@@ -409,11 +409,12 @@ skill_versions
 3. 启动 PostgreSQL + Redis。
 4. 建 FastAPI `/health`、`/ready`。
 5. 建 Alembic。
-6. 建 Vue + Arco 基础布局。
-7. 建 Project、Module、Repository、Environment、TestCommand。
-8. 建 Worker 空任务。
-9. 建 mock LLM provider。
-10. 建 Prompt/Skill Registry。
+6. 完成单用户上下文。
+7. 按 Slice 2.5 建 Vue + Vite + Arco + router/store/API 前端基础布局。
+8. 建 Project、Module、Repository、Environment、TestCommand。
+9. 建 Worker 空任务。
+10. 建 mock LLM provider。
+11. 建 Prompt/Skill Registry。
 
 完成后再进入需求评审和用例生成。
 

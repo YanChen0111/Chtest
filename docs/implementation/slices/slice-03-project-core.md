@@ -11,7 +11,15 @@ Create the single-user project context needed by all later AI, execution, and re
 - `docs/contracts/03-state-machines.md`
 - `docs/architecture/03-implementation-technology.md`
 - `docs/implementation/04-ai-vibecoding-governance.md`
+- `docs/implementation/slices/slice-02-frontend-foundation.md`
+- `docs/product/06-frontend-ui-guidelines.md`
 - `memory/13-ai-readable-project-brief.md`
+
+## Preconditions
+
+- Slice 01 and Slice 02 are complete.
+- Slice 02.5 Frontend Foundation is complete before Task 6.
+- If Slice 02.5 is not complete, skip Task 6 and record it as blocked in handoff instead of hand-writing an ad hoc frontend structure.
 
 ## Task Table
 
@@ -170,6 +178,8 @@ feat(projects): add test command validation
 ## Task 6: Add Project Settings Frontend Shell
 
 Goal: Add the first frontend route for viewing and editing Project Settings.
+
+Precondition: Slice 02.5 Frontend Foundation is complete.
 
 Expected files:
 

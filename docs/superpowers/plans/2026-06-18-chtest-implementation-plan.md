@@ -1,5 +1,9 @@
 # Chtest V1 Implementation Plan
 
+> Historical plan. Do not execute this file as the current source of truth.
+> Current implementation must follow `docs/implementation/02-v1-slice-plan.md`
+> and `docs/implementation/slices/*`, including Slice 2.5 Frontend Foundation.
+
 ## Batch 1: Repository And Docker Foundation
 
 Tasks:
@@ -9,7 +13,7 @@ Tasks:
 3. Add Docker Compose for PostgreSQL and Redis.
 4. Add backend FastAPI health and readiness endpoints.
 5. Add worker startup command and Redis ping task.
-6. Add frontend Vite + Vue + Arco shell.
+6. Frontend foundation is now handled by `docs/implementation/slices/slice-02-frontend-foundation.md`.
 
 Verification:
 

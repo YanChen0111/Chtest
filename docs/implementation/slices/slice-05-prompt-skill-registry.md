@@ -12,6 +12,13 @@ Load, validate, version, and expose built-in PromptVersion and SkillVersion reco
 - `docs/contracts/08-mock-provider-contract.md`
 - `docs/architecture/02-agent-mcp-skill-prompt.md`
 - `docs/implementation/04-ai-vibecoding-governance.md`
+- `docs/implementation/slices/slice-02-frontend-foundation.md`
+- `docs/product/06-frontend-ui-guidelines.md`
+
+## Preconditions
+
+- Slice 01, Slice 02, Slice 02.5, and Slice 04 AI Runtime Core are complete.
+- If Slice 02.5 is not complete, skip Task 6 and record it as blocked in handoff instead of hand-writing an ad hoc frontend structure.
 
 ## Task Table
 
@@ -183,6 +190,8 @@ feat(prompt-skill): add registry api
 ## Task 6: Add Prompt/Skill Frontend Shell
 
 Goal: Add version list/detail views for Prompt and Skill Center.
+
+Precondition: Slice 02.5 Frontend Foundation is complete.
 
 Expected files:
 

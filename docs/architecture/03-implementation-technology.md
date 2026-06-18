@@ -132,7 +132,8 @@ AutomationDraft 是 V1 主线 B 的关键实体。
 6. 用户审批或编辑。
 7. 审批后，后端将 draft_code 写入 Chtest artifact runtime 目录，并创建 `automation_draft_code` Artifact。
 8. ToolExecutionAgent 使用 artifact runtime 文件和 allowlisted TestCommand 触发 TestRunnerTool 或 PlaywrightTool。
-9. 结果进入 TestRun/TestResult/Report。
+9. TestRun 记录 `runtime_artifact_ids`，并写入 `runtime_manifest.json`。
+10. 结果进入 TestRun/TestResult/Report。
 
 ### 6.1 AutomationDraft Runtime 策略
 
@@ -152,6 +153,7 @@ AutomationDraft.draft_code
 - 审批后创建临时 runtime 文件，路径只能位于 Chtest artifact root 下。
 - runtime 文件名来自 `suggested_file_path` 的安全化结果；必须去除绝对路径、`..`、shell 特殊字符和仓库外路径。
 - TestCommand 的 working directory 仍必须在 allowlisted repository path 下；runtime 文件作为明确参数传入执行器。
+- TestRun 必须记录本次实际执行的 runtime artifact id，报告和失败归因必须能追溯到该文件。
 - 运行通过并不代表自动化资产已经进入业务仓库；Promote 是后续人工导出或 patch 流程。
 - 如果用户希望把草稿落到业务仓库，应走未来的 manual export 或 Git Quality UnitTestPatch 流程，不在 V1 自动写入。
 

@@ -56,6 +56,7 @@
   - `docs/implementation/slices/slice-03-project-core.md`
   - `docs/implementation/slices/slice-04-ai-runtime-core.md`
   - `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+  - `docs/implementation/slices/slice-02-frontend-foundation.md`
   - `docs/product/06-frontend-ui-guidelines.md`
 
 ## 本轮完成
@@ -109,6 +110,7 @@
 - 切片计划：`docs/implementation/02-v1-slice-plan.md`
 - Slice 1 Task Plan：`docs/implementation/slices/slice-01-platform-foundation.md`
 - Slice 2 Task Plan：`docs/implementation/slices/slice-02-backend-core.md`
+- Slice 2.5 Task Plan：`docs/implementation/slices/slice-02-frontend-foundation.md`
 - Slice 3 Task Plan：`docs/implementation/slices/slice-03-project-core.md`
 - Slice 4 Task Plan：`docs/implementation/slices/slice-04-ai-runtime-core.md`
 - Slice 5 Task Plan：`docs/implementation/slices/slice-05-prompt-skill-registry.md`
@@ -179,9 +181,9 @@ Next recommended Task:
 - 写 `deploy/docker-compose.yml`，启动 PostgreSQL + Redis。
 - 建 FastAPI 健康检查和数据库连接。
 - 建 Alembic 迁移骨架。
-- 建 Vue 3 + Arco 前端骨架。
 - 做单用户上下文。
-- 建 mock LLM provider，为后续 AI Task Core 铺路。
+- 按 Slice 2.5 建 Vue 3 + Vite + Arco + router/store/API 前端骨架。
+- 再进入 Slice 3 Project Core。
 
 ## 仍需用户确认
 

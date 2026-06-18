@@ -586,9 +586,12 @@ Response 202:
 {
   "test_run_id": "00000000-0000-0000-0000-000000001301",
   "tool_invocation_id": "00000000-0000-0000-0000-000000001302",
-  "status": "queued"
+  "status": "queued",
+  "runtime_artifact_ids": ["00000000-0000-0000-0000-000000001201"]
 }
 ```
+
+When `automation_draft_id` is provided, the backend must create or reuse the approved AutomationDraft runtime artifact before enqueueing the run. The response and TestRun detail must include `runtime_artifact_ids`.
 
 ### 6.2 Get Test Run
 
@@ -609,6 +612,12 @@ Response 200:
     "skipped": 0,
     "error": 0
   },
+  "runtime_artifacts": [
+    {
+      "artifact_type": "automation_draft_code",
+      "file_path": "projects/00000000-0000-0000-0000-000000000101/automation-drafts/00000000-0000-0000-0000-000000001001/runtime/test_from_draft.py"
+    }
+  ],
   "test_results": [],
   "artifacts": [
     {"artifact_type": "stdout", "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/stdout.log"}

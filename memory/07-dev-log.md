@@ -41,7 +41,7 @@
 
 ### Next Step
 
-Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI health/ready, PostgreSQL, Redis, worker ping, Vue + Arco shell, default workspace/user, and Project Settings APIs.
+Start V1 with the current execution order: Slice 1 repository/deploy skeleton, Slice 2 backend core, Slice 2.5 frontend foundation, then Slice 3 Project Core.
 
 ## 2026-06-18 AI Vibecoding Governance
 
@@ -81,7 +81,7 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Fixed AutomationDraft approval wording in page PRD: AutomationDraft uses `edit`, `approve`, and `reject`; `approve_after_edit` remains only for GeneratedCaseCandidate.
 - Aligned Memory update policy across brief, session protocol, development process, and governance.
 - Added V1 Minimum Demo Golden Path fixture.
-- Added Slice 1 and Slice 2 Task Plans for small-step coding.
+- Added initial platform task plans; later preflight cleanup added Slice 2.5 and Slice 3-5 plans.
 - Added Error Code, Seed Data, and Mock Provider contracts.
 - Updated docs and memory indexes for the new fixture, contracts, and Slice Task Plans.
 
@@ -120,3 +120,23 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Commit the preflight documentation fix.
 - Return to Slice 1 Task 1: initialize repository directories.
+
+## 2026-06-18 Current-State Cleanup
+
+### Completed
+
+- Added Slice 2.5 Frontend Foundation so Vue/Vite/Arco/router/store/API shell exists before Slice 3 frontend tasks.
+- Updated Slice 3-5 plans to depend on Slice 2.5 for frontend work and to block frontend tasks rather than create ad hoc structure.
+- Added `TestRun.runtime_artifact_ids` and `runtime_manifest.json` so AutomationDraft executions trace the exact generated runtime file.
+- Updated roadmap, memory, and handoff language to reflect the latest Slice 1 -> Slice 2 -> Slice 2.5 -> Slice 3 flow.
+- Removed historical wording that placed Vue/Arco shell ambiguously before the dedicated Frontend Foundation slice.
+
+### Verification
+
+- Documentation-only change.
+- Run path and keyword consistency checks before committing.
+
+### Next Step
+
+- Commit current-state cleanup.
+- Return to Slice 1 Task 1.

@@ -82,6 +82,7 @@ artifacts/projects/{project_id}/git-quality/{change_set_id}/
 
 ```text
 artifacts/projects/{project_id}/test-runs/{test_run_id}/
+  runtime_manifest.json
   stdout.log
   stderr.log
   junit.xml
@@ -90,6 +91,8 @@ artifacts/projects/{project_id}/test-runs/{test_run_id}/
   screenshot.png
   parsed_result.json
 ```
+
+`runtime_manifest.json` records runtime artifacts used by the TestRun. For AutomationDraft execution it must include the `automation_draft_code` artifact copied into the AutomationDraft `runtime/` directory.
 
 ### 3.7 Report
 

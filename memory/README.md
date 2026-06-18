@@ -170,6 +170,7 @@ Update related files when scope changes:
 - Slice plan: `docs/implementation/02-v1-slice-plan.md`
 - Slice 1 Task plan: `docs/implementation/slices/slice-01-platform-foundation.md`
 - Slice 2 Task plan: `docs/implementation/slices/slice-02-backend-core.md`
+- Slice 2.5 Task plan: `docs/implementation/slices/slice-02-frontend-foundation.md`
 - Slice 3 Task plan: `docs/implementation/slices/slice-03-project-core.md`
 - Slice 4 Task plan: `docs/implementation/slices/slice-04-ai-runtime-core.md`
 - Slice 5 Task plan: `docs/implementation/slices/slice-05-prompt-skill-registry.md`
@@ -189,8 +190,8 @@ Update related files when scope changes:
 
 ## Current State
 
-- Phase: V1 implementation-ready documentation, contracts, Golden Paths, and Slice 1-5 Task plans are complete.
-- Focus: start Slice 1 Task 1, then proceed through Slice 1 and Slice 2 with Task-level verification and commits.
+- Phase: V1 implementation-ready documentation, contracts, Golden Paths, and Slice 1-5 Task plans are complete, including Slice 2.5 Frontend Foundation.
+- Focus: start Slice 1 Task 1, then proceed through Slice 1, Slice 2, Slice 2.5, and Slice 3 with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
 
 ## Implementation Principles

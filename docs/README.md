@@ -21,7 +21,7 @@ When documents disagree, follow this order:
 5. `../memory/13-ai-readable-project-brief.md`.
 6. `fixtures/*`.
 7. `architecture/*`.
-8. `reference/*`, `reviews/*`, and `superpowers/*`.
+8. `reference/*`, `reviews/*`, and `superpowers/*` as historical/reference material only.
 
 ## Documentation Entry Points
 
@@ -36,7 +36,7 @@ When documents disagree, follow this order:
 | `reference/` | WHartTest and MeterSphere migration map |
 | `roadmap/` | Phase roadmap and agile slices |
 | `reviews/` | Architecture, feasibility, and risk review |
-| `superpowers/` | Design, plan, and review docs for structured AI development |
+| `superpowers/` | Historical design, plan, and review docs; current execution follows `implementation/slices/*` |
 | `../memory/` | Long-term AI context and session handoff |
 
 ## Recommended Reading Order
@@ -121,6 +121,7 @@ When documents disagree, follow this order:
 - `implementation/02-v1-slice-plan.md`: V1 slice plan.
 - `implementation/slices/slice-01-platform-foundation.md`: Slice 1 Task plan.
 - `implementation/slices/slice-02-backend-core.md`: Slice 2 Task plan.
+- `implementation/slices/slice-02-frontend-foundation.md`: Slice 2.5 Task plan for Vue/Vite/Arco shell before frontend pages.
 - `implementation/slices/slice-03-project-core.md`: Slice 3 Task plan.
 - `implementation/slices/slice-04-ai-runtime-core.md`: Slice 4 Task plan.
 - `implementation/slices/slice-05-prompt-skill-registry.md`: Slice 5 Task plan.

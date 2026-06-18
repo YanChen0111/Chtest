@@ -88,10 +88,11 @@ Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
 
 当前应进入 V1 实施，而不是继续扩写大而全规划。
 
-推荐下一个开发切片：
+推荐下一个开发切片顺序：
 
 ```text
-Slice 1 + Slice 2：Repository and Deploy Skeleton + Backend Core
+Slice 1 -> Slice 2 -> Slice 2.5 -> Slice 3
+Repository and Deploy Skeleton -> Backend Core -> Frontend Foundation -> Project Core
 ```
 
 具体任务：
@@ -101,8 +102,9 @@ Slice 1 + Slice 2：Repository and Deploy Skeleton + Backend Core
 - 启动 PostgreSQL 和 Redis。
 - 建 FastAPI health/ready。
 - 建 Alembic。
-- 建 Vue + Arco 基础布局。
 - 建单用户上下文。
+- 建 Vue + Vite + Arco + router/store/API 前端基础布局。
+- 建 Project / Module / Repository / Environment / TestCommand API 和 Project Settings 前端入口。
 
 ## 6. 不要做什么
 

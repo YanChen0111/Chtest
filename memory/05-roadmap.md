@@ -25,8 +25,8 @@ Foundation
 - PostgreSQL / Redis。
 - FastAPI app。
 - Alembic。
-- Vue 3 + Arco shell。
 - 单用户上下文。
+- 按 Slice 2.5 Frontend Foundation 建 Vue 3 + Vite + Arco 前端基础工程。
 - Project / Module / Repository / Environment / TestCommand CRUD。
 
 验收：
@@ -108,6 +108,7 @@ Foundation
 - 使用 `docs/fixtures/02-golden-case-to-playwright.md` 的 pytest 示例生成草稿。
 - 未审批 AutomationDraft 不能执行。
 - 审批后 pytest 可执行并结构化保存结果。
+- TestRun 记录实际执行的 AutomationDraft runtime artifact 和 `runtime_manifest.json`。
 
 ## 7. Phase 6: Playwright Minimal Loop
 

@@ -337,10 +337,13 @@ Relationship: GitChangeSet 1:1 GitRiskAnalysis in V1.
 | name | varchar(255) | yes | none | Run name |
 | command | text | yes | none | Executed command |
 | working_directory | text | yes | none | Working directory |
+| runtime_artifact_ids | uuid[] | yes | {} | Runtime files used by this run, including AutomationDraft copies |
 | status | TestRunStatus | yes | created | Status |
 | exit_code | int | no | null | Exit code |
 | duration_ms | int | no | null | Duration |
 | parsed_result_json | jsonb | yes | {} | Parsed aggregate result |
+
+When `automation_draft_id` is set, `runtime_artifact_ids` must include the AutomationDraft runtime copy artifact used by the run. This lets reports and failure analysis identify the exact generated file that was executed.
 
 ## 23. TestResult
 

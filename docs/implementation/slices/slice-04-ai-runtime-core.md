@@ -12,6 +12,14 @@ Create the AI task runtime foundation: AITask, Artifact, LLMCallLog, determinist
 - `docs/contracts/08-mock-provider-contract.md`
 - `docs/architecture/04-agent-workflow-design.md`
 - `docs/implementation/04-ai-vibecoding-governance.md`
+- `docs/implementation/slices/slice-02-frontend-foundation.md`
+- `docs/product/06-frontend-ui-guidelines.md`
+
+## Preconditions
+
+- Slice 01, Slice 02, and Slice 03 backend tasks are complete.
+- Slice 02.5 Frontend Foundation is complete before Task 6.
+- If Slice 02.5 is not complete, skip Task 6 and record it as blocked in handoff instead of hand-writing an ad hoc frontend structure.
 
 ## Task Table
 
@@ -166,6 +174,8 @@ feat(ai-runtime): add ai task api
 ## Task 6: Add AI Task Frontend Status Shell
 
 Goal: Add recent AI task list and detail shell for AI Workbench.
+
+Precondition: Slice 02.5 Frontend Foundation is complete.
 
 Expected files:
 

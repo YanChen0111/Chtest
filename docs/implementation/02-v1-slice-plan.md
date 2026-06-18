@@ -12,6 +12,7 @@ All coding work must follow `docs/implementation/04-ai-vibecoding-governance.md`
 |---:|---|---|
 | 1 | Repository and Deploy Skeleton | Establish directories, Docker Compose, PostgreSQL, Redis |
 | 2 | Backend Core | FastAPI, Settings, DB, Redis, Alembic, health/ready |
+| 2.5 | Frontend Foundation | Vue 3, Vite, Arco, router, store, API shell |
 | 3 | Project Core | Project, Module, Repository, Environment, TestCommand |
 | 4 | AI Runtime Core | AITask, Artifact, LLMCallLog, worker, mock provider |
 | 5 | Prompt And Skill Registry | PromptVersion, SkillVersion, schema validation, version hash |
@@ -30,9 +31,9 @@ All coding work must follow `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## 3. P0 Development Batches
 
-Batch 1: Slice 1-5.
+Batch 1: Slice 1-5, including Slice 2.5.
 
-- Goal: platform starts, connects DB/Redis, creates projects, creates AI tasks, loads Prompt/Skill.
+- Goal: platform starts, connects DB/Redis, has a Vue/Arco frontend shell, creates projects, creates AI tasks, loads Prompt/Skill.
 - Real LLM is not required; use mock provider first.
 
 Batch 2: Slice 6-10.
@@ -105,6 +106,7 @@ A Slice is complete only when:
 
 - `docs/implementation/slices/slice-01-platform-foundation.md`
 - `docs/implementation/slices/slice-02-backend-core.md`
+- `docs/implementation/slices/slice-02-frontend-foundation.md`
 - `docs/implementation/slices/slice-03-project-core.md`
 - `docs/implementation/slices/slice-04-ai-runtime-core.md`
 - `docs/implementation/slices/slice-05-prompt-skill-registry.md`

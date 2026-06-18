@@ -32,11 +32,19 @@
 
 验收：后端启动成功；`/ready` 能检查 PostgreSQL 和 Redis；Alembic 能创建首批基础表。
 
+## Slice 2.5: Frontend Foundation
+
+目标：在进入 Slice 3 前建立 Vue 3 + TypeScript + Vite + Arco 前端基础工程。
+
+交付：`frontend/package.json`、Vite 配置、Vue app、Arco Design Vue、router、store、API client、WorkbenchLayout、AI Workbench 空壳、frontend Docker dev command。
+
+验收：`npm --prefix frontend run build` 通过；`npm --prefix frontend run test -- --run` 通过；`docker compose -f deploy/docker-compose.yml config` 通过。
+
 ## Slice 3: Project Core
 
 目标：平台能管理项目上下文。
 
-交付：Workspace、User、Project、Module、Repository、Environment、TestCommand models；CRUD API；基础 Vue 页面。
+交付：Workspace、User、Project、Module、Repository、Environment、TestCommand models；CRUD API；Project Settings 页面。前端任务必须依赖 Slice 2.5，不允许临时手写一套 ad hoc frontend 结构。
 
 验收：UI/API 可以创建项目、模块、仓库、环境、测试命令；数据写入 PostgreSQL。
 
@@ -108,9 +116,9 @@
 
 目标：V1 P0 执行闭环。
 
-交付：ToolDefinition、ToolInvocation、TestRun、TestResult 初版、TestRunnerTool、pytest allowlist 执行、stdout/stderr/JUnit artifact。
+交付：ToolDefinition、ToolInvocation、TestRun、TestResult 初版、TestRunnerTool、pytest allowlist 执行、AutomationDraft runtime artifact 追踪、runtime_manifest、stdout/stderr/JUnit artifact。
 
-验收：审批后的 AutomationDraft 可触发 pytest TestRun；执行结果结构化入库。
+验收：审批后的 AutomationDraft 可触发 pytest TestRun；TestRun 记录实际执行的 `runtime_artifact_ids`；执行结果结构化入库。
 
 ## Slice 13: Playwright Minimal Loop
 
