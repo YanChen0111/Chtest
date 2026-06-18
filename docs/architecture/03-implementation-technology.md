@@ -82,10 +82,32 @@ risk_level
 approval_required
 timeout_seconds
 allowed_projects
+command_allowlist
+allowed_working_directories
+forbidden_shell_operators
+max_stdout_bytes
+max_stderr_bytes
 artifact_policy
 ```
 
 V1 禁止任意 shell。所有命令必须来自 TestCommand 或 ToolDefinition allowlist。
+
+### 4.1 Tool Allowlist 安全规则
+
+Tool Adapter 必须在执行前完成以下检查：
+
+1. ToolDefinition 必须存在、启用，并匹配项目范围。
+2. 命令必须来自 TestCommand 或 ToolDefinition `command_allowlist_json`，不能接受前端或 AI 直接传入的任意 shell 字符串。
+3. 命令执行必须使用参数数组或等价的非 shell 模式，不使用 `shell=True`。
+4. 命令字符串或参数中出现 `;`、`&&`、`||`、`|`、`>`、`>>`、`<`、`$(`、反引号时必须拒绝，除非未来有明确的工具级解析器白名单。
+5. working directory 必须先 canonicalize，解析符号链接后仍位于 Repository 或 ToolDefinition 的 allowlisted root 下。
+6. artifact 输出路径必须先 canonicalize，解析后仍位于 configured artifact root 下。
+7. timeout 必须强制执行，超时后 ToolInvocation 进入 `timeout`。
+8. stdout/stderr 捕获必须遵循 `max_stdout_bytes` 和 `max_stderr_bytes`，超出部分截断并在 artifact metadata 标记。
+9. stdout、stderr、raw provider output 和报告展示前必须执行 secret redaction。
+10. medium/high risk 或 `approval_required=true` 的工具必须先进入 approval 状态。
+
+这些规则同时适用于 pytest、Playwright、GitTool、PatchScopeGate、ReportTool，以及后续 Newman/JMeter。
 
 ## 5. Prompt / Skill 实现规则
 
@@ -108,8 +130,30 @@ AutomationDraft 是 V1 主线 B 的关键实体。
 4. 后端校验 draft_code、target_framework、suggested_file_path。
 5. 保存 AutomationDraft，不写入业务项目。
 6. 用户审批或编辑。
-7. 审批后通过 TestRunnerTool 或 PlaywrightTool 执行。
-8. 结果进入 TestRun/TestResult/Report。
+7. 审批后，后端将 draft_code 写入 Chtest artifact runtime 目录，并创建 `automation_draft_code` Artifact。
+8. ToolExecutionAgent 使用 artifact runtime 文件和 allowlisted TestCommand 触发 TestRunnerTool 或 PlaywrightTool。
+9. 结果进入 TestRun/TestResult/Report。
+
+### 6.1 AutomationDraft Runtime 策略
+
+V1 采用 `artifact_runtime_copy` 策略：
+
+```text
+AutomationDraft.draft_code
+  -> user approves
+  -> artifacts/projects/{project_id}/automation-drafts/{automation_draft_id}/runtime/{safe_file_name}
+  -> runtime_artifact_id
+  -> TestRunnerTool / PlaywrightTool
+```
+
+规则：
+
+- AutomationDraft 生成和审批阶段只写 Chtest 数据库与 artifact，不写目标业务仓库。
+- 审批后创建临时 runtime 文件，路径只能位于 Chtest artifact root 下。
+- runtime 文件名来自 `suggested_file_path` 的安全化结果；必须去除绝对路径、`..`、shell 特殊字符和仓库外路径。
+- TestCommand 的 working directory 仍必须在 allowlisted repository path 下；runtime 文件作为明确参数传入执行器。
+- 运行通过并不代表自动化资产已经进入业务仓库；Promote 是后续人工导出或 patch 流程。
+- 如果用户希望把草稿落到业务仓库，应走未来的 manual export 或 Git Quality UnitTestPatch 流程，不在 V1 自动写入。
 
 V1 支持：pytest、Playwright。Newman/JMeter 后置。
 
@@ -145,6 +189,7 @@ Patch 规则：V1 只允许写测试目录，禁止修改业务源码。
 - 限制 timeout。
 - 收集 stdout/stderr。
 - 尝试解析 JUnit 和 coverage。
+- 执行 AutomationDraft 时，pytest 目标文件来自 Chtest artifact runtime 目录，不直接来自业务仓库写入。
 
 ### Playwright
 
@@ -152,6 +197,7 @@ Patch 规则：V1 只允许写测试目录，禁止修改业务源码。
 - 支持运行已有测试。
 - 支持执行审批后的 AutomationDraft。
 - artifact: trace.zip、screenshot、video 可选、console、network 可后置。
+- 执行 AutomationDraft 时，Playwright spec 文件来自 Chtest artifact runtime 目录；locator 失败必须保存 trace/screenshot 后进入失败归因。
 
 ### Newman
 

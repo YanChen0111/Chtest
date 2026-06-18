@@ -105,5 +105,8 @@ A Slice is complete only when:
 
 - `docs/implementation/slices/slice-01-platform-foundation.md`
 - `docs/implementation/slices/slice-02-backend-core.md`
+- `docs/implementation/slices/slice-03-project-core.md`
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `docs/implementation/slices/slice-05-prompt-skill-registry.md`
 
 Add one file per Slice as implementation approaches that Slice.

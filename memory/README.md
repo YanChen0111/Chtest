@@ -28,6 +28,7 @@ The first and second loops are mainlines. The third loop is a support workflow.
 - RAG is not built in; only KnowledgeAdapter is provided.
 - AI-generated cases must enter a review window before becoming TestCase records.
 - AutomationDraft must be approved before execution and cannot directly write target repositories.
+- Approved AutomationDraft execution uses Chtest artifact runtime copies, not direct writes into the target repository.
 - UnitTestPatch must be approved before application and can only write test directories.
 - AI cannot automatically modify business source files.
 - AI quality metrics must track generation count, acceptance rate, rejection rate, edit rate, execution pass rate, and failure reason distribution.
@@ -69,6 +70,7 @@ Required docs:
 10. `docs/implementation/01-v1-development-process.md`
 11. `docs/implementation/02-v1-slice-plan.md`
 12. `docs/implementation/04-ai-vibecoding-governance.md`
+13. `docs/product/06-frontend-ui-guidelines.md` when implementing frontend views
 
 Task-specific fixtures:
 
@@ -145,6 +147,7 @@ Update related files when scope changes:
 - Page PRD: `docs/product/03-user-journey-and-page-prd.md`
 - AI metrics: `docs/product/04-ai-quality-metrics.md`
 - Version boundaries: `docs/product/05-non-goals-and-version-boundaries.md`
+- Frontend UI guidelines: `docs/product/06-frontend-ui-guidelines.md`
 - Data model contract: `docs/contracts/01-data-model-contract.md`
 - API contract: `docs/contracts/02-api-contract.md`
 - State machines: `docs/contracts/03-state-machines.md`
@@ -167,6 +170,9 @@ Update related files when scope changes:
 - Slice plan: `docs/implementation/02-v1-slice-plan.md`
 - Slice 1 Task plan: `docs/implementation/slices/slice-01-platform-foundation.md`
 - Slice 2 Task plan: `docs/implementation/slices/slice-02-backend-core.md`
+- Slice 3 Task plan: `docs/implementation/slices/slice-03-project-core.md`
+- Slice 4 Task plan: `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- Slice 5 Task plan: `docs/implementation/slices/slice-05-prompt-skill-registry.md`
 - Testing acceptance: `docs/implementation/03-testing-and-acceptance.md`
 - AI vibecoding governance: `docs/implementation/04-ai-vibecoding-governance.md`
 - Docker environment: `docs/deployment/01-docker-environment.md`
@@ -183,7 +189,7 @@ Update related files when scope changes:
 
 ## Current State
 
-- Phase: V1 implementation-ready documentation, contracts, Golden Paths, and Slice 1/2 Task plans are complete.
+- Phase: V1 implementation-ready documentation, contracts, Golden Paths, and Slice 1-5 Task plans are complete.
 - Focus: start Slice 1 Task 1, then proceed through Slice 1 and Slice 2 with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
 

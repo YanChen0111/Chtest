@@ -417,7 +417,7 @@ Response 202:
 
 `GET /api/automation/drafts/{id}`
 
-Response 200 returns AutomationDraft read model with `draft_code`, `target_framework`, `suggested_file_path`, `execution_notes`, `risk_notes`, and artifacts.
+Response 200 returns AutomationDraft read model with `draft_code`, `target_framework`, `suggested_file_path`, `execution_strategy`, `runtime_artifact_id`, `execution_notes`, `risk_notes`, and artifacts.
 
 ### 4.3 Edit Automation Draft
 
@@ -462,11 +462,14 @@ Response 200:
 ```json
 {
   "automation_draft_id": "00000000-0000-0000-0000-000000001001",
-  "status": "approved"
+  "status": "approved",
+  "execution_strategy": "artifact_runtime_copy"
 }
 ```
 
 AutomationDraft uses `edit -> edited -> approve -> approved`. It does not use `approve_after_edit`.
+
+Approval does not write generated code into the target business repository. When a TestRun is created from an approved AutomationDraft, the backend copies `draft_code` into a Chtest-managed artifact runtime path and stores the copied file as `runtime_artifact_id`.
 
 ## 5. Git Quality APIs
 

@@ -16,6 +16,10 @@
 - 增加 Web 自动化能力，但 V1 只做 Playwright 最小闭环；Newman/JMeter 后置。
 - 文档必须足够详细，方便后续 AI 读取后继续完成项目。
 - 长期 AI 开发必须遵循 `docs/implementation/04-ai-vibecoding-governance.md`：小步 Task、每步验证、每个完成 Task 提交、可回滚；Slice 完成和重大上下文变化时更新 memory。
+- 用户已确认 preflight 文档修复方案：
+  - AutomationDraft 审批后采用 Chtest artifact runtime 临时执行目录，不直接写业务仓库。
+  - `LLMCallLog` 使用独立表。
+  - 补充前端 UI 指南，避免 V1 做成泛企业后台。
 
 ## 当前本地状态
 
@@ -26,7 +30,33 @@
 - 参考框架目录应保留本地，但默认不纳入 Chtest Git 提交记录。
 - Chtest 已初始化为独立 Git 仓库，当前分支 `main`。
 - Git remote `origin` 已设置为 `https://github.com/2696437448-cmyk/Chtest.git`。
-- 当前未创建 commit，也未 push。
+- baseline commit 已存在：`3be8e82 docs(product): define chtest v1 planning baseline`。
+- 当前 preflight 文档修复在隔离分支 `docs/preflight-vibecoding-fixes`，worktree 路径为 `/private/tmp/chtest-preflight-docs`。
+- 当前未 push。
+
+## 当前 Preflight 修复内容
+
+本轮修复 vibe coding 开工前的契约断点：
+
+- `docs/contracts/01-data-model-contract.md`
+  - 补齐 `LLMCallLog`、`CaseQualityMetric`、`GitRiskAnalysis`、`RegressionPlan`、`KnowledgeProviderConfig`、`KnowledgeEvidence`、`McpServerConfig`。
+  - 将 `FailureAnalysis.confidence` 固定为 `0.00-1.00`。
+  - 明确 AutomationDraft `execution_strategy=artifact_runtime_copy` 和 `runtime_artifact_id`。
+  - 强化 ToolDefinition/ToolInvocation 的 allowlist、安全路径、输出限制字段。
+- `docs/architecture/03-implementation-technology.md`
+  - 明确 Tool Adapter 非 shell、allowlist、canonicalize、timeout、stdout/stderr limit、redaction 规则。
+  - 明确 AutomationDraft 审批后复制到 Chtest artifact runtime 目录执行。
+- `docs/contracts/02-api-contract.md`
+  - 明确 approve AutomationDraft 不写业务仓库，创建 TestRun 时生成 runtime artifact。
+- `docs/contracts/04-artifact-contract.md`
+  - 增加 AutomationDraft `runtime/` artifact 路径。
+- `docs/implementation/04-ai-vibecoding-governance.md`
+  - 增加 Tool/runtime 安全门禁。
+- 新增：
+  - `docs/implementation/slices/slice-03-project-core.md`
+  - `docs/implementation/slices/slice-04-ai-runtime-core.md`
+  - `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+  - `docs/product/06-frontend-ui-guidelines.md`
 
 ## 本轮完成
 
@@ -79,6 +109,10 @@
 - 切片计划：`docs/implementation/02-v1-slice-plan.md`
 - Slice 1 Task Plan：`docs/implementation/slices/slice-01-platform-foundation.md`
 - Slice 2 Task Plan：`docs/implementation/slices/slice-02-backend-core.md`
+- Slice 3 Task Plan：`docs/implementation/slices/slice-03-project-core.md`
+- Slice 4 Task Plan：`docs/implementation/slices/slice-04-ai-runtime-core.md`
+- Slice 5 Task Plan：`docs/implementation/slices/slice-05-prompt-skill-registry.md`
+- 前端 UI 指南：`docs/product/06-frontend-ui-guidelines.md`
 - 测试验收：`docs/implementation/03-testing-and-acceptance.md`
 - AI vibecoding 治理：`docs/implementation/04-ai-vibecoding-governance.md`
 
@@ -93,9 +127,10 @@
 7. 查看 `docs/implementation/01-v1-development-process.md`。
 8. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
 9. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
-10. 查看 `git status --short`。
-11. 进入 Slice 1 Task 1：Initialize repository directories。
-12. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
+10. 如涉及前端，读取 `docs/product/06-frontend-ui-guidelines.md`。
+11. 查看 `git status --short`。
+12. 进入 Slice 1 Task 1：Initialize repository directories。
+13. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
 
 
 ## Memory 更新原则

@@ -60,7 +60,12 @@ artifacts/projects/{project_id}/automation-drafts/{automation_draft_id}/
   draft.spec.ts
   review.json
   execution_plan.json
+  runtime/
+    test_from_draft.py
+    test_from_draft.spec.ts
 ```
+
+`runtime/` stores approved AutomationDraft execution copies. Files in this directory are generated from reviewed draft code and remain under Chtest artifact root. They are not written into the target business repository.
 
 ### 3.5 Git Quality
 

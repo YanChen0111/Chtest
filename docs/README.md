@@ -18,16 +18,16 @@ When documents disagree, follow this order:
 2. `contracts/*`.
 3. `implementation/04-ai-vibecoding-governance.md`.
 4. `implementation/01-v1-delivery-plan.md`.
-4. `../memory/13-ai-readable-project-brief.md`.
-5. `fixtures/*`.
-6. `architecture/*`.
-7. `reference/*`, `reviews/*`, and `superpowers/*`.
+5. `../memory/13-ai-readable-project-brief.md`.
+6. `fixtures/*`.
+7. `architecture/*`.
+8. `reference/*`, `reviews/*`, and `superpowers/*`.
 
 ## Documentation Entry Points
 
 | Directory | Purpose |
 |---|---|
-| `product/` | Product positioning, PRD, page PRD, AI metrics, version boundaries |
+| `product/` | Product positioning, PRD, page PRD, AI metrics, frontend UI guidance, version boundaries |
 | `architecture/` | Platform architecture, Agent/MCP/Skill/Prompt design, Git Quality design |
 | `contracts/` | Data model, API, state machine, artifact, Prompt/Skill contracts |
 | `fixtures/` | Golden Path standard inputs and expected outputs |
@@ -61,6 +61,7 @@ When documents disagree, follow this order:
 18. `implementation/02-v1-slice-plan.md`
 19. `implementation/03-testing-and-acceptance.md`
 20. `implementation/04-ai-vibecoding-governance.md`
+21. `product/06-frontend-ui-guidelines.md` when implementing frontend views
 
 ## V1 Hard Constraints
 
@@ -85,6 +86,7 @@ When documents disagree, follow this order:
 - `product/03-user-journey-and-page-prd.md`: User journey and page-level PRD.
 - `product/04-ai-quality-metrics.md`: AI quality metrics.
 - `product/05-non-goals-and-version-boundaries.md`: Non-goals and version boundaries.
+- `product/06-frontend-ui-guidelines.md`: V1 frontend layout, review surface, evidence display, and visual guidance.
 
 ### Contracts
 
@@ -119,6 +121,9 @@ When documents disagree, follow this order:
 - `implementation/02-v1-slice-plan.md`: V1 slice plan.
 - `implementation/slices/slice-01-platform-foundation.md`: Slice 1 Task plan.
 - `implementation/slices/slice-02-backend-core.md`: Slice 2 Task plan.
+- `implementation/slices/slice-03-project-core.md`: Slice 3 Task plan.
+- `implementation/slices/slice-04-ai-runtime-core.md`: Slice 4 Task plan.
+- `implementation/slices/slice-05-prompt-skill-registry.md`: Slice 5 Task plan.
 - `implementation/03-testing-and-acceptance.md`: Testing and acceptance.
 - `implementation/04-ai-vibecoding-governance.md`: AI development governance, Task loop, testing, commit, rollback, and handoff rules.
 - `deployment/01-docker-environment.md`: Docker and environment control.

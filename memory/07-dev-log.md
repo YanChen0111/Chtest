@@ -94,3 +94,29 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Create initial planning baseline commit.
 - Start Slice 1 Task 1: initialize repository directories.
+
+## 2026-06-18 Preflight Contract Closure
+
+### Completed
+
+- Closed the main pre-vibecoding contract gaps identified during product/implementation review.
+- Confirmed AutomationDraft V1 execution strategy: approved drafts are copied into a Chtest-managed artifact runtime directory and executed from there, not written directly into the target business repository.
+- Confirmed `LLMCallLog` is a separate table so one AITask can record one or more provider calls.
+- Added data contracts for `LLMCallLog`, `CaseQualityMetric`, `GitRiskAnalysis`, `RegressionPlan`, `KnowledgeProviderConfig`, `KnowledgeEvidence`, and `McpServerConfig`.
+- Fixed `FailureAnalysis.confidence` to a single `0.00-1.00` scale.
+- Strengthened ToolDefinition and ToolInvocation contracts for command allowlists, forbidden shell operators, canonical working directories, stdout/stderr limits, and artifact references.
+- Added Tool/runtime safety governance for non-shell execution, path canonicalization, timeout, output size limits, secret redaction, and approval gates.
+- Added detailed Task Plans for Slice 3 Project Core, Slice 4 AI Runtime Core, and Slice 5 Prompt And Skill Registry.
+- Added `docs/product/06-frontend-ui-guidelines.md` to keep the frontend workbench-focused and avoid a generic enterprise admin UI.
+
+### Verification
+
+- Documentation-only change.
+- Ran `git diff --check`.
+- Ran placeholder and ambiguity scan across `docs/` and `memory/`.
+- Verified new Slice 3-5 and frontend UI guide files exist.
+
+### Next Step
+
+- Commit the preflight documentation fix.
+- Return to Slice 1 Task 1: initialize repository directories.
