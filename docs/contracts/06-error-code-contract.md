@@ -26,6 +26,9 @@ Common error response:
 | SCHEMA_VALIDATION_FAILED | 422 | AI output does not match schema | Agent output parser fails validation |
 | AI_TASK_FAILED | 500 | AI task failed | Provider error, parser error, or worker failure |
 | ARTIFACT_NOT_FOUND | 404 | Artifact does not exist | Report or detail page references missing artifact |
+| CONTEXT_ARTIFACT_NOT_ALLOWED | 422 | ContextArtifact cannot be used for prompt input | Unsafe MIME, binary file, missing owner, or allowed_for_prompt=false |
+| CONTEXT_ARTIFACT_TOO_LARGE | 413 | ContextArtifact exceeds V1 size limit | Single file > 1 MiB or AITask context total > 2 MiB |
+| CONTEXT_ARTIFACT_SECRET_DETECTED | 422 | ContextArtifact contains high-risk secret | Secret scan finds token, credential, cookie, or production connection string |
 | REPOSITORY_PATH_NOT_ALLOWED | 422 | Repository path is outside allowlist | Creating/updating Repository |
 | REPORT_INSUFFICIENT_EVIDENCE | 409 | Report cannot make conclusion with available evidence | ReportAgent lacks required artifacts |
 

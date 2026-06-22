@@ -94,3 +94,18 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Create initial planning baseline commit.
 - Start Slice 1 Task 1: initialize repository directories.
+
+## 2026-06-22 ContextArtifact Contract Closure
+
+### Completed
+
+- Defined V1 ContextArtifact as an API-level use of the Artifact table, not a new table.
+- Fixed owner rule: project-level ContextArtifact uses `owner_entity_type=Project` and `owner_entity_id=project_id`.
+- Clarified that `use_knowledge=false` disables external RAG/KnowledgeAdapter only; provided `context_artifact_ids` are still injected into prompts.
+- Added ContextArtifact usage to V1 Minimum Demo, seed data, mock provider behavior, prompt/skill contract, testing acceptance, and AI-readable project brief.
+- Expanded Artifact redaction and safety rules to cover context documents, logs, OpenAPI snippets, and fixtures.
+
+### Verification
+
+- Documentation-only change.
+- Required checks: ContextArtifact grep, `use_knowledge=false` semantics grep, owner rule grep, docs whitespace check.

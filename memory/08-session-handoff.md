@@ -26,8 +26,9 @@
 - 参考框架目录应保留本地，但默认不纳入 Chtest Git 提交记录。
 - Chtest 已初始化为独立 Git 仓库，当前分支 `main`。
 - Git remote `origin` 已设置为 `https://github.com/2696437448-cmyk/Chtest.git`。
-- 当前 baseline commit：`3be8e82 docs(product): define chtest v1 planning baseline`。
-- 当前尚未 push 到远程。
+- 当前最新已 push commit：`1fb52c1 docs(process): tighten vibecoding readiness docs`。
+- GitHub 提示仓库已迁移到 `https://github.com/YanChen0111/Chtest.git`，但当前 origin 仍指向旧地址。
+- 本轮 ContextArtifact 文档契约修复作为本地提交保存；push 仍需用户明确要求。
 
 ## 本轮完成
 
@@ -151,5 +152,6 @@ Next recommended Task:
 
 ## 仍需用户确认
 
-- 是否需要把当前 baseline commit push 到 `https://github.com/2696437448-cmyk/Chtest`。
+- 是否需要把 Git remote `origin` 改为 `https://github.com/YanChen0111/Chtest.git`。
+- 本轮 ContextArtifact 文档修复完成后，是否需要 push。
 - LLM 第一接入方式：OpenAI 官方 API、Azure OpenAI、兼容代理网关，还是 Ollama。

@@ -45,6 +45,7 @@ V1 is single-user, but owner fields are kept for later extension.
 | SkillStatus | draft, active, deprecated |
 | ToolDefinitionStatus | active, disabled, archived |
 | FailureClassification | product_defect, test_script_issue, environment_issue, test_data_issue, dependency_issue, flaky_test, insufficient_evidence |
+| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, GitChangeSet, ToolInvocation |
 
 ## 3. Workspace
 
@@ -368,6 +369,7 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | output_json | jsonb | yes | {} | Structured output |
 | error_json | jsonb | no | null | Error information |
 | token_usage_json | jsonb | yes | {} | Token usage |
+| context_artifact_ids | uuid[] | yes | {} | Context artifacts injected into the prompt |
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
@@ -445,26 +447,36 @@ Unique constraint: project_id + name, treating null project_id as built-in scope
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| owner_entity_type | varchar(80) | yes | none | AITask/TestRun/Report/etc. |
+| owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, context_markdown, context_text, context_json, context_yaml, context_openapi |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
 | sha256 | varchar(128) | yes | none | Content hash |
 | metadata_json | jsonb | yes | {} | Metadata |
 
+V1 ContextArtifact rule:
+
+- ContextArtifact is not a separate table in V1.
+- ContextArtifact reuses the Artifact table.
+- For project-level context documents, set `owner_entity_type=Project` and `owner_entity_id=project_id`.
+- AITask rows that use context must copy the selected ids into `context_artifact_ids`.
+- A prompt input artifact must include `context_manifest.json` with the exact context artifact ids, hashes, titles, MIME types, and redaction flags used for that AI task.
+- Artifact owner fields must never be null for ContextArtifact.
+
 ## 30. Relationship Summary
 
 ```text
 Workspace -> Project
 Project -> Module / Repository / Environment / TestCommand
+Project -> Artifact (ContextArtifact)
 Project -> Requirement -> RequirementReview -> RiskItem
 Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
 TestRun/TestResult -> FailureAnalysis -> Report
 Repository -> GitChangeSet -> GitChangedFile -> UnitTestPatch -> TestRun -> Report
-AITask -> Artifact
+AITask -> Artifact / ContextArtifact references
 ToolDefinition -> ToolInvocation -> Artifact
 Report -> Artifact
 PromptVersion + SkillVersion -> AITask

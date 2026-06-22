@@ -70,6 +70,36 @@ Return JSON only. Do not include markdown fences in the model output.
 - Prompt 内容变化必须生成新 hash。
 - 已发布版本不能覆盖。
 
+## 4.1 Context Input Contract
+
+RequirementReviewAgent and CaseGenerationAgent may receive local ContextArtifacts.
+
+Prompt input must include:
+
+```json
+{
+  "use_knowledge": false,
+  "context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+  "context_manifest": [
+    {
+      "artifact_id": "00000000-0000-0000-0000-000000000371",
+      "title": "coupon-api-notes.md",
+      "mime_type": "text/markdown",
+      "sha256": "sha256:example",
+      "redaction_applied": false
+    }
+  ]
+}
+```
+
+Rules:
+
+- `use_knowledge=false` means external RAG/KnowledgeAdapter is disabled.
+- ContextArtifact content is still available to the prompt when `context_artifact_ids` is non-empty.
+- Prompt input artifacts must save `context_manifest.json`.
+- Model output or parsed AITask output must expose `used_context_artifact_ids`.
+- Model output must not claim external evidence when `used_knowledge=false`.
+
 ## 5. Skill 文件格式
 
 每个 Skill 文件必须包含以下段落：

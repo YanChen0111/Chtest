@@ -36,7 +36,7 @@ The product must measure AI output quality instead of only showing generated con
 
 ### 4.1 Requirement Review
 
-User uploads or pastes a requirement. Chtest asks AI to analyze the requirement on six dimensions:
+User uploads or pastes a requirement and may attach lightweight ContextArtifacts such as API notes, business rules, OpenAPI snippets, logs, or fixtures. Chtest asks AI to analyze the requirement on six dimensions:
 
 - Completeness.
 - Clarity.
@@ -47,9 +47,11 @@ User uploads or pastes a requirement. Chtest asks AI to analyze the requirement 
 
 The output includes score, issue list, clarification questions, risk items, and test design notes. The user can confirm the review result before generating cases.
 
+If ContextArtifacts are selected, the review result must show which context artifacts were used. This local context does not require external RAG.
+
 ### 4.2 AI Test Case Generation
 
-User selects a requirement, target test types, and optional context. Chtest generates structured candidate cases.
+User selects a requirement, target test types, and optional ContextArtifacts. Chtest generates structured candidate cases.
 
 Each candidate case must include:
 
@@ -65,6 +67,8 @@ Each candidate case must include:
 - AI generation reason.
 
 Candidates cannot directly become official test cases. They enter a review queue first.
+
+Generated cases must preserve traceability to the requirement, risk items, and any ContextArtifacts used during generation.
 
 ### 4.3 Test Case Review
 
@@ -242,6 +246,16 @@ V1 does not build a RAG system. It provides a KnowledgeAdapter interface so a la
 
 When no knowledge provider is configured, AI workflows must still run with `used_knowledge=false` and an empty evidence list.
 
+V1 does support lightweight ContextArtifact injection before RAG exists:
+
+- ContextArtifact is a user-provided local context file or text snippet stored as an Artifact.
+- ContextArtifact can include requirement notes, API notes, OpenAPI snippets, fixture examples, logs, or Markdown references.
+- ContextArtifact is injected into prompts when `context_artifact_ids` are provided.
+- `use_knowledge=false` only means external RAG/KnowledgeAdapter is not used.
+- `context_artifact_ids` can still be used when `use_knowledge=false`.
+- AI task results must distinguish `used_knowledge=false` from `used_context_artifact_ids=[...]`.
+- AI task artifacts must include `context_manifest.json` so the user can answer which local context was used.
+
 ## 9. Quality Metrics
 
 Chtest must track:
@@ -262,7 +276,9 @@ Chtest must track:
 V1 can be accepted when:
 
 - A user can create a project and configure repository, environment, and test commands.
+- A user can create a ContextArtifact and see whether it is safe to show and safe for prompt use.
 - A user can create a requirement, run AI review, and view six-dimension results.
+- RequirementReview and CaseGeneration can show which ContextArtifacts were used.
 - A user can generate candidate cases and complete review decisions.
 - Approved candidates become TestCase records.
 - A user can generate AutomationDraft from TestCase.

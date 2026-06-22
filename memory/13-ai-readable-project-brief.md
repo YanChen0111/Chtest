@@ -57,6 +57,8 @@ Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
 - AI 生成 UnitTestPatch 必须人工审批，只允许写测试目录。
 - V1 禁止 AI 自动修改业务源码。
 - RAG 不内置，只保留 Knowledge/RAG Adapter。
+- V1 支持轻量 ContextArtifact：复用 Artifact 表，`owner_entity_type=Project`，`owner_entity_id=project_id`；ContextArtifact 可注入 Prompt，但不等同外部 RAG。
+- `use_knowledge=false` 只表示不使用外部 RAG/KnowledgeAdapter，不表示禁用 `context_artifact_ids`。
 - MCP 不作为 V1 强依赖，先实现 Internal Tool Adapter。
 - ToolInvocation 只能执行 ToolDefinition allowlist。
 - 每个完成 Task 必须测试并 commit；Slice 完成或重大上下文变化时更新 `memory/07-dev-log.md` 和 `memory/08-session-handoff.md`；会话结束但 Slice 未完成时更新 handoff 的 Task table。

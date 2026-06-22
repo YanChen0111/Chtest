@@ -74,6 +74,31 @@ Mock Provider must be enabled by default in local development and tests.
 | default_model | mock-model |
 | enabled | true |
 
+### 2.7 V1 Demo ContextArtifact
+
+Minimum demo seed must include one deterministic ContextArtifact:
+
+| Field | Value |
+|---|---|
+| title | coupon-api-notes.md |
+| artifact_type | context_markdown |
+| mime_type | text/markdown |
+| owner_entity_type | Project |
+| owner_entity_id | demo project id |
+| source_ref | seed:coupon-api-notes.md |
+| safe_to_show | server-computed true after scan |
+| redaction_applied | false unless scan finds sensitive content |
+
+Content:
+
+```markdown
+# Coupon API Notes
+
+POST /api/coupons/validate checks coupon availability.
+Expired coupons return COUPON_EXPIRED.
+Coupons cannot be combined with points.
+```
+
 ## 3. Rules
 
 - Seed data must be idempotent.
@@ -82,3 +107,4 @@ Mock Provider must be enabled by default in local development and tests.
 - Built-in Prompt/Skill content must be versioned and hashable.
 - Built-in ToolDefinition must follow `docs/contracts/01-data-model-contract.md`.
 - If seed data changes, update `docs/fixtures/00-v1-demo-path.md` when relevant.
+- Seed ContextArtifact must pass the same secret scan and redaction rules as user-created ContextArtifact.

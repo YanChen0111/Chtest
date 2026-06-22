@@ -13,6 +13,14 @@ Common rules:
 - Error response: `{"error_code": "string", "message": "string", "details": {}}`.
 - V1 is single-user; API uses default user/workspace internally.
 
+Context rules:
+
+- V1 ContextArtifact is an API concept backed by the Artifact table, not a separate data table.
+- `use_knowledge=false` only means external RAG/KnowledgeAdapter is not used.
+- `context_artifact_ids` are still injected into prompts when provided, even when `use_knowledge=false`.
+- AI responses that used local context must return `used_context_artifact_ids`.
+- AI responses that used external RAG/KnowledgeAdapter must return `used_knowledge=true`; otherwise return `used_knowledge=false`.
+
 ## 2. Project Settings APIs
 
 ### 2.1 Create Project
@@ -221,6 +229,79 @@ Response 200:
 
 This endpoint powers the Project Settings page and gives the frontend one stable bootstrap contract.
 
+### 2.10 Create Context Artifact
+
+`POST /api/context-artifacts`
+
+ContextArtifact is the V1 lightweight context mechanism before external RAG exists. It stores small requirement notes, API notes, OpenAPI snippets, logs, fixtures, or Markdown references that can be injected into AI prompts.
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "title": "coupon-api-notes.md",
+  "artifact_type": "context_markdown",
+  "mime_type": "text/markdown",
+  "content": "# Coupon API Notes\nPOST /api/coupons/validate validates coupon availability.",
+  "source_ref": "manual:coupon-api-notes.md"
+}
+```
+
+Response 201:
+
+```json
+{
+  "id": "00000000-0000-0000-0000-000000000371",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "owner_entity_type": "Project",
+  "owner_entity_id": "00000000-0000-0000-0000-000000000101",
+  "artifact_type": "context_markdown",
+  "mime_type": "text/markdown",
+  "file_path": "projects/00000000-0000-0000-0000-000000000101/context-artifacts/00000000-0000-0000-0000-000000000371/content.md",
+  "sha256": "sha256:example",
+  "metadata": {
+    "title": "coupon-api-notes.md",
+    "source_ref": "manual:coupon-api-notes.md",
+    "safe_to_show": true,
+    "redaction_applied": false
+  }
+}
+```
+
+Hard rules:
+
+- The server must set `owner_entity_type=Project` and `owner_entity_id=project_id`.
+- The client must not send or override owner fields.
+- The server must run secret scan and redaction before saving and before display.
+- `safe_to_show` is server-computed; a client-provided value is ignored.
+- Allowed MIME types and size limits follow `docs/contracts/04-artifact-contract.md`.
+- Unsafe MIME returns `CONTEXT_ARTIFACT_NOT_ALLOWED`.
+- Size limit violations return `CONTEXT_ARTIFACT_TOO_LARGE`.
+- High-risk secret detection returns `CONTEXT_ARTIFACT_SECRET_DETECTED`.
+
+### 2.11 List Context Artifacts
+
+`GET /api/projects/{project_id}/context-artifacts`
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000371",
+      "title": "coupon-api-notes.md",
+      "artifact_type": "context_markdown",
+      "mime_type": "text/markdown",
+      "safe_to_show": true,
+      "redaction_applied": false
+    }
+  ],
+  "total": 1
+}
+```
+
 ## 3. Requirement To Case APIs
 
 ### 3.1 Create Requirement
@@ -254,7 +335,8 @@ Request:
   "skill_version": "requirement-review-skill:v1",
   "model_provider": "mock",
   "model_name": "mock-requirement-review",
-  "use_knowledge": false
+  "use_knowledge": false,
+  "context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
 }
 ```
 
@@ -265,9 +347,13 @@ Response 202:
   "ai_task_id": "00000000-0000-0000-0000-000000000501",
   "requirement_id": "00000000-0000-0000-0000-000000000401",
   "status": "pending",
-  "next_poll_url": "/api/ai-tasks/00000000-0000-0000-0000-000000000501"
+  "next_poll_url": "/api/ai-tasks/00000000-0000-0000-0000-000000000501",
+  "used_knowledge": false,
+  "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
 }
 ```
+
+`use_knowledge=false` disables only external RAG/KnowledgeAdapter. The listed `context_artifact_ids` are still included in the prompt input and recorded on AITask.
 
 ### 3.3 Get Requirement Review
 
@@ -295,6 +381,9 @@ Response 200:
   "risk_items": [
     {"title": "Coupon and points conflict", "risk_level": "high", "suggestion": "Cover the conflict path"}
   ],
+  "used_knowledge": false,
+  "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+  "context_manifest_artifact_id": "00000000-0000-0000-0000-000000000372",
   "status": "reviewed"
 }
 ```
@@ -314,7 +403,9 @@ Request:
   "prompt_version": "case_generation:v1",
   "skill_version": "test-case-generation-skill:v1",
   "model_provider": "mock",
-  "model_name": "mock-case-generator"
+  "model_name": "mock-case-generator",
+  "use_knowledge": false,
+  "context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
 }
 ```
 
@@ -324,7 +415,9 @@ Response 202:
 {
   "case_generation_task_id": "00000000-0000-0000-0000-000000000701",
   "ai_task_id": "00000000-0000-0000-0000-000000000702",
-  "status": "pending"
+  "status": "pending",
+  "used_knowledge": false,
+  "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
 }
 ```
 
@@ -742,6 +835,9 @@ Response 200:
   "model_provider": "mock",
   "model_name": "mock-requirement-review",
   "token_usage": {"input_tokens": 1200, "output_tokens": 800},
+  "used_knowledge": false,
+  "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+  "context_manifest_artifact_id": "00000000-0000-0000-0000-000000000372",
   "artifacts": [
     {"artifact_type": "raw_llm_output", "file_path": "projects/00000000-0000-0000-0000-000000000101/ai-tasks/00000000-0000-0000-0000-000000000501/raw.json"}
   ]

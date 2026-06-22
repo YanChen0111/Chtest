@@ -31,6 +31,8 @@ The Mock Provider lets Slice development validate AI workflows without a real LL
 
 - Mock outputs must pass the same schema validators as real provider outputs.
 - Mock outputs must create AITask artifacts the same way real provider outputs do.
+- Mock outputs must echo `used_context_artifact_ids` when context is provided.
+- Mock outputs must create `context_manifest.json` when context is provided.
 - Mock Provider must support forced failure mode for tests.
 - Mock Provider must support schema-invalid output mode for parser tests.
 - Mock Provider must never call external network.
@@ -48,5 +50,6 @@ The Mock Provider lets Slice development validate AI workflows without a real LL
 ## 6. Golden Path Mapping
 
 - V1 Minimum Demo uses `mock-requirement-review`, `mock-case-generator`, and `mock-automation-draft`.
+- V1 Minimum Demo requirement review and case generation must reference seed ContextArtifact `coupon-api-notes.md`.
 - Git Quality Golden Path uses `mock-git-analysis` and `mock-unit-test-generator`.
 - Failure analysis tests use `mock-failure-analysis` with deterministic artifacts.
