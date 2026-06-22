@@ -72,9 +72,11 @@ When documents disagree, follow this order:
 - MCP is not a V1 dependency; Internal Tool Adapter comes first.
 - Git Quality Center is a support workflow and must not overtake the requirement-to-automation mainlines.
 - V1 priority tools: TestRunner/pytest and Playwright minimal loop.
+- Runner isolation is a V1 safety boundary by contract: every TestRun records runtime workspace, dependency snapshot, environment snapshot, runtime manifest, network setting, and artifact trace.
 - Newman after V1 core loop; JMeter after execution/report parsing is stable; Appium and traffic capture are roadmap capabilities.
 - AI-generated cases require review before entering the case library.
 - AI-generated AutomationDraft requires approval before execution.
+- Failed AutomationDraft execution can enter an evidence-driven repair loop, but repaired drafts remain review-gated.
 - AI-generated UnitTestPatch requires approval and can only write test directories.
 
 ## Document List

@@ -476,6 +476,10 @@ Any Task that implements ToolDefinition, ToolInvocation, TestCommand execution, 
 - Enforce timeout and stdout/stderr size limits.
 - Redact secrets before storing or displaying stdout, stderr, raw provider output, and reports.
 - Require approval for medium/high risk tools and for AutomationDraft execution.
+- Use an isolated per-run workspace/runtime directory.
+- Treat repository paths as read-only unless the Task explicitly defines a writable output path.
+- Record runner mode, dependency snapshot, environment snapshot, runtime artifacts, and network setting for every TestRun.
+- Default runner network access to disabled unless TestCommand or Environment explicitly enables it.
 
 Minimum verification for such Tasks:
 

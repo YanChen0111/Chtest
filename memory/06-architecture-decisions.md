@@ -171,5 +171,33 @@ Implementation:
 
 - Product positioning defines scope.
 - Contracts define data/API/state names.
+- AI vibecoding governance defines safe implementation rules and completion gates.
 - Implementation plan defines delivery order.
 - Memory documents preserve active context for the next AI session.
+
+## ADR-0015: Runner Sandbox Is A V1 Safety Boundary
+
+Decision: V1 treats the runner as an explicit sandbox boundary, not only a future optional enhancement.
+
+Reason: Chtest executes user-project tests and AI-generated AutomationDraft runtime files. Allowlisted commands reduce risk, but execution still needs controlled workspace, environment, artifact, network, timeout, and resource boundaries.
+
+Implementation:
+
+- Pytest and Playwright execution must run through ToolDefinition/TestCommand allowlists.
+- Each TestRun receives an isolated per-run workspace or runtime directory.
+- Repository paths are mounted read-only unless the Task explicitly requires a writable test output directory.
+- Artifact paths are writable only under the configured Chtest artifact root.
+- Environment variables are built from Environment records plus safe system defaults, with secret values referenced and redacted.
+- Runner mode can start as local subprocess in dev, but the contract must expose sandbox fields so Docker runner can become the default without changing TestRun semantics.
+
+## ADR-0016: AutomationDraft Repair Loop Is Part Of The Automation Mainline
+
+Decision: V1 tracks AutomationDraft repair attempts after failed execution.
+
+Reason: AI-generated automation is rarely perfect on the first run. The product value is not a single generation event; it is the feedback loop from execution evidence to a reviewed, improved draft.
+
+Implementation:
+
+- A failed AutomationDraft execution can create an AutomationRepairTask linked to AutomationDraft, TestRun, FailureAnalysis, PromptVersion, SkillVersion, and model.
+- Repair output stays review-gated and cannot overwrite an approved draft silently.
+- Repair quality metrics include first-run pass rate, repair success rate, retry count, and evidence completeness.

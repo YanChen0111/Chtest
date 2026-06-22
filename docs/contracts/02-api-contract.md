@@ -471,6 +471,60 @@ AutomationDraft uses `edit -> edited -> approve -> approved`. It does not use `a
 
 Approval does not write generated code into the target business repository. When a TestRun is created from an approved AutomationDraft, the backend copies `draft_code` into a Chtest-managed artifact runtime path and stores the copied file as `runtime_artifact_id`.
 
+### 4.5 Create Automation Repair Task
+
+`POST /api/automation/drafts/{id}/repair-tasks`
+
+Request:
+
+```json
+{
+  "failed_test_run_id": "00000000-0000-0000-0000-000000001301",
+  "failure_analysis_id": "00000000-0000-0000-0000-000000001501",
+  "prompt_version": "automation_draft_generation:v1",
+  "skill_version": "automation-draft-skill:v1",
+  "model_provider": "mock",
+  "model_name": "mock-automation-draft"
+}
+```
+
+Response 202:
+
+```json
+{
+  "automation_repair_task_id": "00000000-0000-0000-0000-000000001701",
+  "ai_task_id": "00000000-0000-0000-0000-000000001702",
+  "status": "created"
+}
+```
+
+Repair tasks require a failed TestRun with runtime artifacts and available execution evidence. The generated repair candidate must enter review before it can update an AutomationDraft or create a new draft revision.
+
+### 4.6 Review Automation Repair Task
+
+`POST /api/automation/repair-tasks/{id}/review`
+
+Request:
+
+```json
+{
+  "action": "approve",
+  "review_comment": "Repair maps the fixture name to the sample repository"
+}
+```
+
+Response 200:
+
+```json
+{
+  "automation_repair_task_id": "00000000-0000-0000-0000-000000001701",
+  "status": "approved",
+  "repaired_artifact_id": "00000000-0000-0000-0000-000000001703"
+}
+```
+
+Allowed actions: `approve`, `reject`. Approval does not execute automatically; the user must approve the resulting AutomationDraft state and create a new TestRun.
+
 ## 5. Git Quality APIs
 
 ### 5.1 Create Change Set
@@ -587,11 +641,18 @@ Response 202:
   "test_run_id": "00000000-0000-0000-0000-000000001301",
   "tool_invocation_id": "00000000-0000-0000-0000-000000001302",
   "status": "queued",
-  "runtime_artifact_ids": ["00000000-0000-0000-0000-000000001201"]
+  "runtime_artifact_ids": ["00000000-0000-0000-0000-000000001201"],
+  "runner_mode": "local_subprocess",
+  "repository_readonly": true,
+  "network_enabled": false,
+  "dependency_snapshot_artifact_id": "00000000-0000-0000-0000-000000001202",
+  "environment_snapshot_artifact_id": "00000000-0000-0000-0000-000000001203"
 }
 ```
 
 When `automation_draft_id` is provided, the backend must create or reuse the approved AutomationDraft runtime artifact before enqueueing the run. The response and TestRun detail must include `runtime_artifact_ids`.
+
+The created TestRun must also record runner sandbox metadata: `runner_mode`, `run_workspace`, `repository_readonly`, `network_enabled`, `dependency_snapshot_artifact_id`, and `environment_snapshot_artifact_id`.
 
 ### 6.2 Get Test Run
 
@@ -605,6 +666,12 @@ Response 200:
   "status": "passed",
   "exit_code": 0,
   "duration_ms": 3560,
+  "runner_mode": "local_subprocess",
+  "run_workspace": "/opt/chtest/runtime/test-runs/00000000-0000-0000-0000-000000001301",
+  "repository_readonly": true,
+  "network_enabled": false,
+  "dependency_snapshot_artifact_id": "00000000-0000-0000-0000-000000001202",
+  "environment_snapshot_artifact_id": "00000000-0000-0000-0000-000000001203",
   "parsed_result": {
     "total": 3,
     "passed": 3,

@@ -32,7 +32,7 @@
 - Git remote `origin` 已设置为 `https://github.com/2696437448-cmyk/Chtest.git`。
 - baseline commit 已存在：`3be8e82 docs(product): define chtest v1 planning baseline`。
 - 当前 preflight 文档修复在隔离分支 `docs/preflight-vibecoding-fixes`，worktree 路径为 `/private/tmp/chtest-preflight-docs`。
-- 当前未 push。
+- 当前分支已 push 到 `origin/docs/preflight-vibecoding-fixes`；远端提示仓库已迁移到 `https://github.com/YanChen0111/Chtest.git`，但旧 origin 仍接受 push。
 
 ## 当前 Preflight 修复内容
 
@@ -58,6 +58,16 @@
   - `docs/implementation/slices/slice-05-prompt-skill-registry.md`
   - `docs/implementation/slices/slice-02-frontend-foundation.md`
   - `docs/product/06-frontend-ui-guidelines.md`
+
+## 当前 P0 优化内容
+
+本轮基于最新外部趋势和项目评审，继续收紧 V1 方案：
+
+- 文档优先级统一：`docs/implementation/04-ai-vibecoding-governance.md` 位于 contracts 和 delivery plan 之间。
+- runner sandbox 成为 V1 安全边界：TestRun 必须记录 runtime workspace、network setting、runtime manifest、dependency snapshot、environment snapshot 和 artifact trace。
+- 新增 `AutomationRepairTask`：失败的 AutomationDraft 执行可进入证据驱动修复，但修复候选仍必须人工评审，不能自动覆盖已审批草稿。
+- 新增 `AutomationQualityMetric`：记录 draft schema pass、approval、manual edit、first-run pass、repair success、flaky retry、evidence complete 等指标。
+- Golden Path 增加产品价值验收：用户必须能看懂 AI 分析了什么、执行了哪个 runtime 文件、证据是什么、失败后下一步是什么。
 
 ## 本轮完成
 
@@ -187,5 +197,6 @@ Next recommended Task:
 
 ## 仍需用户确认
 
-- 是否需要把初始化后的本地仓库做第一次 commit 并 push 到 `https://github.com/2696437448-cmyk/Chtest`。
+- 是否将本分支合并到 `main`。
+- 是否将 Git remote origin 更新为迁移后的 `https://github.com/YanChen0111/Chtest.git`。
 - LLM 第一接入方式：OpenAI 官方 API、Azure OpenAI、兼容代理网关，还是 Ollama。

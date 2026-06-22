@@ -13,7 +13,7 @@
 | backend | build ./backend | 8000 | FastAPI API |
 | worker | build ./backend | none | RQ/Celery worker |
 | frontend | build ./frontend | 5173 | Vue dev server |
-| runner | optional profile | none | 后续隔离执行测试 |
+| runner | docker runner profile, V1 safety boundary by contract | none | 隔离执行 pytest/Playwright；本地 subprocess 也必须遵循同一 sandbox contract |
 
 ## 3. 目录挂载
 
@@ -140,3 +140,15 @@ docker compose up backend worker frontend
 - 工具执行目录必须在项目工作区内。
 - 禁止容器挂载宿主机敏感目录。
 - LLM/GitHub/Postman token 只通过 env 注入。
+
+## 10. Runner Sandbox 要求
+
+即使早期使用本地 subprocess，TestRunner/Playwright runner 也必须按同一执行边界实现：
+
+- 每个 TestRun 使用独立 runtime workspace。
+- 业务仓库默认只读挂载；写入仅限 Chtest artifact root 和明确 allowlisted 的测试输出目录。
+- 默认禁止网络访问；只有 Environment/TestCommand 明确声明时才能开启。
+- 强制 timeout、stdout/stderr 大小上限和 secret redaction。
+- 记录 dependency snapshot：Python/Node 版本、lockfile hash、runner image 或本地运行器版本。
+- 记录 environment snapshot：变量名、非敏感值、安全脱敏状态和 secret reference。
+- runner container 不挂载用户 home、SSH key、Docker socket、系统凭证目录。

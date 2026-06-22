@@ -74,7 +74,28 @@ authorized execution failure: execution_pending -> execution_failed -> under_rev
 
 规则：AutomationDraft 未 approved 前不能执行。V1 不允许自动写业务源码。
 
-## 5. UnitTestPatch 状态机
+## 5. AutomationRepairTask 状态机
+
+```text
+created -> running -> generated -> under_review -> approved
+created -> running -> generated -> under_review -> rejected
+created -> running -> failed
+generated/under_review -> superseded
+```
+
+| 当前状态 | 动作 | 目标状态 | 说明 |
+|---|---|---|---|
+| created | enqueue | running | Worker 开始基于失败证据生成修复候选 |
+| running | repair_generated | generated | 生成修复候选和 artifact |
+| running | repair_failed | failed | 证据不足、schema 失败或 provider 失败 |
+| generated | open_review | under_review | 用户评审修复候选 |
+| under_review | approve | approved | 用户接受修复候选，可更新 AutomationDraft 或创建新 draft revision |
+| under_review | reject | rejected | 用户拒绝修复候选 |
+| generated/under_review | regenerate | superseded | 被新的 repair attempt 替代 |
+
+规则：AutomationRepairTask 不能自动覆盖已 approved 的 AutomationDraft，不能绕过 AutomationDraft 审批，不能在证据不足时编造 root cause 或 fixture。
+
+## 6. UnitTestPatch 状态机
 
 ```text
 generated -> scope_validated -> awaiting_review -> approved -> applied
@@ -100,7 +121,7 @@ approved -> apply_failed
 
 规则：scope_rejected 不能进入 approved。UnitTestPatch 只允许写测试目录。
 
-## 6. ToolInvocation 状态机
+## 7. ToolInvocation 状态机
 
 ```text
 created -> waiting_approval -> approved -> running -> succeeded
@@ -123,7 +144,7 @@ running -> failed / timeout / cancelled
 
 规则：ToolInvocation 必须来自 ToolDefinition allowlist，禁止任意 shell。
 
-## 7. TestRun 状态机
+## 8. TestRun 状态机
 
 ```text
 created -> queued -> running -> passed
@@ -145,7 +166,7 @@ running -> timeout
 
 规则：failed 与 error 不等价。failed 是测试断言失败，error 是环境、命令、解析器或执行器异常。
 
-## 8. Report 状态机
+## 9. Report 状态机
 
 ```text
 draft -> generating -> ready
@@ -164,7 +185,7 @@ failed -> generating
 
 规则：报告结论必须引用 evidence/artifact。无证据时 conclusion 必须是 `insufficient_evidence` 或 `needs_attention`。
 
-## 9. PromptVersion 和 SkillVersion 状态机
+## 10. PromptVersion 和 SkillVersion 状态机
 
 ```text
 draft -> active -> deprecated

@@ -100,8 +100,9 @@ When documents appear to disagree, follow this order:
 
 1. `docs/product/01-positioning-and-scope.md`.
 2. `docs/contracts/*`.
-3. `docs/implementation/01-v1-delivery-plan.md`.
-4. `memory/13-ai-readable-project-brief.md`.
-5. `docs/fixtures/*`.
-6. `docs/architecture/*`.
-7. `docs/reference/*` and `docs/superpowers/*`.
+3. `docs/implementation/04-ai-vibecoding-governance.md`.
+4. `docs/implementation/01-v1-delivery-plan.md`.
+5. `memory/13-ai-readable-project-brief.md`.
+6. `docs/fixtures/*`.
+7. `docs/architecture/*`.
+8. `docs/reference/*` and `docs/superpowers/*`.

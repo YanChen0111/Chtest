@@ -59,6 +59,8 @@ Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
 - RAG 不内置，只保留 Knowledge/RAG Adapter。
 - MCP 不作为 V1 强依赖，先实现 Internal Tool Adapter。
 - ToolInvocation 只能执行 ToolDefinition allowlist。
+- Runner sandbox 是 V1 安全边界：每个 TestRun 必须记录独立运行工作区、runtime_manifest、dependency_snapshot、environment_snapshot、网络设置和 artifact 追踪。
+- AutomationDraft 执行失败后可进入证据驱动 repair loop，但修复候选仍必须人工评审，不能自动覆盖已审批草稿。
 - 每个完成 Task 必须测试并 commit；Slice 完成或重大上下文变化时更新 `memory/07-dev-log.md` 和 `memory/08-session-handoff.md`；会话结束但 Slice 未完成时更新 handoff 的 Task table。
 
 ## 4. 必读文档顺序

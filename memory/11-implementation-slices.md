@@ -116,9 +116,9 @@
 
 目标：V1 P0 执行闭环。
 
-交付：ToolDefinition、ToolInvocation、TestRun、TestResult 初版、TestRunnerTool、pytest allowlist 执行、AutomationDraft runtime artifact 追踪、runtime_manifest、stdout/stderr/JUnit artifact。
+交付：ToolDefinition、ToolInvocation、TestRun、TestResult 初版、TestRunnerTool、pytest allowlist 执行、AutomationDraft runtime artifact 追踪、runner sandbox metadata、runtime_manifest、dependency_snapshot、environment_snapshot、stdout/stderr/JUnit artifact。
 
-验收：审批后的 AutomationDraft 可触发 pytest TestRun；TestRun 记录实际执行的 `runtime_artifact_ids`；执行结果结构化入库。
+验收：审批后的 AutomationDraft 可触发 pytest TestRun；TestRun 记录实际执行的 `runtime_artifact_ids`、runtime manifest、dependency snapshot、environment snapshot 和 runner sandbox metadata；执行结果结构化入库。
 
 ## Slice 13: Playwright Minimal Loop
 
@@ -132,9 +132,9 @@
 
 目标：生成有证据的质量报告。
 
-交付：FailureAnalysis、Report、evidence_manifest、Report Center。
+交付：FailureAnalysis、Report、evidence_manifest、Report Center、AutomationDraft repair task 入口。
 
-验收：失败有证据链；报告输出 md/html/json；无证据时不能给出 passed 结论。
+验收：失败有证据链；失败的 AutomationDraft 可创建 review-gated repair task；报告输出 md/html/json；无证据时不能给出 passed 结论。
 
 ## Slice 15: Git Quality Foundation
 

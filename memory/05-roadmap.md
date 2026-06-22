@@ -101,6 +101,8 @@ Foundation
 - TestRun/TestResult。
 - TestRunnerTool。
 - pytest allowlist 执行。
+- runner sandbox metadata。
+- runtime_manifest、dependency_snapshot、environment_snapshot。
 - stdout/stderr/JUnit artifact。
 
 验收：
@@ -108,7 +110,7 @@ Foundation
 - 使用 `docs/fixtures/02-golden-case-to-playwright.md` 的 pytest 示例生成草稿。
 - 未审批 AutomationDraft 不能执行。
 - 审批后 pytest 可执行并结构化保存结果。
-- TestRun 记录实际执行的 AutomationDraft runtime artifact 和 `runtime_manifest.json`。
+- TestRun 记录实际执行的 AutomationDraft runtime artifact、`runtime_manifest.json`、`dependency_snapshot.json`、`environment_snapshot.json` 和 runner sandbox metadata。
 
 ## 7. Phase 6: Playwright Minimal Loop
 
@@ -132,6 +134,7 @@ Foundation
 交付：
 
 - FailureAnalysis。
+- AutomationRepairTask。
 - Report。
 - Evidence manifest。
 - Report Center。
@@ -141,6 +144,7 @@ Foundation
 验收：
 
 - 失败有证据链。
+- 失败的 AutomationDraft 可创建 review-gated repair task。
 - 报告输出 md/html/json。
 - 未归因失败不能给出通过结论。
 

@@ -29,6 +29,8 @@ The first and second loops are mainlines. The third loop is a support workflow.
 - AI-generated cases must enter a review window before becoming TestCase records.
 - AutomationDraft must be approved before execution and cannot directly write target repositories.
 - Approved AutomationDraft execution uses Chtest artifact runtime copies, not direct writes into the target repository.
+- Runner sandbox is a V1 safety boundary: TestRun must record runtime manifest, dependency snapshot, environment snapshot, network setting, and artifact trace.
+- Failed AutomationDraft execution can enter an evidence-driven repair loop, but repair candidates remain review-gated.
 - UnitTestPatch must be approved before application and can only write test directories.
 - AI cannot automatically modify business source files.
 - AI quality metrics must track generation count, acceptance rate, rejection rate, edit rate, execution pass rate, and failure reason distribution.
@@ -96,11 +98,12 @@ When documents disagree, follow this order:
 
 1. `docs/product/01-positioning-and-scope.md`.
 2. `docs/contracts/*`.
-3. `docs/implementation/01-v1-delivery-plan.md`.
-4. `memory/13-ai-readable-project-brief.md`.
-5. `docs/fixtures/*`.
-6. `docs/architecture/*`.
-7. `docs/reference/*`, `docs/reviews/*`, and `docs/superpowers/*`.
+3. `docs/implementation/04-ai-vibecoding-governance.md`.
+4. `docs/implementation/01-v1-delivery-plan.md`.
+5. `memory/13-ai-readable-project-brief.md`.
+6. `docs/fixtures/*`.
+7. `docs/architecture/*`.
+8. `docs/reference/*`, `docs/reviews/*`, and `docs/superpowers/*`.
 
 ## Update Rules After Development
 
@@ -193,6 +196,7 @@ Update related files when scope changes:
 - Phase: V1 implementation-ready documentation, contracts, Golden Paths, and Slice 1-5 Task plans are complete, including Slice 2.5 Frontend Foundation.
 - Focus: start Slice 1 Task 1, then proceed through Slice 1, Slice 2, Slice 2.5, and Slice 3 with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
+- Latest P0 optimization: runner sandbox, AutomationDraft repair loop, AutomationQualityMetric, and Golden Path product value checks are now part of the current contracts.
 
 ## Implementation Principles
 

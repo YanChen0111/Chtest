@@ -36,6 +36,7 @@ V1 is single-user, but owner fields are kept for later extension.
 | AITaskStatus | created, pending, running, waiting_review, waiting_approval, succeeded, failed, cancelled |
 | CandidateStatus | generated, under_review, approved, approved_after_edit, rejected, needs_optimization, optimization_pending_review, archived |
 | AutomationDraftStatus | draft_generated, under_review, approved, edited, rejected, execution_pending, executed, execution_failed, promoted, archived |
+| AutomationRepairStatus | created, running, generated, under_review, approved, rejected, superseded, failed |
 | PatchStatus | generated, scope_validated, scope_rejected, awaiting_review, approved, rejected, edited, applied, apply_failed, replaced |
 | ToolInvocationStatus | created, waiting_approval, approved, rejected, running, succeeded, failed, timeout, cancelled |
 | TestRunStatus | created, queued, running, passed, failed, error, cancelled, timeout |
@@ -254,7 +255,33 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 
 V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed artifact runtime directory before execution. It is not written directly into the target business repository. The copied runtime file is stored as an Artifact and referenced by `runtime_artifact_id`.
 
-## 17. GitChangeSet
+## 17. AutomationRepairTask
+
+AutomationRepairTask records an evidence-driven attempt to improve an AutomationDraft after a failed execution. It does not overwrite the approved AutomationDraft silently.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| automation_draft_id | uuid | yes | none | FK AutomationDraft |
+| failed_test_run_id | uuid | yes | none | FK TestRun |
+| failure_analysis_id | uuid | no | null | FK FailureAnalysis |
+| ai_task_id | uuid | yes | none | FK AITask |
+| attempt_index | int | yes | 1 | 1-based attempt count for this draft |
+| max_attempts | int | yes | 2 | Default maximum repair attempts |
+| repair_reason | text | yes | none | Evidence-based reason for repair |
+| repaired_draft_code | text | no | null | Candidate repaired code |
+| repaired_artifact_id | uuid | no | null | Artifact containing repaired draft candidate |
+| evidence_artifact_ids | uuid[] | yes | {} | stdout/stderr/JUnit/trace/screenshots used |
+| status | AutomationRepairStatus | yes | created | Status |
+| review_comment | text | no | null | Human review comment |
+
+Rules:
+
+- Repair input must include the failed TestRun runtime manifest and available execution artifacts.
+- Repair output stays review-gated; it cannot replace `AutomationDraft.draft_code` without user action.
+- If evidence is missing, the repair task must fail or produce `insufficient_evidence` guidance rather than inventing fixtures, selectors, or environment assumptions.
+
+## 18. GitChangeSet
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -267,7 +294,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | overall_risk | RiskLevel | yes | medium | Overall risk |
 | status | varchar(40) | yes | created | created, analyzed, reported, archived |
 
-## 18. GitChangedFile
+## 19. GitChangedFile
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -282,7 +309,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | lines_added | int | yes | 0 | Added lines |
 | lines_deleted | int | yes | 0 | Deleted lines |
 
-## 19. UnitTestPatch
+## 20. UnitTestPatch
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -296,7 +323,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | status | PatchStatus | yes | generated | Status |
 | review_comment | text | no | null | Review comment |
 
-## 20. GitRiskAnalysis
+## 21. GitRiskAnalysis
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -312,7 +339,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 
 Relationship: GitChangeSet 1:1 GitRiskAnalysis in V1.
 
-## 21. RegressionPlan
+## 22. RegressionPlan
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -325,7 +352,7 @@ Relationship: GitChangeSet 1:1 GitRiskAnalysis in V1.
 | manual_attention_json | jsonb | yes | [] | Items requiring human decision |
 | status | varchar(40) | yes | draft | draft, approved, executed, replaced, archived |
 
-## 22. TestRun
+## 23. TestRun
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -338,6 +365,12 @@ Relationship: GitChangeSet 1:1 GitRiskAnalysis in V1.
 | command | text | yes | none | Executed command |
 | working_directory | text | yes | none | Working directory |
 | runtime_artifact_ids | uuid[] | yes | {} | Runtime files used by this run, including AutomationDraft copies |
+| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, docker_runner |
+| run_workspace | text | no | null | Canonical isolated run workspace |
+| repository_readonly | bool | yes | true | Repository access mode snapshot |
+| network_enabled | bool | yes | false | Network access snapshot |
+| dependency_snapshot_artifact_id | uuid | no | null | Python/Node/lockfile/image snapshot |
+| environment_snapshot_artifact_id | uuid | no | null | Redacted env snapshot |
 | status | TestRunStatus | yes | created | Status |
 | exit_code | int | no | null | Exit code |
 | duration_ms | int | no | null | Duration |
@@ -345,7 +378,7 @@ Relationship: GitChangeSet 1:1 GitRiskAnalysis in V1.
 
 When `automation_draft_id` is set, `runtime_artifact_ids` must include the AutomationDraft runtime copy artifact used by the run. This lets reports and failure analysis identify the exact generated file that was executed.
 
-## 23. TestResult
+## 24. TestResult
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -359,7 +392,7 @@ When `automation_draft_id` is set, `runtime_artifact_ids` must include the Autom
 | failure_artifact_ids | uuid[] | yes | {} | Related artifacts |
 | metadata_json | jsonb | yes | {} | Parser-specific metadata |
 
-## 24. FailureAnalysis
+## 25. FailureAnalysis
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -375,7 +408,7 @@ When `automation_draft_id` is set, `runtime_artifact_ids` must include the Autom
 | suggested_actions_json | jsonb | yes | [] | Suggested next actions |
 | status | varchar(40) | yes | draft | draft, confirmed, rejected |
 
-## 25. Report
+## 26. Report
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -390,7 +423,7 @@ When `automation_draft_id` is set, `runtime_artifact_ids` must include the Autom
 | metrics_json | jsonb | yes | {} | Metrics |
 | artifact_ids | uuid[] | yes | {} | Report artifacts |
 
-## 26. AITask
+## 27. AITask
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -409,7 +442,7 @@ When `automation_draft_id` is set, `runtime_artifact_ids` must include the Autom
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 27. LLMCallLog
+## 28. LLMCallLog
 
 LLMCallLog records each provider call made inside an AITask. AITask is the workflow-level task; LLMCallLog is the per-model-call audit log. V1 may create one LLMCallLog per AITask, but the model supports retries, schema-repair calls, and future model comparison.
 
@@ -437,7 +470,7 @@ LLMCallLog records each provider call made inside an AITask. AITask is the workf
 
 Relationship: AITask 1:N LLMCallLog.
 
-## 28. PromptVersion
+## 29. PromptVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -452,7 +485,7 @@ Relationship: AITask 1:N LLMCallLog.
 
 Unique constraint: name + version.
 
-## 29. SkillVersion
+## 30. SkillVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -468,7 +501,7 @@ Unique constraint: name + version.
 
 Unique constraint: name + version.
 
-## 30. ToolDefinition
+## 31. ToolDefinition
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -491,7 +524,7 @@ Unique constraint: name + version.
 
 Unique constraint: project_id + name, treating null project_id as built-in scope.
 
-## 31. ToolInvocation
+## 32. ToolInvocation
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -513,21 +546,21 @@ Unique constraint: project_id + name, treating null project_id as built-in scope
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 32. Artifact
+## 33. Artifact
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | AITask/TestRun/Report/etc. |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
 | sha256 | varchar(128) | yes | none | Content hash |
 | metadata_json | jsonb | yes | {} | Metadata |
 
-## 33. CaseQualityMetric
+## 34. CaseQualityMetric
 
 CaseQualityMetric stores batch-level AI case-generation quality. Ratio fields use `0.00-1.00`; UI may render percentages.
 
@@ -556,7 +589,37 @@ CaseQualityMetric stores batch-level AI case-generation quality. Ratio fields us
 
 Relationship: CaseGenerationTask 1:1 CaseQualityMetric in V1.
 
-## 34. KnowledgeProviderConfig
+## 35. AutomationQualityMetric
+
+AutomationQualityMetric stores batch-level AutomationDraft generation, execution, and repair quality. Ratio fields use `0.00-1.00`; UI may render percentages.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| automation_draft_id | uuid | no | null | Optional FK AutomationDraft for draft-level metric |
+| prompt_version_id | uuid | yes | none | FK PromptVersion |
+| skill_version_id | uuid | yes | none | FK SkillVersion |
+| model_provider | varchar(80) | yes | mock | Provider |
+| model_name | varchar(120) | yes | mock-model | Model |
+| draft_generated_count | int | yes | 0 | Generated draft count |
+| schema_valid_count | int | yes | 0 | Draft outputs passing schema |
+| approved_count | int | yes | 0 | Approved drafts |
+| rejected_count | int | yes | 0 | Rejected drafts |
+| manual_edit_count | int | yes | 0 | Drafts edited before approval |
+| first_run_pass_count | int | yes | 0 | Approved drafts passing first execution |
+| first_run_fail_count | int | yes | 0 | Approved drafts failing first execution |
+| repair_attempt_count | int | yes | 0 | Repair attempts |
+| repair_success_count | int | yes | 0 | Repairs that pass a follow-up TestRun |
+| flaky_retry_count | int | yes | 0 | Runs that pass only after retry without draft change |
+| evidence_complete_count | int | yes | 0 | Failed runs with complete required evidence |
+| schema_valid_rate | numeric(3,2) | yes | 0.00 | schema_valid_count / draft_generated_count |
+| approval_rate | numeric(3,2) | yes | 0.00 | approved_count / draft_generated_count |
+| manual_edit_rate | numeric(3,2) | yes | 0.00 | manual_edit_count / draft_generated_count |
+| first_run_pass_rate | numeric(3,2) | yes | 0.00 | first_run_pass_count / approved_count |
+| repair_success_rate | numeric(3,2) | yes | 0.00 | repair_success_count / repair_attempt_count |
+| evidence_complete_rate | numeric(3,2) | yes | 0.00 | evidence_complete_count / first_run_fail_count |
+
+## 36. KnowledgeProviderConfig
 
 KnowledgeProviderConfig is the V1 configuration shell for future RAG integration. The default provider returns no evidence and does not block AI workflows.
 
@@ -570,7 +633,7 @@ KnowledgeProviderConfig is the V1 configuration shell for future RAG integration
 | secret_ref_json | jsonb | yes | {} | Secret references only |
 | status | EntityStatus | yes | active | Status |
 
-## 35. KnowledgeEvidence
+## 37. KnowledgeEvidence
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -583,7 +646,7 @@ KnowledgeProviderConfig is the V1 configuration shell for future RAG integration
 | relevance_score | numeric(3,2) | no | null | 0.00-1.00 when provider supplies it |
 | metadata_json | jsonb | yes | {} | Provider metadata |
 
-## 36. McpServerConfig
+## 38. McpServerConfig
 
 McpServerConfig is a placeholder for V2 MCP integration. V1 stores it only as disabled configuration and does not depend on MCP for core workflows.
 
@@ -597,7 +660,7 @@ McpServerConfig is a placeholder for V2 MCP integration. V1 stores it only as di
 | secret_ref_json | jsonb | yes | {} | Secret references only |
 | status | MCPServerStatus | yes | disabled | Disabled in V1 by default |
 
-## 37. Relationship Summary
+## 39. Relationship Summary
 
 ```text
 Workspace -> Project
@@ -606,6 +669,7 @@ Project -> Requirement -> RequirementReview -> RiskItem
 Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
 CaseGenerationTask -> CaseQualityMetric
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
+AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric
 TestRun/TestResult -> FailureAnalysis -> Report
 Repository -> GitChangeSet -> GitChangedFile -> GitRiskAnalysis -> UnitTestPatch -> RegressionPlan -> TestRun -> Report
 AITask -> LLMCallLog

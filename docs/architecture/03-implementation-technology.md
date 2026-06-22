@@ -14,7 +14,7 @@ V1 技术栈冻结，除非进入 ADR 流程，不再讨论更换主技术栈。
 | Queue | Redis + RQ | AI 任务和工具执行队列 |
 | Frontend | Vue 3 + TypeScript + Vite | Web 控制台 |
 | UI | Arco Design Vue | 表格、抽屉、表单、统计图 |
-| Runner | Python subprocess + allowlist | pytest/TestCommand 执行 |
+| Runner | sandboxed subprocess contract + allowlist | pytest/TestCommand 执行；Docker runner-ready |
 | Web Test | Playwright | V1 最小 Web 自动化闭环 |
 | API Test | Newman | V1.1 后置 |
 | Performance | JMeter | V1.1/V2 后置 |
@@ -109,6 +109,37 @@ Tool Adapter 必须在执行前完成以下检查：
 
 这些规则同时适用于 pytest、Playwright、GitTool、PatchScopeGate、ReportTool，以及后续 Newman/JMeter。
 
+### 4.2 Runner Sandbox Contract
+
+V1 runner execution must expose the same safety contract whether the first implementation uses local subprocess or a Docker runner.
+
+Required runtime fields:
+
+```text
+runner_mode: local_subprocess | docker_runner
+run_workspace
+repository_mount_path
+repository_readonly
+artifact_root
+network_enabled
+cpu_limit
+memory_limit_mb
+timeout_seconds
+environment_snapshot_ref
+dependency_snapshot_ref
+```
+
+Rules:
+
+1. Each TestRun must use an isolated per-run workspace or runtime directory.
+2. Repository access must be read-only by default. Writable paths are limited to test output directories and artifact root.
+3. AutomationDraft runtime files must be copied from Chtest artifacts into the run workspace or passed as explicit readonly inputs.
+4. Network access defaults to disabled for unit/pytest runs unless TestCommand or Environment explicitly enables it.
+5. Environment variables must be materialized from Environment records and safe defaults; secret values are referenced and redacted in artifacts.
+6. Dependency snapshots record package manager files, lockfiles, Python/Node versions, and runner image when available.
+7. Runner stdout/stderr, JUnit, coverage, trace, screenshot, and runtime_manifest must remain under artifact root.
+8. Local subprocess mode is acceptable for early V1 dev only if it enforces the same path, timeout, redaction, and allowlist checks.
+
 ## 5. Prompt / Skill 实现规则
 
 - Prompt 存文件，同时在 DB 记录 PromptVersion 和 hash。
@@ -156,6 +187,28 @@ AutomationDraft.draft_code
 - TestRun 必须记录本次实际执行的 runtime artifact id，报告和失败归因必须能追溯到该文件。
 - 运行通过并不代表自动化资产已经进入业务仓库；Promote 是后续人工导出或 patch 流程。
 - 如果用户希望把草稿落到业务仓库，应走未来的 manual export 或 Git Quality UnitTestPatch 流程，不在 V1 自动写入。
+
+### 6.2 AutomationDraft Repair Loop
+
+After an approved AutomationDraft execution fails, Chtest may create a repair task. Repair is evidence-driven and review-gated.
+
+```text
+failed TestRun
+  -> FailureAnalysis
+  -> AutomationRepairTask
+  -> repaired AutomationDraft candidate
+  -> human review/edit
+  -> approved repaired draft
+  -> new TestRun
+```
+
+Rules:
+
+- Repair input must include the failed TestRun, runtime_manifest, stdout/stderr/JUnit/trace artifacts, and FailureAnalysis.
+- Repair output must be stored as a new draft revision or repair artifact; it must not silently overwrite the approved draft.
+- Repair attempts must have a maximum retry count configured per project or tool, default `2`.
+- Repair must preserve AutomationDraft approval gates and artifact runtime execution strategy.
+- If evidence is missing, repair must return `insufficient_evidence` instead of inventing fixture names, locators, or environment assumptions.
 
 V1 支持：pytest、Playwright。Newman/JMeter 后置。
 

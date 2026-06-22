@@ -131,6 +131,14 @@ Start V1 with the current execution order: Slice 1 repository/deploy skeleton, S
 - Updated roadmap, memory, and handoff language to reflect the latest Slice 1 -> Slice 2 -> Slice 2.5 -> Slice 3 flow.
 - Removed historical wording that placed Vue/Arco shell ambiguously before the dedicated Frontend Foundation slice.
 
+## 2026-06-22 P0 Market/Architecture Review Follow-Up
+
+- Aligned product documentation priority so AI vibecoding governance sits between contracts and delivery plan.
+- Promoted runner sandbox from future optional enhancement to V1 safety boundary by contract.
+- Added AutomationRepairTask and AutomationQualityMetric contracts for evidence-driven repair and measurable automation quality.
+- Added TestRun sandbox metadata fields, dependency/environment snapshot artifacts, and Golden Path product value checks.
+- Updated memory and acceptance docs so future implementation treats AI testing value as reviewable, executable, traceable, and measurable rather than simple content generation.
+
 ### Verification
 
 - Documentation-only change.

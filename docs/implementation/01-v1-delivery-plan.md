@@ -283,6 +283,8 @@ skill_versions
 - TestResult。
 - TestRunnerTool。
 - pytest allowlist 执行。
+- runner sandbox metadata。
+- runtime_manifest、dependency_snapshot、environment_snapshot。
 - stdout/stderr/JUnit artifact。
 
 验收：
@@ -292,6 +294,7 @@ skill_versions
 - 未审批 AutomationDraft 不能执行。
 - 审批后创建 TestRun。
 - pytest 执行结果结构化入库。
+- TestRun 记录 runtime artifact、runner sandbox metadata、dependency snapshot 和 environment snapshot。
 - stdout/stderr/JUnit 保存为 artifact。
 
 ## 11. M5 Playwright Minimal Loop
@@ -320,6 +323,7 @@ skill_versions
 任务：
 
 - FailureAnalysis。
+- AutomationRepairTask。
 - Report。
 - evidence_manifest。
 - Report Center。
@@ -330,6 +334,7 @@ skill_versions
 验收：
 
 - 失败有证据链。
+- 失败的 AutomationDraft 可创建 review-gated repair task。
 - 报告输出 md/html/json。
 - 无 evidence 的报告不能标记 passed。
 - 未归因失败不能给出通过结论。
