@@ -436,6 +436,7 @@ When `automation_draft_id` is set, `runtime_artifact_ids` must include the Autom
 | model_name | varchar(120) | yes | mock-model | Model |
 | status | AITaskStatus | yes | created | Status |
 | input_json | jsonb | yes | {} | Input summary |
+| context_artifact_ids | uuid[] | yes | {} | Explicit context artifacts used by this task; empty means no context |
 | output_json | jsonb | yes | {} | Structured output |
 | error_json | jsonb | no | null | Error information |
 | token_usage_json | jsonb | yes | {} | Token usage |
@@ -553,7 +554,7 @@ Unique constraint: project_id + name, treating null project_id as built-in scope
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | AITask/TestRun/Report/etc. |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_document, context_openapi, context_log, context_fixture, context_bug_summary |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -674,6 +675,7 @@ TestRun/TestResult -> FailureAnalysis -> Report
 Repository -> GitChangeSet -> GitChangedFile -> GitRiskAnalysis -> UnitTestPatch -> RegressionPlan -> TestRun -> Report
 AITask -> LLMCallLog
 AITask -> Artifact
+AITask -> Artifact through context_artifact_ids
 ToolDefinition -> ToolInvocation -> Artifact
 Report -> Artifact
 PromptVersion + SkillVersion -> AITask

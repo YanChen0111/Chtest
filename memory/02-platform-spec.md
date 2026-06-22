@@ -2,7 +2,7 @@
 
 ## 1. 总体架构
 
-V1 采用单用户、模块化单体 + Worker 架构。底层真实使用 PostgreSQL + Redis。平台定位是个人测试/自动化测试工程师的 AI 测试设计与自动化落地工作台，不是企业协作测试管理系统。
+V1 采用单用户、模块化单体 + Worker 架构。底层真实使用 PostgreSQL + Redis。平台定位是个人测试/自动化测试工程师的 AI 测试证据工作台，不是企业协作测试管理系统。
 
 正式架构以 `docs/architecture/01-platform-architecture.md` 和 `docs/contracts/*` 为准。
 

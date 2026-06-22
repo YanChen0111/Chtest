@@ -114,7 +114,7 @@ Implementation:
 
 ## ADR-0010: Final Product Positioning
 
-Decision: Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers.
+Decision: Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers.
 
 Reason: This positioning keeps the first release focused on the highest-value personal testing loops and avoids unnecessary enterprise collaboration complexity.
 

@@ -1,8 +1,8 @@
-# Chtest AI Testing Workbench Design
+# Chtest AI Testing Evidence Workbench Design
 
 ## 1. Design Summary
 
-Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers. It turns requirements and local code changes into reviewed test assets, automation drafts, controlled executions, failure analysis, and quality reports.
+Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers. It turns requirements and local code changes into reviewed test assets, automation drafts, controlled executions, failure analysis, and quality reports.
 
 The product uses real infrastructure from the first release: Docker Compose, PostgreSQL, Redis, FastAPI, worker process, Vue 3, Arco Design Vue, artifact storage, Prompt/Skill registry, and controlled Tool Adapter execution.
 

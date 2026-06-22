@@ -2,11 +2,14 @@
 
 ## 1. 总体路线
 
-V1 采用三条最小闭环路线：需求到用例、用例到自动化、Git 到质量报告。每个阶段必须可运行、可验证、可回滚。
+V1 先证明一条 AI 测试证据闭环，再扩展三条最小闭环路线：需求到用例、用例到自动化、Git 到质量报告。每个阶段必须可运行、可验证、可回滚。
+
+`docs/fixtures/00-v1-demo-path.md` 是 release spine。任何宽功能都不能替代这个最小证据闭环。
 
 ```text
 Foundation
   -> AI Runtime Core
+  -> V1 Minimum Demo Evidence Loop
   -> Requirement To Case
   -> AutomationDraft + Pytest
   -> Playwright Minimal Loop
@@ -47,6 +50,8 @@ Foundation
 - Redis worker。
 - Mock LLM Provider。
 - AI Workbench 基础页面。
+- ContextArtifact metadata。
+- Mock-provider eval bench。
 
 验收：
 
@@ -54,6 +59,8 @@ Foundation
 - Worker 消费并写回状态。
 - Prompt/Skill/model/token/artifact 可追踪。
 - schema 校验失败能保存 raw output。
+- AI task 能记录使用的 context artifact ids 或空列表。
+- mock-provider eval bench 输出 schema_valid_rate、evidence_complete_rate、unsafe_output_rate。
 
 ## 4. Phase 3: Requirement Review
 
@@ -101,6 +108,7 @@ Foundation
 - TestRun/TestResult。
 - TestRunnerTool。
 - pytest allowlist 执行。
+- docker runner mode 优先产品验收，local subprocess 作为开发 fallback。
 - runner sandbox metadata。
 - runtime_manifest、dependency_snapshot、environment_snapshot。
 - stdout/stderr/JUnit artifact。
@@ -111,6 +119,7 @@ Foundation
 - 未审批 AutomationDraft 不能执行。
 - 审批后 pytest 可执行并结构化保存结果。
 - TestRun 记录实际执行的 AutomationDraft runtime artifact、`runtime_manifest.json`、`dependency_snapshot.json`、`environment_snapshot.json` 和 runner sandbox metadata。
+- V1 Minimum Demo 能从需求走到报告，并展示证据链。
 
 ## 7. Phase 6: Playwright Minimal Loop
 

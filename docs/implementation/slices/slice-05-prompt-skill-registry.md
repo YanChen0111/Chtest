@@ -2,7 +2,7 @@
 
 ## Goal
 
-Load, validate, version, and expose built-in PromptVersion and SkillVersion records for AI workflows.
+Load, validate, version, expose, and benchmark built-in PromptVersion and SkillVersion records for AI workflows.
 
 ## Source Documents
 
@@ -18,7 +18,7 @@ Load, validate, version, and expose built-in PromptVersion and SkillVersion reco
 ## Preconditions
 
 - Slice 01, Slice 02, Slice 02.5, and Slice 04 AI Runtime Core are complete.
-- If Slice 02.5 is not complete, skip Task 6 and record it as blocked in handoff instead of hand-writing an ad hoc frontend structure.
+- If Slice 02.5 is not complete, skip Task 7 and record it as blocked in handoff instead of hand-writing an ad hoc frontend structure.
 
 ## Task Table
 
@@ -28,6 +28,7 @@ Load, validate, version, and expose built-in PromptVersion and SkillVersion reco
 | Add built-in prompt files | planned | `pytest backend/app/tests/prompt_skill/test_prompt_files.py -q` | - | JSON output schema required |
 | Add built-in skill files | planned | `pytest backend/app/tests/prompt_skill/test_skill_files.py -q` | - | Quality gates and forbidden actions |
 | Add registry loader and hash logic | planned | `pytest backend/app/tests/prompt_skill/test_registry_loader.py -q` | - | Idempotent seed |
+| Add mock-provider eval bench | planned | `pytest backend/app/tests/prompt_skill/test_eval_bench.py -q` | - | Deterministic schema/evidence/unsafe metrics |
 | Add Prompt/Skill API | planned | `pytest backend/app/tests/api/test_prompt_skill_registry.py -q` | - | List and detail only |
 | Add Prompt/Skill frontend shell | planned | `npm --prefix frontend run test -- --run` | - | Version list and detail smoke |
 
@@ -158,7 +159,48 @@ Commit message:
 feat(prompt-skill): add registry loader
 ```
 
-## Task 5: Add Prompt/Skill API
+## Task 5: Add Mock-Provider Eval Bench
+
+Goal: Add a deterministic eval bench that can run built-in prompts and skills against mock provider samples and produce schema, evidence, and safety metrics.
+
+Expected files:
+
+- `backend/app/modules/prompt_skill/eval_bench.py`
+- `backend/app/modules/prompt_skill/eval_samples.py`
+- `backend/app/tests/prompt_skill/test_eval_bench.py`
+- `docs/fixtures/eval-bench/requirements.md`
+- `docs/fixtures/eval-bench/code-changes.md`
+- `docs/fixtures/eval-bench/failed-runs.md`
+- `docs/fixtures/eval-bench/bug-history.md`
+
+Verification command:
+
+```bash
+pytest backend/app/tests/prompt_skill/test_eval_bench.py -q
+```
+
+Expected metrics:
+
+- `schema_valid_rate`
+- `evidence_complete_rate`
+- `unsafe_output_rate`
+- `manual_edit_rate`
+- `first_run_pass_rate`
+- `repair_success_rate`
+
+Non-goals:
+
+- Do not build a public model leaderboard.
+- Do not call a real LLM provider.
+- Do not block V1 on perfect metric thresholds; this bench is the deterministic baseline.
+
+Commit message:
+
+```text
+feat(prompt-skill): add mock provider eval bench
+```
+
+## Task 6: Add Prompt/Skill API
 
 Goal: Add list/detail APIs for PromptVersion and SkillVersion so AI tasks and UI can trace versions.
 
@@ -187,7 +229,7 @@ Commit message:
 feat(prompt-skill): add registry api
 ```
 
-## Task 6: Add Prompt/Skill Frontend Shell
+## Task 7: Add Prompt/Skill Frontend Shell
 
 Goal: Add version list/detail views for Prompt and Skill Center.
 
@@ -224,6 +266,8 @@ feat(frontend): add prompt skill center shell
 - Hash changes when file content changes.
 - Prompt files include valid JSON schemas.
 - Skill files include quality gates and forbidden actions.
+- Mock-provider eval bench outputs schema_valid_rate, evidence_complete_rate, and unsafe_output_rate.
 - AI task creation can reference active prompt and skill versions.
+- Prompt/Skill API returns version trace data for AI tasks.
 - `memory/07-dev-log.md` and `memory/08-session-handoff.md` are updated.
 - Next Slice is set to Slice 06 Requirement Review.

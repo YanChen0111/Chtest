@@ -2,7 +2,7 @@
 
 ## 1. 文档目的
 
-本文用于防止 Chtest V1 失控。Chtest 长期可以演进为小团队 AI Testing Workbench 平台和 Agent/Skill/MCP 工具生态，但 V1 必须先做成个人测试工程师、自动化测试工程师真实可用的 AI 测试设计与自动化落地工作台。
+本文用于防止 Chtest V1 失控。Chtest 长期可以演进为小团队 AI 测试证据工作台和 Agent/Skill/MCP 工具生态，但 V1 必须先做成个人测试工程师、自动化测试工程师真实可用的 AI 测试证据工作台。
 
 ## 2. 产品北极星
 

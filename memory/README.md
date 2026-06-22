@@ -6,13 +6,15 @@ The purpose is to let long-running vibe coding continue from stable project fact
 
 ## One-Sentence Product Definition
 
-Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers.
+Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers.
 
-It uses ideas from WHartTest's AI testing workflow and MeterSphere's case review, test asset, and report experience. It helps one engineer complete requirement review, case generation, case review, AutomationDraft generation, pytest/Playwright execution, Git diff unit-test support, failure analysis, and report output.
+It uses ideas from WHartTest's AI testing workflow and MeterSphere's case review, test asset, and report experience. It helps one engineer turn requirements and local code changes into reviewed, sandbox-executed, evidence-backed, and quality-measured testing assets.
 
 Chtest is not an enterprise collaboration test management platform. V1 focuses on personal testing design and automation productivity. The long-term direction is a small-team AI testing workbench plus Agent/Skill/MCP testing tool ecosystem.
 
 ## V1 Loops
+
+The first release spine is `docs/fixtures/00-v1-demo-path.md`: Requirement -> AI review -> candidate case -> human review -> AutomationDraft -> approval -> runner execution -> artifacts -> evidence report.
 
 1. Requirement to cases: Requirement -> AI requirement review -> AI case generation -> human review -> case library.
 2. Case to automation: Requirement/TestCase -> AI AutomationDraft -> approval -> pytest/Playwright execution -> report.
@@ -26,14 +28,17 @@ The first and second loops are mainlines. The third loop is a support workflow.
 - PostgreSQL + Redis are the default infrastructure.
 - Frozen stack: FastAPI, SQLAlchemy 2, Pydantic v2, Alembic, Vue 3, Arco Design Vue, Redis + RQ, Docker Compose.
 - RAG is not built in; only KnowledgeAdapter is provided.
+- Lightweight ContextArtifact inputs come before full RAG; AI tasks must record used context artifact ids or an explicit empty list.
 - AI-generated cases must enter a review window before becoming TestCase records.
 - AutomationDraft must be approved before execution and cannot directly write target repositories.
 - Approved AutomationDraft execution uses Chtest artifact runtime copies, not direct writes into the target repository.
 - Runner sandbox is a V1 safety boundary: TestRun must record runtime manifest, dependency snapshot, environment snapshot, network setting, and artifact trace.
+- `docker_runner` is the preferred product acceptance runner when available; `local_subprocess` is a development fallback.
 - Failed AutomationDraft execution can enter an evidence-driven repair loop, but repair candidates remain review-gated.
 - UnitTestPatch must be approved before application and can only write test directories.
 - AI cannot automatically modify business source files.
 - AI quality metrics must track generation count, acceptance rate, rejection rate, edit rate, execution pass rate, and failure reason distribution.
+- Mock-provider eval bench must track schema_valid_rate, evidence_complete_rate, unsafe_output_rate, usefulness, first-run pass, manual edit, and repair success signals.
 - Git Quality Center is a support page for local diff, unit test generation, regression execution, and quality reports.
 - Agent orchestrates workflows; Prompt constrains output; Skill stores testing methods; Tool Adapter/MCP handles tool calls.
 - Reference framework source is local study material and is excluded from the Chtest repository commit set.
@@ -72,7 +77,8 @@ Required docs:
 10. `docs/implementation/01-v1-development-process.md`
 11. `docs/implementation/02-v1-slice-plan.md`
 12. `docs/implementation/04-ai-vibecoding-governance.md`
-13. `docs/product/06-frontend-ui-guidelines.md` when implementing frontend views
+13. `docs/product/07-ai-testing-evidence-workbench-optimization.md`
+14. `docs/product/06-frontend-ui-guidelines.md` when implementing frontend views
 
 Task-specific fixtures:
 
@@ -122,6 +128,7 @@ Update related files when scope changes:
 - Data/API/state changes: `docs/contracts/*`.
 - Golden Path changes: `docs/fixtures/*`.
 - Agent/MCP/Skill/Prompt changes: `12-agent-mcp-skill-design.md` and `docs/contracts/05-prompt-skill-contract.md`.
+- Evidence-loop strategy changes: `docs/product/07-ai-testing-evidence-workbench-optimization.md`.
 
 ## Memory File Roles
 
@@ -151,6 +158,7 @@ Update related files when scope changes:
 - AI metrics: `docs/product/04-ai-quality-metrics.md`
 - Version boundaries: `docs/product/05-non-goals-and-version-boundaries.md`
 - Frontend UI guidelines: `docs/product/06-frontend-ui-guidelines.md`
+- Evidence workbench optimization: `docs/product/07-ai-testing-evidence-workbench-optimization.md`
 - Data model contract: `docs/contracts/01-data-model-contract.md`
 - API contract: `docs/contracts/02-api-contract.md`
 - State machines: `docs/contracts/03-state-machines.md`
@@ -196,7 +204,7 @@ Update related files when scope changes:
 - Phase: V1 implementation-ready documentation, contracts, Golden Paths, and Slice 1-5 Task plans are complete, including Slice 2.5 Frontend Foundation.
 - Focus: start Slice 1 Task 1, then proceed through Slice 1, Slice 2, Slice 2.5, and Slice 3 with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
-- Latest P0 optimization: runner sandbox, AutomationDraft repair loop, AutomationQualityMetric, and Golden Path product value checks are now part of the current contracts.
+- Latest P0 optimization: Strategy B evidence-loop-first delivery, runner sandbox, ContextArtifact trace, mock-provider eval bench, AutomationDraft repair loop, AutomationQualityMetric, and Golden Path product value checks are now part of the current docs.
 
 ## Implementation Principles
 

@@ -2,7 +2,7 @@
 
 ## Verdict
 
-Chtest V1 is feasible and worth building if implementation stays focused on an AI Testing Workbench for individual test engineers and automation test engineers.
+Chtest V1 is feasible and worth building if implementation stays focused on an AI testing evidence workbench for individual test engineers and automation test engineers.
 
 The product should proceed to implementation. The next milestone is not more strategy writing; it is a runnable Docker + FastAPI + PostgreSQL + Redis + worker + Vue foundation.
 

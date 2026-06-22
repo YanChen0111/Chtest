@@ -6,6 +6,7 @@
 
 每个 Slice 完成前必须具备：
 
+- 产品价值答案：本 Slice 让用户能理解、信任、执行或决策什么。
 - 数据模型或明确不需要数据模型。
 - API 契约或明确只做内部能力。
 - 状态机或复用现有状态机。
@@ -14,6 +15,7 @@
 - UI 或 API 验证入口。
 - artifact/log。
 - 失败状态。
+- 对 `docs/fixtures/00-v1-demo-path.md` 的影响说明。
 - 更新 `memory/07-dev-log.md` 和 `memory/08-session-handoff.md`。
 
 ## Slice 1: Repository and Deploy Skeleton
@@ -52,17 +54,17 @@
 
 目标：所有 AI/执行任务可追踪。
 
-交付：AITask、Artifact、LLMCallLog、Redis queue、Worker 消费示例任务、任务列表和详情页。
+交付：AITask、Artifact、ContextArtifact metadata、LLMCallLog、Redis queue、Worker 消费示例任务、任务列表和详情页。
 
-验收：UI/API 创建任务；Worker 推进 created -> pending -> running -> succeeded/failed；artifact 可查看。
+验收：UI/API 创建任务；Worker 推进 created -> pending -> running -> succeeded/failed；artifact 可查看；AI task 记录 context artifact ids 或空列表。
 
 ## Slice 5: Prompt And Skill Registry
 
 目标：统一管理 PromptVersion 和 SkillVersion。
 
-交付：PromptVersion、SkillVersion models；文件加载；hash；JSON schema 输出校验；调用日志。
+交付：PromptVersion、SkillVersion models；文件加载；hash；JSON schema 输出校验；调用日志；mock-provider eval bench 初版。
 
-验收：mock LLM 调用保存 prompt/skill 版本、输入输出、token、耗时；schema 失败保存 raw artifact。
+验收：mock LLM 调用保存 prompt/skill 版本、输入输出、token、耗时；schema 失败保存 raw artifact；eval bench 输出 schema_valid_rate、evidence_complete_rate、unsafe_output_rate。
 
 ## Slice 6: Requirement Review
 
@@ -116,9 +118,9 @@
 
 目标：V1 P0 执行闭环。
 
-交付：ToolDefinition、ToolInvocation、TestRun、TestResult 初版、TestRunnerTool、pytest allowlist 执行、AutomationDraft runtime artifact 追踪、runner sandbox metadata、runtime_manifest、dependency_snapshot、environment_snapshot、stdout/stderr/JUnit artifact。
+交付：ToolDefinition、ToolInvocation、TestRun、TestResult 初版、TestRunnerTool、pytest allowlist 执行、docker runner preference、AutomationDraft runtime artifact 追踪、runner sandbox metadata、runtime_manifest、dependency_snapshot、environment_snapshot、stdout/stderr/JUnit artifact。
 
-验收：审批后的 AutomationDraft 可触发 pytest TestRun；TestRun 记录实际执行的 `runtime_artifact_ids`、runtime manifest、dependency snapshot、environment snapshot 和 runner sandbox metadata；执行结果结构化入库。
+验收：审批后的 AutomationDraft 可触发 pytest TestRun；TestRun 记录实际执行的 `runtime_artifact_ids`、runtime manifest、dependency snapshot、environment snapshot 和 runner sandbox metadata；docker runner 可用时作为产品验收路径，不可用时记录 fallback 原因；执行结果结构化入库。
 
 ## Slice 13: Playwright Minimal Loop
 
@@ -134,7 +136,7 @@
 
 交付：FailureAnalysis、Report、evidence_manifest、Report Center、AutomationDraft repair task 入口。
 
-验收：失败有证据链；失败的 AutomationDraft 可创建 review-gated repair task；报告输出 md/html/json；无证据时不能给出 passed 结论。
+验收：失败有证据链；失败的 AutomationDraft 可创建 review-gated repair task；报告输出 md/html/json；无证据时不能给出 passed 结论；V1 Minimum Demo report 能回答 AI 分析了什么、执行了哪个 runtime artifact、证据是什么、失败后下一步是什么。
 
 ## Slice 15: Git Quality Foundation
 

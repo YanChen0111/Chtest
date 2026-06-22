@@ -1,8 +1,8 @@
 # Chtest Documentation
 
-Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers. It improves testing efficiency and quality across requirement review, case generation, case review, automation draft generation, controlled execution, failure analysis, and report generation.
+Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers. It turns requirements and local code changes into reviewed, sandbox-executed, evidence-backed, and quality-measured testing assets.
 
-V1 focuses on three loops:
+V1 first proves the minimum evidence loop in `fixtures/00-v1-demo-path.md`, then expands across three loops:
 
 1. Requirement -> AI requirement review -> AI case generation -> human review -> case library.
 2. Requirement/TestCase -> AI AutomationDraft -> approval -> pytest/Playwright execution -> report.
@@ -45,23 +45,24 @@ When documents disagree, follow this order:
 2. `../memory/13-ai-readable-project-brief.md`
 3. `product/01-positioning-and-scope.md`
 4. `product/02-v1-product-prd.md`
-5. `contracts/01-data-model-contract.md`
-6. `contracts/02-api-contract.md`
-7. `contracts/03-state-machines.md`
-8. `contracts/04-artifact-contract.md`
-9. `contracts/05-prompt-skill-contract.md`
-10. `contracts/06-error-code-contract.md`
-11. `contracts/07-seed-data-contract.md`
-12. `contracts/08-mock-provider-contract.md`
-13. `fixtures/00-v1-demo-path.md`
-14. `fixtures/01-golden-requirement-to-case.md`
-15. `fixtures/02-golden-case-to-playwright.md`
-16. `fixtures/03-golden-git-quality.md`
-17. `implementation/01-v1-development-process.md`
-18. `implementation/02-v1-slice-plan.md`
-19. `implementation/03-testing-and-acceptance.md`
-20. `implementation/04-ai-vibecoding-governance.md`
-21. `product/06-frontend-ui-guidelines.md` when implementing frontend views
+5. `product/07-ai-testing-evidence-workbench-optimization.md`
+6. `contracts/01-data-model-contract.md`
+7. `contracts/02-api-contract.md`
+8. `contracts/03-state-machines.md`
+9. `contracts/04-artifact-contract.md`
+10. `contracts/05-prompt-skill-contract.md`
+11. `contracts/06-error-code-contract.md`
+12. `contracts/07-seed-data-contract.md`
+13. `contracts/08-mock-provider-contract.md`
+14. `fixtures/00-v1-demo-path.md`
+15. `fixtures/01-golden-requirement-to-case.md`
+16. `fixtures/02-golden-case-to-playwright.md`
+17. `fixtures/03-golden-git-quality.md`
+18. `implementation/01-v1-development-process.md`
+19. `implementation/02-v1-slice-plan.md`
+20. `implementation/03-testing-and-acceptance.md`
+21. `implementation/04-ai-vibecoding-governance.md`
+22. `product/06-frontend-ui-guidelines.md` when implementing frontend views
 
 ## V1 Hard Constraints
 
@@ -71,8 +72,12 @@ When documents disagree, follow this order:
 - RAG is not built in; only KnowledgeAdapter is provided.
 - MCP is not a V1 dependency; Internal Tool Adapter comes first.
 - Git Quality Center is a support workflow and must not overtake the requirement-to-automation mainlines.
+- `fixtures/00-v1-demo-path.md` is the release spine; broad features cannot replace this evidence loop.
 - V1 priority tools: TestRunner/pytest and Playwright minimal loop.
 - Runner isolation is a V1 safety boundary by contract: every TestRun records runtime workspace, dependency snapshot, environment snapshot, runtime manifest, network setting, and artifact trace.
+- `docker_runner` is the preferred product acceptance runner when available; `local_subprocess` is a development fallback.
+- Lightweight context artifacts come before full RAG. AI tasks must record used context artifact ids or an explicit empty list.
+- Mock-provider eval bench must track schema, evidence, and unsafe-output metrics before broad real-model tuning.
 - Newman after V1 core loop; JMeter after execution/report parsing is stable; Appium and traffic capture are roadmap capabilities.
 - AI-generated cases require review before entering the case library.
 - AI-generated AutomationDraft requires approval before execution.
@@ -89,6 +94,7 @@ When documents disagree, follow this order:
 - `product/04-ai-quality-metrics.md`: AI quality metrics.
 - `product/05-non-goals-and-version-boundaries.md`: Non-goals and version boundaries.
 - `product/06-frontend-ui-guidelines.md`: V1 frontend layout, review surface, evidence display, and visual guidance.
+- `product/07-ai-testing-evidence-workbench-optimization.md`: Strategy B optimization plan for evidence-loop-first delivery.
 
 ### Contracts
 

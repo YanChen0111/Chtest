@@ -27,11 +27,14 @@ Docker 环境中挂载为 volume：
 ```text
 artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   input.json
+  context_manifest.json
   raw_output.json
   parsed_output.json
   schema_validation.json
   error.json
 ```
+
+`context_manifest.json` records the context artifact ids used by the AI task. An empty list means no context artifacts were used.
 
 ### 3.2 Requirement Review
 
@@ -110,6 +113,19 @@ artifacts/projects/{project_id}/reports/{report_id}/
   evidence_manifest.json
 ```
 
+### 3.8 Context Artifacts
+
+```text
+artifacts/projects/{project_id}/context/
+  documents/{artifact_id}.md
+  openapi/{artifact_id}.json
+  logs/{artifact_id}.log
+  fixtures/{artifact_id}.json
+  bug-summaries/{artifact_id}.md
+```
+
+Context artifacts are explicit lightweight inputs to AI tasks. They are not a RAG index and do not imply hidden retrieval. AITask must reference used context artifacts through `context_artifact_ids` and `context_manifest.json`.
+
 ## 4. Artifact 类型
 
 | artifact_type | MIME | 说明 |
@@ -125,6 +141,11 @@ artifacts/projects/{project_id}/reports/{report_id}/
 | runtime_manifest | application/json | TestRun 实际运行文件清单 |
 | dependency_snapshot | application/json | 依赖和 runner 版本快照 |
 | environment_snapshot | application/json | 脱敏后的执行环境快照 |
+| context_document | text/markdown | 需求、设计、说明等上下文文档 |
+| context_openapi | application/json | OpenAPI 或接口契约 |
+| context_log | text/plain | 用户提供的日志片段 |
+| context_fixture | application/json | 测试数据或 fixture |
+| context_bug_summary | text/markdown | 历史缺陷摘要 |
 | patch | text/x-diff | unified diff |
 | stdout | text/plain | 标准输出 |
 | stderr | text/plain | 标准错误 |

@@ -6,7 +6,9 @@
 - 第一版就做单用户模式。
 - 第一版直接使用 PostgreSQL + Redis。
 - 不要一次性演示，要真实能大幅提高测试效率的 AI 工具。
-- 最新定位已校准为：面向个人测试工程师、自动化测试工程师的 AI 测试设计与自动化落地工作台。
+- 最新定位已校准为：面向个人测试工程师、自动化测试工程师的 AI 测试证据工作台。
+- 用户要求实施方案 B：证据闭环优先。不要把 Chtest 做成简单 AI 用例生成器或泛测试管理平台。
+- `docs/fixtures/00-v1-demo-path.md` 是 V1 release spine，后续 Slice 必须持续推动这个最小证据闭环。
 - 长期方向是小团队 AI 测试工作台 + Agent / Skill / MCP 测试工具生态。
 - V1 三条最小闭环：需求到用例、用例到自动化、Git 到质量报告。
 - Git Quality Center 是 V1 支线能力，不能压过需求到自动化主线。
@@ -63,8 +65,13 @@
 
 本轮基于最新外部趋势和项目评审，继续收紧 V1 方案：
 
+- Strategy B 已成为当前优化方向：先证明 AI 测试证据闭环，再扩展三条最小闭环。
+- 新增 `docs/product/07-ai-testing-evidence-workbench-optimization.md`。
 - 文档优先级统一：`docs/implementation/04-ai-vibecoding-governance.md` 位于 contracts 和 delivery plan 之间。
 - runner sandbox 成为 V1 安全边界：TestRun 必须记录 runtime workspace、network setting、runtime manifest、dependency snapshot、environment snapshot 和 artifact trace。
+- `docker_runner` 是优先产品验收 runner；`local_subprocess` 是开发/fallback 路径。
+- 轻量 ContextArtifact 先于完整 RAG：使用 Artifact 存储上下文资料，并由 `AITask.context_artifact_ids` 显式引用。
+- Mock-provider eval bench 成为 V1 质量基线：至少输出 schema_valid_rate、evidence_complete_rate、unsafe_output_rate，并逐步记录 usefulness、first-run pass、manual edit、repair success。
 - 新增 `AutomationRepairTask`：失败的 AutomationDraft 执行可进入证据驱动修复，但修复候选仍必须人工评审，不能自动覆盖已审批草稿。
 - 新增 `AutomationQualityMetric`：记录 draft schema pass、approval、manual edit、first-run pass、repair success、flaky retry、evidence complete 等指标。
 - Golden Path 增加产品价值验收：用户必须能看懂 AI 分析了什么、执行了哪个 runtime 文件、证据是什么、失败后下一步是什么。
@@ -125,6 +132,7 @@
 - Slice 4 Task Plan：`docs/implementation/slices/slice-04-ai-runtime-core.md`
 - Slice 5 Task Plan：`docs/implementation/slices/slice-05-prompt-skill-registry.md`
 - 前端 UI 指南：`docs/product/06-frontend-ui-guidelines.md`
+- 方案 B 优化方案：`docs/product/07-ai-testing-evidence-workbench-optimization.md`
 - 测试验收：`docs/implementation/03-testing-and-acceptance.md`
 - AI vibecoding 治理：`docs/implementation/04-ai-vibecoding-governance.md`
 
@@ -134,15 +142,16 @@
 2. 读取 `memory/README.md`。
 3. 读取 `memory/13-ai-readable-project-brief.md`。
 4. 读取 `docs/product/01-positioning-and-scope.md`。
-5. 读取 `docs/contracts/*`。
-6. 根据任务读取 `docs/fixtures/*`。
-7. 查看 `docs/implementation/01-v1-development-process.md`。
-8. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
-9. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
-10. 如涉及前端，读取 `docs/product/06-frontend-ui-guidelines.md`。
-11. 查看 `git status --short`。
-12. 进入 Slice 1 Task 1：Initialize repository directories。
-13. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
+5. 读取 `docs/product/07-ai-testing-evidence-workbench-optimization.md`。
+6. 读取 `docs/contracts/*`。
+7. 根据任务读取 `docs/fixtures/*`，尤其是 `docs/fixtures/00-v1-demo-path.md`。
+8. 查看 `docs/implementation/01-v1-development-process.md`。
+9. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
+10. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
+11. 如涉及前端，读取 `docs/product/06-frontend-ui-guidelines.md`。
+12. 查看 `git status --short`。
+13. 进入 Slice 1 Task 1：Initialize repository directories。
+14. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
 
 
 ## Memory 更新原则

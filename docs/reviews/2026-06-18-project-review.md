@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The documentation is implementation-ready. Chtest V1 is correctly scoped as an AI Testing Workbench for individual test engineers and automation test engineers.
+The documentation is implementation-ready. Chtest V1 is correctly scoped as an AI testing evidence workbench for individual test engineers and automation test engineers.
 
 The strongest V1 delivery path is: Docker foundation, Project Settings, AI Runtime, Requirement Review, Case Generation Review, AutomationDraft, pytest execution, Playwright minimal loop, FailureAnalysis, Report Center, and Git Quality support workflow.
 

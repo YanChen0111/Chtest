@@ -2,9 +2,9 @@
 
 ## 1. Product Definition
 
-Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers. It helps a single user complete the core testing workflow from requirement analysis, requirement review, test case generation, human review, automation draft generation, test execution, failure analysis, and report generation.
+Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers. It helps a single user turn requirements and local code changes into human-reviewed, sandbox-executed, evidence-backed, and quality-measured testing assets.
 
-Chtest V1 is not a team collaboration platform, defect management system, enterprise quality portal, or general project management system. The first version must stay focused on personal productivity, reviewable AI output, executable tests, and measurable quality improvement.
+Chtest V1 is not a team collaboration platform, defect management system, enterprise quality portal, general project management system, or simple AI case generator. The first version must stay focused on personal productivity, reviewable AI output, executable tests, traceable evidence, and measurable quality improvement.
 
 ## 2. Target Users
 
@@ -24,19 +24,21 @@ Non-target users for V1:
 
 Chtest V1 is successful when it can repeatedly complete these loops in a real project:
 
-1. Requirement to reviewed test cases.
-2. Reviewed test cases to approved automation drafts.
-3. Approved automation drafts to executable pytest or Playwright test runs.
-4. Test runs to failure analysis and reports.
+1. Requirement or local code change to AI risk and test analysis.
+2. AI output to human-reviewed test cases, automation drafts, or scoped test patches.
+3. Approved AutomationDraft to sandboxed pytest or Playwright execution.
+4. Test runs to evidence artifacts, failure analysis, repair candidates, and reports.
 5. Local Git diff to AI-generated unit test patch, approval, execution, and regression conclusion.
 
 The product must measure AI output quality instead of only showing generated content. Every AI result needs review status, acceptance data, edit data, failure data, and traceable artifacts.
+
+The V1 release spine is `docs/fixtures/00-v1-demo-path.md`. Before feature breadth, the product must prove one credible evidence loop: requirement -> reviewed case -> approved AutomationDraft -> controlled execution -> evidence report.
 
 ## 4. Core User Scenarios
 
 ### 4.1 Requirement Review
 
-User uploads or pastes a requirement. Chtest asks AI to analyze the requirement on six dimensions:
+User uploads or pastes a requirement and may attach lightweight context artifacts such as Markdown notes, API samples, logs, fixtures, or historical bug summaries. Chtest asks AI to analyze the requirement on six dimensions:
 
 - Completeness.
 - Clarity.
@@ -46,6 +48,8 @@ User uploads or pastes a requirement. Chtest asks AI to analyze the requirement 
 - Logic.
 
 The output includes score, issue list, clarification questions, risk items, and test design notes. The user can confirm the review result before generating cases.
+
+The result must record which context artifacts were used. If no context artifact is used, the task records an empty context list explicitly.
 
 ### 4.2 AI Test Case Generation
 
@@ -111,6 +115,8 @@ V1 execution focus:
 
 Every execution creates TestRun, TestResult, ToolInvocation, Artifact, and Report data.
 
+`local_subprocess` is allowed for development and smoke verification. `docker_runner` is the preferred product acceptance runner when available. Every TestRun must record runner mode, isolated workspace, repository readonly setting, network setting, runtime manifest, dependency snapshot, environment snapshot, and runtime artifact ids.
+
 ### 4.6 Failure Analysis
 
 When execution fails, Chtest analyzes stdout, stderr, JUnit, screenshots, traces, and related artifacts. The output must classify failure type, list evidence, and suggest next actions.
@@ -153,6 +159,7 @@ Project Settings must support:
 - Environment configuration.
 - Test command configuration.
 - Command validation.
+- Lightweight context artifact registration for documents, OpenAPI files, logs, fixtures, and bug summaries.
 
 ### 5.2 Case Library
 
@@ -242,6 +249,8 @@ V1 does not build a RAG system. It provides a KnowledgeAdapter interface so a la
 
 When no knowledge provider is configured, AI workflows must still run with `used_knowledge=false` and an empty evidence list.
 
+Before full RAG, V1 supports lightweight context artifacts. Context artifacts are user-provided files or text inputs explicitly attached to an AI task. They must be stored as artifacts or metadata references and listed in the AI task trace.
+
 ## 9. Quality Metrics
 
 Chtest must track:
@@ -256,19 +265,27 @@ Chtest must track:
 - Failure classification distribution.
 - AI task schema validation pass rate.
 - Prompt and skill version effectiveness.
+- Context artifact usage rate.
+- Evidence complete rate.
+- Unsafe AI output rate.
+- Model/prompt eval bench pass rate.
 
 ## 10. V1 Acceptance Criteria
 
 V1 can be accepted when:
 
 - A user can create a project and configure repository, environment, and test commands.
+- A user can attach or register lightweight context artifacts for an AI task.
 - A user can create a requirement, run AI review, and view six-dimension results.
 - A user can generate candidate cases and complete review decisions.
 - Approved candidates become TestCase records.
 - A user can generate AutomationDraft from TestCase.
 - AutomationDraft requires approval before execution.
 - A user can run pytest through TestCommand and view TestRun/TestResult.
+- TestRun records runner mode, runtime artifact ids, runtime manifest, dependency snapshot, environment snapshot, and evidence artifacts.
 - A failed run can trigger FailureAnalysis.
+- A failed AutomationDraft execution can create a review-gated AutomationRepairTask.
 - A report can be generated for execution and case quality.
+- The V1 minimum demo path can show requirement, context, approved case, approved AutomationDraft, runner execution, evidence artifacts, and report.
 - A local Git diff can generate a scoped UnitTestPatch and run tests after approval.
 - All AI outputs are stored with prompt, skill, model, schema validation, artifacts, and quality metrics.

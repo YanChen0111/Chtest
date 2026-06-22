@@ -2,7 +2,7 @@
 
 ## 1. Review Scope
 
-This review evaluates Chtest V1 as an AI Testing Workbench for individual test engineers and automation test engineers.
+This review evaluates Chtest V1 as an AI testing evidence workbench for individual test engineers and automation test engineers.
 
 Reference materials:
 

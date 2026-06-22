@@ -16,7 +16,7 @@
 
 ### Final V1 Scope Captured
 
-- Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers.
+- Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers.
 - V1 is single-user and local-first.
 - V1 uses PostgreSQL, Redis, Docker Compose, FastAPI, worker, Vue 3, and Arco Design Vue.
 - Mainline A: requirement review to reviewed test cases.
@@ -148,3 +148,27 @@ Start V1 with the current execution order: Slice 1 repository/deploy skeleton, S
 
 - Commit current-state cleanup.
 - Return to Slice 1 Task 1.
+
+## 2026-06-22 Strategy B Evidence Loop Optimization
+
+### Completed
+
+- Repositioned V1 as an AI testing evidence workbench rather than a simple AI case generator or broad test management platform.
+- Added `docs/product/07-ai-testing-evidence-workbench-optimization.md` as the Strategy B product optimization plan.
+- Made `docs/fixtures/00-v1-demo-path.md` the release spine across positioning, PRD, delivery plan, slice plan, testing acceptance, roadmap, and memory.
+- Added lightweight ContextArtifact trace as Artifact-backed task context via `AITask.context_artifact_ids`.
+- Added context artifact API, artifact path/type, and AI task API contract updates.
+- Added mock-provider eval bench requirements for schema, evidence, unsafe output, usefulness, first-run pass, manual edit, and repair success signals.
+- Clarified `docker_runner` as the preferred product acceptance runner when available, with `local_subprocess` as development/fallback.
+- Strengthened vibe coding governance with product value answer and failed-verification budget.
+
+### Verification
+
+- Documentation-only change.
+- Run `git diff --check`.
+- Run keyword consistency scans for old positioning, ContextArtifact, eval bench, runner, and placeholder wording before committing.
+
+### Next Step
+
+- Commit Strategy B optimization.
+- Return to Slice 1 Task 1 after the documentation branch is merged or explicitly chosen for implementation.

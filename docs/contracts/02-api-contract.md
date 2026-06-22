@@ -197,7 +197,45 @@ Response 200:
 }
 ```
 
-### 2.9 Get Project Settings
+### 2.9 Create Context Artifact
+
+`POST /api/context-artifacts`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "artifact_type": "context_document",
+  "name": "coupon-api-notes.md",
+  "mime_type": "text/markdown",
+  "content": "# Coupon API Notes\n\nCoupons cannot be stacked.",
+  "metadata_json": {
+    "source": "manual",
+    "safe_to_show": true
+  }
+}
+```
+
+Response 201:
+
+```json
+{
+  "artifact_id": "00000000-0000-0000-0000-000000000901",
+  "artifact_type": "context_document",
+  "name": "coupon-api-notes.md",
+  "sha256": "sha256-placeholder",
+  "size_bytes": 42
+}
+```
+
+Rules:
+
+- Allowed V1 context artifact types: `context_document`, `context_openapi`, `context_log`, `context_fixture`, `context_bug_summary`.
+- This API stores explicit task context only. It does not create a vector index or hidden retrieval source.
+- AI task create APIs must pass context artifact ids explicitly when context is used.
+
+### 2.10 Get Project Settings
 
 `GET /api/projects/{id}/settings`
 
@@ -215,6 +253,7 @@ Response 200:
   "repositories": [],
   "environments": [],
   "test_commands": [],
+  "context_artifacts": [],
   "tool_definitions": []
 }
 ```
@@ -254,6 +293,7 @@ Request:
   "skill_version": "requirement-review-skill:v1",
   "model_provider": "mock",
   "model_name": "mock-requirement-review",
+  "context_artifact_ids": ["00000000-0000-0000-0000-000000000901"],
   "use_knowledge": false
 }
 ```
@@ -314,7 +354,8 @@ Request:
   "prompt_version": "case_generation:v1",
   "skill_version": "test-case-generation-skill:v1",
   "model_provider": "mock",
-  "model_name": "mock-case-generator"
+  "model_name": "mock-case-generator",
+  "context_artifact_ids": ["00000000-0000-0000-0000-000000000901"]
 }
 ```
 
@@ -399,7 +440,8 @@ Request:
   "prompt_version": "automation_draft_generation:v1",
   "skill_version": "automation-draft-skill:v1",
   "model_provider": "mock",
-  "model_name": "mock-automation-draft"
+  "model_name": "mock-automation-draft",
+  "context_artifact_ids": []
 }
 ```
 
@@ -563,7 +605,8 @@ Request:
   "prompt_version": "git_diff_analysis:v1",
   "skill_version": "regression-selection-skill:v1",
   "model_provider": "mock",
-  "model_name": "mock-git-analysis"
+  "model_name": "mock-git-analysis",
+  "context_artifact_ids": []
 }
 ```
 
@@ -581,7 +624,8 @@ Request:
   "prompt_version": "unit_test_generation:v1",
   "skill_version": "unit-test-generation-skill:v1",
   "model_provider": "mock",
-  "model_name": "mock-unit-test-generator"
+  "model_name": "mock-unit-test-generator",
+  "context_artifact_ids": []
 }
 ```
 
@@ -727,7 +771,8 @@ Request:
   "prompt_version": "failure_analysis:v1",
   "skill_version": "failure-analysis-skill:v1",
   "model_provider": "mock",
-  "model_name": "mock-failure-analysis"
+  "model_name": "mock-failure-analysis",
+  "context_artifact_ids": []
 }
 ```
 
@@ -820,6 +865,7 @@ Response 200:
   "skill_version": "requirement-review-skill:v1",
   "model_provider": "mock",
   "model_name": "mock-requirement-review",
+  "context_artifact_ids": ["00000000-0000-0000-0000-000000000901"],
   "token_usage": {"input_tokens": 1200, "output_tokens": 800},
   "artifacts": [
     {"artifact_type": "raw_llm_output", "file_path": "projects/00000000-0000-0000-0000-000000000101/ai-tasks/00000000-0000-0000-0000-000000000501/raw.json"}

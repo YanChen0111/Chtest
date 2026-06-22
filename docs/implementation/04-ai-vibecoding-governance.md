@@ -10,6 +10,7 @@ Core principles:
 
 - Small-step development.
 - Every step is testable.
+- Every step serves one product value target.
 - Every completed Task has a commit.
 - Every commit is reviewable and reversible.
 - Every session updates handoff memory when required by this document.
@@ -80,6 +81,7 @@ Before coding a Task, AI must define:
 |---|---|
 | Slice | Slice number and name |
 | Task | One-sentence goal |
+| Product value answer | What the user can understand, trust, execute, or decide after this Task |
 | Source documents | Contracts, fixtures, architecture docs, or memory files needed |
 | Expected files | Likely files to create or modify |
 | Verification | Exact test or smoke command |
@@ -87,6 +89,8 @@ Before coding a Task, AI must define:
 | Commit scope | Expected commit type and scope |
 
 Do not start coding when the Task cannot name a verification command. If a verification command does not exist yet, the first step is to create a focused test or smoke check.
+
+Do not start broad feature work that does not move `docs/fixtures/00-v1-demo-path.md` forward or explicitly maintain a contract needed by that path.
 
 ## 5. Mandatory Task Loop
 
@@ -104,6 +108,19 @@ Read Task-specific docs
   -> commit
   -> update Task progress
 ```
+
+If the same verification fails after two to three focused repair attempts, stop changing code and write a failure report in `memory/08-session-handoff.md`:
+
+```text
+Failed verification:
+Observed evidence:
+Likely cause:
+Rejected hypotheses:
+Next smallest diagnostic step:
+Risk if continued:
+```
+
+Do not continue speculative AI repair loops without new evidence.
 
 Minimum command sequence before commit:
 
@@ -130,6 +147,7 @@ Every Task must have matching verification.
 | Prompt/Skill | Schema example validation |
 | Artifact/parser | Fixture parser test |
 | Golden Path | Fixture-aligned acceptance or smoke test |
+| Eval bench | Mock provider deterministic benchmark smoke |
 | Documentation | Path/link self-check and keyword consistency check |
 
 Verification levels:
@@ -139,7 +157,7 @@ Verification levels:
 | Task Gate | Every Task | Focused test or smoke command |
 | Slice Gate | Slice completion | Slice-level related test set |
 | Milestone Gate | Major workflow completion | Docker + API + worker + frontend smoke, plus relevant Golden Path |
-| Release Gate | Release candidate | Full test suite, docker smoke, docs consistency, Golden Paths |
+| Release Gate | Release candidate | Full test suite, docker smoke, docs consistency, V1 Minimum Demo, Golden Paths |
 
 If a test cannot run, record in `memory/08-session-handoff.md`:
 
