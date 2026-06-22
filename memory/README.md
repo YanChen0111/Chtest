@@ -78,7 +78,8 @@ Required docs:
 11. `docs/implementation/02-v1-slice-plan.md`
 12. `docs/implementation/04-ai-vibecoding-governance.md`
 13. `docs/product/07-ai-testing-evidence-workbench-optimization.md`
-14. `docs/product/06-frontend-ui-guidelines.md` when implementing frontend views
+14. `docs/reviews/2026-06-22-ai-testing-product-review.md`
+15. `docs/product/06-frontend-ui-guidelines.md` when implementing frontend views
 
 Task-specific fixtures:
 
@@ -159,6 +160,7 @@ Update related files when scope changes:
 - Version boundaries: `docs/product/05-non-goals-and-version-boundaries.md`
 - Frontend UI guidelines: `docs/product/06-frontend-ui-guidelines.md`
 - Evidence workbench optimization: `docs/product/07-ai-testing-evidence-workbench-optimization.md`
+- Current AI testing product review: `docs/reviews/2026-06-22-ai-testing-product-review.md`
 - Data model contract: `docs/contracts/01-data-model-contract.md`
 - API contract: `docs/contracts/02-api-contract.md`
 - State machines: `docs/contracts/03-state-machines.md`
@@ -190,6 +192,7 @@ Update related files when scope changes:
 - Docker environment: `docs/deployment/01-docker-environment.md`
 - Roadmap: `docs/roadmap/01-implementation-roadmap.md`
 - Project review: `docs/reviews/2026-06-18-project-review.md`
+- Current AI testing market/product/architecture review: `docs/reviews/2026-06-22-ai-testing-product-review.md`
 
 ## Repositories And References
 
@@ -205,6 +208,7 @@ Update related files when scope changes:
 - Focus: start Slice 1 Task 1, then proceed through Slice 1, Slice 2, Slice 2.5, and Slice 3 with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
 - Latest P0 optimization: Strategy B evidence-loop-first delivery, runner sandbox, ContextArtifact trace, mock-provider eval bench, AutomationDraft repair loop, AutomationQualityMetric, and Golden Path product value checks are now part of the current docs.
+- Latest review lock: 2026-06-22 current AI testing product review confirms the direction, stack, and vibe coding constraints; next work should move to Slice 1 runnable foundation instead of broadening planning.
 
 ## Implementation Principles
 

@@ -35,6 +35,7 @@
 - baseline commit 已存在：`3be8e82 docs(product): define chtest v1 planning baseline`。
 - 当前 preflight 文档修复在隔离分支 `docs/preflight-vibecoding-fixes`，worktree 路径为 `/private/tmp/chtest-preflight-docs`。
 - 当前分支已 push 到 `origin/docs/preflight-vibecoding-fixes`；远端提示仓库已迁移到 `https://github.com/YanChen0111/Chtest.git`，但旧 origin 仍接受 push。
+- 最新当前评审：`docs/reviews/2026-06-22-ai-testing-product-review.md`。
 
 ## 当前 Preflight 修复内容
 
@@ -75,8 +76,15 @@
 - 新增 `AutomationRepairTask`：失败的 AutomationDraft 执行可进入证据驱动修复，但修复候选仍必须人工评审，不能自动覆盖已审批草稿。
 - 新增 `AutomationQualityMetric`：记录 draft schema pass、approval、manual edit、first-run pass、repair success、flaky retry、evidence complete 等指标。
 - Golden Path 增加产品价值验收：用户必须能看懂 AI 分析了什么、执行了哪个 runtime 文件、证据是什么、失败后下一步是什么。
+- 当前外部趋势评审确认：Chtest 不应扩成泛测试管理或简单用例生成，V1 应继续执行 AI 测试证据闭环优先；大厂落地模式是上下文输入、结构化输出、受控执行、证据记录、人审门禁、质量指标。
 
 ## 本轮完成
+
+最新补充：
+
+- 新增 `docs/reviews/2026-06-22-ai-testing-product-review.md`，沉淀当前大厂 AI 测试趋势、产品价值、技术架构、vibe coding 约束评审。
+- 更新 `docs/product/07-ai-testing-evidence-workbench-optimization.md`，补充外部证据映射、技术栈合理性检查、架构 watchlist、vibe coding 增强约束。
+- 更新 docs/memory 索引，后续 AI 开工前必须读取当前评审。
 
 本轮按用户整理的优化稿执行了系统性文档优化：
 
@@ -133,6 +141,7 @@
 - Slice 5 Task Plan：`docs/implementation/slices/slice-05-prompt-skill-registry.md`
 - 前端 UI 指南：`docs/product/06-frontend-ui-guidelines.md`
 - 方案 B 优化方案：`docs/product/07-ai-testing-evidence-workbench-optimization.md`
+- 当前 AI 测试产品评审：`docs/reviews/2026-06-22-ai-testing-product-review.md`
 - 测试验收：`docs/implementation/03-testing-and-acceptance.md`
 - AI vibecoding 治理：`docs/implementation/04-ai-vibecoding-governance.md`
 
@@ -143,15 +152,16 @@
 3. 读取 `memory/13-ai-readable-project-brief.md`。
 4. 读取 `docs/product/01-positioning-and-scope.md`。
 5. 读取 `docs/product/07-ai-testing-evidence-workbench-optimization.md`。
-6. 读取 `docs/contracts/*`。
-7. 根据任务读取 `docs/fixtures/*`，尤其是 `docs/fixtures/00-v1-demo-path.md`。
-8. 查看 `docs/implementation/01-v1-development-process.md`。
-9. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
-10. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
-11. 如涉及前端，读取 `docs/product/06-frontend-ui-guidelines.md`。
-12. 查看 `git status --short`。
-13. 进入 Slice 1 Task 1：Initialize repository directories。
-14. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
+6. 读取 `docs/reviews/2026-06-22-ai-testing-product-review.md`。
+7. 读取 `docs/contracts/*`。
+8. 根据任务读取 `docs/fixtures/*`，尤其是 `docs/fixtures/00-v1-demo-path.md`。
+9. 查看 `docs/implementation/01-v1-development-process.md`。
+10. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
+11. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
+12. 如涉及前端，读取 `docs/product/06-frontend-ui-guidelines.md`。
+13. 查看 `git status --short`。
+14. 进入 Slice 1 Task 1：Initialize repository directories。
+15. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
 
 
 ## Memory 更新原则

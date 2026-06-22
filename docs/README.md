@@ -46,23 +46,24 @@ When documents disagree, follow this order:
 3. `product/01-positioning-and-scope.md`
 4. `product/02-v1-product-prd.md`
 5. `product/07-ai-testing-evidence-workbench-optimization.md`
-6. `contracts/01-data-model-contract.md`
-7. `contracts/02-api-contract.md`
-8. `contracts/03-state-machines.md`
-9. `contracts/04-artifact-contract.md`
-10. `contracts/05-prompt-skill-contract.md`
-11. `contracts/06-error-code-contract.md`
-12. `contracts/07-seed-data-contract.md`
-13. `contracts/08-mock-provider-contract.md`
-14. `fixtures/00-v1-demo-path.md`
-15. `fixtures/01-golden-requirement-to-case.md`
-16. `fixtures/02-golden-case-to-playwright.md`
-17. `fixtures/03-golden-git-quality.md`
-18. `implementation/01-v1-development-process.md`
-19. `implementation/02-v1-slice-plan.md`
-20. `implementation/03-testing-and-acceptance.md`
-21. `implementation/04-ai-vibecoding-governance.md`
-22. `product/06-frontend-ui-guidelines.md` when implementing frontend views
+6. `reviews/2026-06-22-ai-testing-product-review.md`
+7. `contracts/01-data-model-contract.md`
+8. `contracts/02-api-contract.md`
+9. `contracts/03-state-machines.md`
+10. `contracts/04-artifact-contract.md`
+11. `contracts/05-prompt-skill-contract.md`
+12. `contracts/06-error-code-contract.md`
+13. `contracts/07-seed-data-contract.md`
+14. `contracts/08-mock-provider-contract.md`
+15. `fixtures/00-v1-demo-path.md`
+16. `fixtures/01-golden-requirement-to-case.md`
+17. `fixtures/02-golden-case-to-playwright.md`
+18. `fixtures/03-golden-git-quality.md`
+19. `implementation/01-v1-development-process.md`
+20. `implementation/02-v1-slice-plan.md`
+21. `implementation/03-testing-and-acceptance.md`
+22. `implementation/04-ai-vibecoding-governance.md`
+23. `product/06-frontend-ui-guidelines.md` when implementing frontend views
 
 ## V1 Hard Constraints
 
@@ -138,6 +139,11 @@ When documents disagree, follow this order:
 - `deployment/01-docker-environment.md`: Docker and environment control.
 - `roadmap/01-implementation-roadmap.md`: Implementation roadmap.
 - `reference/01-open-source-migration-map.md`: Open-source reference migration map.
+
+### Reviews
+
+- `reviews/2026-06-18-project-review.md`: Implementation-readiness review.
+- `reviews/2026-06-22-ai-testing-product-review.md`: Current AI testing market, product value, architecture, and vibe coding review.
 
 ## Next Step
 
