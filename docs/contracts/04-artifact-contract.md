@@ -61,7 +61,12 @@ artifacts/projects/{project_id}/automation-drafts/{automation_draft_id}/
   draft.spec.ts
   review.json
   execution_plan.json
+  runtime/
+    test_from_draft.py
+    test_from_draft.spec.ts
 ```
+
+`runtime/` stores approved AutomationDraft execution copies. Files in this directory are generated from reviewed draft code and remain under Chtest artifact root. They are not written into the target business repository.
 
 ### 3.5 Git Quality
 
@@ -78,6 +83,9 @@ artifacts/projects/{project_id}/git-quality/{change_set_id}/
 
 ```text
 artifacts/projects/{project_id}/test-runs/{test_run_id}/
+  runtime_manifest.json
+  dependency_snapshot.json
+  environment_snapshot.json
   stdout.log
   stderr.log
   junit.xml
@@ -86,6 +94,12 @@ artifacts/projects/{project_id}/test-runs/{test_run_id}/
   screenshot.png
   parsed_result.json
 ```
+
+`runtime_manifest.json` records runtime artifacts used by the TestRun. For AutomationDraft execution it must include the `automation_draft_code` artifact copied into the AutomationDraft `runtime/` directory.
+
+`dependency_snapshot.json` records runner version, Python/Node version, lockfile hashes, package manager metadata, and runner image when available.
+
+`environment_snapshot.json` records environment variable names and safe non-secret values used by the run. Secret values must appear only as redacted references.
 
 ### 3.7 Report
 
@@ -123,6 +137,9 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | requirement_md | text/markdown | 需求内容 |
 | candidates_json | application/json | 候选用例 |
 | automation_draft_code | text/plain | 自动化草稿代码 |
+| runtime_manifest | application/json | TestRun 实际运行文件清单 |
+| dependency_snapshot | application/json | 依赖和 runner 版本快照 |
+| environment_snapshot | application/json | 脱敏后的执行环境快照 |
 | patch | text/x-diff | unified diff |
 | stdout | text/plain | 标准输出 |
 | stderr | text/plain | 标准错误 |

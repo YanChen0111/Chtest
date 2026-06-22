@@ -50,6 +50,8 @@ Required seed data:
 - All related AITask records can trace PromptVersion, SkillVersion, model, input artifact, and output artifact.
 - RequirementReview and CaseGeneration AITask records include `context_artifact_ids`.
 - AI task artifact directory includes `context_manifest.json` with the exact ContextArtifact id, sha256, title, MIME type, and redaction flag.
+- TestRun records `runtime_artifact_ids`, `runtime_manifest.json`, `dependency_snapshot.json`, and `environment_snapshot.json`.
+- TestRun records runner sandbox metadata: runner mode, isolated run workspace, repository readonly setting, and network setting.
 - ToolInvocation is linked to TestRun and captures stdout/stderr/JUnit artifacts.
 
 ## 5. Minimum Evidence
@@ -64,6 +66,7 @@ The demo must show:
 - Approved TestCase.
 - Approved AutomationDraft.
 - TestRun detail with parsed result.
+- Runtime manifest, dependency snapshot, environment snapshot, and runner sandbox metadata.
 - Report detail with evidence/artifact references.
 
 ## 6. Out Of Scope For This Demo

@@ -4,27 +4,49 @@
 
 本文是 Chtest 第一版完整实施规划。它告诉后续 AI 或开发者先做什么、每一步交付什么、如何验收、哪些风险需要提前处理。
 
-Chtest V1 目标：做成一个真实可运行的个人测试/自动化测试工程师 AI 测试设计与自动化落地工作台，而不是小 demo。
+Chtest V1 目标：做成一个真实可运行的个人测试/自动化测试工程师 AI 测试证据工作台，而不是小 demo 或简单 AI 用例生成器。
 
 ## 2. V1 交付北极星
 
-V1 围绕三条最小闭环交付：
+V1 先围绕一个证据闭环交付，再扩展三条最小闭环。
+
+第一优先级是 `docs/fixtures/00-v1-demo-path.md`：
+
+```text
+需求
+  -> ContextArtifact
+  -> AI 需求评审和风险分析
+  -> 候选用例
+  -> 人工评审
+  -> AutomationDraft
+  -> 人工审批
+  -> sandbox runner 执行
+  -> runtime/evidence artifacts
+  -> 失败归因或修复候选
+  -> 证据报告
+```
+
+V1 的三条最小闭环：
 
 1. 需求到用例：需求评审 -> 候选用例 -> 人工评审 -> 用例库。
 2. 用例到自动化：AutomationDraft -> 审批 -> pytest/Playwright 执行 -> 报告。
 3. 代码到质量：Git diff -> UnitTestPatch -> 审批 -> pytest 回归 -> 质量结论。
 
-第一条和第二条是主线，第三条是支线能力。
+第一条和第二条组成主证据闭环，第三条是支线能力。Git Quality 不能压过 V1 Minimum Demo。
 
 ## 3. 开发总原则
 
 - 每次只做一个可验收 Slice。
 - 每个 Slice 必须能运行、能验证、能回滚。
 - 先打通真实闭环，再增强细节。
+- 先证明证据闭环可信，再扩展平台功能。
 - AI 输出先评审再入库。
 - AutomationDraft 先审批再执行。
 - UnitTestPatch 先审批再应用，且只允许写测试目录。
 - 工具调用先安全再自动化。
+- `local_subprocess` 可用于开发，`docker_runner` 是优先产品验收 runner。
+- 每个 AI 任务记录使用的 context artifacts；没有上下文时记录空列表。
+- 每个执行结论必须能回到 artifacts 和 runner metadata。
 - RAG 和 MCP 先留接口，不阻塞 V1 主流程。
 - 文档、代码、测试、memory 必须同步更新。
 
@@ -76,6 +98,7 @@ Chtest/
 ```text
 M0 Documentation And Contracts Gate
   -> M1 Platform Foundation
+  -> M1.5 Frontend Foundation
   -> M2 AI Runtime Core
   -> M3 Requirement To Case Mainline
   -> M4 AutomationDraft And Pytest Mainline
@@ -93,6 +116,8 @@ M0 Documentation And Contracts Gate
 
 - 产品定位和范围：`docs/product/01-positioning-and-scope.md`。
 - 产品 PRD 和页面 PRD。
+- 前端 UI 指南。
+- 证据工作台优化方案：`docs/product/07-ai-testing-evidence-workbench-optimization.md`。
 - AI 质量指标。
 - 版本边界和非目标。
 - 数据模型契约。
@@ -101,6 +126,7 @@ M0 Documentation And Contracts Gate
 - Artifact 契约。
 - Prompt/Skill 契约。
 - 三条 Golden Path fixtures。
+- V1 Minimum Demo Golden Path。
 - V1 开发流程、切片计划、测试验收文档。
 - memory 接续文档。
 
@@ -109,6 +135,7 @@ M0 Documentation And Contracts Gate
 - `docs/README.md` 能引导找到全部正式文档。
 - `memory/README.md` 能引导下一次 AI 会话读取关键上下文。
 - 新 AI 会话能准确说出 V1 定位、三条闭环、技术栈、禁止事项。
+- 新 AI 会话能准确说出 V1 Minimum Demo 是 release spine，不能被宽功能替代。
 
 ## 7. M1 Platform Foundation
 
@@ -147,7 +174,7 @@ backend/app/main.py
 
 任务：
 
-- 创建 Vue 3 + TypeScript + Vite。
+- 按 Slice 2.5 创建 Vue 3 + TypeScript + Vite。
 - 接入 Arco Design Vue。
 - 建立路由和主布局。
 - 创建 Home、Project Settings 占位页。
@@ -180,12 +207,14 @@ backend/app/main.py
 
 - 建立 Workspace、User、Project、Module、Repository、Environment、TestCommand。
 - 建立 AITask、Artifact、LLMCallLog。
+- 建立轻量 ContextArtifact metadata：使用 Artifact 存储文档、OpenAPI、日志、fixture、历史 bug 摘要，并由 AITask.context_artifact_ids 显式引用。
 - 建立 Redis worker。
 - 实现 LLM Provider Adapter。
 - 支持 OpenAI-compatible provider 和 mock provider。
 - 实现 PromptVersion。
 - 实现 SkillVersion。
 - 实现 JSON schema validation。
+- 建立 mock-provider eval bench 初版。
 - 实现 AI Workbench 基础页面。
 
 数据模型：
@@ -213,6 +242,8 @@ skill_versions
 - mock provider 能返回结构化结果。
 - 调用日志记录 PromptVersion、SkillVersion、model、token、耗时。
 - schema 校验失败时保存 raw artifact。
+- AI task 能记录 context artifact ids；没有 context 时记录空列表。
+- mock-provider eval bench 能输出 schema_valid_rate、evidence_complete_rate 和 unsafe_output_rate。
 
 ## 9. M3 Requirement To Case Mainline
 
@@ -283,6 +314,10 @@ skill_versions
 - TestResult。
 - TestRunnerTool。
 - pytest allowlist 执行。
+- docker runner mode 作为优先产品验收路径；local subprocess 保留开发路径。
+- AutomationDraft runtime artifact 追踪。
+- runner sandbox metadata。
+- runtime_manifest、dependency_snapshot、environment_snapshot。
 - stdout/stderr/JUnit artifact。
 
 验收：
@@ -292,6 +327,8 @@ skill_versions
 - 未审批 AutomationDraft 不能执行。
 - 审批后创建 TestRun。
 - pytest 执行结果结构化入库。
+- TestRun 记录 runtime artifact、runner sandbox metadata、dependency snapshot 和 environment snapshot。
+- 当 docker runner 可用时，V1 demo 使用 docker runner 完成产品验收；不可用时必须记录 fallback 原因。
 - stdout/stderr/JUnit 保存为 artifact。
 
 ## 11. M5 Playwright Minimal Loop
@@ -320,8 +357,10 @@ skill_versions
 任务：
 
 - FailureAnalysis。
+- AutomationRepairTask。
 - Report。
 - evidence_manifest。
+- V1 Minimum Demo report。
 - Report Center。
 - automation_execution report。
 - case_quality report。
@@ -330,9 +369,11 @@ skill_versions
 验收：
 
 - 失败有证据链。
+- 失败的 AutomationDraft 可创建 review-gated repair task。
 - 报告输出 md/html/json。
 - 无 evidence 的报告不能标记 passed。
 - 未归因失败不能给出通过结论。
+- V1 Minimum Demo report 能回答：AI 分析了什么、用了哪些 context、执行了哪个 runtime artifact、证据是什么、失败后下一步是什么。
 
 ## 13. M7 Git Quality Supporting Flow
 

@@ -46,6 +46,8 @@ V1 is single-user, but owner fields are kept for later extension.
 | ToolDefinitionStatus | active, disabled, archived |
 | FailureClassification | product_defect, test_script_issue, environment_issue, test_data_issue, dependency_issue, flaky_test, insufficient_evidence |
 | ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, GitChangeSet, ToolInvocation |
+| LLMCallStatus | started, succeeded, failed, timeout, schema_invalid |
+| AutomationRepairStatus | created, running, candidate_generated, waiting_review, approved, rejected, failed |
 
 ## 3. Workspace
 
@@ -244,10 +246,14 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | suggested_file_path | text | no | null | Suggested test path |
 | execution_notes | text | no | null | How to run and prerequisites |
 | risk_notes | text | no | null | Known risks and review focus |
+| execution_strategy | varchar(60) | yes | artifact_runtime_copy | artifact_runtime_copy in V1 |
 | approval_required | bool | yes | true | Must be approved in V1 |
 | status | AutomationDraftStatus | yes | draft_generated | Status |
 | review_comment | text | no | null | Review comment |
+| runtime_artifact_id | uuid | no | null | Artifact for approved temporary runtime file |
 | promoted_artifact_id | uuid | no | null | Promoted artifact |
+
+V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed artifact runtime directory before execution. It is not written directly into the target business repository.
 
 ## 17. GitChangeSet
 
@@ -303,6 +309,13 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | name | varchar(255) | yes | none | Run name |
 | command | text | yes | none | Executed command |
 | working_directory | text | yes | none | Working directory |
+| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, docker_runner |
+| run_workspace | text | no | null | Isolated execution workspace |
+| repository_readonly | bool | yes | true | Target repository mounted/read as readonly when possible |
+| network_enabled | bool | yes | false | Network access during run |
+| runtime_artifact_ids | uuid[] | yes | {} | Exact runtime files executed |
+| dependency_snapshot_artifact_id | uuid | no | null | Python/Node/lockfile/image snapshot |
+| environment_snapshot_artifact_id | uuid | no | null | Redacted environment snapshot |
 | status | TestRunStatus | yes | created | Status |
 | exit_code | int | no | null | Exit code |
 | duration_ms | int | no | null | Duration |
@@ -338,7 +351,33 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | suggested_actions_json | jsonb | yes | [] | Suggested next actions |
 | status | varchar(40) | yes | draft | draft, confirmed, rejected |
 
-## 23. Report
+## 23. AutomationRepairTask
+
+AutomationRepairTask records an evidence-driven attempt to improve an AutomationDraft after a failed execution. It does not overwrite the approved AutomationDraft silently.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| automation_draft_id | uuid | yes | none | FK AutomationDraft |
+| failed_test_run_id | uuid | yes | none | FK TestRun |
+| failure_analysis_id | uuid | no | null | FK FailureAnalysis |
+| ai_task_id | uuid | yes | none | FK AITask |
+| attempt_index | int | yes | 1 | 1-based attempt count for this draft |
+| max_attempts | int | yes | 2 | Default maximum repair attempts |
+| repair_reason | text | yes | none | Evidence-based reason for repair |
+| repaired_draft_code | text | no | null | Candidate repaired code |
+| repaired_artifact_id | uuid | no | null | Artifact containing repaired draft candidate |
+| evidence_artifact_ids | uuid[] | yes | {} | stdout/stderr/JUnit/trace/screenshots used |
+| status | AutomationRepairStatus | yes | created | Status |
+| review_comment | text | no | null | Human review comment |
+
+Rules:
+
+- Repair input must include the failed TestRun runtime manifest and available execution artifacts.
+- Repair candidate cannot automatically replace or promote an approved AutomationDraft.
+- Repair approval does not execute automatically; it creates or updates a review-gated AutomationDraft candidate.
+
+## 24. Report
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -353,7 +392,7 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | metrics_json | jsonb | yes | {} | Metrics |
 | artifact_ids | uuid[] | yes | {} | Report artifacts |
 
-## 24. AITask
+## 25. AITask
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -373,7 +412,35 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 25. PromptVersion
+## 26. LLMCallLog
+
+LLMCallLog records each provider call made inside an AITask. AITask is the workflow-level task; LLMCallLog is the per-model-call audit log.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| ai_task_id | uuid | yes | none | FK AITask |
+| prompt_version_id | uuid | yes | none | FK PromptVersion |
+| skill_version_id | uuid | yes | none | FK SkillVersion |
+| provider | varchar(80) | yes | mock | mock/openai-compatible |
+| model_name | varchar(120) | yes | mock-model | Model |
+| call_index | int | yes | 1 | 1-based order inside AITask |
+| status | LLMCallStatus | yes | started | Call status |
+| request_artifact_id | uuid | no | null | Artifact containing provider request |
+| response_artifact_id | uuid | no | null | Artifact containing raw provider response |
+| parsed_artifact_id | uuid | no | null | Artifact containing parsed structured output |
+| schema_validation_artifact_id | uuid | no | null | Artifact containing schema validation result |
+| input_summary_json | jsonb | yes | {} | Safe input summary for UI |
+| output_summary_json | jsonb | yes | {} | Safe output summary for UI |
+| token_usage_json | jsonb | yes | {} | Provider token usage |
+| latency_ms | int | no | null | Provider call latency |
+| error_json | jsonb | no | null | Safe error summary |
+| started_at | timestamptz | no | null | Start time |
+| finished_at | timestamptz | no | null | Finish time |
+
+Relationship: AITask 1:N LLMCallLog.
+
+## 27. PromptVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -388,7 +455,7 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 
 Unique constraint: name + version.
 
-## 26. SkillVersion
+## 28. SkillVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -404,7 +471,7 @@ Unique constraint: name + version.
 
 Unique constraint: name + version.
 
-## 27. ToolDefinition
+## 29. ToolDefinition
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -419,12 +486,15 @@ Unique constraint: name + version.
 | timeout_seconds | int | yes | 600 | Default timeout |
 | command_allowlist_json | jsonb | yes | [] | Allowed command templates |
 | allowed_working_directories_json | jsonb | yes | [] | Directory allowlist |
+| forbidden_shell_operators_json | jsonb | yes | [";", "&&", "||", "|", ">", ">>", "<", "$(", "`"] | Operators rejected in command strings |
+| max_stdout_bytes | int | yes | 1048576 | Captured stdout limit |
+| max_stderr_bytes | int | yes | 1048576 | Captured stderr limit |
 | artifact_policy_json | jsonb | yes | {} | Artifact capture rules |
 | status | ToolDefinitionStatus | yes | active | Status |
 
 Unique constraint: project_id + name, treating null project_id as built-in scope.
 
-## 28. ToolInvocation
+## 30. ToolInvocation
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -437,19 +507,23 @@ Unique constraint: project_id + name, treating null project_id as built-in scope
 | risk_level | RiskLevel | yes | medium | Risk |
 | approval_required | bool | yes | false | Approval required |
 | approval_status | varchar(40) | yes | not_required | not_required, pending, approved, rejected |
+| working_directory | text | no | null | Canonical working directory snapshot |
+| command_snapshot | text | no | null | Executed allowlisted command snapshot |
 | exit_code | int | no | null | Exit code |
 | output_json | jsonb | yes | {} | Structured output |
+| stdout_artifact_id | uuid | no | null | Captured stdout artifact |
+| stderr_artifact_id | uuid | no | null | Captured stderr artifact |
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 29. Artifact
+## 31. Artifact
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, context_markdown, context_text, context_json, context_yaml, context_openapi |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -465,7 +539,36 @@ V1 ContextArtifact rule:
 - A prompt input artifact must include `context_manifest.json` with the exact context artifact ids, hashes, titles, MIME types, and redaction flags used for that AI task.
 - Artifact owner fields must never be null for ContextArtifact.
 
-## 30. Relationship Summary
+## 32. AutomationQualityMetric
+
+AutomationQualityMetric stores batch-level AutomationDraft generation, execution, and repair quality. Ratio fields use `0.00-1.00`; UI may render percentages.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| automation_draft_id | uuid | no | null | Optional FK AutomationDraft |
+| prompt_version_id | uuid | yes | none | FK PromptVersion |
+| skill_version_id | uuid | yes | none | FK SkillVersion |
+| model_provider | varchar(80) | yes | mock | Provider |
+| model_name | varchar(120) | yes | mock-model | Model |
+| draft_generated_count | int | yes | 0 | Generated draft count |
+| schema_valid_count | int | yes | 0 | Draft outputs passing schema |
+| approved_count | int | yes | 0 | Approved drafts |
+| rejected_count | int | yes | 0 | Rejected drafts |
+| manual_edit_count | int | yes | 0 | Drafts edited before approval |
+| first_run_pass_count | int | yes | 0 | Approved drafts passing first execution |
+| first_run_fail_count | int | yes | 0 | Approved drafts failing first execution |
+| repair_attempt_count | int | yes | 0 | Repair attempts |
+| repair_success_count | int | yes | 0 | Repairs that pass a follow-up TestRun |
+| evidence_complete_count | int | yes | 0 | Failed runs with complete required evidence |
+| schema_valid_rate | numeric(3,2) | yes | 0.00 | schema_valid_count / draft_generated_count |
+| approval_rate | numeric(3,2) | yes | 0.00 | approved_count / draft_generated_count |
+| manual_edit_rate | numeric(3,2) | yes | 0.00 | manual_edit_count / draft_generated_count |
+| first_run_pass_rate | numeric(3,2) | yes | 0.00 | first_run_pass_count / approved_count |
+| repair_success_rate | numeric(3,2) | yes | 0.00 | repair_success_count / repair_attempt_count |
+| evidence_complete_rate | numeric(3,2) | yes | 0.00 | evidence_complete_count / first_run_fail_count |
+
+## 33. Relationship Summary
 
 ```text
 Workspace -> Project
@@ -474,9 +577,11 @@ Project -> Artifact (ContextArtifact)
 Project -> Requirement -> RequirementReview -> RiskItem
 Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
-TestRun/TestResult -> FailureAnalysis -> Report
+TestRun/TestResult -> FailureAnalysis -> AutomationRepairTask -> Report
 Repository -> GitChangeSet -> GitChangedFile -> UnitTestPatch -> TestRun -> Report
+AITask -> LLMCallLog
 AITask -> Artifact / ContextArtifact references
+AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric
 ToolDefinition -> ToolInvocation -> Artifact
 Report -> Artifact
 PromptVersion + SkillVersion -> AITask

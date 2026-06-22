@@ -676,9 +676,18 @@ Response 202:
 {
   "test_run_id": "00000000-0000-0000-0000-000000001301",
   "tool_invocation_id": "00000000-0000-0000-0000-000000001302",
-  "status": "queued"
+  "status": "queued",
+  "runner_mode": "local_subprocess",
+  "run_workspace": "artifacts/projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/workspace",
+  "repository_readonly": true,
+  "network_enabled": false,
+  "runtime_artifact_ids": ["00000000-0000-0000-0000-000000001201"],
+  "dependency_snapshot_artifact_id": "00000000-0000-0000-0000-000000001202",
+  "environment_snapshot_artifact_id": "00000000-0000-0000-0000-000000001203"
 }
 ```
+
+The created TestRun must record runner sandbox metadata: `runner_mode`, `run_workspace`, `repository_readonly`, `network_enabled`, `runtime_artifact_ids`, `dependency_snapshot_artifact_id`, and `environment_snapshot_artifact_id`.
 
 ### 6.2 Get Test Run
 
@@ -690,6 +699,13 @@ Response 200:
 {
   "id": "00000000-0000-0000-0000-000000001301",
   "status": "passed",
+  "runner_mode": "local_subprocess",
+  "run_workspace": "artifacts/projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/workspace",
+  "repository_readonly": true,
+  "network_enabled": false,
+  "runtime_artifact_ids": ["00000000-0000-0000-0000-000000001201"],
+  "dependency_snapshot_artifact_id": "00000000-0000-0000-0000-000000001202",
+  "environment_snapshot_artifact_id": "00000000-0000-0000-0000-000000001203",
   "exit_code": 0,
   "duration_ms": 3560,
   "parsed_result": {
@@ -701,6 +717,9 @@ Response 200:
   },
   "test_results": [],
   "artifacts": [
+    {"artifact_type": "runtime_manifest", "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/runtime_manifest.json"},
+    {"artifact_type": "dependency_snapshot", "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/dependency_snapshot.json"},
+    {"artifact_type": "environment_snapshot", "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/environment_snapshot.json"},
     {"artifact_type": "stdout", "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/stdout.log"}
   ]
 }
@@ -771,6 +790,36 @@ Response 200:
   "suggested_actions": ["Add fixture coupon_client or update the test to use existing fixture api_client"]
 }
 ```
+
+### 7.3 Create Automation Repair Task
+
+`POST /api/automation-repair-tasks`
+
+Request:
+
+```json
+{
+  "automation_draft_id": "00000000-0000-0000-0000-000000001001",
+  "failed_test_run_id": "00000000-0000-0000-0000-000000001301",
+  "failure_analysis_id": "00000000-0000-0000-0000-000000001501",
+  "prompt_version": "automation_draft_generation:v1",
+  "skill_version": "automation-draft-skill:v1",
+  "model_provider": "mock",
+  "model_name": "mock-automation-repair"
+}
+```
+
+Response 202:
+
+```json
+{
+  "automation_repair_task_id": "00000000-0000-0000-0000-000000001701",
+  "ai_task_id": "00000000-0000-0000-0000-000000001702",
+  "status": "running"
+}
+```
+
+Repair tasks cannot automatically overwrite an approved AutomationDraft. Any repaired draft candidate remains review-gated.
 
 ## 8. Report APIs
 
