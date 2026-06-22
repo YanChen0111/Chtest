@@ -18,10 +18,10 @@ When documents disagree, follow this order:
 2. `contracts/*`.
 3. `implementation/04-ai-vibecoding-governance.md`.
 4. `implementation/01-v1-delivery-plan.md`.
-4. `../memory/13-ai-readable-project-brief.md`.
-5. `fixtures/*`.
-6. `architecture/*`.
-7. `reference/*`, `reviews/*`, and `superpowers/*`.
+5. `../memory/13-ai-readable-project-brief.md`.
+6. `fixtures/*`.
+7. `architecture/*`.
+8. `reference/*`, `reviews/*`, and `superpowers/*`.
 
 ## Documentation Entry Points
 

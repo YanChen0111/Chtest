@@ -53,7 +53,7 @@ Each active Slice must maintain a Task table in the implementation plan or `memo
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Backend health API | planned | `pytest backend/app/tests/test_health.py -q` | - | - |
+| Backend health API | planned | `cd backend && uv run pytest app/tests/test_health.py -q` | - | - |
 
 Allowed statuses:
 

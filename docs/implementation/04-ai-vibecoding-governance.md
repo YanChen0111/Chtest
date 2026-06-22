@@ -298,7 +298,7 @@ What:
 - Return DRAFT_NOT_APPROVED when draft is not approved.
 
 Validation:
-- pytest backend/app/tests/api/test_automation_drafts.py -q
+- cd backend && uv run pytest app/tests/api/test_automation_drafts.py -q
 
 Refs:
 - docs/contracts/03-state-machines.md
@@ -436,8 +436,8 @@ When changing database models:
 Minimum verification:
 
 ```bash
-alembic upgrade head
-pytest backend/app/tests/db -q
+cd backend && uv run alembic upgrade head
+cd backend && uv run pytest app/tests/db -q
 ```
 
 If the project does not yet have Alembic or DB tests, the Task must create the minimal smoke path.
@@ -458,7 +458,7 @@ Rules:
 Minimum verification:
 
 ```bash
-pytest backend/app/tests/ai_runtime -q
+cd backend && uv run pytest app/tests/ai_runtime -q
 ```
 
 If schema validation tooling does not exist yet, the Task must add a minimal validator or record the exact gap.
@@ -613,8 +613,8 @@ Each active Slice should maintain a progress table in `memory/08-session-handoff
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Backend health API | done | `pytest backend/app/tests/test_health.py -q` | `abc123` | pass |
-| Redis ready check | doing | `pytest backend/app/tests/test_ready.py -q` | - | investigating timeout |
+| Backend health API | done | `cd backend && uv run pytest app/tests/test_health.py -q` | `abc123` | pass |
+| Redis ready check | doing | `cd backend && uv run pytest app/tests/test_ready.py -q` | - | investigating timeout |
 
 Allowed statuses:
 
@@ -643,7 +643,7 @@ Commit table template:
 
 | Commit | Content | Verification |
 |---|---|---|
-| `abc123` | `feat(backend): add health check endpoint` | `pytest backend/app/tests/test_health.py -q` |
+| `abc123` | `feat(backend): add health check endpoint` | `cd backend && uv run pytest app/tests/test_health.py -q` |
 | `def456` | `docs(memory): update slice handoff` | doc self-check |
 
 `memory/07-dev-log.md` records long-term Slice summaries. `memory/08-session-handoff.md` records operational details for the next session.
@@ -693,7 +693,7 @@ If there is no commit, explain why the Task is not complete or why the session o
 
 ```bash
 git status --short
-pytest backend/app/tests/test_health.py -q
+cd backend && uv run pytest app/tests/test_health.py -q
 git add backend/app/main.py backend/app/tests/test_health.py
 git commit -m "feat(backend): add health check endpoint"
 ```

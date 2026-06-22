@@ -17,12 +17,12 @@ Create the minimal FastAPI backend foundation: settings, health, ready checks, d
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add FastAPI app and health endpoint | planned | `pytest backend/app/tests/test_health.py -q` | - | - |
-| Add settings model | planned | `pytest backend/app/tests/test_settings.py -q` | - | - |
-| Add database session and ready check | planned | `pytest backend/app/tests/test_ready.py -q` | - | - |
-| Add Redis client and ready check | planned | `pytest backend/app/tests/test_ready.py -q` | - | - |
-| Add Alembic skeleton and default workspace/user migration | planned | `alembic upgrade head` in test database or documented smoke | - | - |
-| Add default single-user context dependency | planned | `pytest backend/app/tests/test_single_user.py -q` | - | - |
+| Add FastAPI app and health endpoint | planned | `cd backend && uv run pytest app/tests/test_health.py -q` | - | - |
+| Add settings model | planned | `cd backend && uv run pytest app/tests/test_settings.py -q` | - | - |
+| Add database session and ready check | planned | `cd backend && uv run pytest app/tests/test_ready.py -q` | - | - |
+| Add Redis client and ready check | planned | `cd backend && uv run pytest app/tests/test_ready.py -q` | - | - |
+| Add Alembic skeleton and default workspace/user migration | planned | `cd backend && uv run alembic upgrade head` in test database or documented smoke | - | - |
+| Add default single-user context dependency | planned | `cd backend && uv run pytest app/tests/test_single_user.py -q` | - | - |
 
 ## Task 1: Add FastAPI App And Health Endpoint
 
@@ -37,12 +37,12 @@ Expected files:
 
 - `backend/app/main.py`
 - `backend/app/tests/test_health.py`
-- `backend/pyproject.toml` or equivalent backend dependency file
+- `backend/pyproject.toml`
 
 Verification command:
 
 ```bash
-pytest backend/app/tests/test_health.py -q
+cd backend && uv run pytest app/tests/test_health.py -q
 ```
 
 Non-goals:
@@ -74,7 +74,7 @@ Expected files:
 Verification command:
 
 ```bash
-pytest backend/app/tests/test_settings.py -q
+cd backend && uv run pytest app/tests/test_settings.py -q
 ```
 
 Non-goals:
@@ -106,7 +106,7 @@ Expected files:
 Verification command:
 
 ```bash
-pytest backend/app/tests/test_ready.py -q
+cd backend && uv run pytest app/tests/test_ready.py -q
 ```
 
 Non-goals:
@@ -138,7 +138,7 @@ Expected files:
 Verification command:
 
 ```bash
-pytest backend/app/tests/test_ready.py -q
+cd backend && uv run pytest app/tests/test_ready.py -q
 ```
 
 Non-goals:
@@ -173,7 +173,7 @@ Expected files:
 Verification command:
 
 ```bash
-alembic upgrade head
+cd backend && uv run alembic upgrade head
 ```
 
 If a test database is not ready yet, document the smoke command in handoff and add the minimal missing setup as the next Task.
@@ -206,7 +206,7 @@ Expected files:
 Verification command:
 
 ```bash
-pytest backend/app/tests/test_single_user.py -q
+cd backend && uv run pytest app/tests/test_single_user.py -q
 ```
 
 Non-goals:

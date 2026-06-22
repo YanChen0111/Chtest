@@ -330,7 +330,7 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | test_result_id | uuid | no | null | FK TestResult |
 | ai_task_id | uuid | yes | none | FK AITask |
 | classification | FailureClassification | yes | insufficient_evidence | Classification |
-| confidence | numeric(5,2) | yes | 0 | 0-1 or 0-100; implementation must choose one consistently |
+| confidence | numeric(4,3) | yes | 0 | Confidence score from 0.000 to 1.000 |
 | evidence_artifact_ids | uuid[] | yes | {} | Evidence artifacts |
 | summary | text | yes | none | Human-readable summary |
 | root_cause | text | no | null | Evidence-based root cause |

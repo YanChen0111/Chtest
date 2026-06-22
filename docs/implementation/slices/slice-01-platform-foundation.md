@@ -32,19 +32,21 @@ Source documents:
 
 Expected files/directories:
 
-- `backend/`
-- `frontend/`
-- `worker/`
-- `deploy/`
-- `prompts/`
-- `skills/`
-- `mcp_tools/`
-- `artifacts/`
+- `backend/.gitkeep`
+- `frontend/.gitkeep`
+- `worker/.gitkeep`
+- `deploy/.gitkeep`
+- `prompts/.gitkeep`
+- `skills/.gitkeep`
+- `mcp_tools/.gitkeep`
+- `artifacts/.gitkeep`
+
+Rule: Empty directories must include `.gitkeep` so the directory skeleton is committed.
 
 Verification command:
 
 ```bash
-find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth 1 -type d
+find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth 1 -type f -name .gitkeep
 ```
 
 Non-goals:
