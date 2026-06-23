@@ -10,12 +10,13 @@ Slice 1: Repository and Deploy Skeleton.
 
 ## Current Task
 
-Task 2: Add Docker Compose for PostgreSQL and Redis.
+Task 3: Add backend container placeholder.
 
 ## Product Value Answer
 
-After this task, Chtest has a deterministic local PostgreSQL and Redis foundation
-that later backend, worker, queue, and readiness checks can use.
+After this task, Chtest has a stable backend service surface in Docker Compose
+so Slice 2 can add the FastAPI app without changing container names or basic
+environment wiring.
 
 ## Must Read
 
@@ -39,7 +40,8 @@ Create or update only these files for the current task:
 
 ```text
 deploy/docker-compose.yml
-.env.example
+backend/Dockerfile
+backend/README.md
 ```
 
 ## Verification Command
@@ -52,18 +54,18 @@ Expected result: Docker Compose renders a valid configuration without errors.
 
 ## Acceptance
 
-- `deploy/docker-compose.yml` defines PostgreSQL and Redis services.
-- PostgreSQL and Redis have health checks.
-- `.env.example` contains only non-secret local defaults.
-- No backend, worker, frontend, database schema, AI runtime, or UI behavior is added in this task.
-- `git status --short` shows only the expected compose/env files before commit.
+- `deploy/docker-compose.yml` includes a backend service placeholder.
+- The backend service has a stable service name and port surface for later `/health`.
+- `backend/Dockerfile` and `backend/README.md` exist.
+- No FastAPI app, backend dependencies, worker logic, database schema, AI runtime, or UI behavior is added in this task.
+- `git status --short` shows only the expected backend placeholder files and compose update before commit.
 
 ## Commit Message
 
 ```text
-build(deploy): add postgres and redis compose services
+build(backend): add backend container placeholder
 ```
 
 ## Next Task
 
-Slice 1 Task 3: Add backend container placeholder.
+Slice 1 Task 4: Add worker container placeholder.
