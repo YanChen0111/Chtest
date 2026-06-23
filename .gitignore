@@ -24,6 +24,7 @@ artifacts/
 reports/generated/
 logs/
 .tmp/
+.worktrees/
 
 # Environment and secrets
 .env
