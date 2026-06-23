@@ -27,6 +27,10 @@ When documents disagree, follow this order:
 
 For implementation sessions, start with `../START_HERE_FOR_AI.md`. It gives the shortest safe reading path, first command, current recommended development path, and forbidden shortcuts.
 
+Then read `../NEXT_AI_TASK.md`. It is the active short handoff for vibecoding:
+current Slice, current Task, expected files, verification command, acceptance,
+commit message, and next Task.
+
 ## Documentation Entry Points
 
 | Directory | Purpose |
@@ -45,30 +49,46 @@ For implementation sessions, start with `../START_HERE_FOR_AI.md`. It gives the 
 
 ## Recommended Reading Order
 
+### Fast Implementation Path
+
 1. `../START_HERE_FOR_AI.md`
-2. `../memory/README.md`
-3. `../memory/13-ai-readable-project-brief.md`
-4. `product/01-positioning-and-scope.md`
-5. `product/02-v1-product-prd.md`
-6. `product/07-ai-testing-evidence-workbench-optimization.md`
-7. `implementation/00-v0.1-walking-skeleton.md`
-8. `contracts/01-data-model-contract.md`
-9. `contracts/02-api-contract.md`
-10. `contracts/03-state-machines.md`
-11. `contracts/04-artifact-contract.md`
-12. `contracts/05-prompt-skill-contract.md`
-13. `contracts/06-error-code-contract.md`
-14. `contracts/07-seed-data-contract.md`
-15. `contracts/08-mock-provider-contract.md`
-16. `fixtures/00-v1-demo-path.md`
-17. `fixtures/01-golden-requirement-to-case.md`
-18. `fixtures/02-golden-case-to-playwright.md`
-19. `fixtures/03-golden-git-quality.md`
-20. `implementation/01-v1-development-process.md`
-21. `implementation/02-v1-slice-plan.md`
-22. `implementation/03-testing-and-acceptance.md`
-23. `implementation/04-ai-vibecoding-governance.md`
-24. `product/06-frontend-ui-guidelines.md` when implementing frontend views
+2. `../NEXT_AI_TASK.md`
+3. the active Slice task file named by `NEXT_AI_TASK.md`
+4. only the task-specific contracts named by `NEXT_AI_TASK.md`
+
+### Full Onboarding Path
+
+Use this longer path when a new AI worker needs broad context or when contracts
+appear to disagree:
+
+1. `../START_HERE_FOR_AI.md`
+2. `../NEXT_AI_TASK.md`
+3. `../memory/README.md`
+4. `../memory/13-ai-readable-project-brief.md`
+5. `product/01-positioning-and-scope.md`
+6. `product/02-v1-product-prd.md`
+7. `product/07-ai-testing-evidence-workbench-optimization.md`
+8. `implementation/00-v0.1-walking-skeleton.md`
+9. `implementation/05-execution-efficiency-plan.md`
+10. `contracts/01-data-model-contract.md`
+11. `contracts/02-api-contract.md`
+12. `contracts/03-state-machines.md`
+13. `contracts/04-artifact-contract.md`
+14. `contracts/05-prompt-skill-contract.md`
+15. `contracts/06-error-code-contract.md`
+16. `contracts/07-seed-data-contract.md`
+17. `contracts/08-mock-provider-contract.md`
+18. `fixtures/00-v1-demo-path.md`
+19. `fixtures/01-golden-requirement-to-case.md`
+20. `fixtures/02-golden-case-to-playwright.md`
+21. `fixtures/03-golden-git-quality.md`
+22. `fixtures/04-real-user-scenarios.md`
+23. `fixtures/05-minimal-prompt-skill-seeds.md`
+24. `implementation/01-v1-development-process.md`
+25. `implementation/02-v1-slice-plan.md`
+26. `implementation/03-testing-and-acceptance.md`
+27. `implementation/04-ai-vibecoding-governance.md`
+28. `product/06-frontend-ui-guidelines.md` when implementing frontend views
 
 ## V1 Hard Constraints
 
@@ -117,6 +137,9 @@ For implementation sessions, start with `../START_HERE_FOR_AI.md`. It gives the 
 - `fixtures/01-golden-requirement-to-case.md`: Requirement to cases.
 - `fixtures/02-golden-case-to-playwright.md`: TestCase to pytest/Playwright.
 - `fixtures/03-golden-git-quality.md`: Git diff to quality report.
+- `fixtures/04-real-user-scenarios.md`: Real API tester, Web automation tester, and backend unit-test user samples.
+- `fixtures/05-minimal-prompt-skill-seeds.md`: Minimal Prompt/Skill seed fixture index for Slice 5.
+- `fixtures/prompt-skill-seeds/`: Concrete Prompt/Skill seed files for mock provider and PromptVersion/SkillVersion loading.
 
 ### Architecture
 
@@ -140,10 +163,15 @@ For implementation sessions, start with `../START_HERE_FOR_AI.md`. It gives the 
 - `implementation/slices/slice-05-prompt-skill-registry.md`: Slice 5 Task plan.
 - `implementation/03-testing-and-acceptance.md`: Testing and acceptance.
 - `implementation/04-ai-vibecoding-governance.md`: AI development governance, Task loop, testing, commit, rollback, and handoff rules.
+- `implementation/05-execution-efficiency-plan.md`: Fast AI session routing, `NEXT_AI_TASK.md` rules, and reduced-reading workflow.
 - `deployment/01-docker-environment.md`: Docker and environment control.
 - `roadmap/01-implementation-roadmap.md`: Implementation roadmap.
 - `reference/01-open-source-migration-map.md`: Open-source reference migration map.
 
 ## Next Step
 
-Use `../START_HERE_FOR_AI.md` as the session entry. Then start Slice 1 Task 1: initialize platform directories according to `implementation/slices/slice-01-platform-foundation.md`. Keep `implementation/00-v0.1-walking-skeleton.md` as the first early evidence checkpoint while progressing through Slice 1-5.
+Use `../START_HERE_FOR_AI.md` and `../NEXT_AI_TASK.md` as the session entry.
+Then start Slice 1 Task 1: initialize platform directories according to
+`implementation/slices/slice-01-platform-foundation.md`. Keep
+`implementation/00-v0.1-walking-skeleton.md` as the first early evidence
+checkpoint while progressing through Slice 1-5.

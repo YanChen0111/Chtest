@@ -18,13 +18,18 @@ Read these files before any development work:
 3. `docs/implementation/00-v0.1-walking-skeleton.md`
 4. `docs/implementation/02-v1-slice-plan.md`
 5. `docs/implementation/04-ai-vibecoding-governance.md`
+6. `docs/implementation/05-execution-efficiency-plan.md`
+
+For fast implementation sessions, read `NEXT_AI_TASK.md` immediately after this
+file. It narrows the current task, expected files, verification command, and
+commit scope.
 
 Then read task-specific contracts:
 
 - Data/API/state work: `docs/contracts/01-data-model-contract.md`, `docs/contracts/02-api-contract.md`, `docs/contracts/03-state-machines.md`
 - Artifact or evidence work: `docs/contracts/04-artifact-contract.md`
-- Prompt/Skill or mock provider work: `docs/contracts/05-prompt-skill-contract.md`, `docs/contracts/08-mock-provider-contract.md`
-- Golden Path work: `docs/fixtures/00-v1-demo-path.md`
+- Prompt/Skill or mock provider work: `docs/contracts/05-prompt-skill-contract.md`, `docs/contracts/08-mock-provider-contract.md`, `docs/fixtures/05-minimal-prompt-skill-seeds.md`
+- Golden Path or real scenario work: `docs/fixtures/00-v1-demo-path.md`, `docs/fixtures/04-real-user-scenarios.md`
 
 ## First Command
 
@@ -36,11 +41,12 @@ If the workspace is dirty, inspect the diff before editing. Do not overwrite use
 
 ## Current Recommended Development Path
 
-1. Finish Slice 1: repository/deploy skeleton.
-2. Finish Slice 2: backend core with health/ready, settings, DB, Redis, Alembic, single-user context.
-3. Finish Slice 2.5 only to the frontend shell level.
-4. Finish Slice 3-5 enough to support the V0.1 Walking Skeleton.
-5. Run the V0.1 evidence loop before expanding into all V1 pages and metrics.
+1. Follow `NEXT_AI_TASK.md` for the active smallest task.
+2. Finish Slice 1: repository/deploy skeleton.
+3. Finish Slice 2: backend core with health/ready, settings, DB, Redis, Alembic, single-user context.
+4. Finish Slice 2.5 only to the frontend shell level.
+5. Finish Slice 3-5 enough to support the V0.1 Walking Skeleton.
+6. Run the V0.1 evidence loop before expanding into all V1 pages and metrics.
 
 ## V0.1 Evidence Loop
 
@@ -76,4 +82,5 @@ Every completed task must have:
 - one focused verification command;
 - a passing result or documented blocker;
 - a small commit;
+- `NEXT_AI_TASK.md` updated when the active task changes;
 - updated handoff when the session changes slice state or discovers a significant risk.
