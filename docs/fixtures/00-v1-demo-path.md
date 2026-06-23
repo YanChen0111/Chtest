@@ -15,6 +15,9 @@ Required seed data:
 - Project: `Checkout System`.
 - Module: `订单结算`.
 - Repository: local sample repository under an allowlisted path.
+- Sample repository fixture: `examples/sample-checkout-app` or an equivalent
+  allowlisted local path with a minimal coupon validation target and `tests/`
+  directory.
 - Environment: `local`.
 - TestCommand: `pytest tests -q --junitxml=artifacts/junit.xml`.
 - ContextArtifact: `coupon-api-notes.md`, stored as `context_markdown`, owner `Project`.
@@ -24,6 +27,10 @@ Required seed data:
 - Built-in ToolDefinition: `TestRunnerTool`.
 
 ## 3. Minimum Flow
+
+Precondition: the sample repository fixture exists and the configured
+Repository/TestCommand can run in a controlled runner workspace. If this fixture
+does not exist yet, create it before starting the V0.1 or V1 runner smoke.
 
 1. Create Project.
 2. Create Module.
