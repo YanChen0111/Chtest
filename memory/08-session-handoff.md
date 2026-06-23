@@ -41,7 +41,8 @@
 - 完成 Slice 1 Task 1：初始化 `backend/`、`frontend/`、`worker/`、`deploy/`、`prompts/`、`skills/`、`mcp_tools/`、`artifacts/` 八个顶层目录，并为每个目录加入 `.gitkeep`。
 - `artifacts/` 受 `.gitignore` 忽略，已使用 `git add -f artifacts/.gitkeep` 只跟踪占位文件，运行产物仍保持忽略。
 - 完成 Slice 1 Task 2：添加 PostgreSQL 和 Redis 的 Docker Compose 基础。
-- 已更新 `NEXT_AI_TASK.md`，当前下一任务为 Slice 1 Task 3：Add backend container placeholder。
+- 完成 Slice 1 Task 3：添加 backend container placeholder。
+- 已更新 `NEXT_AI_TASK.md`，当前下一任务为 Slice 1 Task 4：Add worker container placeholder。
 
 本轮验证：
 
@@ -62,10 +63,11 @@ find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth
 | `58104e5` | 收紧执行准备文档，统一 Slice 1 验收命令，补充 sample repository 前置，降低早期指标看板优先级 | `git diff --check` |
 | `a7cd981` | 初始化 8 个平台目录和 `.gitkeep` | `find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth 1 -type f -name .gitkeep` |
 | `360ab7a` | 添加 PostgreSQL 和 Redis Docker Compose 服务及本地 `.env.example` | `docker compose -f deploy/docker-compose.yml config` |
+| `4160695` | 添加 backend Dockerfile、README 和 Docker Compose backend service placeholder | `docker compose -f deploy/docker-compose.yml config` |
 
 下次推荐任务：
 
-- Slice 1 Task 3：添加 backend container placeholder。
+- Slice 1 Task 4：添加 worker container placeholder。
 - 必读：`NEXT_AI_TASK.md`、`docs/implementation/slices/slice-01-platform-foundation.md`、`docs/deployment/01-docker-environment.md`。
 - 验证命令：`docker compose -f deploy/docker-compose.yml config`。
 
@@ -73,7 +75,7 @@ find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth
 
 - 当前分支尚未 push。
 - `origin` 仍指向旧 GitHub 地址；是否切换 remote 仍需用户明确确认。
-- 不要在 Task 3 实现 FastAPI health endpoint 或安装业务依赖。
+- 不要在 Task 4 实现 RQ worker、AI runtime 或队列业务逻辑。
 
 ## 本轮完成
 
@@ -145,7 +147,7 @@ find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth
 10. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
 11. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
 12. 查看 `git status --short`。
-13. 进入 Slice 1 Task 3：Add backend container placeholder。
+13. 进入 Slice 1 Task 4：Add worker container placeholder。
 14. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
 
 ## Memory 更新原则
