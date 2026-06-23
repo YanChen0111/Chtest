@@ -28,7 +28,9 @@
 - 当前工作分支：`codex/chtest-vibecoding-foundation`。
 - Git remote `origin` 已设置为 `https://github.com/2696437448-cmyk/Chtest.git`。
 - 当前最新已 push commit：`1fb52c1 docs(process): tighten vibecoding readiness docs`。
-- 当前本地最新文档基线 commit：`422ecfd docs(process): freeze v1 vibecoding baseline`。
+- 本轮一致性修复开始前的最新本地提交：`6ed134a docs(memory): hand off slice one worker task`。
+- 当前最新本地提交以 `git log -1 --oneline` 为准。
+- 当前未 push 的本地提交包括 Slice 1 Tasks 1-3 和后续 handoff 更新。
 - GitHub 提示仓库已迁移到 `https://github.com/YanChen0111/Chtest.git`，但当前 origin 仍指向旧地址。
 - 本轮 ContextArtifact 文档契约修复作为本地提交保存；push 仍需用户明确要求。
 
@@ -43,18 +45,22 @@
 - 完成 Slice 1 Task 2：添加 PostgreSQL 和 Redis 的 Docker Compose 基础。
 - 完成 Slice 1 Task 3：添加 backend container placeholder。
 - 已更新 `NEXT_AI_TASK.md`，当前下一任务为 Slice 1 Task 4：Add worker container placeholder。
+- 修复全量文档复审发现的漏改：入口文档仍指向已完成任务、`.env.example` 容器连接串使用本地回环地址、Artifact Docker 路径不一致、裸 Compose 启动命令不匹配 `deploy/docker-compose.yml` 位置、历史评审/计划文档未标注历史状态。
 
 本轮验证：
 
 ```bash
 git diff --check --cached
 find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth 1 -type f -name .gitkeep
+docker compose --env-file .env.example -f deploy/docker-compose.yml config
+docker compose -f deploy/docker-compose.yml config
 ```
 
 验证结果：
 
 - `git diff --check --cached` 无输出。
 - `find ... .gitkeep` 打印 8 个 `.gitkeep` 文件。
+- 两个 Docker Compose config 命令均能渲染，backend 环境变量使用 `postgres`、`redis` 和 `/opt/chtest/artifacts`。
 
 本轮提交：
 
@@ -193,8 +199,8 @@ Next recommended Task:
 开始实现 V1 平台骨架：
 
 - 先读 `START_HERE_FOR_AI.md` 和 `docs/implementation/00-v0.1-walking-skeleton.md`。
-- 按 `docs/implementation/slices/slice-01-platform-foundation.md` 执行 Slice 1 Task 1，初始化 backend/frontend/worker/deploy/prompts/skills/mcp_tools/artifacts 目录。
-- 写 `deploy/docker-compose.yml`，启动 PostgreSQL + Redis。
+- 按 `NEXT_AI_TASK.md` 执行 Slice 1 Task 4：添加 worker container placeholder。
+- PostgreSQL + Redis Compose 和 backend placeholder 已完成。
 - 建 FastAPI 健康检查和数据库连接。
 - 建 Alembic 迁移骨架。
 - 建 Vue 3 + Arco 前端骨架。

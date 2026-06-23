@@ -215,7 +215,7 @@ backend/app/main.py
 
 验收：
 
-- `docker compose up` 能启动所有服务。
+- `docker compose -f deploy/docker-compose.yml up` 能启动所有服务。
 - 服务之间网络连通。
 
 ## 9. M2 AI Runtime Core

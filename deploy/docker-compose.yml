@@ -44,7 +44,7 @@ services:
       APP_ENV: ${APP_ENV:-dev}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://chtest:chtest@postgres:5432/chtest}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      ARTIFACT_ROOT: ${ARTIFACT_ROOT:-/app/artifacts}
+      ARTIFACT_ROOT: ${ARTIFACT_ROOT:-/opt/chtest/artifacts}
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
       TOOL_EXECUTION_MODE: ${TOOL_EXECUTION_MODE:-local}
     depends_on:
@@ -55,7 +55,7 @@ services:
     ports:
       - "${CHTEST_BACKEND_PORT:-8000}:8000"
     volumes:
-      - ../artifacts:/app/artifacts
+      - ../artifacts:/opt/chtest/artifacts
 
 volumes:
   postgres-data:

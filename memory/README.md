@@ -191,8 +191,8 @@ Update related files when scope changes:
 
 ## Current State
 
-- Phase: V1 implementation-ready documentation, contracts, Golden Paths, V0.1 Walking Skeleton, and Slice 1/2 Task plans are complete.
-- Focus: start from `START_HERE_FOR_AI.md`, execute Slice 1 Task 1, then progress toward the V0.1 evidence loop with Task-level verification and commits.
+- Phase: V1 implementation has started. Slice 1 Tasks 1-3 are complete, and the active handoff points to Slice 1 Task 4.
+- Focus: start from `START_HERE_FOR_AI.md`, then `NEXT_AI_TASK.md`, and continue the active Slice 1 task with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
 
 ## Implementation Principles

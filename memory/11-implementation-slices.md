@@ -22,7 +22,7 @@
 
 交付：`backend/`、`frontend/`、`worker/`、`deploy/`、`prompts/`、`skills/`、`mcp_tools/`、`artifacts/` 目录；`deploy/docker-compose.yml`；`.env.example`。
 
-验收：PostgreSQL、Redis 可启动；backend health check 可访问；worker 能连接 Redis。
+验收：平台目录、PostgreSQL、Redis、backend/worker/frontend 容器占位配置可通过 `docker compose -f deploy/docker-compose.yml config` 校验。Backend health check 和 worker Redis ping 属于 Slice 2 及后续任务。
 
 ## Slice 2: Backend Core
 

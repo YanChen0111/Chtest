@@ -171,7 +171,7 @@ appear to disagree:
 ## Next Step
 
 Use `../START_HERE_FOR_AI.md` and `../NEXT_AI_TASK.md` as the session entry.
-Then start Slice 1 Task 1: initialize platform directories according to
-`implementation/slices/slice-01-platform-foundation.md`. Keep
+Then continue the active task named in `../NEXT_AI_TASK.md`. As of the current
+handoff this is Slice 1 Task 4: add the worker container placeholder. Keep
 `implementation/00-v0.1-walking-skeleton.md` as the first early evidence
 checkpoint while progressing through Slice 1-5.

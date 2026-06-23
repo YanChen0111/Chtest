@@ -1,5 +1,9 @@
 # Chtest Project Review Report
 
+> Historical review from 2026-06-18. Current implementation status is tracked in
+> `NEXT_AI_TASK.md`, `docs/implementation/slices/`, and
+> `memory/08-session-handoff.md`.
+
 ## Executive Summary
 
 The documentation is implementation-ready. Chtest V1 is correctly scoped as an AI Testing Workbench for individual test engineers and automation test engineers.
@@ -10,7 +14,8 @@ The strongest V1 delivery path is: Docker foundation, Project Settings, AI Runti
 
 ### Critical: Runnable Implementation Is The Next Milestone
 
-The repository contains complete planning and contracts but no executable backend, frontend, worker, or Docker Compose yet.
+At the time of this review, the repository contained complete planning and
+contracts but no executable backend, frontend, worker, or Docker Compose yet.
 
 Required next action:
 

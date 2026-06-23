@@ -102,9 +102,10 @@ Slice 1 + Slice 2：Repository and Deploy Skeleton + Backend Core
 
 具体任务：
 
-- 创建 backend/frontend/worker/deploy/prompts/skills/mcp_tools 目录。
-- 写 Docker Compose。
-- 启动 PostgreSQL 和 Redis。
+- 继续 `NEXT_AI_TASK.md` 指向的当前任务。
+- 已完成 backend/frontend/worker/deploy/prompts/skills/mcp_tools/artifacts 目录初始化。
+- 已完成 PostgreSQL、Redis 和 backend placeholder Docker Compose 基础。
+- 下一步是 worker container placeholder。
 - 建 FastAPI health/ready。
 - 建 Alembic。
 - 建 Vue + Arco 基础布局。

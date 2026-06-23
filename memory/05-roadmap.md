@@ -31,7 +31,7 @@ Foundation
 
 验收：
 
-- `docker compose up` 启动服务。
+- `docker compose -f deploy/docker-compose.yml up` 启动服务。
 - `/health`、`/ready` 通过。
 - 可以创建项目、模块、仓库和测试命令。
 

@@ -10,15 +10,15 @@
 |---|---|---:|---|
 | postgres | postgres:16 | 5432 | 主数据库 |
 | redis | redis:7 | 6379 | 队列和缓存 |
-| backend | build ./backend | 8000 | FastAPI API |
-| worker | build ./backend | none | RQ/Celery worker |
-| frontend | build ./frontend | 5173 | Vue dev server |
+| backend | build ../backend | 8000 | FastAPI API |
+| worker | build ../backend | none | RQ/Celery worker |
+| frontend | build ../frontend | 5173 | Vue dev server |
 | runner | optional profile | none | 后续隔离执行测试 |
 
 ## 3. 目录挂载
 
 ```text
-./storage:/app/storage
+./artifacts:/opt/chtest/artifacts
 ./prompts:/app/prompts:ro
 ./skills:/app/skills:ro
 ./mcp_tools:/app/mcp_tools:ro
@@ -32,12 +32,12 @@
 APP_ENV=dev
 DATABASE_URL=postgresql+psycopg://chtest:chtest@postgres:5432/chtest
 REDIS_URL=redis://redis:6379/0
-ARTIFACT_ROOT=/app/storage
-DEFAULT_USER_ID=default-user
-LLM_PROVIDER=openai-compatible
+ARTIFACT_ROOT=/opt/chtest/artifacts
+DEFAULT_USER_ID=00000000-0000-0000-0000-000000000001
+LLM_PROVIDER=mock
 LLM_BASE_URL=
 LLM_API_KEY=
-LLM_MODEL=
+LLM_MODEL=mock-model
 TOOL_EXECUTION_MODE=local
 ```
 
@@ -72,8 +72,7 @@ services:
       retries: 20
 
   backend:
-    build: ./backend
-    env_file: .env
+    build: ../backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,26 +81,25 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./storage:/app/storage
-      - ./prompts:/app/prompts:ro
-      - ./skills:/app/skills:ro
+      - ../artifacts:/opt/chtest/artifacts
+      - ../prompts:/app/prompts:ro
+      - ../skills:/app/skills:ro
 
   worker:
-    build: ./backend
+    build: ../backend
     command: python -m app.worker
-    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
-      - ./storage:/app/storage
-      - ./prompts:/app/prompts:ro
-      - ./skills:/app/skills:ro
+      - ../artifacts:/opt/chtest/artifacts
+      - ../prompts:/app/prompts:ro
+      - ../skills:/app/skills:ro
 
   frontend:
-    build: ./frontend
+    build: ../frontend
     ports:
       - "5173:5173"
     environment:
@@ -115,8 +113,8 @@ volumes:
 
 ```bash
 cp .env.example .env
-docker compose up -d postgres redis
-docker compose up backend worker frontend
+docker compose -f deploy/docker-compose.yml up -d postgres redis
+docker compose -f deploy/docker-compose.yml up backend worker frontend
 ```
 
 ## 7. 健康检查
@@ -136,7 +134,7 @@ docker compose up backend worker frontend
 ## 9. 安全要求
 
 - `.env` 不提交。
-- `storage/` 不提交。
+- `artifacts/` 只提交 `.gitkeep`，运行产物不提交。
 - 工具执行目录必须在项目工作区内。
 - 禁止容器挂载宿主机敏感目录。
 - LLM/GitHub/Postman token 只通过 env 注入。

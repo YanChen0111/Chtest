@@ -92,8 +92,7 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 ### Next Step
 
-- Create initial planning baseline commit.
-- Start Slice 1 Task 1: initialize repository directories.
+- Continue from `NEXT_AI_TASK.md`; Slice 1 Task 1 is complete.
 
 ## 2026-06-22 ContextArtifact Contract Closure
 
@@ -109,3 +108,22 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Documentation-only change.
 - Required checks: ContextArtifact grep, `use_knowledge=false` semantics grep, owner rule grep, docs whitespace check.
+
+## 2026-06-23 Slice 1 Start
+
+### Completed
+
+- Tightened execution-readiness documentation after product and market review.
+- Created branch `codex/chtest-vibecoding-foundation` for implementation work.
+- Completed Slice 1 Task 1: initialized platform directories with `.gitkeep`.
+- Completed Slice 1 Task 2: added PostgreSQL and Redis Docker Compose services plus `.env.example`.
+- Completed Slice 1 Task 3: added backend Dockerfile, README, and backend Compose placeholder.
+
+### Verification
+
+- `find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth 1 -type f -name .gitkeep`
+- `docker compose -f deploy/docker-compose.yml config`
+
+### Next Step
+
+- Continue Slice 1 Task 4 from `NEXT_AI_TASK.md`: add worker container placeholder.

@@ -1,5 +1,9 @@
 # Chtest V1 Implementation Plan
 
+> Historical planning artifact from 2026-06-18. The canonical active task source
+> is now `NEXT_AI_TASK.md`, with detailed task status in
+> `docs/implementation/slices/` and `memory/08-session-handoff.md`.
+
 ## Batch 1: Repository And Docker Foundation
 
 Tasks:
@@ -13,7 +17,7 @@ Tasks:
 
 Verification:
 
-- `docker compose up postgres redis` works.
+- `docker compose -f deploy/docker-compose.yml up postgres redis` works.
 - `GET /health` returns OK.
 - `GET /ready` checks PostgreSQL and Redis.
 - Frontend shell opens and calls backend health.
