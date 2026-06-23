@@ -10,12 +10,12 @@ Slice 1: Repository and Deploy Skeleton.
 
 ## Current Task
 
-Task 1: Initialize repository directories.
+Task 2: Add Docker Compose for PostgreSQL and Redis.
 
 ## Product Value Answer
 
-After this task, Chtest has a committed local project skeleton that future backend,
-frontend, worker, prompt, skill, MCP-tool, and artifact work can build on.
+After this task, Chtest has a deterministic local PostgreSQL and Redis foundation
+that later backend, worker, queue, and readiness checks can use.
 
 ## Must Read
 
@@ -23,6 +23,7 @@ frontend, worker, prompt, skill, MCP-tool, and artifact work can build on.
 2. `docs/implementation/slices/slice-01-platform-foundation.md`
 3. `docs/implementation/04-ai-vibecoding-governance.md`
 4. `docs/implementation/05-execution-efficiency-plan.md`
+5. `docs/deployment/01-docker-environment.md`
 
 ## Do Not Read Unless Needed
 
@@ -34,41 +35,35 @@ frontend, worker, prompt, skill, MCP-tool, and artifact work can build on.
 
 ## Expected Files
 
-Create only these files/directories for the current task:
+Create or update only these files for the current task:
 
 ```text
-backend/.gitkeep
-frontend/.gitkeep
-worker/.gitkeep
-deploy/.gitkeep
-prompts/.gitkeep
-skills/.gitkeep
-mcp_tools/.gitkeep
-artifacts/.gitkeep
+deploy/docker-compose.yml
+.env.example
 ```
 
 ## Verification Command
 
 ```bash
-find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth 1 -type f -name .gitkeep
+docker compose -f deploy/docker-compose.yml config
 ```
 
-Expected result: the command prints the eight `.gitkeep` files above.
+Expected result: Docker Compose renders a valid configuration without errors.
 
 ## Acceptance
 
-- The eight top-level directories exist.
-- Each directory has one `.gitkeep`.
-- No backend, frontend, worker, Docker, database, AI runtime, or UI behavior is added in this task.
-- `git status --short` shows only the expected skeleton files before commit.
+- `deploy/docker-compose.yml` defines PostgreSQL and Redis services.
+- PostgreSQL and Redis have health checks.
+- `.env.example` contains only non-secret local defaults.
+- No backend, worker, frontend, database schema, AI runtime, or UI behavior is added in this task.
+- `git status --short` shows only the expected compose/env files before commit.
 
 ## Commit Message
 
 ```text
-chore(repo): initialize platform directories
+build(deploy): add postgres and redis compose services
 ```
 
 ## Next Task
 
-Slice 1 Task 2: Add Docker Compose for PostgreSQL and Redis.
-
+Slice 1 Task 3: Add backend container placeholder.

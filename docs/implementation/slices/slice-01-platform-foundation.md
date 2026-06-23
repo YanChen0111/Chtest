@@ -15,7 +15,7 @@ Create the repository and deploy skeleton required for Chtest local development.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Initialize repository directories | planned | `find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth 1 -type f -name .gitkeep` | - | Matches Task 1 acceptance |
+| Initialize repository directories | done | `find backend frontend worker deploy prompts skills mcp_tools artifacts -maxdepth 1 -type f -name .gitkeep` | `a7cd981` | Matches Task 1 acceptance |
 | Add Docker Compose for PostgreSQL and Redis | planned | `docker compose -f deploy/docker-compose.yml config` | - | - |
 | Add backend container placeholder | planned | `docker compose -f deploy/docker-compose.yml config` | - | - |
 | Add worker container placeholder | planned | `docker compose -f deploy/docker-compose.yml config` | - | - |
