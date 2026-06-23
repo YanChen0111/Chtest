@@ -35,5 +35,27 @@ services:
       retries: 20
       start_period: 5s
 
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: chtest-backend
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://chtest:chtest@postgres:5432/chtest}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ARTIFACT_ROOT: ${ARTIFACT_ROOT:-/app/artifacts}
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      TOOL_EXECUTION_MODE: ${TOOL_EXECUTION_MODE:-local}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${CHTEST_BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ../artifacts:/app/artifacts
+
 volumes:
   postgres-data:
