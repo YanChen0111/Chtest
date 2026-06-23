@@ -67,18 +67,20 @@ Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
 
 后续 AI 开工前按顺序读：
 
-1. `memory/README.md`
-2. `memory/13-ai-readable-project-brief.md`
-3. `docs/product/01-positioning-and-scope.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `docs/contracts/04-artifact-contract.md`
-8. `docs/contracts/05-prompt-skill-contract.md`
-9. `docs/implementation/01-v1-development-process.md`
-10. `docs/implementation/02-v1-slice-plan.md`
-11. `memory/11-implementation-slices.md`
-12. `memory/08-session-handoff.md`
+1. `START_HERE_FOR_AI.md`
+2. `memory/README.md`
+3. `memory/13-ai-readable-project-brief.md`
+4. `docs/product/01-positioning-and-scope.md`
+5. `docs/implementation/00-v0.1-walking-skeleton.md`
+6. `docs/contracts/01-data-model-contract.md`
+7. `docs/contracts/02-api-contract.md`
+8. `docs/contracts/03-state-machines.md`
+9. `docs/contracts/04-artifact-contract.md`
+10. `docs/contracts/05-prompt-skill-contract.md`
+11. `docs/implementation/01-v1-development-process.md`
+12. `docs/implementation/02-v1-slice-plan.md`
+13. `memory/11-implementation-slices.md`
+14. `memory/08-session-handoff.md`
 
 按任务追加 fixtures：
 
@@ -95,6 +97,8 @@ Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
 ```text
 Slice 1 + Slice 2：Repository and Deploy Skeleton + Backend Core
 ```
+
+早期工程检查点：`docs/implementation/00-v0.1-walking-skeleton.md`。完成 Slice 1-5 后优先跑通 Project -> ContextArtifact -> Mock AITask -> artifacts -> minimal pytest execution -> minimal report JSON。
 
 具体任务：
 

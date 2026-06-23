@@ -6,7 +6,7 @@ This document is the executable V1 slice plan. Each Slice must be independently 
 
 All coding work must follow `docs/implementation/04-ai-vibecoding-governance.md`.
 
-The V1 release spine is `docs/fixtures/00-v1-demo-path.md`. Slice work must optimize for one credible evidence loop before adding broad platform features.
+The V1 release spine is `docs/fixtures/00-v1-demo-path.md`. Slice work must optimize for one credible evidence loop before adding broad platform features. `docs/implementation/00-v0.1-walking-skeleton.md` is the early engineering checkpoint used to prove the platform spine before the full V1 Minimum Demo is complete.
 
 ## 2. Slice List
 
@@ -38,6 +38,13 @@ Batch 1: Slice 1-5, including Slice 2.5.
 - Goal: platform starts, connects DB/Redis, has a Vue/Arco frontend shell, creates projects, creates AI tasks, records context artifact metadata, loads Prompt/Skill.
 - Real LLM is not required; use mock provider first.
 - Eval bench starts with mock provider and records schema/evidence metrics.
+- After Batch 1, run or implement the V0.1 Walking Skeleton smoke before expanding into all requirement/case pages.
+
+Batch 1.5: V0.1 Walking Skeleton.
+
+- Goal: API-first evidence spine: Project -> ContextArtifact -> mock AITask -> artifacts -> minimal pytest execution -> minimal report JSON.
+- Source: `docs/implementation/00-v0.1-walking-skeleton.md`.
+- This is an engineering checkpoint, not the final V1 product acceptance demo.
 
 Batch 2: Slice 6-10.
 
@@ -114,6 +121,7 @@ A Slice is complete only when:
 
 ## 8. Detailed Slice Task Plans
 
+- `docs/implementation/00-v0.1-walking-skeleton.md`
 - `docs/implementation/slices/slice-01-platform-foundation.md`
 - `docs/implementation/slices/slice-02-backend-core.md`
 - `docs/implementation/slices/slice-02-frontend-foundation.md`

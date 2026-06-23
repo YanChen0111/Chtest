@@ -23,6 +23,10 @@ When documents disagree, follow this order:
 7. `architecture/*`.
 8. `reference/*`, `reviews/*`, and `superpowers/*`.
 
+## Fast Start
+
+For implementation sessions, start with `../START_HERE_FOR_AI.md`. It gives the shortest safe reading path, first command, current recommended development path, and forbidden shortcuts.
+
 ## Documentation Entry Points
 
 | Directory | Purpose |
@@ -41,28 +45,30 @@ When documents disagree, follow this order:
 
 ## Recommended Reading Order
 
-1. `../memory/README.md`
-2. `../memory/13-ai-readable-project-brief.md`
-3. `product/01-positioning-and-scope.md`
-4. `product/02-v1-product-prd.md`
-5. `product/07-ai-testing-evidence-workbench-optimization.md`
-6. `contracts/01-data-model-contract.md`
-7. `contracts/02-api-contract.md`
-8. `contracts/03-state-machines.md`
-9. `contracts/04-artifact-contract.md`
-10. `contracts/05-prompt-skill-contract.md`
-11. `contracts/06-error-code-contract.md`
-12. `contracts/07-seed-data-contract.md`
-13. `contracts/08-mock-provider-contract.md`
-14. `fixtures/00-v1-demo-path.md`
-15. `fixtures/01-golden-requirement-to-case.md`
-16. `fixtures/02-golden-case-to-playwright.md`
-17. `fixtures/03-golden-git-quality.md`
-18. `implementation/01-v1-development-process.md`
-19. `implementation/02-v1-slice-plan.md`
-20. `implementation/03-testing-and-acceptance.md`
-21. `implementation/04-ai-vibecoding-governance.md`
-22. `product/06-frontend-ui-guidelines.md` when implementing frontend views
+1. `../START_HERE_FOR_AI.md`
+2. `../memory/README.md`
+3. `../memory/13-ai-readable-project-brief.md`
+4. `product/01-positioning-and-scope.md`
+5. `product/02-v1-product-prd.md`
+6. `product/07-ai-testing-evidence-workbench-optimization.md`
+7. `implementation/00-v0.1-walking-skeleton.md`
+8. `contracts/01-data-model-contract.md`
+9. `contracts/02-api-contract.md`
+10. `contracts/03-state-machines.md`
+11. `contracts/04-artifact-contract.md`
+12. `contracts/05-prompt-skill-contract.md`
+13. `contracts/06-error-code-contract.md`
+14. `contracts/07-seed-data-contract.md`
+15. `contracts/08-mock-provider-contract.md`
+16. `fixtures/00-v1-demo-path.md`
+17. `fixtures/01-golden-requirement-to-case.md`
+18. `fixtures/02-golden-case-to-playwright.md`
+19. `fixtures/03-golden-git-quality.md`
+20. `implementation/01-v1-development-process.md`
+21. `implementation/02-v1-slice-plan.md`
+22. `implementation/03-testing-and-acceptance.md`
+23. `implementation/04-ai-vibecoding-governance.md`
+24. `product/06-frontend-ui-guidelines.md` when implementing frontend views
 
 ## V1 Hard Constraints
 
@@ -122,6 +128,7 @@ When documents disagree, follow this order:
 
 ### Implementation And Operation
 
+- `implementation/00-v0.1-walking-skeleton.md`: Earliest runnable evidence loop before the full V1 Minimum Demo.
 - `implementation/01-v1-development-process.md`: V1 development process.
 - `implementation/01-v1-delivery-plan.md`: V1 delivery plan.
 - `implementation/02-v1-slice-plan.md`: V1 slice plan.
@@ -139,4 +146,4 @@ When documents disagree, follow this order:
 
 ## Next Step
 
-Start Slice 1 Task 1: initialize platform directories according to `implementation/slices/slice-01-platform-foundation.md`.
+Use `../START_HERE_FOR_AI.md` as the session entry. Then start Slice 1 Task 1: initialize platform directories according to `implementation/slices/slice-01-platform-foundation.md`. Keep `implementation/00-v0.1-walking-skeleton.md` as the first early evidence checkpoint while progressing through Slice 1-5.

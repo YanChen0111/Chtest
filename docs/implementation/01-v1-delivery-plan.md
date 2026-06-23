@@ -8,9 +8,11 @@ Chtest V1 目标：做成一个真实可运行的个人测试/自动化测试工
 
 ## 2. V1 交付北极星
 
-V1 先围绕一个证据闭环交付，再扩展三条最小闭环。
+V1 先围绕一个证据闭环交付，再扩展三条最小闭环。为了避免完整闭环反馈过晚，实施过程中先增加 V0.1 Walking Skeleton 作为早期工程检查点。
 
-第一优先级是 `docs/fixtures/00-v1-demo-path.md`：
+产品验收的第一优先级是 `docs/fixtures/00-v1-demo-path.md`。工程实施的早期检查点是 `docs/implementation/00-v0.1-walking-skeleton.md`。
+
+完整 V1 证据闭环是：
 
 ```text
 需求
@@ -137,7 +139,24 @@ M0 Documentation And Contracts Gate
 - 新 AI 会话能准确说出 V1 定位、三条闭环、技术栈、禁止事项。
 - 新 AI 会话能准确说出 V1 Minimum Demo 是 release spine，不能被宽功能替代。
 
-## 7. M1 Platform Foundation
+## 7. V0.1 Walking Skeleton Checkpoint
+
+目标：在完整 V1 Minimum Demo 之前，尽早证明项目上下文、AI task、artifact、pytest 执行和 report evidence 这条平台脊柱能跑通。
+
+范围以 `docs/implementation/00-v0.1-walking-skeleton.md` 为准。V0.1 可以 API-only，可以使用 mock provider，可以使用最小 report JSON；但不能绕过 V1 的安全原则，也不能替代最终 V1 Minimum Demo。
+
+建议在 Slice 1-5 完成后立刻补一个薄的 TestRun + Report smoke，而不是等所有页面、指标、Playwright、Git Quality 都完成后才首次端到端验证。
+
+验收：
+
+- `/health` 和 `/ready` 通过。
+- Project Settings bootstrap 可返回项目上下文。
+- ContextArtifact 以 Artifact 形式保存。
+- Mock AITask 记录 context artifact ids 并写出 `context_manifest.json`。
+- 最小 pytest 执行或 TestRunner stub 产生 TestRun 和执行 artifact。
+- 最小 `automation_execution` report 引用 evidence manifest。
+
+## 8. M1 Platform Foundation
 
 目标：搭建真实可运行平台骨架。
 
@@ -199,7 +218,7 @@ backend/app/main.py
 - `docker compose up` 能启动所有服务。
 - 服务之间网络连通。
 
-## 8. M2 AI Runtime Core
+## 9. M2 AI Runtime Core
 
 目标：所有 AI 任务可追踪、可重试、可审计。
 
@@ -245,7 +264,7 @@ skill_versions
 - AI task 能记录 context artifact ids；没有 context 时记录空列表。
 - mock-provider eval bench 能输出 schema_valid_rate、evidence_complete_rate 和 unsafe_output_rate。
 
-## 9. M3 Requirement To Case Mainline
+## 10. M3 Requirement To Case Mainline
 
 目标：打通需求评审到用例评审入库主线。
 
@@ -298,7 +317,7 @@ skill_versions
 - 通过评审的用例进入正式库。
 - 批次展示采纳率、驳回率、修改率、重复率、评审进度。
 
-## 10. M4 AutomationDraft And Pytest Mainline
+## 11. M4 AutomationDraft And Pytest Mainline
 
 目标：打通用例到自动化主线的 P0 执行闭环。
 
@@ -331,7 +350,7 @@ skill_versions
 - 当 docker runner 可用时，V1 demo 使用 docker runner 完成产品验收；不可用时必须记录 fallback 原因。
 - stdout/stderr/JUnit 保存为 artifact。
 
-## 11. M5 Playwright Minimal Loop
+## 12. M5 Playwright Minimal Loop
 
 目标：让 Web 自动化有最小可用闭环，不做完整低代码平台。
 
@@ -350,7 +369,7 @@ skill_versions
 - artifact 保存。
 - 失败时进入 FailureAnalysisAgent。
 
-## 12. M6 Reports And Failure Analysis
+## 13. M6 Reports And Failure Analysis
 
 目标：生成有证据的质量报告。
 
@@ -375,7 +394,7 @@ skill_versions
 - 未归因失败不能给出通过结论。
 - V1 Minimum Demo report 能回答：AI 分析了什么、用了哪些 context、执行了哪个 runtime artifact、证据是什么、失败后下一步是什么。
 
-## 13. M7 Git Quality Supporting Flow
+## 14. M7 Git Quality Supporting Flow
 
 目标：保留用户明确要求的 push/diff 后补单测和回归能力，但作为 V1 支线推进。
 
@@ -405,7 +424,7 @@ skill_versions
 - pytest 新增测试和回归可执行。
 - 生成 GitQualityReport。
 
-## 14. M8 Extension Surface And Hardening
+## 15. M8 Extension Surface And Hardening
 
 目标：让 V1 可长期使用和扩展。
 
@@ -427,7 +446,7 @@ skill_versions
 - 文档说明如何接外部 RAG。
 - Docker 环境可重复启动。
 
-## 15. 每个 Slice 的 Definition Of Done
+## 16. 每个 Slice 的 Definition Of Done
 
 每个 Slice 完成前必须满足：
 
@@ -441,7 +460,7 @@ skill_versions
 - artifact 和日志可追踪。
 - memory 的 `07-dev-log.md` 和 `08-session-handoff.md` 已更新。
 
-## 16. 推荐第一批实现任务
+## 17. 推荐第一批实现任务
 
 第一批不应该先做复杂 AI 生成，而是先搭平台骨架：
 
@@ -455,10 +474,11 @@ skill_versions
 8. 建 Worker 空任务。
 9. 建 mock LLM provider。
 10. 建 Prompt/Skill Registry。
+11. 按 `docs/implementation/00-v0.1-walking-skeleton.md` 跑通早期 evidence loop。
 
-完成后再进入需求评审和用例生成。
+完成 V0.1 后再进入完整需求评审和用例生成。
 
-## 17. 风险与应对
+## 18. 风险与应对
 
 | 风险 | 应对 |
 |---|---|
@@ -470,18 +490,19 @@ skill_versions
 | 测试工具环境复杂 | TestRunner/pytest 优先，Playwright 最小闭环，其余后置 |
 | 后续 AI 读不懂上下文 | 每次更新 memory，保持 docs/README 和 memory/README 最新 |
 
-## 18. 后续 AI 开发开工协议
+## 19. 后续 AI 开发开工协议
 
 每次新的 AI 会话必须：
 
 1. 进入 `/Users/yanchen/VscodeProject/Chtest`。
-2. 读取 `memory/README.md`。
-3. 读取 `memory/13-ai-readable-project-brief.md`。
-4. 查看 `docs/product/01-positioning-and-scope.md`。
-5. 查看 `docs/contracts/*`。
-6. 查看本次任务相关 `docs/fixtures/*`。
-7. 查看 `docs/implementation/01-v1-development-process.md`。
-8. 查看 `memory/11-implementation-slices.md`。
-9. 查看 `git status --short`。
-10. 选择一个最小 Slice。
-11. 实现、验证、更新 memory。
+2. 读取 `START_HERE_FOR_AI.md`。
+3. 读取 `memory/README.md`。
+4. 读取 `memory/13-ai-readable-project-brief.md`。
+5. 查看 `docs/product/01-positioning-and-scope.md`。
+6. 查看 `docs/contracts/*`。
+7. 查看本次任务相关 `docs/fixtures/*`。
+8. 查看 `docs/implementation/01-v1-development-process.md`。
+9. 查看 `memory/11-implementation-slices.md`。
+10. 查看 `git status --short`。
+11. 选择一个最小 Slice。
+12. 实现、验证、更新 memory。

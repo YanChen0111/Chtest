@@ -1,6 +1,6 @@
 # Chtest Memory Index
 
-This directory is the long-term memory for Chtest. Read it before every new AI development session and update it at the end of each session.
+This directory is the long-term memory for Chtest. Read it before every new AI development session and update it at the end of each session. For the shortest implementation entry, read `../START_HERE_FOR_AI.md` first.
 
 The purpose is to let long-running vibe coding continue from stable project facts instead of transient chat context.
 
@@ -39,36 +39,38 @@ The first and second loops are mainlines. The third loop is a support workflow.
 
 Full order:
 
-1. `README.md`
-2. `00-ai-session-protocol.md`
-3. `13-ai-readable-project-brief.md`
-4. `01-product-prd.md`
-5. `02-platform-spec.md`
-6. `03-tech-stack.md`
-7. `04-project-constraints.md`
-8. `05-roadmap.md`
-9. `06-architecture-decisions.md`
-10. `07-dev-log.md`
-11. `08-session-handoff.md`
-12. `09-reference-framework-review.md`
-13. `10-superpowers-review.md`
-14. `11-implementation-slices.md`
-15. `12-agent-mcp-skill-design.md`
+1. `../START_HERE_FOR_AI.md`
+2. `README.md`
+3. `00-ai-session-protocol.md`
+4. `13-ai-readable-project-brief.md`
+5. `01-product-prd.md`
+6. `02-platform-spec.md`
+7. `03-tech-stack.md`
+8. `04-project-constraints.md`
+9. `05-roadmap.md`
+10. `06-architecture-decisions.md`
+11. `07-dev-log.md`
+12. `08-session-handoff.md`
+13. `09-reference-framework-review.md`
+14. `10-superpowers-review.md`
+15. `11-implementation-slices.md`
+16. `12-agent-mcp-skill-design.md`
 
 Required docs:
 
 1. `docs/product/01-positioning-and-scope.md`
-2. `docs/contracts/01-data-model-contract.md`
-3. `docs/contracts/02-api-contract.md`
-4. `docs/contracts/03-state-machines.md`
-5. `docs/contracts/04-artifact-contract.md`
-6. `docs/contracts/05-prompt-skill-contract.md`
-7. `docs/contracts/06-error-code-contract.md`
-8. `docs/contracts/07-seed-data-contract.md`
-9. `docs/contracts/08-mock-provider-contract.md`
-10. `docs/implementation/01-v1-development-process.md`
-11. `docs/implementation/02-v1-slice-plan.md`
-12. `docs/implementation/04-ai-vibecoding-governance.md`
+2. `docs/implementation/00-v0.1-walking-skeleton.md`
+3. `docs/contracts/01-data-model-contract.md`
+4. `docs/contracts/02-api-contract.md`
+5. `docs/contracts/03-state-machines.md`
+6. `docs/contracts/04-artifact-contract.md`
+7. `docs/contracts/05-prompt-skill-contract.md`
+8. `docs/contracts/06-error-code-contract.md`
+9. `docs/contracts/07-seed-data-contract.md`
+10. `docs/contracts/08-mock-provider-contract.md`
+11. `docs/implementation/01-v1-development-process.md`
+12. `docs/implementation/02-v1-slice-plan.md`
+13. `docs/implementation/04-ai-vibecoding-governance.md`
 
 Task-specific fixtures:
 
@@ -79,14 +81,15 @@ Task-specific fixtures:
 
 Minimum reading set under tight context:
 
-1. `README.md`
-2. `13-ai-readable-project-brief.md`
-3. `docs/product/01-positioning-and-scope.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `11-implementation-slices.md`
-8. `08-session-handoff.md`
+1. `../START_HERE_FOR_AI.md`
+2. `README.md`
+3. `13-ai-readable-project-brief.md`
+4. `docs/product/01-positioning-and-scope.md`
+5. `docs/contracts/01-data-model-contract.md`
+6. `docs/contracts/02-api-contract.md`
+7. `docs/contracts/03-state-machines.md`
+8. `11-implementation-slices.md`
+9. `08-session-handoff.md`
 
 ## Canonical Source Of Truth
 
@@ -94,11 +97,14 @@ When documents disagree, follow this order:
 
 1. `docs/product/01-positioning-and-scope.md`.
 2. `docs/contracts/*`.
-3. `docs/implementation/01-v1-delivery-plan.md`.
-4. `memory/13-ai-readable-project-brief.md`.
-5. `docs/fixtures/*`.
-6. `docs/architecture/*`.
-7. `docs/reference/*`, `docs/reviews/*`, and `docs/superpowers/*`.
+3. `docs/implementation/04-ai-vibecoding-governance.md`.
+4. `docs/implementation/01-v1-delivery-plan.md`.
+5. `memory/13-ai-readable-project-brief.md`.
+6. `docs/fixtures/*`.
+7. `docs/architecture/*`.
+8. `docs/reference/*`, `docs/reviews/*`, and `docs/superpowers/*`.
+
+`docs/implementation/00-v0.1-walking-skeleton.md` is an early engineering checkpoint. It guides implementation order, but it does not override product scope, contracts, or safety governance.
 
 ## Update Rules After Development
 
@@ -162,6 +168,8 @@ Update related files when scope changes:
 - Technical guide: `docs/architecture/03-implementation-technology.md`
 - Agent workflow: `docs/architecture/04-agent-workflow-design.md`
 - Git Quality design: `docs/architecture/05-git-quality-center-design.md`
+- Start here: `START_HERE_FOR_AI.md`
+- V0.1 Walking Skeleton: `docs/implementation/00-v0.1-walking-skeleton.md`
 - Development process: `docs/implementation/01-v1-development-process.md`
 - Delivery plan: `docs/implementation/01-v1-delivery-plan.md`
 - Slice plan: `docs/implementation/02-v1-slice-plan.md`
@@ -183,8 +191,8 @@ Update related files when scope changes:
 
 ## Current State
 
-- Phase: V1 implementation-ready documentation, contracts, Golden Paths, and Slice 1/2 Task plans are complete.
-- Focus: start Slice 1 Task 1, then proceed through Slice 1 and Slice 2 with Task-level verification and commits.
+- Phase: V1 implementation-ready documentation, contracts, Golden Paths, V0.1 Walking Skeleton, and Slice 1/2 Task plans are complete.
+- Focus: start from `START_HERE_FOR_AI.md`, execute Slice 1 Task 1, then progress toward the V0.1 evidence loop with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
 
 ## Implementation Principles

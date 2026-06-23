@@ -27,6 +27,7 @@
 - Chtest 已初始化为独立 Git 仓库，当前分支 `main`。
 - Git remote `origin` 已设置为 `https://github.com/2696437448-cmyk/Chtest.git`。
 - 当前最新已 push commit：`1fb52c1 docs(process): tighten vibecoding readiness docs`。
+- 当前本地最新文档基线 commit：`422ecfd docs(process): freeze v1 vibecoding baseline`。
 - GitHub 提示仓库已迁移到 `https://github.com/YanChen0111/Chtest.git`，但当前 origin 仍指向旧地址。
 - 本轮 ContextArtifact 文档契约修复作为本地提交保存；push 仍需用户明确要求。
 
@@ -65,6 +66,8 @@
 
 ## 当前正式文档结构重点
 
+- AI 开工入口：`START_HERE_FOR_AI.md`
+- V0.1 早期闭环：`docs/implementation/00-v0.1-walking-skeleton.md`
 - 定位：`docs/product/01-positioning-and-scope.md`
 - 总 PRD：`docs/product/02-v1-product-prd.md`
 - 页面 PRD：`docs/product/03-user-journey-and-page-prd.md`
@@ -87,18 +90,19 @@
 ## 下次 AI 会话开工步骤
 
 1. 进入 `/Users/yanchen/VscodeProject/Chtest`。
-2. 读取 `memory/README.md`。
-3. 读取 `memory/13-ai-readable-project-brief.md`。
-4. 读取 `docs/product/01-positioning-and-scope.md`。
-5. 读取 `docs/contracts/*`。
-6. 根据任务读取 `docs/fixtures/*`。
-7. 查看 `docs/implementation/01-v1-development-process.md`。
-8. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
-9. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
-10. 查看 `git status --short`。
-11. 进入 Slice 1 Task 1：Initialize repository directories。
-12. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
-
+2. 读取 `START_HERE_FOR_AI.md`。
+3. 读取 `memory/README.md`。
+4. 读取 `memory/13-ai-readable-project-brief.md`。
+5. 读取 `docs/product/01-positioning-and-scope.md`。
+6. 读取 `docs/implementation/00-v0.1-walking-skeleton.md`。
+7. 读取 `docs/contracts/*`。
+8. 根据任务读取 `docs/fixtures/*`。
+9. 查看 `docs/implementation/01-v1-development-process.md`。
+10. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
+11. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
+12. 查看 `git status --short`。
+13. 进入 Slice 1 Task 1：Initialize repository directories。
+14. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
 
 ## Memory 更新原则
 
@@ -142,6 +146,7 @@ Next recommended Task:
 
 开始实现 V1 平台骨架：
 
+- 先读 `START_HERE_FOR_AI.md` 和 `docs/implementation/00-v0.1-walking-skeleton.md`。
 - 按 `docs/implementation/slices/slice-01-platform-foundation.md` 执行 Slice 1 Task 1，初始化 backend/frontend/worker/deploy/prompts/skills/mcp_tools/artifacts 目录。
 - 写 `deploy/docker-compose.yml`，启动 PostgreSQL + Redis。
 - 建 FastAPI 健康检查和数据库连接。
@@ -149,6 +154,7 @@ Next recommended Task:
 - 建 Vue 3 + Arco 前端骨架。
 - 做单用户上下文。
 - 建 mock LLM provider，为后续 AI Task Core 铺路。
+- 完成 Slice 1-5 后，优先跑 V0.1 Walking Skeleton，再扩展完整 V1 Minimum Demo。
 
 ## 仍需用户确认
 
