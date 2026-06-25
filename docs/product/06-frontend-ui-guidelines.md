@@ -6,6 +6,17 @@ This document gives V1 frontend implementation guidance so vibe coding produces 
 
 Chtest is a personal AI testing design and automation workbench. The UI should help one tester quickly review AI output, approve safe actions, inspect evidence, and continue the three product loops.
 
+## 1.1 User-Facing Language
+
+- All visible page titles, navigation labels, buttons, empty states, table headers, and helper copy should be Chinese-first.
+- Keep technical English only when the term is a product contract, code symbol, or industry term that would be more precise in English, such as `Prompt`, `Skill`, `Playwright`, `MCP`, or `TestCommand`.
+- The following user-facing contract names must be rendered in Chinese in the UI:
+  - `ContextArtifact` -> `上下文工件`
+  - `AITask` -> `AI 任务`
+  - `LLMCallLog` -> `大模型调用日志`
+  - `Artifact` -> `工件`
+- Technical identifiers can remain in code, API payloads, and logs, but visible labels must prefer Chinese text.
+
 ## 2. Design Direction
 
 - Workbench-first, not landing-page-first.
@@ -18,16 +29,16 @@ Chtest is a personal AI testing design and automation workbench. The UI should h
 
 Primary navigation should follow V1 work:
 
-1. AI Workbench.
-2. Requirement Review.
-3. Case Generation Review.
-4. Test Case Library.
-5. Automation Draft Center.
-6. Execution Center.
-7. Git Quality Center.
-8. Report Center.
-9. Prompt / Skill Center.
-10. Settings.
+1. AI 工作台.
+2. 需求评审.
+3. 用例生成评审.
+4. 用例库.
+5. 自动化草稿中心.
+6. 执行中心.
+7. Git 质量中心.
+8. 报告中心.
+9. Prompt / Skill 中心.
+10. 设置.
 
 Do not add enterprise navigation such as departments, members, roles, permissions, SSO, audit center, or tenant management in V1.
 

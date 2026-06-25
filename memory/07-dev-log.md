@@ -127,3 +127,25 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Continue Slice 1 Task 4 from `NEXT_AI_TASK.md`: add worker container placeholder.
+
+## 2026-06-25 Frontend Chinese UI Alignment
+
+### Completed
+
+- Reconciled frontend design docs to Chinese-first visible copy.
+- Added explicit UI naming rules:
+  - `ContextArtifact` -> `上下文工件`
+  - `AITask` -> `AI 任务`
+  - `LLMCallLog` -> `大模型调用日志`
+  - `Artifact` -> `工件`
+- Updated page PRD section names and user-facing entities so future frontend coding uses Chinese labels by default.
+- Updated Slice 02.5 frontend task plan and `NEXT_AI_TASK.md` so the next AI coding session starts from frontend scaffold work instead of the stale Slice 1 worker placeholder.
+
+### Verification
+
+- Documentation-only change.
+- Required checks: `git diff --check`, `git diff --name-only`, and readback of `NEXT_AI_TASK.md`.
+
+### Next Step
+
+- Continue from `NEXT_AI_TASK.md`: Slice 02.5 Task 1, scaffold Vue 3 + TypeScript + Vite frontend app.
