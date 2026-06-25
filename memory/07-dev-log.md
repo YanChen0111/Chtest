@@ -148,4 +148,6 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 ### Next Step
 
-- Continue from `NEXT_AI_TASK.md`: Slice 02.5 Task 1, scaffold Vue 3 + TypeScript + Vite frontend app.
+- Slice 02.5 Task 1 completed in commit `daf5b7c`: scaffolded Vue 3 + TypeScript + Vite frontend app.
+- Verification: `npm --prefix frontend run build`, `npm --prefix frontend run test -- --run`, and `git diff --check`.
+- Continue from `NEXT_AI_TASK.md`: Slice 02.5 Task 2, add Arco, router, store, and API shell with Chinese-first visible copy.

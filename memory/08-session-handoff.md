@@ -35,7 +35,8 @@
 - 当前未 push 的本地提交包括 Slice 1 Tasks 1-3 和后续 handoff 更新。
 - GitHub 提示仓库已迁移到 `https://github.com/YanChen0111/Chtest.git`，但当前 origin 仍指向旧地址。
 - 本轮 ContextArtifact 文档契约修复作为本地提交保存；push 仍需用户明确要求。
-- 当前 `NEXT_AI_TASK.md` 已从旧的 Slice 1 worker 任务切换到 Slice 02.5 Frontend Foundation Task 1。
+- Slice 02.5 Task 1 已完成并提交：`daf5b7c feat(frontend): scaffold vue workbench app`。
+- 当前 `NEXT_AI_TASK.md` 已切换到 Slice 02.5 Task 2：Add Arco, router, store, and API shell。
 
 ## 2026-06-23 继续执行更新
 
@@ -156,7 +157,7 @@ docker compose -f deploy/docker-compose.yml config
 10. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
 11. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
 12. 查看 `git status --short`。
-13. 进入 Slice 02.5 Task 1：Scaffold Vue Vite app。
+13. 进入 Slice 02.5 Task 2：Add Arco, router, store, and API shell。
 14. 前端页面文案必须中文优先；`Prompt`、`Skill`、`MCP` 等技术词可保留英文，优先作为专业术语而不是默认页面英文。
 15. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
 
@@ -203,7 +204,7 @@ Next recommended Task:
 开始实现 V1 平台骨架：
 
 - 先读 `START_HERE_FOR_AI.md` 和 `docs/implementation/00-v0.1-walking-skeleton.md`。
-- 按 `NEXT_AI_TASK.md` 执行 Slice 02.5 Task 1：创建 Vue 3 + TypeScript + Vite 前端骨架。
+- 按 `NEXT_AI_TASK.md` 执行 Slice 02.5 Task 2：接入 Arco Design Vue、Vue Router、Pinia 和 API client shell。
 - PostgreSQL + Redis Compose 和 backend placeholder 已完成。
 - 建 FastAPI 健康检查和数据库连接。
 - 建 Alembic 迁移骨架。

@@ -10,13 +10,13 @@ Slice 02.5: Frontend Foundation.
 
 ## Current Task
 
-Task 1: Scaffold Vue Vite app.
+Task 2: Add Arco, router, store, and API shell.
 
 ## Product Value Answer
 
-After this task, Chtest has a real frontend application skeleton that future AI
-coding sessions can extend without redoing the build tooling, TypeScript
-baseline, or app entry structure.
+After this task, Chtest has a reusable Chinese-first workbench shell with
+navigation, routing, state, and an API client base so later pages can be added
+without inventing frontend structure again.
 
 ## Must Read
 
@@ -39,38 +39,41 @@ baseline, or app entry structure.
 Create or update only these files for the current task:
 
 ```text
-frontend/package.json
 frontend/package-lock.json
-frontend/index.html
-frontend/vite.config.ts
-frontend/tsconfig.json
+frontend/package.json
 frontend/src/main.ts
 frontend/src/App.vue
-frontend/src/env.d.ts
-frontend/src/App.spec.ts
+frontend/src/api/client.ts
+frontend/src/layouts/WorkbenchLayout.vue
+frontend/src/layouts/WorkbenchLayout.spec.ts
+frontend/src/router/index.ts
+frontend/src/stores/index.ts
+frontend/src/styles/global.css
+frontend/src/views/ai-workbench/AiWorkbenchView.vue
 ```
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run build
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: Vite builds the frontend application successfully.
+Expected result: Vitest runs the frontend shell tests successfully.
 
 ## Acceptance
 
-- `frontend` contains a working Vue 3 + TypeScript + Vite scaffold.
-- The scaffold is ready for Chinese-first UI copy and Arco Design Vue shell work.
-- No backend APIs, business pages, or execution flows are added in this task.
-- `git status --short` shows only the expected frontend scaffold files before commit.
+- Arco Design Vue, Vue Router, Pinia, and the API client shell are wired.
+- The main layout shows Chinese-first navigation labels.
+- The initial AI 工作台 page uses Chinese visible copy and no marketing landing page.
+- No Project Settings forms, business APIs, or execution flows are added in this task.
+- `git status --short` shows only the expected frontend shell files before commit.
 
 ## Commit Message
 
 ```text
-feat(frontend): scaffold vue workbench app
+feat(frontend): add workbench shell
 ```
 
 ## Next Task
 
-Slice 02.5 Task 2: Add Arco, router, store, and API shell.
+Slice 02.5 Task 3: Add frontend Docker dev command.
