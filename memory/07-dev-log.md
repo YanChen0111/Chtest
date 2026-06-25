@@ -153,4 +153,9 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Slice 02.5 Task 2 completed in commit `2ec1c7c`: added Arco Design Vue, Vue Router, Pinia, API client shell, Chinese-first workbench layout, and AI 工作台页面。
 - Verification: `npm --prefix frontend run test -- --run`, `npm --prefix frontend run build`, and `git diff --check`.
 - Residual note: the Vite build passes but warns that the current Arco-based bundle is large; optimization can happen later and does not block Slice 02.5 Task 2 acceptance.
-- Continue from `NEXT_AI_TASK.md`: Slice 02.5 Task 3, wire the frontend Vite dev server into Docker Compose.
+- Slice 02.5 Task 3 completed in commit `6526a2b`: added frontend Dockerfile, frontend README, and Docker Compose frontend service for the Vite dev server。
+- Verification: `docker compose -f deploy/docker-compose.yml config`, `npm --prefix frontend run test -- --run`, `npm --prefix frontend run build`, and `git diff --check`.
+- Slice 02.5 Task 4 completed in commit `de1f5fd`: added typed frontend `/health` helper plus AI 工作台 success/failure smoke tests。
+- Verification: `npm --prefix frontend run test -- --run`, `npm --prefix frontend run build`, and `git diff --check`.
+- Slice 02.5 Frontend Foundation is now complete.
+- Continue from `NEXT_AI_TASK.md`: Slice 03 Task 1, add project core models and migration.

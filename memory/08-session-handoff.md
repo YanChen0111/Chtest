@@ -37,8 +37,11 @@
 - 本轮 ContextArtifact 文档契约修复作为本地提交保存；push 仍需用户明确要求。
 - Slice 02.5 Task 1 已完成并提交：`daf5b7c feat(frontend): scaffold vue workbench app`。
 - Slice 02.5 Task 2 已完成并提交：`2ec1c7c feat(frontend): add workbench shell`。
-- 当前 `NEXT_AI_TASK.md` 已切换到 Slice 02.5 Task 3：Add frontend Docker dev command。
-- 当前前端 shell 已有中文主导航、AI 工作台首页、Pinia、Vue Router、Arco Design Vue 和 `api/client.ts`。
+- Slice 02.5 Task 3 已完成并提交：`6526a2b build(frontend): wire vite dev container`。
+- Slice 02.5 Task 4 已完成并提交：`de1f5fd feat(frontend): add health probe smoke`。
+- Slice 02.5 Frontend Foundation 已完成。
+- 当前 `NEXT_AI_TASK.md` 已切换到 Slice 03 Task 1：Add Project Core models and migration。
+- 当前前端 shell 已有中文主导航、AI 工作台首页、Pinia、Vue Router、Arco Design Vue、`api/client.ts` 和 `/health` smoke。
 - 当前前端 build 会给出 bundle 偏大的 warning，来源于 Arco baseline；不是阻塞问题，但后续可以在稳定后做按需优化。
 
 ## 2026-06-23 继续执行更新
@@ -160,9 +163,9 @@ docker compose -f deploy/docker-compose.yml config
 10. 读取 `docs/implementation/04-ai-vibecoding-governance.md`。
 11. 查看 `docs/implementation/02-v1-slice-plan.md` 或 `memory/11-implementation-slices.md`。
 12. 查看 `git status --short`。
-13. 进入 Slice 02.5 Task 3：Add frontend Docker dev command。
-14. 前端页面文案必须中文优先；`Prompt`、`Skill`、`MCP` 等技术词可保留英文，优先作为专业术语而不是默认页面英文。
-15. Task 3 重点是 `frontend/Dockerfile`、`frontend/README.md` 和 `deploy/docker-compose.yml`，不要顺手扩成生产打包或 CI 部署。
+13. 进入 Slice 03 Task 1：Add Project Core models and migration。
+14. Slice 03 先做 backend models/migration，再做 API，再做 frontend Project Settings shell。
+15. 前端页面文案继续保持中文优先；backend 这一轮不要顺手扩成 AI runtime、ToolInvocation 或多用户权限。
 16. 每次只做一个 Slice 内的 1-3 个 Task；每个完成 Task 必须验证并 commit；Slice 完成或重大上下文变化时更新 handoff。
 
 ## Memory 更新原则
@@ -208,7 +211,7 @@ Next recommended Task:
 开始实现 V1 平台骨架：
 
 - 先读 `START_HERE_FOR_AI.md` 和 `docs/implementation/00-v0.1-walking-skeleton.md`。
-- 按 `NEXT_AI_TASK.md` 执行 Slice 02.5 Task 3：把前端 Vite dev server 接入 Docker Compose。
+- 按 `NEXT_AI_TASK.md` 执行 Slice 03 Task 1：先落 Project / Module / Repository / Environment / TestCommand 的 model 和 migration。
 - PostgreSQL + Redis Compose 和 backend placeholder 已完成。
 - 建 FastAPI 健康检查和数据库连接。
 - 建 Alembic 迁移骨架。

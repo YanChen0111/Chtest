@@ -6,30 +6,32 @@ full docs so an AI worker can start fast without rereading the whole planning se
 
 ## Current Slice
 
-Slice 02.5: Frontend Foundation.
+Slice 03: Project Core.
 
 ## Current Task
 
-Task 3: Add frontend Docker dev command.
+Task 1: Add Project Core models and migration.
 
 ## Product Value Answer
 
-After this task, Chtest frontend can run through Docker Compose with a stable
-dev command, so later frontend work does not depend on ad hoc local startup.
+After this task, Chtest has persistent project context records for project,
+module, repository, environment, and test command, which unlocks every later
+AI, execution, and report workflow.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
-2. `docs/implementation/slices/slice-02-frontend-foundation.md`
-3. `docs/deployment/01-docker-environment.md`
-4. `docs/product/06-frontend-ui-guidelines.md`
-5. `docs/implementation/04-ai-vibecoding-governance.md`
-6. `docs/implementation/05-execution-efficiency-plan.md`
+2. `docs/implementation/slices/slice-03-project-core.md`
+3. `docs/contracts/01-data-model-contract.md`
+4. `docs/contracts/02-api-contract.md`
+5. `docs/contracts/03-state-machines.md`
+6. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
 - Backend architecture deep dives.
 - Open-source migration references.
+- Frontend page polish docs beyond shell level.
 - Git Quality implementation docs.
 - Playwright, Newman, JMeter, Appium, traffic-capture roadmap docs.
 
@@ -38,32 +40,35 @@ dev command, so later frontend work does not depend on ad hoc local startup.
 Create or update only these files for the current task:
 
 ```text
-frontend/Dockerfile
-frontend/README.md
-deploy/docker-compose.yml
+backend/app/modules/projects/models.py
+backend/app/modules/projects/schemas.py
+backend/app/modules/projects/service.py
+backend/alembic/versions/<revision>_project_core.py
+backend/app/tests/db/test_project_core_models.py
 ```
 
 ## Verification Command
 
 ```bash
-docker compose -f deploy/docker-compose.yml config
+pytest backend/app/tests/db/test_project_core_models.py -q
 ```
 
-Expected result: Docker Compose renders the frontend service without errors.
+Expected result: the new project core model test passes.
 
 ## Acceptance
 
-- `deploy/docker-compose.yml` includes a frontend service for the Vite dev server.
-- The frontend container command aligns with the documented local dev flow.
-- No production nginx packaging or CI deployment is added in this task.
-- `git status --short` shows only the expected Docker/frontend container files before commit.
+- SQLAlchemy models exist for Project, Module, Repository, Environment, and TestCommand.
+- The migration creates the project core tables with the contract fields needed by later slices.
+- Workspace/User ownership assumptions remain single-user V1 only.
+- No AI task models, ToolInvocation, or multi-user permissions are added in this task.
+- `git status --short` shows only the expected backend model, migration, and test files before commit.
 
 ## Commit Message
 
 ```text
-build(frontend): wire vite dev container
+feat(projects): add project core models
 ```
 
 ## Next Task
 
-Slice 02.5 Task 4: Add frontend health and API smoke.
+Slice 03 Task 2: add project settings api.
