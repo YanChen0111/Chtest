@@ -150,4 +150,7 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Slice 02.5 Task 1 completed in commit `daf5b7c`: scaffolded Vue 3 + TypeScript + Vite frontend app.
 - Verification: `npm --prefix frontend run build`, `npm --prefix frontend run test -- --run`, and `git diff --check`.
-- Continue from `NEXT_AI_TASK.md`: Slice 02.5 Task 2, add Arco, router, store, and API shell with Chinese-first visible copy.
+- Slice 02.5 Task 2 completed in commit `2ec1c7c`: added Arco Design Vue, Vue Router, Pinia, API client shell, Chinese-first workbench layout, and AI 工作台页面。
+- Verification: `npm --prefix frontend run test -- --run`, `npm --prefix frontend run build`, and `git diff --check`.
+- Residual note: the Vite build passes but warns that the current Arco-based bundle is large; optimization can happen later and does not block Slice 02.5 Task 2 acceptance.
+- Continue from `NEXT_AI_TASK.md`: Slice 02.5 Task 3, wire the frontend Vite dev server into Docker Compose.

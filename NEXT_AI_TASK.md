@@ -10,20 +10,19 @@ Slice 02.5: Frontend Foundation.
 
 ## Current Task
 
-Task 2: Add Arco, router, store, and API shell.
+Task 3: Add frontend Docker dev command.
 
 ## Product Value Answer
 
-After this task, Chtest has a reusable Chinese-first workbench shell with
-navigation, routing, state, and an API client base so later pages can be added
-without inventing frontend structure again.
+After this task, Chtest frontend can run through Docker Compose with a stable
+dev command, so later frontend work does not depend on ad hoc local startup.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/implementation/slices/slice-02-frontend-foundation.md`
-3. `docs/product/06-frontend-ui-guidelines.md`
-4. `docs/product/03-user-journey-and-page-prd.md`
+3. `docs/deployment/01-docker-environment.md`
+4. `docs/product/06-frontend-ui-guidelines.md`
 5. `docs/implementation/04-ai-vibecoding-governance.md`
 6. `docs/implementation/05-execution-efficiency-plan.md`
 
@@ -39,41 +38,32 @@ without inventing frontend structure again.
 Create or update only these files for the current task:
 
 ```text
-frontend/package-lock.json
-frontend/package.json
-frontend/src/main.ts
-frontend/src/App.vue
-frontend/src/api/client.ts
-frontend/src/layouts/WorkbenchLayout.vue
-frontend/src/layouts/WorkbenchLayout.spec.ts
-frontend/src/router/index.ts
-frontend/src/stores/index.ts
-frontend/src/styles/global.css
-frontend/src/views/ai-workbench/AiWorkbenchView.vue
+frontend/Dockerfile
+frontend/README.md
+deploy/docker-compose.yml
 ```
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+docker compose -f deploy/docker-compose.yml config
 ```
 
-Expected result: Vitest runs the frontend shell tests successfully.
+Expected result: Docker Compose renders the frontend service without errors.
 
 ## Acceptance
 
-- Arco Design Vue, Vue Router, Pinia, and the API client shell are wired.
-- The main layout shows Chinese-first navigation labels.
-- The initial AI 工作台 page uses Chinese visible copy and no marketing landing page.
-- No Project Settings forms, business APIs, or execution flows are added in this task.
-- `git status --short` shows only the expected frontend shell files before commit.
+- `deploy/docker-compose.yml` includes a frontend service for the Vite dev server.
+- The frontend container command aligns with the documented local dev flow.
+- No production nginx packaging or CI deployment is added in this task.
+- `git status --short` shows only the expected Docker/frontend container files before commit.
 
 ## Commit Message
 
 ```text
-feat(frontend): add workbench shell
+build(frontend): wire vite dev container
 ```
 
 ## Next Task
 
-Slice 02.5 Task 3: Add frontend Docker dev command.
+Slice 02.5 Task 4: Add frontend health and API smoke.
