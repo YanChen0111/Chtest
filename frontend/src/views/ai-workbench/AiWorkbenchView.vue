@@ -6,6 +6,16 @@
       <p>从需求评审开始，把 AI 输出、人工决策、执行工件和报告结论串成可信证据链。</p>
     </div>
 
+    <a-card class="health-card" :bordered="false">
+      <div class="health-row">
+        <div>
+          <p class="health-label">后端健康</p>
+          <strong>{{ healthLabel }}</strong>
+        </div>
+        <span class="health-detail">{{ healthDetail }}</span>
+      </div>
+    </a-card>
+
     <div class="metric-grid">
       <a-card v-for="metric in metrics" :key="metric.label" class="metric-card" :bordered="false">
         <span>{{ metric.label }}</span>
@@ -24,6 +34,10 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from 'vue';
+
+import { getBackendHealth } from '../../api/health';
+
 interface MetricCard {
   readonly label: string;
   readonly value: string;
@@ -59,4 +73,13 @@ const flows: FlowCard[] = [
     action: '创建 Git 质量分析',
   },
 ];
+
+const healthLabel = ref('检测中');
+const healthDetail = ref('正在检查后端 /health');
+
+onMounted(async () => {
+  const result = await getBackendHealth();
+  healthLabel.value = result.state;
+  healthDetail.value = result.rawText;
+});
 </script>
