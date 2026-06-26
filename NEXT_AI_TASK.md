@@ -32,7 +32,7 @@ AI, execution, and report workflow.
 - Backend architecture deep dives.
 - Open-source migration references.
 - Frontend page polish docs beyond shell level.
-- Git Quality implementation docs.
+- CI/CD Management implementation docs.
 - Playwright, Newman, JMeter, Appium, traffic-capture roadmap docs.
 
 ## Expected Files

@@ -32,9 +32,9 @@ V1 的三条最小闭环：
 
 1. 需求到用例：需求评审 -> 候选用例 -> 人工评审 -> 用例库。
 2. 用例到自动化：AutomationDraft -> 审批 -> pytest/Playwright 执行 -> 报告。
-3. 代码到质量：Git diff -> UnitTestPatch -> 审批 -> pytest 回归 -> 质量结论。
+3. CI/CD 到质量：CI/CD 管理中的本地 Git diff -> UnitTestPatch -> 审批 -> pytest 回归 -> 质量结论。
 
-第一条和第二条组成主证据闭环，第三条是支线能力。Git Quality 不能压过 V1 Minimum Demo。
+第一条和第二条组成主证据闭环，第三条是支线能力。CI/CD 管理不能压过 V1 Minimum Demo，也不是 V1 云 CI/CD 平台。
 
 ## 3. 开发总原则
 
@@ -65,7 +65,7 @@ Chtest/
         case_generation/
         test_cases/
         automation_drafts/
-        git_quality/
+        cicd_quality/
         ai_tasks/
         prompts/
         skills/
@@ -106,7 +106,7 @@ M0 Documentation And Contracts Gate
   -> M4 AutomationDraft And Pytest Mainline
   -> M5 Playwright Minimal Loop
   -> M6 Reports And Failure Analysis
-  -> M7 Git Quality Supporting Flow
+  -> M7 CI/CD Management Supporting Flow
   -> M8 Extension Surface And Hardening
 ```
 
@@ -145,7 +145,7 @@ M0 Documentation And Contracts Gate
 
 范围以 `docs/implementation/00-v0.1-walking-skeleton.md` 为准。V0.1 可以 API-only，可以使用 mock provider，可以使用最小 report JSON；但不能绕过 V1 的安全原则，也不能替代最终 V1 Minimum Demo。
 
-建议在 Slice 1-5 完成后立刻补一个薄的 TestRun + Report smoke，而不是等所有页面、指标、Playwright、Git Quality 都完成后才首次端到端验证。
+建议在 Slice 1-5 完成后立刻补一个薄的 TestRun + Report smoke，而不是等所有页面、指标、Playwright、CI/CD 管理都完成后才首次端到端验证。
 
 验收：
 
@@ -394,27 +394,27 @@ skill_versions
 - 未归因失败不能给出通过结论。
 - V1 Minimum Demo report 能回答：AI 分析了什么、用了哪些 context、执行了哪个 runtime artifact、证据是什么、失败后下一步是什么。
 
-## 14. M7 Git Quality Supporting Flow
+## 14. M7 CI/CD Management Supporting Flow
 
 目标：保留用户明确要求的 push/diff 后补单测和回归能力，但作为 V1 支线推进。
 
 任务：
 
-- GitChangeSet。
-- GitChangedFile。
-- GitRiskAnalysis。
+- CICDRun。
+- CICDChangedFile。
+- CICDRiskAnalysis。
 - UnitTestPatch。
 - RegressionPlan。
-- GitTool。
-- GitDiffAgent。
+- ChangeSetTool。
+- CICDChangeAnalysisAgent。
 - UnitTestAgent。
 - RegressionAgent。
 - PatchScopeGate。
-- Git Quality Center 页面。
+- CI/CD 管理页面。
 
 验收：
 
-- 使用 `docs/fixtures/03-golden-git-quality.md`。
+- 使用 `docs/fixtures/03-golden-cicd-quality.md`。
 - 用户可选择本地仓库和 base/head 或上传 diff。
 - 系统展示 changed files。
 - AI 生成风险摘要。
@@ -422,7 +422,7 @@ skill_versions
 - PatchScopeGate 阻止业务源码修改。
 - 用户批准后才应用 patch。
 - pytest 新增测试和回归可执行。
-- 生成 GitQualityReport。
+- 生成 CI/CD quality report。
 
 ## 15. M8 Extension Surface And Hardening
 
@@ -431,6 +431,7 @@ skill_versions
 任务：
 
 - Knowledge/RAG Adapter 空实现。
+- RAG 知识库页面，展示 ContextArtifact、安全元数据、KnowledgeAdapter 配置状态和 evidence 使用记录。
 - MCP Server 配置占位。
 - Tool Adapter schema 对齐 MCP tool schema。
 - Prompt/Skill 版本效果指标。
@@ -444,6 +445,7 @@ skill_versions
 - 未配置 RAG/MCP 时主流程可运行。
 - ToolDefinition 可映射到未来 MCP。
 - 文档说明如何接外部 RAG。
+- RAG 知识库不实现内置向量库、embedding、chunking 或 rerank。
 - Docker 环境可重复启动。
 
 ## 16. 每个 Slice 的 Definition Of Done

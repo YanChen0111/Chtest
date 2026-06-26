@@ -14,7 +14,7 @@ Chtest V1 是面向个人测试工程师、自动化测试工程师的 AI 测试
 |---|---|---|
 | 需求到用例 | 需求评审、候选用例、人工评审、正式用例库、质量指标 | 主线 P0 |
 | 用例到自动化 | AutomationDraft、审批、pytest/Playwright 执行、失败归因、报告 | 主线 P0/P1 |
-| 代码到质量 | Git diff、UnitTestPatch、审批、pytest 回归、Git 质量报告 | 支线 P1 |
+| CI/CD 到质量 | CI/CD 管理中的本地 Git diff、UnitTestPatch、审批、pytest 回归、CI/CD 质量报告 | 支线 P1 |
 
 ## 3. 第一版用户模式
 
@@ -49,15 +49,16 @@ Chtest V1 是面向个人测试工程师、自动化测试工程师的 AI 测试
 - AutomationDraft 必须审批后执行。
 - 执行后生成 TestRun、Artifact、Report。
 
-### 4.4 Git Quality Center
+### 4.4 CI/CD 管理
 
 - V1 支线能力。
 - 支持本地仓库 base/head 和手动 diff。
-- GitDiffAgent 分析风险。
+- CICDChangeAnalysisAgent 分析风险。
 - UnitTestAgent 生成 UnitTestPatch。
 - PatchScopeGate 只允许写测试目录。
 - 审批后执行 pytest 新增测试和回归。
-- 生成 GitQualityReport。
+- 生成 CI/CD quality report。
+- V1 不接 GitHub Actions/GitLab/webhook 云 CI；这些是 V2 能力。
 
 ### 4.5 Tool Adapter
 
@@ -75,6 +76,7 @@ V1：
 ### 4.6 RAG/MCP
 
 - RAG 不内置，只保留 Knowledge/RAG Adapter。
+- RAG 知识库是 ContextArtifact、KnowledgeAdapter 配置状态和 evidence 展示页面，不是内置向量库或 rerank 平台。
 - MCP 不作为 V1 强依赖，先实现 Internal Tool Adapter。
 - ToolDefinition schema 保持 MCP-ready。
 
@@ -94,7 +96,7 @@ V1：
 | AutomationDraft | pytest/Playwright 草稿、审批、执行入口 |
 | TestRunner | pytest allowlist 执行、stdout/stderr/JUnit artifact |
 | Playwright Minimal Loop | 草稿/已有测试执行、trace/screenshot artifact |
-| Git Quality Center | diff 记录、变更分析、UnitTestPatch、pytest 回归、质量报告 |
+| CI/CD 管理 | diff 记录、变更分析、UnitTestPatch、pytest 回归、质量报告 |
 | Failure Analysis | 失败归因和证据链 |
 | Report Center | Markdown/HTML/JSON 报告和质量结论 |
 | Knowledge/RAG Adapter | 只预留接口，不实现 RAG |
@@ -125,7 +127,7 @@ V1 必须能演示：
 6. 把通过评审的用例沉淀到正式用例库。
 7. 从需求/用例生成 AutomationDraft。
 8. 审批 AutomationDraft 后执行 pytest 或 Playwright 最小闭环。
-9. 在 Git Quality Center 导入 diff 或读取本地仓库变更。
+9. 在 CI/CD 管理导入 diff 或读取本地仓库变更。
 10. 生成 UnitTestPatch 并进行人工评审。
 11. 执行 pytest 新增测试和相关回归。
 12. 查看失败归因、证据链和测试报告。

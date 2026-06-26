@@ -20,7 +20,7 @@ Knowledge/RAG Adapter 负责未来知识上下文接入
 |---|---|---|
 | 需求到用例 | RequirementReviewAgent -> RiskAgent -> CaseGenerationAgent -> CaseReviewAgent | 主线 P0 |
 | 用例到自动化 | AutomationDraftAgent -> ToolExecutionAgent -> FailureAnalysisAgent -> ReportAgent | 主线 P0/P1 |
-| Git 到质量报告 | GitDiffAgent -> UnitTestAgent -> RegressionAgent -> ToolExecutionAgent -> ReportAgent | 支线 P1 |
+| CI/CD 管理到质量报告 | CICDChangeAnalysisAgent -> UnitTestAgent -> RegressionAgent -> ToolExecutionAgent -> ReportAgent | 支线 P1 |
 
 ## 3. Agent 分工
 
@@ -32,7 +32,7 @@ Knowledge/RAG Adapter 负责未来知识上下文接入
 | CaseGenerationAgent | 生成结构化用例候选 | 是 |
 | CaseReviewAgent | 检查用例质量，辅助优化 | 是 |
 | AutomationDraftAgent | 从需求/用例生成 pytest/Playwright 草稿 | 是 |
-| GitDiffAgent | 分析 diff、变更风险、影响范围 | 是，支线 |
+| CICDChangeAnalysisAgent | 分析 diff、变更风险、影响范围 | 是，支线 |
 | UnitTestAgent | 生成 UnitTestPatch | 是，支线 |
 | RegressionAgent | 选择 pytest 回归范围 | 是，支线 |
 | ToolExecutionAgent | 调度 pytest/Playwright 执行 | 是 |
@@ -108,12 +108,12 @@ GitHub MCP 适合 V2 接入：仓库文件读取、PR 详情、commit/diff、Act
 
 V1 先做本地 Git Tool。
 
-Git Quality Center 工具调用顺序：
+CI/CD 管理工具调用顺序：
 
 ```text
-GitTool.get_repo_status
-GitTool.get_diff
-GitDiffAgent.analyze
+ChangeSetTool.get_repo_status
+ChangeSetTool.get_diff
+CICDChangeAnalysisAgent.analyze
 UnitTestAgent.generate_patch
 PatchScopeGate.validate
 ToolApproval.apply_patch_if_approved
@@ -121,7 +121,7 @@ TestRunner.run_new_tests
 RegressionAgent.select_pytest_regression
 TestRunner.run_regression
 FailureAnalysisAgent.analyze
-ReportAgent.generate_git_quality_report
+ReportAgent.generate_cicd_quality_report
 ```
 
 ## 8. RAG Adapter 设计
@@ -131,9 +131,10 @@ ReportAgent.generate_git_quality_report
 ```text
 KnowledgeAdapter.search_context(query, project_id, filters) -> evidence[]
 KnowledgeAdapter.get_document(document_id) -> document
-KnowledgeAdapter.rank_evidence(query, evidence[]) -> evidence[]
 KnowledgeAdapter.list_sources(project_id) -> source[]
 ```
+
+`rank_evidence` 或 rerank 逻辑是后续外部 provider 能力，不是 V1 内置 RAG 的必交接口。
 
 未配置时：`used_knowledge = false`，`evidence = []`。任何 Agent 都不能因为没有 RAG 而失败。
 
@@ -146,14 +147,14 @@ KnowledgeAdapter.list_sources(project_id) -> source[]
 | Case Generation Review | CaseGenerationAgent、CaseReviewAgent |
 | Test Case Library | Test Asset Service、Case Metrics、AutomationDraft 入口 |
 | Automation Draft Center | AutomationDraftAgent、草稿评审、执行入口 |
-| Git Quality Center | GitDiffAgent、UnitTestAgent、RegressionAgent |
+| CI/CD 管理 | CICDChangeAnalysisAgent、UnitTestAgent、RegressionAgent |
 | Automation Execution Center | ToolExecutionAgent、Tool Adapter |
 | Tool Adapter / MCP Center | ToolDefinition、ToolInvocation、McpServerConfig |
 | Report Center | FailureAnalysisAgent、ReportAgent |
-| Knowledge Integration | Knowledge/RAG Adapter 配置和 evidence 展示 |
+| RAG 知识库 | ContextArtifact、Knowledge/RAG Adapter 配置和 evidence 展示 |
 
 ## 10. 第一版边界
 
-第一版做：Internal Tool Adapter、本地 Prompt/Skill Registry、Agent 状态机、Knowledge/RAG Adapter 空实现、需求到用例、AutomationDraft + pytest/Playwright、Git Quality 本地支线。
+第一版做：Internal Tool Adapter、本地 Prompt/Skill Registry、Agent 状态机、RAG 知识库 surface、Knowledge/RAG Adapter 空实现、需求到用例、AutomationDraft + pytest/Playwright、CI/CD 管理本地支线。
 
 第一版不做：完整 MCP Server、完整外部 MCP marketplace、完整内置 RAG、Skill ZIP/Git 导入、Newman/JMeter 主路径、Appium 设备管理、Fiddler 深度自动化控制。

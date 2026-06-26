@@ -12,7 +12,7 @@ Reason: The product needs fast iteration, clear module boundaries, and low opera
 
 Implementation:
 
-- Backend modules: project, requirement, case, automation, execution, git_quality, ai_runtime, report, artifact.
+- Backend modules: project, requirement, case, automation, execution, cicd_quality, ai_runtime, report, artifact.
 - Module boundaries are enforced by service interfaces and database contracts.
 - Workers handle AI tasks and tool execution.
 
@@ -149,17 +149,18 @@ Implementation:
 - AutomationDraft stores draft code, framework, suggested path, execution notes, and risk notes.
 - AutomationDraft requires review before execution.
 
-## ADR-0013: Git Quality Is A Support Workflow
+## ADR-0013: CI/CD Management Is A Support Workflow
 
-Decision: Git Quality is included in V1 as a support workflow, not the main product path.
+Decision: CI/CD Management is included in V1 as a local-first support workflow, not the main product path and not a cloud CI/CD platform.
 
 Reason: The user wants push/diff-driven unit test generation and regression support, but the core product value is AI-assisted testing lifecycle work.
 
 Implementation:
 
-- Git diff analysis generates GitChangeSet and GitChangedFile.
+- Git diff analysis generates CICDRun and CICDChangedFile.
 - UnitTestPatch is approval-gated and test-directory scoped.
 - RegressionAgent recommends commands and explains selection.
+- User-facing UI name is `CI/CD 管理`; current internal data and agent names are `CICDRun`, `CICDChangedFile`, and `CICDChangeAnalysisAgent`.
 
 ## ADR-0014: Final Documentation Priority
 

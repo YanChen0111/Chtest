@@ -110,7 +110,7 @@ with evidence.
 
 ### Chtest Evidence Output
 
-- GitChangeSet and GitChangedFile records with changed file summary.
+- CICDRun and CICDChangedFile records with changed file summary.
 - Git risk analysis naming affected coupon validation behavior.
 - UnitTestPatch with test intent, coverage target, unified diff, and risk notes.
 - PatchScopeGate result proving only test files are modified.
@@ -128,5 +128,5 @@ regression -> Git quality report.
 - Use Scenario A as the default V1 product demo input.
 - Use Scenario B after the pytest loop is stable and Playwright execution starts.
 - Use Scenario C only after the requirement-to-automation mainlines are already
-  moving; Git Quality remains a support workflow in V1.
+  moving; CI/CD Quality remains a support workflow in V1.
 

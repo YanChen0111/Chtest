@@ -178,15 +178,15 @@ Forbidden actions:
 - Directly applying generated code.
 - Creating hidden network or credential dependencies.
 
-### 5.7 GitDiffAgent
+### 5.7 CICDChangeAnalysisAgent
 
 Responsibilities:
 
-- Read GitChangeSet.
+- Read CICDRun.
 - Analyze change intent, affected modules, and risk level.
 - Provide context for UnitTestAgent and RegressionAgent.
 
-Outputs: GitRiskAnalysis.
+Outputs: CICDRiskAnalysis.
 
 Quality gate: every high-risk file must include risk reason and suggested tests.
 
@@ -315,12 +315,12 @@ Acceptance output:
 - FailureAnalysis when failed.
 - Report.
 
-## 8. Support Workflow: Git Quality
+## 8. Support Workflow: CI/CD Management
 
 ```text
-Local Git Diff
-  -> GitTool.get_diff
-  -> GitDiffAgent
+Local Git Diff / CI/CD Change
+  -> ChangeSetTool.get_diff
+  -> CICDChangeAnalysisAgent
   -> UnitTestAgent
   -> validate_patch_scope
   -> user_patch_review
@@ -330,7 +330,7 @@ Local Git Diff
   -> user_confirm_regression_plan
   -> TestRunner.run_regression
   -> FailureAnalysisAgent if failed
-  -> ReportAgent.generate_git_quality_report
+  -> ReportAgent.generate_cicd_quality_report
 ```
 
 Human checkpoints:
@@ -341,11 +341,11 @@ Human checkpoints:
 
 Acceptance output:
 
-- GitChangeSet.
-- GitChangedFile[].
+- CICDRun.
+- CICDChangedFile[].
 - UnitTestPatch.
 - TestRun records.
-- Git quality report.
+- CI/CD quality report.
 
 ## 9. Tool Execution Workflow
 
@@ -435,9 +435,10 @@ V1 does not build RAG. The interface is stable:
 ```text
 KnowledgeAdapter.search_context(query, project_id, filters) -> evidence[]
 KnowledgeAdapter.get_document(document_id) -> document
-KnowledgeAdapter.rank_evidence(query, evidence[]) -> evidence[]
 KnowledgeAdapter.list_sources(project_id) -> source[]
 ```
+
+`rank_evidence` or other reranking behavior is a later external provider capability, not a V1 internal RAG implementation requirement.
 
 When no provider is configured:
 

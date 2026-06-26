@@ -15,11 +15,11 @@ Case Generation Review
 Test Case Library
 Automation Draft Center
 Automation Execution Center
-Git Quality Center
+CI/CD Management
 Report Center
 Prompt & Skill Center
 Tool Adapter / MCP Center
-Knowledge Integration
+RAG Knowledge Base
 Settings
 ```
 
@@ -32,7 +32,7 @@ Case Generation Service
 Case Review Service
 Test Asset Service
 Automation Draft Service
-Git Quality Service
+CI/CD Quality Service (powers CI/CD Management)
 Tool Adapter Service
 AI Task Service
 Execution Service
@@ -52,7 +52,7 @@ RiskAgent
 CaseGenerationAgent
 CaseReviewAgent
 AutomationDraftAgent
-GitDiffAgent
+CICDChangeAnalysisAgent
 UnitTestAgent
 RegressionAgent
 ToolExecutionAgent
@@ -94,13 +94,13 @@ Requirement/TestCase
 
 关键要求：AutomationDraft 未审批不能执行，AI 不能直接写业务项目。
 
-### 5.3 Git 到质量报告
+### 5.3 CI/CD 管理到质量报告
 
 ```text
 手动 diff / 本地 base-head
-  -> Git Quality Center 创建 GitChangeSet
-  -> GitTool 收集 diff、文件状态
-  -> GitDiffAgent 分析变更文件和风险等级
+  -> CI/CD 管理创建 CICDRun
+  -> ChangeSetTool 收集 diff、文件状态
+  -> CICDChangeAnalysisAgent 分析变更文件和风险等级
   -> UnitTestAgent 生成 UnitTestPatch
   -> PatchScopeGate 校验只写测试目录
   -> Patch Review Window 展示 patch、解释、风险和命令
@@ -109,10 +109,10 @@ Requirement/TestCase
   -> RegressionAgent 选择相关 pytest 回归范围
   -> TestRunner 执行回归
   -> FailureAnalysisAgent 归因
-  -> ReportAgent 生成 Git 质量报告
+  -> ReportAgent 生成 CI/CD 质量报告
 ```
 
-关键要求：Git Quality 是 V1 支线能力，本地优先；GitHub MCP/PR 评论/CI webhook 后置 V2。
+关键要求：CI/CD 管理是 V1 支线能力，本地优先；底层可继续使用 CICDRun/UnitTestPatch；GitHub MCP/PR 评论/CI webhook 后置 V2。
 
 ## 6. 核心状态机
 
@@ -146,8 +146,8 @@ CaseGenerationTask
 GeneratedCaseCandidate
 TestCase
 AutomationDraft
-GitChangeSet
-GitChangedFile
+CICDRun
+CICDChangedFile
 UnitTestPatch
 RegressionPlan
 AITask
@@ -163,14 +163,14 @@ Report
 
 - 用例生成：generated_count、field_complete_rate、duplicate_rate、acceptance_rate、edit_rate、rejection_rate。
 - AutomationDraft：draft_generated_count、approval_rate、execution_pass_rate、manual_edit_rate。
-- Git Quality：patch_scope_pass_rate、patch_apply_rate、new_test_pass_rate、regression_pass_rate。
+- CI/CD 管理：patch_scope_pass_rate、patch_apply_rate、new_test_pass_rate、regression_pass_rate。
 - 失败归因：evidence_complete_rate、classification_accuracy、unresolved_failure_rate。
 
 详细指标以 `docs/product/04-ai-quality-metrics.md` 为准。
 
 ## 9. Knowledge/RAG Adapter
 
-第一版不搭建 RAG，只预留接口。未配置外部知识服务时返回空 evidence。Agent 必须能在没有 RAG 的情况下工作。
+第一版不搭建 RAG，只预留接口。RAG 知识库页面只管理 ContextArtifact、KnowledgeAdapter 配置状态和 evidence 展示。未配置外部知识服务时返回空 evidence。Agent 必须能在没有 RAG 的情况下工作。
 
 ## 10. 第一版 Sprint 拆分
 
@@ -188,5 +188,5 @@ Report
 | Sprint 10 | TestRunner / pytest | 审批后的草稿可触发 pytest 执行并保存 artifact |
 | Sprint 11 | Playwright Minimal Loop | 可以执行 Playwright 草稿/已有测试并保存 trace/screenshot |
 | Sprint 12 | Failure + Report Center | 可以生成失败归因、证据链和质量报告 |
-| Sprint 13 | Git Quality Center | 可以读取 diff、生成风险摘要、UnitTestPatch、pytest 回归和报告 |
-| Sprint 14 | MCP/RAG Adapter Surface | 可以配置 MCP/RAG 占位接口，未接入时主流程正常 |
+| Sprint 13 | CI/CD 管理 | 可以读取 diff、生成风险摘要、UnitTestPatch、pytest 回归和报告 |
+| Sprint 14 | MCP/RAG Adapter Surface | 可以配置 MCP 占位接口和 RAG 知识库 surface，未接入时主流程正常 |

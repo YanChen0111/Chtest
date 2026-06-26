@@ -8,7 +8,7 @@ The purpose is to let long-running vibe coding continue from stable project fact
 
 Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers.
 
-It uses ideas from WHartTest's AI testing workflow and MeterSphere's case review, test asset, and report experience. It helps one engineer complete requirement review, case generation, case review, AutomationDraft generation, pytest/Playwright execution, Git diff unit-test support, failure analysis, and report output.
+It uses ideas from WHartTest's AI testing workflow and MeterSphere's case review, test asset, and report experience. It helps one engineer complete requirement review, case generation, case review, AutomationDraft generation, pytest/Playwright execution, CI/CD-managed local diff unit-test support, failure analysis, and report output.
 
 Chtest is not an enterprise collaboration test management platform. V1 focuses on personal testing design and automation productivity. The long-term direction is a small-team AI testing workbench plus Agent/Skill/MCP testing tool ecosystem.
 
@@ -16,7 +16,7 @@ Chtest is not an enterprise collaboration test management platform. V1 focuses o
 
 1. Requirement to cases: Requirement -> AI requirement review -> AI case generation -> human review -> case library.
 2. Case to automation: Requirement/TestCase -> AI AutomationDraft -> approval -> pytest/Playwright execution -> report.
-3. Code to quality: Local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
+3. Code to quality: CI/CD Management local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
 
 The first and second loops are mainlines. The third loop is a support workflow.
 
@@ -26,12 +26,13 @@ The first and second loops are mainlines. The third loop is a support workflow.
 - PostgreSQL + Redis are the default infrastructure.
 - Frozen stack: FastAPI, SQLAlchemy 2, Pydantic v2, Alembic, Vue 3, Arco Design Vue, Redis + RQ, Docker Compose.
 - RAG is not built in; only KnowledgeAdapter is provided.
+- RAG 知识库 is a ContextArtifact and KnowledgeAdapter management page, not an internal RAG runtime.
 - AI-generated cases must enter a review window before becoming TestCase records.
 - AutomationDraft must be approved before execution and cannot directly write target repositories.
 - UnitTestPatch must be approved before application and can only write test directories.
 - AI cannot automatically modify business source files.
 - AI quality metrics must track generation count, acceptance rate, rejection rate, edit rate, execution pass rate, and failure reason distribution.
-- Git Quality Center is a support page for local diff, unit test generation, regression execution, and quality reports.
+- CI/CD 管理 is a support page for local diff, unit test generation, regression execution, and quality reports. Current contract names include `CICDRun`, `CICDChangedFile`, and `UnitTestPatch`.
 - Agent orchestrates workflows; Prompt constrains output; Skill stores testing methods; Tool Adapter/MCP handles tool calls.
 - Reference framework source is local study material and is excluded from the Chtest repository commit set.
 
@@ -77,7 +78,7 @@ Task-specific fixtures:
 - V1 minimum demo: `docs/fixtures/00-v1-demo-path.md`
 - Requirement to cases: `docs/fixtures/01-golden-requirement-to-case.md`
 - Case to automation: `docs/fixtures/02-golden-case-to-playwright.md`
-- Git quality: `docs/fixtures/03-golden-git-quality.md`
+- CI/CD local diff quality: `docs/fixtures/03-golden-cicd-quality.md`
 
 Minimum reading set under tight context:
 
@@ -162,13 +163,14 @@ Update related files when scope changes:
 - Golden Path 0: `docs/fixtures/00-v1-demo-path.md`
 - Golden Path 1: `docs/fixtures/01-golden-requirement-to-case.md`
 - Golden Path 2: `docs/fixtures/02-golden-case-to-playwright.md`
-- Golden Path 3: `docs/fixtures/03-golden-git-quality.md`
+- Golden Path 3: `docs/fixtures/03-golden-cicd-quality.md`
 - Platform architecture: `docs/architecture/01-platform-architecture.md`
 - Agent summary: `docs/architecture/02-agent-mcp-skill-prompt.md`
 - Technical guide: `docs/architecture/03-implementation-technology.md`
 - Agent workflow: `docs/architecture/04-agent-workflow-design.md`
-- Git Quality design: `docs/architecture/05-git-quality-center-design.md`
+- CI/CD Management design: `docs/architecture/05-cicd-quality-center-design.md`
 - Start here: `START_HERE_FOR_AI.md`
+- Final frontend design: `docs/product/08-frontend-design-spec.md`
 - V0.1 Walking Skeleton: `docs/implementation/00-v0.1-walking-skeleton.md`
 - Development process: `docs/implementation/01-v1-development-process.md`
 - Delivery plan: `docs/implementation/01-v1-delivery-plan.md`
@@ -191,8 +193,8 @@ Update related files when scope changes:
 
 ## Current State
 
-- Phase: V1 implementation has started. Slice 1 Tasks 1-3 are complete, and the active handoff points to Slice 1 Task 4.
-- Focus: start from `START_HERE_FOR_AI.md`, then `NEXT_AI_TASK.md`, and continue the active Slice 1 task with Task-level verification and commits.
+- Phase: V1 implementation has started. Slice 02.5 Frontend Foundation is complete, and `NEXT_AI_TASK.md` points to Slice 03 Task 1.
+- Focus: start from `START_HERE_FOR_AI.md`, then `NEXT_AI_TASK.md`, and continue the active task with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
 
 ## Implementation Principles
@@ -201,6 +203,7 @@ Update related files when scope changes:
 - Use MeterSphere case review, pass-rate progress, test asset governance, and report views as supporting references.
 - Use a modular monolith with Redis queue and PostgreSQL storage.
 - Keep RAG as an adapter until an external RAG service is available.
+- Use `docs/product/08-frontend-design-spec.md` for future frontend page design: light A direction, Chinese-first copy, CI/CD 管理 naming, and RAG 知识库 boundaries.
 - Use Internal Git Tool Adapter first; GitHub MCP is a later integration.
 - Each module must be runnable, verifiable, committed, and easy to roll back. Update memory after every iteration.
 - Every completed Task follows `docs/implementation/04-ai-vibecoding-governance.md`: focused verification, git diff self-review, and commit.

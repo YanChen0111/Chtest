@@ -10,7 +10,7 @@ V1 只围绕三条最小闭环交付价值：
 
 1. 需求到用例：更快完成需求评审、测试用例设计、用例评审和入库。
 2. 用例到自动化：更快生成 pytest/Playwright 自动化草稿、审批执行并输出报告。
-3. 代码到质量：针对本地 diff 补单测、跑 pytest 回归、输出质量结论。
+3. CI/CD 到质量：针对本地 diff 补单测、跑 pytest 回归、输出质量结论。
 
 第一条和第二条是主线；第三条是支线但保留为 V1 差异化能力。
 
@@ -30,15 +30,15 @@ V1 只围绕三条最小闭环交付价值：
 | AutomationDraft | 从需求/用例生成 pytest/Playwright 草稿，审批后执行 |
 | TestRunner | 执行 pytest allowlist 命令，保存 stdout/stderr/JUnit/coverage |
 | Playwright 最小闭环 | 执行脚本草稿或已有测试，保存 trace/screenshot |
-| Git Quality 支线 | diff 分析、UnitTestPatch、审批、pytest 回归、Git 质量报告 |
-| 报告中心 | 需求评审报告、用例生成质量报告、自动化执行报告、Git 质量报告 |
-| 扩展接口 | Knowledge/RAG Adapter 空实现、Tool Adapter schema、MCP-ready 设计 |
+| CI/CD 管理支线 | 本地 diff 分析、UnitTestPatch、审批、pytest 回归、CI/CD 质量报告 |
+| 报告中心 | 需求评审报告、用例生成质量报告、自动化执行报告、CI/CD 质量报告 |
+| 扩展接口 | RAG 知识库页面、Knowledge/RAG Adapter 空实现、Tool Adapter schema、MCP-ready 设计 |
 
 ### 3.2 V1 工具优先级
 
 | 优先级 | 工具 | 范围 |
 |---|---|---|
-| P0 | TestRunner / pytest | V1 主执行闭环和 Git 质量闭环基础 |
+| P0 | TestRunner / pytest | V1 主执行闭环和 CI/CD 管理闭环基础 |
 | P1 | Playwright | V1 只做最小闭环：脚本草稿、审批、执行、trace/screenshot |
 | P2 | Newman | V1.1，collection 执行和结果解析 |
 | P3 | JMeter | V1.1/V2，jmx non-GUI 和 JTL 报告解析 |
@@ -57,7 +57,7 @@ V1 只围绕三条最小闭环交付价值：
 | 完整 JMeter 平台 | JMeter 后置到 V1.1/V2 |
 | Appium 设备农场 | 环境成本高，不适合 V1 |
 | Fiddler 深度集成 | 证书、代理、桌面环境复杂，V3 再考虑 |
-| CI/CD 云平台 | V1 本地优先，GitHub Actions/GitHub MCP 放 V2 |
+| CI/CD 云平台 | V1 的 CI/CD 管理只做本地 diff 和回归证据，GitHub Actions/GitHub MCP 放 V2 |
 | 团队缺陷管理 | V1 可导出报告，缺陷平台集成后置 |
 | 大规模分布式执行 | 个人工具先保证本地 worker 稳定 |
 | AI 自动修改业务源码 | V1 禁止，避免不可控风险 |
@@ -115,7 +115,7 @@ V3 是个人到小团队、工具生态扩展方向。
 
 - 直接服务需求到用例闭环。
 - 直接服务用例到自动化闭环。
-- 直接服务本地 diff 到 pytest 质量报告闭环。
+- 直接服务 CI/CD 管理中的本地 diff 到 pytest 质量报告闭环。
 - 能降低人工重复劳动。
 - 能提升 AI 输出可控性。
 - 能提高测试结论可信度。

@@ -1,8 +1,8 @@
-# Golden Path: Git Quality
+# Golden Path: CI/CD Quality
 
 ## 1. 目的
 
-本 fixture 用于验证 Chtest V1 支线 C：代码到质量。Git Quality Center 在 V1 是支线能力，但必须满足用户“push/diff 后补单测和回归”的明确诉求。
+本 fixture 用于验证 Chtest V1 支线 C：CI/CD 到质量。CI/CD Quality Center 在 V1 是支线能力，但必须满足用户“push/diff 后补单测和回归”的明确诉求。
 
 ## 2. 输入 diff
 
@@ -30,7 +30,7 @@ index 1111111..2222222 100644
 }
 ```
 
-## 3. 期望 GitDiffAgent 输出
+## 3. 期望 CICDChangeAnalysisAgent 输出
 
 ```json
 {
@@ -138,11 +138,11 @@ pytest tests -q --junitxml=artifacts/junit.xml
 }
 ```
 
-## 7. 期望 Git Quality Report
+## 7. 期望 CI/CD Quality Report
 
 ```json
 {
-  "report_type": "git_quality",
+  "report_type": "cicd_quality",
   "conclusion": "passed",
   "summary": "本次变更新增优惠券金额边界分支，已生成并执行对应 pytest 单测，相关回归通过。",
   "metrics": {
@@ -159,10 +159,10 @@ pytest tests -q --junitxml=artifacts/junit.xml
 
 ## 8. 验收标准
 
-- GitChangeSet 能保存 diff 和 changed files。
-- GitDiffAgent 能识别 source 文件和新增分支风险。
+- CICDRun 能保存 diff 和 changed files。
+- CICDChangeAnalysisAgent 能识别 source 文件和新增分支风险。
 - UnitTestPatch 只修改测试目录。
 - PatchScopeGate 能阻止业务源码修改。
 - 用户审批后才能应用 patch。
 - 新增测试和回归测试都能生成 TestRun。
-- GitQualityReport 结论引用 evidence。
+- CICDQualityReport 结论引用 evidence。

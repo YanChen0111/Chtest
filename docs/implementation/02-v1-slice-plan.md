@@ -27,9 +27,9 @@ The V1 release spine is `docs/fixtures/00-v1-demo-path.md`. Slice work must opti
 | 12 | TestRunner Pytest Execution | pytest allowlist execution, docker runner preference, stdout/stderr/JUnit artifact, runtime snapshots |
 | 13 | Playwright Minimal Loop | Playwright draft/existing test execution, trace/screenshot |
 | 14 | Report And Failure Analysis | FailureAnalysis, Report, evidence manifest |
-| 15 | Git Quality Foundation | GitChangeSet, GitChangedFile, diff analysis |
+| 15 | CI/CD Management Foundation | CICDRun, CICDChangedFile, local diff analysis |
 | 16 | UnitTestPatch And Regression | UnitTestPatch, PatchScopeGate, pytest regression |
-| 17 | Extension Surface | Empty KnowledgeAdapter, MCP-ready Tool schema |
+| 17 | Extension Surface | RAG 知识库 surface, empty KnowledgeAdapter, MCP-ready Tool schema |
 
 ## 3. P0 Development Batches
 
@@ -56,7 +56,7 @@ Batch 3: Slice 11-14.
 
 Batch 4: Slice 15-16.
 
-- Goal: Golden Path 3, Git to quality report.
+- Goal: Golden Path 3, CI/CD-managed local Git diff to quality report.
 
 ## 4. Slice Task Table Template
 

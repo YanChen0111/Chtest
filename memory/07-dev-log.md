@@ -28,8 +28,8 @@
 
 ### Contracts Completed
 
-- Data model contract includes Project, Module, Repository, Environment, TestCommand, Requirement, RequirementReview, RiskItem, GeneratedCaseCandidate, TestCase, AutomationDraft, GitChangeSet, GitChangedFile, UnitTestPatch, TestRun, TestResult, FailureAnalysis, Report, AITask, PromptVersion, SkillVersion, ToolDefinition, ToolInvocation, and Artifact.
-- API contract includes Project Settings, Requirement Review, Case Generation, Case Review, AutomationDraft, Git Quality, TestRun, FailureAnalysis, Report, and AITask APIs.
+- Data model contract includes Project, Module, Repository, Environment, TestCommand, Requirement, RequirementReview, RiskItem, GeneratedCaseCandidate, TestCase, AutomationDraft, CICDRun, CICDChangedFile, UnitTestPatch, TestRun, TestResult, FailureAnalysis, Report, AITask, PromptVersion, SkillVersion, ToolDefinition, ToolInvocation, and Artifact.
+- API contract includes Project Settings, Requirement Review, Case Generation, Case Review, AutomationDraft, CI/CD Quality, TestRun, FailureAnalysis, Report, and AITask APIs.
 - State machines define AITask, GeneratedCaseCandidate, AutomationDraft, UnitTestPatch, ToolInvocation, TestRun, Report, PromptVersion, and SkillVersion transitions.
 - Golden Paths define requirement-to-case, case-to-automation, and Git-quality expected behavior.
 
@@ -158,4 +158,27 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Slice 02.5 Task 4 completed in commit `de1f5fd`: added typed frontend `/health` helper plus AI 工作台 success/failure smoke tests。
 - Verification: `npm --prefix frontend run test -- --run`, `npm --prefix frontend run build`, and `git diff --check`.
 - Slice 02.5 Frontend Foundation is now complete.
+- Continue from `NEXT_AI_TASK.md`: Slice 03 Task 1, add project core models and migration.
+
+## 2026-06-26 Final Frontend Design Documentation
+
+### Completed
+
+- Captured the approved A direction as the final V1 frontend design: light palette, Chinese-first copy, Vue 3 + Arco Design Vue, workbench density, tables, split panes, drawers, and evidence-first reports.
+- Added `docs/product/08-frontend-design-spec.md` as the implementation-facing frontend design source.
+- Added `docs/superpowers/specs/2026-06-26-chtest-final-frontend-design.md` as the approved brainstorming spec archive.
+- Renamed the user-facing Git quality page to `CI/CD 管理` across current product, architecture, implementation, and memory docs.
+- Aligned CI/CD quality contracts and fixtures to `CICDRun`, `CICDChangedFile`, `CICDChangeAnalysisAgent`, `/api/cicd/*`, and `docs/fixtures/03-golden-cicd-quality.md`.
+- Added `RAG 知识库` as a user-facing page for ContextArtifact, KnowledgeAdapter configuration state, safety metadata, and evidence usage display.
+- Clarified that V1 does not build internal RAG runtime, vector indexing, chunking, embedding, or reranking.
+- Clarified that V1 CI/CD Management remains local-first and does not include GitHub Actions, GitLab CI, webhook ingestion, or PR comments.
+- Documented open-source UI reference boundaries: keep Arco Design Vue; WHartTest MIT patterns may be adapted with attribution; MeterSphere, shadcn/ui, Nuxt UI, and Creative Tim are design references only.
+
+### Verification
+
+- Documentation-only change.
+- Required checks: `git diff --check`, `git diff --name-only`, and targeted grep for old user-facing names in current docs.
+
+### Next Step
+
 - Continue from `NEXT_AI_TASK.md`: Slice 03 Task 1, add project core models and migration.

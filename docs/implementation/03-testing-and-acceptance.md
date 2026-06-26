@@ -22,7 +22,7 @@ V1 Minimum Demo：
 
 1. 需求到用例。
 2. 用例到自动化。
-3. Git 到质量报告。
+3. CI/CD 管理中的本地 Git diff 到质量报告。
 
 ## 2. 测试分层
 
@@ -121,19 +121,19 @@ V1 Minimum Demo：
 - TestRun 记录 runtime_manifest、dependency_snapshot、environment_snapshot 和 runner sandbox metadata。
 - Report 生成。
 
-### 4.4 Git 到质量报告
+### 4.4 CI/CD 管理到质量报告
 
-使用：`docs/fixtures/03-golden-git-quality.md`
+使用：`docs/fixtures/03-golden-cicd-quality.md`
 
 通过标准：
 
-- GitChangeSet 创建。
-- GitChangedFile 分类为 source。
-- GitDiffAgent 识别新增分支风险。
+- CICDRun 创建。
+- CICDChangedFile 分类为 source。
+- CICDChangeAnalysisAgent 识别新增分支风险。
 - UnitTestPatch 只修改 tests/。
 - PatchScopeGate 通过。
 - 审批后执行 pytest。
-- GitQualityReport 生成，结论引用 evidence。
+- CI/CD quality report 生成，结论引用 evidence。
 
 ## 5. Smoke 命令建议
 

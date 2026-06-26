@@ -81,6 +81,6 @@ The demo must show:
 - Real LLM provider.
 - External RAG/KnowledgeAdapter evidence retrieval.
 - Playwright execution.
-- Git Quality workflow.
+- CI/CD Quality workflow.
 - Newman/JMeter/Appium/traffic capture.
 - Multi-user collaboration.

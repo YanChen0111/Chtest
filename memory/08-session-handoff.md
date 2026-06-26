@@ -8,15 +8,16 @@
 - 不要一次性演示，要真实能大幅提高测试效率的 AI 工具。
 - 最新定位已校准为：面向个人测试工程师、自动化测试工程师的 AI 测试设计与自动化落地工作台。
 - 长期方向是小团队 AI 测试工作台 + Agent / Skill / MCP 测试工具生态。
-- V1 三条最小闭环：需求到用例、用例到自动化、Git 到质量报告。
-- Git Quality Center 是 V1 支线能力，不能压过需求到自动化主线。
-- RAG 功能只保留接口，后续外部搭建后接入。
+- V1 三条最小闭环：需求到用例、用例到自动化、CI/CD 管理中的本地 diff 到质量报告。
+- 用户可见 `CI/CD Quality Center` / `CI/CD 质量中心` 已统一为 `CI/CD 管理`；当前契约名使用 `CICDRun`、`CICDChangedFile`、`UnitTestPatch`。
+- 新增用户可见页面 `RAG 知识库`；RAG 功能只保留 ContextArtifact + KnowledgeAdapter surface，后续外部搭建后接入。
 - MCP / Skill / Prompt / Agent 要分层设计并贯穿各流程。
 - 新代码 push/PR/diff 后生成单测、执行回归，并有独立页面查看 Git 情况。
 - 增加 Web 自动化能力，但 V1 只做 Playwright 最小闭环；Newman/JMeter 后置。
 - 文档必须足够详细，方便后续 AI 读取后继续完成项目。
 - 长期 AI 开发必须遵循 `docs/implementation/04-ai-vibecoding-governance.md`：小步 Task、每步验证、每个完成 Task 提交、可回滚；Slice 完成和重大上下文变化时更新 memory。
 - 当前前端设计必须中文优先；页面标题、导航、按钮、表头、空状态和状态文案都用中文。
+- 当前前端最终设计采用 A 方案浅色系、Vue 3 + Arco Design Vue、工作台式信息密度，详见 `docs/product/08-frontend-design-spec.md`。
 - `ContextArtifact`、`AITask`、`LLMCallLog`、`Artifact` 的用户可见名称分别写成 `上下文工件`、`AI 任务`、`大模型调用日志`、`工件`。
 
 ## 当前本地状态
@@ -43,6 +44,47 @@
 - 当前 `NEXT_AI_TASK.md` 已切换到 Slice 03 Task 1：Add Project Core models and migration。
 - 当前前端 shell 已有中文主导航、AI 工作台首页、Pinia、Vue Router、Arco Design Vue、`api/client.ts` 和 `/health` smoke。
 - 当前前端 build 会给出 bundle 偏大的 warning，来源于 Arco baseline；不是阻塞问题，但后续可以在稳定后做按需优化。
+- 2026-06-26 已固化最终前端设计文档：`docs/product/08-frontend-design-spec.md` 和 `docs/superpowers/specs/2026-06-26-chtest-final-frontend-design.md`。
+- 后续实现前端页面时优先读取 `docs/product/08-frontend-design-spec.md`、`docs/product/03-user-journey-and-page-prd.md` 和 `docs/product/06-frontend-ui-guidelines.md`。
+
+## 2026-06-26 前端最终设计文档同步
+
+本轮完成：
+
+- 根据用户确认的 A 方案浅色系，新增最终前端设计规格。
+- 将用户可见 `CI/CD 质量中心` / `CI/CD Quality Center` 统一为 `CI/CD 管理`。
+- 将当前契约和 Golden Path 对齐到 `CICDRun`、`CICDChangedFile`、`CICDChangeAnalysisAgent`、`/api/cicd/*` 和 `docs/fixtures/03-golden-cicd-quality.md`。
+- 新增 `RAG 知识库` 页面设计和 V1 边界说明。
+- 同步产品、架构、实施计划、memory 和入口文档，方便后续 AI coding。
+
+本轮验证：
+
+- 文档变更需以本轮最终 `git diff --check` 和旧命名 grep 审计为准。
+
+修改文件：
+
+- `docs/product/08-frontend-design-spec.md`
+- `docs/superpowers/specs/2026-06-26-chtest-final-frontend-design.md`
+- `docs/product/*`
+- `docs/architecture/*`
+- `docs/implementation/*`
+- `docs/README.md`
+- `START_HERE_FOR_AI.md`
+- `NEXT_AI_TASK.md`
+- `memory/*`
+
+未完成问题：
+
+- 当前实现任务仍以 `NEXT_AI_TASK.md` 的 Slice 03 Task 1 为准，本轮不进入前端页面实现。
+
+下次推荐任务：
+
+- 继续 Slice 03 Task 1：Add Project Core models and migration。
+
+风险提醒：
+
+- `CI/CD 管理` 是 V1 本地 diff 支线，不是云 CI/CD 平台。
+- `RAG 知识库` 是 ContextArtifact 和 KnowledgeAdapter surface，不是内置 RAG/vector/rerank 平台。
 
 ## 2026-06-23 继续执行更新
 
@@ -107,7 +149,7 @@ docker compose -f deploy/docker-compose.yml config
 - `docs/contracts/05-prompt-skill-contract.md`
 - `docs/fixtures/01-golden-requirement-to-case.md`
 - `docs/fixtures/02-golden-case-to-playwright.md`
-- `docs/fixtures/03-golden-git-quality.md`
+- `docs/fixtures/03-golden-cicd-quality.md`
 - `docs/implementation/01-v1-development-process.md`
 - `docs/implementation/02-v1-slice-plan.md`
 - `docs/implementation/03-testing-and-acceptance.md`
@@ -141,7 +183,7 @@ docker compose -f deploy/docker-compose.yml config
 - Golden Path 0：`docs/fixtures/00-v1-demo-path.md`
 - Golden Path 1：`docs/fixtures/01-golden-requirement-to-case.md`
 - Golden Path 2：`docs/fixtures/02-golden-case-to-playwright.md`
-- Golden Path 3：`docs/fixtures/03-golden-git-quality.md`
+- Golden Path 3：`docs/fixtures/03-golden-cicd-quality.md`
 - 开发流程：`docs/implementation/01-v1-development-process.md`
 - 切片计划：`docs/implementation/02-v1-slice-plan.md`
 - Slice 1 Task Plan：`docs/implementation/slices/slice-01-platform-foundation.md`

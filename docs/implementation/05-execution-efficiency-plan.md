@@ -24,7 +24,7 @@ NEXT_AI_TASK
 - Fixtures explain product paths, but real tester scenarios were not explicit.
 - Prompt and Skill behavior existed as a contract, but not as seed files that an
   AI worker can load or test.
-- Some future AI sessions may expand into dashboards, Git Quality, RAG, or MCP
+- Some future AI sessions may expand into dashboards, CI/CD Management, RAG, or MCP
   before the V0.1 evidence loop runs.
 
 ## 3. Optimization Decisions
@@ -89,7 +89,7 @@ uncontrolled external project.
 - Stop after two or three failed repair attempts and write a failure handoff.
 - Do not start V0.1 runner smoke until the sample repository path and pytest
   TestCommand are defined and allowlisted.
-- Do not add UI, dashboard, RAG, MCP, or Git Quality breadth unless the active
+- Do not add UI, dashboard, RAG, MCP, or CI/CD Management breadth unless the active
   task moves the V0.1 or V1 evidence loop forward.
 
 ## 5. Documentation Routing
@@ -102,7 +102,7 @@ uncontrolled external project.
 | Artifact/evidence work | `docs/contracts/04-artifact-contract.md` |
 | Prompt/Skill/mock provider work | `docs/contracts/05-prompt-skill-contract.md`, `docs/contracts/08-mock-provider-contract.md`, `docs/fixtures/05-minimal-prompt-skill-seeds.md` |
 | User scenario or demo fixture work | `docs/fixtures/00-v1-demo-path.md`, `docs/fixtures/04-real-user-scenarios.md` |
-| Frontend page work | `docs/product/06-frontend-ui-guidelines.md` plus the relevant API contract |
+| Frontend page work | `docs/product/08-frontend-design-spec.md`, `docs/product/06-frontend-ui-guidelines.md`, plus the relevant API contract |
 
 ## 6. Completion Gate
 

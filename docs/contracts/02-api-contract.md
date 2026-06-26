@@ -561,11 +561,11 @@ Response 200:
 
 AutomationDraft uses `edit -> edited -> approve -> approved`. It does not use `approve_after_edit`.
 
-## 5. Git Quality APIs
+## 5. CI/CD Quality APIs
 
-### 5.1 Create Change Set
+### 5.1 Create CI/CD Run
 
-`POST /api/git/change-sets`
+`POST /api/cicd/runs`
 
 Request:
 
@@ -583,23 +583,23 @@ Response 202:
 
 ```json
 {
-  "change_set_id": "00000000-0000-0000-0000-000000001101",
+  "cicd_run_id": "00000000-0000-0000-0000-000000001101",
   "status": "created"
 }
 ```
 
-### 5.2 Analyze Change Set
+### 5.2 Analyze CI/CD Run
 
-`POST /api/git/change-sets/{id}/analyze`
+`POST /api/cicd/runs/{id}/analyze`
 
 Request:
 
 ```json
 {
-  "prompt_version": "git_diff_analysis:v1",
+  "prompt_version": "cicd_change_analysis:v1",
   "skill_version": "regression-selection-skill:v1",
   "model_provider": "mock",
-  "model_name": "mock-git-analysis"
+  "model_name": "mock-cicd-analysis"
 }
 ```
 
@@ -607,7 +607,7 @@ Response 202 returns AITask reference.
 
 ### 5.3 Generate Unit Test Patch
 
-`POST /api/git/change-sets/{id}/unit-test-patches`
+`POST /api/cicd/runs/{id}/unit-test-patches`
 
 Request:
 
@@ -632,7 +632,7 @@ Response 202:
 
 ### 5.4 Approve Unit Test Patch
 
-`POST /api/git/unit-test-patches/{id}/approve`
+`POST /api/cicd/unit-test-patches/{id}/approve`
 
 Request:
 

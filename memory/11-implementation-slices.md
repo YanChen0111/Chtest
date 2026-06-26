@@ -128,13 +128,13 @@
 
 验收：失败有证据链；报告输出 md/html/json；无证据时不能给出 passed 结论。
 
-## Slice 15: Git Quality Foundation
+## Slice 15: CI/CD Management Foundation
 
 目标：支线能力：本地 diff 有质量视图。
 
-交付：GitChangeSet、GitChangedFile、diff 导入 API、本地 git diff 解析、Git 质量任务列表和详情页。
+交付：CICDRun、CICDChangedFile、diff 导入 API、本地 git diff 解析、CI/CD 管理任务列表和详情页。
 
-验收：使用 `docs/fixtures/03-golden-git-quality.md` 的 diff 可看到变更文件、类型和风险摘要。
+验收：使用 `docs/fixtures/03-golden-cicd-quality.md` 的 diff 可看到变更文件、类型和风险摘要。
 
 ## Slice 16: UnitTestPatch And Regression
 
@@ -142,12 +142,12 @@
 
 交付：UnitTestPatch、UnitTestAgent、PatchScopeGate、Patch 评审页面、RegressionPlan、pytest 回归执行。
 
-验收：AI 生成 patch；patch 默认只包含测试目录变更；用户审批后应用；新增测试和回归结果进入 Git Quality Center。
+验收：AI 生成 patch；patch 默认只包含测试目录变更；用户审批后应用；新增测试和回归结果进入 CI/CD 管理。
 
 ## Slice 17: Extension Surface
 
-目标：预留后续 RAG/MCP 扩展接口。
+目标：预留后续 RAG/MCP 扩展接口，并提供 RAG 知识库管理页面。
 
-交付：KnowledgeAdapter 空实现、McpServerConfig placeholder、ToolDefinition schema MCP-ready、文档更新。
+交付：RAG 知识库 surface、KnowledgeAdapter 空实现、McpServerConfig placeholder、ToolDefinition schema MCP-ready、文档更新。
 
 验收：未配置 RAG/MCP 时主流程仍可运行；后续可接外部 RAG 和 GitHub MCP。

@@ -141,7 +141,7 @@ Describe required output fields.
 | 需求评审 | RequirementReviewAgent | requirement_review:v1 | requirement-review-skill:v1 |
 | 用例生成 | CaseGenerationAgent | case_generation:v1 | test-case-generation-skill:v1 |
 | 自动化草稿 | AutomationDraftAgent | automation_draft_generation:v1 | automation-draft-skill:v1 |
-| Git 分析 | GitDiffAgent | git_diff_analysis:v1 | regression-selection-skill:v1 |
+| Git 分析 | CICDChangeAnalysisAgent | git_diff_analysis:v1 | regression-selection-skill:v1 |
 | 单测 patch | UnitTestAgent | unit_test_generation:v1 | unit-test-generation-skill:v1 |
 | 回归选择 | RegressionAgent | regression_selection:v1 | regression-selection-skill:v1 |
 | 失败归因 | FailureAnalysisAgent | failure_analysis:v1 | failure-analysis-skill:v1 |

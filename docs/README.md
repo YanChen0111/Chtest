@@ -6,9 +6,9 @@ V1 first proves the minimum evidence loop in `fixtures/00-v1-demo-path.md`, then
 
 1. Requirement -> AI requirement review -> AI case generation -> human review -> case library.
 2. Requirement/TestCase -> AI AutomationDraft -> approval -> pytest/Playwright execution -> report.
-3. Local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
+3. CI/CD Management local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
 
-The first and second loops are the product mainlines. The Git loop is a support workflow.
+The first and second loops are the product mainlines. The CI/CD Management loop is a local-first support workflow.
 
 ## Canonical Source Of Truth
 
@@ -36,7 +36,7 @@ commit message, and next Task.
 | Directory | Purpose |
 |---|---|
 | `product/` | Product positioning, PRD, page PRD, AI metrics, version boundaries |
-| `architecture/` | Platform architecture, Agent/MCP/Skill/Prompt design, Git Quality design |
+| `architecture/` | Platform architecture, Agent/MCP/Skill/Prompt design, CI/CD Management design |
 | `contracts/` | Data model, API, state machine, artifact, Prompt/Skill contracts |
 | `fixtures/` | Golden Path standard inputs and expected outputs |
 | `implementation/` | V1 delivery plan, development process, slice plan, acceptance |
@@ -81,7 +81,7 @@ appear to disagree:
 18. `fixtures/00-v1-demo-path.md`
 19. `fixtures/01-golden-requirement-to-case.md`
 20. `fixtures/02-golden-case-to-playwright.md`
-21. `fixtures/03-golden-git-quality.md`
+21. `fixtures/03-golden-cicd-quality.md`
 22. `fixtures/04-real-user-scenarios.md`
 23. `fixtures/05-minimal-prompt-skill-seeds.md`
 24. `implementation/01-v1-development-process.md`
@@ -89,6 +89,7 @@ appear to disagree:
 26. `implementation/03-testing-and-acceptance.md`
 27. `implementation/04-ai-vibecoding-governance.md`
 28. `product/06-frontend-ui-guidelines.md` when implementing frontend views
+29. `product/08-frontend-design-spec.md` when implementing V1 frontend pages
 
 ## V1 Hard Constraints
 
@@ -96,8 +97,9 @@ appear to disagree:
 - PostgreSQL + Redis + Docker Compose from the first release.
 - Frozen V1 stack: FastAPI, SQLAlchemy 2, Pydantic v2, Alembic, Vue 3, Arco Design Vue, Redis + RQ.
 - RAG is not built in; only KnowledgeAdapter is provided.
+- RAG 知识库 is a ContextArtifact and KnowledgeAdapter management page, not an internal RAG runtime.
 - MCP is not a V1 dependency; Internal Tool Adapter comes first.
-- Git Quality Center is a support workflow and must not overtake the requirement-to-automation mainlines.
+- CI/CD 管理 is a local-first support workflow and must not overtake the requirement-to-automation mainlines.
 - `fixtures/00-v1-demo-path.md` is the release spine; broad features cannot replace this evidence loop.
 - V1 priority tools: TestRunner/pytest and Playwright minimal loop.
 - Runner isolation is a V1 safety boundary by contract: every TestRun records runtime workspace, dependency snapshot, environment snapshot, runtime manifest, network setting, and artifact trace.
@@ -119,6 +121,7 @@ appear to disagree:
 - `product/05-non-goals-and-version-boundaries.md`: Non-goals and version boundaries.
 - `product/06-frontend-ui-guidelines.md`: V1 frontend layout, review surface, evidence display, and visual guidance.
 - `product/07-ai-testing-evidence-workbench-optimization.md`: Strategy B optimization plan for evidence-loop-first delivery.
+- `product/08-frontend-design-spec.md`: Approved final frontend design, navigation, page layouts, and open-source UI reference boundary.
 
 ### Contracts
 
@@ -136,7 +139,7 @@ appear to disagree:
 - `fixtures/00-v1-demo-path.md`: V1 minimum demo path.
 - `fixtures/01-golden-requirement-to-case.md`: Requirement to cases.
 - `fixtures/02-golden-case-to-playwright.md`: TestCase to pytest/Playwright.
-- `fixtures/03-golden-git-quality.md`: Git diff to quality report.
+- `fixtures/03-golden-cicd-quality.md`: Git diff to quality report.
 - `fixtures/04-real-user-scenarios.md`: Real API tester, Web automation tester, and backend unit-test user samples.
 - `fixtures/05-minimal-prompt-skill-seeds.md`: Minimal Prompt/Skill seed fixture index for Slice 5.
 - `fixtures/prompt-skill-seeds/`: Concrete Prompt/Skill seed files for mock provider and PromptVersion/SkillVersion loading.
@@ -147,7 +150,7 @@ appear to disagree:
 - `architecture/02-agent-mcp-skill-prompt.md`: Agent/MCP/Skill/Prompt summary.
 - `architecture/03-implementation-technology.md`: Technical implementation guide.
 - `architecture/04-agent-workflow-design.md`: Detailed Agent workflow design.
-- `architecture/05-git-quality-center-design.md`: Git Quality Center design.
+- `architecture/05-cicd-quality-center-design.md`: CI/CD Management design.
 
 ### Implementation And Operation
 
@@ -172,6 +175,6 @@ appear to disagree:
 
 Use `../START_HERE_FOR_AI.md` and `../NEXT_AI_TASK.md` as the session entry.
 Then continue the active task named in `../NEXT_AI_TASK.md`. As of the current
-handoff this is Slice 1 Task 4: add the worker container placeholder. Keep
+handoff this is Slice 03 Task 1: add Project Core models and migration. Keep
 `implementation/00-v0.1-walking-skeleton.md` as the first early evidence
 checkpoint while progressing through Slice 1-5.

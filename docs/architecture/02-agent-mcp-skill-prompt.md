@@ -19,7 +19,7 @@
 - CaseGenerationAgent.
 - CaseReviewAgent.
 - AutomationDraftAgent.
-- GitDiffAgent.
+- CICDChangeAnalysisAgent.
 - UnitTestAgent.
 - RegressionAgent.
 - ToolExecutionAgent.

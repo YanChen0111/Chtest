@@ -45,7 +45,7 @@ V1 is single-user, but owner fields are kept for later extension.
 | SkillStatus | draft, active, deprecated |
 | ToolDefinitionStatus | active, disabled, archived |
 | FailureClassification | product_defect, test_script_issue, environment_issue, test_data_issue, dependency_issue, flaky_test, insufficient_evidence |
-| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, GitChangeSet, ToolInvocation |
+| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation |
 | LLMCallStatus | started, succeeded, failed, timeout, schema_invalid |
 | AutomationRepairStatus | created, running, candidate_generated, waiting_review, approved, rejected, failed |
 
@@ -255,24 +255,28 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 
 V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed artifact runtime directory before execution. It is not written directly into the target business repository.
 
-## 17. GitChangeSet
+## 17. CICDRun
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
 | repository_id | uuid | no | null | FK Repository |
-| source_type | varchar(40) | yes | local_diff | local_diff, uploaded_diff |
+| source_type | varchar(40) | yes | local_diff | local_diff, uploaded_diff, manual_check |
+| trigger_type | varchar(40) | yes | manual | manual in V1; webhook, pr, scheduled are V2+ |
+| provider | varchar(40) | yes | local | local in V1; github_actions, gitlab_ci, jenkins are V2+ |
+| pipeline_name | varchar(160) | no | null | Optional local pipeline/check name |
 | base_ref | varchar(160) | no | null | Base commit or branch |
 | head_ref | varchar(160) | no | null | Head commit or branch |
 | summary | text | no | null | Change summary |
 | overall_risk | RiskLevel | yes | medium | Overall risk |
-| status | varchar(40) | yes | created | created, analyzed, reported, archived |
+| quality_gate_status | varchar(40) | yes | pending | pending, passed, failed, needs_review |
+| status | varchar(40) | yes | created | created, analyzed, patch_ready, tests_running, reported, archived |
 
-## 18. GitChangedFile
+## 18. CICDChangedFile
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
-| change_set_id | uuid | yes | none | FK GitChangeSet |
+| cicd_run_id | uuid | yes | none | FK CICDRun |
 | path | text | yes | none | File path |
 | old_path | text | no | null | Rename source path |
 | change_type | varchar(40) | yes | modified | added, modified, deleted, renamed |
@@ -287,7 +291,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
-| change_set_id | uuid | yes | none | FK GitChangeSet |
+| cicd_run_id | uuid | yes | none | FK CICDRun |
 | ai_task_id | uuid | yes | none | FK AITask |
 | patch_text | text | yes | none | Unified diff |
 | target_framework | varchar(60) | yes | pytest | pytest/jest/vitest |
@@ -302,7 +306,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| change_set_id | uuid | no | null | FK GitChangeSet |
+| cicd_run_id | uuid | no | null | FK CICDRun |
 | automation_draft_id | uuid | no | null | FK AutomationDraft |
 | test_command_id | uuid | no | null | FK TestCommand |
 | tool_invocation_id | uuid | no | null | FK ToolInvocation |
@@ -382,7 +386,7 @@ Rules:
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| report_type | varchar(80) | yes | execution | requirement_review, case_quality, automation_execution, git_quality, ai_effectiveness |
+| report_type | varchar(80) | yes | execution | requirement_review, case_quality, automation_execution, cicd_quality, ai_effectiveness |
 | title | varchar(255) | yes | none | Report title |
 | related_entity_type | varchar(80) | no | null | Related entity type |
 | related_entity_id | uuid | no | null | Related entity id |
@@ -578,7 +582,7 @@ Project -> Requirement -> RequirementReview -> RiskItem
 Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
 TestRun/TestResult -> FailureAnalysis -> AutomationRepairTask -> Report
-Repository -> GitChangeSet -> GitChangedFile -> UnitTestPatch -> TestRun -> Report
+Repository -> CICDRun -> CICDChangedFile -> UnitTestPatch -> TestRun -> Report
 AITask -> LLMCallLog
 AITask -> Artifact / ContextArtifact references
 AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric

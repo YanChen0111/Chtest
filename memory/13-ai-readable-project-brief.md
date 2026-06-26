@@ -32,18 +32,18 @@ Chtest V1 是面向个人测试工程师、自动化测试工程师的 AI 测试
   -> 报告
 ```
 
-### 支线 C：代码到质量
+### 支线 C：CI/CD 到质量
 
 ```text
-本地 Git diff
+CI/CD 管理中的本地 Git diff
   -> 变更风险分析
   -> AI 生成 UnitTestPatch
   -> 人工审批
   -> pytest 新增测试和回归
-  -> Git 质量报告
+  -> CI/CD 质量报告
 ```
 
-Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
+CI/CD 管理是 V1 支线能力，不压过需求到自动化主线。用户可见页面名使用 `CI/CD 管理`；当前底层数据和契约名使用 `CICDRun`、`CICDChangedFile`、`UnitTestPatch`。
 
 ## 3. 硬约束
 
@@ -57,6 +57,7 @@ Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
 - AI 生成 UnitTestPatch 必须人工审批，只允许写测试目录。
 - V1 禁止 AI 自动修改业务源码。
 - RAG 不内置，只保留 Knowledge/RAG Adapter。
+- RAG 知识库是 ContextArtifact、KnowledgeAdapter 配置状态和 evidence 展示页面，不是内置向量库、chunking 或 rerank 平台。
 - V1 支持轻量 ContextArtifact：复用 Artifact 表，`owner_entity_type=Project`，`owner_entity_id=project_id`；ContextArtifact 可注入 Prompt，但不等同外部 RAG。
 - `use_knowledge=false` 只表示不使用外部 RAG/KnowledgeAdapter，不表示禁用 `context_artifact_ids`。
 - MCP 不作为 V1 强依赖，先实现 Internal Tool Adapter。
@@ -71,32 +72,29 @@ Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
 2. `memory/README.md`
 3. `memory/13-ai-readable-project-brief.md`
 4. `docs/product/01-positioning-and-scope.md`
-5. `docs/implementation/00-v0.1-walking-skeleton.md`
-6. `docs/contracts/01-data-model-contract.md`
-7. `docs/contracts/02-api-contract.md`
-8. `docs/contracts/03-state-machines.md`
-9. `docs/contracts/04-artifact-contract.md`
-10. `docs/contracts/05-prompt-skill-contract.md`
-11. `docs/implementation/01-v1-development-process.md`
-12. `docs/implementation/02-v1-slice-plan.md`
-13. `memory/11-implementation-slices.md`
-14. `memory/08-session-handoff.md`
+5. `docs/product/08-frontend-design-spec.md` when implementing frontend pages
+6. `docs/implementation/00-v0.1-walking-skeleton.md`
+7. `docs/contracts/01-data-model-contract.md`
+8. `docs/contracts/02-api-contract.md`
+9. `docs/contracts/03-state-machines.md`
+10. `docs/contracts/04-artifact-contract.md`
+11. `docs/contracts/05-prompt-skill-contract.md`
+12. `docs/implementation/01-v1-development-process.md`
+13. `docs/implementation/02-v1-slice-plan.md`
+14. `memory/11-implementation-slices.md`
+15. `memory/08-session-handoff.md`
 
 按任务追加 fixtures：
 
 - 需求到用例：`docs/fixtures/01-golden-requirement-to-case.md`
 - 用例到自动化：`docs/fixtures/02-golden-case-to-playwright.md`
-- Git 质量：`docs/fixtures/03-golden-git-quality.md`
+- CI/CD 本地 diff 质量：`docs/fixtures/03-golden-cicd-quality.md`
 
 ## 5. 当前优先级
 
 当前应进入 V1 实施，而不是继续扩写大而全规划。
 
-推荐下一个开发切片：
-
-```text
-Slice 1 + Slice 2：Repository and Deploy Skeleton + Backend Core
-```
+当前推荐继续 `NEXT_AI_TASK.md` 指向的 Slice 03 Task 1：Add Project Core models and migration.
 
 早期工程检查点：`docs/implementation/00-v0.1-walking-skeleton.md`。完成 Slice 1-5 后优先跑通 Project -> ContextArtifact -> Mock AITask -> artifacts -> minimal pytest execution -> minimal report JSON。
 
@@ -105,15 +103,13 @@ Slice 1 + Slice 2：Repository and Deploy Skeleton + Backend Core
 - 继续 `NEXT_AI_TASK.md` 指向的当前任务。
 - 已完成 backend/frontend/worker/deploy/prompts/skills/mcp_tools/artifacts 目录初始化。
 - 已完成 PostgreSQL、Redis 和 backend placeholder Docker Compose 基础。
-- 下一步是 worker container placeholder。
-- 建 FastAPI health/ready。
-- 建 Alembic。
-- 建 Vue + Arco 基础布局。
+- 已完成 Slice 02.5 Frontend Foundation：Vue + Arco 基础布局、中文主导航、AI 工作台、Pinia、Vue Router、API client 和 `/health` smoke。
+- 下一步按 `NEXT_AI_TASK.md` 建 Project Core models/migration。
 - 建单用户上下文。
 
 ## 6. 不要做什么
 
-- 不要先做完整 RAG。
+- 不要先做完整 RAG，也不要把 RAG 知识库做成内置向量检索平台。
 - 不要先做企业权限。
 - 不要先做插件市场。
 - 不要先做复杂低代码 UI 自动化。
@@ -153,4 +149,4 @@ Slice 1 + Slice 2：Repository and Deploy Skeleton + Backend Core
 
 ## 9. 给后续 AI 的一句话
 
-优先把 Chtest 做成可运行、可评审、可执行、可报告的个人 AI 测试设计与自动化落地工作台。任何新能力都必须服务“需求到用例”“用例到自动化”“Git 到质量报告”三条最小闭环。
+优先把 Chtest 做成可运行、可评审、可执行、可报告的个人 AI 测试设计与自动化落地工作台。任何新能力都必须服务“需求到用例”“用例到自动化”“CI/CD 管理到质量报告”三条最小闭环。

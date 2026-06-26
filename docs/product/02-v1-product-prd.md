@@ -28,7 +28,7 @@ Chtest V1 is successful when it can repeatedly complete these loops in a real pr
 2. Reviewed test cases to approved automation drafts.
 3. Approved automation drafts to executable pytest or Playwright test runs.
 4. Test runs to failure analysis and reports.
-5. Local Git diff to AI-generated unit test patch, approval, execution, and regression conclusion.
+5. CI/CD-managed local Git diff to AI-generated unit test patch, approval, execution, and regression conclusion.
 
 The product must measure AI output quality instead of only showing generated content. Every AI result needs review status, acceptance data, edit data, failure data, and traceable artifacts.
 
@@ -131,7 +131,7 @@ Allowed failure classifications:
 
 AI must not invent a root cause without evidence.
 
-### 4.7 Git Quality Support
+### 4.7 CI/CD Management Support
 
 The user connects a local repository and creates a change set from a local diff. Chtest analyzes changed files, risk, and affected tests. It can generate a unit test patch for test directories only.
 
@@ -143,7 +143,9 @@ UnitTestPatch rules:
 - Must be reviewed before application.
 - Must be followed by test execution and a report.
 
-Git Quality is a support workflow in V1. The main product value remains requirement review, case generation, automation draft, execution, failure analysis, and reports.
+CI/CD Management is a support workflow in V1. The main product value remains requirement review, case generation, automation draft, execution, failure analysis, and reports.
+
+V1 CI/CD Management is local-first. GitHub Actions, GitLab CI, webhook ingestion, PR comments, and remote CI synchronization are V2 capabilities.
 
 ## 5. Functional Scope
 
@@ -199,10 +201,32 @@ Report Center must support:
 - Requirement review report.
 - Case quality report.
 - Automation execution report.
-- Git quality report.
+- CI/CD quality report.
 - AI effectiveness report.
 
 Reports must include raw data references and artifact ids.
+
+### 5.6 CI/CD Management
+
+CI/CD Management must support:
+
+- Local repository or manual diff input.
+- Changed file summary.
+- Diff risk analysis.
+- UnitTestPatch generation and human review.
+- PatchScopeGate result.
+- New test execution and regression execution.
+- CI/CD quality report.
+
+### 5.7 RAG Knowledge Base
+
+RAG 知识库 must support the V1 knowledge surface without building an internal RAG runtime:
+
+- ContextArtifact list and detail.
+- ContextArtifact safety metadata: `safe_to_show`, `redaction_applied`, and prompt allowance.
+- KnowledgeAdapter provider configuration state.
+- External evidence display when a provider is configured.
+- AI task usage history for local context and external evidence.
 
 ## 6. Tool Scope
 
@@ -225,7 +249,7 @@ AI can:
 - Generate structured candidate cases.
 - Optimize rejected or weak cases.
 - Generate automation draft code.
-- Analyze Git diff risk.
+- Analyze local CI/CD or Git diff risk.
 - Generate unit test patches under test directories.
 - Select regression commands with explanation.
 - Analyze failure evidence.
@@ -245,6 +269,8 @@ AI cannot:
 V1 does not build a RAG system. It provides a KnowledgeAdapter interface so a later RAG service can be connected.
 
 When no knowledge provider is configured, AI workflows must still run with `used_knowledge=false` and an empty evidence list.
+
+The user-facing RAG 知识库 page is a management surface for ContextArtifacts, KnowledgeAdapter configuration state, safety metadata, and evidence usage. It is not an internal vector database, embedding service, chunking system, or reranking pipeline.
 
 V1 does support lightweight ContextArtifact injection before RAG exists:
 

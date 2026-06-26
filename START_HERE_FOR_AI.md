@@ -67,12 +67,14 @@ This loop is defined in `docs/implementation/00-v0.1-walking-skeleton.md`.
 
 - Do not build RBAC, tenants, enterprise approval flows, or team management.
 - Do not build RAG indexing, vector storage, or reranking in V1.
+- Do not treat the RAG 知识库 page as an internal RAG runtime; it is a ContextArtifact and KnowledgeAdapter management surface.
 - Do not make MCP a runtime dependency before Internal Tool Adapter works.
 - Do not let generated cases enter the case library without review.
 - Do not execute AutomationDraft before approval.
 - Do not let UnitTestPatch modify business source files.
 - Do not execute arbitrary shell strings; use ToolDefinition allowlists.
 - Do not mark reports as passed without evidence artifacts.
+- Do not expand CI/CD 管理 beyond local diff, UnitTestPatch review, pytest regression, and evidence report unless a later task explicitly targets V2 integrations.
 - Do not add broad dashboard or marketplace work before the V0.1 loop runs.
 
 ## Completion Rule

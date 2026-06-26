@@ -8,7 +8,7 @@ V1 服务三条最小闭环：
 
 1. 需求到用例。
 2. 用例到自动化。
-3. Git 到质量报告。
+3. CI/CD 管理中的本地 diff 到质量报告。
 
 ## 2. 容器架构
 
@@ -67,7 +67,7 @@ backend/app/
     case_generation/
     test_cases/
     automation_drafts/
-    git_quality/
+    cicd_quality/
     ai_tasks/
     prompts/
     skills/
@@ -88,14 +88,14 @@ backend/app/
 | case_generation | 用例候选生成、生成批次、候选评审 |
 | test_cases | 正式用例库、模块树、用例步骤、套件 |
 | automation_drafts | pytest/Playwright 草稿生成、审批、执行入口 |
-| git_quality | diff、变更分析、UnitTestPatch、回归计划 |
+| cicd_quality | 支撑 CI/CD 管理页面的 diff、变更分析、UnitTestPatch、回归计划 |
 | ai_tasks | AI 任务状态机、artifact、LLM 调用日志 |
 | prompts | PromptVersion、schema、hash |
 | skills | SkillVersion、质量门禁、禁止事项 |
 | tools | ToolDefinition、ToolInvocation、审批 |
 | executions | TestRun、TestResult、执行日志解析 |
 | reports | Markdown/HTML/JSON 报告生成、evidence manifest |
-| knowledge | Knowledge/RAG Adapter 空实现和配置 |
+| knowledge | 支撑 RAG 知识库页面的 ContextArtifact 展示、Knowledge/RAG Adapter 空实现和配置 |
 
 ## 5. 前端页面结构
 
@@ -107,19 +107,21 @@ frontend/src/
     case-generation-review/
     test-case-library/
     automation-draft-center/
-    git-quality-center/
     execution-center/
-    tool-center/
-    prompt-skill-center/
+    cicd-management/
     report-center/
+    rag-knowledge-base/
+    prompt-skill-center/
+    tool-adapter-center/
     settings/
   components/
     review/
     testcase/
     automation/
-    git/
+    cicd/
     execution/
     report/
+    knowledge/
   stores/
   api/
   router/
@@ -157,9 +159,9 @@ CaseGenerationTask
 GeneratedCaseCandidate
 TestCase
 AutomationDraft
-GitChangeSet
-GitChangedFile
-GitRiskAnalysis
+CICDRun
+CICDChangedFile
+CICDRiskAnalysis
 UnitTestPatch
 RegressionPlan
 AITask
@@ -197,8 +199,8 @@ POST /api/case-review/items/{id}/approve
 POST /api/automation/drafts
 POST /api/automation/drafts/{id}/approve
 POST /api/test-runs
-POST /api/git/change-sets
-POST /api/git/change-sets/{id}/unit-test-patches
+POST /api/cicd/change-sets
+POST /api/cicd/change-sets/{id}/unit-test-patches
 GET  /api/reports/{id}
 GET  /api/ai-tasks/{id}
 ```
@@ -213,7 +215,7 @@ artifacts/projects/{project_id}/
   requirements/{requirement_id}/
   case-generation/{generation_task_id}/
   automation-drafts/{automation_draft_id}/
-  git-quality/{change_set_id}/
+  cicd-quality/{change_set_id}/
   test-runs/{test_run_id}/
   reports/{report_id}/
 ```
@@ -234,7 +236,7 @@ artifacts/projects/{project_id}/
 
 | 接口 | 第一版 | 后续 |
 |---|---|---|
-| Knowledge/RAG Adapter | 空实现 | 接外部 RAG |
+| Knowledge/RAG Adapter | RAG 知识库页面 + 空实现 | 接外部 RAG |
 | MCP Adapter | 配置占位 | 接 GitHub MCP、Chtest MCP |
 | Runner Adapter | 本地/容器执行 pytest/Playwright | 分布式执行器 |
 | Object Storage | 本地 volume | MinIO/S3 |

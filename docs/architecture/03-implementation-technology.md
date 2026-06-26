@@ -113,9 +113,9 @@ AutomationDraft 是 V1 主线 B 的关键实体。
 
 V1 支持：pytest、Playwright。Newman/JMeter 后置。
 
-## 7. Git Quality Center 实现技术
+## 7. CI/CD 管理实现技术
 
-Git Quality 是 V1 支线能力。第一版使用本地 git 命令：
+CI/CD 管理是 V1 支线能力。第一版使用本地 git 命令和手动 diff 输入，不接云 CI/CD 平台：
 
 - `git status --short`
 - `git diff --name-status base head`
@@ -126,14 +126,16 @@ Git Quality 是 V1 支线能力。第一版使用本地 git 命令：
 
 1. 后端读取 repository local_path。
 2. 用户选择 base/head 或上传 diff。
-3. GitTool 生成 GitChangeSet 和 GitChangedFile。
-4. GitDiffAgent 生成风险摘要。
+3. ChangeSetTool 生成 CICDRun 和 CICDChangedFile。
+4. CICDChangeAnalysisAgent 生成风险摘要。
 5. UnitTestAgent 生成 UnitTestPatch artifact。
 6. PatchScopeGate 校验路径。
 7. 用户确认后才允许应用 patch。
 8. TestRunner 执行新增 pytest 和回归。
 
 Patch 规则：V1 只允许写测试目录，禁止修改业务源码。
+
+前端实现使用 A 方案浅色工作台设计，页面名称为 `CI/CD 管理`。内部模块、API 或数据对象使用 `cicd_quality`、`CICDRun`、`CICDChangedFile`、`UnitTestPatch`。
 
 ## 8. 测试执行实现技术
 
