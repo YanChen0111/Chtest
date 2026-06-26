@@ -50,7 +50,7 @@ AgentContext
   requirement_id
   test_case_id
   automation_draft_id
-  change_set_id
+  cicd_run_id
   prompt_version
   skill_version
   model_config
@@ -186,7 +186,7 @@ Responsibilities:
 - Analyze change intent, affected modules, and risk level.
 - Provide context for UnitTestAgent and RegressionAgent.
 
-Outputs: CICDRiskAnalysis.
+Outputs: `risk_analysis.json` artifact.
 
 Quality gate: every high-risk file must include risk reason and suggested tests.
 
@@ -315,7 +315,7 @@ Acceptance output:
 - FailureAnalysis when failed.
 - Report.
 
-## 8. Support Workflow: CI/CD Management
+## 8. Support Workflow: CI/CD Quality Center
 
 ```text
 Local Git Diff / CI/CD Change

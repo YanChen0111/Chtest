@@ -24,7 +24,7 @@ NEXT_AI_TASK
 - Fixtures explain product paths, but real tester scenarios were not explicit.
 - Prompt and Skill behavior existed as a contract, but not as seed files that an
   AI worker can load or test.
-- Some future AI sessions may expand into dashboards, CI/CD Management, RAG, or MCP
+- Some future AI sessions may expand into dashboards, CI/CD Quality Center, RAG, or MCP
   before the V0.1 evidence loop runs.
 
 ## 3. Optimization Decisions
@@ -89,7 +89,7 @@ uncontrolled external project.
 - Stop after two or three failed repair attempts and write a failure handoff.
 - Do not start V0.1 runner smoke until the sample repository path and pytest
   TestCommand are defined and allowlisted.
-- Do not add UI, dashboard, RAG, MCP, or CI/CD Management breadth unless the active
+- Do not add UI, dashboard, RAG, MCP, or CI/CD Quality Center breadth unless the active
   task moves the V0.1 or V1 evidence loop forward.
 
 ## 5. Documentation Routing

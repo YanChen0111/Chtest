@@ -22,7 +22,7 @@ V1 Minimum Demo：
 
 1. 需求到用例。
 2. 用例到自动化。
-3. CI/CD 管理中的本地 Git diff 到质量报告。
+3. CI/CD 质量中心中的本地 Git diff 到质量报告。
 
 ## 2. 测试分层
 
@@ -121,7 +121,7 @@ V1 Minimum Demo：
 - TestRun 记录 runtime_manifest、dependency_snapshot、environment_snapshot 和 runner sandbox metadata。
 - Report 生成。
 
-### 4.4 CI/CD 管理到质量报告
+### 4.4 CI/CD 质量中心到质量报告
 
 使用：`docs/fixtures/03-golden-cicd-quality.md`
 

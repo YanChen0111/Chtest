@@ -10,13 +10,12 @@ Slice 03: Project Core.
 
 ## Current Task
 
-Task 1: Add Project Core models and migration.
+Task 2: Add Project CRUD API.
 
 ## Product Value Answer
 
-After this task, Chtest has persistent project context records for project,
-module, repository, environment, and test command, which unlocks every later
-AI, execution, and report workflow.
+After this task, Chtest exposes the first Project Settings backend API so the
+frontend can create, read, update, and bootstrap a local project context.
 
 ## Must Read
 
@@ -32,7 +31,7 @@ AI, execution, and report workflow.
 - Backend architecture deep dives.
 - Open-source migration references.
 - Frontend page polish docs beyond shell level.
-- CI/CD Management implementation docs.
+- CI/CD Quality Center implementation docs.
 - Playwright, Newman, JMeter, Appium, traffic-capture roadmap docs.
 
 ## Expected Files
@@ -40,35 +39,35 @@ AI, execution, and report workflow.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/projects/models.py
-backend/app/modules/projects/schemas.py
 backend/app/modules/projects/service.py
-backend/alembic/versions/<revision>_project_core.py
-backend/app/tests/db/test_project_core_models.py
+backend/app/modules/projects/schemas.py
+backend/app/modules/projects/router.py
+backend/app/main.py
+backend/app/tests/api/test_projects.py
 ```
 
 ## Verification Command
 
 ```bash
-pytest backend/app/tests/db/test_project_core_models.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py -q
 ```
 
-Expected result: the new project core model test passes.
+Expected result: the new Project Settings API test passes.
 
 ## Acceptance
 
-- SQLAlchemy models exist for Project, Module, Repository, Environment, and TestCommand.
-- The migration creates the project core tables with the contract fields needed by later slices.
-- Workspace/User ownership assumptions remain single-user V1 only.
-- No AI task models, ToolInvocation, or multi-user permissions are added in this task.
-- `git status --short` shows only the expected backend model, migration, and test files before commit.
+- Project create/read/update APIs follow `docs/contracts/02-api-contract.md`.
+- Project Settings bootstrap returns project, modules, repositories, environments, and test commands.
+- The API uses the existing SQLAlchemy Project Core models from Task 1.
+- No repository path validation, environment mutation API, TestCommand validation, AI task models, ToolInvocation, or multi-user permissions are added in this task.
+- `git status --short` shows only the expected Project API files before commit.
 
 ## Commit Message
 
 ```text
-feat(projects): add project core models
+feat(projects): add project settings api
 ```
 
 ## Next Task
 
-Slice 03 Task 2: add project settings api.
+Slice 03 Task 3: add module tree api.

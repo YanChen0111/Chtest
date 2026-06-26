@@ -169,7 +169,7 @@ Do not put these in V1 critical path:
 | Slice 11-12 | AutomationDraft execution must record runtime artifact, runner sandbox metadata, and snapshots. |
 | Slice 12 | Docker runner should be the preferred product acceptance path when available. |
 | Slice 13-14 | Failure analysis and reports must cite evidence before drawing conclusions. |
-| Slice 15-16 | CI/CD Management remains a support workflow and must not overtake the main evidence loop. |
+| Slice 15-16 | CI/CD Quality Center remains a support workflow and must not overtake the main evidence loop. |
 
 ## 8. Vibe Coding Constraints
 

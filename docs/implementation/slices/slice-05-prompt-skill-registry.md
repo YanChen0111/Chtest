@@ -72,7 +72,7 @@ Expected files:
 - `prompts/case_review/v1.md`
 - `prompts/case_optimization/v1.md`
 - `prompts/automation_draft_generation/v1.md`
-- `prompts/git_diff_analysis/v1.md`
+- `prompts/cicd_change_analysis/v1.md`
 - `prompts/unit_test_generation/v1.md`
 - `prompts/regression_selection/v1.md`
 - `prompts/tool_execution/v1.md`

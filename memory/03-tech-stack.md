@@ -78,7 +78,7 @@ prompts/
   requirement_review/v1.md
   case_generation/v1.md
   automation_draft_generation/v1.md
-  git_diff_analysis/v1.md
+  cicd_change_analysis/v1.md
   unit_test_generation/v1.md
   regression_selection/v1.md
   failure_analysis/v1.md

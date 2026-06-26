@@ -325,7 +325,22 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | duration_ms | int | no | null | Duration |
 | parsed_result_json | jsonb | yes | {} | Parsed aggregate result |
 
-## 21. TestResult
+## 21. QualityGateDecision
+
+QualityGateDecision records the CI/CD quality gate result for a CICDRun. V1 computes it from local diff risk, PatchScopeGate, new test results, regression results, and failure analysis evidence. It does not trigger merge, push, or deployment automatically.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| cicd_run_id | uuid | yes | none | FK CICDRun |
+| status | varchar(40) | yes | needs_review | passed, failed, needs_review |
+| summary | text | yes | none | Human-readable gate conclusion |
+| blocking_reasons_json | jsonb | yes | [] | Reasons blocking merge/release readiness |
+| evidence_artifact_ids | uuid[] | yes | {} | Diff, patch, JUnit, logs, failure analysis |
+| decided_by | varchar(40) | yes | system | system in V1; user_override is V2+ |
+| status_detail_json | jsonb | yes | {} | Patch/test/regression/failure-analysis signals |
+
+## 22. TestResult
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -339,7 +354,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | failure_artifact_ids | uuid[] | yes | {} | Related artifacts |
 | metadata_json | jsonb | yes | {} | Parser-specific metadata |
 
-## 22. FailureAnalysis
+## 23. FailureAnalysis
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -355,7 +370,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | suggested_actions_json | jsonb | yes | [] | Suggested next actions |
 | status | varchar(40) | yes | draft | draft, confirmed, rejected |
 
-## 23. AutomationRepairTask
+## 24. AutomationRepairTask
 
 AutomationRepairTask records an evidence-driven attempt to improve an AutomationDraft after a failed execution. It does not overwrite the approved AutomationDraft silently.
 
@@ -381,7 +396,7 @@ Rules:
 - Repair candidate cannot automatically replace or promote an approved AutomationDraft.
 - Repair approval does not execute automatically; it creates or updates a review-gated AutomationDraft candidate.
 
-## 24. Report
+## 25. Report
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -396,7 +411,7 @@ Rules:
 | metrics_json | jsonb | yes | {} | Metrics |
 | artifact_ids | uuid[] | yes | {} | Report artifacts |
 
-## 25. AITask
+## 26. AITask
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -416,7 +431,7 @@ Rules:
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 26. LLMCallLog
+## 27. LLMCallLog
 
 LLMCallLog records each provider call made inside an AITask. AITask is the workflow-level task; LLMCallLog is the per-model-call audit log.
 
@@ -444,7 +459,7 @@ LLMCallLog records each provider call made inside an AITask. AITask is the workf
 
 Relationship: AITask 1:N LLMCallLog.
 
-## 27. PromptVersion
+## 28. PromptVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -459,7 +474,7 @@ Relationship: AITask 1:N LLMCallLog.
 
 Unique constraint: name + version.
 
-## 28. SkillVersion
+## 29. SkillVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -475,7 +490,7 @@ Unique constraint: name + version.
 
 Unique constraint: name + version.
 
-## 29. ToolDefinition
+## 30. ToolDefinition
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -498,7 +513,7 @@ Unique constraint: name + version.
 
 Unique constraint: project_id + name, treating null project_id as built-in scope.
 
-## 30. ToolInvocation
+## 31. ToolInvocation
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -520,7 +535,7 @@ Unique constraint: project_id + name, treating null project_id as built-in scope
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 31. Artifact
+## 32. Artifact
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -543,7 +558,7 @@ V1 ContextArtifact rule:
 - A prompt input artifact must include `context_manifest.json` with the exact context artifact ids, hashes, titles, MIME types, and redaction flags used for that AI task.
 - Artifact owner fields must never be null for ContextArtifact.
 
-## 32. AutomationQualityMetric
+## 33. AutomationQualityMetric
 
 AutomationQualityMetric stores batch-level AutomationDraft generation, execution, and repair quality. Ratio fields use `0.00-1.00`; UI may render percentages.
 
@@ -572,7 +587,7 @@ AutomationQualityMetric stores batch-level AutomationDraft generation, execution
 | repair_success_rate | numeric(3,2) | yes | 0.00 | repair_success_count / repair_attempt_count |
 | evidence_complete_rate | numeric(3,2) | yes | 0.00 | evidence_complete_count / first_run_fail_count |
 
-## 33. Relationship Summary
+## 34. Relationship Summary
 
 ```text
 Workspace -> Project
@@ -582,7 +597,7 @@ Project -> Requirement -> RequirementReview -> RiskItem
 Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
 TestRun/TestResult -> FailureAnalysis -> AutomationRepairTask -> Report
-Repository -> CICDRun -> CICDChangedFile -> UnitTestPatch -> TestRun -> Report
+Repository -> CICDRun -> CICDChangedFile -> UnitTestPatch -> TestRun -> QualityGateDecision -> Report
 AITask -> LLMCallLog
 AITask -> Artifact / ContextArtifact references
 AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric

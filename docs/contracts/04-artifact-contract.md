@@ -71,12 +71,16 @@ artifacts/projects/{project_id}/automation-drafts/{automation_draft_id}/
 ### 3.5 CI/CD Quality
 
 ```text
-artifacts/projects/{project_id}/cicd-quality/{change_set_id}/
+artifacts/projects/{project_id}/cicd-quality/{cicd_run_id}/
   diff.patch
   changed_files.json
   risk_analysis.json
   unit_test.patch
   patch_scope_gate.json
+  quality_gate.json
+  cicd_quality_report.json
+  cicd_quality_report.md
+  cicd_quality_report.html
 ```
 
 ### 3.6 Test Run

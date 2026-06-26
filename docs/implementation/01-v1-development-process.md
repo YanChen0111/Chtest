@@ -44,7 +44,7 @@ Task-specific reading:
 |---|---|
 | Requirement to cases | `docs/fixtures/01-golden-requirement-to-case.md` |
 | Case to automation | `docs/fixtures/02-golden-case-to-playwright.md` |
-| Git quality | `docs/fixtures/03-golden-cicd-quality.md` |
+| CI/CD quality | `docs/fixtures/03-golden-cicd-quality.md` |
 | Prompt/Skill | `docs/contracts/05-prompt-skill-contract.md` |
 | Artifact/Report | `docs/contracts/04-artifact-contract.md` |
 | Error handling | `docs/contracts/06-error-code-contract.md` |
@@ -107,7 +107,7 @@ Changing the main stack requires an ADR before implementation.
 4. Requirement To Case.
 5. AutomationDraft + TestRunner.
 6. Playwright minimal loop.
-7. CI/CD Management support workflow.
+7. CI/CD Quality Center support workflow.
 8. Report + Failure Analysis.
 9. Extension Surface.
 

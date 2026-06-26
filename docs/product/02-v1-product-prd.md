@@ -28,7 +28,7 @@ Chtest V1 is successful when it can repeatedly complete these loops in a real pr
 2. Reviewed test cases to approved automation drafts.
 3. Approved automation drafts to executable pytest or Playwright test runs.
 4. Test runs to failure analysis and reports.
-5. CI/CD-managed local Git diff to AI-generated unit test patch, approval, execution, and regression conclusion.
+5. CI/CD Quality Center local Git diff to AI-generated unit test patch, approval, execution, quality gate, and evidence report.
 
 The product must measure AI output quality instead of only showing generated content. Every AI result needs review status, acceptance data, edit data, failure data, and traceable artifacts.
 
@@ -131,7 +131,7 @@ Allowed failure classifications:
 
 AI must not invent a root cause without evidence.
 
-### 4.7 CI/CD Management Support
+### 4.7 CI/CD Quality Center Support
 
 The user connects a local repository and creates a change set from a local diff. Chtest analyzes changed files, risk, and affected tests. It can generate a unit test patch for test directories only.
 
@@ -141,11 +141,11 @@ UnitTestPatch rules:
 - Must not modify business source files.
 - Must not add skip or xfail to hide failures.
 - Must be reviewed before application.
-- Must be followed by test execution and a report.
+- Must be followed by test execution, QualityGateDecision, and a report.
 
-CI/CD Management is a support workflow in V1. The main product value remains requirement review, case generation, automation draft, execution, failure analysis, and reports.
+CI/CD Quality Center is a support workflow in V1. The main product value remains requirement review, case generation, automation draft, execution, failure analysis, and reports.
 
-V1 CI/CD Management is local-first. GitHub Actions, GitLab CI, webhook ingestion, PR comments, and remote CI synchronization are V2 capabilities.
+V1 CI/CD Quality Center is local-first. GitHub Actions, GitLab CI, webhook ingestion, PR comments, and remote CI synchronization are V2 capabilities.
 
 ## 5. Functional Scope
 
@@ -206,9 +206,9 @@ Report Center must support:
 
 Reports must include raw data references and artifact ids.
 
-### 5.6 CI/CD Management
+### 5.6 CI/CD Quality Center
 
-CI/CD Management must support:
+CI/CD Quality Center must support:
 
 - Local repository or manual diff input.
 - Changed file summary.
@@ -216,6 +216,7 @@ CI/CD Management must support:
 - UnitTestPatch generation and human review.
 - PatchScopeGate result.
 - New test execution and regression execution.
+- QualityGateDecision with passed, failed, or needs_review status.
 - CI/CD quality report.
 
 ### 5.7 RAG Knowledge Base

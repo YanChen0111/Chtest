@@ -42,7 +42,8 @@ Requirement or local code change
 - TestRun, TestResult, artifacts, failure analysis, and reports.
 - V1 minimum evidence demo: requirement -> ContextArtifact -> reviewed case -> approved AutomationDraft -> sandboxed execution -> evidence report.
 - Runner sandbox metadata, runtime manifest, dependency snapshot, and environment snapshot for AutomationDraft execution.
-- CI/CD Management support: local Git diff analysis, scoped unit test patch generation, approval, and regression execution.
+- CI/CD Quality Center support: local Git diff analysis, scoped unit test patch generation, approval, and regression execution.
+- CI/CD Quality Center quality gate: local diff risk, patch scope, test evidence, regression evidence, and a passed/failed/needs_review decision.
 - Prompt, Skill, ToolDefinition, ToolInvocation, and AI quality measurement.
 - KnowledgeAdapter interface for future RAG connection.
 - RAG 知识库 page surface for ContextArtifact management, KnowledgeAdapter configuration state, safety metadata, and evidence usage display.
@@ -87,7 +88,7 @@ TestCase / Requirement
   -> ReportAgent
 ```
 
-### Support Workflow: CI/CD Management
+### Support Workflow: CI/CD Quality Center
 
 ```text
 Local Git Diff / CI/CD Change
@@ -96,10 +97,11 @@ Local Git Diff / CI/CD Change
   -> UnitTestPatch Review
   -> TestRunner
   -> RegressionAgent
+  -> QualityGateDecision
   -> ReportAgent
 ```
 
-CI/CD Management supports local code-change validation. In V1 it is a local-first support workflow, not a cloud CI/CD platform, and it does not replace the main product loop.
+CI/CD Quality Center supports local code-change validation. In V1 it is a local-first support workflow, not a cloud CI/CD platform, and it does not replace the main product loop.
 
 ## 5. Tool Priority
 

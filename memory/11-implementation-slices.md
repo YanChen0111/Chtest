@@ -128,21 +128,21 @@
 
 验收：失败有证据链；报告输出 md/html/json；无证据时不能给出 passed 结论。
 
-## Slice 15: CI/CD Management Foundation
+## Slice 15: CI/CD Quality Foundation
 
-目标：支线能力：本地 diff 有质量视图。
+目标：支线能力：本地 diff 有 CI/CD 质量视图和风险摘要。
 
-交付：CICDRun、CICDChangedFile、diff 导入 API、本地 git diff 解析、CI/CD 管理任务列表和详情页。
+交付：CICDRun、CICDChangedFile、diff 导入 API、本地 git diff 解析、CI/CD 质量中心任务列表和详情页。
 
 验收：使用 `docs/fixtures/03-golden-cicd-quality.md` 的 diff 可看到变更文件、类型和风险摘要。
 
-## Slice 16: UnitTestPatch And Regression
+## Slice 16: CI/CD Test Patch And Quality Gate
 
-目标：根据 diff 生成单测 patch 并跑 pytest 回归。
+目标：根据 diff 生成单测 patch、跑 pytest 回归并生成质量门禁结论。
 
-交付：UnitTestPatch、UnitTestAgent、PatchScopeGate、Patch 评审页面、RegressionPlan、pytest 回归执行。
+交付：UnitTestPatch、UnitTestAgent、PatchScopeGate、Patch 评审页面、RegressionPlan、pytest 回归执行、QualityGateDecision。
 
-验收：AI 生成 patch；patch 默认只包含测试目录变更；用户审批后应用；新增测试和回归结果进入 CI/CD 管理。
+验收：AI 生成 patch；patch 默认只包含测试目录变更；用户审批后应用；新增测试和回归结果进入 CI/CD 质量中心；质量门禁输出 passed / failed / needs_review。
 
 ## Slice 17: Extension Surface
 

@@ -35,14 +35,14 @@ Primary navigation should follow V1 work:
 4. 用例库和测试套件.
 5. 自动化草稿中心.
 6. 执行中心.
-7. CI/CD 管理.
+7. CI/CD 质量中心.
 8. 报告中心.
 9. RAG 知识库.
 10. Prompt / Skill 中心.
 11. 工具适配器 / MCP 中心.
 12. 设置.
 
-`CI/CD 管理` is the user-facing page name for the local diff, UnitTestPatch, regression, and quality report workflow. Current technical contract names are `CICDRun`, `CICDChangedFile`, `CICDChangeAnalysisAgent`, and `UnitTestPatch`.
+`CI/CD 质量中心` is the user-facing page name for the local diff, UnitTestPatch, regression, and quality report workflow. Current technical contract names are `CICDRun`, `CICDChangedFile`, `CICDChangeAnalysisAgent`, and `UnitTestPatch`.
 
 `RAG 知识库` is a ContextArtifact and KnowledgeAdapter management surface. It must not imply that V1 has built-in vector indexing, embeddings, chunking, or reranking.
 
@@ -63,7 +63,7 @@ AI-generated content must be visually reviewable before promotion:
 
 - GeneratedCaseCandidate review shows steps, expected results, requirement references, risk references, AI reason, and duplicate warning.
 - AutomationDraft review shows code, suggested file path, execution notes, risk notes, Prompt/Skill version, and approval state.
-- CI/CD 管理中的 UnitTestPatch review shows unified diff, affected paths, PatchScopeGate result, test intent, and coverage target.
+- CI/CD 质量中心中的 UnitTestPatch review shows unified diff, affected paths, PatchScopeGate result, test intent, and coverage target.
 
 Use explicit state tags for pending review, approved, edited, rejected, needs optimization, approval required, running, passed, failed, error, timeout.
 

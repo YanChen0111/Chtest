@@ -20,7 +20,7 @@ Knowledge/RAG Adapter 负责未来知识上下文接入
 |---|---|---|
 | 需求到用例 | RequirementReviewAgent -> RiskAgent -> CaseGenerationAgent -> CaseReviewAgent | 主线 P0 |
 | 用例到自动化 | AutomationDraftAgent -> ToolExecutionAgent -> FailureAnalysisAgent -> ReportAgent | 主线 P0/P1 |
-| CI/CD 管理到质量报告 | CICDChangeAnalysisAgent -> UnitTestAgent -> RegressionAgent -> ToolExecutionAgent -> ReportAgent | 支线 P1 |
+| CI/CD 质量中心到质量报告 | CICDChangeAnalysisAgent -> UnitTestAgent -> RegressionAgent -> ToolExecutionAgent -> ReportAgent | 支线 P1 |
 
 ## 3. Agent 分工
 
@@ -66,7 +66,7 @@ prompts/
   case_review/v1.md
   case_optimization/v1.md
   automation_draft_generation/v1.md
-  git_diff_analysis/v1.md
+  cicd_change_analysis/v1.md
   unit_test_generation/v1.md
   regression_selection/v1.md
   tool_execution/v1.md
@@ -108,7 +108,7 @@ GitHub MCP 适合 V2 接入：仓库文件读取、PR 详情、commit/diff、Act
 
 V1 先做本地 Git Tool。
 
-CI/CD 管理工具调用顺序：
+CI/CD 质量中心工具调用顺序：
 
 ```text
 ChangeSetTool.get_repo_status
@@ -147,7 +147,7 @@ KnowledgeAdapter.list_sources(project_id) -> source[]
 | Case Generation Review | CaseGenerationAgent、CaseReviewAgent |
 | Test Case Library | Test Asset Service、Case Metrics、AutomationDraft 入口 |
 | Automation Draft Center | AutomationDraftAgent、草稿评审、执行入口 |
-| CI/CD 管理 | CICDChangeAnalysisAgent、UnitTestAgent、RegressionAgent |
+| CI/CD 质量中心 | CICDChangeAnalysisAgent、UnitTestAgent、RegressionAgent |
 | Automation Execution Center | ToolExecutionAgent、Tool Adapter |
 | Tool Adapter / MCP Center | ToolDefinition、ToolInvocation、McpServerConfig |
 | Report Center | FailureAnalysisAgent、ReportAgent |
@@ -155,6 +155,6 @@ KnowledgeAdapter.list_sources(project_id) -> source[]
 
 ## 10. 第一版边界
 
-第一版做：Internal Tool Adapter、本地 Prompt/Skill Registry、Agent 状态机、RAG 知识库 surface、Knowledge/RAG Adapter 空实现、需求到用例、AutomationDraft + pytest/Playwright、CI/CD 管理本地支线。
+第一版做：Internal Tool Adapter、本地 Prompt/Skill Registry、Agent 状态机、RAG 知识库 surface、Knowledge/RAG Adapter 空实现、需求到用例、AutomationDraft + pytest/Playwright、CI/CD 质量中心本地支线。
 
 第一版不做：完整 MCP Server、完整外部 MCP marketplace、完整内置 RAG、Skill ZIP/Git 导入、Newman/JMeter 主路径、Appium 设备管理、Fiddler 深度自动化控制。

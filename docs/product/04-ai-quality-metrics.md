@@ -204,7 +204,7 @@ Project -> ContextArtifact -> Mock AITask -> artifacts -> pytest -> report
 - 按 Skill 版本比较 schema 通过率。
 - 按模型比较平均耗时、token、失败率。
 
-### 12.3 CI/CD 管理指标
+### 12.3 CI/CD 质量中心指标
 
 - patch 生成数。
 - patch 应用成功率。
@@ -225,6 +225,6 @@ Project -> ContextArtifact -> Mock AITask -> artifacts -> pytest -> report
 
 - 每个 AI Task 都记录 prompt_version、skill_version、model、输入输出 artifact。
 - 用例生成批次能展示采纳率、驳回率、修改率、重复率、字段完整率；在完整页面完成前，后端必须已记录可计算这些指标的事件。
-- CI/CD 管理能展示 patch 应用率、新增测试通过率、回归通过率；CI/CD 管理未进入主线前，不阻塞 V0.1 或需求到自动化主闭环。
+- CI/CD 质量中心能展示 patch 应用率、新增测试通过率、回归通过率；CI/CD 质量中心未进入主线前，不阻塞 V0.1 或需求到自动化主闭环。
 - 失败归因支持用户反馈准确性。
 - Report Center 能展示报告是否有证据链。

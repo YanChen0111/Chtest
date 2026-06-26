@@ -2,7 +2,7 @@
 
 ## 1. 总体路线
 
-V1 采用三条最小闭环路线：需求到用例、用例到自动化、CI/CD 管理中的本地 Git diff 到质量报告。每个阶段必须可运行、可验证、可回滚。
+V1 采用三条最小闭环路线：需求到用例、用例到自动化、CI/CD 质量中心中的本地 Git diff 到质量报告。每个阶段必须可运行、可验证、可回滚。
 
 ```text
 Foundation
@@ -11,7 +11,7 @@ Foundation
   -> AutomationDraft + Pytest
   -> Playwright Minimal Loop
   -> Reports / Failure Analysis
-  -> CI/CD Management Supporting Flow
+  -> CI/CD Quality Center Supporting Flow
   -> MCP/RAG Extension Surface
 ```
 
@@ -143,17 +143,18 @@ Foundation
 - 报告输出 md/html/json。
 - 未归因失败不能给出通过结论。
 
-## 9. Phase 8: CI/CD Management Supporting Flow
+## 9. Phase 8: CI/CD Quality Supporting Flow
 
-目标：覆盖本地 diff 后单测生成和 pytest 回归，但作为 V1 支线能力。
+目标：覆盖本地 diff 后单测生成、pytest 回归、质量门禁和证据报告，但作为 V1 支线能力。V1 不接远程 CI webhook，不做真实 CD 发布。
 
 交付：
 
 - CICDRun。
 - CICDChangedFile。
-- CICDRiskAnalysis。
+- `risk_analysis.json` artifact。
 - UnitTestPatch。
 - RegressionPlan。
+- QualityGateDecision。
 - diff 导入和 base/head 分析。
 - patch 评审。
 - pytest 新增测试和回归。
@@ -166,6 +167,7 @@ Foundation
 - 生成 UnitTestPatch。
 - PatchScopeGate 阻止业务源码修改。
 - 审批后执行 pytest 回归。
+- 生成 passed / failed / needs_review 的质量门禁结论。
 - 生成 CI/CD quality report。
 
 ## 10. Phase 9: Extension Surface

@@ -25,7 +25,7 @@ Create the single-user project context needed by all later AI, execution, and re
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add Project Core models and migration | planned | `pytest backend/app/tests/db/test_project_core_models.py -q` | - | Workspace/User already exist from Slice 2 |
+| Add Project Core models and migration | done | `UV_CACHE_DIR=.tmp/uv-cache uv --project backend run pytest backend/app/tests/db/test_project_core_models.py -q` | pending commit | Added backend model foundation because Slice 2 backend DB baseline was still placeholder-only |
 | Add Project CRUD API | planned | `pytest backend/app/tests/api/test_projects.py -q` | - | Includes settings bootstrap response |
 | Add Module tree API | planned | `pytest backend/app/tests/api/test_modules.py -q` | - | Enforce five-level limit |
 | Add Repository and Environment API | planned | `pytest backend/app/tests/api/test_repository_environment.py -q` | - | Repository path allowlist required |

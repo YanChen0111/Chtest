@@ -138,7 +138,7 @@ Primary navigation order:
 4. 用例库和测试套件
 5. 自动化草稿中心
 6. 执行中心
-7. CI/CD 管理
+7. CI/CD 质量中心
 8. 报告中心
 9. RAG 知识库
 10. Prompt / Skill 中心
@@ -147,8 +147,8 @@ Primary navigation order:
 
 Rules:
 
-- User-facing page name is `CI/CD 管理`, not `CI/CD 质量中心`.
-- Current V1 data names are `CICDRun`, `CICDChangedFile`, and `UnitTestPatch`.
+- User-facing page name is `CI/CD 质量中心`, not `CI/CD 管理`.
+- Current V1 data names are `CICDRun`, `CICDChangedFile`, `UnitTestPatch`, and `QualityGateDecision`.
 - `RAG 知识库` is a user-facing knowledge and context management page. V1 still does not build vector indexing, embeddings, reranking, or an internal RAG runtime.
 
 ## 7. Page Templates
@@ -176,7 +176,7 @@ Used by:
 - 需求评审.
 - 用例生成评审.
 - 自动化草稿中心.
-- CI/CD 管理 patch review.
+- CI/CD 质量中心 patch review.
 
 Structure:
 
@@ -207,7 +207,7 @@ Used by:
 
 - 执行中心.
 - 报告中心.
-- CI/CD 管理 execution section.
+- CI/CD 质量中心 execution section.
 
 Structure:
 
@@ -338,7 +338,7 @@ Rules:
 - Show ToolDefinition risk level and approval requirement before execution.
 - Never show a confident conclusion without artifacts.
 
-### 8.7 CI/CD 管理
+### 8.7 CI/CD 质量中心
 
 Purpose: turn local code changes into test patch evidence and a quality conclusion.
 

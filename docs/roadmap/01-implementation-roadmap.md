@@ -145,15 +145,16 @@ Foundation
 
 ## 9. Phase 8: CI/CD Quality Supporting Flow
 
-目标：覆盖本地 diff 后单测生成和 pytest 回归，但作为 V1 支线能力。
+目标：覆盖本地 diff 后单测生成、pytest 回归、质量门禁和证据报告，但作为 V1 支线能力。V1 不接远程 CI webhook，不做真实 CD 发布。
 
 交付：
 
 - CICDRun。
 - CICDChangedFile。
-- CICDRiskAnalysis。
+- `risk_analysis.json` artifact。
 - UnitTestPatch。
 - RegressionPlan。
+- QualityGateDecision。
 - diff 导入和 base/head 分析。
 - patch 评审。
 - pytest 新增测试和回归。
@@ -166,6 +167,7 @@ Foundation
 - 生成 UnitTestPatch。
 - PatchScopeGate 阻止业务源码修改。
 - 审批后执行 pytest 回归。
+- 生成 passed / failed / needs_review 的质量门禁结论。
 - 生成 CICDQualityReport。
 
 ## 10. Phase 9: Extension Surface

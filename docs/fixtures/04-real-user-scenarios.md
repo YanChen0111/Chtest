@@ -111,17 +111,17 @@ with evidence.
 ### Chtest Evidence Output
 
 - CICDRun and CICDChangedFile records with changed file summary.
-- Git risk analysis naming affected coupon validation behavior.
+- CI/CD risk analysis naming affected coupon validation behavior.
 - UnitTestPatch with test intent, coverage target, unified diff, and risk notes.
 - PatchScopeGate result proving only test files are modified.
 - Human approval record before patch application.
 - TestRun with pytest result artifacts and parsed pass/fail status.
-- Git quality report that links diff, patch, scope gate, and regression result.
+- CI/CD quality report that links diff, patch, scope gate, and regression result.
 
 ### Related V1 Mainline
 
 Local Git diff -> AI risk analysis -> UnitTestPatch -> review -> pytest
-regression -> Git quality report.
+regression -> CI/CD quality report.
 
 ## 5. How To Use These Scenarios
 
@@ -129,4 +129,3 @@ regression -> Git quality report.
 - Use Scenario B after the pytest loop is stable and Playwright execution starts.
 - Use Scenario C only after the requirement-to-automation mainlines are already
   moving; CI/CD Quality remains a support workflow in V1.
-

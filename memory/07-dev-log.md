@@ -167,11 +167,11 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Captured the approved A direction as the final V1 frontend design: light palette, Chinese-first copy, Vue 3 + Arco Design Vue, workbench density, tables, split panes, drawers, and evidence-first reports.
 - Added `docs/product/08-frontend-design-spec.md` as the implementation-facing frontend design source.
 - Added `docs/superpowers/specs/2026-06-26-chtest-final-frontend-design.md` as the approved brainstorming spec archive.
-- Renamed the user-facing Git quality page to `CI/CD 管理` across current product, architecture, implementation, and memory docs.
+- Standardized the user-facing local diff quality page name to `CI/CD 质量中心` across current product, architecture, implementation, and memory docs.
 - Aligned CI/CD quality contracts and fixtures to `CICDRun`, `CICDChangedFile`, `CICDChangeAnalysisAgent`, `/api/cicd/*`, and `docs/fixtures/03-golden-cicd-quality.md`.
 - Added `RAG 知识库` as a user-facing page for ContextArtifact, KnowledgeAdapter configuration state, safety metadata, and evidence usage display.
 - Clarified that V1 does not build internal RAG runtime, vector indexing, chunking, embedding, or reranking.
-- Clarified that V1 CI/CD Management remains local-first and does not include GitHub Actions, GitLab CI, webhook ingestion, or PR comments.
+- Clarified that V1 CI/CD Quality Center remains local-first and does not include GitHub Actions, GitLab CI, webhook ingestion, or PR comments.
 - Documented open-source UI reference boundaries: keep Arco Design Vue; WHartTest MIT patterns may be adapted with attribution; MeterSphere, shadcn/ui, Nuxt UI, and Creative Tim are design references only.
 
 ### Verification
@@ -182,3 +182,23 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Continue from `NEXT_AI_TASK.md`: Slice 03 Task 1, add project core models and migration.
+
+## 2026-06-26 Slice 03 Project Core Backend Migration
+
+### Completed
+
+- Completed Slice 03 Task 1: added SQLAlchemy Project Core models for `Workspace`, `User`, `Project`, `Module`, `Repository`, `Environment`, and `TestCommand`.
+- Added the first Alembic migration for project core tables and constraints.
+- Added a focused DB test covering migration smoke, project context persistence, module tree relationship, and project-name uniqueness.
+- Added backend package/dependency foundation with `backend/pyproject.toml` so local verification can run through an isolated Python environment.
+- Updated `docs/reference/01-open-source-migration-map.md` with the WHartTest reference code used for the migration and the capabilities intentionally not migrated.
+- Updated Slice 03 task tracking and moved `NEXT_AI_TASK.md` to Slice 03 Task 2: Add Project CRUD API.
+
+### Verification
+
+- `UV_CACHE_DIR=.tmp/uv-cache uv --project backend run pytest backend/app/tests/db/test_project_core_models.py -q`
+- Result: `4 passed in 0.32s`
+
+### Next Step
+
+- Continue from `NEXT_AI_TASK.md`: Slice 03 Task 2, add Project CRUD API.

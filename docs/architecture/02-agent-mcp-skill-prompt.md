@@ -51,7 +51,7 @@ prompts/
   case_review/v1.md
   case_optimization/v1.md
   automation_draft_generation/v1.md
-  git_diff_analysis/v1.md
+  cicd_change_analysis/v1.md
   unit_test_generation/v1.md
   regression_selection/v1.md
   tool_execution/v1.md

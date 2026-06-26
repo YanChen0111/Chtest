@@ -34,7 +34,7 @@ Minimum built-in prompts:
 - `automation_draft_generation:v1`
 - `failure_analysis:v1`
 - `report_generation:v1`
-- `git_diff_analysis:v1`
+- `cicd_change_analysis:v1`
 - `unit_test_generation:v1`
 - `regression_selection:v1`
 

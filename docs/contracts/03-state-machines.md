@@ -165,7 +165,29 @@ running -> timeout
 
 规则：failed 与 error 不等价。failed 是测试断言失败，error 是环境、命令、解析器或执行器异常。
 
-## 9. Report 状态机
+## 9. QualityGateDecision 状态机
+
+```text
+no_decision -> passed
+no_decision -> failed
+no_decision -> needs_review
+needs_review -> passed
+needs_review -> failed
+passed/failed/needs_review -> new QualityGateDecision record on recompute
+```
+
+| 当前状态 | 动作 | 目标状态 | 说明 |
+|---|---|---|---|
+| no_decision | compute_gate_pass | passed | PatchScopeGate、新增测试、回归和失败证据均通过 |
+| no_decision | compute_gate_fail | failed | 存在阻塞原因，例如 patch 越界、测试失败或高风险未覆盖 |
+| no_decision | compute_gate_needs_review | needs_review | 证据不足、风险中等或需要人工判断 |
+| needs_review | recompute_pass | passed | 补充证据后重新计算通过 |
+| needs_review | recompute_fail | failed | 补充证据后重新计算失败 |
+| passed/failed/needs_review | recompute | new QualityGateDecision record | V1 保留旧决定，新建记录并更新 CICDRun.quality_gate_status |
+
+规则：QualityGateDecision 不触发 merge、push 或部署。每个结论必须引用 evidence artifacts；证据缺失时只能是 `needs_review`，不能写成 `passed`。
+
+## 10. Report 状态机
 
 ```text
 draft -> generating -> ready
@@ -184,7 +206,7 @@ failed -> generating
 
 规则：报告结论必须引用 evidence/artifact。无证据时 conclusion 必须是 `insufficient_evidence` 或 `needs_attention`。
 
-## 10. PromptVersion 和 SkillVersion 状态机
+## 11. PromptVersion 和 SkillVersion 状态机
 
 ```text
 draft -> active -> deprecated

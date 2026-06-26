@@ -6,9 +6,9 @@ V1 first proves the minimum evidence loop in `fixtures/00-v1-demo-path.md`, then
 
 1. Requirement -> AI requirement review -> AI case generation -> human review -> case library.
 2. Requirement/TestCase -> AI AutomationDraft -> approval -> pytest/Playwright execution -> report.
-3. CI/CD Management local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
+3. CI/CD Quality Center local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
 
-The first and second loops are the product mainlines. The CI/CD Management loop is a local-first support workflow.
+The first and second loops are the product mainlines. The CI/CD Quality Center loop is a local-first support workflow.
 
 ## Canonical Source Of Truth
 
@@ -36,7 +36,7 @@ commit message, and next Task.
 | Directory | Purpose |
 |---|---|
 | `product/` | Product positioning, PRD, page PRD, AI metrics, version boundaries |
-| `architecture/` | Platform architecture, Agent/MCP/Skill/Prompt design, CI/CD Management design |
+| `architecture/` | Platform architecture, Agent/MCP/Skill/Prompt design, CI/CD Quality Center design |
 | `contracts/` | Data model, API, state machine, artifact, Prompt/Skill contracts |
 | `fixtures/` | Golden Path standard inputs and expected outputs |
 | `implementation/` | V1 delivery plan, development process, slice plan, acceptance |
@@ -99,7 +99,7 @@ appear to disagree:
 - RAG is not built in; only KnowledgeAdapter is provided.
 - RAG 知识库 is a ContextArtifact and KnowledgeAdapter management page, not an internal RAG runtime.
 - MCP is not a V1 dependency; Internal Tool Adapter comes first.
-- CI/CD 管理 is a local-first support workflow and must not overtake the requirement-to-automation mainlines.
+- CI/CD 质量中心 is a local-first support workflow and must not overtake the requirement-to-automation mainlines.
 - `fixtures/00-v1-demo-path.md` is the release spine; broad features cannot replace this evidence loop.
 - V1 priority tools: TestRunner/pytest and Playwright minimal loop.
 - Runner isolation is a V1 safety boundary by contract: every TestRun records runtime workspace, dependency snapshot, environment snapshot, runtime manifest, network setting, and artifact trace.
@@ -139,7 +139,7 @@ appear to disagree:
 - `fixtures/00-v1-demo-path.md`: V1 minimum demo path.
 - `fixtures/01-golden-requirement-to-case.md`: Requirement to cases.
 - `fixtures/02-golden-case-to-playwright.md`: TestCase to pytest/Playwright.
-- `fixtures/03-golden-cicd-quality.md`: Git diff to quality report.
+- `fixtures/03-golden-cicd-quality.md`: Local CI/CD quality gate and evidence report.
 - `fixtures/04-real-user-scenarios.md`: Real API tester, Web automation tester, and backend unit-test user samples.
 - `fixtures/05-minimal-prompt-skill-seeds.md`: Minimal Prompt/Skill seed fixture index for Slice 5.
 - `fixtures/prompt-skill-seeds/`: Concrete Prompt/Skill seed files for mock provider and PromptVersion/SkillVersion loading.
@@ -150,7 +150,7 @@ appear to disagree:
 - `architecture/02-agent-mcp-skill-prompt.md`: Agent/MCP/Skill/Prompt summary.
 - `architecture/03-implementation-technology.md`: Technical implementation guide.
 - `architecture/04-agent-workflow-design.md`: Detailed Agent workflow design.
-- `architecture/05-cicd-quality-center-design.md`: CI/CD Management design.
+- `architecture/05-cicd-quality-center-design.md`: CI/CD Quality Center design.
 
 ### Implementation And Operation
 

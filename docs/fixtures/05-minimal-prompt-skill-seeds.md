@@ -16,11 +16,13 @@ docs/fixtures/prompt-skill-seeds/
     requirement_review/v1.md
     case_generation/v1.md
     automation_draft_generation/v1.md
+    cicd_change_analysis/v1.md
     failure_analysis/v1.md
   skills/
     requirement-review-skill/v1.md
     test-case-generation-skill/v1.md
     automation-draft-skill/v1.md
+    regression-selection-skill/v1.md
     failure-analysis-skill/v1.md
 ```
 
@@ -35,13 +37,14 @@ create a new version instead.
 | RequirementReviewAgent | `prompts/requirement_review/v1.md` | `skills/requirement-review-skill/v1.md` | Generate six-dimensional requirement review JSON |
 | CaseGenerationAgent | `prompts/case_generation/v1.md` | `skills/test-case-generation-skill/v1.md` | Generate structured candidate cases |
 | AutomationDraftAgent | `prompts/automation_draft_generation/v1.md` | `skills/automation-draft-skill/v1.md` | Generate pytest or Playwright draft code |
+| CICDChangeAnalysisAgent | `prompts/cicd_change_analysis/v1.md` | `skills/regression-selection-skill/v1.md` | Generate CI/CD change risk evidence |
 | FailureAnalysisAgent | `prompts/failure_analysis/v1.md` | `skills/failure-analysis-skill/v1.md` | Classify failed execution with evidence references |
 
 ## 4. Minimum Loader Acceptance
 
 Slice 5 is accepted when a loader or smoke test can prove:
 
-- all eight seed files exist;
+- all seed files listed in this fixture exist;
 - every Prompt seed includes `Agent`, `Purpose`, `Input Schema`, `Output Schema`,
   `Instructions`, and `Failure Output`;
 - every Skill seed includes `Applies To`, `Methodology`, `Input Contract`,
@@ -65,4 +68,3 @@ Mock output does not need model quality, but it must prove:
 When implementing Slice 5, use these seeds before designing a prompt management
 UI. The product value is traceable, versioned AI behavior, not prompt editing
 surface area.
-

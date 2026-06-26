@@ -8,8 +8,8 @@
 - 不要一次性演示，要真实能大幅提高测试效率的 AI 工具。
 - 最新定位已校准为：面向个人测试工程师、自动化测试工程师的 AI 测试设计与自动化落地工作台。
 - 长期方向是小团队 AI 测试工作台 + Agent / Skill / MCP 测试工具生态。
-- V1 三条最小闭环：需求到用例、用例到自动化、CI/CD 管理中的本地 diff 到质量报告。
-- 用户可见 `CI/CD Quality Center` / `CI/CD 质量中心` 已统一为 `CI/CD 管理`；当前契约名使用 `CICDRun`、`CICDChangedFile`、`UnitTestPatch`。
+- V1 三条最小闭环：需求到用例、用例到自动化、CI/CD 质量中心中的本地 diff 到质量门禁和证据报告。
+- 用户可见 CI/CD 支线页面统一为 `CI/CD 质量中心`；当前契约名使用 `CICDRun`、`CICDChangedFile`、`QualityGateDecision`、`UnitTestPatch`。
 - 新增用户可见页面 `RAG 知识库`；RAG 功能只保留 ContextArtifact + KnowledgeAdapter surface，后续外部搭建后接入。
 - MCP / Skill / Prompt / Agent 要分层设计并贯穿各流程。
 - 新代码 push/PR/diff 后生成单测、执行回归，并有独立页面查看 Git 情况。
@@ -28,7 +28,7 @@
 - MeterSphere：`/Users/yanchen/VscodeProject/Chtest/参考框架/metersphere`，参考提交 `5dc6df5`
 - 参考框架目录应保留本地，但默认不纳入 Chtest Git 提交记录。
 - Chtest 已初始化为独立 Git 仓库。
-- 当前工作分支：`codex/chtest-vibecoding-foundation`。
+- 当前工作分支：`codex/cicd-quality-docs`。
 - Git remote `origin` 已设置为 `https://github.com/2696437448-cmyk/Chtest.git`。
 - 当前最新已 push commit：`1fb52c1 docs(process): tighten vibecoding readiness docs`。
 - 本轮一致性修复开始前的最新本地提交：`6ed134a docs(memory): hand off slice one worker task`。
@@ -41,19 +41,47 @@
 - Slice 02.5 Task 3 已完成并提交：`6526a2b build(frontend): wire vite dev container`。
 - Slice 02.5 Task 4 已完成并提交：`de1f5fd feat(frontend): add health probe smoke`。
 - Slice 02.5 Frontend Foundation 已完成。
-- 当前 `NEXT_AI_TASK.md` 已切换到 Slice 03 Task 1：Add Project Core models and migration。
+- Slice 03 Task 1 已完成：Add Project Core models and migration。
+- 当前 `NEXT_AI_TASK.md` 已切换到 Slice 03 Task 2：Add Project CRUD API。
 - 当前前端 shell 已有中文主导航、AI 工作台首页、Pinia、Vue Router、Arco Design Vue、`api/client.ts` 和 `/health` smoke。
 - 当前前端 build 会给出 bundle 偏大的 warning，来源于 Arco baseline；不是阻塞问题，但后续可以在稳定后做按需优化。
 - 2026-06-26 已固化最终前端设计文档：`docs/product/08-frontend-design-spec.md` 和 `docs/superpowers/specs/2026-06-26-chtest-final-frontend-design.md`。
 - 后续实现前端页面时优先读取 `docs/product/08-frontend-design-spec.md`、`docs/product/03-user-journey-and-page-prd.md` 和 `docs/product/06-frontend-ui-guidelines.md`。
+
+## 2026-06-26 Slice 03 Task 1 后端迁移完成
+
+本轮完成：
+
+- 新增后端 Python 依赖入口：`backend/pyproject.toml`。
+- 新增 SQLAlchemy 基础包和 Project Core 模型：`Workspace`、`User`、`Project`、`Module`、`Repository`、`Environment`、`TestCommand`。
+- 新增 Alembic migration：`backend/alembic/versions/20260626_0001_project_core.py`。
+- 新增聚焦 DB 测试：`backend/app/tests/db/test_project_core_models.py`。
+- 将 WHartTest 参考源码映射写入 `docs/reference/01-open-source-migration-map.md`，明确只吸收项目聚合根、模块树、环境变量、测试命令入口，不迁移 RBAC、凭据、远程执行器和完整任务编排。
+- 更新 `docs/implementation/slices/slice-03-project-core.md` 和 `NEXT_AI_TASK.md`。
+
+本轮验证：
+
+```bash
+UV_CACHE_DIR=.tmp/uv-cache uv --project backend run pytest backend/app/tests/db/test_project_core_models.py -q
+```
+
+验证结果：
+
+- `4 passed in 0.32s`
+
+下一步：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 03 Task 2：Add Project CRUD API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py -q`。
+- 不要在 Task 2 顺手实现 repository path validation、environment mutation API、TestCommand validation、AI task models、ToolInvocation 或多用户权限。
 
 ## 2026-06-26 前端最终设计文档同步
 
 本轮完成：
 
 - 根据用户确认的 A 方案浅色系，新增最终前端设计规格。
-- 将用户可见 `CI/CD 质量中心` / `CI/CD Quality Center` 统一为 `CI/CD 管理`。
-- 将当前契约和 Golden Path 对齐到 `CICDRun`、`CICDChangedFile`、`CICDChangeAnalysisAgent`、`/api/cicd/*` 和 `docs/fixtures/03-golden-cicd-quality.md`。
+- 将用户可见 CI/CD 支线页面统一为 `CI/CD 质量中心`。
+- 将当前契约和 Golden Path 对齐到 `CICDRun`、`CICDChangedFile`、`CICDChangeAnalysisAgent`、`QualityGateDecision`、`/api/cicd/runs` 和 `docs/fixtures/03-golden-cicd-quality.md`。
 - 新增 `RAG 知识库` 页面设计和 V1 边界说明。
 - 同步产品、架构、实施计划、memory 和入口文档，方便后续 AI coding。
 
@@ -83,7 +111,7 @@
 
 风险提醒：
 
-- `CI/CD 管理` 是 V1 本地 diff 支线，不是云 CI/CD 平台。
+- `CI/CD 质量中心` 是 V1 本地 diff 支线，不是云 CI/CD 平台。
 - `RAG 知识库` 是 ContextArtifact 和 KnowledgeAdapter surface，不是内置 RAG/vector/rerank 平台。
 
 ## 2026-06-23 继续执行更新

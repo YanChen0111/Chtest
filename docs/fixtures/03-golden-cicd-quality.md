@@ -138,7 +138,18 @@ pytest tests -q --junitxml=artifacts/junit.xml
 }
 ```
 
-## 7. 期望 CI/CD Quality Report
+## 7. 期望 QualityGateDecision
+
+```json
+{
+  "status": "passed",
+  "summary": "新增边界单测和相关回归均通过，可以进入人工合并判断。",
+  "blocking_reasons": [],
+  "evidence": ["diff.patch", "unit_test.patch", "junit.xml", "stdout.log"]
+}
+```
+
+## 8. 期望 CI/CD Quality Report
 
 ```json
 {
@@ -157,7 +168,7 @@ pytest tests -q --junitxml=artifacts/junit.xml
 }
 ```
 
-## 8. 验收标准
+## 9. 验收标准
 
 - CICDRun 能保存 diff 和 changed files。
 - CICDChangeAnalysisAgent 能识别 source 文件和新增分支风险。
@@ -165,4 +176,5 @@ pytest tests -q --junitxml=artifacts/junit.xml
 - PatchScopeGate 能阻止业务源码修改。
 - 用户审批后才能应用 patch。
 - 新增测试和回归测试都能生成 TestRun。
+- QualityGateDecision 能输出 passed / failed / needs_review。
 - CICDQualityReport 结论引用 evidence。

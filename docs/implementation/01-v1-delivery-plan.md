@@ -32,9 +32,9 @@ V1 的三条最小闭环：
 
 1. 需求到用例：需求评审 -> 候选用例 -> 人工评审 -> 用例库。
 2. 用例到自动化：AutomationDraft -> 审批 -> pytest/Playwright 执行 -> 报告。
-3. CI/CD 到质量：CI/CD 管理中的本地 Git diff -> UnitTestPatch -> 审批 -> pytest 回归 -> 质量结论。
+3. CI/CD 到质量：CI/CD 质量中心中的本地 Git diff -> UnitTestPatch -> 审批 -> pytest 回归 -> 质量结论。
 
-第一条和第二条组成主证据闭环，第三条是支线能力。CI/CD 管理不能压过 V1 Minimum Demo，也不是 V1 云 CI/CD 平台。
+第一条和第二条组成主证据闭环，第三条是支线能力。CI/CD 质量中心不能压过 V1 Minimum Demo，也不是 V1 云 CI/CD 平台。
 
 ## 3. 开发总原则
 
@@ -106,7 +106,7 @@ M0 Documentation And Contracts Gate
   -> M4 AutomationDraft And Pytest Mainline
   -> M5 Playwright Minimal Loop
   -> M6 Reports And Failure Analysis
-  -> M7 CI/CD Management Supporting Flow
+  -> M7 CI/CD Quality Center Supporting Flow
   -> M8 Extension Surface And Hardening
 ```
 
@@ -145,7 +145,7 @@ M0 Documentation And Contracts Gate
 
 范围以 `docs/implementation/00-v0.1-walking-skeleton.md` 为准。V0.1 可以 API-only，可以使用 mock provider，可以使用最小 report JSON；但不能绕过 V1 的安全原则，也不能替代最终 V1 Minimum Demo。
 
-建议在 Slice 1-5 完成后立刻补一个薄的 TestRun + Report smoke，而不是等所有页面、指标、Playwright、CI/CD 管理都完成后才首次端到端验证。
+建议在 Slice 1-5 完成后立刻补一个薄的 TestRun + Report smoke，而不是等所有页面、指标、Playwright、CI/CD 质量中心都完成后才首次端到端验证。
 
 验收：
 
@@ -394,23 +394,24 @@ skill_versions
 - 未归因失败不能给出通过结论。
 - V1 Minimum Demo report 能回答：AI 分析了什么、用了哪些 context、执行了哪个 runtime artifact、证据是什么、失败后下一步是什么。
 
-## 14. M7 CI/CD Management Supporting Flow
+## 14. M7 CI/CD Quality Supporting Flow
 
-目标：保留用户明确要求的 push/diff 后补单测和回归能力，但作为 V1 支线推进。
+目标：保留用户明确要求的 push/diff 后补单测和回归能力，并升级为本地优先的 CI/CD 质量证据与门禁中心。V1 只做手动触发、本地 diff、测试补全、pytest 回归、失败归因、质量门禁和报告；GitHub Actions、GitLab CI、webhook、PR 评论和真实部署放到 V2/V3。
 
 任务：
 
 - CICDRun。
 - CICDChangedFile。
-- CICDRiskAnalysis。
+- `risk_analysis.json` artifact。
 - UnitTestPatch。
 - RegressionPlan。
+- QualityGateDecision。
 - ChangeSetTool。
 - CICDChangeAnalysisAgent。
 - UnitTestAgent。
 - RegressionAgent。
 - PatchScopeGate。
-- CI/CD 管理页面。
+- CI/CD 质量中心页面。
 
 验收：
 
@@ -422,6 +423,7 @@ skill_versions
 - PatchScopeGate 阻止业务源码修改。
 - 用户批准后才应用 patch。
 - pytest 新增测试和回归可执行。
+- 生成 passed / failed / needs_review 的质量门禁结论。
 - 生成 CI/CD quality report。
 
 ## 15. M8 Extension Surface And Hardening

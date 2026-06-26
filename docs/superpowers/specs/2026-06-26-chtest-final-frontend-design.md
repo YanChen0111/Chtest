@@ -30,14 +30,14 @@ The product must not become a landing page, broad enterprise admin console, deco
 4. 用例库和测试套件
 5. 自动化草稿中心
 6. 执行中心
-7. CI/CD 管理
+7. CI/CD 质量中心
 8. 报告中心
 9. RAG 知识库
 10. Prompt / Skill 中心
 11. 工具适配器 / MCP 中心
 12. 设置
 
-User-facing `Git 质量中心` is renamed to `CI/CD 管理`. V1 still uses local diff and UnitTestPatch behavior; remote CI integrations remain V2.
+User-facing `CI/CD 质量中心` is the current page name. V1 still uses local diff and UnitTestPatch behavior; remote CI integrations remain V2.
 
 `RAG 知识库` is added as the user-facing page for ContextArtifact and KnowledgeAdapter surfaces. V1 still does not build vector indexing, embeddings, reranking, or an internal RAG runtime.
 
@@ -63,6 +63,6 @@ Future frontend implementation should start from that file and then read:
 
 - No placeholder sections remain.
 - The design matches the existing Vue 3 + Arco stack.
-- CI/CD 管理 and RAG 知识库 naming is explicit.
+- CI/CD 质量中心 and RAG 知识库 naming is explicit.
 - V1 RAG and remote CI boundaries are explicit.
 - The spec is scoped to frontend design and does not request broad implementation before the V0.1 evidence loop.

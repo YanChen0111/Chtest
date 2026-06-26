@@ -652,6 +652,30 @@ Response 200:
 }
 ```
 
+### 5.5 Compute Quality Gate
+
+`POST /api/cicd/runs/{id}/quality-gate`
+
+Request:
+
+```json
+{
+  "include_failure_analysis": true
+}
+```
+
+Response 200:
+
+```json
+{
+  "quality_gate_decision_id": "00000000-0000-0000-0000-000000001401",
+  "cicd_run_id": "00000000-0000-0000-0000-000000001101",
+  "status": "passed",
+  "summary": "Patch scope, new tests, and regression passed with evidence.",
+  "blocking_reasons": []
+}
+```
+
 ## 6. Test Run APIs
 
 ### 6.1 Create Test Run
@@ -665,7 +689,7 @@ Request:
   "project_id": "00000000-0000-0000-0000-000000000101",
   "test_command_id": "00000000-0000-0000-0000-000000000302",
   "automation_draft_id": "00000000-0000-0000-0000-000000001001",
-  "change_set_id": null,
+  "cicd_run_id": null,
   "reason": "run approved automation draft"
 }
 ```

@@ -8,7 +8,7 @@ The purpose is to let long-running vibe coding continue from stable project fact
 
 Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers.
 
-It uses ideas from WHartTest's AI testing workflow and MeterSphere's case review, test asset, and report experience. It helps one engineer complete requirement review, case generation, case review, AutomationDraft generation, pytest/Playwright execution, CI/CD-managed local diff unit-test support, failure analysis, and report output.
+It uses ideas from WHartTest's AI testing workflow and MeterSphere's case review, test asset, and report experience. It helps one engineer complete requirement review, case generation, case review, AutomationDraft generation, pytest/Playwright execution, CI/CD Quality Center local diff support, failure analysis, quality gates, and report output.
 
 Chtest is not an enterprise collaboration test management platform. V1 focuses on personal testing design and automation productivity. The long-term direction is a small-team AI testing workbench plus Agent/Skill/MCP testing tool ecosystem.
 
@@ -16,7 +16,7 @@ Chtest is not an enterprise collaboration test management platform. V1 focuses o
 
 1. Requirement to cases: Requirement -> AI requirement review -> AI case generation -> human review -> case library.
 2. Case to automation: Requirement/TestCase -> AI AutomationDraft -> approval -> pytest/Playwright execution -> report.
-3. Code to quality: CI/CD Management local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
+3. Code to quality: CI/CD Quality Center local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
 
 The first and second loops are mainlines. The third loop is a support workflow.
 
@@ -32,7 +32,7 @@ The first and second loops are mainlines. The third loop is a support workflow.
 - UnitTestPatch must be approved before application and can only write test directories.
 - AI cannot automatically modify business source files.
 - AI quality metrics must track generation count, acceptance rate, rejection rate, edit rate, execution pass rate, and failure reason distribution.
-- CI/CD 管理 is a support page for local diff, unit test generation, regression execution, and quality reports. Current contract names include `CICDRun`, `CICDChangedFile`, and `UnitTestPatch`.
+- CI/CD 质量中心 is a support page for local diff, unit test generation, regression execution, and quality reports. Current contract names include `CICDRun`, `CICDChangedFile`, and `UnitTestPatch`.
 - Agent orchestrates workflows; Prompt constrains output; Skill stores testing methods; Tool Adapter/MCP handles tool calls.
 - Reference framework source is local study material and is excluded from the Chtest repository commit set.
 
@@ -168,7 +168,7 @@ Update related files when scope changes:
 - Agent summary: `docs/architecture/02-agent-mcp-skill-prompt.md`
 - Technical guide: `docs/architecture/03-implementation-technology.md`
 - Agent workflow: `docs/architecture/04-agent-workflow-design.md`
-- CI/CD Management design: `docs/architecture/05-cicd-quality-center-design.md`
+- CI/CD Quality Center design: `docs/architecture/05-cicd-quality-center-design.md`
 - Start here: `START_HERE_FOR_AI.md`
 - Final frontend design: `docs/product/08-frontend-design-spec.md`
 - V0.1 Walking Skeleton: `docs/implementation/00-v0.1-walking-skeleton.md`
@@ -203,7 +203,7 @@ Update related files when scope changes:
 - Use MeterSphere case review, pass-rate progress, test asset governance, and report views as supporting references.
 - Use a modular monolith with Redis queue and PostgreSQL storage.
 - Keep RAG as an adapter until an external RAG service is available.
-- Use `docs/product/08-frontend-design-spec.md` for future frontend page design: light A direction, Chinese-first copy, CI/CD 管理 naming, and RAG 知识库 boundaries.
+- Use `docs/product/08-frontend-design-spec.md` for future frontend page design: light A direction, Chinese-first copy, CI/CD 质量中心 naming, and RAG 知识库 boundaries.
 - Use Internal Git Tool Adapter first; GitHub MCP is a later integration.
 - Each module must be runnable, verifiable, committed, and easy to roll back. Update memory after every iteration.
 - Every completed Task follows `docs/implementation/04-ai-vibecoding-governance.md`: focused verification, git diff self-review, and commit.

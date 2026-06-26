@@ -113,9 +113,9 @@ AutomationDraft 是 V1 主线 B 的关键实体。
 
 V1 支持：pytest、Playwright。Newman/JMeter 后置。
 
-## 7. CI/CD 管理实现技术
+## 7. CI/CD 质量中心实现技术
 
-CI/CD 管理是 V1 支线能力。第一版使用本地 git 命令和手动 diff 输入，不接云 CI/CD 平台：
+CI/CD 质量中心是 V1 支线能力。第一版使用本地 git 命令和手动 diff 输入，不接云 CI/CD 平台：
 
 - `git status --short`
 - `git diff --name-status base head`
@@ -135,7 +135,7 @@ CI/CD 管理是 V1 支线能力。第一版使用本地 git 命令和手动 diff
 
 Patch 规则：V1 只允许写测试目录，禁止修改业务源码。
 
-前端实现使用 A 方案浅色工作台设计，页面名称为 `CI/CD 管理`。内部模块、API 或数据对象使用 `cicd_quality`、`CICDRun`、`CICDChangedFile`、`UnitTestPatch`。
+前端实现使用 A 方案浅色工作台设计，页面名称为 `CI/CD 质量中心`。内部模块、API 或数据对象使用 `cicd_quality`、`CICDRun`、`CICDChangedFile`、`UnitTestPatch`。
 
 ## 8. 测试执行实现技术
 

@@ -12,7 +12,7 @@
 
 ## Scope
 
-This plan covers implementation through the V0.1 Walking Skeleton only. It intentionally does not implement full Requirement Review UI, Case Review UI, Playwright, Git Quality, real LLM provider, RAG, MCP runtime, or dashboards.
+This plan covers implementation through the V0.1 Walking Skeleton only. It intentionally does not implement full Requirement Review UI, Case Review UI, Playwright, CI/CD Quality, real LLM provider, RAG, MCP runtime, or dashboards.
 
 Primary source documents:
 
@@ -57,7 +57,7 @@ The implementation should keep these responsibilities stable:
 - Run the task-specific verification command before committing.
 - Update `NEXT_AI_TASK.md` whenever the active task changes.
 - Update `memory/08-session-handoff.md` when a Slice changes state, a blocker appears, or a verification cannot run.
-- Do not add Git Quality, RAG, MCP runtime, real LLM provider, or broad dashboard work before V0.1 passes.
+- Do not add CI/CD Quality, RAG, MCP runtime, real LLM provider, or broad dashboard work before V0.1 passes.
 
 ## Milestone Order
 
@@ -539,7 +539,7 @@ git commit -m "feat(ai-runtime): add context artifacts and mock provider"
 Assert:
 
 ```text
-all eight seed files load
+all seed files listed in `docs/fixtures/05-minimal-prompt-skill-seeds.md` load
 PromptVersion has name, version, hash, input_schema_json, output_schema_json
 SkillVersion has name, version, hash, quality_gates_json, forbidden_actions_json
 loader is idempotent
@@ -745,6 +745,6 @@ After V0.1 passes, start a separate implementation plan for full V1 product work
 4. AutomationDraft review and execution.
 5. FailureAnalysis and richer reports.
 6. Playwright minimal loop.
-7. Git Quality support workflow.
+7. CI/CD Quality support workflow.
 
 Do not start these before the V0.1 smoke has a passing command and handoff evidence.
