@@ -10,13 +10,12 @@ Slice 05: Prompt And Skill Registry.
 
 ## Current Task
 
-Task 5: Add mock-provider eval bench.
+Task 6: Add Prompt/Skill API.
 
 ## Product Value Answer
 
-After this task, Chtest has a deterministic mock-provider evaluation baseline
-for built-in prompts and skills, so schema validity, evidence completeness, and
-unsafe output rates can be measured before real provider integration.
+After this task, Chtest exposes read-only PromptVersion and SkillVersion APIs so
+AI tasks and the UI can trace active prompt and skill versions.
 
 ## Must Read
 
@@ -24,9 +23,7 @@ unsafe output rates can be measured before real provider integration.
 2. `docs/implementation/slices/slice-05-prompt-skill-registry.md`
 3. `docs/contracts/05-prompt-skill-contract.md`
 4. `docs/contracts/07-seed-data-contract.md`
-5. `docs/contracts/08-mock-provider-contract.md`
-6. `docs/fixtures/05-minimal-prompt-skill-seeds.md`
-7. `docs/implementation/04-ai-vibecoding-governance.md`
+5. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
@@ -42,45 +39,42 @@ unsafe output rates can be measured before real provider integration.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/prompt_skill/eval_bench.py
-backend/app/modules/prompt_skill/eval_samples.py
-backend/app/tests/prompt_skill/test_eval_bench.py
-docs/fixtures/eval-bench/requirements.md
-docs/fixtures/eval-bench/code-changes.md
-docs/fixtures/eval-bench/failed-runs.md
-docs/fixtures/eval-bench/bug-history.md
+backend/app/modules/prompt_skill/router.py
+backend/app/modules/prompt_skill/service.py
+backend/app/modules/prompt_skill/schemas.py
+backend/app/main.py
+backend/app/tests/api/test_prompt_skill_registry.py
 ```
 
-Read existing mock provider outputs only to align deterministic sample metrics.
+Read existing PromptVersion/SkillVersion schemas and router patterns only to
+align list/detail responses.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_eval_bench.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_prompt_skill_registry.py -q
 ```
 
-Expected result: the mock-provider eval bench focused test passes.
+Expected result: the Prompt/Skill registry API focused test passes.
 
 ## Acceptance
 
-- Eval bench runs deterministic samples without external network.
-- Metrics include `schema_valid_rate`, `evidence_complete_rate`,
-  `unsafe_output_rate`, `manual_edit_rate`, `first_run_pass_rate`, and
-  `repair_success_rate`.
-- Built-in prompt output schemas are used to validate mock outputs where
-  applicable.
-- Eval fixture files contain no real secrets or customer data.
-- No public leaderboard, API, frontend, real provider, vector index, RAG
-  storage, or MCP runtime is added in this task.
-- `git status --short` shows only expected eval bench files and required task
+- API exposes list and detail endpoints for PromptVersion.
+- API exposes list and detail endpoints for SkillVersion.
+- Responses include version identity, hash, status, applicable Agent(s), and
+  schema/gate metadata.
+- Endpoints are read-only; no create/update/delete endpoints are added.
+- No frontend, real provider, vector index, RAG storage, or MCP runtime is
+  added in this task.
+- `git status --short` shows only expected registry API files and required task
   docs before commit.
 
 ## Commit Message
 
 ```text
-feat(prompt-skill): add mock provider eval bench
+feat(prompt-skill): add registry api
 ```
 
 ## Next Task
 
-Slice 05 Task 6: Add Prompt/Skill API.
+Slice 05 Task 7: Add Prompt/Skill frontend shell.

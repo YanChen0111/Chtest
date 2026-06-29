@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-29 Slice 05 Task 5 Mock Provider Eval Bench 完成
+
+本轮完成：
+
+- 完成 Slice 05 Task 5：新增 deterministic mock-provider eval bench。
+- 新增 `EvalSample` 和默认 eval samples，覆盖 requirements、code changes、failed runs、bug history 四类 fixture。
+- 新增 eval bench 指标：`schema_valid_rate`、`evidence_complete_rate`、`unsafe_output_rate`、`manual_edit_rate`、`first_run_pass_rate`、`repair_success_rate`。
+- Eval bench 使用运行时 Prompt Output Schema 校验 mock provider 输出，并将 schema mismatch 作为指标信号，不作为当前任务阻塞阈值。
+- 新增 `docs/fixtures/eval-bench/*.md`，不包含真实 secrets 或 customer data。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 05 Task 6：Add Prompt/Skill API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_eval_bench.py -q
+git diff --check
+```
+
+验证结果：
+
+- Eval bench focused test：`3 passed in 0.21s`
+
+修改文件：
+
+- `backend/app/modules/prompt_skill/eval_bench.py`
+- `backend/app/modules/prompt_skill/eval_samples.py`
+- `backend/app/tests/prompt_skill/test_eval_bench.py`
+- `docs/fixtures/eval-bench/requirements.md`
+- `docs/fixtures/eval-bench/code-changes.md`
+- `docs/fixtures/eval-bench/failed-runs.md`
+- `docs/fixtures/eval-bench/bug-history.md`
+- `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 05 Task 6：Add Prompt/Skill API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_prompt_skill_registry.py -q`。
+
+风险提醒：
+
+- 当前 mock provider 输出与部分 Prompt Output Schema 不完全一致；eval bench 会量化该差异，后续可单独任务调整 mock 输出或 prompt schema。
+- Task 6 只做 read-only registry API，不要加入 prompt editing、frontend、真实 provider、RAG 或 MCP runtime。
+
 ## 2026-06-29 Slice 05 Task 4 Registry Loader 完成
 
 本轮完成：
