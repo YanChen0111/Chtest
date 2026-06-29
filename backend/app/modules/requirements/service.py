@@ -5,9 +5,15 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.app.modules.ai_runtime import service as ai_runtime_service
+from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
+from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
+from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.projects.models import Module, Project
-from backend.app.modules.requirements.models import Requirement
-from backend.app.modules.requirements.schemas import RequirementCreate
+from backend.app.modules.requirements.models import Requirement, RequirementReview, RiskItem
+from backend.app.modules.requirements.schemas import RequirementCreate, RequirementReviewDetailRead, RequirementReviewStartRequest
+from backend.app.workers.enqueue import FakeAIQueue, enqueue_ai_task
+from backend.app.workers.handlers.ai_task_handler import run_ai_task
 
 
 class ProjectNotFoundError(Exception):
@@ -19,6 +25,26 @@ class ModuleNotFoundError(Exception):
 
 
 class RequirementNotFoundError(Exception):
+    pass
+
+
+class PromptVersionNotFoundError(Exception):
+    pass
+
+
+class SkillVersionNotFoundError(Exception):
+    pass
+
+
+class RequirementReviewSchemaInvalidError(Exception):
+    pass
+
+
+class RequirementReviewNotFoundError(Exception):
+    pass
+
+
+class ContextArtifactNotFoundError(Exception):
     pass
 
 
@@ -75,4 +101,274 @@ def list_requirements(session: Session, project_id: uuid.UUID) -> list[Requireme
             .where(Requirement.project_id == project_id)
             .order_by(Requirement.created_at.asc(), Requirement.title.asc(), Requirement.id.asc()),
         ),
+    )
+
+
+def start_requirement_review(
+    session: Session,
+    store: LocalArtifactStore,
+    requirement_id: uuid.UUID,
+    data: RequirementReviewStartRequest,
+) -> tuple[AITask, RequirementReview]:
+    requirement = get_requirement(session, requirement_id)
+    prompt = get_prompt_version_by_ref(session, data.prompt_version)
+    skill = get_skill_version_by_ref(session, data.skill_version)
+    ai_task = AITask(
+        project_id=requirement.project_id,
+        agent_name="RequirementReviewAgent",
+        task_type="requirement_review",
+        prompt_version_id=prompt.id,
+        skill_version_id=skill.id,
+        model_provider=data.model_provider,
+        model_name=data.model_name,
+        status="created",
+        input_json={
+            "requirement": requirement.content,
+            "requirement_id": str(requirement.id),
+            "use_knowledge": data.use_knowledge,
+            "context_artifact_ids": [str(context_id) for context_id in data.context_artifact_ids],
+            "context_manifest": context_manifest(session, requirement.project_id, data.context_artifact_ids),
+            "mock_mode": data.mock_mode,
+        },
+        context_artifact_ids=data.context_artifact_ids,
+    )
+    session.add(ai_task)
+    session.commit()
+    session.refresh(ai_task)
+
+    queue = FakeAIQueue()
+    job = enqueue_ai_task(session, queue, ai_task.id)
+    run_ai_task(session, store, job)
+    session.refresh(ai_task)
+
+    if ai_task.status != "succeeded":
+        raise RequirementReviewSchemaInvalidError
+
+    output = ai_task.output_json
+    try:
+        validate_requirement_review_output(output)
+    except RequirementReviewSchemaInvalidError:
+        mark_review_schema_invalid(session, ai_task)
+        raise
+    review = persist_requirement_review(session, requirement, ai_task, output)
+    return ai_task, review
+
+
+def get_requirement_review_detail(session: Session, requirement_id: uuid.UUID) -> RequirementReviewDetailRead:
+    get_requirement(session, requirement_id)
+    review = session.scalar(
+        select(RequirementReview)
+        .where(RequirementReview.requirement_id == requirement_id)
+        .order_by(RequirementReview.created_at.desc(), RequirementReview.id.desc()),
+    )
+    if review is None:
+        raise RequirementReviewNotFoundError
+    return requirement_review_detail(session, review)
+
+
+def get_prompt_version_by_ref(session: Session, version_ref: str) -> PromptVersion:
+    name, version = split_version_ref(version_ref)
+    prompt = session.scalar(
+        select(PromptVersion).where(
+            PromptVersion.name == name,
+            PromptVersion.version == version,
+            PromptVersion.status == "active",
+        ),
+    )
+    if prompt is None:
+        raise PromptVersionNotFoundError
+    return prompt
+
+
+def get_skill_version_by_ref(session: Session, version_ref: str) -> SkillVersion:
+    name, version = split_version_ref(version_ref)
+    skill = session.scalar(
+        select(SkillVersion).where(
+            SkillVersion.name == name,
+            SkillVersion.version == version,
+            SkillVersion.status == "active",
+        ),
+    )
+    if skill is None:
+        raise SkillVersionNotFoundError
+    return skill
+
+
+def split_version_ref(version_ref: str) -> tuple[str, str]:
+    name, _, version = version_ref.partition(":")
+    return name, version or "v1"
+
+
+def context_manifest(session: Session, project_id: uuid.UUID, context_artifact_ids: list[uuid.UUID]) -> list[dict]:
+    if not context_artifact_ids:
+        return []
+
+    artifacts = list(
+        session.scalars(
+            select(Artifact).where(
+                Artifact.project_id == project_id,
+                Artifact.id.in_(context_artifact_ids),
+                Artifact.owner_entity_type == "Project",
+                Artifact.owner_entity_id == project_id,
+            ),
+        ),
+    )
+    artifacts_by_id = {artifact.id: artifact for artifact in artifacts}
+    if len(artifacts_by_id) != len(set(context_artifact_ids)):
+        raise ContextArtifactNotFoundError
+    return [
+        {
+            "artifact_id": str(artifact.id),
+            "title": str(artifact.metadata_json.get("title", "")),
+            "mime_type": artifact.mime_type,
+            "sha256": f"sha256:{artifact.sha256}",
+            "redaction_applied": bool(artifact.metadata_json.get("redaction_applied", False)),
+        }
+        for artifact_id in context_artifact_ids
+        if (artifact := artifacts_by_id.get(artifact_id)) is not None
+    ]
+
+
+def validate_requirement_review_output(output: dict) -> None:
+    scores = output.get("scores")
+    required_scores = {"completeness", "clarity", "consistency", "testability", "feasibility", "logic"}
+    if not isinstance(scores, dict) or not required_scores.issubset(scores):
+        raise RequirementReviewSchemaInvalidError
+    for score_name in required_scores:
+        score = scores[score_name]
+        if not isinstance(score, int) or score < 0 or score > 100:
+            raise RequirementReviewSchemaInvalidError
+    overall_score = output.get("overall_score", scores.get("overall", 0))
+    if not isinstance(overall_score, int) or overall_score < 0 or overall_score > 100:
+        raise RequirementReviewSchemaInvalidError
+    if not isinstance(output.get("issues"), list):
+        raise RequirementReviewSchemaInvalidError
+    if not isinstance(output.get("clarification_questions"), list):
+        raise RequirementReviewSchemaInvalidError
+    if "test_design_notes" in output and not isinstance(output["test_design_notes"], list):
+        raise RequirementReviewSchemaInvalidError
+    if not isinstance(output.get("risk_items"), list):
+        raise RequirementReviewSchemaInvalidError
+    for risk in output["risk_items"]:
+        if not isinstance(risk, dict):
+            raise RequirementReviewSchemaInvalidError
+        if not isinstance(risk.get("title"), str) or not risk["title"]:
+            raise RequirementReviewSchemaInvalidError
+        if not isinstance(risk.get("suggestion"), str) or not risk["suggestion"]:
+            raise RequirementReviewSchemaInvalidError
+        risk_level = risk.get("risk_level", "medium")
+        if risk_level not in {"low", "medium", "high", "critical"}:
+            raise RequirementReviewSchemaInvalidError
+        if "impact" in risk and not isinstance(risk["impact"], str):
+            raise RequirementReviewSchemaInvalidError
+        if "category" in risk and risk["category"] not in {"business", "technical", "data", "environment", "regression"}:
+            raise RequirementReviewSchemaInvalidError
+
+
+def mark_review_schema_invalid(session: Session, ai_task: AITask) -> None:
+    error_json = {
+        "error_code": "REQUIREMENT_REVIEW_SCHEMA_INVALID",
+        "message": "Requirement review output did not match the expected schema.",
+        "recoverable": True,
+    }
+    ai_task.status = "failed"
+    ai_task.error_json = error_json
+    ai_task.finished_at = ai_runtime_service.utc_now()
+    llm_log = session.scalar(select(LLMCallLog).where(LLMCallLog.ai_task_id == ai_task.id))
+    if llm_log is not None:
+        llm_log.status = "schema_invalid"
+        llm_log.error_json = error_json
+        session.add(llm_log)
+    session.add(ai_task)
+    session.commit()
+
+
+def persist_requirement_review(
+    session: Session,
+    requirement: Requirement,
+    ai_task: AITask,
+    output: dict,
+) -> RequirementReview:
+    scores = output["scores"]
+    review = RequirementReview(
+        requirement_id=requirement.id,
+        ai_task_id=ai_task.id,
+        completeness_score=int(scores["completeness"]),
+        clarity_score=int(scores["clarity"]),
+        consistency_score=int(scores["consistency"]),
+        testability_score=int(scores["testability"]),
+        feasibility_score=int(scores["feasibility"]),
+        logic_score=int(scores["logic"]),
+        overall_score=int(output.get("overall_score", scores.get("overall", 0))),
+        issues_json=output["issues"],
+        clarification_questions_json=output["clarification_questions"],
+        test_design_notes_json=output.get("test_design_notes", []),
+        status="reviewed",
+    )
+    session.add(review)
+    session.flush()
+
+    for risk in output["risk_items"]:
+        session.add(
+            RiskItem(
+                project_id=requirement.project_id,
+                requirement_review_id=review.id,
+                title=str(risk["title"]),
+                risk_level=str(risk.get("risk_level", "medium")),
+                category=str(risk.get("category", "business")),
+                impact=str(risk.get("impact", risk["title"])),
+                suggestion=str(risk["suggestion"]),
+            ),
+        )
+    session.commit()
+    session.refresh(review)
+    return review
+
+
+def requirement_review_detail(session: Session, review: RequirementReview) -> RequirementReviewDetailRead:
+    ai_task = session.get(AITask, review.ai_task_id)
+    risk_items = list(
+        session.scalars(
+            select(RiskItem)
+            .where(RiskItem.requirement_review_id == review.id)
+            .order_by(RiskItem.created_at.asc(), RiskItem.id.asc()),
+        ),
+    )
+    context_manifest_artifact = session.scalar(
+        select(Artifact).where(
+            Artifact.owner_entity_type == "AITask",
+            Artifact.owner_entity_id == review.ai_task_id,
+            Artifact.file_path.like("%/context_manifest.json"),
+        ),
+    )
+    used_context_ids = []
+    used_knowledge = False
+    if ai_task is not None:
+        used_context_ids = [
+            uuid.UUID(str(context_id))
+            for context_id in ai_task.output_json.get("used_context_artifact_ids", ai_task.context_artifact_ids)
+        ]
+        used_knowledge = bool(ai_task.output_json.get("used_knowledge", False))
+
+    return RequirementReviewDetailRead(
+        id=review.id,
+        requirement_id=review.requirement_id,
+        ai_task_id=review.ai_task_id,
+        overall_score=review.overall_score,
+        scores={
+            "completeness": review.completeness_score,
+            "clarity": review.clarity_score,
+            "consistency": review.consistency_score,
+            "testability": review.testability_score,
+            "feasibility": review.feasibility_score,
+            "logic": review.logic_score,
+        },
+        issues=review.issues_json,
+        clarification_questions=review.clarification_questions_json,
+        test_design_notes=review.test_design_notes_json,
+        risk_items=risk_items,
+        used_knowledge=used_knowledge,
+        used_context_artifact_ids=used_context_ids,
+        context_manifest_artifact_id=context_manifest_artifact.id if context_manifest_artifact else None,
+        status=review.status,
     )

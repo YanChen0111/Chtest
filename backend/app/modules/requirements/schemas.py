@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Literal
 from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,6 +35,53 @@ class RequirementRead(BaseModel):
 class RequirementListRead(BaseModel):
     items: list[RequirementRead]
     total: int
+
+
+class RequirementReviewStartRequest(BaseModel):
+    prompt_version: Literal["requirement_review:v1"] = "requirement_review:v1"
+    skill_version: Literal["requirement-review-skill:v1"] = "requirement-review-skill:v1"
+    model_provider: Literal["mock"] = "mock"
+    model_name: Literal["mock-requirement-review"] = "mock-requirement-review"
+    use_knowledge: bool = False
+    context_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    mock_mode: Literal["success", "schema_invalid"] = "success"
+
+
+class RequirementReviewStartRead(BaseModel):
+    ai_task_id: uuid.UUID
+    requirement_id: uuid.UUID
+    status: str
+    next_poll_url: str
+    used_knowledge: bool
+    used_context_artifact_ids: list[uuid.UUID]
+
+
+class RequirementReviewRiskItemRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    risk_level: str
+    category: str
+    impact: str
+    suggestion: str
+    status: str
+
+
+class RequirementReviewDetailRead(BaseModel):
+    id: uuid.UUID
+    requirement_id: uuid.UUID
+    ai_task_id: uuid.UUID
+    overall_score: int
+    scores: dict[str, int]
+    issues: list[Any]
+    clarification_questions: list[Any]
+    test_design_notes: list[Any]
+    risk_items: list[RequirementReviewRiskItemRead]
+    used_knowledge: bool
+    used_context_artifact_ids: list[uuid.UUID]
+    context_manifest_artifact_id: uuid.UUID | None
+    status: str
 
 
 class RequirementReviewRead(BaseModel):

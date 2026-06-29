@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 3 Requirement Review Mock Flow 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 3：新增 Requirement Review API 和 deterministic mock agent flow。
+- 新增 `POST /api/requirements/{id}/review`，同步运行 mock RequirementReviewAgent，创建 AITask、AI artifacts、LLMCallLog。
+- 新增 `GET /api/requirements/{id}/review`，返回 review scores、issues、clarification questions、test design notes、risk items、context usage 和 context manifest artifact id。
+- 成功输出通过本任务 schema guard 后才写 RequirementReview/RiskItem。
+- mock schema_invalid 路径会保留 AITask failed 状态和 raw output artifact，但不写 RequirementReview/RiskItem。
+- 保留 `use_knowledge=false` 语义：不使用外部 RAG，但显式 `context_artifact_ids` 仍记录到 AITask 并作为 used context 返回。
+- 未加入 case generation、frontend、真实 provider、外部 RAG runtime、MCP runtime、RBAC 或 tenants。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 4：Add Case Generation models and migration。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirements.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_ai_tasks.py backend/app/tests/ai_runtime/test_ai_task_worker.py -q
+git diff --check
+```
+
+验证结果：
+
+- Requirement Review API focused test：`6 passed`
+- Requirement/AI Runtime regression：`28 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/requirements/router.py`
+- `backend/app/modules/requirements/service.py`
+- `backend/app/modules/requirements/schemas.py`
+- `backend/app/tests/api/test_requirement_review.py`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 4：Add Case Generation models and migration。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py -q`。
+
+风险提醒：
+
+- Task 4 只做 CaseGenerationTask、GeneratedCaseCandidate、TestCase models/migration/schema/test；不要加入 Case Generation API、mock flow、case review、frontend 或 AutomationDraft。
+
 ## 2026-06-29 Slice 06 Task 2 Requirement API 完成
 
 本轮完成：
