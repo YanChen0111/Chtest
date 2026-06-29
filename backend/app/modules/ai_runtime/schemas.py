@@ -51,6 +51,12 @@ class ArtifactRead(BaseModel):
     metadata_json: dict[str, Any]
 
 
+class ArtifactWriteResultRead(BaseModel):
+    file_path: str
+    size_bytes: int
+    sha256: str
+
+
 class LLMCallLogRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

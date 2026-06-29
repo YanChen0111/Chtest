@@ -54,6 +54,57 @@ git diff --check
 - Artifact 文件写入、sha256 计算、atomic rename、path traversal 防护是 Task 2；不要在 Task 1 commit 中混入文件系统 store 逻辑。
 - ContextArtifact API、redaction、mock provider、worker 状态流转和 AI Task API 仍属后续任务。
 
+## 2026-06-29 Slice 04 Task 2 Artifact Store 完成
+
+本轮完成：
+
+- 完成 Slice 04 Task 2：新增本地 `LocalArtifactStore`。
+- Artifact 写入使用同目录临时文件，并通过 `os.replace` 原子替换目标文件。
+- 写入结果返回 artifact-relative `file_path`、`size_bytes` 和 `sha256`。
+- 读取和写入均拒绝绝对路径、`..` 路径段、root escape 和 root 内 symlink escape。
+- 写入失败时清理临时文件，不留下半成品目标文件。
+- 新增 `ArtifactWriteResultRead` schema，供后续 API/service 复用。
+- 修复 `.gitignore`：将 `artifacts/` 改为 `/artifacts/`，避免误忽略 `backend/app/tests/artifacts/` 测试目录。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 04 Task 3：Add ContextArtifact API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/artifacts/test_artifact_store.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/artifacts/test_artifact_store.py -q
+git diff --check
+```
+
+验证结果：
+
+- Artifact store focused test：`10 passed in 0.11s`
+- AI Runtime DB + Artifact store regression：`16 passed in 0.53s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `.gitignore`
+- `backend/app/modules/ai_runtime/artifact_store.py`
+- `backend/app/modules/ai_runtime/schemas.py`
+- `backend/app/tests/artifacts/test_artifact_store.py`
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 3 ContextArtifact API 尚未实现。
+- Artifact store 本任务不做 DB 写入；Artifact row 创建属于 Task 3 service/API。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 04 Task 3：Add ContextArtifact API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_context_artifacts.py -q`。
+
+风险提醒：
+
+- ContextArtifact 写入前的 secret scan / redaction 策略需要在 Task 3 API/service 中最小实现或明确保守拒绝；不要引入 RAG、vector index 或隐式上下文注入。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。

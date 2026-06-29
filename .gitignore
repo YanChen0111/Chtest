@@ -20,7 +20,7 @@ coverage/
 
 # Runtime data and artifacts
 storage/
-artifacts/
+/artifacts/
 reports/generated/
 logs/
 .tmp/
