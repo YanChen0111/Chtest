@@ -10,14 +10,13 @@ Slice 05: Prompt And Skill Registry.
 
 ## Current Task
 
-Task 3: Add built-in skill files.
+Task 4: Add registry loader and hash logic.
 
 ## Product Value Answer
 
-After this task, Chtest has deterministic built-in skill markdown files with
-methodology, quality gates, forbidden actions, and tool permissions, so later
-registry loading and AI task execution can trace skill content by version and
-hash.
+After this task, Chtest can idempotently load built-in PromptVersion and
+SkillVersion records from runtime markdown files with stable content hashes, so
+AI tasks can trace exact prompt and skill versions.
 
 ## Must Read
 
@@ -31,7 +30,7 @@ hash.
 ## Do Not Read Unless Needed
 
 - Requirement review or case generation product pages.
-- Skill marketplace, plugin import, prompt editing, optimization, A/B testing,
+- Skill marketplace, plugin import, prompt editing UI, optimization, A/B testing,
   and real provider integration docs.
 - CI/CD Quality Center implementation docs beyond artifact owner references.
 - RAG runtime, vector index, embedding, chunking, or reranking docs.
@@ -42,48 +41,42 @@ hash.
 Create or update only these files for the current task:
 
 ```text
-skills/requirement-review-skill/v1.md
-skills/test-case-generation-skill/v1.md
-skills/testcase-review-skill/v1.md
-skills/automation-draft-skill/v1.md
-skills/unit-test-generation-skill/v1.md
-skills/regression-selection-skill/v1.md
-skills/tool-execution-skill/v1.md
-skills/failure-analysis-skill/v1.md
-skills/report-generation-skill/v1.md
-backend/app/tests/prompt_skill/test_skill_files.py
+backend/app/modules/prompt_skill/registry_loader.py
+backend/app/modules/prompt_skill/service.py
+backend/app/tests/prompt_skill/test_registry_loader.py
 ```
 
-Read existing prompt/skill contracts and seed skill files only to align contract
-sections.
+Read existing prompt/skill contracts and runtime `prompts/` and `skills/` files
+only to align parsing and hash behavior.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_skill_files.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py -q
 ```
 
-Expected result: the built-in skill file focused test passes.
+Expected result: the registry loader focused test passes.
 
 ## Acceptance
 
-- Every required skill file exists with Applies To, Methodology, Input Contract,
-  Output Contract, Quality Gates, Forbidden Actions, and Tool Permissions
-  sections.
-- Applies To maps each skill to the expected V1 Agent.
-- Quality Gates and Forbidden Actions are non-empty.
-- Skill files contain no secrets and no customer data.
-- No prompt markdown changes, registry loader, API, frontend, real provider,
+- Loader discovers all built-in prompt and skill runtime markdown files.
+- Loader computes stable `sha256:` content hashes.
+- Loader creates PromptVersion and SkillVersion records idempotently.
+- Loader does not overwrite an already existing name/version with different
+  active content.
+- Parsed prompt schemas and skill gates/permissions follow
+  `docs/contracts/05-prompt-skill-contract.md`.
+- No prompt/skill markdown content changes, API, frontend, real provider,
   vector index, RAG storage, or MCP runtime is added in this task.
-- `git status --short` shows only expected skill files and required task docs
-  before commit.
+- `git status --short` shows only expected loader/service/test files and
+  required task docs before commit.
 
 ## Commit Message
 
 ```text
-feat(skill): add built-in v1 skills
+feat(prompt-skill): add registry loader
 ```
 
 ## Next Task
 
-Slice 05 Task 4: Add registry loader and hash logic.
+Slice 05 Task 5: Add mock-provider eval bench.

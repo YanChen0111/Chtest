@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-29 Slice 05 Task 3 Built-In Skill Files 完成
+
+本轮完成：
+
+- 完成 Slice 05 Task 3：新增 9 个内置 Skill v1 markdown 文件。
+- Skill 文件从 `docs/fixtures/prompt-skill-seeds/skills/` 落位到运行时 `skills/` 目录。
+- 新增 `backend/app/tests/prompt_skill/test_skill_files.py`，校验文件存在、必需章节、Applies To 映射、Quality Gates 和 Forbidden Actions 非空。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 05 Task 4：Add registry loader and hash logic。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_skill_files.py -q
+git diff --check
+```
+
+验证结果：
+
+- Skill file focused test：`3 passed in 0.01s`
+
+修改文件：
+
+- `skills/automation-draft-skill/v1.md`
+- `skills/failure-analysis-skill/v1.md`
+- `skills/regression-selection-skill/v1.md`
+- `skills/report-generation-skill/v1.md`
+- `skills/requirement-review-skill/v1.md`
+- `skills/test-case-generation-skill/v1.md`
+- `skills/testcase-review-skill/v1.md`
+- `skills/tool-execution-skill/v1.md`
+- `skills/unit-test-generation-skill/v1.md`
+- `backend/app/tests/prompt_skill/test_skill_files.py`
+- `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 05 Task 4：Add registry loader and hash logic。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py -q`。
+
+风险提醒：
+
+- Task 4 只添加 registry loader/service 和 focused test，不要混入 API、frontend、RAG、MCP runtime 或 prompt/skill 内容改写。
+
 ## 2026-06-29 Slice 05 Task 2 Built-In Prompt Files 完成
 
 本轮完成：
