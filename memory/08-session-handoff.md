@@ -1,5 +1,54 @@
 # Session Handoff
 
+## 2026-06-29 Slice 05 Task 2 Built-In Prompt Files 完成
+
+本轮完成：
+
+- 完成 Slice 05 Task 2：新增 11 个内置 Prompt v1 markdown 文件。
+- Prompt 文件从 `docs/fixtures/prompt-skill-seeds/prompts/` 落位到运行时 `prompts/` 目录。
+- 新增 `backend/app/tests/prompt_skill/test_prompt_files.py`，校验文件存在、必需章节、Agent 映射、Input/Output Schema JSON 解析、JSON-only 指令和 Failure Output。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 05 Task 3：Add built-in skill files。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_prompt_files.py -q
+git diff --check
+git diff --name-only
+```
+
+验证结果：
+
+- Prompt file focused test：`4 passed in 0.01s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `prompts/automation_draft_generation/v1.md`
+- `prompts/case_generation/v1.md`
+- `prompts/case_review/v1.md`
+- `prompts/cicd_change_analysis/v1.md`
+- `prompts/failure_analysis/v1.md`
+- `prompts/regression_selection/v1.md`
+- `prompts/report_generation/v1.md`
+- `prompts/requirement_review/v1.md`
+- `prompts/risk_matrix/v1.md`
+- `prompts/tool_execution/v1.md`
+- `prompts/unit_test_generation/v1.md`
+- `backend/app/tests/prompt_skill/test_prompt_files.py`
+- `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 05 Task 3：Add built-in skill files。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_skill_files.py -q`。
+
+风险提醒：
+
+- Task 3 只添加 skill markdown 和对应 focused test，不要混入 registry loader、API、frontend、RAG 或 MCP runtime。
+
 ## 2026-06-29 Slice 04 Task 1 AI Runtime Models 完成
 
 本轮完成：
