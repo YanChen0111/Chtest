@@ -1,5 +1,40 @@
 # Development Log
 
+## 2026-06-29 Slice 06 Requirement To Case Mainline Completion
+
+### Completed
+
+- Completed Slice 06 Requirement To Case Mainline.
+- Added backend requirement creation, deterministic RequirementReviewAgent mock
+  flow, CaseGenerationAgent mock flow, candidate review actions, and official
+  TestCase promotion for approved candidates.
+- Added fixture-aligned golden smoke for the coupon checkout requirement path.
+- Added frontend Requirement Review and Case Generation Review workbench shells
+  using Vue 3 + Arco Design Vue.
+- Kept AutomationDraft, execution, Playwright, CI/CD quality, report center, real
+  provider, RAG runtime, MCP runtime, RBAC, tenants, and permissions out of this
+  slice.
+- Updated `NEXT_AI_TASK.md` to Slice 09 Task 1: Add Case Metrics task plan.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/golden/test_requirement_to_case.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Backend Slice 06 chain: `15 passed`.
+- Frontend shell tests: `7 passed`, `10 tests passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Start Slice 09 by creating `docs/implementation/slices/slice-09-case-metrics.md`
+  with small, verifiable tasks for case quality metrics.
+
 ## 2026-06-18 Documentation Foundation
 
 ### Completed

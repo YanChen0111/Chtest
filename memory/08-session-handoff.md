@@ -1,5 +1,39 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Requirement To Case Mainline 完成
+
+本轮完成：
+
+- 完成 Slice 06 completion gate。
+- 确认 Slice 06 所有任务均为 `done` 且都有提交号。
+- 后端已跑通 Requirement Review、Case Generation、Case Review、golden requirement-to-case smoke。
+- 前端已接入 Requirement Review shell 和 Case Generation Review shell。
+- 已在 `docs/implementation/slices/slice-06-requirement-to-case.md` 写入 completion evidence。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 09 Task 1：Add Case Metrics task plan。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/golden/test_requirement_to_case.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Backend Slice 06 chain：`15 passed`
+- Frontend workbench shell tests：`7 passed, 10 tests passed`
+- `git diff --check` 无输出。
+
+Slice 06 保持的非目标：
+
+- 未加入 AutomationDraft、执行、Playwright、CI/CD 质量中心、报告中心、真实 provider、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 09 Task 1：Add Case Metrics task plan。
+- 下一步先补 `docs/implementation/slices/slice-09-case-metrics.md`，不要直接写模型/API。
+
 ## 2026-06-29 Slice 06 Task 9 Case Generation Review Frontend Shell 完成
 
 本轮完成：

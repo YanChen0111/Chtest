@@ -6,30 +6,30 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 06: Requirement To Case Mainline.
+Slice 09: Case Metrics.
 
 ## Current Task
 
-Slice 06 completion gate.
+Task 1: Add Case Metrics task plan.
 
 ## Product Value Answer
 
-After this task, Chtest verifies the requirement-to-case mainline across backend
-golden smoke and frontend requirement/case review shells.
+After this task, Chtest has a small, executable Slice 09 plan for measuring AI
+case generation quality without expanding into AutomationDraft or execution.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
-2. `docs/implementation/slices/slice-06-requirement-to-case.md`
-3. `docs/contracts/01-data-model-contract.md`
-4. `docs/contracts/02-api-contract.md`
-5. `docs/contracts/03-state-machines.md`
-6. `docs/implementation/04-ai-vibecoding-governance.md`
+2. `docs/implementation/02-v1-slice-plan.md`
+3. `docs/product/04-ai-quality-metrics.md`
+4. `docs/fixtures/01-golden-requirement-to-case.md`
+5. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
-- AutomationDraft, Playwright, CI/CD, report center, RAG runtime, MCP runtime,
-  and migration reference docs unless a concrete blocker requires them.
+- AutomationDraft, execution, Playwright, CI/CD, report center, RAG runtime,
+  MCP runtime, and migration reference docs unless a concrete blocker requires
+  them.
 
 ## Expected Files
 
@@ -37,38 +37,39 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-06-requirement-to-case.md
-memory/07-dev-log.md
-memory/08-session-handoff.md
+docs/implementation/slices/slice-09-case-metrics.md
 NEXT_AI_TASK.md
 ```
 
-Read Slice 06 task plan and recent handoff only as needed to verify the slice
-completion gate.
+Do not implement models, APIs, or frontend in this planning task. Create only
+the smallest task table needed for subsequent coding sessions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/golden/test_requirement_to_case.py -q
-npm --prefix frontend run test -- --run
+rg -n "Case Metrics|CaseQualityMetric|acceptance_rate|edit_rate|review_progress" docs/implementation/slices/slice-09-case-metrics.md
 ```
 
-Expected result: backend Slice 06 chain and frontend test suite pass.
+Expected result: Slice 09 task plan references the required metrics and has a
+focused next verification command.
 
 ## Acceptance
 
-- Verify all Slice 06 completed task tests and frontend shells.
-- Confirm task table has commit ids for every done task.
-- Update long-term dev log and handoff with Slice 06 completion status.
-- Move the next task pointer to the next planned V1 slice/task after Slice 06.
-- Do not add new product behavior in the completion gate.
-- `git status --short` shows only expected docs/memory files before commit.
+- Create `docs/implementation/slices/slice-09-case-metrics.md` with small tasks
+  for backend metrics, API, frontend shell, and golden metric smoke.
+- Metrics must include generated_count, approved_count, rejected_count,
+  acceptance_rate, edit_rate, and review_progress.
+- Keep Slice 09 local to case quality metrics; do not add Test Case Library,
+  AutomationDraft, execution, reports, CI/CD, RAG runtime, MCP runtime, RBAC, or
+  tenants.
+- `git status --short` shows only expected docs before commit.
 
 ## Commit Message
 
 ```text
-docs(memory): complete requirement to case slice
+docs(metrics): add case metrics task plan
 ```
 
 ## Next Task
 
-Next V1 slice/task after Slice 06 completion.
+Slice 09 Task 2: Add Case Metrics backend calculation.

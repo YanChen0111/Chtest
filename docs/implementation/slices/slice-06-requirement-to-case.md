@@ -42,7 +42,7 @@ execution, CI/CD, RAG runtime, MCP runtime, RBAC, or multi-user scope.
 | Add Case Review API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_review.py -q` | `c7c120f` | approve, approve_after_edit, reject, needs_optimization |
 | Add Requirement To Case golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py -q` | `9c2c7d3` | Fixture-aligned backend flow |
 | Add Requirement Review frontend shell | done | `npm --prefix frontend run test -- --run` | `ddfa055` | Requirement input and review result shell |
-| Add Case Generation Review frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | Candidate review shell |
+| Add Case Generation Review frontend shell | done | `npm --prefix frontend run test -- --run` | `dc2217c` | Candidate review shell |
 
 ## Task 1: Add Requirement Review Models And Migration
 
@@ -329,3 +329,46 @@ feat(frontend): add case generation review shell
 - Golden fixture smoke passes.
 - Frontend shells expose the requirement review and candidate review flow without
   adding AutomationDraft or execution behavior.
+
+## Completion Evidence
+
+Status: complete on 2026-06-29.
+
+Product value answer:
+
+```text
+Chtest can run the V1 requirement-to-case mainline with deterministic mock AI:
+create/review a requirement, generate candidate cases, review candidates, and
+promote approved candidates into TestCase records, with first frontend shells for
+requirement review and candidate review.
+```
+
+Verification commands:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/golden/test_requirement_to_case.py -q
+npm --prefix frontend run test -- --run
+```
+
+Verification results:
+
+- Backend Requirement Review / Case Generation / Case Review / Golden smoke:
+  `15 passed`.
+- Frontend workbench shell tests: `7 passed`, `10 tests passed`.
+
+Commits:
+
+- `75c845c` Requirement Review models and migration.
+- `85f5d5a` Requirement API.
+- `290db19` Requirement Review API and mock flow.
+- `069ebf9` Case Generation models and migration.
+- `67b2ca8` Case Generation API and mock flow.
+- `c7c120f` Case Review API.
+- `9c2c7d3` Requirement To Case golden smoke.
+- `ddfa055` Requirement Review frontend shell.
+- `dc2217c` Case Generation Review frontend shell.
+
+Non-goals kept out:
+
+- AutomationDraft, execution, Playwright, CI/CD quality, report center, real
+  provider, RAG runtime, MCP runtime, RBAC, tenants, and permissions.
