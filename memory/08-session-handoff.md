@@ -1,5 +1,52 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 5 Case Generation Mock Flow 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 5：新增 Case Generation API 和 deterministic mock agent flow。
+- 新增 `POST /api/case-generation/tasks`，同步运行 mock CaseGenerationAgent，创建 AITask、AI artifacts、LLMCallLog。
+- 新增 `GET /api/case-generation/tasks/{id}/candidates`，返回 generated candidates 的 API 合同字段。
+- 成功输出通过本任务 schema guard 后才写 CaseGenerationTask/GeneratedCaseCandidate。
+- mock schema_invalid 路径会保留 AITask failed 状态、raw output artifact、schema_invalid LLMCallLog，但不写 CaseGenerationTask/GeneratedCaseCandidate/TestCase。
+- 生成候选不会自动进入 TestCase library。
+- 未加入 Case Review API、frontend、AutomationDraft、真实 provider、外部 RAG runtime 或 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 6：Add Case Review API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirements.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_ai_tasks.py backend/app/tests/ai_runtime/test_ai_task_worker.py -q
+git diff --check
+```
+
+验证结果：
+
+- Case Generation API focused test：`3 passed`
+- Requirement/Case Generation/AI Runtime regression：`31 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/cases/router.py`
+- `backend/app/modules/cases/service.py`
+- `backend/app/modules/cases/schemas.py`
+- `backend/app/main.py`
+- `backend/app/tests/api/test_case_generation.py`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 6：Add Case Review API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_review.py -q`。
+
+风险提醒：
+
+- Task 6 只做 candidate review actions；不要执行 cases、不要加入 AutomationDraft、frontend、真实 provider、外部 RAG runtime 或 MCP runtime。
+
 ## 2026-06-29 Slice 06 Task 4 Case Generation Models 完成
 
 本轮完成：

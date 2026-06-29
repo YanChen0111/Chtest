@@ -10,12 +10,13 @@ Slice 06: Requirement To Case Mainline.
 
 ## Current Task
 
-Task 5: Add Case Generation API and mock agent flow.
+Task 6: Add Case Review API.
 
 ## Product Value Answer
 
-After this task, Chtest can generate deterministic mock case candidates from a
-Requirement and RequirementReview, then list those candidates for user review.
+After this task, Chtest can approve, approve after edit, reject, or request
+optimization for generated case candidates, and approved candidates create
+official TestCase records.
 
 ## Must Read
 
@@ -24,9 +25,7 @@ Requirement and RequirementReview, then list those candidates for user review.
 3. `docs/contracts/01-data-model-contract.md`
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
-6. `docs/contracts/05-prompt-skill-contract.md`
-7. `docs/contracts/08-mock-provider-contract.md`
-8. `docs/implementation/04-ai-vibecoding-governance.md`
+6. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
@@ -42,41 +41,39 @@ Create or update only these files for the current task:
 backend/app/modules/cases/router.py
 backend/app/modules/cases/service.py
 backend/app/modules/cases/schemas.py
-backend/app/main.py
-backend/app/tests/api/test_case_generation.py
+backend/app/tests/api/test_case_review.py
 ```
 
-Read existing Requirement Review mock flow and AI Runtime worker/provider
-patterns only as needed to reuse deterministic mock provider behavior.
+Read existing Case Generation models/API patterns only as needed to implement
+candidate review actions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_review.py -q
 ```
 
-Expected result: Case Generation API focused test passes.
+Expected result: Case Review API focused test passes.
 
 ## Acceptance
 
-- Add `POST /api/case-generation/tasks` and
-  `GET /api/case-generation/tasks/{id}/candidates`.
-- Start generation creates an AITask using active prompt/skill versions and
-  deterministic mock provider output.
-- Persist CaseGenerationTask and GeneratedCaseCandidate rows only after
-  schema-valid mock output.
-- Do not let generated candidates enter the TestCase library automatically.
-- Do not add Case Review API, frontend, AutomationDraft, real provider, external
-  RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- `git status --short` shows only expected cases API/service/schema/main/test
-  files and required task docs before commit.
+- Add candidate review actions for approve, approve_after_edit, reject, and
+  needs_optimization.
+- Approved and approved_after_edit candidates create TestCase records.
+- Rejected candidates do not create TestCase records.
+- needs_optimization marks the candidate for later CaseReviewAgent work but
+  does not implement the optimization agent in this task.
+- Do not execute cases, add AutomationDraft, frontend, real provider, RAG
+  runtime, MCP runtime, RBAC, tenants, or permissions.
+- `git status --short` shows only expected cases API/service/schema/test files
+  and required task docs before commit.
 
 ## Commit Message
 
 ```text
-feat(cases): add mock case generation flow
+feat(cases): add case review api
 ```
 
 ## Next Task
 
-Slice 06 Task 6: Add Case Review API.
+Slice 06 Task 7: Add Requirement To Case golden smoke.
