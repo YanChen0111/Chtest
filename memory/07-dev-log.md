@@ -269,8 +269,32 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - `693e171 feat(ai-runtime): add deterministic mock provider`
 - `63efbc6 feat(ai-runtime): add ai task worker handler`
 - `f006cb2 feat(ai-runtime): add ai task api`
-- Task 7 commit pending at handoff update time.
+- `31ce363 feat(frontend): add ai task status shell`
 
 ### Next Step
 
-- Continue Slice 04 Completion Gate from `NEXT_AI_TASK.md`, then move to Slice 05 Task 1.
+- Slice 04 completion gate completed after Task 7.
+- Continue Slice 05 Task 1 from `NEXT_AI_TASK.md`: add PromptVersion and SkillVersion models.
+
+## 2026-06-29 Slice 04 AI Runtime Completion Gate
+
+### Completed
+
+- Verified Slice 04 AI Runtime Core end to end.
+- Confirmed Slice 04 task table records Task 1-7 as done with commit ids.
+- Confirmed `NEXT_AI_TASK.md` now points to Slice 05 Task 1: Add PromptVersion and SkillVersion models.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/artifacts/test_artifact_store.py backend/app/tests/api/test_context_artifacts.py backend/app/tests/api/test_ai_tasks.py backend/app/tests/ai_runtime/test_mock_provider.py backend/app/tests/ai_runtime/test_ai_task_worker.py -q`
+- Result: `49 passed in 1.58s`
+- `npm --prefix frontend run test -- --run`
+- Result: `7 passed (7)`
+- `npm --prefix frontend run build`
+- Result: passed with existing Arco bundle size warning.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Continue Slice 05 Task 1 from `NEXT_AI_TASK.md`.

@@ -387,6 +387,53 @@ npm --prefix frontend run build
 - Completion Gate 应跑 backend AI runtime regression、frontend tests、frontend build 和 `git diff --check`。
 - 不要在 completion gate 顺手实现 Prompt/Skill models；先完成 Slice 04 总验收和 handoff。
 
+## 2026-06-29 Slice 04 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 04 AI Runtime Core completion gate。
+- `docs/implementation/slices/slice-04-ai-runtime-core.md` 中 Task 1-7 均为 `done`，并记录 commit：`11bb6cc`、`5b17d26`、`d7570ba`、`693e171`、`63efbc6`、`f006cb2`、`31ce363`。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 05 Task 1：Add PromptVersion and SkillVersion models。
+- Slice 04 范围保持干净：未引入真实 provider、RAG/vector runtime、MCP runtime、requirement review endpoint 或 case generation endpoint。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/artifacts/test_artifact_store.py backend/app/tests/api/test_context_artifacts.py backend/app/tests/api/test_ai_tasks.py backend/app/tests/ai_runtime/test_mock_provider.py backend/app/tests/ai_runtime/test_ai_task_worker.py -q
+npm --prefix frontend run test -- --run
+npm --prefix frontend run build
+git diff --check
+```
+
+验证结果：
+
+- AI Runtime backend regression：`49 passed in 1.58s`
+- Frontend Vitest suite：`7 passed`
+- Frontend build：通过；仍有既有 Arco bundle size warning。
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/07-dev-log.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Slice 05 Prompt And Skill Registry 尚未开始。
+- AI Workbench 仍只展示 AI task/status/evidence metadata，不提供 artifact download/read 或任务创建入口。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 05 Task 1：Add PromptVersion and SkillVersion models。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/db/test_prompt_skill_models.py -q`。
+
+风险提醒：
+
+- Slice 05 Task 1 只做 PromptVersion/SkillVersion models、schemas、migration 和 DB test。
+- 不要在 Task 1 顺手添加 prompt markdown、skill markdown、registry loader、API、frontend、真实 provider、RAG/vector runtime 或 MCP runtime。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。
