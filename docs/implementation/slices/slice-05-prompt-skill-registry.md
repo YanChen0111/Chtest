@@ -24,7 +24,7 @@ Load, validate, version, expose, and benchmark built-in PromptVersion and SkillV
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add PromptVersion and SkillVersion models | planned | `pytest backend/app/tests/db/test_prompt_skill_models.py -q` | - | Migration included |
+| Add PromptVersion and SkillVersion models | done | `pytest backend/app/tests/db/test_prompt_skill_models.py -q` | pending commit | Migration included |
 | Add built-in prompt files | planned | `pytest backend/app/tests/prompt_skill/test_prompt_files.py -q` | - | JSON output schema required |
 | Add built-in skill files | planned | `pytest backend/app/tests/prompt_skill/test_skill_files.py -q` | - | Quality gates and forbidden actions |
 | Add registry loader and hash logic | planned | `pytest backend/app/tests/prompt_skill/test_registry_loader.py -q` | - | Idempotent seed |

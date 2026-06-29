@@ -434,6 +434,62 @@ git diff --check
 - Slice 05 Task 1 只做 PromptVersion/SkillVersion models、schemas、migration 和 DB test。
 - 不要在 Task 1 顺手添加 prompt markdown、skill markdown、registry loader、API、frontend、真实 provider、RAG/vector runtime 或 MCP runtime。
 
+## 2026-06-29 Slice 05 Task 1 Prompt/Skill Models 完成
+
+本轮完成：
+
+- 完成 Slice 05 Task 1：新增 `PromptVersion` 和 `SkillVersion` models。
+- 新增 `backend/app/modules/prompt_skill/models.py`，包含 `prompt_versions` 和 `skill_versions` 表定义。
+- 新增 `backend/app/modules/prompt_skill/schemas.py`，提供 `PromptVersionRead` 和 `SkillVersionRead`。
+- 新增 Alembic migration：`backend/alembic/versions/20260629_0003_prompt_skill_registry.py`。
+- PromptVersion 字段覆盖：`name/version/hash/agent_name/content/input_schema_json/output_schema_json/status` 和通用 timestamp/user 字段。
+- SkillVersion 字段覆盖：`name/version/hash/applicable_agents/content/quality_gates_json/forbidden_actions_json/tool_permissions_json/status` 和通用 timestamp/user 字段。
+- 两张表均增加 `name + version` 唯一约束。
+- JSON dict/list 字段使用 SQLAlchemy mutable 类型，支持 in-place 更新被持久化。
+- `applicable_agents` 在 PostgreSQL 使用 `text[]`，SQLite 测试路径使用 JSON 兼容存储。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 05 Task 2：Add built-in prompt files。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_prompt_skill_models.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/db/test_prompt_skill_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- Prompt/Skill model focused test：`5 passed in 0.36s`
+- Project Core + AI Runtime + Prompt/Skill DB regression：`15 passed in 0.38s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/prompt_skill/__init__.py`
+- `backend/app/modules/prompt_skill/models.py`
+- `backend/app/modules/prompt_skill/schemas.py`
+- `backend/alembic/versions/20260629_0003_prompt_skill_registry.py`
+- `backend/app/tests/db/test_prompt_skill_models.py`
+- `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+- `NEXT_AI_TASK.md`
+- `memory/07-dev-log.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Built-in prompt markdown files 尚未添加。
+- Built-in skill markdown files、registry loader、Prompt/Skill API、Prompt/Skill frontend shell 尚未开始。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 05 Task 2：Add built-in prompt files。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_prompt_files.py -q`。
+
+风险提醒：
+
+- Task 2 只添加 prompt markdown 和 prompt file tests；不要顺手实现 skill files、registry loader、API 或 frontend。
+- Prompt 输出必须 JSON-only，不允许 markdown fences 作为模型主输出。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。

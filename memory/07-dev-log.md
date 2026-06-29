@@ -298,3 +298,26 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Continue Slice 05 Task 1 from `NEXT_AI_TASK.md`.
+
+## 2026-06-29 Slice 05 Prompt And Skill Registry Models
+
+### Completed
+
+- Completed Slice 05 Task 1: added `PromptVersion` and `SkillVersion` SQLAlchemy models, Pydantic read schemas, Alembic migration, and DB tests.
+- PromptVersion persists `name`, `version`, `hash`, `agent_name`, `content`, input/output schema JSON, status, and timestamp fields.
+- SkillVersion persists `name`, `version`, `hash`, applicable agents, content, quality gates, forbidden actions, tool permissions, status, and timestamp fields.
+- Added uniqueness constraints for `name + version` on both version tables.
+- Updated `NEXT_AI_TASK.md` to Slice 05 Task 2: Add built-in prompt files.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/db/test_prompt_skill_models.py -q`
+- Result: `5 passed in 0.36s`
+- `backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/db/test_prompt_skill_models.py -q`
+- Result: `15 passed in 0.38s`
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Continue Slice 05 Task 2 from `NEXT_AI_TASK.md`: add built-in prompt files.
