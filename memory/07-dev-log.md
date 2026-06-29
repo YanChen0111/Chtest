@@ -202,3 +202,37 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Continue from `NEXT_AI_TASK.md`: Slice 03 Task 2, add Project CRUD API.
+
+## 2026-06-29 Slice 03 Project Core Completion
+
+### Completed
+
+- Completed Slice 03 Task 2: Project create/read/update APIs and Project Settings bootstrap API.
+- Completed Slice 03 Task 3: Module tree create/list/update API with five-level validation and descendant path refresh.
+- Completed Slice 03 Task 4: Repository and Environment APIs with repository path allowlist and environment secret-reference guard.
+- Completed Slice 03 Task 5: TestCommand create/list/update/validate APIs with allowlist, working-directory, shell-operator, and same-project environment checks.
+- Completed Slice 03 Task 6: Project Settings frontend shell with typed API helper, Pinia store, route, and Chinese-first workbench view.
+- Updated `NEXT_AI_TASK.md` to Slice 04 Task 1: Add AI Runtime models and migration.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py backend/app/tests/api/test_modules.py backend/app/tests/api/test_repository_environment.py backend/app/tests/api/test_test_commands.py backend/app/tests/db/test_project_core_models.py -q`
+- Result: `39 passed in 2.61s`
+- `npm --prefix frontend run test -- --run`
+- Result: `4 passed (4), 6 passed (6)`
+- `npm --prefix frontend run build`
+- Result: passed with existing Arco bundle size warning.
+- `git diff --check`
+- Result: no output.
+
+### Commits
+
+- `6c12d64 feat(projects): add project settings api`
+- `57e64f4 feat(projects): add module tree api`
+- `7c8471f feat(projects): add repository and environment api`
+- `47f6724 feat(projects): add test command validation`
+- `524b7c7 feat(frontend): add project settings shell`
+
+### Next Step
+
+- Continue Slice 04 Task 1 from `NEXT_AI_TASK.md`: add AI Runtime models and migration.

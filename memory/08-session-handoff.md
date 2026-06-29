@@ -350,6 +350,51 @@ git diff --check
 
 - Project Settings 前端壳只做查看和基础刷新，不实现完整编辑表单、拖拽模块树或命令执行。
 
+## 2026-06-29 Slice 03 Completion Gate 完成
+
+本轮完成：
+
+- Slice 03 Project Core 所有任务已完成并提交。
+- `docs/implementation/slices/slice-03-project-core.md` task table 已更新 commit hash。
+- `NEXT_AI_TASK.md` 已切换到 Slice 04 Task 1：Add AI Runtime models and migration。
+- `memory/07-dev-log.md` 已追加 Slice 03 completion 记录。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py backend/app/tests/api/test_modules.py backend/app/tests/api/test_repository_environment.py backend/app/tests/api/test_test_commands.py backend/app/tests/db/test_project_core_models.py -q
+npm --prefix frontend run test -- --run
+npm --prefix frontend run build
+git diff --check
+```
+
+验证结果：
+
+- Backend Slice 03 related tests：`39 passed in 2.61s`
+- Frontend test：`4 passed (4), 6 passed (6)`
+- Frontend build：通过；仍有既有 Arco bundle size warning。
+- `git diff --check` 无输出。
+
+Slice 03 commits：
+
+- `d87036d feat(projects): add project core backend`
+- `6c12d64 feat(projects): add project settings api`
+- `57e64f4 feat(projects): add module tree api`
+- `7c8471f feat(projects): add repository and environment api`
+- `47f6724 feat(projects): add test command validation`
+- `524b7c7 feat(frontend): add project settings shell`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 04 Task 1：Add AI Runtime models and migration。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py -q`。
+
+风险提醒：
+
+- 当前本地分支领先远端多个提交，尚未 push。
+- 前端 build 的 Arco chunk size warning 仍是已知非阻塞项。
+- Slice 04 不要引入真实 LLM、RAG/vector runtime、PromptVersion/SkillVersion models 或 MCP runtime；Task 1 只做 AITask/Artifact/LLMCallLog 模型和 migration。
+
 ## 2026-06-26 前端最终设计文档同步
 
 本轮完成：
