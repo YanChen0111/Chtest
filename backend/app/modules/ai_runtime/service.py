@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import re
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
-from backend.app.modules.ai_runtime.models import Artifact
+from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
+from backend.app.modules.ai_runtime.providers.base import ProviderArtifactPayload
 from backend.app.modules.ai_runtime.schemas import (
     ContextArtifactCreate,
     ContextArtifactListItemRead,
@@ -62,6 +64,10 @@ class ContextArtifactSecretDetectedError(Exception):
 
 class ProjectNotFoundError(Exception):
     pass
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
 def create_context_artifact(
@@ -151,3 +157,76 @@ def validate_context_artifact_input(data: ContextArtifactCreate) -> None:
 
 def has_high_risk_secret(content: str) -> bool:
     return any(pattern.search(content) for pattern in SECRET_PATTERNS)
+
+
+def write_ai_task_artifact(
+    session: Session,
+    store: LocalArtifactStore,
+    ai_task: AITask,
+    payload: ProviderArtifactPayload,
+) -> Artifact:
+    file_path = f"projects/{ai_task.project_id}/ai-tasks/{ai_task.id}/{payload.file_name}"
+    write_result = store.write_bytes(file_path, payload.content)
+    artifact = Artifact(
+        project_id=ai_task.project_id,
+        owner_entity_type="AITask",
+        owner_entity_id=ai_task.id,
+        artifact_type=payload.artifact_type,
+        file_path=write_result.file_path,
+        mime_type=payload.mime_type,
+        size_bytes=write_result.size_bytes,
+        sha256=write_result.sha256,
+        metadata_json={
+            "created_by_component": "AITaskWorker",
+            "source_entity_type": "AITask",
+            "source_entity_id": str(ai_task.id),
+            "safe_to_show": True,
+            "redaction_applied": False,
+            "description": f"AI task artifact {payload.file_name}",
+        },
+    )
+    session.add(artifact)
+    session.flush()
+    return artifact
+
+
+def create_llm_call_log(
+    session: Session,
+    ai_task: AITask,
+    *,
+    status: str,
+    artifacts_by_name: dict[str, Artifact],
+    input_summary_json: dict,
+    output_summary_json: dict,
+    token_usage_json: dict,
+    error_json: dict | None = None,
+) -> LLMCallLog:
+    llm_call_log = LLMCallLog(
+        project_id=ai_task.project_id,
+        ai_task_id=ai_task.id,
+        prompt_version_id=ai_task.prompt_version_id,
+        skill_version_id=ai_task.skill_version_id,
+        provider=ai_task.model_provider,
+        model_name=ai_task.model_name,
+        status=status,
+        request_artifact_id=artifact_id_for(artifacts_by_name, "input.json"),
+        response_artifact_id=artifact_id_for(artifacts_by_name, "raw_output.json"),
+        parsed_artifact_id=artifact_id_for(artifacts_by_name, "parsed_output.json"),
+        schema_validation_artifact_id=artifact_id_for(artifacts_by_name, "schema_validation.json"),
+        input_summary_json=input_summary_json,
+        output_summary_json=output_summary_json,
+        token_usage_json=token_usage_json,
+        error_json=error_json,
+        started_at=ai_task.started_at,
+        finished_at=utc_now(),
+    )
+    session.add(llm_call_log)
+    session.flush()
+    return llm_call_log
+
+
+def artifact_id_for(artifacts_by_name: dict[str, Artifact], file_name: str) -> uuid.UUID | None:
+    artifact = artifacts_by_name.get(file_name)
+    if artifact is None:
+        return None
+    return artifact.id

@@ -216,6 +216,64 @@ git diff --check
 - Task 5 可以使用 fake queue，不要引入真实 Redis worker CLI，除非当前项目已有稳定 Redis worker 入口。
 - Worker 应记录 LLMCallLog 和 Artifact rows，但不要顺手实现 AI Task API 或前端。
 
+## 2026-06-29 Slice 04 Task 5 AI Task Worker 完成
+
+本轮完成：
+
+- 完成 Slice 04 Task 5：新增 fake AI queue 和 AI task worker handler。
+- `enqueue_ai_task()` 将 `created` 的 AITask 转为 `pending`，并推入 `FakeAIQueue`。
+- Worker 将 `pending` 任务先持久化为 `running`，再调用 Mock Provider。
+- 成功路径写入 `input.json`、`context_manifest.json`、`raw_output.json`、`parsed_output.json`、`schema_validation.json` Artifact rows，并创建 LLMCallLog。
+- `schema_invalid` 路径将 AITask 标为 `failed`，保存 raw/schema/error artifacts，并记录 LLMCallLog `schema_invalid`。
+- `provider_error` 和 `timeout` 路径保留 input/context artifacts，写 `error.json`，将 AITask 标为 `failed`，并记录 LLMCallLog `failed` 或 `timeout`。
+- `cancelled` 任务不会被 worker 执行。
+- Artifact 写入失败会将 AITask 标为 `failed` 并写入 `ARTIFACT_WRITE_FAILED` error_json。
+- 额外新增 `backend/app/workers/__init__.py` 和 `backend/app/workers/handlers/__init__.py` 作为包入口；这是 `NEXT_AI_TASK.md` expected files 外的必要 Python 包结构文件。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 04 Task 6：Add AI Task API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/ai_runtime/test_ai_task_worker.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/ai_runtime/test_ai_task_worker.py backend/app/tests/ai_runtime/test_mock_provider.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/artifacts/test_artifact_store.py backend/app/tests/api/test_context_artifacts.py backend/app/tests/ai_runtime/test_mock_provider.py backend/app/tests/ai_runtime/test_ai_task_worker.py -q
+git diff --check
+```
+
+验证结果：
+
+- AI Task Worker focused test：`9 passed in 0.56s`
+- Worker + Mock Provider regression：`20 passed in 0.59s`
+- AI Runtime related regression：`45 passed in 1.03s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/ai_runtime/service.py`
+- `backend/app/workers/__init__.py`
+- `backend/app/workers/enqueue.py`
+- `backend/app/workers/handlers/__init__.py`
+- `backend/app/workers/handlers/ai_task_handler.py`
+- `backend/app/tests/ai_runtime/test_ai_task_worker.py`
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 6 AI Task API 尚未实现。
+- Worker 当前使用 fake queue；没有引入真实 Redis worker CLI。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 04 Task 6：Add AI Task API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_ai_tasks.py -q`。
+
+风险提醒：
+
+- AI Task API 只返回 artifact metadata 和路径，不要暴露 raw LLM output 内容。
+- 不要在 Task 6 顺手实现 requirement review/case generation endpoint 或前端。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。
