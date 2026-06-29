@@ -11,8 +11,13 @@ from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
 from backend.app.modules.ai_runtime.providers.base import ProviderArtifactPayload
 from backend.app.modules.ai_runtime.schemas import (
+    AIArtifactSummaryRead,
+    AITaskDetailRead,
+    AITaskListRead,
+    AITaskListItemRead,
     ContextArtifactCreate,
     ContextArtifactListItemRead,
+    LLMCallLogSummaryRead,
 )
 from backend.app.modules.projects.models import Project
 
@@ -48,6 +53,7 @@ SECRET_PATTERNS = [
     re.compile(r"\bmongodb(?:\+srv)?://\S+", re.IGNORECASE),
     re.compile(r"\bprod(?:uction)?[.-][A-Za-z0-9.-]+\b", re.IGNORECASE),
 ]
+UNSAFE_AI_TASK_ARTIFACT_TYPES = {"raw_llm_output", "error_json"}
 
 
 class ContextArtifactNotAllowedError(Exception):
@@ -63,6 +69,10 @@ class ContextArtifactSecretDetectedError(Exception):
 
 
 class ProjectNotFoundError(Exception):
+    pass
+
+
+class AITaskNotFoundError(Exception):
     pass
 
 
@@ -180,7 +190,7 @@ def write_ai_task_artifact(
             "created_by_component": "AITaskWorker",
             "source_entity_type": "AITask",
             "source_entity_id": str(ai_task.id),
-            "safe_to_show": True,
+            "safe_to_show": is_ai_task_artifact_safe_to_show(payload),
             "redaction_applied": False,
             "description": f"AI task artifact {payload.file_name}",
         },
@@ -188,6 +198,10 @@ def write_ai_task_artifact(
     session.add(artifact)
     session.flush()
     return artifact
+
+
+def is_ai_task_artifact_safe_to_show(payload: ProviderArtifactPayload) -> bool:
+    return payload.artifact_type not in UNSAFE_AI_TASK_ARTIFACT_TYPES
 
 
 def create_llm_call_log(
@@ -230,3 +244,116 @@ def artifact_id_for(artifacts_by_name: dict[str, Artifact], file_name: str) -> u
     if artifact is None:
         return None
     return artifact.id
+
+
+def get_ai_task_detail(session: Session, ai_task_id: uuid.UUID) -> AITaskDetailRead:
+    ai_task = session.get(AITask, ai_task_id)
+    if ai_task is None:
+        raise AITaskNotFoundError
+
+    artifacts = list(
+        session.scalars(
+            select(Artifact)
+            .where(
+                Artifact.owner_entity_type == "AITask",
+                Artifact.owner_entity_id == ai_task.id,
+            )
+            .order_by(Artifact.created_at.asc()),
+        ),
+    )
+    llm_call_logs = list(
+        session.scalars(
+            select(LLMCallLog).where(LLMCallLog.ai_task_id == ai_task.id).order_by(LLMCallLog.call_index.asc()),
+        ),
+    )
+    context_manifest_artifact = next(
+        (artifact for artifact in artifacts if artifact.file_path.endswith("/context_manifest.json")),
+        None,
+    )
+    return AITaskDetailRead(
+        id=ai_task.id,
+        project_id=ai_task.project_id,
+        agent_name=ai_task.agent_name,
+        task_type=ai_task.task_type,
+        status=ai_task.status,
+        prompt_version_id=ai_task.prompt_version_id,
+        skill_version_id=ai_task.skill_version_id,
+        model_provider=ai_task.model_provider,
+        model_name=ai_task.model_name,
+        token_usage=ai_task.token_usage_json,
+        used_knowledge=bool(ai_task.output_json.get("used_knowledge", False)),
+        context_artifact_ids=ai_task.context_artifact_ids,
+        used_context_artifact_ids=used_context_artifact_ids(ai_task),
+        context_manifest_artifact_id=context_manifest_artifact.id if context_manifest_artifact else None,
+        artifacts=[artifact_summary(artifact) for artifact in artifacts],
+        llm_call_logs=[llm_call_log_summary(llm_call_log) for llm_call_log in llm_call_logs],
+        started_at=ai_task.started_at,
+        finished_at=ai_task.finished_at,
+    )
+
+
+def list_project_ai_tasks(session: Session, project_id: uuid.UUID) -> AITaskListRead:
+    project = session.get(Project, project_id)
+    if project is None:
+        raise ProjectNotFoundError
+
+    ai_tasks = list(
+        session.scalars(
+            select(AITask).where(AITask.project_id == project_id).order_by(AITask.created_at.desc()),
+        ),
+    )
+    return AITaskListRead(
+        items=[
+            AITaskListItemRead(
+                id=ai_task.id,
+                project_id=ai_task.project_id,
+                agent_name=ai_task.agent_name,
+                task_type=ai_task.task_type,
+                status=ai_task.status,
+                model_provider=ai_task.model_provider,
+                model_name=ai_task.model_name,
+                context_artifact_ids=ai_task.context_artifact_ids,
+                started_at=ai_task.started_at,
+                finished_at=ai_task.finished_at,
+            )
+            for ai_task in ai_tasks
+        ],
+        total=len(ai_tasks),
+    )
+
+
+def used_context_artifact_ids(ai_task: AITask) -> list[uuid.UUID]:
+    raw_ids = ai_task.output_json.get("used_context_artifact_ids", ai_task.context_artifact_ids)
+    return [uuid.UUID(str(context_artifact_id)) for context_artifact_id in raw_ids]
+
+
+def artifact_summary(artifact: Artifact) -> AIArtifactSummaryRead:
+    return AIArtifactSummaryRead(
+        id=artifact.id,
+        artifact_type=artifact.artifact_type,
+        file_path=artifact.file_path,
+        mime_type=artifact.mime_type,
+        size_bytes=artifact.size_bytes,
+        sha256=f"sha256:{artifact.sha256}",
+        safe_to_show=bool(artifact.metadata_json.get("safe_to_show", False)),
+        redaction_applied=bool(artifact.metadata_json.get("redaction_applied", False)),
+    )
+
+
+def llm_call_log_summary(llm_call_log: LLMCallLog) -> LLMCallLogSummaryRead:
+    return LLMCallLogSummaryRead(
+        id=llm_call_log.id,
+        provider=llm_call_log.provider,
+        model_name=llm_call_log.model_name,
+        call_index=llm_call_log.call_index,
+        status=llm_call_log.status,
+        request_artifact_id=llm_call_log.request_artifact_id,
+        response_artifact_id=llm_call_log.response_artifact_id,
+        parsed_artifact_id=llm_call_log.parsed_artifact_id,
+        schema_validation_artifact_id=llm_call_log.schema_validation_artifact_id,
+        token_usage_json=llm_call_log.token_usage_json,
+        latency_ms=llm_call_log.latency_ms,
+        error_json=llm_call_log.error_json,
+        started_at=llm_call_log.started_at,
+        finished_at=llm_call_log.finished_at,
+    )

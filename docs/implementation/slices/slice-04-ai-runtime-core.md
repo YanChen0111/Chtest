@@ -25,12 +25,12 @@ Create the AI task runtime foundation: AITask, Artifact, ContextArtifact metadat
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add AI runtime models and migration | done | `pytest backend/app/tests/db/test_ai_runtime_models.py -q` | pending commit | AITask, Artifact, context_artifact_ids, LLMCallLog |
-| Add Artifact store service | done | `pytest backend/app/tests/artifacts/test_artifact_store.py -q` | pending commit | Atomic write and sha256 |
-| Add ContextArtifact API | done | `pytest backend/app/tests/api/test_context_artifacts.py -q` | pending commit | Lightweight context input, no RAG |
-| Add Mock LLM Provider | done | `pytest backend/app/tests/ai_runtime/test_mock_provider.py -q` | pending commit | success, provider_error, schema_invalid, timeout |
-| Add AI task enqueue and worker handler | done | `pytest backend/app/tests/ai_runtime/test_ai_task_worker.py -q` | pending commit | fake queue acceptable |
-| Add AI Task API | planned | `pytest backend/app/tests/api/test_ai_tasks.py -q` | - | GET status and artifacts |
+| Add AI runtime models and migration | done | `pytest backend/app/tests/db/test_ai_runtime_models.py -q` | `11bb6cc` | AITask, Artifact, context_artifact_ids, LLMCallLog |
+| Add Artifact store service | done | `pytest backend/app/tests/artifacts/test_artifact_store.py -q` | `5b17d26` | Atomic write and sha256 |
+| Add ContextArtifact API | done | `pytest backend/app/tests/api/test_context_artifacts.py -q` | `d7570ba` | Lightweight context input, no RAG |
+| Add Mock LLM Provider | done | `pytest backend/app/tests/ai_runtime/test_mock_provider.py -q` | `693e171` | success, provider_error, schema_invalid, timeout |
+| Add AI task enqueue and worker handler | done | `pytest backend/app/tests/ai_runtime/test_ai_task_worker.py -q` | `63efbc6` | fake queue acceptable |
+| Add AI Task API | done | `pytest backend/app/tests/api/test_ai_tasks.py -q` | pending commit | GET status and artifacts |
 | Add AI task frontend status shell | planned | `npm --prefix frontend run test -- --run` | - | Recent task list/detail smoke |
 
 ## Task 1: Add AI Runtime Models And Migration

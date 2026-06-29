@@ -236,3 +236,35 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Continue Slice 04 Task 1 from `NEXT_AI_TASK.md`: add AI Runtime models and migration.
+
+## 2026-06-29 Slice 04 AI Runtime Backend Progress
+
+### Completed
+
+- Completed Slice 04 Task 1: AI Runtime models and migration for `AITask`, `Artifact`, `LLMCallLog`, and `context_artifact_ids`.
+- Completed Slice 04 Task 2: local `LocalArtifactStore` with path safety, atomic write, sha256, size, and read helpers.
+- Completed Slice 04 Task 3: ContextArtifact create/list API with owner enforcement, MIME/type guard, size limit, and conservative secret scan.
+- Completed Slice 04 Task 4: deterministic Mock LLM Provider with success, provider error, schema invalid, timeout, and all V1 mock contract models.
+- Completed Slice 04 Task 5: fake queue and AI task worker handler with status progression, Artifact rows, LLMCallLog rows, failure artifacts, and cancelled-task guard.
+- Completed Slice 04 Task 6: AI Task detail/list API for status views, LLM call logs, context usage, artifact summaries, and safe artifact metadata.
+- Updated `NEXT_AI_TASK.md` to Slice 04 Task 7: Add AI task frontend status shell.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/artifacts/test_artifact_store.py backend/app/tests/api/test_context_artifacts.py backend/app/tests/api/test_ai_tasks.py backend/app/tests/ai_runtime/test_mock_provider.py backend/app/tests/ai_runtime/test_ai_task_worker.py -q`
+- Result: `49 passed in 0.94s`
+- `git diff --check`
+- Result: no output.
+
+### Commits
+
+- `11bb6cc feat(ai-runtime): add ai task artifact and llm call models`
+- `5b17d26 feat(artifact): add local artifact store`
+- `d7570ba feat(ai-runtime): add context artifact api`
+- `693e171 feat(ai-runtime): add deterministic mock provider`
+- `63efbc6 feat(ai-runtime): add ai task worker handler`
+- Task 6 commit pending at handoff update time.
+
+### Next Step
+
+- Continue Slice 04 Task 7 from `NEXT_AI_TASK.md`: add AI task frontend status shell.

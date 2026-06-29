@@ -113,6 +113,9 @@ def test_worker_runs_pending_task_and_records_artifacts_and_llm_log(
         context_manifest = json.loads((tmp_path / context_manifest_artifact.file_path).read_text())
         assert context_manifest["context_manifest"][0]["title"] == "coupon-api-notes.md"
         assert all((tmp_path / artifact.file_path).exists() for artifact in artifacts)
+        raw_artifact = next(artifact for artifact in artifacts if artifact.artifact_type == "raw_llm_output")
+        assert raw_artifact.metadata_json["safe_to_show"] is False
+        assert raw_artifact.metadata_json["redaction_applied"] is False
         assert llm_log is not None
         assert llm_log.status == "succeeded"
         assert llm_log.request_artifact_id is not None

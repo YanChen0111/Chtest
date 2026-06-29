@@ -274,6 +274,66 @@ git diff --check
 - AI Task API 只返回 artifact metadata 和路径，不要暴露 raw LLM output 内容。
 - 不要在 Task 6 顺手实现 requirement review/case generation endpoint 或前端。
 
+## 2026-06-29 Slice 04 Task 6 AI Task API 完成
+
+本轮完成：
+
+- 完成 Slice 04 Task 6：新增 AI Task status/detail API。
+- 新增 `GET /api/ai-tasks/{ai_task_id}`，返回 task status、Agent、Prompt/Skill id、provider/model、token usage、context artifact ids、used context ids、context manifest artifact id、artifact summaries 和 LLM call logs。
+- 新增 `GET /api/projects/{project_id}/ai-tasks`，按 project 返回最近 AI tasks 的最小列表。
+- API 只返回 artifact metadata、safe flags、sha256 和路径，不返回 artifact 原始 content。
+- `used_context_artifact_ids` 优先来自 task output，缺省时回退到 `AITask.context_artifact_ids`，保证前端能看见上下文使用。
+- 按评审修复 worker artifact 安全 metadata：`raw_llm_output` 和 `error_json` 默认 `safe_to_show=false`，避免 API 把原始 LLM 输出标成可直接展示。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 04 Task 7：Add AI task frontend status shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/ai_runtime/test_ai_task_worker.py::test_worker_runs_pending_task_and_records_artifacts_and_llm_log -q
+backend/.venv/bin/python -m pytest backend/app/tests/ai_runtime/test_ai_task_worker.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ai_tasks.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ai_tasks.py backend/app/tests/api/test_context_artifacts.py backend/app/tests/api/test_projects.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/artifacts/test_artifact_store.py backend/app/tests/api/test_context_artifacts.py backend/app/tests/api/test_ai_tasks.py backend/app/tests/ai_runtime/test_mock_provider.py backend/app/tests/ai_runtime/test_ai_task_worker.py -q
+git diff --check
+```
+
+验证结果：
+
+- Worker raw artifact metadata regression：`1 passed in 0.35s`
+- AI Task Worker focused test：`9 passed in 0.47s`
+- AI Task API focused test：`4 passed in 0.57s`
+- Project API + ContextArtifact API + AI Task API regression：`20 passed in 0.79s`
+- AI Runtime related regression：`49 passed in 0.94s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/ai_runtime/router.py`
+- `backend/app/modules/ai_runtime/service.py`
+- `backend/app/modules/ai_runtime/schemas.py`
+- `backend/app/tests/api/test_ai_tasks.py`
+- `backend/app/tests/ai_runtime/test_ai_task_worker.py`
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 7 AI Workbench frontend status shell 尚未实现。
+- 当前 AI Task API 不提供 artifact download/read endpoint；前端只能展示 metadata 和 file path。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 04 Task 7：Add AI task frontend status shell。
+- 验证命令：`npm --prefix frontend run test -- --run`。
+
+风险提醒：
+
+- Slice 02.5 Frontend Foundation 已完成，可以进入 Task 7。
+- 前端必须保持中文优先、浅色 Arco 工作台风格，只做最近 AI 任务列表和详情壳。
+- 不要在 Task 7 展示 raw LLM output content；只展示 artifact metadata、safe flags 和路径。
+- 不要在 Task 7 顺手实现完整 requirement review/case generation UI、图表大屏、RAG runtime 或 MCP runtime。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。

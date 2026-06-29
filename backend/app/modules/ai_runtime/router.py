@@ -10,6 +10,8 @@ from backend.app.modules.ai_runtime import service
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.ai_runtime.schemas import (
+    AITaskDetailRead,
+    AITaskListRead,
     ContextArtifactCreate,
     ContextArtifactListRead,
     ContextArtifactRead,
@@ -32,6 +34,17 @@ def project_not_found() -> HTTPException:
         detail={
             "error_code": "PROJECT_NOT_FOUND",
             "message": "Project not found.",
+            "details": {},
+        },
+    )
+
+
+def ai_task_not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "error_code": "AI_TASK_NOT_FOUND",
+            "message": "AI task not found.",
             "details": {},
         },
     )
@@ -107,6 +120,28 @@ def list_context_artifacts(
     except service.ProjectNotFoundError as exc:
         raise project_not_found() from exc
     return ContextArtifactListRead(items=items, total=len(items))
+
+
+@router.get("/ai-tasks/{ai_task_id}", response_model=AITaskDetailRead)
+def get_ai_task(
+    ai_task_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> AITaskDetailRead:
+    try:
+        return service.get_ai_task_detail(session, ai_task_id)
+    except service.AITaskNotFoundError as exc:
+        raise ai_task_not_found() from exc
+
+
+@router.get("/projects/{project_id}/ai-tasks", response_model=AITaskListRead)
+def list_project_ai_tasks(
+    project_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> AITaskListRead:
+    try:
+        return service.list_project_ai_tasks(session, project_id)
+    except service.ProjectNotFoundError as exc:
+        raise project_not_found() from exc
 
 
 def context_artifact_read(artifact: Artifact) -> ContextArtifactRead:

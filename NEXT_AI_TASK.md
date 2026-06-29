@@ -10,28 +10,29 @@ Slice 04: AI Runtime Core.
 
 ## Current Task
 
-Task 6: Add AI Task API.
+Task 7: Add AI task frontend status shell.
 
 ## Product Value Answer
 
-After this task, Chtest can expose AI task status, model metadata, token usage,
-context artifact ids, LLM call logs, and generated artifacts through a minimal
-API for backend and frontend status views.
+After this task, Chtest can show a lightweight AI Workbench status surface with
+recent AI tasks, selected task details, model metadata, context usage, LLM call
+logs, and generated artifact summaries.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/implementation/slices/slice-04-ai-runtime-core.md`
-3. `docs/contracts/02-api-contract.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/04-artifact-contract.md`
-6. `docs/implementation/04-ai-vibecoding-governance.md`
+3. `docs/implementation/slices/slice-02-frontend-foundation.md`
+4. `docs/product/06-frontend-ui-guidelines.md`
+5. `docs/product/08-frontend-design-spec.md`
+6. `docs/contracts/02-api-contract.md`
+7. `docs/contracts/04-artifact-contract.md`
+8. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
 - Requirement review or case generation product pages.
 - CI/CD Quality Center implementation docs beyond artifact owner references.
-- Frontend page polish docs.
 - RAG runtime, vector index, embedding, chunking, or reranking docs.
 - MCP runtime integration docs.
 
@@ -40,38 +41,38 @@ API for backend and frontend status views.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/ai_runtime/service.py
-backend/app/modules/ai_runtime/router.py
-backend/app/modules/ai_runtime/schemas.py
-backend/app/main.py
-backend/app/tests/api/test_ai_tasks.py
+frontend/src/views/ai-workbench/AiWorkbenchView.vue
+frontend/src/api/aiTasks.ts
+frontend/src/stores/aiTasks.ts
+frontend/src/router/index.ts
+frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
-Read existing ContextArtifact and Project API tests only to follow FastAPI patterns.
+Read nearby frontend API/store/router tests only to follow existing Vue 3 + Arco Design Vue patterns.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_ai_tasks.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: the AI Task API focused test passes.
+Expected result: the frontend focused and existing Vitest tests pass.
 
 ## Acceptance
 
-- `GET /api/ai-tasks/{id}` returns task status, prompt/skill ids, provider/model, token usage, context artifact ids, LLM call logs, and artifact summaries.
-- Minimal list API returns recent AI tasks for a project.
-- API does not expose unsafe raw LLM output content; it returns artifact metadata and paths only.
-- API returns `context_artifact_ids` for every task.
-- No requirement review or case generation endpoints, frontend, real provider, vector index, RAG storage, or MCP runtime is added in this task.
-- `git status --short` shows only expected AI Task API files before commit.
+- AI 工作台 displays recent AI tasks from `GET /api/projects/{project_id}/ai-tasks`.
+- Selecting a task displays status, prompt/skill ids, provider/model, token usage, context artifact ids, LLM call logs, and artifact summaries from `GET /api/ai-tasks/{id}`.
+- Visible labels remain Chinese-first and use the approved light Arco workbench style.
+- Raw LLM output content is not fetched or displayed; only artifact metadata, safe flags, and paths are shown.
+- No full requirement review UI, case generation UI, charts beyond simple status counts, real provider, vector index, RAG storage, or MCP runtime is added in this task.
+- `git status --short` shows only expected frontend files and required task docs before commit.
 
 ## Commit Message
 
 ```text
-feat(ai-runtime): add ai task api
+feat(frontend): add ai task status shell
 ```
 
 ## Next Task
 
-Slice 04 Task 7: Add AI task frontend status shell.
+Slice 04 completion gate, then Slice 05 Prompt And Skill Registry.
