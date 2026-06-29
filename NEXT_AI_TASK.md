@@ -10,12 +10,12 @@ Slice 06: Requirement To Case Mainline.
 
 ## Current Task
 
-Task 8: Add Requirement Review frontend shell.
+Task 9: Add Case Generation Review frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest has the first Requirement Review frontend shell for
-creating a requirement and viewing mock review and risk results.
+After this task, Chtest has the first Case Generation Review frontend shell for
+reviewing generated candidates and submitting candidate review actions.
 
 ## Must Read
 
@@ -28,25 +28,24 @@ creating a requirement and viewing mock review and risk results.
 
 ## Do Not Read Unless Needed
 
-- Case Generation Review, AutomationDraft, Playwright, CI/CD, report center,
-  RAG runtime, MCP runtime, and migration reference docs unless a concrete
-  blocker requires them.
+- AutomationDraft, Playwright, CI/CD, report center, RAG runtime, MCP runtime,
+  and migration reference docs unless a concrete blocker requires them.
 
 ## Expected Files
 
 Create or update only these files for the current task:
 
 ```text
-frontend/src/views/requirements/RequirementReviewView.vue
-frontend/src/api/requirements.ts
-frontend/src/stores/requirements.ts
+frontend/src/views/cases/CaseGenerationReviewView.vue
+frontend/src/api/cases.ts
+frontend/src/stores/cases.ts
 frontend/src/router/index.ts
 frontend/src/stores/index.ts
-frontend/src/views/requirements/RequirementReviewView.spec.ts
+frontend/src/views/cases/CaseGenerationReviewView.spec.ts
 ```
 
-Read existing frontend route, store, API client, and component test patterns
-only as needed to match the current frontend foundation.
+Read existing Requirement Review frontend shell, API client, store, route, and
+component test patterns only as needed to match the current frontend foundation.
 
 ## Verification Command
 
@@ -58,22 +57,23 @@ Expected result: frontend test suite passes.
 
 ## Acceptance
 
-- Add a Requirement Review view shell that can create a requirement and display
-  review scores, issues, clarification questions, risk items, and context usage.
+- Add a Case Generation Review view shell that can start case generation, list
+  generated candidates, and submit approve/approve_after_edit/reject/
+  needs_optimization review actions.
 - Add minimal API and store wiring needed by the shell.
-- Keep behavior aligned to existing backend Requirement Review contracts.
-- Do not add full case review UI, AutomationDraft entry points, browser
-  automation, real provider, RAG runtime, MCP runtime, RBAC, tenants, or
-  permissions.
-- `git status --short` shows only expected frontend files and required task
-  docs before commit.
+- Keep behavior aligned to existing backend Case Generation and Case Review
+  contracts.
+- Do not add AutomationDraft entry points, execution, browser automation, real
+  provider, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+- `git status --short` shows only expected frontend files and required task docs
+  before commit.
 
 ## Commit Message
 
 ```text
-feat(frontend): add requirement review shell
+feat(frontend): add case generation review shell
 ```
 
 ## Next Task
 
-Slice 06 Task 9: Add Case Generation Review frontend shell.
+Slice 06 completion gate.

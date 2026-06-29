@@ -1,5 +1,52 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 8 Requirement Review Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 8：新增 Requirement Review frontend shell。
+- 新增 `frontend/src/views/requirements/RequirementReviewView.vue`，支持录入需求、触发 mock RequirementReviewAgent、展示评分、问题、澄清问题、风险项和上下文使用。
+- 新增 `frontend/src/api/requirements.ts` 和 `frontend/src/stores/requirements.ts`，最小接入 Requirement create、review start、review get API。
+- 扩展 `ApiClient.postJson`，并把 `需求评审` 路由/导航状态接入现有 workbench shell。
+- 未加入 Case Generation Review、AutomationDraft、执行、browser automation、真实 provider、RAG runtime、MCP runtime、RBAC 或 tenants。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 9：Add Case Generation Review frontend shell。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/requirements/RequirementReviewView.spec.ts
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Requirement Review frontend focused test：`1 passed`
+- Frontend test suite：`6 passed, 9 tests passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `frontend/src/views/requirements/RequirementReviewView.vue`
+- `frontend/src/views/requirements/RequirementReviewView.spec.ts`
+- `frontend/src/api/client.ts`
+- `frontend/src/api/requirements.ts`
+- `frontend/src/stores/requirements.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 9：Add Case Generation Review frontend shell。
+- 验证命令：`npm --prefix frontend run test -- --run`。
+
+风险提醒：
+
+- Task 9 只做 Case Generation Review frontend shell；不要加入 AutomationDraft、执行、真实 provider、外部 RAG runtime 或 MCP runtime。
+
 ## 2026-06-29 Slice 06 Task 7 Requirement To Case Golden Smoke 完成
 
 本轮完成：
