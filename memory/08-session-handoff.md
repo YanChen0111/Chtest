@@ -105,6 +105,63 @@ git diff --check
 
 - ContextArtifact 写入前的 secret scan / redaction 策略需要在 Task 3 API/service 中最小实现或明确保守拒绝；不要引入 RAG、vector index 或隐式上下文注入。
 
+## 2026-06-29 Slice 04 Task 3 ContextArtifact API 完成
+
+本轮完成：
+
+- 完成 Slice 04 Task 3：新增 ContextArtifact create/list API。
+- `POST /api/context-artifacts` 使用本地 Artifact store 写入内容，并创建 Artifact DB row。
+- ContextArtifact Artifact row 使用 `owner_entity_type=Project`、`owner_entity_id=project_id`，客户端不能覆盖 owner fields。
+- ContextArtifact `metadata_json` 同时包含 Artifact 基础 metadata：`created_by_component/source_entity_type/source_entity_id/description`，以及 ContextArtifact 专属字段：`title/source_ref/safe_to_show/redaction_applied/redaction_report_artifact_id/allowed_for_prompt`。
+- MIME 校验按 `artifact_type` 绑定组合，拒绝 mismatched type/MIME。
+- 内容大小限制为 V1 单个 ContextArtifact 1 MiB。
+- 写入前对 `title`、`source_ref` 和 `content` 做基础 secret scan；发现高风险内容时返回 `CONTEXT_ARTIFACT_SECRET_DETECTED` 并拒绝保存。
+- `GET /api/projects/{project_id}/context-artifacts` 只返回当前 project 的 project-level context artifacts。
+- Create 响应不返回原始 content，避免绕过后续展示前 redaction view。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 04 Task 4：Add Mock LLM Provider。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_context_artifacts.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py backend/app/tests/api/test_context_artifacts.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/artifacts/test_artifact_store.py backend/app/tests/api/test_context_artifacts.py -q
+git diff --check
+```
+
+验证结果：
+
+- ContextArtifact API focused test：`9 passed in 0.71s`
+- Project API + ContextArtifact API regression：`16 passed in 0.80s`
+- AI Runtime DB + Artifact store + ContextArtifact regression：`25 passed in 0.79s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/main.py`
+- `backend/app/modules/ai_runtime/router.py`
+- `backend/app/modules/ai_runtime/service.py`
+- `backend/app/modules/ai_runtime/schemas.py`
+- `backend/app/tests/api/test_context_artifacts.py`
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 4 Mock LLM Provider 尚未实现。
+- ContextArtifact API 当前只做保守拒绝式 secret scan，不做脱敏保存版本；后续若要 redaction artifact，需要单独任务补 `redaction_report.json`。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 04 Task 4：Add Mock LLM Provider。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/ai_runtime/test_mock_provider.py -q`。
+
+风险提醒：
+
+- 不要让 Mock Provider 调外部网络。
+- 不要在 Task 4 顺手实现 worker handler、AI Task API 或业务 agent endpoint。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。

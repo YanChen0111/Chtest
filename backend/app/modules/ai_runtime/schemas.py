@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AITaskRead(BaseModel):
@@ -55,6 +55,42 @@ class ArtifactWriteResultRead(BaseModel):
     file_path: str
     size_bytes: int
     sha256: str
+
+
+class ContextArtifactCreate(BaseModel):
+    project_id: uuid.UUID
+    title: str = Field(min_length=1, max_length=255)
+    artifact_type: str
+    mime_type: str
+    content: str = Field(min_length=1)
+    source_ref: str = Field(min_length=1, max_length=500)
+    safe_to_show: bool | None = None
+
+
+class ContextArtifactRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    owner_entity_type: str
+    owner_entity_id: uuid.UUID
+    artifact_type: str
+    mime_type: str
+    file_path: str
+    sha256: str
+    metadata: dict[str, Any]
+
+
+class ContextArtifactListItemRead(BaseModel):
+    id: uuid.UUID
+    title: str
+    artifact_type: str
+    mime_type: str
+    safe_to_show: bool
+    redaction_applied: bool
+
+
+class ContextArtifactListRead(BaseModel):
+    items: list[ContextArtifactListItemRead]
+    total: int
 
 
 class LLMCallLogRead(BaseModel):

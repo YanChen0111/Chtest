@@ -6,11 +6,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from backend.app.modules.ai_runtime.router import router as ai_runtime_router
 from backend.app.modules.projects.router import router as projects_router
 
 
 app = FastAPI(title="Chtest API")
 app.include_router(projects_router, prefix="/api")
+app.include_router(ai_runtime_router, prefix="/api")
 
 
 @app.exception_handler(HTTPException)
