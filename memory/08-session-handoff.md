@@ -334,6 +334,59 @@ git diff --check
 - 不要在 Task 7 展示 raw LLM output content；只展示 artifact metadata、safe flags 和路径。
 - 不要在 Task 7 顺手实现完整 requirement review/case generation UI、图表大屏、RAG runtime 或 MCP runtime。
 
+## 2026-06-29 Slice 04 Task 7 AI Workbench 前端状态壳完成
+
+本轮完成：
+
+- 完成 Slice 04 Task 7：新增 AI Workbench frontend status shell。
+- 新增 `frontend/src/api/aiTasks.ts`，按后端 schema 定义 AI task list/detail、artifact summary 和 LLM call log 类型，并封装 `GET /api/projects/{project_id}/ai-tasks` 与 `GET /api/ai-tasks/{id}`。
+- 新增 `frontend/src/stores/aiTasks.ts` Pinia store，维护默认单用户 project、recent tasks、selected task、loading/error 状态和简要指标。
+- 更新 `AI 工作台` 页面：保留后端健康 smoke，新增最近 AI 任务列表、任务详情、Prompt/Skill id、provider/model、token usage、上下文工件、已使用上下文、工件摘要和大模型调用日志。
+- 工件区域只展示 artifact metadata、路径、MIME、大小、sha256、`safe_to_show` 和 `redaction_applied` 状态；不拉取或展示 raw LLM output content。
+- 大模型调用日志展示 provider/model/status、response artifact id、latency 和 token usage，保留证据追溯入口。
+- 页面继续使用 Vue 3 + Arco Design Vue，中文优先，浅色工作台布局，不新增完整需求评审 UI、case generation UI、RAG runtime 或 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 04 Completion Gate。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts
+npm --prefix frontend run test -- --run
+npm --prefix frontend run build
+```
+
+验证结果：
+
+- AI Workbench focused test：`3 passed`
+- Frontend Vitest suite：`7 passed`
+- Frontend build：通过；仍有既有 Arco bundle size warning。
+
+修改文件：
+
+- `frontend/src/api/aiTasks.ts`
+- `frontend/src/stores/aiTasks.ts`
+- `frontend/src/views/ai-workbench/AiWorkbenchView.vue`
+- `frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/07-dev-log.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Slice 04 completion gate 尚未执行。
+- AI Workbench 当前只提供状态壳和 metadata 详情，不提供 artifact download/read、任务创建入口或完整业务评审动作。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 04 Completion Gate。
+- 完成后将 `NEXT_AI_TASK.md` 切换到 Slice 05 Task 1：Add PromptVersion and SkillVersion models。
+
+风险提醒：
+
+- Completion Gate 应跑 backend AI runtime regression、frontend tests、frontend build 和 `git diff --check`。
+- 不要在 completion gate 顺手实现 Prompt/Skill models；先完成 Slice 04 总验收和 handoff。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。

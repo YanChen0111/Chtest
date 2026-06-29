@@ -247,12 +247,17 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Completed Slice 04 Task 4: deterministic Mock LLM Provider with success, provider error, schema invalid, timeout, and all V1 mock contract models.
 - Completed Slice 04 Task 5: fake queue and AI task worker handler with status progression, Artifact rows, LLMCallLog rows, failure artifacts, and cancelled-task guard.
 - Completed Slice 04 Task 6: AI Task detail/list API for status views, LLM call logs, context usage, artifact summaries, and safe artifact metadata.
-- Updated `NEXT_AI_TASK.md` to Slice 04 Task 7: Add AI task frontend status shell.
+- Completed Slice 04 Task 7: AI Workbench frontend status shell with recent AI tasks, selected task details, context usage, artifact summaries, and LLM call logs.
+- Updated `NEXT_AI_TASK.md` to Slice 04 Completion Gate.
 
 ### Verification
 
 - `backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/artifacts/test_artifact_store.py backend/app/tests/api/test_context_artifacts.py backend/app/tests/api/test_ai_tasks.py backend/app/tests/ai_runtime/test_mock_provider.py backend/app/tests/ai_runtime/test_ai_task_worker.py -q`
 - Result: `49 passed in 0.94s`
+- `npm --prefix frontend run test -- --run`
+- Result: `7 passed (7)`
+- `npm --prefix frontend run build`
+- Result: passed with existing Arco bundle size warning.
 - `git diff --check`
 - Result: no output.
 
@@ -263,8 +268,9 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - `d7570ba feat(ai-runtime): add context artifact api`
 - `693e171 feat(ai-runtime): add deterministic mock provider`
 - `63efbc6 feat(ai-runtime): add ai task worker handler`
-- Task 6 commit pending at handoff update time.
+- `f006cb2 feat(ai-runtime): add ai task api`
+- Task 7 commit pending at handoff update time.
 
 ### Next Step
 
-- Continue Slice 04 Task 7 from `NEXT_AI_TASK.md`: add AI task frontend status shell.
+- Continue Slice 04 Completion Gate from `NEXT_AI_TASK.md`, then move to Slice 05 Task 1.

@@ -30,8 +30,8 @@ Create the AI task runtime foundation: AITask, Artifact, ContextArtifact metadat
 | Add ContextArtifact API | done | `pytest backend/app/tests/api/test_context_artifacts.py -q` | `d7570ba` | Lightweight context input, no RAG |
 | Add Mock LLM Provider | done | `pytest backend/app/tests/ai_runtime/test_mock_provider.py -q` | `693e171` | success, provider_error, schema_invalid, timeout |
 | Add AI task enqueue and worker handler | done | `pytest backend/app/tests/ai_runtime/test_ai_task_worker.py -q` | `63efbc6` | fake queue acceptable |
-| Add AI Task API | done | `pytest backend/app/tests/api/test_ai_tasks.py -q` | pending commit | GET status and artifacts |
-| Add AI task frontend status shell | planned | `npm --prefix frontend run test -- --run` | - | Recent task list/detail smoke |
+| Add AI Task API | done | `pytest backend/app/tests/api/test_ai_tasks.py -q` | `f006cb2` | GET status and artifacts |
+| Add AI task frontend status shell | done | `npm --prefix frontend run test -- --run` | pending commit | Recent task list/detail smoke |
 
 ## Task 1: Add AI Runtime Models And Migration
 
