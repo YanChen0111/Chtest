@@ -30,7 +30,7 @@ Load, validate, version, expose, and benchmark built-in PromptVersion and SkillV
 | Add registry loader and hash logic | done | `backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py -q` | pending commit | Idempotent seed |
 | Add mock-provider eval bench | done | `backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_eval_bench.py -q` | pending commit | Deterministic schema/evidence/unsafe metrics |
 | Add Prompt/Skill API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_prompt_skill_registry.py -q` | pending commit | List and detail only |
-| Add Prompt/Skill frontend shell | planned | `npm --prefix frontend run test -- --run` | - | Version list and detail smoke |
+| Add Prompt/Skill frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | Version list and detail smoke |
 
 ## Task 1: Add PromptVersion And SkillVersion Models
 

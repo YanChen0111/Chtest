@@ -6,77 +6,73 @@ full docs so an AI worker can start fast without rereading the whole planning se
 
 ## Current Slice
 
-Slice 05: Prompt And Skill Registry.
+Slice 06: Requirement To Case Mainline.
 
 ## Current Task
 
-Task 7: Add Prompt/Skill frontend shell.
+Task 0: Create Slice 06 task plan.
 
 ## Product Value Answer
 
-After this task, Chtest has a Prompt/Skill Center frontend shell where users can
-inspect built-in prompt and skill versions, hashes, applicable agents, and
-contract metadata.
+After this task, Chtest has a focused Slice 06 task plan for requirement review,
+risk analysis, case generation, and case review, so future AI coding sessions can
+continue without broad roadmap rereads.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
-2. `docs/implementation/slices/slice-05-prompt-skill-registry.md`
-3. `docs/product/06-frontend-ui-guidelines.md`
-4. `docs/contracts/05-prompt-skill-contract.md`
-5. `docs/implementation/04-ai-vibecoding-governance.md`
+2. `docs/product/01-positioning-and-scope.md`
+3. `docs/contracts/01-data-model-contract.md`
+4. `docs/contracts/02-api-contract.md`
+5. `docs/contracts/03-state-machines.md`
+6. `docs/contracts/05-prompt-skill-contract.md`
+7. `docs/fixtures/01-golden-requirement-to-case.md`
+8. `docs/implementation/01-v1-delivery-plan.md`
+9. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
-- Requirement review or case generation product pages.
-- Skill marketplace, plugin import, prompt editing UI, optimization, A/B testing,
-  and real provider integration docs.
-- CI/CD Quality Center implementation docs beyond artifact owner references.
-- RAG runtime, vector index, embedding, chunking, or reranking docs.
-- MCP runtime integration docs.
+- AutomationDraft, Playwright, CI/CD Quality Center, report center, RAG runtime,
+  vector index, embedding, chunking, reranking, MCP runtime, and frontend polish
+  docs unless a concrete Slice 06 task requires them.
 
 ## Expected Files
 
 Create or update only these files for the current task:
 
 ```text
-frontend/src/views/prompt-skill/PromptSkillCenterView.vue
-frontend/src/api/promptSkill.ts
-frontend/src/stores/promptSkill.ts
-frontend/src/router/index.ts
-frontend/src/views/prompt-skill/PromptSkillCenterView.spec.ts
+docs/implementation/slices/slice-06-requirement-to-case.md
+NEXT_AI_TASK.md
 ```
 
-Precondition: Slice 02.5 Frontend Foundation is complete. Read existing frontend
-route/API/store/test patterns only to align the shell.
+Do not implement Slice 06 code in this planning task.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_prompt_skill_models.py -q
 ```
 
-Expected result: the frontend test suite passes with Prompt/Skill Center shell
-coverage.
+Expected result: existing prompt/skill model smoke remains green after docs-only
+handoff changes.
 
 ## Acceptance
 
-- Prompt/Skill Center route renders a read-only shell.
-- Frontend API client can load prompt and skill version lists.
-- Store tracks loading, error, prompts, and skills.
-- View displays version identity, hash, status, applicable Agent(s), and
-  schema/gate metadata at shell level.
-- No prompt editing, marketplace, real provider, vector index, RAG storage, or
-  MCP runtime is added in this task.
-- `git status --short` shows only expected frontend files and required task docs
-  before commit.
+- Slice 06 task file exists and breaks M3 into small, verified backend/frontend
+  tasks.
+- The first executable Slice 06 task has expected files, non-goals,
+  verification command, and commit message.
+- Task plan follows V1 boundaries: no RBAC, no RAG runtime, no MCP runtime,
+  no AutomationDraft or CI/CD scope.
+- `NEXT_AI_TASK.md` points to the first executable Slice 06 task after the plan
+  is created.
 
 ## Commit Message
 
 ```text
-feat(frontend): add prompt skill center shell
+docs(slice-06): add requirement to case task plan
 ```
 
 ## Next Task
 
-Slice 06: Requirement To Case mainline.
+Slice 06 Task 1: Add Requirement Review models and migration.

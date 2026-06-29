@@ -167,7 +167,8 @@ body {
   line-height: 1.65;
 }
 
-.project-settings-page {
+.project-settings-page,
+.prompt-skill-page {
   display: grid;
   gap: 18px;
 }
@@ -199,11 +200,35 @@ body {
   min-height: 320px;
 }
 
-.settings-grid {
+.settings-grid,
+.prompt-skill-grid,
+.prompt-skill-metrics {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.settings-grid,
+.prompt-skill-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 16px;
+}
+
+.prompt-skill-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.prompt-skill-metrics span,
+.prompt-skill-metrics strong {
+  display: block;
+}
+
+.prompt-skill-metrics span {
+  color: #64748b;
+}
+
+.prompt-skill-metrics strong {
+  margin-top: 8px;
+  font-size: 26px;
 }
 
 .settings-panel {
@@ -221,7 +246,9 @@ body {
 
   .metric-grid,
   .flow-grid,
-  .settings-grid {
+  .settings-grid,
+  .prompt-skill-grid,
+  .prompt-skill-metrics {
     grid-template-columns: 1fr;
   }
 

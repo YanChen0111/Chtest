@@ -1,5 +1,53 @@
 # Session Handoff
 
+## 2026-06-29 Slice 05 Task 7 Prompt/Skill Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 05 Task 7：新增 Prompt/Skill Center read-only frontend shell。
+- 新增 frontend API client：加载 `/api/prompt-versions` 和 `/api/skill-versions`。
+- 新增 Pinia store：跟踪 prompts、skills、loading、error 和基础计数。
+- 新增 route `/prompt-skill`，并将侧边栏 `Prompt / Skill 中心` 标记为就绪。
+- 页面展示 PromptVersion / SkillVersion 数量、active 计数、适用 Agent、hash、状态、schema required 字段、quality gates 和 tool permissions。
+- 未加入 prompt editing、marketplace、真实 provider、RAG 或 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 0：Create Slice 06 task plan。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/prompt-skill/PromptSkillCenterView.spec.ts
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Prompt/Skill Center focused spec：`1 passed`
+- Frontend full test suite：`5 passed (5 files), 8 passed (8 tests)`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `frontend/src/api/promptSkill.ts`
+- `frontend/src/stores/promptSkill.ts`
+- `frontend/src/views/prompt-skill/PromptSkillCenterView.vue`
+- `frontend/src/views/prompt-skill/PromptSkillCenterView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `frontend/src/styles/global.css`
+- `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 0：Create Slice 06 task plan。
+- 创建 `docs/implementation/slices/slice-06-requirement-to-case.md` 后，将 `NEXT_AI_TASK.md` 切到 Slice 06 的第一个可执行小任务。
+
+风险提醒：
+
+- Slice 06 尚无独立 task plan 文件；不要直接开始写需求/用例模型，先建立小任务边界。
+
 ## 2026-06-29 Slice 05 Task 6 Prompt/Skill API 完成
 
 本轮完成：
