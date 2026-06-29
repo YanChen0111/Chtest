@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
-from backend.app.modules.projects.models import Environment, Module, Project, Repository, Workspace
+from backend.app.modules.projects.models import Environment, Module, Project, Repository, TestCommand, Workspace
 from backend.app.modules.projects.schemas import (
     EnvironmentCreate,
     EnvironmentUpdate,
@@ -19,6 +19,8 @@ from backend.app.modules.projects.schemas import (
     ProjectUpdate,
     RepositoryCreate,
     RepositoryUpdate,
+    TestCommandCreate,
+    TestCommandUpdate,
 )
 
 
@@ -66,6 +68,18 @@ class EnvironmentNotFoundError(Exception):
 
 
 class EnvironmentSecretNotAllowedError(Exception):
+    pass
+
+
+class TestCommandAlreadyExistsError(Exception):
+    pass
+
+
+class TestCommandNotAllowedError(Exception):
+    pass
+
+
+class TestCommandNotFoundError(Exception):
     pass
 
 
@@ -408,3 +422,185 @@ def validate_environment_variables(variables: dict[str, object]) -> None:
         if isinstance(value, str) and value.startswith("ref:"):
             continue
         raise EnvironmentSecretNotAllowedError
+
+
+def is_command_allowlisted(command: str, command_type: str) -> bool:
+    normalized_command = " ".join(command.strip().split())
+    if command_type == "pytest":
+        return normalized_command == "pytest" or normalized_command.startswith("pytest ")
+    if command_type == "npm":
+        return normalized_command in {"npm test", "npm run test"} or normalized_command.startswith(
+            ("npm test ", "npm run test "),
+        )
+    if command_type == "playwright":
+        return normalized_command == "npx playwright test" or normalized_command.startswith("npx playwright test ")
+    return False
+
+
+def has_forbidden_shell_operator(command: str) -> bool:
+    forbidden_tokens = ("&&", "||", ";", "|", "`", "$(", ">", "<", "&", "\n", "\r")
+    return any(token in command for token in forbidden_tokens)
+
+
+def is_working_directory_under_repository(working_directory: str, repository: Repository | None) -> bool:
+    if repository is None:
+        return False
+
+    path = Path(working_directory).expanduser()
+    if not path.exists():
+        return False
+
+    resolved_workdir = path.resolve()
+    resolved_repository = Path(repository.local_path).expanduser().resolve()
+    return resolved_workdir == resolved_repository or resolved_repository in resolved_workdir.parents
+
+
+def validate_test_command_payload(
+    command: str,
+    command_type: str,
+    working_directory: str,
+    repository: Repository | None,
+) -> tuple[bool, bool, list[str]]:
+    messages: list[str] = []
+    allowlist_passed = is_command_allowlisted(command, command_type) and not has_forbidden_shell_operator(command)
+    if not allowlist_passed:
+        messages.append("Command is outside the allowlist or contains forbidden shell operators.")
+
+    working_directory_passed = is_working_directory_under_repository(working_directory, repository)
+    if not working_directory_passed:
+        messages.append("Working directory must exist under the selected repository path.")
+
+    return allowlist_passed, working_directory_passed, messages
+
+
+def get_repository_for_project(
+    session: Session,
+    project_id: uuid.UUID,
+    repository_id: uuid.UUID | None,
+) -> Repository | None:
+    if repository_id is None:
+        return None
+    return session.scalar(select(Repository).where(Repository.id == repository_id, Repository.project_id == project_id))
+
+
+def environment_belongs_to_project(
+    session: Session,
+    project_id: uuid.UUID,
+    environment_id: uuid.UUID | None,
+) -> bool:
+    if environment_id is None:
+        return True
+    return (
+        session.scalar(
+            select(Environment).where(Environment.id == environment_id, Environment.project_id == project_id),
+        )
+        is not None
+    )
+
+
+def create_test_command(session: Session, data: TestCommandCreate) -> TestCommand:
+    project = get_project(session, data.project_id)
+    if project is None:
+        raise ModuleNotFoundError
+
+    repository = get_repository_for_project(session, data.project_id, data.repository_id)
+    if not environment_belongs_to_project(session, data.project_id, data.environment_id):
+        raise TestCommandNotAllowedError
+
+    allowlist_passed, working_directory_passed, _messages = validate_test_command_payload(
+        data.command,
+        data.command_type,
+        data.working_directory,
+        repository,
+    )
+    if not allowlist_passed or not working_directory_passed:
+        raise TestCommandNotAllowedError
+
+    test_command = TestCommand(
+        project_id=data.project_id,
+        repository_id=data.repository_id,
+        environment_id=data.environment_id,
+        name=data.name,
+        command=data.command,
+        working_directory=str(Path(data.working_directory).expanduser().resolve()),
+        command_type=data.command_type,
+        timeout_seconds=data.timeout_seconds,
+        parse_junit=data.parse_junit,
+        parse_coverage=data.parse_coverage,
+    )
+    session.add(test_command)
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise TestCommandAlreadyExistsError from exc
+    session.refresh(test_command)
+    return test_command
+
+
+def list_test_commands(session: Session, project_id: uuid.UUID) -> list[TestCommand]:
+    project = get_project(session, project_id)
+    if project is None:
+        raise ModuleNotFoundError
+
+    return list(
+        session.scalars(
+            select(TestCommand)
+            .where(TestCommand.project_id == project_id)
+            .order_by(TestCommand.created_at.asc()),
+        ),
+    )
+
+
+def update_test_command(session: Session, test_command_id: uuid.UUID, data: TestCommandUpdate) -> TestCommand:
+    test_command = session.get(TestCommand, test_command_id)
+    if test_command is None:
+        raise TestCommandNotFoundError
+
+    updates = data.model_dump(exclude_unset=True)
+    command = updates.get("command", test_command.command)
+    command_type = updates.get("command_type", test_command.command_type)
+    working_directory = updates.get("working_directory", test_command.working_directory)
+    repository_id = updates.get("repository_id", test_command.repository_id)
+    environment_id = updates.get("environment_id", test_command.environment_id)
+    repository = get_repository_for_project(session, test_command.project_id, repository_id)
+    if not environment_belongs_to_project(session, test_command.project_id, environment_id):
+        raise TestCommandNotAllowedError
+
+    allowlist_passed, working_directory_passed, _messages = validate_test_command_payload(
+        command,
+        command_type,
+        working_directory,
+        repository,
+    )
+    if not allowlist_passed or not working_directory_passed:
+        raise TestCommandNotAllowedError
+
+    for field, value in updates.items():
+        if field == "working_directory":
+            value = str(Path(value).expanduser().resolve())
+        setattr(test_command, field, value)
+
+    session.add(test_command)
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise TestCommandAlreadyExistsError from exc
+    session.refresh(test_command)
+    return test_command
+
+
+def validate_test_command(session: Session, test_command_id: uuid.UUID) -> tuple[TestCommand, bool, bool, list[str]]:
+    test_command = session.get(TestCommand, test_command_id)
+    if test_command is None:
+        raise TestCommandNotFoundError
+
+    repository = get_repository_for_project(session, test_command.project_id, test_command.repository_id)
+    allowlist_passed, working_directory_passed, messages = validate_test_command_payload(
+        test_command.command,
+        test_command.command_type,
+        test_command.working_directory,
+        repository,
+    )
+    return test_command, allowlist_passed, working_directory_passed, messages

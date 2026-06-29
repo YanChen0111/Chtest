@@ -29,6 +29,12 @@ from backend.app.modules.projects.schemas import (
     RepositoryListRead,
     RepositoryRead,
     RepositoryUpdate,
+    TestCommandCreate,
+    TestCommandListRead,
+    TestCommandRead,
+    TestCommandUpdate,
+    TestCommandValidateRequest,
+    TestCommandValidationRead,
 )
 
 
@@ -172,6 +178,39 @@ def environment_secret_not_allowed() -> HTTPException:
         detail={
             "error_code": "ENVIRONMENT_SECRET_NOT_ALLOWED",
             "message": "Environment secret-like values must be stored as references.",
+            "details": {},
+        },
+    )
+
+
+def test_command_not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "error_code": "TEST_COMMAND_NOT_FOUND",
+            "message": "Test command not found.",
+            "details": {},
+        },
+    )
+
+
+def test_command_already_exists() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={
+            "error_code": "TEST_COMMAND_ALREADY_EXISTS",
+            "message": "Test command name already exists in this project.",
+            "details": {},
+        },
+    )
+
+
+def test_command_not_allowed() -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={
+            "error_code": "TEST_COMMAND_NOT_ALLOWED",
+            "message": "Test command violates allowlist or working directory rules.",
             "details": {},
         },
     )
@@ -343,6 +382,73 @@ def patch_environment(
         raise environment_secret_not_allowed() from exc
     except service.EnvironmentAlreadyExistsError as exc:
         raise environment_already_exists() from exc
+
+
+@router.post("/test-commands", response_model=TestCommandRead, status_code=status.HTTP_201_CREATED)
+def create_test_command(
+    data: TestCommandCreate,
+    session: Session = Depends(get_session),
+) -> Any:
+    try:
+        return service.create_test_command(session, data)
+    except service.ModuleNotFoundError as exc:
+        raise project_not_found() from exc
+    except service.TestCommandNotAllowedError as exc:
+        raise test_command_not_allowed() from exc
+    except service.TestCommandAlreadyExistsError as exc:
+        raise test_command_already_exists() from exc
+
+
+@router.get("/projects/{project_id}/test-commands", response_model=TestCommandListRead)
+def list_test_commands(
+    project_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> TestCommandListRead:
+    try:
+        test_commands = service.list_test_commands(session, project_id)
+    except service.ModuleNotFoundError as exc:
+        raise project_not_found() from exc
+
+    return TestCommandListRead(items=test_commands, total=len(test_commands))
+
+
+@router.patch("/test-commands/{test_command_id}", response_model=TestCommandRead)
+def patch_test_command(
+    test_command_id: uuid.UUID,
+    data: TestCommandUpdate,
+    session: Session = Depends(get_session),
+) -> Any:
+    try:
+        return service.update_test_command(session, test_command_id, data)
+    except service.TestCommandNotFoundError as exc:
+        raise test_command_not_found() from exc
+    except service.TestCommandNotAllowedError as exc:
+        raise test_command_not_allowed() from exc
+    except service.TestCommandAlreadyExistsError as exc:
+        raise test_command_already_exists() from exc
+
+
+@router.post("/test-commands/{test_command_id}/validate", response_model=TestCommandValidationRead)
+def validate_test_command(
+    test_command_id: uuid.UUID,
+    _data: TestCommandValidateRequest,
+    session: Session = Depends(get_session),
+) -> TestCommandValidationRead:
+    try:
+        test_command, allowlist_passed, working_directory_passed, messages = service.validate_test_command(
+            session,
+            test_command_id,
+        )
+    except service.TestCommandNotFoundError as exc:
+        raise test_command_not_found() from exc
+
+    return TestCommandValidationRead(
+        test_command_id=test_command.id,
+        valid=allowlist_passed and working_directory_passed,
+        allowlist_passed=allowlist_passed,
+        working_directory_passed=working_directory_passed,
+        messages=messages,
+    )
 
 
 @router.get("/projects/{project_id}/settings", response_model=ProjectSettingsRead)

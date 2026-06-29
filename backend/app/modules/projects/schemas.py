@@ -150,6 +150,49 @@ class TestCommandRead(BaseModel):
     status: str
 
 
+class TestCommandCreate(BaseModel):
+    project_id: uuid.UUID
+    repository_id: uuid.UUID | None = None
+    environment_id: uuid.UUID | None = None
+    name: str = Field(min_length=1, max_length=160)
+    command: str = Field(min_length=1)
+    working_directory: str = Field(min_length=1)
+    command_type: str = "pytest"
+    timeout_seconds: int = Field(default=600, gt=0)
+    parse_junit: bool = True
+    parse_coverage: bool = False
+
+
+class TestCommandUpdate(BaseModel):
+    repository_id: uuid.UUID | None = None
+    environment_id: uuid.UUID | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    command: str | None = Field(default=None, min_length=1)
+    working_directory: str | None = Field(default=None, min_length=1)
+    command_type: str | None = None
+    timeout_seconds: int | None = Field(default=None, gt=0)
+    parse_junit: bool | None = None
+    parse_coverage: bool | None = None
+    status: str | None = None
+
+
+class TestCommandListRead(BaseModel):
+    items: list[TestCommandRead]
+    total: int
+
+
+class TestCommandValidateRequest(BaseModel):
+    dry_run: bool = True
+
+
+class TestCommandValidationRead(BaseModel):
+    test_command_id: uuid.UUID
+    valid: bool
+    allowlist_passed: bool
+    working_directory_passed: bool
+    messages: list[str]
+
+
 class ProjectSettingsRead(BaseModel):
     project: ProjectSettingsProjectRead
     modules: list[ModuleRead]

@@ -10,13 +10,12 @@ Slice 03: Project Core.
 
 ## Current Task
 
-Task 5: Add TestCommand API and validation.
+Task 6: Add Project Settings frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest can store safe pytest and frontend test commands tied to
-a repository and environment, giving later runner workflows a validated command
-record instead of arbitrary shell input.
+After this task, Chtest has the first Project Settings frontend route for viewing
+and editing the project context that later AI, runner, and report workflows use.
 
 ## Must Read
 
@@ -24,14 +23,15 @@ record instead of arbitrary shell input.
 2. `docs/implementation/slices/slice-03-project-core.md`
 3. `docs/contracts/01-data-model-contract.md`
 4. `docs/contracts/02-api-contract.md`
-5. `docs/contracts/03-state-machines.md`
-6. `docs/implementation/04-ai-vibecoding-governance.md`
+5. `docs/product/08-frontend-design-spec.md`
+6. `docs/product/06-frontend-ui-guidelines.md`
+7. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
 - Backend architecture deep dives.
 - Open-source migration references.
-- Frontend page polish docs beyond shell level.
+- Frontend page polish docs beyond this shell task.
 - CI/CD Quality Center implementation docs.
 - Playwright, Newman, JMeter, Appium, traffic-capture roadmap docs.
 
@@ -40,36 +40,35 @@ record instead of arbitrary shell input.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/projects/service.py
-backend/app/modules/projects/schemas.py
-backend/app/modules/projects/router.py
-backend/app/main.py
-backend/app/tests/api/test_test_commands.py
+frontend/src/views/settings/ProjectSettingsView.vue
+frontend/src/api/projects.ts
+frontend/src/router/index.ts
+frontend/src/stores/projectSettings.ts
+frontend/src/views/settings/ProjectSettingsView.spec.ts
 ```
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_commands.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: the new TestCommand API and validation test passes.
+Expected result: the Project Settings frontend route smoke test passes.
 
 ## Acceptance
 
-- TestCommand create/update/list APIs follow `docs/contracts/02-api-contract.md` and Slice 03 Task 5.
-- TestCommand validation rejects commands outside the V1 allowlist.
-- `working_directory` must stay under the selected repository `local_path`.
-- Forbidden shell operators are rejected.
-- No command execution, git command execution, AI task models, ToolInvocation, frontend, or multi-user permissions are added in this task.
-- `git status --short` shows only the expected TestCommand API files before commit.
+- Project Settings route loads in the existing Vue/Arco shell.
+- The route fetches `/api/projects/{id}/settings` through a typed API helper.
+- The page presents project, modules, repositories, environments, and test commands in Chinese-first shell UI.
+- The frontend task does not implement full page polish, drag-and-drop module editing, command execution, AI task models, ToolInvocation, or enterprise admin navigation.
+- `git status --short` shows only the expected Project Settings frontend files before commit.
 
 ## Commit Message
 
 ```text
-feat(projects): add test command validation
+feat(frontend): add project settings shell
 ```
 
 ## Next Task
 
-Slice 03 Task 6: add project settings frontend shell.
+Slice 03 completion gate review, then prepare Slice 04 AI Runtime Core.

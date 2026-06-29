@@ -234,6 +234,64 @@ git diff --check
 
 - TestCommand allowlist、working_directory 校验和禁止 shell operator 是 Task 5，不要在 Task 4 commit 中混入命令执行。
 
+## 2026-06-29 Slice 03 Task 5 TestCommand API 完成
+
+本轮完成：
+
+- 完成 Slice 03 Task 5：新增 TestCommand create/list/update/validate API。
+- TestCommand command_type 支持 V1 安全 allowlist：`pytest`、`npm test` / `npm run test`、`npx playwright test`。
+- 禁止 shell operator 和多命令拼接，包括 `&&`、`||`、`;`、`|`、单 `&`、重定向、反引号、`$()` 和换行。
+- `working_directory` 必须存在且位于所选 Repository `local_path` 下。
+- `environment_id` 必须为空或属于同一 project。
+- Validate endpoint 只做静态校验，不执行命令。
+- 根据只读 code review 修复单 `&`/换行绕过、Playwright 前缀边界过松、跨项目 environment_id 三个问题。
+- 新增聚焦 API 测试：`backend/app/tests/api/test_test_commands.py`。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 03 Task 6：Add Project Settings frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_commands.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_repository_environment.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_modules.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- TestCommand API focused test：`9 passed in 1.10s`
+- Repository/Environment API regression：`10 passed in 0.86s`
+- Module API regression：`9 passed in 0.91s`
+- Project API regression：`7 passed in 0.69s`
+- Project Core DB regression：`4 passed in 0.45s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/projects/router.py`
+- `backend/app/modules/projects/schemas.py`
+- `backend/app/modules/projects/service.py`
+- `backend/app/tests/api/test_test_commands.py`
+- `docs/implementation/slices/slice-03-project-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 6 尚未实现 Project Settings frontend shell。
+- Slice 03 completion gate 尚未执行。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 03 Task 6：Add Project Settings frontend shell。
+- 验证命令：`npm --prefix frontend run test -- --run`。
+
+风险提醒：
+
+- Task 5 没有执行命令、没有 git 命令执行、没有 ToolInvocation；后续 runner slice 必须继续复用这些安全校验，而不是接受任意 shell。
+
 ## 2026-06-26 前端最终设计文档同步
 
 本轮完成：
