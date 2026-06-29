@@ -10,24 +10,24 @@ Slice 06: Requirement To Case Mainline.
 
 ## Current Task
 
-Task 1: Add Requirement Review models and migration.
+Task 2: Add Requirement API.
 
 ## Product Value Answer
 
-After this task, Chtest has the Requirement, RequirementReview, and RiskItem
-database foundation needed to persist AI-assisted requirement review evidence.
+After this task, Chtest can create, read, and list manual Requirement records so
+the requirement-to-case mainline has an API entry point before AI review starts.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/implementation/slices/slice-06-requirement-to-case.md`
 3. `docs/contracts/01-data-model-contract.md`
-4. `docs/contracts/03-state-machines.md`
+4. `docs/contracts/02-api-contract.md`
 5. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
-- Requirement Review API docs beyond model field checks.
+- Requirement Review agent/mock flow docs beyond route shape checks.
 - Case generation, case review, frontend, AutomationDraft, Playwright, CI/CD,
   report center, RAG runtime, MCP runtime, and migration reference docs unless a
   concrete blocker requires them.
@@ -37,42 +37,43 @@ database foundation needed to persist AI-assisted requirement review evidence.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/requirements/__init__.py
-backend/app/modules/requirements/models.py
+backend/app/modules/requirements/router.py
+backend/app/modules/requirements/service.py
 backend/app/modules/requirements/schemas.py
-backend/alembic/versions/<revision>_requirement_review.py
-backend/app/tests/db/test_requirement_review_models.py
+backend/app/main.py
+backend/app/tests/api/test_requirements.py
 ```
 
-Read nearby Project and AI Runtime model patterns only to align UUID, timestamp,
-JSON, and SQLite/PostgreSQL compatibility.
+Read existing Project API patterns only to align FastAPI routing, session
+dependency, error shape, pagination defaults, and schema style.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/db/test_requirement_review_models.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirements.py -q
 ```
 
-Expected result: Requirement Review model focused test passes.
+Expected result: Requirement API focused test passes.
 
 ## Acceptance
 
-- Requirement, RequirementReview, and RiskItem models match
-  `docs/contracts/01-data-model-contract.md`.
-- Migration creates the three contract tables and can run under the existing
-  SQLite migration smoke style.
-- JSON fields track in-place updates where needed.
-- No API, worker, mock agent flow, case generation, frontend, RAG runtime, MCP
-  runtime, RBAC, tenants, or permissions are added in this task.
-- `git status --short` shows only expected model/migration/test files and
-  required task docs before commit.
+- Add create, get, and list endpoints for manual Requirement records.
+- API persists contract fields: project_id, module_id, title, content,
+  source_type, source_ref, and status.
+- API validates project existence and optional module belongs to the same
+  project when module_id is provided.
+- Do not start AI review, generate risks, or create case generation records.
+- No worker, mock agent flow, frontend, RAG runtime, MCP runtime, RBAC, tenants,
+  or permissions are added in this task.
+- `git status --short` shows only expected API/schema/service/main/test files
+  and required task docs before commit.
 
 ## Commit Message
 
 ```text
-feat(requirements): add requirement review models
+feat(requirements): add requirement api
 ```
 
 ## Next Task
 
-Slice 06 Task 2: Add Requirement API.
+Slice 06 Task 3: Add Requirement Review API and mock agent flow.

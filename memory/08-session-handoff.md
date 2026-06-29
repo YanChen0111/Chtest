@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 1 Requirement Review Models 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 1：新增 Requirement、RequirementReview、RiskItem 数据模型与迁移。
+- 新增 `backend/app/modules/requirements/` 模块骨架和 read schema。
+- 新增 Alembic migration `20260629_0004_requirement_review.py`，沿用现有 UUID、timestamp、JSONB/SQLite JSON 兼容模式。
+- RequirementReview 的 issues、clarification questions、test design notes 使用 MutableList，支持 JSON list 原地更新持久化。
+- 为 7 个评分字段添加 0-100 check constraint。
+- 未加入 API、worker、mock agent flow、case generation、frontend、RAG runtime 或 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 2：Add Requirement API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_requirement_review_models.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/db/test_prompt_skill_models.py backend/app/tests/db/test_requirement_review_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- Requirement Review model focused test：`6 passed`
+- DB model regression：`21 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/requirements/__init__.py`
+- `backend/app/modules/requirements/models.py`
+- `backend/app/modules/requirements/schemas.py`
+- `backend/alembic/versions/20260629_0004_requirement_review.py`
+- `backend/app/tests/db/test_requirement_review_models.py`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 2：Add Requirement API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirements.py -q`。
+
+风险提醒：
+
+- Task 2 只做 Requirement create/get/list API；不要启动 RequirementReviewAgent，不要生成 risks/cases，不要加入 frontend。
+
 ## 2026-06-29 Slice 06 Task 0 Requirement To Case Plan 完成
 
 本轮完成：
