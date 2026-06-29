@@ -10,12 +10,13 @@ Slice 06: Requirement To Case Mainline.
 
 ## Current Task
 
-Task 2: Add Requirement API.
+Task 3: Add Requirement Review API and mock agent flow.
 
 ## Product Value Answer
 
-After this task, Chtest can create, read, and list manual Requirement records so
-the requirement-to-case mainline has an API entry point before AI review starts.
+After this task, Chtest can start a deterministic mock RequirementReviewAgent
+flow, persist review scores and risks, and let users retrieve review evidence
+for a Requirement.
 
 ## Must Read
 
@@ -23,11 +24,13 @@ the requirement-to-case mainline has an API entry point before AI review starts.
 2. `docs/implementation/slices/slice-06-requirement-to-case.md`
 3. `docs/contracts/01-data-model-contract.md`
 4. `docs/contracts/02-api-contract.md`
-5. `docs/implementation/04-ai-vibecoding-governance.md`
+5. `docs/contracts/03-state-machines.md`
+6. `docs/contracts/05-prompt-skill-contract.md`
+7. `docs/contracts/08-mock-provider-contract.md`
+8. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
-- Requirement Review agent/mock flow docs beyond route shape checks.
 - Case generation, case review, frontend, AutomationDraft, Playwright, CI/CD,
   report center, RAG runtime, MCP runtime, and migration reference docs unless a
   concrete blocker requires them.
@@ -40,40 +43,41 @@ Create or update only these files for the current task:
 backend/app/modules/requirements/router.py
 backend/app/modules/requirements/service.py
 backend/app/modules/requirements/schemas.py
-backend/app/main.py
-backend/app/tests/api/test_requirements.py
+backend/app/tests/api/test_requirement_review.py
 ```
 
-Read existing Project API patterns only to align FastAPI routing, session
-dependency, error shape, pagination defaults, and schema style.
+Read existing AI Runtime worker/provider/service patterns only as needed to
+reuse AITask, PromptVersion, SkillVersion, and deterministic mock provider
+behavior.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirements.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py -q
 ```
 
-Expected result: Requirement API focused test passes.
+Expected result: Requirement Review API focused test passes.
 
 ## Acceptance
 
-- Add create, get, and list endpoints for manual Requirement records.
-- API persists contract fields: project_id, module_id, title, content,
-  source_type, source_ref, and status.
-- API validates project existence and optional module belongs to the same
-  project when module_id is provided.
-- Do not start AI review, generate risks, or create case generation records.
-- No worker, mock agent flow, frontend, RAG runtime, MCP runtime, RBAC, tenants,
-  or permissions are added in this task.
-- `git status --short` shows only expected API/schema/service/main/test files
-  and required task docs before commit.
+- Add `POST /api/requirements/{id}/review` and `GET /api/requirements/{id}/review`.
+- Start review creates an AITask using active prompt/skill versions and mock
+  provider behavior.
+- Persist RequirementReview scores, issues, clarification questions, test design
+  notes, and RiskItem rows only after schema-valid mock output.
+- Response preserves `use_knowledge=false` semantics: explicit
+  `context_artifact_ids` are still recorded and returned as used context.
+- Do not add case generation, frontend, real provider, external RAG runtime, MCP
+  runtime, RBAC, tenants, or permissions.
+- `git status --short` shows only expected requirements API/service/schema/test
+  files and required task docs before commit.
 
 ## Commit Message
 
 ```text
-feat(requirements): add requirement api
+feat(requirements): add mock requirement review flow
 ```
 
 ## Next Task
 
-Slice 06 Task 3: Add Requirement Review API and mock agent flow.
+Slice 06 Task 4: Add Case Generation models and migration.

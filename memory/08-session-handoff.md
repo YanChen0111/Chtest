@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 2 Requirement API 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 2：新增 Requirement create/get/list API。
+- 新增 `POST /api/requirements`、`GET /api/requirements/{id}`、`GET /api/projects/{project_id}/requirements`。
+- 新增 Requirement service，校验 project 存在和 module 归属同一 project。
+- 扩展 Requirement schema：create、read、list envelope。
+- 将 requirements router 注册到 FastAPI main。
+- 未启动 RequirementReviewAgent，未创建 RequirementReview/RiskItem/CaseGeneration，未加入 frontend、RAG runtime 或 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 3：Add Requirement Review API and mock agent flow。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirements.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py backend/app/tests/api/test_modules.py backend/app/tests/api/test_requirements.py -q
+git diff --check
+```
+
+验证结果：
+
+- Requirement API focused test：`9 passed`
+- Project/Module/Requirement API regression：`25 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/requirements/router.py`
+- `backend/app/modules/requirements/service.py`
+- `backend/app/modules/requirements/schemas.py`
+- `backend/app/main.py`
+- `backend/app/tests/api/test_requirements.py`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 3：Add Requirement Review API and mock agent flow。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py -q`。
+
+风险提醒：
+
+- Task 3 可以复用 AI Runtime 和 deterministic mock provider，但仍不能加入 case generation、frontend、真实 provider、外部 RAG runtime 或 MCP runtime。
+
 ## 2026-06-29 Slice 06 Task 1 Requirement Review Models 完成
 
 本轮完成：

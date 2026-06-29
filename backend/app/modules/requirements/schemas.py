@@ -2,9 +2,19 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class RequirementCreate(BaseModel):
+    project_id: uuid.UUID
+    module_id: uuid.UUID | None = None
+    title: str = Field(min_length=1, max_length=255)
+    content: str = Field(min_length=1)
+    source_type: Literal["manual"] = "manual"
+    source_ref: str | None = None
 
 
 class RequirementRead(BaseModel):
@@ -20,6 +30,11 @@ class RequirementRead(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+
+
+class RequirementListRead(BaseModel):
+    items: list[RequirementRead]
+    total: int
 
 
 class RequirementReviewRead(BaseModel):
