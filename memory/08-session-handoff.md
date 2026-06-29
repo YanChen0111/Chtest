@@ -179,6 +179,61 @@ git diff --check
 
 - Repository path allowlist 属于 Task 4，不要在 Task 3 里补。
 
+## 2026-06-29 Slice 03 Task 4 Repository/Environment API 完成
+
+本轮完成：
+
+- 完成 Slice 03 Task 4：新增 Repository create/list/update API。
+- 新增 Environment create/list/update API。
+- Repository `local_path` 会校验路径存在，并且必须位于 `CHTEST_REPOSITORY_ALLOWLIST_ROOTS` 配置的 allowlist 根目录下。
+- Repository 路径保存为 resolve 后的绝对路径。
+- Environment 拒绝 secret-like 明文变量值，要求使用 `ref:` 引用形式。
+- 根据只读 code review 补充 raw secret 拒绝测试和实现。
+- 新增聚焦 API 测试：`backend/app/tests/api/test_repository_environment.py`。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 03 Task 5：Add TestCommand API and validation。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_repository_environment.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_modules.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- Repository/Environment API focused test：`10 passed in 0.69s`
+- Module API regression：`9 passed in 0.70s`
+- Project API regression：`7 passed in 0.61s`
+- Project Core DB regression：`4 passed in 0.40s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/projects/router.py`
+- `backend/app/modules/projects/schemas.py`
+- `backend/app/modules/projects/service.py`
+- `backend/app/tests/api/test_repository_environment.py`
+- `docs/implementation/slices/slice-03-project-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 5 尚未实现 TestCommand API and validation。
+- Repository create/update 不运行 git 命令；`.git` 校验和 Git workflow 细化如需启用，应在后续明确任务中补充。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 03 Task 5：Add TestCommand API and validation。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_commands.py -q`。
+
+风险提醒：
+
+- TestCommand allowlist、working_directory 校验和禁止 shell operator 是 Task 5，不要在 Task 4 commit 中混入命令执行。
+
 ## 2026-06-26 前端最终设计文档同步
 
 本轮完成：

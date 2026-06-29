@@ -1,14 +1,25 @@
 from __future__ import annotations
 
+import os
 import uuid
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
-from backend.app.modules.projects.models import Module, Project, Workspace
-from backend.app.modules.projects.schemas import ModuleCreate, ModuleUpdate, ProjectCreate, ProjectUpdate
+from backend.app.modules.projects.models import Environment, Module, Project, Repository, Workspace
+from backend.app.modules.projects.schemas import (
+    EnvironmentCreate,
+    EnvironmentUpdate,
+    ModuleCreate,
+    ModuleUpdate,
+    ProjectCreate,
+    ProjectUpdate,
+    RepositoryCreate,
+    RepositoryUpdate,
+)
 
 
 DEFAULT_WORKSPACE_NAME = "Personal Workspace"
@@ -31,6 +42,30 @@ class ModuleParentNotFoundError(Exception):
 
 
 class ModuleNotFoundError(Exception):
+    pass
+
+
+class RepositoryAlreadyExistsError(Exception):
+    pass
+
+
+class RepositoryNotFoundError(Exception):
+    pass
+
+
+class RepositoryPathNotAllowedError(Exception):
+    pass
+
+
+class EnvironmentAlreadyExistsError(Exception):
+    pass
+
+
+class EnvironmentNotFoundError(Exception):
+    pass
+
+
+class EnvironmentSecretNotAllowedError(Exception):
     pass
 
 
@@ -220,3 +255,156 @@ def refresh_descendant_paths(session: Session, project_id: uuid.UUID, parent: Mo
         child.path = module_path(parent, child.name)
         session.add(child)
         refresh_descendant_paths(session, project_id, child)
+
+
+def repository_allowlist_roots() -> list[Path]:
+    raw_roots = os.getenv("CHTEST_REPOSITORY_ALLOWLIST_ROOTS", "")
+    return [Path(raw).expanduser().resolve() for raw in raw_roots.split(os.pathsep) if raw.strip()]
+
+
+def validate_repository_path(local_path: str) -> str:
+    path = Path(local_path).expanduser()
+    if not path.exists():
+        raise RepositoryPathNotAllowedError
+
+    resolved_path = path.resolve()
+    allowed_roots = repository_allowlist_roots()
+    if not allowed_roots:
+        raise RepositoryPathNotAllowedError
+
+    if not any(resolved_path == root or root in resolved_path.parents for root in allowed_roots):
+        raise RepositoryPathNotAllowedError
+
+    return str(resolved_path)
+
+
+def create_repository(session: Session, data: RepositoryCreate) -> Repository:
+    project = get_project(session, data.project_id)
+    if project is None:
+        raise ModuleNotFoundError
+
+    local_path = validate_repository_path(data.local_path)
+    repository = Repository(
+        project_id=data.project_id,
+        name=data.name,
+        local_path=local_path,
+        default_base_branch=data.default_base_branch,
+        language_hint=data.language_hint,
+    )
+    session.add(repository)
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise RepositoryAlreadyExistsError from exc
+    session.refresh(repository)
+    return repository
+
+
+def list_repositories(session: Session, project_id: uuid.UUID) -> list[Repository]:
+    project = get_project(session, project_id)
+    if project is None:
+        raise ModuleNotFoundError
+
+    return list(
+        session.scalars(
+            select(Repository)
+            .where(Repository.project_id == project_id)
+            .order_by(Repository.created_at.asc()),
+        ),
+    )
+
+
+def update_repository(session: Session, repository_id: uuid.UUID, data: RepositoryUpdate) -> Repository:
+    repository = session.get(Repository, repository_id)
+    if repository is None:
+        raise RepositoryNotFoundError
+
+    updates = data.model_dump(exclude_unset=True)
+    if "name" in updates:
+        repository.name = updates["name"]
+    if "local_path" in updates:
+        repository.local_path = validate_repository_path(updates["local_path"])
+    if "default_base_branch" in updates:
+        repository.default_base_branch = updates["default_base_branch"]
+    if "language_hint" in updates:
+        repository.language_hint = updates["language_hint"]
+    if "status" in updates:
+        repository.status = updates["status"]
+
+    session.add(repository)
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise RepositoryAlreadyExistsError from exc
+    session.refresh(repository)
+    return repository
+
+
+def create_environment(session: Session, data: EnvironmentCreate) -> Environment:
+    project = get_project(session, data.project_id)
+    if project is None:
+        raise ModuleNotFoundError
+
+    validate_environment_variables(data.variables_json)
+    environment = Environment(
+        project_id=data.project_id,
+        name=data.name,
+        variables_json=data.variables_json,
+    )
+    session.add(environment)
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise EnvironmentAlreadyExistsError from exc
+    session.refresh(environment)
+    return environment
+
+
+def list_environments(session: Session, project_id: uuid.UUID) -> list[Environment]:
+    project = get_project(session, project_id)
+    if project is None:
+        raise ModuleNotFoundError
+
+    return list(
+        session.scalars(
+            select(Environment)
+            .where(Environment.project_id == project_id)
+            .order_by(Environment.created_at.asc()),
+        ),
+    )
+
+
+def update_environment(session: Session, environment_id: uuid.UUID, data: EnvironmentUpdate) -> Environment:
+    environment = session.get(Environment, environment_id)
+    if environment is None:
+        raise EnvironmentNotFoundError
+
+    updates = data.model_dump(exclude_unset=True)
+    if "variables_json" in updates:
+        validate_environment_variables(updates["variables_json"])
+
+    for field, value in updates.items():
+        setattr(environment, field, value)
+
+    session.add(environment)
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise EnvironmentAlreadyExistsError from exc
+    session.refresh(environment)
+    return environment
+
+
+def validate_environment_variables(variables: dict[str, object]) -> None:
+    secret_markers = ("password", "token", "secret", "credential", "api_key")
+    for key, value in variables.items():
+        key_lower = key.lower()
+        if not any(marker in key_lower for marker in secret_markers):
+            continue
+        if isinstance(value, str) and value.startswith("ref:"):
+            continue
+        raise EnvironmentSecretNotAllowedError

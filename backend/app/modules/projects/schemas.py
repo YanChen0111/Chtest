@@ -85,6 +85,27 @@ class RepositoryRead(BaseModel):
     status: str
 
 
+class RepositoryCreate(BaseModel):
+    project_id: uuid.UUID
+    name: str = Field(min_length=1, max_length=160)
+    local_path: str = Field(min_length=1)
+    default_base_branch: str | None = "main"
+    language_hint: str | None = None
+
+
+class RepositoryUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    local_path: str | None = Field(default=None, min_length=1)
+    default_base_branch: str | None = None
+    language_hint: str | None = None
+    status: str | None = None
+
+
+class RepositoryListRead(BaseModel):
+    items: list[RepositoryRead]
+    total: int
+
+
 class EnvironmentRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -93,6 +114,23 @@ class EnvironmentRead(BaseModel):
     name: str
     variables_json: dict[str, Any]
     status: str
+
+
+class EnvironmentCreate(BaseModel):
+    project_id: uuid.UUID
+    name: str = Field(default="dev", min_length=1, max_length=120)
+    variables_json: dict[str, Any] = Field(default_factory=dict)
+
+
+class EnvironmentUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    variables_json: dict[str, Any] | None = None
+    status: str | None = None
+
+
+class EnvironmentListRead(BaseModel):
+    items: list[EnvironmentRead]
+    total: int
 
 
 class TestCommandRead(BaseModel):

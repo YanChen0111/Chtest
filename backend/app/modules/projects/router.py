@@ -12,6 +12,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from backend.app.models.base import Base
 from backend.app.modules.projects import service
 from backend.app.modules.projects.schemas import (
+    EnvironmentCreate,
+    EnvironmentListRead,
+    EnvironmentRead,
+    EnvironmentUpdate,
     ModuleCreate,
     ModuleListRead,
     ModuleRead,
@@ -21,6 +25,10 @@ from backend.app.modules.projects.schemas import (
     ProjectSettingsRead,
     ProjectSettingsProjectRead,
     ProjectUpdate,
+    RepositoryCreate,
+    RepositoryListRead,
+    RepositoryRead,
+    RepositoryUpdate,
 )
 
 
@@ -28,7 +36,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+pysqlite:////tmp/chtest-dev.db"
 engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(engine, expire_on_commit=False, future=True)
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(tags=["projects"])
 
 
 def get_session() -> Iterator[Session]:
@@ -103,7 +111,73 @@ def module_level_limit_exceeded() -> HTTPException:
     )
 
 
-@router.post("", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
+def repository_not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "error_code": "REPOSITORY_NOT_FOUND",
+            "message": "Repository not found.",
+            "details": {},
+        },
+    )
+
+
+def repository_already_exists() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={
+            "error_code": "REPOSITORY_ALREADY_EXISTS",
+            "message": "Repository name already exists in this project.",
+            "details": {},
+        },
+    )
+
+
+def repository_path_not_allowed() -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={
+            "error_code": "REPOSITORY_PATH_NOT_ALLOWED",
+            "message": "Repository path is missing or outside configured allowlisted roots.",
+            "details": {},
+        },
+    )
+
+
+def environment_not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "error_code": "ENVIRONMENT_NOT_FOUND",
+            "message": "Environment not found.",
+            "details": {},
+        },
+    )
+
+
+def environment_already_exists() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={
+            "error_code": "ENVIRONMENT_ALREADY_EXISTS",
+            "message": "Environment name already exists in this project.",
+            "details": {},
+        },
+    )
+
+
+def environment_secret_not_allowed() -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={
+            "error_code": "ENVIRONMENT_SECRET_NOT_ALLOWED",
+            "message": "Environment secret-like values must be stored as references.",
+            "details": {},
+        },
+    )
+
+
+@router.post("/projects", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
 def create_project(
     data: ProjectCreate,
     session: Session = Depends(get_session),
@@ -114,7 +188,7 @@ def create_project(
         raise project_already_exists() from exc
 
 
-@router.get("/{project_id}", response_model=ProjectRead)
+@router.get("/projects/{project_id}", response_model=ProjectRead)
 def read_project(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
@@ -125,7 +199,7 @@ def read_project(
     return project
 
 
-@router.patch("/{project_id}", response_model=ProjectRead)
+@router.patch("/projects/{project_id}", response_model=ProjectRead)
 def patch_project(
     project_id: uuid.UUID,
     data: ProjectUpdate,
@@ -137,7 +211,7 @@ def patch_project(
     return service.update_project(session, project, data)
 
 
-@router.post("/{project_id}/modules", response_model=ModuleRead, status_code=status.HTTP_201_CREATED)
+@router.post("/projects/{project_id}/modules", response_model=ModuleRead, status_code=status.HTTP_201_CREATED)
 def create_module(
     project_id: uuid.UUID,
     data: ModuleCreate,
@@ -155,7 +229,7 @@ def create_module(
         raise module_already_exists() from exc
 
 
-@router.get("/{project_id}/modules", response_model=ModuleListRead)
+@router.get("/projects/{project_id}/modules", response_model=ModuleListRead)
 def list_modules(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),
@@ -168,7 +242,7 @@ def list_modules(
     return ModuleListRead(items=modules, total=len(modules))
 
 
-@router.patch("/{project_id}/modules/{module_id}", response_model=ModuleRead)
+@router.patch("/projects/{project_id}/modules/{module_id}", response_model=ModuleRead)
 def patch_module(
     project_id: uuid.UUID,
     module_id: uuid.UUID,
@@ -183,7 +257,95 @@ def patch_module(
         raise module_already_exists() from exc
 
 
-@router.get("/{project_id}/settings", response_model=ProjectSettingsRead)
+@router.post("/repositories", response_model=RepositoryRead, status_code=status.HTTP_201_CREATED)
+def create_repository(
+    data: RepositoryCreate,
+    session: Session = Depends(get_session),
+) -> Any:
+    try:
+        return service.create_repository(session, data)
+    except service.ModuleNotFoundError as exc:
+        raise project_not_found() from exc
+    except service.RepositoryPathNotAllowedError as exc:
+        raise repository_path_not_allowed() from exc
+    except service.RepositoryAlreadyExistsError as exc:
+        raise repository_already_exists() from exc
+
+
+@router.get("/projects/{project_id}/repositories", response_model=RepositoryListRead)
+def list_repositories(
+    project_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> RepositoryListRead:
+    try:
+        repositories = service.list_repositories(session, project_id)
+    except service.ModuleNotFoundError as exc:
+        raise project_not_found() from exc
+
+    return RepositoryListRead(items=repositories, total=len(repositories))
+
+
+@router.patch("/repositories/{repository_id}", response_model=RepositoryRead)
+def patch_repository(
+    repository_id: uuid.UUID,
+    data: RepositoryUpdate,
+    session: Session = Depends(get_session),
+) -> Any:
+    try:
+        return service.update_repository(session, repository_id, data)
+    except service.RepositoryNotFoundError as exc:
+        raise repository_not_found() from exc
+    except service.RepositoryPathNotAllowedError as exc:
+        raise repository_path_not_allowed() from exc
+    except service.RepositoryAlreadyExistsError as exc:
+        raise repository_already_exists() from exc
+
+
+@router.post("/environments", response_model=EnvironmentRead, status_code=status.HTTP_201_CREATED)
+def create_environment(
+    data: EnvironmentCreate,
+    session: Session = Depends(get_session),
+) -> Any:
+    try:
+        return service.create_environment(session, data)
+    except service.ModuleNotFoundError as exc:
+        raise project_not_found() from exc
+    except service.EnvironmentSecretNotAllowedError as exc:
+        raise environment_secret_not_allowed() from exc
+    except service.EnvironmentAlreadyExistsError as exc:
+        raise environment_already_exists() from exc
+
+
+@router.get("/projects/{project_id}/environments", response_model=EnvironmentListRead)
+def list_environments(
+    project_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> EnvironmentListRead:
+    try:
+        environments = service.list_environments(session, project_id)
+    except service.ModuleNotFoundError as exc:
+        raise project_not_found() from exc
+
+    return EnvironmentListRead(items=environments, total=len(environments))
+
+
+@router.patch("/environments/{environment_id}", response_model=EnvironmentRead)
+def patch_environment(
+    environment_id: uuid.UUID,
+    data: EnvironmentUpdate,
+    session: Session = Depends(get_session),
+) -> Any:
+    try:
+        return service.update_environment(session, environment_id, data)
+    except service.EnvironmentNotFoundError as exc:
+        raise environment_not_found() from exc
+    except service.EnvironmentSecretNotAllowedError as exc:
+        raise environment_secret_not_allowed() from exc
+    except service.EnvironmentAlreadyExistsError as exc:
+        raise environment_already_exists() from exc
+
+
+@router.get("/projects/{project_id}/settings", response_model=ProjectSettingsRead)
 def read_project_settings(
     project_id: uuid.UUID,
     session: Session = Depends(get_session),

@@ -10,13 +10,13 @@ Slice 03: Project Core.
 
 ## Current Task
 
-Task 4: Add Repository and Environment API.
+Task 5: Add TestCommand API and validation.
 
 ## Product Value Answer
 
-After this task, Chtest can connect a project to an allowlisted local repository
-and environment variables so later test commands, runners, and evidence reports
-have a concrete execution context.
+After this task, Chtest can store safe pytest and frontend test commands tied to
+a repository and environment, giving later runner workflows a validated command
+record instead of arbitrary shell input.
 
 ## Must Read
 
@@ -44,32 +44,32 @@ backend/app/modules/projects/service.py
 backend/app/modules/projects/schemas.py
 backend/app/modules/projects/router.py
 backend/app/main.py
-backend/app/tests/api/test_repository_environment.py
+backend/app/tests/api/test_test_commands.py
 ```
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_repository_environment.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_commands.py -q
 ```
 
-Expected result: the new Repository and Environment API test passes.
+Expected result: the new TestCommand API and validation test passes.
 
 ## Acceptance
 
-- Repository create/update/list APIs follow `docs/contracts/02-api-contract.md` and Slice 03 Task 4.
-- Repository `local_path` exists and is under configured allowlisted roots.
-- Environment create/update/list APIs follow `docs/contracts/02-api-contract.md`.
-- Sensitive environment values are not expanded into a secret storage system in this task.
-- No TestCommand validation, command execution, git command execution, AI task models, ToolInvocation, frontend, or multi-user permissions are added in this task.
-- `git status --short` shows only the expected Repository/Environment API files before commit.
+- TestCommand create/update/list APIs follow `docs/contracts/02-api-contract.md` and Slice 03 Task 5.
+- TestCommand validation rejects commands outside the V1 allowlist.
+- `working_directory` must stay under the selected repository `local_path`.
+- Forbidden shell operators are rejected.
+- No command execution, git command execution, AI task models, ToolInvocation, frontend, or multi-user permissions are added in this task.
+- `git status --short` shows only the expected TestCommand API files before commit.
 
 ## Commit Message
 
 ```text
-feat(projects): add repository and environment api
+feat(projects): add test command validation
 ```
 
 ## Next Task
 
-Slice 03 Task 5: add test command validation.
+Slice 03 Task 6: add project settings frontend shell.
