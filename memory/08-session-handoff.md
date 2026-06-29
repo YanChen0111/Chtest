@@ -1,5 +1,59 @@
 # Session Handoff
 
+## 2026-06-29 Slice 04 Task 1 AI Runtime Models 完成
+
+本轮完成：
+
+- 完成 Slice 04 Task 1：新增 `AITask`、`Artifact`、`LLMCallLog` ORM models。
+- 新增 AI Runtime Pydantic read schemas，并补齐 `created_at`、`updated_at`、`created_by`、`updated_by` 基字段。
+- 新增 Alembic migration：`backend/alembic/versions/20260629_0002_ai_runtime_core.py`。
+- `AITask.context_artifact_ids` 在 PostgreSQL 上使用 `UUID[]`，在 SQLite 测试路径使用 JSON 兼容存储，Python 层返回 `list[uuid.UUID]`。
+- AI Runtime JSON dict 字段使用 `MutableDict`，避免 worker/provider 后续原地更新 `output_json`、`metadata_json` 等字段时静默丢失。
+- PromptVersion / SkillVersion 仍按 Task 非目标不建表、不建 relationship、不加 FK；本任务仅保留 `prompt_version_id` 和 `skill_version_id` UUID 字段。
+- Artifact 可表达 V1 ContextArtifact：`owner_entity_type=Project`、`owner_entity_id=project_id`、`artifact_type=context_markdown`、`metadata_json` 包含 `title/source_ref/safe_to_show/redaction_applied/allowed_for_prompt`。
+- 额外新增 `backend/app/modules/ai_runtime/__init__.py` 作为包入口；这是 `NEXT_AI_TASK.md` expected files 外的必要 Python 包结构文件。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 04 Task 2：Add Artifact store service。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_ai_runtime_models.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py backend/app/tests/db/test_ai_runtime_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- AI Runtime DB focused test：`6 passed in 0.40s`
+- Project Core + AI Runtime DB regression：`10 passed in 0.49s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/ai_runtime/__init__.py`
+- `backend/app/modules/ai_runtime/models.py`
+- `backend/app/modules/ai_runtime/schemas.py`
+- `backend/alembic/versions/20260629_0002_ai_runtime_core.py`
+- `backend/app/tests/db/test_ai_runtime_models.py`
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 2 Artifact store 尚未实现。
+- 迁移层为 AI Runtime 三张表增加了 PostgreSQL `gen_random_uuid()` 和默认用户 UUID server default；早期 `20260626_0001_project_core.py` 仍保持原状，未在本任务中回改历史迁移。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 04 Task 2：Add Artifact store service。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/artifacts/test_artifact_store.py -q`。
+
+风险提醒：
+
+- Artifact 文件写入、sha256 计算、atomic rename、path traversal 防护是 Task 2；不要在 Task 1 commit 中混入文件系统 store 逻辑。
+- ContextArtifact API、redaction、mock provider、worker 状态流转和 AI Task API 仍属后续任务。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。

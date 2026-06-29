@@ -25,7 +25,7 @@ Create the AI task runtime foundation: AITask, Artifact, ContextArtifact metadat
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add AI runtime models and migration | planned | `pytest backend/app/tests/db/test_ai_runtime_models.py -q` | - | AITask, Artifact, context_artifact_ids, LLMCallLog |
+| Add AI runtime models and migration | done | `pytest backend/app/tests/db/test_ai_runtime_models.py -q` | pending commit | AITask, Artifact, context_artifact_ids, LLMCallLog |
 | Add Artifact store service | planned | `pytest backend/app/tests/artifacts/test_artifact_store.py -q` | - | Atomic write and sha256 |
 | Add ContextArtifact API | planned | `pytest backend/app/tests/api/test_context_artifacts.py -q` | - | Lightweight context input, no RAG |
 | Add Mock LLM Provider | planned | `pytest backend/app/tests/ai_runtime/test_mock_provider.py -q` | - | success, provider_error, schema_invalid, timeout |
