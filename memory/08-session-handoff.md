@@ -1,5 +1,53 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 9 Case Generation Review Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 9：新增 Case Generation Review frontend shell。
+- 新增 `frontend/src/views/cases/CaseGenerationReviewView.vue`，支持启动 mock case generation、展示候选用例、查看步骤/预期结果/AI 理由，并提交 approve、approve_after_edit、reject、needs_optimization 评审动作。
+- 新增 `frontend/src/api/cases.ts` 和 `frontend/src/stores/cases.ts`，最小接入 Case Generation 和 Case Review API。
+- 把 `用例生成评审` 路由/导航状态接入现有 workbench shell。
+- 未加入 AutomationDraft、执行、browser automation、真实 provider、RAG runtime、MCP runtime、RBAC 或 tenants。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 completion gate。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/cases/CaseGenerationReviewView.spec.ts
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Case Generation Review frontend focused test：`1 passed`
+- Frontend test suite：`7 passed, 10 tests passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `frontend/src/views/cases/CaseGenerationReviewView.vue`
+- `frontend/src/views/cases/CaseGenerationReviewView.spec.ts`
+- `frontend/src/api/cases.ts`
+- `frontend/src/stores/cases.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 completion gate。
+- 验证命令：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/golden/test_requirement_to_case.py -q`
+  和 `npm --prefix frontend run test -- --run`。
+
+风险提醒：
+
+- completion gate 只做验证和记忆/进度收口；不要加入新的产品行为。
+
 ## 2026-06-29 Slice 06 Task 8 Requirement Review Frontend Shell 完成
 
 本轮完成：

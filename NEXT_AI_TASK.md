@@ -10,12 +10,12 @@ Slice 06: Requirement To Case Mainline.
 
 ## Current Task
 
-Task 9: Add Case Generation Review frontend shell.
+Slice 06 completion gate.
 
 ## Product Value Answer
 
-After this task, Chtest has the first Case Generation Review frontend shell for
-reviewing generated candidates and submitting candidate review actions.
+After this task, Chtest verifies the requirement-to-case mainline across backend
+golden smoke and frontend requirement/case review shells.
 
 ## Must Read
 
@@ -36,44 +36,39 @@ reviewing generated candidates and submitting candidate review actions.
 Create or update only these files for the current task:
 
 ```text
-frontend/src/views/cases/CaseGenerationReviewView.vue
-frontend/src/api/cases.ts
-frontend/src/stores/cases.ts
-frontend/src/router/index.ts
-frontend/src/stores/index.ts
-frontend/src/views/cases/CaseGenerationReviewView.spec.ts
+docs/implementation/slices/slice-06-requirement-to-case.md
+memory/07-dev-log.md
+memory/08-session-handoff.md
+NEXT_AI_TASK.md
 ```
 
-Read existing Requirement Review frontend shell, API client, store, route, and
-component test patterns only as needed to match the current frontend foundation.
+Read Slice 06 task plan and recent handoff only as needed to verify the slice
+completion gate.
 
 ## Verification Command
 
 ```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/golden/test_requirement_to_case.py -q
 npm --prefix frontend run test -- --run
 ```
 
-Expected result: frontend test suite passes.
+Expected result: backend Slice 06 chain and frontend test suite pass.
 
 ## Acceptance
 
-- Add a Case Generation Review view shell that can start case generation, list
-  generated candidates, and submit approve/approve_after_edit/reject/
-  needs_optimization review actions.
-- Add minimal API and store wiring needed by the shell.
-- Keep behavior aligned to existing backend Case Generation and Case Review
-  contracts.
-- Do not add AutomationDraft entry points, execution, browser automation, real
-  provider, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- `git status --short` shows only expected frontend files and required task docs
-  before commit.
+- Verify all Slice 06 completed task tests and frontend shells.
+- Confirm task table has commit ids for every done task.
+- Update long-term dev log and handoff with Slice 06 completion status.
+- Move the next task pointer to the next planned V1 slice/task after Slice 06.
+- Do not add new product behavior in the completion gate.
+- `git status --short` shows only expected docs/memory files before commit.
 
 ## Commit Message
 
 ```text
-feat(frontend): add case generation review shell
+docs(memory): complete requirement to case slice
 ```
 
 ## Next Task
 
-Slice 06 completion gate.
+Next V1 slice/task after Slice 06 completion.

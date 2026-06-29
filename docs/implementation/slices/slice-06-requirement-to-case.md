@@ -41,8 +41,8 @@ execution, CI/CD, RAG runtime, MCP runtime, RBAC, or multi-user scope.
 | Add Case Generation API and mock agent flow | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py -q` | `67b2ca8` | Generate/list candidates |
 | Add Case Review API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_review.py -q` | `c7c120f` | approve, approve_after_edit, reject, needs_optimization |
 | Add Requirement To Case golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py -q` | `9c2c7d3` | Fixture-aligned backend flow |
-| Add Requirement Review frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | Requirement input and review result shell |
-| Add Case Generation Review frontend shell | planned | `npm --prefix frontend run test -- --run` | - | Candidate review shell |
+| Add Requirement Review frontend shell | done | `npm --prefix frontend run test -- --run` | `ddfa055` | Requirement input and review result shell |
+| Add Case Generation Review frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | Candidate review shell |
 
 ## Task 1: Add Requirement Review Models And Migration
 

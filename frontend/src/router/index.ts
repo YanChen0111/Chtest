@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import WorkbenchLayout from '../layouts/WorkbenchLayout.vue';
 import AiWorkbenchView from '../views/ai-workbench/AiWorkbenchView.vue';
+import CaseGenerationReviewView from '../views/cases/CaseGenerationReviewView.vue';
 import PromptSkillCenterView from '../views/prompt-skill/PromptSkillCenterView.vue';
 import RequirementReviewView from '../views/requirements/RequirementReviewView.vue';
 import ProjectSettingsView from '../views/settings/ProjectSettingsView.vue';
@@ -27,6 +28,14 @@ export const router = createRouter({
           component: RequirementReviewView,
           meta: {
             title: '需求评审',
+          },
+        },
+        {
+          path: 'cases/generation-review',
+          name: 'case-generation-review',
+          component: CaseGenerationReviewView,
+          meta: {
+            title: '用例生成评审',
           },
         },
         {
