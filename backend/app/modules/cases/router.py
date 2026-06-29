@@ -11,6 +11,8 @@ from backend.app.modules.cases import service
 from backend.app.modules.cases.schemas import (
     CaseGenerationStartRead,
     CaseGenerationStartRequest,
+    CaseReviewRead,
+    CaseReviewRequest,
     GeneratedCaseCandidateListRead,
 )
 from backend.app.modules.projects.router import get_session
@@ -34,6 +36,20 @@ def schema_invalid() -> HTTPException:
             "message": "Case generation output did not match the expected schema.",
             "details": {},
         },
+    )
+
+
+def conflict(error_code: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={"error_code": error_code, "message": message, "details": {}},
+    )
+
+
+def bad_request(error_code: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={"error_code": error_code, "message": message, "details": {}},
     )
 
 
@@ -87,3 +103,25 @@ def list_candidates(
     except service.CaseGenerationTaskNotFoundError as exc:
         raise not_found("CASE_GENERATION_TASK_NOT_FOUND", "Case generation task not found.") from exc
     return GeneratedCaseCandidateListRead(items=items, total=len(items))
+
+
+@router.post("/case-review/items/{candidate_id}/approve", response_model=CaseReviewRead)
+def review_candidate(
+    candidate_id: uuid.UUID,
+    data: CaseReviewRequest,
+    session: Session = Depends(get_session),
+) -> CaseReviewRead:
+    try:
+        candidate, test_case = service.review_candidate(session, candidate_id, data)
+    except service.CaseCandidateNotFoundError as exc:
+        raise not_found("CASE_CANDIDATE_NOT_FOUND", "Case candidate not found.") from exc
+    except service.CaseCandidateAlreadyFinalError as exc:
+        raise conflict("CASE_CANDIDATE_ALREADY_FINAL", "Case candidate is already in a final review state.") from exc
+    except service.CaseReviewInvalidActionError as exc:
+        raise bad_request("CASE_REVIEW_INVALID_ACTION", "Case review action payload is invalid.") from exc
+
+    return CaseReviewRead(
+        candidate_id=candidate.id,
+        status=candidate.status,
+        test_case_id=test_case.id if test_case is not None else None,
+    )

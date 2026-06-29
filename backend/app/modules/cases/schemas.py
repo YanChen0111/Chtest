@@ -90,6 +90,29 @@ class GeneratedCaseCandidateListRead(BaseModel):
     total: int
 
 
+class CaseReviewEditedCase(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    priority: str = "P2"
+    test_type: str = "functional"
+    precondition: str | None = None
+    steps: list[Any] = Field(default_factory=list)
+    expected_results: list[Any] = Field(default_factory=list)
+    input_data: dict[str, Any] = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
+
+
+class CaseReviewRequest(BaseModel):
+    action: Literal["approve", "approve_after_edit", "reject", "needs_optimization"]
+    edited_case: CaseReviewEditedCase | None = None
+    review_comment: str | None = None
+
+
+class CaseReviewRead(BaseModel):
+    candidate_id: uuid.UUID
+    status: str
+    test_case_id: uuid.UUID | None
+
+
 class TestCaseRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

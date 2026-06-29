@@ -8,8 +8,12 @@ from sqlalchemy.orm import Session
 from backend.app.modules.ai_runtime import service as ai_runtime_service
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
-from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate
-from backend.app.modules.cases.schemas import CaseGenerationStartRequest, GeneratedCaseCandidateListItemRead
+from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
+from backend.app.modules.cases.schemas import (
+    CaseGenerationStartRequest,
+    CaseReviewRequest,
+    GeneratedCaseCandidateListItemRead,
+)
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.projects.models import Project
 from backend.app.modules.requirements.models import Requirement, RequirementReview, RiskItem
@@ -46,6 +50,18 @@ class CaseGenerationSchemaInvalidError(Exception):
 
 
 class CaseGenerationTaskNotFoundError(Exception):
+    pass
+
+
+class CaseCandidateNotFoundError(Exception):
+    pass
+
+
+class CaseCandidateAlreadyFinalError(Exception):
+    pass
+
+
+class CaseReviewInvalidActionError(Exception):
     pass
 
 
@@ -151,6 +167,86 @@ def list_candidates(session: Session, generation_task_id: uuid.UUID) -> list[Gen
         )
         for candidate in candidates
     ]
+
+
+def review_candidate(session: Session, candidate_id: uuid.UUID, data: CaseReviewRequest) -> tuple[GeneratedCaseCandidate, TestCase | None]:
+    candidate = session.get(GeneratedCaseCandidate, candidate_id)
+    if candidate is None:
+        raise CaseCandidateNotFoundError
+    if candidate.status in {"approved", "approved_after_edit", "rejected"}:
+        raise CaseCandidateAlreadyFinalError
+
+    test_case: TestCase | None = None
+    if data.action == "approve":
+        candidate.status = "approved"
+        candidate.review_comment = data.review_comment
+        test_case = test_case_from_candidate(candidate, review_status="approved")
+        session.add(test_case)
+    elif data.action == "approve_after_edit":
+        if data.edited_case is None:
+            raise CaseReviewInvalidActionError
+        candidate.status = "approved_after_edit"
+        candidate.review_comment = data.review_comment
+        test_case = test_case_from_edited_candidate(candidate, data, review_status="approved_after_edit")
+        session.add(test_case)
+    elif data.action == "reject":
+        candidate.status = "rejected"
+        candidate.review_comment = data.review_comment
+    elif data.action == "needs_optimization":
+        candidate.status = "needs_optimization"
+        candidate.review_comment = data.review_comment
+    else:
+        raise CaseReviewInvalidActionError
+
+    session.add(candidate)
+    session.commit()
+    session.refresh(candidate)
+    if test_case is not None:
+        session.refresh(test_case)
+    return candidate, test_case
+
+
+def test_case_from_candidate(candidate: GeneratedCaseCandidate, review_status: str) -> TestCase:
+    return TestCase(
+        project_id=candidate.project_id,
+        module_id=candidate.module_id,
+        source_candidate_id=candidate.id,
+        title=candidate.title,
+        priority=candidate.priority,
+        test_type=candidate.test_type,
+        precondition=candidate.precondition,
+        steps_json=list(candidate.steps_json),
+        expected_results_json=list(candidate.expected_results_json),
+        input_data_json=dict(candidate.input_data_json),
+        tags=list(candidate.tags),
+        source_type="ai",
+        review_status=review_status,
+    )
+
+
+def test_case_from_edited_candidate(
+    candidate: GeneratedCaseCandidate,
+    data: CaseReviewRequest,
+    review_status: str,
+) -> TestCase:
+    if data.edited_case is None:
+        raise CaseReviewInvalidActionError
+    edited = data.edited_case
+    return TestCase(
+        project_id=candidate.project_id,
+        module_id=candidate.module_id,
+        source_candidate_id=candidate.id,
+        title=edited.title,
+        priority=edited.priority,
+        test_type=edited.test_type,
+        precondition=edited.precondition,
+        steps_json=edited.steps,
+        expected_results_json=edited.expected_results,
+        input_data_json=edited.input_data,
+        tags=edited.tags,
+        source_type="ai",
+        review_status=review_status,
+    )
 
 
 def get_prompt_version_by_ref(session: Session, version_ref: str) -> PromptVersion:

@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 6 Case Review API 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 6：新增 Case Review API。
+- 新增 `POST /api/case-review/items/{candidate_id}/approve`，支持 `approve`、`approve_after_edit`、`reject`、`needs_optimization`。
+- `approve` 会从 GeneratedCaseCandidate 创建官方 TestCase，并保留候选原始内容。
+- `approve_after_edit` 会从人工编辑后的 case payload 创建官方 TestCase。
+- `reject` 和 `needs_optimization` 只更新候选状态与 review comment，不创建 TestCase。
+- 已阻止 `approved`、`approved_after_edit`、`rejected` 终态候选再次评审。
+- 未加入 CaseReviewAgent 优化实现、执行、AutomationDraft、frontend、真实 provider、RAG runtime、MCP runtime、RBAC 或 tenants。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 7：Add Requirement To Case golden smoke。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_review.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py -q
+git diff --check
+```
+
+验证结果：
+
+- Case Review API focused test：`5 passed`
+- Requirement Review / Case Generation / Case Review regression：`14 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/cases/router.py`
+- `backend/app/modules/cases/service.py`
+- `backend/app/modules/cases/schemas.py`
+- `backend/app/tests/api/test_case_review.py`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 7：Add Requirement To Case golden smoke。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py -q`。
+
+风险提醒：
+
+- Task 7 只做 backend golden smoke；不要加入 frontend、AutomationDraft、browser automation、真实 provider、外部 RAG runtime 或 MCP runtime。
+
 ## 2026-06-29 Slice 06 Task 5 Case Generation Mock Flow 完成
 
 本轮完成：
