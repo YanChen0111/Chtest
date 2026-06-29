@@ -10,13 +10,13 @@ Slice 05: Prompt And Skill Registry.
 
 ## Current Task
 
-Task 4: Add registry loader and hash logic.
+Task 5: Add mock-provider eval bench.
 
 ## Product Value Answer
 
-After this task, Chtest can idempotently load built-in PromptVersion and
-SkillVersion records from runtime markdown files with stable content hashes, so
-AI tasks can trace exact prompt and skill versions.
+After this task, Chtest has a deterministic mock-provider evaluation baseline
+for built-in prompts and skills, so schema validity, evidence completeness, and
+unsafe output rates can be measured before real provider integration.
 
 ## Must Read
 
@@ -24,8 +24,9 @@ AI tasks can trace exact prompt and skill versions.
 2. `docs/implementation/slices/slice-05-prompt-skill-registry.md`
 3. `docs/contracts/05-prompt-skill-contract.md`
 4. `docs/contracts/07-seed-data-contract.md`
-5. `docs/fixtures/05-minimal-prompt-skill-seeds.md`
-6. `docs/implementation/04-ai-vibecoding-governance.md`
+5. `docs/contracts/08-mock-provider-contract.md`
+6. `docs/fixtures/05-minimal-prompt-skill-seeds.md`
+7. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
@@ -41,42 +42,45 @@ AI tasks can trace exact prompt and skill versions.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/prompt_skill/registry_loader.py
-backend/app/modules/prompt_skill/service.py
-backend/app/tests/prompt_skill/test_registry_loader.py
+backend/app/modules/prompt_skill/eval_bench.py
+backend/app/modules/prompt_skill/eval_samples.py
+backend/app/tests/prompt_skill/test_eval_bench.py
+docs/fixtures/eval-bench/requirements.md
+docs/fixtures/eval-bench/code-changes.md
+docs/fixtures/eval-bench/failed-runs.md
+docs/fixtures/eval-bench/bug-history.md
 ```
 
-Read existing prompt/skill contracts and runtime `prompts/` and `skills/` files
-only to align parsing and hash behavior.
+Read existing mock provider outputs only to align deterministic sample metrics.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_eval_bench.py -q
 ```
 
-Expected result: the registry loader focused test passes.
+Expected result: the mock-provider eval bench focused test passes.
 
 ## Acceptance
 
-- Loader discovers all built-in prompt and skill runtime markdown files.
-- Loader computes stable `sha256:` content hashes.
-- Loader creates PromptVersion and SkillVersion records idempotently.
-- Loader does not overwrite an already existing name/version with different
-  active content.
-- Parsed prompt schemas and skill gates/permissions follow
-  `docs/contracts/05-prompt-skill-contract.md`.
-- No prompt/skill markdown content changes, API, frontend, real provider,
-  vector index, RAG storage, or MCP runtime is added in this task.
-- `git status --short` shows only expected loader/service/test files and
-  required task docs before commit.
+- Eval bench runs deterministic samples without external network.
+- Metrics include `schema_valid_rate`, `evidence_complete_rate`,
+  `unsafe_output_rate`, `manual_edit_rate`, `first_run_pass_rate`, and
+  `repair_success_rate`.
+- Built-in prompt output schemas are used to validate mock outputs where
+  applicable.
+- Eval fixture files contain no real secrets or customer data.
+- No public leaderboard, API, frontend, real provider, vector index, RAG
+  storage, or MCP runtime is added in this task.
+- `git status --short` shows only expected eval bench files and required task
+  docs before commit.
 
 ## Commit Message
 
 ```text
-feat(prompt-skill): add registry loader
+feat(prompt-skill): add mock provider eval bench
 ```
 
 ## Next Task
 
-Slice 05 Task 5: Add mock-provider eval bench.
+Slice 05 Task 6: Add Prompt/Skill API.

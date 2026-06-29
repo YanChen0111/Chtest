@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-06-29 Slice 05 Task 4 Registry Loader 完成
+
+本轮完成：
+
+- 完成 Slice 05 Task 4：新增 built-in Prompt/Skill registry loader。
+- Loader 可发现运行时 `prompts/*/v1.md` 和 `skills/*/v1.md` 文件。
+- Loader 解析 Prompt 的 Agent、Input Schema、Output Schema，解析 Skill 的 Applies To、Quality Gates、Forbidden Actions、Tool Permissions。
+- Loader 使用稳定 `sha256:` 内容 hash，并可 idempotent 创建 PromptVersion / SkillVersion 记录。
+- 对已有同名同版本但内容不同的 active record，loader 抛出 `RegistryContentConflict`，不覆盖已发布内容。
+- 新增 `backend/app/modules/prompt_skill/service.py` 包装 seed 入口，供后续 API/启动流程复用。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 05 Task 5：Add mock-provider eval bench。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py -q
+git diff --check
+```
+
+验证结果：
+
+- Registry loader focused test：`4 passed in 0.31s`
+
+修改文件：
+
+- `backend/app/modules/prompt_skill/registry_loader.py`
+- `backend/app/modules/prompt_skill/service.py`
+- `backend/app/tests/prompt_skill/test_registry_loader.py`
+- `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 05 Task 5：Add mock-provider eval bench。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_eval_bench.py -q`。
+
+风险提醒：
+
+- Task 5 只做 deterministic eval bench 和 fixture，不要引入真实 provider、API、frontend、RAG、MCP runtime 或公开 leaderboard。
+
 ## 2026-06-29 Slice 05 Task 3 Built-In Skill Files 完成
 
 本轮完成：
