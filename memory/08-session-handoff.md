@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 0 Requirement To Case Plan 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 0：新增 Requirement To Case mainline task plan。
+- 新增 `docs/implementation/slices/slice-06-requirement-to-case.md`。
+- 将 M3 Requirement To Case 拆成 9 个小任务：Requirement Review models、Requirement API、Requirement Review mock flow、Case Generation models、Case Generation mock flow、Case Review API、Golden smoke、Requirement Review frontend shell、Case Generation Review frontend shell。
+- 每个任务包含 expected files、verification command、non-goals 和 commit message。
+- 明确 Slice 06 不包含 AutomationDraft、执行、CI/CD、RAG runtime、MCP runtime、RBAC 或多用户权限。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 1：Add Requirement Review models and migration。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_prompt_skill_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- Prompt/Skill model smoke：`5 passed in 0.34s`
+
+修改文件：
+
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 1：Add Requirement Review models and migration。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/db/test_requirement_review_models.py -q`。
+
+风险提醒：
+
+- Task 1 只做 Requirement、RequirementReview、RiskItem model/migration/schema/test；不要混入 API、AI worker flow、case generation 或 frontend。
+
 ## 2026-06-29 Slice 05 Task 7 Prompt/Skill Frontend Shell 完成
 
 本轮完成：
