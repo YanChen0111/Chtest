@@ -162,6 +162,60 @@ git diff --check
 - 不要让 Mock Provider 调外部网络。
 - 不要在 Task 4 顺手实现 worker handler、AI Task API 或业务 agent endpoint。
 
+## 2026-06-29 Slice 04 Task 4 Mock LLM Provider 完成
+
+本轮完成：
+
+- 完成 Slice 04 Task 4：新增 deterministic Mock LLM Provider。
+- 新增 provider base dataclass：`LLMProviderRequest`、`LLMProviderResponse`、`ProviderArtifactPayload`、provider error/timeout exceptions。
+- Mock Provider 支持 `success`、`provider_error`、`schema_invalid`、`timeout` 四种测试模式。
+- `mock-requirement-review` 输出六维评分、issues、clarification questions、risk items，并回显 `used_context_artifact_ids`。
+- `mock-case-generator` 输出 Golden Path 候选用例基本结构。
+- 按 mock provider contract 补齐 `mock-automation-draft`、`mock-cicd-analysis`、`mock-unit-test-generator`、`mock-failure-analysis`、`mock-report-generator` 的 deterministic 输出形状。
+- Mock Provider 不调用网络、不读取 secrets、不引入真实 provider。
+- 成功响应生成内存 artifact payload：`input.json`、`raw_output.json`、`parsed_output.json`、`schema_validation.json`；提供 context 时额外生成 `context_manifest.json`，内容包含 `context_artifact_ids` 和完整 `context_manifest`。
+- 额外新增 `backend/app/modules/ai_runtime/providers/__init__.py` 作为包入口；这是 `NEXT_AI_TASK.md` expected files 外的必要 Python 包结构文件。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 04 Task 5：Add AI Task Enqueue And Worker Handler。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/ai_runtime/test_mock_provider.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/ai_runtime/test_mock_provider.py backend/app/tests/api/test_context_artifacts.py backend/app/tests/artifacts/test_artifact_store.py -q
+git diff --check
+```
+
+验证结果：
+
+- Mock Provider focused test：`11 passed in 0.01s`
+- Mock Provider + ContextArtifact + Artifact store regression：`30 passed in 0.71s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/ai_runtime/providers/__init__.py`
+- `backend/app/modules/ai_runtime/providers/base.py`
+- `backend/app/modules/ai_runtime/providers/mock_provider.py`
+- `backend/app/tests/ai_runtime/test_mock_provider.py`
+- `docs/implementation/slices/slice-04-ai-runtime-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 5 AI Task worker handler 尚未实现。
+- 当前 provider 只产出内存 artifact payload；真正写 Artifact rows 由 Task 5 worker handler 完成。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 04 Task 5：Add AI Task Enqueue And Worker Handler。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/ai_runtime/test_ai_task_worker.py -q`。
+
+风险提醒：
+
+- Task 5 可以使用 fake queue，不要引入真实 Redis worker CLI，除非当前项目已有稳定 Redis worker 入口。
+- Worker 应记录 LLMCallLog 和 Artifact rows，但不要顺手实现 AI Task API 或前端。
+
 ## 当前用户最新明确要求
 
 - Chtest 项目必须放在 `/Users/yanchen/VscodeProject/Chtest`。
