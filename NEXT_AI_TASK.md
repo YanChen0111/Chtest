@@ -10,25 +10,26 @@ Slice 06: Requirement To Case Mainline.
 
 ## Current Task
 
-Task 4: Add Case Generation models and migration.
+Task 5: Add Case Generation API and mock agent flow.
 
 ## Product Value Answer
 
-After this task, Chtest has the CaseGenerationTask, GeneratedCaseCandidate, and
-TestCase database foundation needed to persist generated case candidates and
-reviewed test cases.
+After this task, Chtest can generate deterministic mock case candidates from a
+Requirement and RequirementReview, then list those candidates for user review.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/implementation/slices/slice-06-requirement-to-case.md`
 3. `docs/contracts/01-data-model-contract.md`
-4. `docs/contracts/03-state-machines.md`
-5. `docs/implementation/04-ai-vibecoding-governance.md`
+4. `docs/contracts/02-api-contract.md`
+5. `docs/contracts/03-state-machines.md`
+6. `docs/contracts/05-prompt-skill-contract.md`
+7. `docs/contracts/08-mock-provider-contract.md`
+8. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
-- Case generation API docs beyond model field checks.
 - Case review, frontend, AutomationDraft, Playwright, CI/CD, report center, RAG
   runtime, MCP runtime, and migration reference docs unless a concrete blocker
   requires them.
@@ -38,43 +39,44 @@ reviewed test cases.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/cases/__init__.py
-backend/app/modules/cases/models.py
+backend/app/modules/cases/router.py
+backend/app/modules/cases/service.py
 backend/app/modules/cases/schemas.py
-backend/alembic/versions/<revision>_case_generation.py
-backend/app/tests/db/test_case_generation_models.py
+backend/app/main.py
+backend/app/tests/api/test_case_generation.py
 ```
 
-Read nearby Requirement, AI Runtime, and Prompt/Skill model patterns only to
-align UUID, timestamp, JSON/list, and SQLite/PostgreSQL compatibility.
+Read existing Requirement Review mock flow and AI Runtime worker/provider
+patterns only as needed to reuse deterministic mock provider behavior.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py -q
 ```
 
-Expected result: Case Generation model focused test passes.
+Expected result: Case Generation API focused test passes.
 
 ## Acceptance
 
-- CaseGenerationTask, GeneratedCaseCandidate, and TestCase models match
-  `docs/contracts/01-data-model-contract.md`.
-- Migration creates the three contract tables and can run under the existing
-  SQLite migration smoke style with prior migrations.
-- JSON/list fields track in-place updates where needed.
-- No Case Generation API, mock generation flow, case review API, frontend,
-  AutomationDraft, RAG runtime, MCP runtime, RBAC, tenants, or permissions are
-  added in this task.
-- `git status --short` shows only expected model/migration/test files and
-  required task docs before commit.
+- Add `POST /api/case-generation/tasks` and
+  `GET /api/case-generation/tasks/{id}/candidates`.
+- Start generation creates an AITask using active prompt/skill versions and
+  deterministic mock provider output.
+- Persist CaseGenerationTask and GeneratedCaseCandidate rows only after
+  schema-valid mock output.
+- Do not let generated candidates enter the TestCase library automatically.
+- Do not add Case Review API, frontend, AutomationDraft, real provider, external
+  RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+- `git status --short` shows only expected cases API/service/schema/main/test
+  files and required task docs before commit.
 
 ## Commit Message
 
 ```text
-feat(cases): add case generation models
+feat(cases): add mock case generation flow
 ```
 
 ## Next Task
 
-Slice 06 Task 5: Add Case Generation API and mock agent flow.
+Slice 06 Task 6: Add Case Review API.

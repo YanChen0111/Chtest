@@ -36,8 +36,8 @@ execution, CI/CD, RAG runtime, MCP runtime, RBAC, or multi-user scope.
 |---|---|---|---|---|
 | Add Requirement Review models and migration | done | `backend/.venv/bin/python -m pytest backend/app/tests/db/test_requirement_review_models.py -q` | `75c845c` | Requirement, RequirementReview, RiskItem |
 | Add Requirement API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirements.py -q` | `85f5d5a` | Create/get/list requirements |
-| Add Requirement Review API and mock agent flow | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py -q` | pending commit | Start review, persist review and risks |
-| Add Case Generation models and migration | planned | `backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py -q` | - | CaseGenerationTask, GeneratedCaseCandidate, TestCase |
+| Add Requirement Review API and mock agent flow | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py -q` | `290db19` | Start review, persist review and risks |
+| Add Case Generation models and migration | done | `backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py -q` | pending commit | CaseGenerationTask, GeneratedCaseCandidate, TestCase |
 | Add Case Generation API and mock agent flow | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py -q` | - | Generate/list candidates |
 | Add Case Review API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_review.py -q` | - | approve, approve_after_edit, reject, needs_optimization |
 | Add Requirement To Case golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py -q` | - | Fixture-aligned backend flow |

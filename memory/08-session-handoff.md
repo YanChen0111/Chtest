@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 4 Case Generation Models 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 4：新增 CaseGenerationTask、GeneratedCaseCandidate、TestCase 模型与迁移。
+- 新增 `backend/app/modules/cases/` 模块骨架和 read schema。
+- 新增 Alembic migration `20260629_0005_case_generation.py`，沿用现有 UUID、timestamp、JSONB/SQLite JSON、Postgres text[]/SQLite JSON list 兼容模式。
+- 为 target_test_types、steps、expected_results、input_data、tags、requirement/risk refs 等 JSON/list 字段启用 Mutable tracking。
+- 未加入 Case Generation API、mock flow、Case Review API、frontend、AutomationDraft、RAG runtime 或 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 5：Add Case Generation API and mock agent flow。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py backend/app/tests/db/test_ai_runtime_models.py backend/app/tests/db/test_prompt_skill_models.py backend/app/tests/db/test_requirement_review_models.py backend/app/tests/db/test_case_generation_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- Case Generation model focused test：`4 passed`
+- DB model regression：`25 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/cases/__init__.py`
+- `backend/app/modules/cases/models.py`
+- `backend/app/modules/cases/schemas.py`
+- `backend/alembic/versions/20260629_0005_case_generation.py`
+- `backend/app/tests/db/test_case_generation_models.py`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 5：Add Case Generation API and mock agent flow。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py -q`。
+
+风险提醒：
+
+- Task 5 可以复用 AI Runtime 和 deterministic mock provider，但仍不能加入 Case Review API、frontend、AutomationDraft、真实 provider、外部 RAG runtime 或 MCP runtime。
+
 ## 2026-06-29 Slice 06 Task 3 Requirement Review Mock Flow 完成
 
 本轮完成：
