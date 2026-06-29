@@ -56,6 +56,23 @@ class ModuleRead(BaseModel):
     status: str
 
 
+class ModuleCreate(BaseModel):
+    parent_id: uuid.UUID | None = None
+    name: str = Field(min_length=1, max_length=160)
+    sort_order: int = 0
+
+
+class ModuleUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    sort_order: int | None = None
+    status: str | None = None
+
+
+class ModuleListRead(BaseModel):
+    items: list[ModuleRead]
+    total: int
+
+
 class RepositoryRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

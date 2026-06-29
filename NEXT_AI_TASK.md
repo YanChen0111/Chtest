@@ -10,13 +10,13 @@ Slice 03: Project Core.
 
 ## Current Task
 
-Task 3: Add Module tree API.
+Task 4: Add Repository and Environment API.
 
 ## Product Value Answer
 
-After this task, Chtest can organize a project's testing scope into a bounded
-module tree that later requirement, case, automation, and report workflows can
-reference consistently.
+After this task, Chtest can connect a project to an allowlisted local repository
+and environment variables so later test commands, runners, and evidence reports
+have a concrete execution context.
 
 ## Must Read
 
@@ -44,32 +44,32 @@ backend/app/modules/projects/service.py
 backend/app/modules/projects/schemas.py
 backend/app/modules/projects/router.py
 backend/app/main.py
-backend/app/tests/api/test_modules.py
+backend/app/tests/api/test_repository_environment.py
 ```
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_modules.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_repository_environment.py -q
 ```
 
-Expected result: the new Module tree API test passes.
+Expected result: the new Repository and Environment API test passes.
 
 ## Acceptance
 
-- Module create/list/update APIs follow `docs/contracts/02-api-contract.md` and Slice 03 Task 3.
-- Root modules have `level=1`, child modules derive `level`, `parent_id`, and `path` from their parent.
-- The five-level module tree limit is enforced.
-- Module names remain unique under the same parent.
-- No repository path validation, environment mutation API, TestCommand validation, AI task models, ToolInvocation, frontend, or multi-user permissions are added in this task.
-- `git status --short` shows only the expected Module API files before commit.
+- Repository create/update/list APIs follow `docs/contracts/02-api-contract.md` and Slice 03 Task 4.
+- Repository `local_path` exists and is under configured allowlisted roots.
+- Environment create/update/list APIs follow `docs/contracts/02-api-contract.md`.
+- Sensitive environment values are not expanded into a secret storage system in this task.
+- No TestCommand validation, command execution, git command execution, AI task models, ToolInvocation, frontend, or multi-user permissions are added in this task.
+- `git status --short` shows only the expected Repository/Environment API files before commit.
 
 ## Commit Message
 
 ```text
-feat(projects): add module tree api
+feat(projects): add repository and environment api
 ```
 
 ## Next Task
 
-Slice 03 Task 4: add repository and environment api.
+Slice 03 Task 5: add test command validation.

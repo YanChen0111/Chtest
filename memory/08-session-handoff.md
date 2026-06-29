@@ -127,6 +127,58 @@ git diff --check
 
 - 当前测试未使用 `fastapi.testclient.TestClient`，因为 Starlette 版本要求额外安装 `httpx2`；后续若统一 API 测试 fixture，可选择补依赖或保留轻量 ASGI client。
 
+## 2026-06-29 Slice 03 Task 3 Module API 完成
+
+本轮完成：
+
+- 完成 Slice 03 Task 3：新增 Module create/list/update API。
+- Root module 自动派生 `level=1` 和 `path=/{name}`。
+- Child module 校验 parent 属于同一 project，并自动派生 `level`、`parent_id` 和层级 path。
+- 强制五级模块树限制。
+- 同一 project + 同一 parent 下 module name 冲突返回 `MODULE_ALREADY_EXISTS`。
+- 根据只读 code review 修复父模块重命名后 descendant path 陈旧问题，新增回归测试覆盖。
+- 新增聚焦 API 测试：`backend/app/tests/api/test_modules.py`。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 03 Task 4：Add Repository and Environment API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_modules.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- Module API focused test：`9 passed in 0.61s`
+- Project API regression：`7 passed in 0.48s`
+- Project Core DB regression：`4 passed in 0.32s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/projects/router.py`
+- `backend/app/modules/projects/schemas.py`
+- `backend/app/modules/projects/service.py`
+- `backend/app/tests/api/test_modules.py`
+- `docs/implementation/slices/slice-03-project-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 4 尚未实现 Repository and Environment API。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 03 Task 4：Add Repository and Environment API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_repository_environment.py -q`。
+
+风险提醒：
+
+- Repository path allowlist 属于 Task 4，不要在 Task 3 里补。
+
 ## 2026-06-26 前端最终设计文档同步
 
 本轮完成：
