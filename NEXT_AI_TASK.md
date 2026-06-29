@@ -10,20 +10,21 @@ Slice 09: Case Metrics.
 
 ## Current Task
 
-Task 1: Add Case Metrics task plan.
+Task 2: Add Case Metrics backend calculation.
 
 ## Product Value Answer
 
-After this task, Chtest has a small, executable Slice 09 plan for measuring AI
-case generation quality without expanding into AutomationDraft or execution.
+After this task, Chtest can calculate batch-level case generation quality
+metrics from persisted CaseGenerationTask and GeneratedCaseCandidate records.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
-2. `docs/implementation/02-v1-slice-plan.md`
+2. `docs/implementation/slices/slice-09-case-metrics.md`
 3. `docs/product/04-ai-quality-metrics.md`
-4. `docs/fixtures/01-golden-requirement-to-case.md`
-5. `docs/implementation/04-ai-vibecoding-governance.md`
+4. `docs/contracts/01-data-model-contract.md`
+5. `docs/contracts/02-api-contract.md`
+6. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
@@ -37,39 +38,41 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-06-requirement-to-case.md
-docs/implementation/slices/slice-09-case-metrics.md
-NEXT_AI_TASK.md
+backend/app/modules/cases/service.py
+backend/app/modules/cases/schemas.py
+backend/app/tests/api/test_case_metrics.py
 ```
 
-Do not implement models, APIs, or frontend in this planning task. Create only
-the smallest task table needed for subsequent coding sessions.
+Read existing Case Generation and Case Review tests only as needed to reuse
+fixtures and request patterns.
 
 ## Verification Command
 
 ```bash
-rg -n "Case Metrics|CaseQualityMetric|acceptance_rate|edit_rate|review_progress" docs/implementation/slices/slice-09-case-metrics.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q
 ```
 
-Expected result: Slice 09 task plan references the required metrics and has a
-focused next verification command.
+Expected result: Case Metrics focused test passes.
 
 ## Acceptance
 
-- Create `docs/implementation/slices/slice-09-case-metrics.md` with small tasks
-  for backend metrics, API, frontend shell, and golden metric smoke.
-- Metrics must include generated_count, approved_count, rejected_count,
-  acceptance_rate, edit_rate, and review_progress.
-- Keep Slice 09 local to case quality metrics; do not add Test Case Library,
-  AutomationDraft, execution, reports, CI/CD, RAG runtime, MCP runtime, RBAC, or
-  tenants.
-- `git status --short` shows only expected docs before commit.
+- Add backend calculation for generated_count, approved_count, edited_count,
+  rejected_count, optimization_count, reviewed_count, acceptance_rate,
+  edit_rate, rejection_rate, optimization_rate, review_progress, and
+  field_complete_rate.
+- Calculate from existing CaseGenerationTask and GeneratedCaseCandidate records.
+- Do not create new metric tables unless existing records are insufficient.
+- Do not add API route, frontend, Test Case Library, AutomationDraft, execution,
+  reports, CI/CD, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+- `git status --short` shows only expected cases service/schema/test files and
+  required task docs before commit.
 
 ## Commit Message
 
 ```text
-docs(metrics): add case metrics task plan
+feat(cases): add case metrics calculation
 ```
 
 ## Next Task
 
-Slice 09 Task 2: Add Case Metrics backend calculation.
+Slice 09 Task 3: Add Case Metrics API.
