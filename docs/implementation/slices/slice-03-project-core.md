@@ -30,7 +30,7 @@ Create the single-user project context needed by all later AI, execution, and re
 | Add Module tree API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_modules.py -q` | pending commit | Enforce five-level limit |
 | Add Repository and Environment API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_repository_environment.py -q` | pending commit | Repository path allowlist required |
 | Add TestCommand API and validation | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_commands.py -q` | pending commit | Command safety rules required |
-| Add Project Settings frontend shell | planned | `npm --prefix frontend run test -- --run` | - | Basic route and API client smoke |
+| Add Project Settings frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | Basic route and API client smoke |
 
 ## Task 1: Add Project Core Models And Migration
 

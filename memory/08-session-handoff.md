@@ -292,6 +292,64 @@ git diff --check
 
 - Task 5 没有执行命令、没有 git 命令执行、没有 ToolInvocation；后续 runner slice 必须继续复用这些安全校验，而不是接受任意 shell。
 
+## 2026-06-29 Slice 03 Task 6 Project Settings 前端壳完成
+
+本轮完成：
+
+- 完成 Slice 03 Task 6：新增 Project Settings frontend shell。
+- 新增 `frontend/src/api/projects.ts` typed API helper，读取 `/api/projects/{id}/settings`。
+- 扩展 `frontend/src/api/client.ts` 支持 JSON 响应。
+- 新增 `frontend/src/stores/projectSettings.ts`，管理项目设置加载、错误和数据状态。
+- 新增 `frontend/src/views/settings/ProjectSettingsView.vue`，以中文工作台页面展示项目概览、模块树、仓库、环境变量和测试命令。
+- 接入 Vue Router：`/settings/project` / route name `project-settings`。
+- 导航中的 `Git 质量中心` 已改为 `CI/CD 质量中心`，设置入口指向项目设置页。
+- 更新 WorkbenchLayout 让顶部标题优先使用 route meta title。
+- 根据只读 code review 修复侧栏“设置”仍 fallback 到 AI 工作台的问题，并补充导航链接断言。
+- `client.ts`、`stores/index.ts`、`global.css` 和 `WorkbenchLayout.*` 虽不在原 Expected Files 列表内，但分别是 JSON API 支持、导航接入、页面样式和 route title 行为的必要最小改动。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+npm --prefix frontend run build
+git diff --check
+```
+
+验证结果：
+
+- Frontend test：`4 passed (4), 6 passed (6)`
+- Frontend build：通过；仍有既有 Arco bundle size warning。
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `frontend/src/api/client.ts`
+- `frontend/src/api/projects.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `frontend/src/stores/projectSettings.ts`
+- `frontend/src/layouts/WorkbenchLayout.vue`
+- `frontend/src/layouts/WorkbenchLayout.spec.ts`
+- `frontend/src/styles/global.css`
+- `frontend/src/views/settings/ProjectSettingsView.vue`
+- `frontend/src/views/settings/ProjectSettingsView.spec.ts`
+- `docs/implementation/slices/slice-03-project-core.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Slice 03 completion gate 尚未执行。
+- 当前前端使用默认 project id 作为 shell smoke；后续需要项目选择/创建流程后再改为真实当前项目上下文。
+
+下次推荐任务：
+
+- 执行 Slice 03 completion gate review。
+- 若通过，更新 handoff 到 Slice 04 AI Runtime Core。
+
+风险提醒：
+
+- Project Settings 前端壳只做查看和基础刷新，不实现完整编辑表单、拖拽模块树或命令执行。
+
 ## 2026-06-26 前端最终设计文档同步
 
 本轮完成：

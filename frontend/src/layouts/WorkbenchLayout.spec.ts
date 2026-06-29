@@ -25,4 +25,23 @@ describe('WorkbenchLayout', () => {
     expect(wrapper.text()).toContain('用例生成评审');
     expect(wrapper.text()).toContain('Prompt / Skill 中心');
   });
+
+  it('uses route title for project settings page', async () => {
+    await router.push({ name: 'project-settings' });
+    await router.isReady();
+
+    const wrapper = mount(WorkbenchLayout, {
+      global: {
+        plugins: [createPinia(), router, ArcoVue],
+        stubs: {
+          RouterView: true,
+        },
+      },
+    });
+
+    expect(wrapper.find('.workbench-header h1').text()).toBe('项目设置');
+    expect(wrapper.text()).toContain('CI/CD 质量中心');
+    const settingsLink = wrapper.findAll('.nav-item').find((link) => link.text().includes('设置'));
+    expect(settingsLink?.attributes('href')).toBe('/settings/project');
+  });
 });

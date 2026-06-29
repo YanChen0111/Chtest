@@ -28,6 +28,18 @@ export class ApiClient {
     }
     return response.text();
   }
+
+  async getJson<T>(path: string): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new ApiError(response.status, `请求失败：${response.status}`);
+    }
+    return response.json() as Promise<T>;
+  }
 }
 
 export const apiClient = new ApiClient();

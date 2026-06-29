@@ -15,7 +15,7 @@
           :key="item.routeName"
           class="nav-item"
           :class="{ active: item.routeName === activeRouteName }"
-          :to="item.routeName === 'ai-workbench' ? { name: item.routeName } : routeFallback"
+          :to="item.status === '就绪' ? { name: item.routeName } : routeFallback"
         >
           <span>{{ item.label }}</span>
           <a-tag size="small" :color="item.status === '就绪' ? 'green' : 'gray'">{{ item.status }}</a-tag>
@@ -54,6 +54,9 @@ const routeFallback = { name: 'ai-workbench' };
 
 const activeRouteName = computed(() => String(route.name ?? 'ai-workbench'));
 const currentTitle = computed(() => {
+  if (typeof route.meta.title === 'string') {
+    return route.meta.title;
+  }
   const matched = workbench.navigation.find((item) => item.routeName === activeRouteName.value);
   return matched?.label ?? 'AI 工作台';
 });
