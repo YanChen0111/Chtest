@@ -10,13 +10,12 @@ Slice 06: Requirement To Case Mainline.
 
 ## Current Task
 
-Task 7: Add Requirement To Case golden smoke.
+Task 8: Add Requirement Review frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest has one fixture-aligned backend smoke test proving the
-mainline from requirement creation through review, case generation, and case
-approval into official TestCase records.
+After this task, Chtest has the first Requirement Review frontend shell for
+creating a requirement and viewing mock review and risk results.
 
 ## Must Read
 
@@ -25,52 +24,56 @@ approval into official TestCase records.
 3. `docs/contracts/01-data-model-contract.md`
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
-6. `docs/fixtures/01-golden-requirement-to-case.md`
-7. `docs/implementation/04-ai-vibecoding-governance.md`
+6. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
-- Frontend, AutomationDraft, Playwright, CI/CD, report center, RAG runtime, MCP
-  runtime, and migration reference docs unless a concrete blocker requires
-  them.
+- Case Generation Review, AutomationDraft, Playwright, CI/CD, report center,
+  RAG runtime, MCP runtime, and migration reference docs unless a concrete
+  blocker requires them.
 
 ## Expected Files
 
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_requirement_to_case.py
+frontend/src/views/requirements/RequirementReviewView.vue
+frontend/src/api/requirements.ts
+frontend/src/stores/requirements.ts
+frontend/src/router/index.ts
+frontend/src/stores/index.ts
+frontend/src/views/requirements/RequirementReviewView.spec.ts
 ```
 
-Read existing Requirement Review, Case Generation, and Case Review API tests
-only as needed to reuse their fixtures and request patterns.
+Read existing frontend route, store, API client, and component test patterns
+only as needed to match the current frontend foundation.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: Requirement-to-case golden smoke passes.
+Expected result: frontend test suite passes.
 
 ## Acceptance
 
-- Exercise the golden requirement fixture through requirement creation,
-  requirement review, case generation, candidate listing, and candidate approval.
-- Assert persisted RequirementReview/RiskItem evidence, GeneratedCaseCandidate
-  records, and official TestCase creation from an approved candidate.
-- Keep the smoke deterministic with mock provider behavior only.
-- Do not add browser automation, execution, AutomationDraft, frontend, real
-  provider, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- `git status --short` shows only expected golden test and required task docs
-  before commit.
+- Add a Requirement Review view shell that can create a requirement and display
+  review scores, issues, clarification questions, risk items, and context usage.
+- Add minimal API and store wiring needed by the shell.
+- Keep behavior aligned to existing backend Requirement Review contracts.
+- Do not add full case review UI, AutomationDraft entry points, browser
+  automation, real provider, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions.
+- `git status --short` shows only expected frontend files and required task
+  docs before commit.
 
 ## Commit Message
 
 ```text
-test(golden): add requirement to case smoke
+feat(frontend): add requirement review shell
 ```
 
 ## Next Task
 
-Slice 06 Task 8: Add Requirement Review frontend shell.
+Slice 06 Task 9: Add Case Generation Review frontend shell.

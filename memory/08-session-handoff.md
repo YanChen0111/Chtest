@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-06-29 Slice 06 Task 7 Requirement To Case Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 06 Task 7：新增 fixture-aligned backend golden smoke。
+- 新增 `backend/app/tests/golden/test_requirement_to_case.py`，覆盖项目/模块/需求创建、Requirement Review、Case Generation、候选用例列表和 Case Review。
+- golden smoke 使用 `docs/fixtures/01-golden-requirement-to-case.md` 的优惠券结算规则、目标测试类型和人工评审动作。
+- 验证 RequirementReview 六维评分、RiskItem、GeneratedCaseCandidate、TestCase 创建和批次指标。
+- 未加入 browser automation、执行、AutomationDraft、frontend、真实 provider、RAG runtime、MCP runtime、RBAC 或 tenants。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 06 Task 8：Add Requirement Review frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/golden/test_requirement_to_case.py -q
+git diff --check
+```
+
+验证结果：
+
+- Requirement To Case golden smoke：`1 passed`
+- Requirement Review / Case Generation / Case Review / Golden regression：`15 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/tests/golden/test_requirement_to_case.py`
+- `docs/implementation/slices/slice-06-requirement-to-case.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 06 Task 8：Add Requirement Review frontend shell。
+- 验证命令：`npm --prefix frontend run test -- --run`。
+
+风险提醒：
+
+- Task 8 是 frontend shell；不要加入 Case Generation Review、AutomationDraft、真实 provider、外部 RAG runtime 或 MCP runtime。
+
 ## 2026-06-29 Slice 06 Task 6 Case Review API 完成
 
 本轮完成：
