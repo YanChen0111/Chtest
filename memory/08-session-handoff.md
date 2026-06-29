@@ -75,6 +75,58 @@ UV_CACHE_DIR=.tmp/uv-cache uv --project backend run pytest backend/app/tests/db/
 - 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py -q`。
 - 不要在 Task 2 顺手实现 repository path validation、environment mutation API、TestCommand validation、AI task models、ToolInvocation 或多用户权限。
 
+## 2026-06-29 Slice 03 Task 2 Project API 完成
+
+本轮完成：
+
+- 完成 Slice 03 Task 2：新增 Project create/read/update API。
+- 新增 Project Settings bootstrap API：返回 project、modules、repositories、environments、test_commands 和空的 tool_definitions。
+- 新增最小 FastAPI app 入口和 Project router。
+- 扩展 Project schema 和 service，复用 Task 1 的 SQLAlchemy Project Core models。
+- 新增聚焦 API 测试：`backend/app/tests/api/test_projects.py`。
+- 根据只读 code review 修复两个 API 契约缺口：422 validation error envelope 和重复项目名 409 envelope。
+- 因当前 `.venv` 未安装 `httpx2`，测试使用文件内最小 ASGI client 直接调用 FastAPI app，不新增依赖。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 03 Task 3：Add Module tree API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_project_core_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- Project API focused test：`7 passed in 0.53s`
+- Project Core DB regression：`4 passed in 0.35s`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/main.py`
+- `backend/app/modules/projects/router.py`
+- `backend/app/modules/projects/schemas.py`
+- `backend/app/modules/projects/service.py`
+- `backend/app/tests/api/test_projects.py`
+- `docs/implementation/slices/slice-03-project-core.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+未完成问题：
+
+- Task 3 尚未实现 Module tree API。
+- 当前 Project API 只覆盖 Project 自身和 settings bootstrap；Repository、Environment、TestCommand 的 mutation 和 validation 留给 Slice 03 Task 4/5。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 03 Task 3：Add Module tree API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_modules.py -q`。
+
+风险提醒：
+
+- 当前测试未使用 `fastapi.testclient.TestClient`，因为 Starlette 版本要求额外安装 `httpx2`；后续若统一 API 测试 fixture，可选择补依赖或保留轻量 ASGI client。
+
 ## 2026-06-26 前端最终设计文档同步
 
 本轮完成：

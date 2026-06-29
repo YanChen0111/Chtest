@@ -10,12 +10,13 @@ Slice 03: Project Core.
 
 ## Current Task
 
-Task 2: Add Project CRUD API.
+Task 3: Add Module tree API.
 
 ## Product Value Answer
 
-After this task, Chtest exposes the first Project Settings backend API so the
-frontend can create, read, update, and bootstrap a local project context.
+After this task, Chtest can organize a project's testing scope into a bounded
+module tree that later requirement, case, automation, and report workflows can
+reference consistently.
 
 ## Must Read
 
@@ -43,31 +44,32 @@ backend/app/modules/projects/service.py
 backend/app/modules/projects/schemas.py
 backend/app/modules/projects/router.py
 backend/app/main.py
-backend/app/tests/api/test_projects.py
+backend/app/tests/api/test_modules.py
 ```
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_projects.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_modules.py -q
 ```
 
-Expected result: the new Project Settings API test passes.
+Expected result: the new Module tree API test passes.
 
 ## Acceptance
 
-- Project create/read/update APIs follow `docs/contracts/02-api-contract.md`.
-- Project Settings bootstrap returns project, modules, repositories, environments, and test commands.
-- The API uses the existing SQLAlchemy Project Core models from Task 1.
-- No repository path validation, environment mutation API, TestCommand validation, AI task models, ToolInvocation, or multi-user permissions are added in this task.
-- `git status --short` shows only the expected Project API files before commit.
+- Module create/list/update APIs follow `docs/contracts/02-api-contract.md` and Slice 03 Task 3.
+- Root modules have `level=1`, child modules derive `level`, `parent_id`, and `path` from their parent.
+- The five-level module tree limit is enforced.
+- Module names remain unique under the same parent.
+- No repository path validation, environment mutation API, TestCommand validation, AI task models, ToolInvocation, frontend, or multi-user permissions are added in this task.
+- `git status --short` shows only the expected Module API files before commit.
 
 ## Commit Message
 
 ```text
-feat(projects): add project settings api
+feat(projects): add module tree api
 ```
 
 ## Next Task
 
-Slice 03 Task 3: add module tree api.
+Slice 03 Task 4: add repository and environment api.
