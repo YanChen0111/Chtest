@@ -113,6 +113,22 @@ class CaseReviewRead(BaseModel):
     test_case_id: uuid.UUID | None
 
 
+class CaseMetricsRead(BaseModel):
+    generation_task_id: uuid.UUID
+    generated_count: int
+    approved_count: int
+    edited_count: int
+    rejected_count: int
+    optimization_count: int
+    reviewed_count: int
+    acceptance_rate: float
+    edit_rate: float
+    rejection_rate: float
+    optimization_rate: float
+    review_progress: float
+    field_complete_rate: float
+
+
 class TestCaseRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

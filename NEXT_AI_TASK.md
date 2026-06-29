@@ -10,12 +10,12 @@ Slice 09: Case Metrics.
 
 ## Current Task
 
-Task 2: Add Case Metrics backend calculation.
+Task 3: Add Case Metrics API.
 
 ## Product Value Answer
 
-After this task, Chtest can calculate batch-level case generation quality
-metrics from persisted CaseGenerationTask and GeneratedCaseCandidate records.
+After this task, Chtest can expose batch-level case generation quality metrics
+through a backend API for frontend display.
 
 ## Must Read
 
@@ -39,6 +39,7 @@ Create or update only these files for the current task:
 ```text
 docs/implementation/slices/slice-06-requirement-to-case.md
 backend/app/modules/cases/service.py
+backend/app/modules/cases/router.py
 backend/app/modules/cases/schemas.py
 backend/app/tests/api/test_case_metrics.py
 ```
@@ -56,23 +57,22 @@ Expected result: Case Metrics focused test passes.
 
 ## Acceptance
 
-- Add backend calculation for generated_count, approved_count, edited_count,
-  rejected_count, optimization_count, reviewed_count, acceptance_rate,
-  edit_rate, rejection_rate, optimization_rate, review_progress, and
-  field_complete_rate.
-- Calculate from existing CaseGenerationTask and GeneratedCaseCandidate records.
-- Do not create new metric tables unless existing records are insufficient.
-- Do not add API route, frontend, Test Case Library, AutomationDraft, execution,
-  reports, CI/CD, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- `git status --short` shows only expected cases service/schema/test files and
-  required task docs before commit.
+- Add `GET /api/case-generation/tasks/{generation_task_id}/metrics`.
+- Return generated_count, approved_count, edited_count, rejected_count,
+  optimization_count, reviewed_count, acceptance_rate, edit_rate,
+  rejection_rate, optimization_rate, review_progress, and field_complete_rate.
+- Reuse the service calculation from Task 2.
+- Do not add frontend, Test Case Library, AutomationDraft, execution, reports,
+  CI/CD, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+- `git status --short` shows only expected cases router/service/schema/test files
+  and required task docs before commit.
 
 ## Commit Message
 
 ```text
-feat(cases): add case metrics calculation
+feat(cases): add case metrics api
 ```
 
 ## Next Task
 
-Slice 09 Task 3: Add Case Metrics API.
+Slice 09 Task 4: Add Case Metrics frontend shell.

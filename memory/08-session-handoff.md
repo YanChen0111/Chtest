@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-29 Slice 09 Task 2 Case Metrics Backend Calculation 完成
+
+本轮完成：
+
+- 完成 Slice 09 Task 2：新增 case generation batch metrics service 计算。
+- 新增 `CaseMetricsRead` schema。
+- 新增 `calculate_case_metrics`，从 CaseGenerationTask/GeneratedCaseCandidate 计算 generated_count、approved_count、edited_count、rejected_count、optimization_count、reviewed_count、acceptance_rate、edit_rate、rejection_rate、optimization_rate、review_progress、field_complete_rate。
+- 未新增 metric table，未加入 API route、frontend、Test Case Library、AutomationDraft、执行、reports、CI/CD、RAG runtime 或 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 09 Task 3：Add Case Metrics API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_case_metrics.py -q
+git diff --check
+```
+
+验证结果：
+
+- Case Metrics focused test：`2 passed`
+- Case Generation / Case Review / Case Metrics regression：`10 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/cases/service.py`
+- `backend/app/modules/cases/schemas.py`
+- `backend/app/tests/api/test_case_metrics.py`
+- `docs/implementation/slices/slice-09-case-metrics.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 09 Task 3：Add Case Metrics API。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q`。
+
 ## 2026-06-29 Slice 06 Requirement To Case Mainline 完成
 
 本轮完成：

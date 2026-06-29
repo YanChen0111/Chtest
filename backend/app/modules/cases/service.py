@@ -11,6 +11,7 @@ from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
 from backend.app.modules.cases.schemas import (
     CaseGenerationStartRequest,
+    CaseMetricsRead,
     CaseReviewRequest,
     GeneratedCaseCandidateListItemRead,
 )
@@ -204,6 +205,63 @@ def review_candidate(session: Session, candidate_id: uuid.UUID, data: CaseReview
     if test_case is not None:
         session.refresh(test_case)
     return candidate, test_case
+
+
+def calculate_case_metrics(session: Session, generation_task_id: uuid.UUID) -> CaseMetricsRead:
+    generation_task = session.get(CaseGenerationTask, generation_task_id)
+    if generation_task is None:
+        raise CaseGenerationTaskNotFoundError
+
+    candidates = list(
+        session.scalars(
+            select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task_id),
+        ),
+    )
+    generated_count = len(candidates)
+    approved_count = count_by_status(candidates, "approved")
+    edited_count = count_by_status(candidates, "approved_after_edit")
+    rejected_count = count_by_status(candidates, "rejected")
+    optimization_count = count_by_status(candidates, "needs_optimization")
+    reviewed_count = approved_count + edited_count + rejected_count + optimization_count
+    return CaseMetricsRead(
+        generation_task_id=generation_task.id,
+        generated_count=generated_count,
+        approved_count=approved_count,
+        edited_count=edited_count,
+        rejected_count=rejected_count,
+        optimization_count=optimization_count,
+        reviewed_count=reviewed_count,
+        acceptance_rate=ratio(approved_count + edited_count, generated_count),
+        edit_rate=ratio(edited_count, generated_count),
+        rejection_rate=ratio(rejected_count, generated_count),
+        optimization_rate=ratio(optimization_count, generated_count),
+        review_progress=ratio(reviewed_count, generated_count),
+        field_complete_rate=ratio(sum(1 for candidate in candidates if candidate_fields_complete(candidate)), generated_count),
+    )
+
+
+def count_by_status(candidates: list[GeneratedCaseCandidate], status: str) -> int:
+    return sum(1 for candidate in candidates if candidate.status == status)
+
+
+def ratio(numerator: int, denominator: int) -> float:
+    if denominator == 0:
+        return 0.0
+    return round(numerator / denominator, 4)
+
+
+def candidate_fields_complete(candidate: GeneratedCaseCandidate) -> bool:
+    return all(
+        [
+            bool(candidate.title),
+            bool(candidate.priority),
+            bool(candidate.test_type),
+            bool(candidate.steps_json),
+            bool(candidate.expected_results_json),
+            bool(candidate.requirement_refs_json),
+            bool(candidate.ai_reason),
+        ],
+    )
 
 
 def test_case_from_candidate(candidate: GeneratedCaseCandidate, review_status: str) -> TestCase:
