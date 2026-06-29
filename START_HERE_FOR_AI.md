@@ -74,7 +74,7 @@ This loop is defined in `docs/implementation/00-v0.1-walking-skeleton.md`.
 - Do not let UnitTestPatch modify business source files.
 - Do not execute arbitrary shell strings; use ToolDefinition allowlists.
 - Do not mark reports as passed without evidence artifacts.
-- Do not expand CI/CD 质量中心 beyond local diff, UnitTestPatch review, pytest regression, and evidence report unless a later task explicitly targets V2 integrations.
+- Do not expand CI/CD 质量中心 beyond local diff, UnitTestPatch review, pytest regression, QualityGateDecision, and evidence report unless a later task explicitly targets V2 integrations.
 - Do not add broad dashboard or marketplace work before the V0.1 loop runs.
 
 ## Completion Rule

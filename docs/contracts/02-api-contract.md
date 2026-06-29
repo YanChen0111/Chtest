@@ -563,6 +563,11 @@ AutomationDraft uses `edit -> edited -> approve -> approved`. It does not use `a
 
 ## 5. CI/CD Quality APIs
 
+CI/CD Quality APIs are the page-level workflow contract for `CI/CD 质量中心`.
+They may create or return generic `AITask`, `TestRun`, `FailureAnalysis`, and
+`Report` records, but the endpoint names stay under `/api/cicd` so the frontend
+can drive the CI/CD quality workflow without guessing cross-module orchestration.
+
 ### 5.1 Create CI/CD Run
 
 `POST /api/cicd/runs`
@@ -588,7 +593,64 @@ Response 202:
 }
 ```
 
-### 5.2 Analyze CI/CD Run
+### 5.2 List CI/CD Runs
+
+`GET /api/cicd/runs`
+
+Query parameters:
+
+```text
+project_id optional uuid
+repository_id optional uuid
+status optional string
+quality_gate_status optional pending|passed|failed|needs_review
+```
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000001101",
+      "project_id": "00000000-0000-0000-0000-000000000101",
+      "repository_id": "00000000-0000-0000-0000-000000000301",
+      "source_type": "local_diff",
+      "base_ref": "main",
+      "head_ref": "HEAD",
+      "overall_risk": "medium",
+      "quality_gate_status": "pending",
+      "status": "created"
+    }
+  ],
+  "total": 1
+}
+```
+
+### 5.3 Get CI/CD Run
+
+`GET /api/cicd/runs/{id}`
+
+Response 200:
+
+```json
+{
+  "id": "00000000-0000-0000-0000-000000001101",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "repository_id": "00000000-0000-0000-0000-000000000301",
+  "summary": "Coupon amount boundary change",
+  "overall_risk": "medium",
+  "quality_gate_status": "pending",
+  "status": "analyzed",
+  "changed_files": [],
+  "unit_test_patches": [],
+  "test_runs": [],
+  "quality_gate_decision": null,
+  "reports": []
+}
+```
+
+### 5.4 Analyze CI/CD Run
 
 `POST /api/cicd/runs/{id}/analyze`
 
@@ -605,7 +667,7 @@ Request:
 
 Response 202 returns AITask reference.
 
-### 5.3 Generate Unit Test Patch
+### 5.5 Generate Unit Test Patch
 
 `POST /api/cicd/runs/{id}/unit-test-patches`
 
@@ -630,7 +692,7 @@ Response 202:
 }
 ```
 
-### 5.4 Approve Unit Test Patch
+### 5.6 Approve Unit Test Patch
 
 `POST /api/cicd/unit-test-patches/{id}/approve`
 
@@ -652,7 +714,138 @@ Response 200:
 }
 ```
 
-### 5.5 Compute Quality Gate
+### 5.7 Reject Unit Test Patch
+
+`POST /api/cicd/unit-test-patches/{id}/reject`
+
+Request:
+
+```json
+{
+  "review_comment": "Patch does not cover the changed branch."
+}
+```
+
+Response 200:
+
+```json
+{
+  "unit_test_patch_id": "00000000-0000-0000-0000-000000001201",
+  "status": "rejected"
+}
+```
+
+### 5.8 Apply Unit Test Patch
+
+`POST /api/cicd/unit-test-patches/{id}/apply`
+
+Request:
+
+```json
+{
+  "confirm_scope_gate_result": true
+}
+```
+
+Response 200:
+
+```json
+{
+  "unit_test_patch_id": "00000000-0000-0000-0000-000000001201",
+  "status": "applied",
+  "applied_artifact_id": "00000000-0000-0000-0000-000000001211"
+}
+```
+
+Rules:
+
+- Only `approved` UnitTestPatch records can be applied.
+- PatchScopeGate must pass before application.
+- Application must fail with `PATCH_SCOPE_REJECTED` when the patch modifies paths outside allowed test directories.
+
+### 5.9 Run New Tests
+
+`POST /api/cicd/runs/{id}/run-new-tests`
+
+Request:
+
+```json
+{
+  "unit_test_patch_id": "00000000-0000-0000-0000-000000001201",
+  "test_command_id": "00000000-0000-0000-0000-000000000302"
+}
+```
+
+Response 202:
+
+```json
+{
+  "test_run_id": "00000000-0000-0000-0000-000000001301",
+  "cicd_run_id": "00000000-0000-0000-0000-000000001101",
+  "status": "queued"
+}
+```
+
+Rules:
+
+- The endpoint creates a generic TestRun with `cicd_run_id` set.
+- The endpoint requires an applied UnitTestPatch when `unit_test_patch_id` is provided.
+
+### 5.10 Select Regression
+
+`POST /api/cicd/runs/{id}/select-regression`
+
+Request:
+
+```json
+{
+  "skill_version": "regression-selection-skill:v1",
+  "candidate_test_command_ids": ["00000000-0000-0000-0000-000000000302"]
+}
+```
+
+Response 200:
+
+```json
+{
+  "cicd_run_id": "00000000-0000-0000-0000-000000001101",
+  "regression_plan_artifact_id": "00000000-0000-0000-0000-000000001221",
+  "recommended_test_command_ids": ["00000000-0000-0000-0000-000000000302"],
+  "reasons": ["Changed source branch is covered by pytest unit command."]
+}
+```
+
+RegressionPlan is stored as `regression_plan.json` artifact in V1, not as a separate database table.
+
+### 5.11 Run Regression
+
+`POST /api/cicd/runs/{id}/run-regression`
+
+Request:
+
+```json
+{
+  "regression_plan_artifact_id": "00000000-0000-0000-0000-000000001221",
+  "test_command_ids": ["00000000-0000-0000-0000-000000000302"]
+}
+```
+
+Response 202:
+
+```json
+{
+  "cicd_run_id": "00000000-0000-0000-0000-000000001101",
+  "test_run_ids": ["00000000-0000-0000-0000-000000001302"],
+  "status": "tests_running"
+}
+```
+
+Rules:
+
+- Each regression command creates a generic TestRun with `cicd_run_id` set.
+- V1 regression execution must use allowed TestCommand records.
+
+### 5.12 Compute Quality Gate
 
 `POST /api/cicd/runs/{id}/quality-gate`
 
@@ -675,6 +868,38 @@ Response 200:
   "blocking_reasons": []
 }
 ```
+
+Rules:
+
+- A recompute always creates a new QualityGateDecision record and updates `CICDRun.quality_gate_status`.
+- Missing required evidence returns `needs_review`, not `passed`.
+
+### 5.13 Generate CI/CD Quality Report
+
+`POST /api/cicd/runs/{id}/generate-report`
+
+Request:
+
+```json
+{
+  "report_format": ["markdown", "html", "json"]
+}
+```
+
+Response 202:
+
+```json
+{
+  "report_id": "00000000-0000-0000-0000-000000001501",
+  "cicd_run_id": "00000000-0000-0000-0000-000000001101",
+  "status": "generating"
+}
+```
+
+Rules:
+
+- The endpoint creates a generic Report with `report_type=cicd_quality`.
+- The report conclusion must cite QualityGateDecision and evidence artifacts.
 
 ## 6. Test Run APIs
 

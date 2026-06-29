@@ -77,6 +77,7 @@ artifacts/projects/{project_id}/cicd-quality/{cicd_run_id}/
   risk_analysis.json
   unit_test.patch
   patch_scope_gate.json
+  regression_plan.json
   quality_gate.json
   cicd_quality_report.json
   cicd_quality_report.md

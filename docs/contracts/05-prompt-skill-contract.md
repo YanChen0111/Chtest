@@ -9,11 +9,14 @@
 ```text
 prompts/
   requirement_review/v1.md
+  risk_matrix/v1.md
   case_generation/v1.md
+  case_review/v1.md
   automation_draft_generation/v1.md
   cicd_change_analysis/v1.md
   unit_test_generation/v1.md
   regression_selection/v1.md
+  tool_execution/v1.md
   failure_analysis/v1.md
   report_generation/v1.md
 ```
@@ -24,6 +27,7 @@ prompts/
 skills/
   requirement-review-skill/v1.md
   test-case-generation-skill/v1.md
+  testcase-review-skill/v1.md
   automation-draft-skill/v1.md
   unit-test-generation-skill/v1.md
   regression-selection-skill/v1.md
@@ -139,11 +143,14 @@ Describe required output fields.
 | 流程 | Agent | Prompt | Skill |
 |---|---|---|---|
 | 需求评审 | RequirementReviewAgent | requirement_review:v1 | requirement-review-skill:v1 |
+| 风险矩阵 | RequirementReviewAgent | risk_matrix:v1 | requirement-review-skill:v1 |
 | 用例生成 | CaseGenerationAgent | case_generation:v1 | test-case-generation-skill:v1 |
+| 用例评审 | CaseReviewAgent | case_review:v1 | testcase-review-skill:v1 |
 | 自动化草稿 | AutomationDraftAgent | automation_draft_generation:v1 | automation-draft-skill:v1 |
 | CI/CD 变更分析 | CICDChangeAnalysisAgent | cicd_change_analysis:v1 | regression-selection-skill:v1 |
 | 单测 patch | UnitTestAgent | unit_test_generation:v1 | unit-test-generation-skill:v1 |
 | 回归选择 | RegressionAgent | regression_selection:v1 | regression-selection-skill:v1 |
+| 工具执行计划 | ToolExecutionAgent | tool_execution:v1 | tool-execution-skill:v1 |
 | 失败归因 | FailureAnalysisAgent | failure_analysis:v1 | failure-analysis-skill:v1 |
 | 报告生成 | ReportAgent | report_generation:v1 | report-generation-skill:v1 |
 
@@ -197,6 +204,29 @@ Describe required output fields.
   "test_intent": "cover expired coupon rejection",
   "coverage_target": ["coupon validation branch"],
   "risk_notes": ["patch only modifies tests/"]
+}
+```
+
+### 7.4 RegressionPlan 输出
+
+```json
+{
+  "recommended_test_command_ids": ["00000000-0000-0000-0000-000000000302"],
+  "reasons": ["Changed source branch is covered by pytest unit command."],
+  "risk_coverage": ["src/coupon.py coupon.amount > order_total"],
+  "needs_review": false
+}
+```
+
+### 7.5 Report 输出
+
+```json
+{
+  "conclusion": "passed",
+  "summary": "Patch scope, new tests, and regression passed with evidence.",
+  "metrics": {"new_tests_passed": true, "regression_passed": true},
+  "evidence_artifact_ids": ["00000000-0000-0000-0000-000000001601"],
+  "next_actions": []
 }
 ```
 

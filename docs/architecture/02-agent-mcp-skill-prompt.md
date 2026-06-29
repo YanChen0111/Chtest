@@ -35,7 +35,6 @@
 - `unit-test-generation-skill`.
 - `regression-selection-skill`.
 - `tool-execution-skill`.
-- `playwright-web-testing-skill`.
 - `failure-analysis-skill`.
 - `report-generation-skill`.
 
@@ -49,7 +48,6 @@ prompts/
   risk_matrix/v1.md
   case_generation/v1.md
   case_review/v1.md
-  case_optimization/v1.md
   automation_draft_generation/v1.md
   cicd_change_analysis/v1.md
   unit_test_generation/v1.md

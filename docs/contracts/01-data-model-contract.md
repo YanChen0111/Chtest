@@ -327,7 +327,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 
 ## 21. QualityGateDecision
 
-QualityGateDecision records the CI/CD quality gate result for a CICDRun. V1 computes it from local diff risk, PatchScopeGate, new test results, regression results, and failure analysis evidence. It does not trigger merge, push, or deployment automatically.
+QualityGateDecision records one computed CI/CD quality gate result for a CICDRun. V1 computes it from local diff risk, PatchScopeGate, new test results, regression results, and failure analysis evidence. It does not trigger merge, push, or deployment automatically. Recomputing the gate creates a new QualityGateDecision record and updates `CICDRun.quality_gate_status`; old decisions remain as evidence history.
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|

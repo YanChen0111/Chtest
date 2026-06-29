@@ -70,7 +70,6 @@ Expected files:
 - `prompts/risk_matrix/v1.md`
 - `prompts/case_generation/v1.md`
 - `prompts/case_review/v1.md`
-- `prompts/case_optimization/v1.md`
 - `prompts/automation_draft_generation/v1.md`
 - `prompts/cicd_change_analysis/v1.md`
 - `prompts/unit_test_generation/v1.md`
@@ -110,7 +109,6 @@ Expected files:
 - `skills/unit-test-generation-skill/v1.md`
 - `skills/regression-selection-skill/v1.md`
 - `skills/tool-execution-skill/v1.md`
-- `skills/playwright-web-testing-skill/v1.md`
 - `skills/failure-analysis-skill/v1.md`
 - `skills/report-generation-skill/v1.md`
 - `backend/app/tests/prompt_skill/test_skill_files.py`
