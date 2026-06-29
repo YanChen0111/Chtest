@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-06-29 Slice 05 Task 6 Prompt/Skill API 完成
+
+本轮完成：
+
+- 完成 Slice 05 Task 6：新增 read-only Prompt/Skill registry API。
+- 新增 `/api/prompt-versions` 和 `/api/prompt-versions/{id}`。
+- 新增 `/api/skill-versions` 和 `/api/skill-versions/{id}`。
+- 响应包含 version identity、hash、status、agent/applicable agents、schema/gate metadata 和 content。
+- 未添加 create/update/delete endpoint。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 05 Task 7：Add Prompt/Skill frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_prompt_skill_registry.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_prompt_skill_registry.py backend/app/tests/api/test_ai_tasks.py -q
+git diff --check
+```
+
+验证结果：
+
+- Prompt/Skill registry API focused test：`5 passed in 0.57s`
+- Prompt/Skill registry API + AI Task API regression：`9 passed in 0.67s`
+
+修改文件：
+
+- `backend/app/modules/prompt_skill/router.py`
+- `backend/app/modules/prompt_skill/service.py`
+- `backend/app/modules/prompt_skill/schemas.py`
+- `backend/app/main.py`
+- `backend/app/tests/api/test_prompt_skill_registry.py`
+- `docs/implementation/slices/slice-05-prompt-skill-registry.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 05 Task 7：Add Prompt/Skill frontend shell。
+- 验证命令：`npm --prefix frontend run test -- --run`。
+
+风险提醒：
+
+- Task 7 只做 read-only frontend shell，不要加入 prompt editing、marketplace、真实 provider、RAG 或 MCP runtime。
+
 ## 2026-06-29 Slice 05 Task 5 Mock Provider Eval Bench 完成
 
 本轮完成：

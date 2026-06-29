@@ -25,6 +25,11 @@ class PromptVersionRead(BaseModel):
     status: str
 
 
+class PromptVersionListRead(BaseModel):
+    items: list[PromptVersionRead]
+    total: int
+
+
 class SkillVersionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -42,3 +47,8 @@ class SkillVersionRead(BaseModel):
     forbidden_actions_json: list[Any]
     tool_permissions_json: list[Any]
     status: str
+
+
+class SkillVersionListRead(BaseModel):
+    items: list[SkillVersionRead]
+    total: int
