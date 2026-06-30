@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-06-30 Slice 13 Task 3 Playwright Runner Adapter 完成
+
+本轮完成：
+
+- 完成 Slice 13 Task 3：Add Playwright runner adapter。
+- 新增 `backend/app/modules/execution/playwright_runner.py`。
+- adapter 复用 TestCommand allowlist 口径，只接受 `npx playwright test ...`
+  命令并拒绝 forbidden shell operators。
+- adapter 捕获 stdout、stderr、exit_code、duration_ms，并解析
+  passed/failed/skipped/error/total 计数。
+- adapter 可发现 `playwright_trace` zip 和 `screenshot` png artifact
+  candidates。
+- 新增 `backend/app/tests/api/test_playwright_minimal_loop.py`，使用 fake npx
+  可执行文件做确定性测试，不依赖真实浏览器或 Playwright 包。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 13 Task 4：Add Playwright execution API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q
+```
+
+验证结果：
+
+- Playwright runner adapter focused tests：`5 passed`
+
+修改文件：
+
+- `backend/app/modules/execution/playwright_runner.py`
+- `backend/app/tests/api/test_playwright_minimal_loop.py`
+- `docs/implementation/slices/slice-13-playwright-minimal-loop.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 13 Task 4：Add Playwright execution API。
+- 通过 `POST /api/test-runs` + `runner_mode=playwright_local` 接入，不新增报告或质量门禁。
+
 ## 2026-06-30 Slice 13 Task 2 Playwright Execution Contract 完成
 
 本轮完成：

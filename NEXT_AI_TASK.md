@@ -10,12 +10,12 @@ Slice 13: Playwright Minimal Loop.
 
 ## Current Task
 
-Task 3: Add Playwright runner adapter.
+Task 4: Add Playwright execution API.
 
 ## Product Value Answer
 
-After this task, Chtest has a minimal Playwright runner adapter that can wrap an
-allowlisted local command and return parsed execution evidence.
+After this task, Chtest can create and retrieve controlled Playwright TestRun
+records through the backend API.
 
 ## Must Read
 
@@ -42,11 +42,14 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-13-playwright-minimal-loop.md
 backend/app/modules/execution/playwright_runner.py
+backend/app/modules/execution/router.py
+backend/app/modules/execution/service.py
 backend/app/modules/execution/schemas.py
 backend/app/tests/api/test_playwright_minimal_loop.py
 ```
 
-Do not add API/router orchestration in this task.
+Do not generate reports, FailureAnalysis, or QualityGateDecision records in
+this task.
 
 ## Verification Command
 
@@ -54,26 +57,26 @@ Do not add API/router orchestration in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q
 ```
 
-Expected result: focused Playwright runner adapter tests pass.
+Expected result: focused Playwright execution API tests pass.
 
 ## Acceptance
 
-- Runs only Playwright-style commands assembled by backend code or configured
-  TestCommand allowlists.
-- Captures stdout, stderr, exit_code, duration_ms, and parsed pass/fail counts.
-- Produces metadata entries for Playwright trace and screenshot files when
+- Adds the contract-selected Playwright execution path through
+  `POST /api/test-runs` with `runner_mode=playwright_local`.
+- Requires approved Playwright AutomationDraft or configured Playwright
+  TestCommand.
+- Persists stdout/stderr/trace/screenshot/runtime artifact metadata where
   available.
-- Supports local Playwright execution first.
-- Does not add browser grid, Docker runner, pytest changes, reports, or CI/CD
-  quality gates.
-- Update handoff and set the next task to Playwright execution API.
+- Persists TestResult rows from parsed Playwright output.
+- Does not generate reports, FailureAnalysis, or QualityGateDecision records.
+- Update handoff and set the next task to Playwright execution frontend shell.
 
 ## Commit Message
 
 ```text
-feat(execution): add playwright runner adapter
+feat(execution): add playwright minimal api
 ```
 
 ## Next Task
 
-Slice 13 Task 4: Add Playwright execution API.
+Slice 13 Task 5: Add Playwright execution frontend shell.
