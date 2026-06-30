@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 15: CI/CD Quality Center Foundation.
+Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Slice 15 completion gate.
+Task 1: Add UnitTestPatch And Regression task plan.
 
 ## Product Value Answer
 
-After this task, Slice 15 has verified API, frontend, golden smoke, and handoff
-evidence for local-first CI/CD Quality Center foundation.
+After this task, Slice 16 has a scoped implementation plan for UnitTestPatch,
+PatchScopeGate, pytest regression, and QualityGateDecision evidence.
 
 ## Must Read
 
@@ -42,37 +42,36 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-memory/07-dev-log.md
-docs/implementation/slices/slice-15-cicd-quality-center.md
+docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Do not add product behavior in this task. This is verification and handoff only.
+This is a planning-only task. Do not add product code.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q && npm --prefix frontend run test -- --run
+test -f docs/implementation/slices/slice-16-unit-test-patch-regression.md && rg -n "UnitTestPatch|PatchScopeGate|Verification Command|Non-goals" docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Expected result: Slice 15 backend API, golden smoke, and frontend tests pass.
+Expected result: Slice 16 task plan exists and contains scoped task table,
+verification commands, and non-goals.
 
 ## Acceptance
 
-- Run the Slice 15 completion verification command.
-- Mark Slice 15 completion gate done in the slice task plan if verification
-  passes.
-- Record verification evidence in handoff and dev log.
-- Set the next task to Slice 16 Task 1: UnitTestPatch And Regression task plan.
-- Do not add product behavior, broad refactors, UnitTestPatch, regression,
-  QualityGateDecision, Report, RAG runtime, MCP runtime, RBAC, tenants, or
-  permissions.
+- Creates `docs/implementation/slices/slice-16-unit-test-patch-regression.md`.
+- Splits Slice 16 into small contract/model/API/frontend/golden/completion tasks.
+- Scope covers UnitTestPatch, PatchScopeGate, pytest regression, and
+  QualityGateDecision evidence.
+- Explicitly excludes merge/release actions, remote CI provider integration,
+  RAG runtime, MCP runtime, RBAC, tenants, and permissions.
+- Updates handoff and sets the next task to Slice 16 contract boundary.
 
 ## Commit Message
 
 ```text
-docs(cicd): complete quality center slice
+docs(cicd): add unit test patch task plan
 ```
 
 ## Next Task
 
-Slice 16 Task 1: Add UnitTestPatch And Regression task plan.
+Slice 16 Task 2: Add UnitTestPatch and regression contract boundary.

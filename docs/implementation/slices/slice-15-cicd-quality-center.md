@@ -40,8 +40,8 @@ RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 | Add CI/CD run create/list/get API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | `2e51d06` | `/api/cicd/runs` local_diff only |
 | Add CI/CD analyze API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | `3a6df10` | mock risk_analysis artifact |
 | Add CI/CD Quality Center frontend shell | done | `npm --prefix frontend run test -- --run` | `362ce0e` | local diff evidence view; no quality gate decision |
-| Add CI/CD Quality Center golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_center_golden.py -q` | pending commit | local diff -> CICDRun -> changed files -> analysis artifact |
-| Slice 15 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
+| Add CI/CD Quality Center golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_center_golden.py -q` | `6e59820` | local diff -> CICDRun -> changed files -> analysis artifact |
+| Slice 15 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q && npm --prefix frontend run test -- --run` | pending commit | docs and handoff only |
 
 ## Task 1: Add CI/CD Quality Center Contract Boundary
 
@@ -295,3 +295,15 @@ test(golden): add cicd quality smoke
   remote status checks.
 - Do not trigger merge, push, release, or deployment actions.
 - Do not add RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+
+Completion evidence on 2026-06-30:
+
+- Backend API + golden smoke:
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q`
+  -> `8 passed`.
+- Frontend shell:
+  `npm --prefix frontend run test -- --run`
+  -> `13 passed`, `16 tests passed`.
+- Completed task commits:
+  `6133121`, `a8a5482`, `788d6c0`, `a0391fa`, `2e51d06`,
+  `3a6df10`, `362ce0e`, `6e59820`.

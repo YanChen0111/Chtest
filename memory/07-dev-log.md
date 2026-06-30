@@ -1,5 +1,44 @@
 # Development Log
 
+## 2026-06-30 Slice 15 CI/CD Quality Center Foundation Completion
+
+### Completed
+
+- Completed Slice 15 CI/CD Quality Center Foundation.
+- Added CICDRun and CICDChangedFile model/schema, local diff parser, CI/CD run
+  create/list/get API, mock change analysis API, and risk_analysis artifact
+  evidence.
+- Added frontend CI/CD Quality Center shell for local diff input, changed files,
+  file role/risk display, and analysis artifact references.
+- Added golden smoke for local diff -> CICDRun -> changed files -> risk
+  analysis evidence.
+- Kept UnitTestPatch, QualityGateDecision, TestRun, Report, merge/release
+  decisions, remote CI provider integration, RAG runtime, MCP runtime, RBAC,
+  tenants, and permissions out of this slice.
+- Updated `NEXT_AI_TASK.md` to Slice 16 Task 1: Add UnitTestPatch And Regression
+  task plan.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- CI/CD Quality API + golden smoke: `8 passed`.
+- Frontend shell tests: `13 passed`, `16 tests passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Start Slice 16 by creating
+  `docs/implementation/slices/slice-16-unit-test-patch-regression.md` with
+  small, verifiable tasks for UnitTestPatch, PatchScopeGate, pytest regression,
+  and QualityGateDecision evidence.
+
 ## 2026-06-30 Slice 14 Report And Failure Analysis Completion
 
 ### Completed
