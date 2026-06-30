@@ -32,7 +32,8 @@ RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add Test Case Library API contract and task boundary | planned | `rg -n "Test Case Library|GET /api/test-cases|TestCaseList" docs/contracts/02-api-contract.md docs/implementation/slices/slice-10-test-case-library.md` | - | contract-first endpoint shape |
+| Add Test Case Library task plan | done | `test -f docs/implementation/slices/slice-10-test-case-library.md && rg -n "Test Case Library|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-10-test-case-library.md` | `03114cd` | scoped Slice 10 plan |
+| Add Test Case Library API contract and task boundary | done | `rg -n "Test Case Library|GET /api/test-cases|TestCaseList" docs/contracts/02-api-contract.md docs/implementation/slices/slice-10-test-case-library.md` | pending commit | contract-first endpoint shape |
 | Add Test Case Library backend API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py -q` | - | list reviewed TestCase records by project/module/status |
 | Add Test Case Library frontend shell | planned | `npm --prefix frontend run test -- --run` | - | compact searchable library view |
 | Add Test Case Library golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library.py -q` | - | reviewed golden cases appear in library |

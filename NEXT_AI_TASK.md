@@ -10,12 +10,12 @@ Slice 10: Test Case Library.
 
 ## Current Task
 
-Task 2: Add Test Case Library API contract and task boundary.
+Task 3: Add Test Case Library backend API.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-first Test Case Library API boundary for
-browsing reviewed cases before backend implementation starts.
+After this task, Chtest can list reviewed TestCase records through a scoped
+backend API for the Test Case Library.
 
 ## Must Read
 
@@ -39,39 +39,42 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-10-test-case-library.md
-docs/contracts/02-api-contract.md
+backend/app/modules/cases/router.py
+backend/app/modules/cases/service.py
+backend/app/modules/cases/schemas.py
+backend/app/tests/api/test_test_case_library.py
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-This is a contract/documentation task only. Do not modify product code.
+Read nearby cases tests and models as needed, but keep writes inside the files
+above unless a concrete blocker requires an explained contract/doc update.
 
 ## Verification Command
 
 ```bash
-rg -n "Test Case Library|GET /api/test-cases|TestCaseList" docs/contracts/02-api-contract.md docs/implementation/slices/slice-10-test-case-library.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py -q
 ```
 
-Expected result: API contract and Slice 10 plan both name the Test Case Library
-endpoint and response model.
+Expected result: Test Case Library backend API tests pass.
 
 ## Acceptance
 
-- Add `GET /api/test-cases` to the API contract.
-- Define response fields for reviewed TestCase library items.
-- Define query filters for project_id, module_id, status, test_type, priority,
-  and keyword.
-- Keep Slice 10 limited to browsing/searching existing reviewed TestCase records.
-- Do not add AutomationDraft, execution, reports, CI/CD quality, RAG runtime,
-  MCP runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to backend API implementation.
+- Add `GET /api/test-cases`.
+- Return only persisted TestCase records, not generated candidates.
+- Support project_id filtering and optional module_id, status, test_type,
+  priority, and keyword filters.
+- Return deterministic `items` and `total`.
+- Do not add TestCase mutation, AutomationDraft, execution, reports, CI/CD
+  quality, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+- Update handoff and set the next task to frontend shell.
 
 ## Commit Message
 
 ```text
-docs(cases): define test case library api
+feat(cases): add test case library api
 ```
 
 ## Next Task
 
-Slice 10 Task 3: Add Test Case Library backend API.
+Slice 10 Task 4: Add Test Case Library frontend shell.

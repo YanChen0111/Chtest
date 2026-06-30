@@ -475,6 +475,58 @@ Response 200:
 }
 ```
 
+### 3.7 Test Case Library
+
+`GET /api/test-cases`
+
+Query filters:
+
+| Name | Required | Notes |
+|---|---:|---|
+| project_id | yes | Limit library results to one project |
+| module_id | no | Limit results to one module |
+| status | no | TestCase entity status, default includes active records |
+| test_type | no | Filter by functional, ui, api, etc. |
+| priority | no | Filter by P0/P1/P2/P3 |
+| keyword | no | Case-insensitive match against title, steps, expected results, tags, or requirement refs where available |
+
+Response model: `TestCaseListRead`.
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000901",
+      "project_id": "00000000-0000-0000-0000-000000000101",
+      "module_id": "00000000-0000-0000-0000-000000000201",
+      "source_candidate_id": "00000000-0000-0000-0000-000000000801",
+      "title": "Expired coupon cannot submit order",
+      "priority": "P0",
+      "test_type": "functional",
+      "precondition": "User has an expired coupon",
+      "steps": ["Prepare expired coupon", "Login", "Open checkout", "Select expired coupon", "Submit order"],
+      "expected_results": ["Coupon is unavailable or submit fails", "Clear error message is shown"],
+      "input_data": {"coupon_state": "expired"},
+      "tags": ["coupon", "boundary"],
+      "source_type": "ai",
+      "review_status": "approved_after_edit",
+      "status": "active"
+    }
+  ],
+  "total": 1
+}
+```
+
+Contract boundary:
+
+- The library lists reviewed TestCase records only. It does not list generated
+  candidates that have not been approved.
+- V1 does not create or mutate TestCase records through this endpoint.
+- AutomationDraft creation, execution, reports, CI/CD quality, RAG runtime, MCP
+  runtime, RBAC, tenants, and permissions are outside this API.
+
 ## 4. Automation Draft APIs
 
 ### 4.1 Create Automation Draft

@@ -1,5 +1,33 @@
 # Session Handoff
 
+## 2026-06-30 Slice 10 Task 2 Test Case Library API Contract 完成
+
+本轮完成：
+
+- 完成 Slice 10 Task 2：新增 Test Case Library API contract and task boundary。
+- 在 `docs/contracts/02-api-contract.md` 增加 `GET /api/test-cases`。
+- 合同定义了 `TestCaseListRead` 响应字段，以及 project_id、module_id、status、test_type、priority、keyword 查询过滤。
+- 明确该端点只浏览已评审 TestCase，不创建/修改 TestCase，不加入 AutomationDraft、执行、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 10 Task 3：Add Test Case Library backend API。
+
+本轮验证：
+
+```bash
+rg -n "Test Case Library|GET /api/test-cases|TestCaseList" docs/contracts/02-api-contract.md docs/implementation/slices/slice-10-test-case-library.md
+```
+
+修改文件：
+
+- `docs/contracts/02-api-contract.md`
+- `docs/implementation/slices/slice-10-test-case-library.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 10 Task 3：Add Test Case Library backend API。
+- 先写 `backend/app/tests/api/test_test_case_library.py` 红灯，再补 schemas/service/router。
+
 ## 2026-06-30 Slice 10 Task 1 Test Case Library Task Plan 完成
 
 本轮完成：
