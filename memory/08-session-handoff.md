@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-06-30 Slice 18 Task 5 完成
+
+本轮完成：
+
+- 完成 Slice 18 Task 5：Add Newman API execution golden smoke。
+- 新增 `backend/app/tests/golden/test_newman_api_execution_golden.py`。
+- 新增 `docs/fixtures/07-newman-api-execution-golden.md`。
+- Golden path 覆盖：
+  - Project。
+  - `TestCommand.command_type=newman`。
+  - `TestRun.runner_mode=newman_local`。
+  - stdout/stderr、`newman_json`、`parsed_output` artifacts。
+  - assertion-level TestResult。
+  - failed assertion 作为证据可见。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 18 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_newman_api_execution_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Newman golden smoke：`1 passed`。
+- Newman API + golden：`5 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 18 completion gate。
+- 只记录完成证据和下一步，不新增产品行为。
+
 ## 2026-06-30 Slice 18 Task 4 完成
 
 本轮完成：

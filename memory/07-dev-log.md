@@ -1,5 +1,33 @@
 # Development Log
 
+## 2026-06-30 Slice 18 Newman Golden Smoke
+
+### Completed
+
+- Added `backend/app/tests/golden/test_newman_api_execution_golden.py`.
+- Added `docs/fixtures/07-newman-api-execution-golden.md`.
+- Proved configured Newman TestCommand -> TestRun -> artifacts -> TestResult
+  evidence chain.
+- Updated `NEXT_AI_TASK.md` to Slice 18 completion gate.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_newman_api_execution_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q
+git diff --check
+```
+
+Results:
+
+- Newman golden smoke: `1 passed`.
+- Newman API + golden: `5 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Run Slice 18 completion gate and record final evidence.
+
 ## 2026-06-30 Slice 18 Newman Frontend Shell
 
 ### Completed

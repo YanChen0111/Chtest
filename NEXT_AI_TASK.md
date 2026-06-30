@@ -10,13 +10,12 @@ Slice 18: Newman API Execution.
 
 ## Current Task
 
-Slice 18 Task 5: Add Newman API execution golden smoke.
+Slice 18 Completion Gate.
 
 ## Product Value Answer
 
-After this task, the Newman API execution path is proven by a golden smoke that
-creates project settings, runs a deterministic Newman collection, and verifies
-the evidence chain.
+After this task, Slice 18 is verified end to end and ready for the next V2
+planning or implementation task.
 
 ## Must Read
 
@@ -32,8 +31,9 @@ the evidence chain.
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-18-newman-api-execution.md`
-13. `backend/app/tests/golden/test_newman_api_execution_golden.py`
-14. `docs/fixtures/07-newman-api-execution-golden.md`
+13. `backend/app/tests/api/test_newman_execution.py`
+14. `backend/app/tests/golden/test_newman_api_execution_golden.py`
+15. frontend Newman execution tests
 
 ## Do Not Read Unless Needed
 
@@ -49,41 +49,35 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-18-newman-api-execution.md
-backend/app/tests/golden/test_newman_api_execution_golden.py
-docs/fixtures/07-newman-api-execution-golden.md
 ```
 
-Golden-only task. Add only deterministic Newman API execution evidence proof.
-Do not add new backend features, frontend changes, RAG runtime, MCP runtime,
-RBAC, tenants, permissions, marketplace, cloud sync, release automation, remote
-CI provider integration, Postman workspace parity, collection editor, or
-arbitrary shell execution.
+Completion-only task. Do not add new product behavior. Record verification
+evidence, mark Slice 18 complete, and name the next V2 task.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_newman_api_execution_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: Newman golden smoke and diff check pass.
+Expected result: Newman backend/API golden tests, frontend tests, and diff check
+pass.
 
 ## Acceptance
 
-- Creates a project and approved Newman TestCommand fixture.
-- Executes a deterministic Newman API collection fixture.
-- Persists TestRun, TestResult, stdout/stderr, Newman JSON, parsed result, and
-  environment/runtime evidence artifacts.
-- Confirms failed assertions are visible as evidence, not hidden in logs.
-- Confirms no arbitrary shell, Postman cloud, remote CI/CD, RAG/MCP runtime,
-  RBAC, tenant, or permission dependency is introduced.
+- All Slice 18 task rows are marked done with commit ids.
+- Completion evidence records backend, golden, frontend, and diff verification.
+- Handoff names the next V2 slice or planning task.
+- Non-goals remain excluded.
 
 ## Commit Message
 
 ```text
-test(v2): add newman execution golden
+docs(v2): complete newman execution slice
 ```
 
 ## Next Task
 
-Start Slice 18 completion gate only after the Newman golden smoke is committed.
+Choose the next V2 task after Slice 18 completion evidence is committed.
