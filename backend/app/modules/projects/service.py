@@ -434,6 +434,8 @@ def is_command_allowlisted(command: str, command_type: str) -> bool:
         )
     if command_type == "playwright":
         return normalized_command == "npx playwright test" or normalized_command.startswith("npx playwright test ")
+    if command_type == "newman":
+        return normalized_command == "npx newman run" or normalized_command.startswith("npx newman run ")
     return False
 
 

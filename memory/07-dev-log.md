@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-06-30 Slice 18 Newman Backend Runner
+
+### Completed
+
+- Added Newman runner/parser backend.
+- Added `command_type=newman` allowlist support.
+- Added `runner_mode=newman_local` service branch.
+- Persisted Newman stdout/stderr, `newman_json`, `parsed_output`, TestRun, and
+  assertion-level TestResult evidence.
+- Added deterministic API tests with a fake `npx` executable.
+- Updated `NEXT_AI_TASK.md` to Slice 18 Task 4: add Newman frontend shell.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/api/test_test_commands.py -q
+git diff --check
+```
+
+Results:
+
+- Newman focused API tests: `4 passed`.
+- Adjacent execution/project tests: `27 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Add the Newman API execution frontend shell.
+
 ## 2026-06-30 Slice 18 Newman Contract Boundary
 
 ### Completed

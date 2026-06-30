@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-06-30 Slice 18 Task 3 完成
+
+本轮完成：
+
+- 完成 Slice 18 Task 3：Add Newman runner/parser backend。
+- 新增 `backend/app/modules/execution/newman_runner.py`：
+  - 校验 `npx newman run ...` allowlist。
+  - 禁止 shell chaining、redirection、substitution、pipes 等任意 shell 行为。
+  - 解析 Newman JSON reporter 输出。
+  - 将 request/assertion 映射为 TestResult candidate。
+- 更新 `backend/app/modules/execution/service.py`：
+  - `runner_mode=newman_local` 分支。
+  - TestRun/TestResult 持久化。
+  - stdout/stderr、`newman_json`、`parsed_output` artifacts。
+- 更新 `backend/app/modules/projects/service.py`：
+  - TestCommand allowlist 支持 `command_type=newman`。
+- 新增 `backend/app/tests/api/test_newman_execution.py`：
+  - fake `npx` deterministic fixture。
+  - runner parse/rejection tests。
+  - `/api/test-runs` Newman command execution测试。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 18 Task 4：Add Newman API execution
+  frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/api/test_test_commands.py -q
+git diff --check
+```
+
+验证结果：
+
+- Newman focused API tests：`4 passed`。
+- 相邻 execution/project tests：`27 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 增加 Newman API 执行前端页面。
+- 页面只展示执行证据和 artifact，不做 collection editor、secret manager、
+  remote CI/CD、Postman cloud 或 marketplace。
+
 ## 2026-06-30 Slice 18 Task 2 完成
 
 本轮完成：

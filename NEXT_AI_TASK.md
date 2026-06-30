@@ -10,13 +10,12 @@ Slice 18: Newman API Execution.
 
 ## Current Task
 
-Slice 18 Task 3: Add Newman runner/parser backend.
+Slice 18 Task 4: Add Newman API execution frontend shell.
 
 ## Product Value Answer
 
-After this task, the backend can execute an allowlisted local Newman API
-collection, persist execution artifacts, and parse request/assertion evidence
-into TestRun/TestResult records.
+After this task, users can inspect Newman API execution evidence in the
+frontend using the existing light workbench UI.
 
 ## Must Read
 
@@ -32,7 +31,7 @@ into TestRun/TestResult records.
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-18-newman-api-execution.md`
-13. backend execution module and tests needed for Newman only
+13. frontend Newman execution view and tests needed for Slice 18 only
 
 ## Do Not Read Unless Needed
 
@@ -48,44 +47,45 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-18-newman-api-execution.md
-backend/app/modules/execution/newman_runner.py
-backend/app/modules/execution/*
-backend/app/tests/api/test_newman_execution.py
-backend/app/tests/fixtures/*
+frontend/src/api/*
+frontend/src/stores/*
+frontend/src/views/*
+frontend/src/router/*
+frontend/src/layouts/*
 ```
 
-Backend-only task. Add only the Newman runner/parser and focused tests needed
-for Slice 18. Do not add frontend, RAG runtime, MCP runtime, RBAC, tenants,
-permissions, marketplace, cloud sync, release automation, remote CI provider
-integration, Postman workspace parity, collection editor, or arbitrary shell
-execution.
+Frontend-only task. Add only the Newman API execution shell and focused tests
+needed for Slice 18. Do not add backend behavior, RAG runtime, MCP runtime,
+RBAC, tenants, permissions, marketplace, cloud sync, release automation, remote
+CI provider integration, Postman workspace parity, collection editor, or
+arbitrary shell execution.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: Newman backend tests and diff check pass.
+Expected result: frontend tests and diff check pass.
 
 ## Acceptance
 
-- Runs only approved Newman TestCommand/ToolDefinition entries.
-- Captures stdout, stderr, runtime manifest, dependency snapshot, environment
-  snapshot, Newman JSON, and parsed result artifacts.
-- Maps Newman collection/request/assertion results into TestRun/TestResult
-  evidence.
-- Uses deterministic local fixtures in tests.
-- Rejects arbitrary command text and unapproved command types.
-- Does not call remote CI/CD providers or require Postman cloud accounts.
+- Adds a Chinese-facing API execution page aligned with the current light
+  workbench UI.
+- Keeps technical terms such as Newman, TestCommand, TestRun, Prompt, Skill,
+  and Artifact unchanged when they are model/product terms.
+- Shows command approval state, execution status, request/assertion summary,
+  failure details, and artifact links.
+- Does not add a collection editor, environment secret manager, remote CI/CD
+  controls, RBAC, tenants, or marketplace controls.
 
 ## Commit Message
 
 ```text
-feat(execution): add newman runner
+feat(frontend): add newman execution shell
 ```
 
 ## Next Task
 
-Start Slice 18 Task 4 only after the Newman backend runner/parser is committed.
+Start Slice 18 Task 5 only after the Newman frontend shell is committed.

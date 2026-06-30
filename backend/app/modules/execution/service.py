@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import tempfile
 import uuid
@@ -10,6 +11,11 @@ from sqlalchemy.orm import Session
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.automation.models import AutomationDraft
 from backend.app.modules.execution.models import TestResult, TestRun
+from backend.app.modules.execution.newman_runner import (
+    NewmanRunner,
+    NewmanRunnerCommandError,
+    NewmanRunnerResult,
+)
 from backend.app.modules.execution.playwright_runner import (
     PlaywrightRunner,
     PlaywrightRunnerCommandError,
@@ -85,6 +91,8 @@ def create_test_run_from_command(session: Session, data: TestRunCreateRequest) -
         raise TestRunInvalidInputError
     if data.runner_mode == "playwright_local":
         return create_playwright_test_run_from_command(session, data, test_command)
+    if data.runner_mode == "newman_local":
+        return create_newman_test_run_from_command(session, data, test_command)
     if test_command.command_type != "pytest" or test_command.status != "active":
         raise TestRunInvalidInputError
 
@@ -149,6 +157,29 @@ def create_playwright_test_run_from_command(
     session.add(test_run)
     session.flush()
     return execute_playwright_and_persist(session, test_run, workdir, None, timeout_seconds=test_command.timeout_seconds)
+
+
+def create_newman_test_run_from_command(
+    session: Session,
+    data: TestRunCreateRequest,
+    test_command: TestCommand,
+) -> TestRun:
+    if test_command.command_type != "newman" or test_command.status != "active":
+        raise TestRunInvalidInputError
+    workdir = Path(test_command.working_directory).expanduser().resolve()
+    test_run = TestRun(
+        project_id=data.project_id,
+        test_command_id=test_command.id,
+        name=test_command.name,
+        command=test_command.command,
+        working_directory=str(workdir),
+        runner_mode="newman_local",
+        run_workspace=str(workdir),
+        status="running",
+    )
+    session.add(test_run)
+    session.flush()
+    return execute_newman_and_persist(session, test_run, workdir, timeout_seconds=test_command.timeout_seconds)
 
 
 def execute_and_persist(
@@ -216,6 +247,46 @@ def execute_playwright_and_persist(
     return test_run
 
 
+def execute_newman_and_persist(
+    session: Session,
+    test_run: TestRun,
+    working_directory: Path,
+    timeout_seconds: int = 600,
+) -> TestRun:
+    try:
+        result = NewmanRunner().run(test_run.command, working_directory, timeout_seconds=timeout_seconds)
+    except NewmanRunnerCommandError as exc:
+        test_run.status = "error"
+        test_run.parsed_result_json = {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "error": 1,
+            "request_count": 0,
+            "assertion_count": 0,
+        }
+        session.add(test_run)
+        session.commit()
+        raise TestRunInvalidInputError from exc
+
+    test_run.exit_code = result.exit_code
+    test_run.duration_ms = result.duration_ms
+    test_run.parsed_result_json = result.parsed_result
+    test_run.status = status_from_newman_result(result)
+    session.add(test_run)
+    session.flush()
+
+    artifacts = create_execution_artifacts(session, test_run, result.stdout, result.stderr, "NewmanRunner")
+    artifacts.extend(create_newman_artifacts(session, test_run, result))
+    test_run.runtime_artifact_ids = [artifact.id for artifact in artifacts if artifact.artifact_type == "runtime_manifest"]
+    create_newman_results(session, test_run, result)
+    session.add(test_run)
+    session.commit()
+    session.refresh(test_run)
+    return test_run
+
+
 def write_draft_file(run_workspace: Path, draft: AutomationDraft) -> Path:
     relative_path = Path(draft.suggested_file_path or "tests/test_generated_draft.py")
     if relative_path.is_absolute() or ".." in relative_path.parts:
@@ -277,6 +348,55 @@ def create_playwright_artifacts(session: Session, test_run: TestRun, result: Pla
     return artifacts
 
 
+def create_newman_artifacts(session: Session, test_run: TestRun, result: NewmanRunnerResult) -> list[Artifact]:
+    newman_content = result.newman_json_path.read_text(encoding="utf-8")
+    parsed_content = json.dumps(result.parsed_result, ensure_ascii=False, sort_keys=True) + "\n"
+    artifact_specs = [
+        ("newman_json", "newman-report.json", newman_content, "application/json"),
+        ("parsed_output", "parsed_result.json", parsed_content, "application/json"),
+    ]
+    artifacts: list[Artifact] = []
+    for artifact_type, name, content, mime_type in artifact_specs:
+        artifact = Artifact(
+            project_id=test_run.project_id,
+            owner_entity_type="TestRun",
+            owner_entity_id=test_run.id,
+            artifact_type=artifact_type,
+            file_path=f"test-runs/{test_run.id}/{name}",
+            mime_type=mime_type,
+            size_bytes=len(content.encode("utf-8")),
+            sha256=f"sha256:{artifact_type}:{test_run.id}",
+            metadata_json={
+                "created_by_component": "NewmanRunner",
+                "runner_mode": test_run.runner_mode,
+                "collection_name": result.parsed_result.get("collection_name"),
+                "request_count": result.parsed_result.get("request_count"),
+                "assertion_count": result.parsed_result.get("assertion_count"),
+                "redaction_applied": False,
+            },
+        )
+        session.add(artifact)
+        artifacts.append(artifact)
+    session.flush()
+    return artifacts
+
+
+def create_newman_results(session: Session, test_run: TestRun, result: NewmanRunnerResult) -> None:
+    for candidate in result.test_results:
+        session.add(
+            TestResult(
+                project_id=test_run.project_id,
+                test_run_id=test_run.id,
+                test_name=candidate.test_name,
+                test_file=candidate.test_file,
+                status=candidate.status,
+                duration_ms=candidate.duration_ms,
+                failure_message=candidate.failure_message,
+                metadata_json=candidate.metadata,
+            ),
+        )
+
+
 def create_results(
     session: Session,
     test_run: TestRun,
@@ -326,4 +446,14 @@ def status_from_exit_code(exit_code: int) -> str:
         return "passed"
     if exit_code == 1:
         return "failed"
+    return "error"
+
+
+def status_from_newman_result(result: NewmanRunnerResult) -> str:
+    if result.parsed_result.get("error", 0) > 0:
+        return "error"
+    if result.parsed_result.get("failed", 0) > 0:
+        return "failed"
+    if result.exit_code == 0:
+        return "passed"
     return "error"
