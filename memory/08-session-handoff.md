@@ -1,5 +1,53 @@
 # Session Handoff
 
+## 2026-06-30 Slice 17 Task 3 KnowledgeAdapter Shell 完成
+
+本轮完成：
+
+- 完成 Slice 17 Task 3：Add KnowledgeAdapter empty interface/schema。
+- 新增 `backend/app/modules/extension` 模块。
+- 新增 `KnowledgeAdapterConfig` model、read/update schema、service 和 router。
+- 新增 `GET /api/projects/{project_id}/knowledge-adapter`，未配置时返回
+  `not_configured`、`provider_type=none`、`used_knowledge=false`。
+- 新增 `PUT /api/projects/{project_id}/knowledge-adapter`，只允许 `none/stub`
+  provider 和 `not_configured/disabled/configured_stub` 状态。
+- 拒绝 `api_key`、vector DB、embedding、reranker、remote URL、MCP transport
+  等运行时配置。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 17 Task 4：Add RAG 知识库
+  ContextArtifact API shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q
+git diff --check
+```
+
+验证结果：
+
+- `3 passed`
+- `git diff --check` clean。
+
+修改文件：
+
+- `backend/app/main.py`
+- `backend/app/modules/extension/__init__.py`
+- `backend/app/modules/extension/models.py`
+- `backend/app/modules/extension/router.py`
+- `backend/app/modules/extension/schemas.py`
+- `backend/app/modules/extension/service.py`
+- `backend/app/tests/api/test_extension_surface.py`
+- `docs/implementation/slices/slice-17-extension-surface.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 17 Task 4：Add RAG 知识库
+  ContextArtifact API shell。
+- 该任务继续复用 ContextArtifact，不建立单独知识库表，不加入 semantic
+  search、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+
 ## 2026-06-30 Slice 17 Task 2 Extension Surface Contract Boundary 完成
 
 本轮完成：

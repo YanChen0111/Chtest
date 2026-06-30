@@ -10,13 +10,13 @@ Slice 17: Extension Surface.
 
 ## Current Task
 
-Task 3: Add KnowledgeAdapter empty interface/schema.
+Task 4: Add RAG 知识库 ContextArtifact API shell.
 
 ## Product Value Answer
 
-After this task, Chtest has a backend KnowledgeAdapter empty interface/schema
-that records V1 configuration state without adding retrieval, vector, embedding,
-reranking, or external RAG behavior.
+After this task, Chtest exposes a RAG 知识库 backend API shell backed by
+ContextArtifacts and KnowledgeAdapter state, with safety metadata and usage
+display fields but no semantic retrieval runtime.
 
 ## Must Read
 
@@ -50,7 +50,7 @@ backend/app/modules/extension/service.py
 backend/app/tests/api/test_extension_surface.py
 ```
 
-Backend shell task. Do not add frontend code, RAG runtime, vector indexing,
+Backend API shell task. Do not add frontend code, RAG runtime, vector indexing,
 embeddings, reranking, MCP runtime dependency, RBAC, tenants, or permissions.
 
 ## Verification Command
@@ -59,26 +59,25 @@ embeddings, reranking, MCP runtime dependency, RBAC, tenants, or permissions.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q
 ```
 
-Expected result: KnowledgeAdapter shell API tests pass.
+Expected result: Extension surface API tests pass.
 
 ## Acceptance
 
-- Provides an empty KnowledgeAdapter read model or configuration state for a
-  project.
-- Records status such as `not_configured`, `disabled`, or `configured_stub`.
-- Returns `used_knowledge=false` unless a future runtime explicitly implements
-  retrieval.
-- Does not call external RAG providers, create vector indexes, embed content, or
-  rank search results.
-- Updates handoff and sets the next task to the RAG 知识库 ContextArtifact API
-  shell task.
+- Lists project ContextArtifacts with title, source, MIME type, redaction, and
+  prompt eligibility metadata.
+- Shows AI task usage references when available.
+- Reuses existing ContextArtifact creation/list contracts.
+- Does not create a separate ContextArtifact table.
+- Does not perform semantic search or external retrieval.
+- Updates handoff and sets the next task to MCP-ready ToolDefinition schema
+  metadata.
 
 ## Commit Message
 
 ```text
-feat(extension): add knowledge adapter shell
+feat(extension): add knowledge context api
 ```
 
 ## Next Task
 
-Slice 17 Task 4: Add RAG 知识库 ContextArtifact API shell.
+Slice 17 Task 5: Add MCP-ready ToolDefinition schema metadata.

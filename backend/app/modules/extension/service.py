@@ -1,0 +1,133 @@
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from backend.app.modules.extension.models import KnowledgeAdapterConfig
+from backend.app.modules.extension.schemas import KnowledgeAdapterRead, KnowledgeAdapterUpdate
+from backend.app.modules.projects.models import Project
+
+
+ALLOWED_PROVIDER_TYPES = {"none", "stub"}
+ALLOWED_STATUSES = {"not_configured", "disabled", "configured_stub"}
+RUNTIME_CONFIG_KEYS = {
+    "api_key",
+    "access_token",
+    "token",
+    "secret",
+    "password",
+    "vector_db",
+    "vector_db_url",
+    "embedding_model",
+    "embedding_provider",
+    "index_name",
+    "reranker",
+    "remote_url",
+    "server_url",
+    "mcp_transport",
+}
+
+
+class KnowledgeAdapterRuntimeNotAllowedError(Exception):
+    pass
+
+
+class KnowledgeAdapterProjectNotFoundError(Exception):
+    pass
+
+
+def get_project_or_raise(session: Session, project_id: uuid.UUID) -> Project:
+    project = session.get(Project, project_id)
+    if project is None:
+        raise KnowledgeAdapterProjectNotFoundError
+    return project
+
+
+def get_knowledge_adapter_config(
+    session: Session,
+    project_id: uuid.UUID,
+    adapter_name: str = "default",
+) -> KnowledgeAdapterConfig | None:
+    return session.scalar(
+        select(KnowledgeAdapterConfig).where(
+            KnowledgeAdapterConfig.project_id == project_id,
+            KnowledgeAdapterConfig.adapter_name == adapter_name,
+        ),
+    )
+
+
+def read_knowledge_adapter(session: Session, project_id: uuid.UUID) -> KnowledgeAdapterRead:
+    get_project_or_raise(session, project_id)
+    config = get_knowledge_adapter_config(session, project_id)
+    if config is None:
+        return KnowledgeAdapterRead(
+            project_id=project_id,
+            adapter_name="default",
+            status="not_configured",
+            provider_type="none",
+            config={},
+            safety_policy={},
+            used_knowledge=False,
+        )
+    return to_read(config)
+
+
+def update_knowledge_adapter(
+    session: Session,
+    project_id: uuid.UUID,
+    data: KnowledgeAdapterUpdate,
+) -> KnowledgeAdapterRead:
+    get_project_or_raise(session, project_id)
+    ensure_stub_only(data)
+
+    config = get_knowledge_adapter_config(session, project_id, data.adapter_name)
+    if config is None:
+        config = KnowledgeAdapterConfig(project_id=project_id, adapter_name=data.adapter_name)
+
+    config.status = data.status
+    config.provider_type = data.provider_type
+    config.config_json = dict(data.config)
+    config.safety_policy_json = dict(data.safety_policy)
+    config.notes = data.notes
+    session.add(config)
+    session.commit()
+    session.refresh(config)
+    return to_read(config)
+
+
+def ensure_stub_only(data: KnowledgeAdapterUpdate) -> None:
+    if data.provider_type not in ALLOWED_PROVIDER_TYPES or data.status not in ALLOWED_STATUSES:
+        raise KnowledgeAdapterRuntimeNotAllowedError
+
+    if contains_runtime_key(data.config) or contains_runtime_key(data.safety_policy):
+        raise KnowledgeAdapterRuntimeNotAllowedError
+
+
+def contains_runtime_key(value: Any) -> bool:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            normalized_key = str(key).lower()
+            if normalized_key in RUNTIME_CONFIG_KEYS:
+                return True
+            if contains_runtime_key(child):
+                return True
+    if isinstance(value, list):
+        return any(contains_runtime_key(item) for item in value)
+    return False
+
+
+def to_read(config: KnowledgeAdapterConfig) -> KnowledgeAdapterRead:
+    return KnowledgeAdapterRead(
+        project_id=config.project_id,
+        adapter_name=config.adapter_name,
+        status=config.status,
+        provider_type=config.provider_type,
+        config=config.config_json,
+        safety_policy=config.safety_policy_json,
+        last_checked_at=config.last_checked_at,
+        notes=config.notes,
+        used_knowledge=False,
+    )
