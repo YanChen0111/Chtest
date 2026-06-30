@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import inspect
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.modules.automation.models import AutomationDraft
+from backend.app.modules.execution.models import TestResult, TestRun
+from backend.app.modules.reporting.models import Report
 from backend.app.tests.golden.test_test_case_library_golden import (
     ASGIClient,
     api_client,
@@ -74,7 +76,6 @@ def test_golden_reviewed_case_produces_approved_automation_draft_without_executi
         assert persisted.status == "approved"
         assert persisted.runtime_artifact_id is None
         assert persisted.promoted_artifact_id is None
-        tables = set(inspect(session.bind).get_table_names())
-        assert "test_runs" not in tables
-        assert "test_results" not in tables
-        assert "reports" not in tables
+        assert session.scalar(select(TestRun)) is None
+        assert session.scalar(select(TestResult)) is None
+        assert session.scalar(select(Report)) is None

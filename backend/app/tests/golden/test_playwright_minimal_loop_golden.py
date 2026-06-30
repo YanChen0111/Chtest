@@ -3,13 +3,15 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from sqlalchemy import inspect, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.automation.models import AutomationDraft
+from backend.app.modules.cicd.models import QualityGateDecision
 from backend.app.modules.execution.models import TestResult, TestRun
 from backend.app.modules.execution.playwright_runner import PlaywrightRunner
+from backend.app.modules.reporting.models import FailureAnalysis, Report
 from backend.app.tests.api.test_playwright_minimal_loop import write_fake_npx
 from backend.app.tests.golden.test_test_case_library_golden import (
     ASGIClient,
@@ -104,7 +106,9 @@ def test_golden_approved_playwright_draft_executes_with_browser_evidence(
                 ),
             ),
         )
-        tables = set(inspect(session.bind).get_table_names())
+        report = session.scalar(select(Report))
+        failure_analysis = session.scalar(select(FailureAnalysis))
+        quality_gate_decision = session.scalar(select(QualityGateDecision))
 
     assert persisted_draft is not None
     assert persisted_draft.status == "approved"
@@ -118,6 +122,6 @@ def test_golden_approved_playwright_draft_executes_with_browser_evidence(
         "playwright_trace",
         "screenshot",
     }
-    assert "reports" not in tables
-    assert "failure_analyses" not in tables
-    assert "quality_gate_decisions" not in tables
+    assert report is None
+    assert failure_analysis is None
+    assert quality_gate_decision is None

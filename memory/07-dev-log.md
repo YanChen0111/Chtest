@@ -1,5 +1,64 @@
 # Development Log
 
+## 2026-06-30 V1 Release Acceptance Golden Isolation Fix
+
+### Completed
+
+- Fixed the V1 release-acceptance blocker from the first full golden run.
+- Updated five historical golden smokes to assert absence of rows or behavior
+  instead of absence of later-slice tables.
+- Preserved the original slice non-goal intent without product-code changes.
+- Updated `docs/implementation/07-v1-release-acceptance.md` with GO status.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_testrunner_pytest_golden.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py backend/app/tests/golden/test_report_failure_analysis_golden.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_testrunner_pytest_golden.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py backend/app/tests/golden/test_report_failure_analysis_golden.py backend/app/tests/golden/test_cicd_quality_center_golden.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py backend/app/tests/golden/test_extension_surface_golden.py -q
+```
+
+Results:
+
+- Focused failing golden set: `5 passed`.
+- Full V1 golden release-acceptance suite: `10 passed`.
+
+### Next Step
+
+- Prepare the final V1 acceptance handoff and decide whether release packaging
+  needs an additional narrative E2E demo artifact.
+
+## 2026-06-30 V1 Release Acceptance First Run
+
+### Completed
+
+- Ran the first V1 release-acceptance verification set after Slice 17
+  completion.
+- Added `docs/implementation/07-v1-release-acceptance.md`.
+- Recorded release recommendation as `NO-GO`.
+- Identified release blocker: five historical golden smokes assert later-slice
+  table absence, but full V1 acceptance registers all models before table
+  creation.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_testrunner_pytest_golden.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py backend/app/tests/golden/test_report_failure_analysis_golden.py backend/app/tests/golden/test_cicd_quality_center_golden.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py backend/app/tests/golden/test_extension_surface_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Backend golden release-acceptance suite: `5 failed`, `5 passed`.
+- Frontend shell tests: `14` test files passed, `17` tests passed.
+- `git diff --check` clean.
+
+### Next Step
+
+- Fix the five golden isolation assertions by checking absence of rows or
+  behavior instead of absence of complete tables.
+- Re-run the full V1 release-acceptance command set.
+
 ## 2026-06-30 Slice 17 Extension Surface Completion
 
 ### Completed

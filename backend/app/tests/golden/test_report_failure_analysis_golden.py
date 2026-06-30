@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import inspect, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.modules.ai_runtime.models import AITask, Artifact
+from backend.app.modules.cicd.models import QualityGateDecision
 from backend.app.modules.execution.models import TestResult, TestRun
 from backend.app.modules.projects.models import Project, Workspace
 from backend.app.modules.reporting.models import FailureAnalysis, Report
@@ -82,7 +83,7 @@ def test_golden_failed_test_run_creates_failure_analysis_and_report_evidence(
                 ),
             ),
         )
-        tables = set(inspect(session.bind).get_table_names())
+        quality_gate_decision = session.scalar(select(QualityGateDecision))
 
     assert persisted_analysis is not None
     assert persisted_analysis.classification == "test_script_issue"
@@ -96,7 +97,7 @@ def test_golden_failed_test_run_creates_failure_analysis_and_report_evidence(
     assert manifest_artifact.id == uuid.UUID(report_created["evidence_manifest_artifact_id"])
     assert manifest_artifact.metadata_json["evidence_count"] >= 2
     assert manifest_artifact.metadata_json["manifest_json"]["conclusion"] == "failed"
-    assert "quality_gate_decisions" not in tables
+    assert quality_gate_decision is None
 
 
 def seed_failed_test_run(session: Session) -> tuple[Project, TestRun, TestResult, Artifact]:

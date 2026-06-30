@@ -1,5 +1,72 @@
 # Session Handoff
 
+## 2026-06-30 V1 Completion Review Task 3 完成
+
+本轮完成：
+
+- 完成 V1 Completion Review Task 3：Fix full-suite golden isolation
+  assertions。
+- 只修改 5 个 historical golden smoke 的断言，不修改产品代码。
+- 将旧的 later-slice table absence assertions 改为 row/behavior absence
+  assertions：
+  - AutomationDraft flow 不创建 `TestRun`、`TestResult`、`Report` rows。
+  - Pytest runner flow 不创建 `Report`、`QualityGateDecision` rows。
+  - Playwright runner flow 不创建 `Report`、`FailureAnalysis`、
+    `QualityGateDecision` rows。
+  - Report/FailureAnalysis flow 不创建 `QualityGateDecision` rows。
+  - CI/CD Quality Center analysis flow 不创建 `QualityGateDecision` rows。
+- 更新 `docs/implementation/07-v1-release-acceptance.md`，release
+  recommendation 从 `NO-GO` 更新为 `GO`。
+- 已将 `NEXT_AI_TASK.md` 切换到 V1 Completion Review Task 4：Prepare final
+  V1 acceptance handoff。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_testrunner_pytest_golden.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py backend/app/tests/golden/test_report_failure_analysis_golden.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_testrunner_pytest_golden.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py backend/app/tests/golden/test_report_failure_analysis_golden.py backend/app/tests/golden/test_cicd_quality_center_golden.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py backend/app/tests/golden/test_extension_surface_golden.py -q
+```
+
+验证结果：
+
+- 原失败 golden smokes：`5 passed`。
+- V1 full golden release-acceptance suite：`10 passed`。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 V1 Completion Review Task 4。
+- 创建最终 V1 acceptance handoff，整理 release evidence 和剩余非阻塞风险。
+
+## 2026-06-30 V1 Completion Review Task 2 完成
+
+本轮完成：
+
+- 完成 V1 Completion Review Task 2：Run V1 release acceptance。
+- 新增 `docs/implementation/07-v1-release-acceptance.md`。
+- 后端 V1 full golden release-acceptance suite 首次运行结果为 `5 failed,
+  5 passed`。
+- 前端 Vitest release check 通过：`14` test files passed，`17` tests
+  passed。
+- `git diff --check` clean。
+- 已将 release recommendation 标记为 `NO-GO`。
+- 已将 `NEXT_AI_TASK.md` 切换到 V1 Completion Review Task 3：Fix
+  full-suite golden isolation assertions。
+
+阻塞原因：
+
+- 5 个历史 slice golden smoke 使用 `test_runs`、`reports`、
+  `quality_gate_decisions` 等“表不存在”断言来证明 later-slice behavior 未被
+  涉及。
+- 完整 V1 应用在 release acceptance 中会先注册全部 SQLAlchemy models，再
+  `Base.metadata.create_all`，所以 later-slice tables 会存在。
+- 应保留原意，但改为断言没有相关 rows 或 behavior 被当前 flow 创建。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 V1 Completion Review Task 3。
+- 只修复 golden isolation assertions，不修改产品代码。
+- 修复后重新运行完整 release-acceptance verification command set。
+
 ## 2026-06-30 V1 Completion Review Task 1 完成
 
 本轮完成：

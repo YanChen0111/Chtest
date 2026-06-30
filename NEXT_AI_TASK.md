@@ -10,13 +10,13 @@ V1 Completion Review.
 
 ## Current Task
 
-Task 2: Run V1 release acceptance.
+Task 4: Prepare final V1 acceptance handoff.
 
 ## Product Value Answer
 
-After this task, Chtest has a release-acceptance record with full golden smoke
-results, frontend verification, remaining release risks, and a clear go/no-go
-recommendation for V1.
+After this task, Chtest has a concise final V1 acceptance handoff that points to
+passing release evidence, remaining non-blocking risks, and the next post-V1
+work item.
 
 ## Must Read
 
@@ -32,6 +32,7 @@ recommendation for V1.
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/slices/slice-17-extension-surface.md`
 12. `docs/implementation/06-v1-completion-audit.md`
+13. `docs/implementation/07-v1-release-acceptance.md`
 
 ## Do Not Read Unless Needed
 
@@ -47,11 +48,12 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/07-v1-release-acceptance.md
+docs/implementation/08-v1-final-acceptance-handoff.md
 ```
 
-Acceptance-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
-tenants, permissions, marketplace, cloud sync, release automation, or remote CI
-provider integration.
+Documentation-only handoff task. Do not add product code, RAG runtime, MCP
+runtime, RBAC, tenants, permissions, marketplace, cloud sync, release
+automation, or remote CI provider integration.
 
 ## Verification Command
 
@@ -61,23 +63,21 @@ npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: all V1 golden smokes, frontend tests, and diff check pass or
-document a concrete blocker.
+Expected result: all V1 golden smokes, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- Runs the full V1 release-acceptance verification command set.
-- Creates `docs/implementation/07-v1-release-acceptance.md`.
-- Records pass/fail results and remaining release risks.
-- Provides a go/no-go recommendation.
+- Creates a final V1 acceptance handoff document.
+- Links the completion audit and release acceptance report.
+- Records release recommendation and remaining non-blocking risks.
 - Keeps V1 non-goals out of scope.
 
 ## Commit Message
 
 ```text
-docs(v1): add release acceptance report
+docs(v1): add final acceptance handoff
 ```
 
 ## Next Task
 
-Release readiness cleanup or V1 acceptance handoff based on report outcome.
+Post-V1 planning or release packaging based on the final handoff.

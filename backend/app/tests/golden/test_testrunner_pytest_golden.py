@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import inspect, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.automation.models import AutomationDraft
+from backend.app.modules.cicd.models import QualityGateDecision
 from backend.app.modules.execution.models import TestResult, TestRun
+from backend.app.modules.reporting.models import Report
 from backend.app.tests.golden.test_test_case_library_golden import (
     ASGIClient,
     api_client,
@@ -102,7 +104,8 @@ def test_golden_approved_automation_draft_executes_pytest_with_evidence(
                 ),
             ),
         )
-        tables = set(inspect(session.bind).get_table_names())
+        report = session.scalar(select(Report))
+        quality_gate_decision = session.scalar(select(QualityGateDecision))
 
     assert persisted_draft is not None
     assert persisted_draft.status == "approved"
@@ -112,5 +115,5 @@ def test_golden_approved_automation_draft_executes_pytest_with_evidence(
     assert len(persisted_results) == 1
     assert persisted_results[0].status == "passed"
     assert {artifact.artifact_type for artifact in persisted_artifacts} >= {"runtime_manifest", "stdout", "stderr"}
-    assert "reports" not in tables
-    assert "quality_gate_decisions" not in tables
+    assert report is None
+    assert quality_gate_decision is None

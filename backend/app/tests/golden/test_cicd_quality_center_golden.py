@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import inspect, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.automation.models import AutomationDraft
-from backend.app.modules.cicd.models import CICDChangedFile, CICDRun
+from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, QualityGateDecision
 from backend.app.modules.execution.models import TestRun
 from backend.app.modules.projects.models import Project, Repository, Workspace
 from backend.app.modules.reporting.models import Report
@@ -97,10 +97,10 @@ def test_golden_local_diff_creates_cicd_run_and_risk_analysis_evidence(
                 ),
             ),
         )
-        tables = set(inspect(session.bind).get_table_names())
         assert session.scalar(select(AutomationDraft)) is None
         assert session.scalar(select(TestRun)) is None
         assert session.scalar(select(Report)) is None
+        assert session.scalar(select(QualityGateDecision)) is None
 
     assert persisted_run is not None
     assert persisted_run.status == "analyzed"
@@ -116,7 +116,6 @@ def test_golden_local_diff_creates_cicd_run_and_risk_analysis_evidence(
     risk_artifact = next(artifact for artifact in artifacts if artifact.artifact_type == "risk_analysis")
     assert risk_artifact.metadata_json["overall_risk"] == "medium"
     assert risk_artifact.metadata_json["changed_file_count"] == 1
-    assert "quality_gate_decisions" not in tables
 
 
 def seed_project_repository(session: Session) -> tuple[Project, Repository]:
