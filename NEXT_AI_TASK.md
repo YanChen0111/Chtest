@@ -10,12 +10,12 @@ Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Task 3: Add CICDRun and CICDChangedFile model/schema.
+Task 4: Add local diff parser service.
 
 ## Product Value Answer
 
-After this task, Chtest can persist CICDRun and CICDChangedFile records aligned
-with the local-first CI/CD Quality Center contract.
+After this task, Chtest can deterministically parse local unified diff text into
+changed-file evidence for CICDRun records.
 
 ## Must Read
 
@@ -40,15 +40,13 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-backend/app/modules/cicd/__init__.py
-backend/app/modules/cicd/models.py
+backend/app/modules/cicd/service.py
 backend/app/modules/cicd/schemas.py
 backend/app/tests/api/test_cicd_quality_center.py
 docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-Do not create UnitTestPatch, QualityGateDecision, TestRun, or Report records in
-this task.
+Do not run git commands against remote providers in this task.
 
 ## Verification Command
 
@@ -56,23 +54,24 @@ this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
 ```
 
-Expected result: focused CICDRun/CICDChangedFile model/schema tests pass.
+Expected result: focused local diff parser tests pass.
 
 ## Acceptance
 
-- Defines CICDRun fields from the data model contract.
-- Defines CICDChangedFile fields from the data model contract.
-- Defines create/read/list schemas for CICDRun and changed files.
-- Does not create UnitTestPatch, QualityGateDecision, TestRun, or Report
-  records in this task.
-- Updates handoff and sets the next task to local diff parser service.
+- Parses added/modified/deleted/renamed file headers from unified diff text.
+- Classifies file_role as source, test, docs, config, migration, fixture,
+  build, or unknown.
+- Assigns deterministic low/medium/high risk from file role and line counts.
+- Produces changed_files metadata compatible with `changed_files.json`.
+- Does not run git commands against remote providers.
+- Updates handoff and sets the next task to CI/CD run create/list/get API.
 
 ## Commit Message
 
 ```text
-feat(cicd): add quality center run schema
+feat(cicd): add local diff parser
 ```
 
 ## Next Task
 
-Slice 15 Task 4: Add local diff parser service.
+Slice 15 Task 5: Add CI/CD run create/list/get API.

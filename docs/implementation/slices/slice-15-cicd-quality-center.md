@@ -34,8 +34,8 @@ RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
 | Add CI/CD Quality Center task plan | done | `test -f docs/implementation/slices/slice-15-cicd-quality-center.md && rg -n "CI/CD Quality Center|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-15-cicd-quality-center.md` | `6133121` | scoped local-first Slice 15 plan |
-| Add CI/CD Quality Center contract boundary | done | `rg -n "CICDRun|CICDChangedFile|POST /api/cicd/runs|local_diff|remote CI" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-15-cicd-quality-center.md` | pending commit | tighten Slice 15 subset before code |
-| Add CICDRun and CICDChangedFile model/schema | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | - | persistence only, no patch/gate |
+| Add CI/CD Quality Center contract boundary | done | `rg -n "CICDRun|CICDChangedFile|POST /api/cicd/runs|local_diff|remote CI" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-15-cicd-quality-center.md` | `a8a5482` | tighten Slice 15 subset before code |
+| Add CICDRun and CICDChangedFile model/schema | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | pending commit | persistence only, no patch/gate |
 | Add local diff parser service | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | - | deterministic parser for unified diff text |
 | Add CI/CD run create/list/get API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | - | `/api/cicd/runs` local_diff only |
 | Add CI/CD analyze API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | - | mock risk_analysis artifact |
