@@ -10,12 +10,12 @@ Post-V1 Planning.
 
 ## Current Task
 
-Post-V1 Task 2: Create V1 release package skeleton.
+Post-V1 Task 3: Write V1 manual walkthrough and acceptance evidence details.
 
 ## Product Value Answer
 
-After this task, the V1 release package has a stable documentation skeleton for
-release notes, acceptance evidence, and manual walkthrough content.
+After this task, the V1 release package contains detailed release-facing
+walkthrough and acceptance evidence content.
 
 ## Must Read
 
@@ -71,18 +71,19 @@ Expected result: all V1 golden smokes, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- Creates `docs/release/v1/README.md`.
-- Creates `docs/release/v1/acceptance-evidence.md`.
-- Creates `docs/release/v1/manual-walkthrough.md`.
+- Expands `docs/release/v1/manual-walkthrough.md` into a release-ready manual
+  checklist.
+- Expands `docs/release/v1/acceptance-evidence.md` with detailed command
+  evidence and source links.
 - Keeps current V1 acceptance evidence linked.
 - Keeps V1 non-goals out of scope.
 
 ## Commit Message
 
 ```text
-docs(release): add v1 release package skeleton
+docs(release): add v1 manual walkthrough
 ```
 
 ## Next Task
 
-Write the V1 manual walkthrough and acceptance evidence details.
+Optionally capture frontend screenshots or move to V2 planning.

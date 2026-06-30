@@ -1,5 +1,23 @@
 # Session Handoff
 
+## 2026-06-30 Post-V1 Task 2 完成
+
+本轮完成：
+
+- 完成 Post-V1 Task 2：Create V1 release package skeleton。
+- 新增 `docs/release/v1/README.md`。
+- 新增 `docs/release/v1/acceptance-evidence.md`。
+- 新增 `docs/release/v1/manual-walkthrough.md`。
+- 新增 `docs/release/v1/screenshots/.gitkeep` 作为可选截图目录占位。
+- Release package skeleton 链接 V1 acceptance evidence，并保留 V1 non-goals。
+- 已将 `NEXT_AI_TASK.md` 切换到 Post-V1 Task 3：Write V1 manual walkthrough
+  and acceptance evidence details。
+
+下次推荐任务：
+
+- 扩展 `docs/release/v1/manual-walkthrough.md` 和
+  `docs/release/v1/acceptance-evidence.md`，写成 release-ready 文档。
+
 ## 2026-06-30 Post-V1 Task 1 完成
 
 本轮完成：

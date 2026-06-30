@@ -1,5 +1,29 @@
 # Development Log
 
+## 2026-06-30 V1 Release Package Skeleton
+
+### Completed
+
+- Added `docs/release/v1/README.md`.
+- Added `docs/release/v1/acceptance-evidence.md`.
+- Added `docs/release/v1/manual-walkthrough.md`.
+- Added `docs/release/v1/screenshots/.gitkeep` for optional screenshots.
+- Updated `NEXT_AI_TASK.md` to Post-V1 Task 3.
+
+### Verification
+
+```bash
+test -f docs/release/v1/README.md
+test -f docs/release/v1/acceptance-evidence.md
+test -f docs/release/v1/manual-walkthrough.md
+git diff --check
+```
+
+### Next Step
+
+- Expand the V1 manual walkthrough and acceptance evidence into release-ready
+  content.
+
 ## 2026-06-30 Post-V1 Release Packaging Decision
 
 ### Completed
