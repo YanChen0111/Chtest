@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-06-30 Slice 18 Completion Gate
+
+### Completed
+
+- Completed Slice 18: Newman API Execution.
+- Recorded completion evidence in
+  `docs/implementation/slices/slice-18-newman-api-execution.md`.
+- Updated `NEXT_AI_TASK.md` to V2 Task 3: select the next small V2 slice.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Newman API + golden tests: `5 passed`.
+- Frontend suite: `15` test files passed, `18` tests passed.
+- `git diff --check` clean.
+
+### Next Step
+
+- Select the next small V2 slice from current product priorities.
+
 ## 2026-06-30 Slice 18 Newman Golden Smoke
 
 ### Completed

@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 18: Newman API Execution.
+V2 Planning.
 
 ## Current Task
 
-Slice 18 Completion Gate.
+V2 Task 3: Select next small V2 slice.
 
 ## Product Value Answer
 
-After this task, Slice 18 is verified end to end and ready for the next V2
-planning or implementation task.
+After this task, the next V2 slice is chosen from current product priorities
+without accidentally expanding Chtest into out-of-scope platform work.
 
 ## Must Read
 
@@ -31,9 +31,6 @@ planning or implementation task.
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-18-newman-api-execution.md`
-13. `backend/app/tests/api/test_newman_execution.py`
-14. `backend/app/tests/golden/test_newman_api_execution_golden.py`
-15. frontend Newman execution tests
 
 ## Do Not Read Unless Needed
 
@@ -49,35 +46,34 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-18-newman-api-execution.md
+docs/implementation/10-v2-scope-options.md
 ```
 
-Completion-only task. Do not add new product behavior. Record verification
-evidence, mark Slice 18 complete, and name the next V2 task.
+Planning-only task. Do not add product behavior. Choose the next small V2 slice
+or pause for product review.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q
-npm --prefix frontend run test -- --run
+rg -n "Recommended First V2 Slice|Candidate Direction|Still Out Of Scope|Slice 18" docs/implementation/10-v2-scope-options.md docs/implementation/slices/slice-18-newman-api-execution.md
 git diff --check
 ```
 
-Expected result: Newman backend/API golden tests, frontend tests, and diff check
-pass.
+Expected result: next V2 planning context is visible and diff check passes.
 
 ## Acceptance
 
-- All Slice 18 task rows are marked done with commit ids.
-- Completion evidence records backend, golden, frontend, and diff verification.
-- Handoff names the next V2 slice or planning task.
-- Non-goals remain excluded.
+- Slice 18 completion evidence is considered before choosing the next slice.
+- Next slice is small, testable, and aligned with V2 scope options.
+- RAG runtime, MCP runtime, RBAC, tenants, permissions, remote CI/CD control,
+  broad dashboards, and marketplace work remain out unless explicitly promoted.
 
 ## Commit Message
 
 ```text
-docs(v2): complete newman execution slice
+docs(v2): select next v2 slice
 ```
 
 ## Next Task
 
-Choose the next V2 task after Slice 18 completion evidence is committed.
+Choose the next V2 slice or ask for product review if priorities are unclear.

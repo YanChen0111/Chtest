@@ -83,7 +83,7 @@ general automation platform.
 | Add Newman runner/parser backend | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py -q` | `6cae700` | allowlisted local runner |
 | Add Newman API execution frontend shell | done | `npm --prefix frontend run test -- --run` | `19e9042` | Chinese workbench UI |
 | Add Newman API execution golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_newman_api_execution_golden.py -q` | `fd3a0c8` | evidence loop proof |
-| Slice 18 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q && npm --prefix frontend run test -- --run` | pending | docs and handoff |
+| Slice 18 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q && npm --prefix frontend run test -- --run` | pending commit | docs and handoff |
 
 ## Task 1: Add Newman API Execution Task Plan
 
@@ -293,3 +293,45 @@ Commit message:
 ```text
 docs(v2): complete newman execution slice
 ```
+
+## Completion Evidence
+
+Completed on 2026-06-30.
+
+Commits:
+
+- `a319a6c` docs(v2): add newman execution slice plan
+- `c8835bc` docs(v2): define newman execution contract
+- `6cae700` feat(execution): add newman runner
+- `1b504a1` docs(v2): record newman runner commit
+- `19e9042` feat(frontend): add newman execution shell
+- `bbf189d` docs(v2): record newman frontend commit
+- `fd3a0c8` test(v2): add newman execution golden
+- `5f956b9` docs(v2): record newman golden commit
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Newman API + golden tests: `5 passed`.
+- Frontend shell: `15` test files passed, `18` tests passed.
+- `git diff --check` clean.
+
+Completion notes:
+
+- Newman API execution is available as an allowlisted local TestCommand path
+  with `command_type=newman` and `runner_mode=newman_local`.
+- Newman execution records TestRun, assertion-level TestResult, stdout/stderr,
+  `newman_json`, and `parsed_output` artifacts.
+- Frontend exposes `API 执行` as a TestCommand-only Newman evidence page.
+- Golden smoke proves a deterministic Newman collection with one visible failed
+  assertion.
+- No arbitrary shell, Postman cloud/workspace/editor, remote CI/CD provider,
+  RAG runtime, MCP runtime, RBAC, tenants, permissions, marketplace, release, or
+  deployment automation was added.

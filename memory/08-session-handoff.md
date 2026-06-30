@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-06-30 Slice 18 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 18：Newman API Execution。
+- 更新 `docs/implementation/slices/slice-18-newman-api-execution.md`：
+  - 所有任务行标记 done。
+  - 记录 completion evidence。
+  - 记录 Newman API + golden、frontend、diff 验证结果。
+- 已将 `NEXT_AI_TASK.md` 切换到 V2 Task 3：Select next small V2 slice。
+
+最终验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Newman API + golden tests：`5 passed`。
+- Frontend suite：`15` test files passed，`18` tests passed。
+- `git diff --check` clean。
+
+Slice 18 结果：
+
+- Newman API execution 已作为 allowlisted local TestCommand 路径接入。
+- `command_type=newman`，`runner_mode=newman_local`。
+- 证据包含 TestRun、assertion-level TestResult、stdout/stderr、
+  `newman_json`、`parsed_output`。
+- 前端新增 `API 执行` 页面，只展示 TestCommand-based Newman evidence。
+- Golden smoke 覆盖 deterministic Newman collection 和一个可见失败断言。
+- 未加入 arbitrary shell、Postman cloud/workspace/editor、remote CI/CD、
+  RAG/MCP runtime、RBAC、tenants、permissions、marketplace、release 或
+  deployment automation。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 V2 Task 3：Select next small V2 slice。
+- 优先从 `docs/implementation/10-v2-scope-options.md` 中选择小切片；如产品优先级
+  不清楚，先停在规划评审，不直接加新功能。
+
 ## 2026-06-30 Slice 18 Task 5 完成
 
 本轮完成：
