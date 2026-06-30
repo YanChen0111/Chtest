@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.models import AITask, Artifact
-from backend.app.modules.cicd.models import CICDChangedFile, CICDRun
-from backend.app.modules.cicd.schemas import CICDRunAnalyzeRequest, CICDRunCreateRequest
+from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, UnitTestPatch
+from backend.app.modules.cicd.schemas import CICDRunAnalyzeRequest, CICDRunCreateRequest, UnitTestPatchGenerateRequest
 from backend.app.modules.projects.models import Project, Repository
 
 
@@ -26,6 +26,14 @@ class CICDRunNotFoundError(Exception):
 
 
 class CICDRunInvalidInputError(Exception):
+    pass
+
+
+class UnitTestPatchNotFoundError(Exception):
+    pass
+
+
+class UnitTestPatchInvalidStatusError(Exception):
     pass
 
 
@@ -490,6 +498,101 @@ def analyze_cicd_run(session: Session, cicd_run_id: uuid.UUID, data: CICDRunAnal
     session.commit()
     session.refresh(cicd_run)
     return cicd_run, ai_task, artifact
+
+
+def generate_unit_test_patch(
+    session: Session,
+    cicd_run_id: uuid.UUID,
+    data: UnitTestPatchGenerateRequest,
+) -> UnitTestPatch:
+    cicd_run = get_cicd_run(session, cicd_run_id)
+    patch_text = data.patch_text or default_unit_test_patch(cicd_run)
+    scope_gate_result = evaluate_patch_scope(patch_text)
+    status = "scope_validated" if scope_gate_result.allowed else "scope_rejected"
+    ai_task = AITask(
+        project_id=cicd_run.project_id,
+        agent_name="UnitTestAgent",
+        task_type="unit_test_patch",
+        prompt_version_id=stable_version_uuid(data.prompt_version),
+        skill_version_id=stable_version_uuid(data.skill_version),
+        model_provider=data.model_provider,
+        model_name=data.model_name,
+        status="succeeded",
+        input_json={
+            "cicd_run_id": str(cicd_run.id),
+            "target_framework": data.target_framework,
+            "coverage_target": data.coverage_target,
+        },
+        output_json={
+            "patch_text": patch_text,
+            "scope_gate_result": scope_gate_result.to_artifact_metadata(),
+            "test_intent": data.test_intent,
+        },
+    )
+    session.add(ai_task)
+    session.flush()
+    patch = UnitTestPatch(
+        cicd_run_id=cicd_run.id,
+        ai_task_id=ai_task.id,
+        patch_text=patch_text,
+        target_framework=data.target_framework,
+        scope_gate_result_json=scope_gate_result.to_artifact_metadata(),
+        test_intent=data.test_intent,
+        coverage_target_json=data.coverage_target,
+        status=status,
+    )
+    session.add(patch)
+    session.commit()
+    session.refresh(patch)
+    return patch
+
+
+def approve_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID, review_comment: str | None) -> UnitTestPatch:
+    patch = get_unit_test_patch(session, unit_test_patch_id)
+    if patch.status not in {"scope_validated", "awaiting_review"}:
+        raise UnitTestPatchInvalidStatusError
+    if not patch.scope_gate_result_json.get("allowed", False):
+        raise UnitTestPatchInvalidStatusError
+    patch.status = "approved"
+    patch.review_comment = review_comment
+    session.add(patch)
+    session.commit()
+    session.refresh(patch)
+    return patch
+
+
+def reject_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID, review_comment: str | None) -> UnitTestPatch:
+    patch = get_unit_test_patch(session, unit_test_patch_id)
+    if patch.status not in {"generated", "scope_validated", "scope_rejected", "awaiting_review"}:
+        raise UnitTestPatchInvalidStatusError
+    patch.status = "rejected"
+    patch.review_comment = review_comment
+    session.add(patch)
+    session.commit()
+    session.refresh(patch)
+    return patch
+
+
+def get_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID) -> UnitTestPatch:
+    patch = session.get(UnitTestPatch, unit_test_patch_id)
+    if patch is None:
+        raise UnitTestPatchNotFoundError
+    return patch
+
+
+def default_unit_test_patch(cicd_run: CICDRun) -> str:
+    return "\n".join(
+        [
+            "diff --git a/tests/test_cicd_generated.py b/tests/test_cicd_generated.py",
+            "new file mode 100644",
+            "--- /dev/null",
+            "+++ b/tests/test_cicd_generated.py",
+            "@@ -0,0 +1,2 @@",
+            "+def test_generated_unit_patch_placeholder():",
+            f"+    assert {str(cicd_run.id)!r}",
+            "",
+        ],
+    )
 
 
 def analysis_artifacts_for_run(session: Session, cicd_run: CICDRun) -> list[Artifact]:

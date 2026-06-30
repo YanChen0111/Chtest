@@ -10,13 +10,12 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 5: Add UnitTestPatch generation/review API.
+Task 6: Add UnitTestPatch apply API.
 
 ## Product Value Answer
 
-After this task, Chtest can generate deterministic mock UnitTestPatch
-candidates, validate them through PatchScopeGate, and let users approve or
-reject them without applying patches.
+After this task, Chtest can apply approved test-only UnitTestPatch records in a
+controlled local workflow and preserve patch evidence.
 
 ## Must Read
 
@@ -41,15 +40,15 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-backend/app/modules/cicd/schemas.py
 backend/app/modules/cicd/router.py
+backend/app/modules/cicd/schemas.py
 backend/app/modules/cicd/service.py
 backend/app/tests/api/test_unit_test_patch_regression.py
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Do not apply patches, mutate the repository, or run external test commands in
-this task.
+Only apply approved test-only patches through the new controlled service path.
+Do not modify business source files or run external test commands in this task.
 
 ## Verification Command
 
@@ -57,25 +56,24 @@ this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
 ```
 
-Expected result: focused UnitTestPatch generation/review API tests pass.
+Expected result: focused UnitTestPatch apply API tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/cicd/runs/{id}/unit-test-patches`.
-- Creates a succeeded mock UnitTestAgent AITask.
-- Persists UnitTestPatch with `scope_gate_result_json`.
-- Returns scope gate result for review UI.
-- Adds approve and reject endpoints.
-- Prevents approving `scope_rejected` patches.
-- Does not apply patches or run tests in this task.
-- Updates handoff and sets the next task to UnitTestPatch apply API.
+- Adds `POST /api/cicd/unit-test-patches/{id}/apply`.
+- Only approved patches can be applied.
+- Re-runs PatchScopeGate before application and rejects unsafe patches.
+- Writes `unit_test.patch` artifact metadata for the original patch text.
+- Preserves original `patch_text` as evidence.
+- Does not modify business source files or run tests in this task.
+- Updates handoff and sets the next task to new-test/regression API.
 
 ## Commit Message
 
 ```text
-feat(cicd): add unit test patch review api
+feat(cicd): add unit test patch apply api
 ```
 
 ## Next Task
 
-Slice 16 Task 6: Add UnitTestPatch apply API.
+Slice 16 Task 7: Add new-test and regression API.

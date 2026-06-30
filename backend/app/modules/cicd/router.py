@@ -15,6 +15,10 @@ from backend.app.modules.cicd.schemas import (
     CICDRunCreateRequest,
     CICDRunListRead,
     CICDRunRead,
+    UnitTestPatchGenerateRequest,
+    UnitTestPatchRead,
+    UnitTestPatchReviewRead,
+    UnitTestPatchReviewRequest,
 )
 from backend.app.modules.projects.router import get_session
 
@@ -85,6 +89,53 @@ def analyze_cicd_run(
     )
 
 
+@router.post(
+    "/cicd/runs/{cicd_run_id}/unit-test-patches",
+    response_model=UnitTestPatchRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generate_unit_test_patch(
+    cicd_run_id: uuid.UUID,
+    data: UnitTestPatchGenerateRequest,
+    session: Session = Depends(get_session),
+) -> UnitTestPatchRead:
+    try:
+        patch = service.generate_unit_test_patch(session, cicd_run_id, data)
+    except service.CICDRunNotFoundError as exc:
+        raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
+    return unit_test_patch_read(patch)
+
+
+@router.post("/cicd/unit-test-patches/{unit_test_patch_id}/approve", response_model=UnitTestPatchReviewRead)
+def approve_unit_test_patch(
+    unit_test_patch_id: uuid.UUID,
+    data: UnitTestPatchReviewRequest,
+    session: Session = Depends(get_session),
+) -> UnitTestPatchReviewRead:
+    try:
+        patch = service.approve_unit_test_patch(session, unit_test_patch_id, data.review_comment)
+    except service.UnitTestPatchNotFoundError as exc:
+        raise not_found("UNIT_TEST_PATCH_NOT_FOUND", "Unit test patch not found.") from exc
+    except service.UnitTestPatchInvalidStatusError as exc:
+        raise bad_request("UNIT_TEST_PATCH_INVALID_STATUS", "Unit test patch status does not allow this action.") from exc
+    return UnitTestPatchReviewRead(unit_test_patch_id=patch.id, status=patch.status)
+
+
+@router.post("/cicd/unit-test-patches/{unit_test_patch_id}/reject", response_model=UnitTestPatchReviewRead)
+def reject_unit_test_patch(
+    unit_test_patch_id: uuid.UUID,
+    data: UnitTestPatchReviewRequest,
+    session: Session = Depends(get_session),
+) -> UnitTestPatchReviewRead:
+    try:
+        patch = service.reject_unit_test_patch(session, unit_test_patch_id, data.review_comment)
+    except service.UnitTestPatchNotFoundError as exc:
+        raise not_found("UNIT_TEST_PATCH_NOT_FOUND", "Unit test patch not found.") from exc
+    except service.UnitTestPatchInvalidStatusError as exc:
+        raise bad_request("UNIT_TEST_PATCH_INVALID_STATUS", "Unit test patch status does not allow this action.") from exc
+    return UnitTestPatchReviewRead(unit_test_patch_id=patch.id, status=patch.status)
+
+
 def cicd_run_read(session: Session, cicd_run: CICDRun) -> CICDRunRead:
     return CICDRunRead(
         id=cicd_run.id,
@@ -102,6 +153,21 @@ def cicd_run_read(session: Session, cicd_run: CICDRun) -> CICDRunRead:
         status=cicd_run.status,
         changed_files=[changed_file_read(changed_file) for changed_file in cicd_run.changed_files],
         analysis_artifacts=service.analysis_artifacts_for_run(session, cicd_run),
+    )
+
+
+def unit_test_patch_read(patch) -> UnitTestPatchRead:
+    return UnitTestPatchRead(
+        id=patch.id,
+        cicd_run_id=patch.cicd_run_id,
+        ai_task_id=patch.ai_task_id,
+        patch_text=patch.patch_text,
+        target_framework=patch.target_framework,
+        scope_gate_result=patch.scope_gate_result_json,
+        test_intent=patch.test_intent,
+        coverage_target=patch.coverage_target_json,
+        status=patch.status,
+        review_comment=patch.review_comment,
     )
 
 

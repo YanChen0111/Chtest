@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
+from typing import Any
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend.app.main import app
 from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.models import AITask
 from backend.app.modules.cicd.models import CICDRun, QualityGateDecision, UnitTestPatch
@@ -17,7 +21,10 @@ from backend.app.modules.cicd.schemas import (
     UnitTestPatchRead,
 )
 from backend.app.modules.cicd.service import evaluate_patch_scope
+from backend.app.modules.execution.models import TestRun
 from backend.app.modules.projects.models import Project, Repository, Workspace
+from backend.app.modules.projects.router import get_session
+from backend.app.modules.reporting.models import Report
 
 
 def session_factory() -> sessionmaker[Session]:
@@ -29,6 +36,65 @@ def session_factory() -> sessionmaker[Session]:
     )
     Base.metadata.create_all(engine)
     return sessionmaker(engine, expire_on_commit=False, future=True)
+
+
+class ASGIResponse:
+    def __init__(self, status_code: int, body: bytes) -> None:
+        self.status_code = status_code
+        self.body = body
+
+    def json(self) -> Any:
+        return json.loads(self.body.decode("utf-8"))
+
+
+class ASGIClient:
+    def __init__(self, asgi_app: Any) -> None:
+        self.asgi_app = asgi_app
+
+    def post(self, path: str, json_body: dict[str, Any]) -> ASGIResponse:
+        return asyncio.run(self._request("POST", path, json_body))
+
+    async def _request(self, method: str, path: str, json_body: dict[str, Any] | None) -> ASGIResponse:
+        body = json.dumps(json_body).encode("utf-8") if json_body is not None else b""
+        status_code: int | None = None
+        body_chunks: list[bytes] = []
+        request_complete = False
+
+        async def receive() -> dict[str, Any]:
+            nonlocal request_complete
+            if not request_complete:
+                request_complete = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return {"type": "http.disconnect"}
+
+        async def send(message: dict[str, Any]) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            elif message["type"] == "http.response.body":
+                body_chunks.append(message.get("body", b""))
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": method,
+            "scheme": "http",
+            "path": path,
+            "raw_path": path.encode("utf-8"),
+            "query_string": b"",
+            "headers": [
+                (b"host", b"testserver"),
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode("ascii")),
+            ],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+        }
+
+        await self.asgi_app(scope, receive, send)
+        assert status_code is not None
+        return ASGIResponse(status_code, b"".join(body_chunks))
 
 
 def seed_cicd_run_and_ai_task(session: Session) -> tuple[Project, CICDRun, AITask]:
@@ -357,3 +423,169 @@ diff --git a/scripts/helper.sh b/scripts/helper.sh
     assert "generated artifact path modified: frontend/dist/app.js" in result.forbidden_patterns
     assert "unknown non-test path modified: scripts/helper.sh" in result.forbidden_patterns
     assert result.to_artifact_metadata()["reason"] == "PATCH_SCOPE_REJECTED"
+
+
+def test_generate_unit_test_patch_api_creates_review_gated_scope_validated_patch() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            _project, cicd_run, _ai_task = seed_cicd_run_and_ai_task(session)
+            session.commit()
+            cicd_run_id = cicd_run.id
+
+        patch_text = """diff --git a/tests/test_coupon.py b/tests/test_coupon.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_coupon.py
+@@ -0,0 +1,2 @@
++def test_coupon_boundary():
++    assert True
+"""
+        client = ASGIClient(app)
+        response = client.post(
+            f"/api/cicd/runs/{cicd_run_id}/unit-test-patches",
+            {
+                "patch_text": patch_text,
+                "target_framework": "pytest",
+                "test_intent": "Cover coupon boundary change",
+                "coverage_target": [{"path": "app/coupon.py", "reason": "changed source"}],
+            },
+        )
+
+        assert response.status_code == 202
+        body = response.json()
+        assert body["cicd_run_id"] == str(cicd_run_id)
+        assert body["status"] == "scope_validated"
+        assert body["target_framework"] == "pytest"
+        assert body["scope_gate_result"]["allowed"] is True
+        assert body["scope_gate_result"]["checked_paths"] == ["tests/test_coupon.py"]
+
+        with SessionLocal() as session:
+            patch = session.get(UnitTestPatch, uuid.UUID(body["id"]))
+            ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+            assert session.scalar(select(TestRun)) is None
+            assert session.scalar(select(QualityGateDecision)) is None
+            assert session.scalar(select(Report)) is None
+
+        assert patch is not None
+        assert patch.status == "scope_validated"
+        assert patch.scope_gate_result_json["allowed"] is True
+        assert patch.patch_text == patch_text
+        assert ai_task is not None
+        assert ai_task.agent_name == "UnitTestAgent"
+        assert ai_task.task_type == "unit_test_patch"
+        assert ai_task.status == "succeeded"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_generate_unit_test_patch_api_blocks_approve_for_scope_rejected_patch() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            _project, cicd_run, _ai_task = seed_cicd_run_and_ai_task(session)
+            session.commit()
+            cicd_run_id = cicd_run.id
+
+        client = ASGIClient(app)
+        generate_response = client.post(
+            f"/api/cicd/runs/{cicd_run_id}/unit-test-patches",
+            {
+                "patch_text": "diff --git a/app/coupon.py b/app/coupon.py\n--- a/app/coupon.py\n+++ b/app/coupon.py\n@@ -1 +1,2 @@\n-old\n+new\n",
+                "test_intent": "This should be rejected",
+            },
+        )
+        patch_id = generate_response.json()["id"]
+
+        approve_response = client.post(
+            f"/api/cicd/unit-test-patches/{patch_id}/approve",
+            {"review_comment": "Do not allow source patch"},
+        )
+
+        assert generate_response.status_code == 202
+        assert generate_response.json()["status"] == "scope_rejected"
+        assert generate_response.json()["scope_gate_result"]["reason"] == "PATCH_SCOPE_REJECTED"
+        assert approve_response.status_code == 400
+        assert approve_response.json()["error_code"] == "UNIT_TEST_PATCH_INVALID_STATUS"
+
+        with SessionLocal() as session:
+            patch = session.get(UnitTestPatch, uuid.UUID(patch_id))
+
+        assert patch is not None
+        assert patch.status == "scope_rejected"
+        assert patch.review_comment is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_approve_and_reject_unit_test_patch_api_updates_review_status() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            _project, cicd_run, ai_task = seed_cicd_run_and_ai_task(session)
+            approve_patch = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/tests/test_coupon.py b/tests/test_coupon.py\n",
+                scope_gate_result_json={"allowed": True},
+                test_intent="Approve me",
+                status="scope_validated",
+            )
+            reject_patch = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/tests/test_other.py b/tests/test_other.py\n",
+                scope_gate_result_json={"allowed": True},
+                test_intent="Reject me",
+                status="awaiting_review",
+            )
+            session.add_all([approve_patch, reject_patch])
+            session.commit()
+            approve_patch_id = approve_patch.id
+            reject_patch_id = reject_patch.id
+
+        client = ASGIClient(app)
+        approve_response = client.post(
+            f"/api/cicd/unit-test-patches/{approve_patch_id}/approve",
+            {"review_comment": "Only tests are modified"},
+        )
+        reject_response = client.post(
+            f"/api/cicd/unit-test-patches/{reject_patch_id}/reject",
+            {"review_comment": "Need stronger assertions"},
+        )
+
+        assert approve_response.status_code == 200
+        assert approve_response.json()["status"] == "approved"
+        assert reject_response.status_code == 200
+        assert reject_response.json()["status"] == "rejected"
+
+        with SessionLocal() as session:
+            approved = session.get(UnitTestPatch, approve_patch_id)
+            rejected = session.get(UnitTestPatch, reject_patch_id)
+
+        assert approved is not None
+        assert approved.status == "approved"
+        assert approved.review_comment == "Only tests are modified"
+        assert rejected is not None
+        assert rejected.status == "rejected"
+        assert rejected.review_comment == "Need stronger assertions"
+    finally:
+        app.dependency_overrides.clear()

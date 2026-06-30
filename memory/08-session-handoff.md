@@ -1,5 +1,53 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 5 UnitTestPatch Generation/Review API 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 5：Add UnitTestPatch generation/review API。
+- 新增 `POST /api/cicd/runs/{id}/unit-test-patches`，生成 deterministic
+  mock UnitTestPatch candidate。
+- 生成流程创建 succeeded mock `UnitTestAgent` AITask，写入
+  `UnitTestPatch.scope_gate_result_json`，并返回 review UI 所需
+  `scope_gate_result`。
+- PatchScopeGate 通过时 patch 状态为 `scope_validated`，失败时为
+  `scope_rejected`。
+- 新增 approve/reject endpoints：
+  `POST /api/cicd/unit-test-patches/{id}/approve` 与
+  `POST /api/cicd/unit-test-patches/{id}/reject`。
+- `scope_rejected` patch 不能 approve，会返回
+  `UNIT_TEST_PATCH_INVALID_STATUS`。
+- 任务未 apply patches，未运行测试命令，未创建 TestRun、
+  QualityGateDecision 或 Report。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 6：Add UnitTestPatch apply
+  API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
+```
+
+验证结果：
+
+- `12 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/router.py`
+- `backend/app/modules/cicd/service.py`
+- `backend/app/modules/cicd/schemas.py`
+- `backend/app/tests/api/test_unit_test_patch_regression.py`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 6：Add UnitTestPatch apply API。
+- 该任务只能通过受控 service path apply 已批准且 scope gate 通过的测试
+  patch；不能修改业务源码，不能运行测试命令。
+
 ## 2026-06-30 Slice 16 Task 4 PatchScopeGate Service 完成
 
 本轮完成：
