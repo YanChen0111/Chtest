@@ -35,9 +35,9 @@ RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 | Add Test Case Library task plan | done | `test -f docs/implementation/slices/slice-10-test-case-library.md && rg -n "Test Case Library|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-10-test-case-library.md` | `03114cd` | scoped Slice 10 plan |
 | Add Test Case Library API contract and task boundary | done | `rg -n "Test Case Library|GET /api/test-cases|TestCaseList" docs/contracts/02-api-contract.md docs/implementation/slices/slice-10-test-case-library.md` | `11942b3` | contract-first endpoint shape |
 | Add Test Case Library backend API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py -q` | `0e0ad8e` | list reviewed TestCase records by project/module/status |
-| Add Test Case Library frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | compact searchable library view |
-| Add Test Case Library golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library.py -q` | - | reviewed golden cases appear in library |
-| Slice 10 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py backend/app/tests/golden/test_test_case_library.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
+| Add Test Case Library frontend shell | done | `npm --prefix frontend run test -- --run` | `41f9518` | compact searchable library view |
+| Add Test Case Library golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library_golden.py -q` | pending commit | reviewed golden cases appear in library |
+| Slice 10 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py backend/app/tests/golden/test_test_case_library_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 
 ## Task 1: Add Test Case Library API Contract And Task Boundary
 
@@ -155,12 +155,12 @@ requirement-to-case review plan.
 
 Expected files:
 
-- `backend/app/tests/golden/test_test_case_library.py`
+- `backend/app/tests/golden/test_test_case_library_golden.py`
 
 Verification Command:
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library_golden.py -q
 ```
 
 Acceptance:

@@ -10,12 +10,12 @@ Slice 10: Test Case Library.
 
 ## Current Task
 
-Task 5: Add Test Case Library golden smoke.
+Slice 10 completion gate.
 
 ## Product Value Answer
 
-After this task, Chtest can prove golden reviewed cases are visible through the
-Test Case Library API after the requirement-to-case review plan.
+After this task, Chtest can prove the Test Case Library slice is complete across
+contract, backend API, frontend shell, and golden fixture coverage.
 
 ## Must Read
 
@@ -39,39 +39,41 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-10-test-case-library.md
-backend/app/tests/golden/test_test_case_library.py
+docs/implementation/slices/slice-10-test-case-library.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Read existing golden requirement-to-case tests as needed, but keep writes inside
-the files above unless a concrete blocker requires an explained contract/doc
-update.
+Do not modify product code unless the completion verification exposes a
+concrete bug.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_requirement_to_case.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: Test Case Library golden smoke passes.
+Expected result: Test Case Library backend/golden tests and frontend suite pass.
 
 ## Acceptance
 
-- Reuse the golden requirement-to-case fixture setup and review plan.
-- Assert the library returns 4 reviewed TestCase records after review.
-- Assert the edited expired-coupon case keeps the edited step and input data.
-- Assert keyword filtering can find a golden case by title or requirement text.
-- Do not add browser automation, AutomationDraft, execution, reports, CI/CD
-  quality, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to Slice 10 completion gate.
+- Confirm the Slice 10 task table has commit IDs for every completed task.
+- Confirm Test Case Library API contract exists.
+- Confirm backend API returns reviewed TestCase records with filters.
+- Confirm frontend shell can browse reviewed cases without automation/execution
+  actions.
+- Confirm golden fixture smoke proves reviewed cases enter the library.
+- Do not add AutomationDraft, execution, reports, CI/CD quality, RAG runtime,
+  MCP runtime, RBAC, tenants, or permissions.
+- Update handoff with completion evidence and next recommended slice/task.
 
 ## Commit Message
 
 ```text
-test(golden): add test case library smoke
+docs(cases): complete test case library slice
 ```
 
 ## Next Task
 
-Slice 10 completion gate.
+Slice 11 Task 1: Add AutomationDraft Foundation task plan.

@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-30 Slice 10 Task 5 Test Case Library Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 10 Task 5：新增 Test Case Library golden smoke。
+- 新增 `backend/app/tests/golden/test_test_case_library_golden.py`，复用 golden requirement-to-case fixture setup 和 review plan。
+- 验证评审后 library API 返回 4 条 reviewed TestCase。
+- 验证编辑后的过期优惠券用例保留 `准备已过期优惠券` 步骤和 `coupon_state=expired` input data。
+- 验证 keyword 过滤可以找到 golden UI 用例。
+- 修复 golden/API 同名测试文件导致的 pytest collection import mismatch，golden 文件采用唯一文件名。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 10 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_requirement_to_case.py -q
+```
+
+验证结果：
+
+- Test Case Library golden smoke：`1 passed`
+- Test Case Library API / golden library / requirement-to-case golden regression：`5 passed`
+
+修改文件：
+
+- `backend/app/tests/golden/test_test_case_library_golden.py`
+- `docs/implementation/slices/slice-10-test-case-library.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 10 completion gate。
+- 验证命令：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_requirement_to_case.py -q`
+  和 `npm --prefix frontend run test -- --run`。
+
 ## 2026-06-30 Slice 10 Task 4 Test Case Library Frontend Shell 完成
 
 本轮完成：
