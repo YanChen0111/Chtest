@@ -10,12 +10,12 @@ Slice 12: TestRunner Pytest Execution.
 
 ## Current Task
 
-Task 1: Add TestRunner Pytest Execution task plan.
+Task 2: Add TestRun API contract and task boundary.
 
 ## Product Value Answer
 
-After this task, Chtest has a scoped, reviewable implementation plan for
-approval-gated pytest execution without expanding into Playwright or reports.
+After this task, Chtest has a contract-first API boundary for approval-gated
+pytest execution before backend implementation starts.
 
 ## Must Read
 
@@ -24,7 +24,7 @@ approval-gated pytest execution without expanding into Playwright or reports.
 3. `docs/product/01-positioning-and-scope.md`
 4. `docs/contracts/01-data-model-contract.md`
 5. `docs/contracts/02-api-contract.md`
-6. `docs/implementation/slices/slice-11-automation-draft-foundation.md`
+6. `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
@@ -38,40 +38,40 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-12-testrunner-pytest-execution.md
+docs/contracts/02-api-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-This is a planning task only. Do not modify product code.
+This is a contract/documentation task only. Do not modify product code.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-12-testrunner-pytest-execution.md
-rg -n "TestRunner Pytest Execution|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-12-testrunner-pytest-execution.md
+rg -n "TestRun|POST /api/test-runs|TestResult" docs/contracts/02-api-contract.md docs/implementation/slices/slice-12-testrunner-pytest-execution.md
 ```
 
-Expected result: Slice 12 task plan exists and names concrete tasks,
-verification commands, and non-goals.
+Expected result: API contract and Slice 12 plan both name the pytest TestRun
+endpoint and response model.
 
 ## Acceptance
 
-- Create a scoped Slice 12 task plan.
-- Define TestRun/TestResult model/API, pytest runner adapter, artifact capture,
-  frontend execution shell, and golden smoke tasks.
-- Keep Slice 12 limited to approval-gated pytest execution for approved
-  AutomationDraft or configured TestCommand.
+- Add `POST /api/test-runs` and `GET /api/test-runs/{id}` to the API contract.
+- Define request fields for approved automation_draft_id or configured
+  test_command_id.
+- Define response fields for TestRun, artifacts, parsed_result, and TestResult
+  items.
+- Keep V1 pytest execution allowlisted and local-first.
 - Do not add Playwright execution, reports, CI/CD quality, RAG runtime, MCP
   runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to the first implementation task from
-  the new Slice 12 plan.
+- Update handoff and set the next task to TestRun/TestResult model schema.
 
 ## Commit Message
 
 ```text
-docs(execution): add pytest runner task plan
+docs(execution): define pytest test run api
 ```
 
 ## Next Task
 
-Slice 12 Task 2 from the new task plan.
+Slice 12 Task 3: Add TestRun and TestResult model schema.

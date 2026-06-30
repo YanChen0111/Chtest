@@ -1,5 +1,32 @@
 # Session Handoff
 
+## 2026-06-30 Slice 12 Task 1 TestRunner Pytest Execution Task Plan 完成
+
+本轮完成：
+
+- 完成 Slice 12 Task 1：新增 TestRunner Pytest Execution task plan。
+- 新增 `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`，将 Slice 12 拆为 API contract、TestRun/TestResult model/schema、pytest runner adapter、TestRun API、frontend shell、golden smoke、completion gate。
+- 明确 Slice 12 只做 approval-gated pytest execution 和证据捕获，不加入 Playwright、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 12 Task 2：Add TestRun API contract and task boundary。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-12-testrunner-pytest-execution.md
+rg -n "TestRunner Pytest Execution|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-12-testrunner-pytest-execution.md
+```
+
+修改文件：
+
+- `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 12 Task 2：Add TestRun API contract and task boundary。
+- 这是 contract/documentation 任务，不要直接改产品代码。
+
 ## 2026-06-30 Slice 11 AutomationDraft Completion Gate 完成
 
 本轮完成：
