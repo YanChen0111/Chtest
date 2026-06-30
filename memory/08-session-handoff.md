@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-06-30 Slice 13 Task 4 Playwright Execution API 完成
+
+本轮完成：
+
+- 完成 Slice 13 Task 4：Add Playwright execution API。
+- 扩展 `backend/app/modules/execution/service.py`，通过既有
+  `POST /api/test-runs` 支持 `runner_mode=playwright_local`。
+- 支持 approved Playwright AutomationDraft 和 configured Playwright
+  TestCommand 两条来源。
+- Playwright draft 会复制到 Chtest-managed 临时运行目录后执行。
+- 执行结果会持久化 TestRun、TestResult、stdout/stderr/runtime_manifest 以及
+  playwright_trace/screenshot Artifact metadata。
+- 新增 focused API tests 覆盖 approved draft、unapproved reject、configured
+  TestCommand。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 13 Task 5：Add Playwright execution
+  frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/api/test_playwright_minimal_loop.py -q
+```
+
+验证结果：
+
+- Playwright execution API focused tests：`8 passed`
+- Pytest + Playwright execution API regression：`18 passed`
+
+修改文件：
+
+- `backend/app/modules/execution/service.py`
+- `backend/app/tests/api/test_playwright_minimal_loop.py`
+- `docs/implementation/slices/slice-13-playwright-minimal-loop.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 13 Task 5：Add Playwright execution frontend
+  shell。
+- 前端只做 minimal Playwright execution workbench shell，不加入 low-code
+  automation editor、report 或 quality gate。
+
 ## 2026-06-30 Slice 13 Task 3 Playwright Runner Adapter 完成
 
 本轮完成：

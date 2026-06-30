@@ -10,12 +10,12 @@ Slice 13: Playwright Minimal Loop.
 
 ## Current Task
 
-Task 4: Add Playwright execution API.
+Task 5: Add Playwright execution frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest can create and retrieve controlled Playwright TestRun
-records through the backend API.
+After this task, users can start a controlled Playwright run and inspect
+trace/screenshot evidence from the frontend workbench shell.
 
 ## Must Read
 
@@ -41,42 +41,43 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-13-playwright-minimal-loop.md
-backend/app/modules/execution/playwright_runner.py
-backend/app/modules/execution/router.py
-backend/app/modules/execution/service.py
-backend/app/modules/execution/schemas.py
-backend/app/tests/api/test_playwright_minimal_loop.py
+frontend/src/api/execution.ts
+frontend/src/stores/execution.ts
+frontend/src/views/execution/PlaywrightExecutionView.vue
+frontend/src/views/execution/PlaywrightExecutionView.spec.ts
+frontend/src/router/index.ts
+frontend/src/stores/index.ts
 ```
 
-Do not generate reports, FailureAnalysis, or QualityGateDecision records in
-this task.
+Do not add low-code automation editing, report generation, CI/CD quality, RAG
+runtime, MCP runtime, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: focused Playwright execution API tests pass.
+Expected result: frontend workbench shell tests pass.
 
 ## Acceptance
 
-- Adds the contract-selected Playwright execution path through
-  `POST /api/test-runs` with `runner_mode=playwright_local`.
-- Requires approved Playwright AutomationDraft or configured Playwright
-  TestCommand.
-- Persists stdout/stderr/trace/screenshot/runtime artifact metadata where
-  available.
-- Persists TestResult rows from parsed Playwright output.
-- Does not generate reports, FailureAnalysis, or QualityGateDecision records.
-- Update handoff and set the next task to Playwright execution frontend shell.
+- Adds workbench navigation for Playwright minimal execution.
+- Starts a run from approved Playwright AutomationDraft or configured
+  Playwright TestCommand.
+- Shows run status, command, exit code, duration, stdout/stderr artifact
+  references, trace/screenshot references, parsed result summary, and
+  TestResult rows.
+- Does not add low-code automation editing, report generation, CI/CD quality,
+  RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+- Update handoff and set the next task to Playwright golden smoke.
 
 ## Commit Message
 
 ```text
-feat(execution): add playwright minimal api
+feat(frontend): add playwright execution shell
 ```
 
 ## Next Task
 
-Slice 13 Task 5: Add Playwright execution frontend shell.
+Slice 13 Task 6: Add Playwright golden smoke.
