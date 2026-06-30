@@ -10,12 +10,12 @@ Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Task 8: Add CI/CD Quality Center golden smoke.
+Slice 15 completion gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a golden smoke proving local diff evidence can
-create a CICDRun, changed files, and a mock analysis artifact.
+After this task, Slice 15 has verified API, frontend, golden smoke, and handoff
+evidence for local-first CI/CD Quality Center foundation.
 
 ## Must Read
 
@@ -40,36 +40,39 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-backend/app/tests/golden/test_cicd_quality_center_golden.py
+NEXT_AI_TASK.md
+memory/08-session-handoff.md
+memory/07-dev-log.md
+docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-Do not create UnitTestPatch, QualityGateDecision, TestRun, or Report records in
-this task.
+Do not add product behavior in this task. This is verification and handoff only.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_center_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q && npm --prefix frontend run test -- --run
 ```
 
-Expected result: focused CI/CD Quality Center golden smoke passes.
+Expected result: Slice 15 backend API, golden smoke, and frontend tests pass.
 
 ## Acceptance
 
-- Uses `docs/fixtures/03-golden-cicd-quality.md` as scenario intent.
-- Creates Project/Repository fixture records.
-- Creates CICDRun from local diff input.
-- Persists CICDChangedFile rows and risk_analysis artifact metadata.
-- Verifies no UnitTestPatch, QualityGateDecision, TestRun, or Report records are
-  created in Slice 15.
-- Updates handoff and sets the next task to Slice 15 completion gate.
+- Run the Slice 15 completion verification command.
+- Mark Slice 15 completion gate done in the slice task plan if verification
+  passes.
+- Record verification evidence in handoff and dev log.
+- Set the next task to Slice 16 Task 1: UnitTestPatch And Regression task plan.
+- Do not add product behavior, broad refactors, UnitTestPatch, regression,
+  QualityGateDecision, Report, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions.
 
 ## Commit Message
 
 ```text
-test(golden): add cicd quality smoke
+docs(cicd): complete quality center slice
 ```
 
 ## Next Task
 
-Slice 15 completion gate.
+Slice 16 Task 1: Add UnitTestPatch And Regression task plan.

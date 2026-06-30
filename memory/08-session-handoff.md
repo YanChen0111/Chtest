@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-06-30 Slice 15 Task 8 CI/CD Quality Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 15 Task 8：Add CI/CD Quality Center golden smoke。
+- 新增 `backend/app/tests/golden/test_cicd_quality_center_golden.py`。
+- Golden smoke 使用本地 diff 场景创建 Project/Repository fixture records。
+- 通过 API 创建 CICDRun，验证 local_diff/manual/local、changed files 和
+  pending quality_gate_status。
+- 通过 API 触发 analyze，验证 succeeded AITask、risk_analysis artifact、
+  analyzed status 和 medium overall_risk。
+- 验证未创建 AutomationDraft、TestRun、Report 或 quality_gate_decisions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 15 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_center_golden.py -q
+```
+
+验证结果：
+
+- CI/CD Quality Center golden smoke：`1 passed`
+
+修改文件：
+
+- `backend/app/tests/golden/test_cicd_quality_center_golden.py`
+- `docs/implementation/slices/slice-15-cicd-quality-center.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 15 completion gate。
+- 验证命令：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q && npm --prefix frontend run test -- --run`。
+
 ## 2026-06-30 Slice 15 Task 7 CI/CD Quality Frontend Shell 完成
 
 本轮完成：
