@@ -10,12 +10,12 @@ Slice 14: Report And Failure Analysis.
 
 ## Current Task
 
-Task 1: Add Report And Failure Analysis task plan.
+Task 2: Add Report and FailureAnalysis API contract boundary.
 
 ## Product Value Answer
 
-After this task, Chtest has a scoped Slice 14 task plan for evidence-backed
-FailureAnalysis and Report work.
+After this task, Chtest has contract-first API boundaries for evidence-backed
+FailureAnalysis and automation_execution Reports.
 
 ## Must Read
 
@@ -25,7 +25,7 @@ FailureAnalysis and Report work.
 4. `docs/contracts/01-data-model-contract.md`
 5. `docs/contracts/02-api-contract.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/slices/slice-13-playwright-minimal-loop.md`
+7. `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
 8. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
@@ -40,38 +40,38 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/implementation/slices/slice-13-playwright-minimal-loop.md
-NEXT_AI_TASK.md
-memory/08-session-handoff.md
 docs/implementation/slices/slice-14-report-and-failure-analysis.md
+docs/contracts/02-api-contract.md
+docs/contracts/04-artifact-contract.md
 ```
 
-This is a planning/documentation task only. Do not modify product code.
+This is a contract/documentation task only. Do not modify product code.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-14-report-and-failure-analysis.md && rg -n "Report And Failure Analysis|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-14-report-and-failure-analysis.md
+rg -n "FailureAnalysis|POST /api/test-runs/.*/failure-analysis|POST /api/reports|evidence_manifest" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-14-report-and-failure-analysis.md
 ```
 
-Expected result: Slice 14 task plan exists and contains task table,
-verification commands, and non-goals.
+Expected result: API/artifact contracts and Slice 14 plan name FailureAnalysis,
+Report, and evidence manifest requirements.
 
 ## Acceptance
 
-- Create a scoped Slice 14 Report And Failure Analysis task plan.
-- Keep Slice 14 limited to FailureAnalysis, evidence manifest, and
-  automation_execution Report.
-- Do not add CI/CD quality gates, RAG runtime, MCP runtime, RBAC, tenants, or
-  permissions.
-- Update handoff and set the next task to Slice 14 API contract/task boundary.
+- Tighten create/get FailureAnalysis endpoint contract.
+- Tighten create/get automation_execution Report endpoint contract.
+- Require evidence_manifest artifact metadata.
+- Keep report conclusions evidence-backed.
+- Do not add CI/CD quality gates, merge/release decisions, RAG runtime, MCP
+  runtime, RBAC, tenants, permissions, or broad report analytics.
+- Update handoff and set the next task to model/schema.
 
 ## Commit Message
 
 ```text
-docs(report): add failure analysis task plan
+docs(report): define failure analysis api
 ```
 
 ## Next Task
 
-Slice 14 Task 2: Add Report and FailureAnalysis API contract boundary.
+Slice 14 Task 3: Add FailureAnalysis and Report model schema.

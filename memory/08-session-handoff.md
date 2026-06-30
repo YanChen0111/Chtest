@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-06-30 Slice 14 Task 1 Report And Failure Analysis Task Plan 完成
+
+本轮完成：
+
+- 完成 Slice 14 Task 1：Add Report And Failure Analysis task plan。
+- 新增 `docs/implementation/slices/slice-14-report-and-failure-analysis.md`。
+- 将 Slice 14 拆为 API/artifact contract、FailureAnalysis/Report
+  model/schema、FailureAnalysis API、automation_execution Report API、frontend
+  shell、golden smoke、completion gate。
+- 明确 Slice 14 只做 evidence-backed FailureAnalysis、evidence manifest 和
+  automation_execution Report。
+- 明确不加入 CI/CD quality gates、merge/release decisions、RAG runtime、MCP
+  runtime、RBAC、tenants、permissions 或 broad report center analytics。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 14 Task 2：Add Report and
+  FailureAnalysis API contract boundary。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-14-report-and-failure-analysis.md
+rg -n "Report And Failure Analysis|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-14-report-and-failure-analysis.md
+```
+
+修改文件：
+
+- `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 14 Task 2：Add Report and FailureAnalysis
+  API contract boundary。
+- 这是 contract/documentation 任务，不要直接改产品代码。
+
 ## 2026-06-30 Slice 13 Completion Gate 完成
 
 本轮完成：
