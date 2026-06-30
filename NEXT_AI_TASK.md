@@ -10,12 +10,12 @@ Slice 12: TestRunner Pytest Execution.
 
 ## Current Task
 
-Task 7: Add Pytest Execution Golden Smoke.
+Slice 12 completion gate.
 
 ## Product Value Answer
 
-After this task, the golden path proves an approved AutomationDraft can execute
-through the controlled pytest runner and persist evidence records.
+After this task, Slice 12 is verified end-to-end and ready to hand off to the
+next V1 slice.
 
 ## Must Read
 
@@ -37,37 +37,37 @@ through the controlled pytest runner and persist evidence records.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_testrunner_pytest.py
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-12-testrunner-pytest-execution.md
 ```
 
-Do not create Report or QualityGateDecision records.
+This is a verification and documentation task only. Do not modify product code
+unless verification exposes a concrete blocker.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest.py -q && npm --prefix frontend run test -- --run
 ```
 
-Expected result: golden pytest execution smoke passes.
+Expected result: backend pytest execution API/golden tests and frontend shell
+tests pass.
 
 ## Acceptance
 
-- Reuses golden reviewed case -> approved AutomationDraft setup.
-- Executes a controlled pytest command against a small generated fixture test.
-- Persists TestRun and TestResult records.
-- Captures stdout/stderr artifact metadata.
-- Does not create Report or QualityGateDecision records.
-- Update handoff and set the next task to Slice 12 completion gate.
+- Confirm Slice 12 task table is fully done.
+- Run backend API + golden pytest execution verification.
+- Run frontend workbench verification.
+- Record completion evidence in the Slice 12 task plan.
+- Update handoff and set the next task to the next V1 slice.
 
 ## Commit Message
 
 ```text
-test(golden): add pytest execution smoke
+docs(execution): complete pytest runner slice
 ```
 
 ## Next Task
 
-Slice 12 completion gate.
+Next V1 slice selection.

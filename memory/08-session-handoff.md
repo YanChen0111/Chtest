@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-30 Slice 12 Task 7 Pytest Execution Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 12 Task 7：Add Pytest Execution Golden Smoke。
+- 新增 `backend/app/tests/golden/test_testrunner_pytest.py`。
+- golden smoke 复用 reviewed golden TestCase -> AutomationDraft -> edit ->
+  approve 链路。
+- 已批准 AutomationDraft 通过 `POST /api/test-runs` 执行 controlled pytest。
+- 验证 TestRun、TestResult、runtime_manifest/stdout/stderr Artifact metadata
+  均持久化。
+- 验证没有创建 Report 或 QualityGateDecision 表/记录。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 12 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest.py -q
+```
+
+验证结果：
+
+- Pytest execution golden smoke：`1 passed`
+
+修改文件：
+
+- `backend/app/tests/golden/test_testrunner_pytest.py`
+- `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 12 completion gate。
+- 验证命令：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest.py -q && npm --prefix frontend run test -- --run`。
+- 完成后在 Slice 12 文档记录 completion evidence，并选择下一 V1 slice。
+
 ## 2026-06-30 Slice 12 Task 6 Pytest Execution Frontend Shell 完成
 
 本轮完成：
