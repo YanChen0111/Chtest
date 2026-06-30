@@ -2,6 +2,31 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
+import uuid
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from backend.app.modules.ai_runtime.models import Artifact
+from backend.app.modules.cicd.models import CICDChangedFile, CICDRun
+from backend.app.modules.cicd.schemas import CICDRunCreateRequest
+from backend.app.modules.projects.models import Project, Repository
+
+
+class ProjectNotFoundError(Exception):
+    pass
+
+
+class RepositoryInvalidError(Exception):
+    pass
+
+
+class CICDRunNotFoundError(Exception):
+    pass
+
+
+class CICDRunInvalidInputError(Exception):
+    pass
 
 
 @dataclass
@@ -195,3 +220,106 @@ def classify_risk(
     if file_role in {"source", "build"} or (change_type in {"deleted", "renamed"} and file_role not in {"docs", "test"}):
         return "medium", reasons
     return "low", reasons
+
+
+def create_cicd_run(session: Session, data: CICDRunCreateRequest) -> CICDRun:
+    project = session.get(Project, data.project_id)
+    if project is None:
+        raise ProjectNotFoundError
+    if data.repository_id is not None:
+        repository = session.get(Repository, data.repository_id)
+        if repository is None or repository.project_id != project.id:
+            raise RepositoryInvalidError
+    if data.source_type not in {"local_diff", "manual_check"}:
+        raise CICDRunInvalidInputError
+    if data.trigger_type != "manual" or data.provider != "local":
+        raise CICDRunInvalidInputError
+
+    cicd_run = CICDRun(
+        project_id=project.id,
+        repository_id=data.repository_id,
+        source_type=data.source_type,
+        trigger_type="manual",
+        provider="local",
+        pipeline_name=data.pipeline_name,
+        base_ref=data.base_ref,
+        head_ref=data.head_ref,
+        status="created",
+    )
+    session.add(cicd_run)
+    session.flush()
+
+    if data.diff_text:
+        parsed_files = parse_local_diff(data.diff_text)
+        for parsed in parsed_files:
+            session.add(
+                CICDChangedFile(
+                    cicd_run_id=cicd_run.id,
+                    path=parsed.path,
+                    old_path=parsed.old_path,
+                    change_type=parsed.change_type,
+                    language=parsed.language,
+                    file_role=parsed.file_role,
+                    risk_level=parsed.risk_level,
+                    risk_reasons_json=parsed.risk_reasons,
+                    lines_added=parsed.lines_added,
+                    lines_deleted=parsed.lines_deleted,
+                ),
+            )
+        create_cicd_run_artifacts(session, cicd_run, data.diff_text, parsed_files)
+    session.commit()
+    session.refresh(cicd_run)
+    return cicd_run
+
+
+def list_cicd_runs(session: Session) -> list[CICDRun]:
+    return list(session.scalars(select(CICDRun).order_by(CICDRun.created_at.desc())))
+
+
+def get_cicd_run(session: Session, cicd_run_id: uuid.UUID) -> CICDRun:
+    cicd_run = session.get(CICDRun, cicd_run_id)
+    if cicd_run is None:
+        raise CICDRunNotFoundError
+    return cicd_run
+
+
+def create_cicd_run_artifacts(
+    session: Session,
+    cicd_run: CICDRun,
+    diff_text: str,
+    parsed_files: list[ParsedChangedFile],
+) -> list[Artifact]:
+    manifest = {"changed_files": [item.to_manifest_item() for item in parsed_files]}
+    specs = [
+        (
+            "diff_patch",
+            "diff.patch",
+            "text/x-diff",
+            len(diff_text.encode("utf-8")),
+            {"source_type": cicd_run.source_type},
+        ),
+        (
+            "changed_files",
+            "changed_files.json",
+            "application/json",
+            0,
+            {"changed_file_count": len(parsed_files), "manifest_json": manifest},
+        ),
+    ]
+    artifacts: list[Artifact] = []
+    for artifact_type, filename, mime_type, size_bytes, metadata in specs:
+        artifact = Artifact(
+            project_id=cicd_run.project_id,
+            owner_entity_type="CICDRun",
+            owner_entity_id=cicd_run.id,
+            artifact_type=artifact_type,
+            file_path=f"artifacts/projects/{cicd_run.project_id}/cicd-quality/{cicd_run.id}/{filename}",
+            mime_type=mime_type,
+            size_bytes=size_bytes,
+            sha256=f"sha256:{artifact_type}:{cicd_run.id}",
+            metadata_json=metadata,
+        )
+        session.add(artifact)
+        artifacts.append(artifact)
+    session.flush()
+    return artifacts

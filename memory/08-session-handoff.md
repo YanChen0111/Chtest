@@ -1,5 +1,45 @@
 # Session Handoff
 
+## 2026-06-30 Slice 15 Task 5 CI/CD Run API 完成
+
+本轮完成：
+
+- 完成 Slice 15 Task 5：Add CI/CD run create/list/get API。
+- 新增 `backend/app/modules/cicd/router.py` 并在 `backend/app/main.py`
+  挂载 `/api/cicd`。
+- `POST /api/cicd/runs` 支持 local_diff/manual/local 输入，解析 diff_text
+  并持久化 CICDChangedFile rows。
+- `GET /api/cicd/runs` 和 `GET /api/cicd/runs/{id}` 返回 changed_files。
+- 创建 `diff_patch` 和 `changed_files` artifacts，owner 为 CICDRun。
+- 未创建 UnitTestPatch、TestRun、QualityGateDecision 或 Report records。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 15 Task 6：Add CI/CD analyze API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
+```
+
+验证结果：
+
+- CI/CD Quality Center focused tests：`6 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/router.py`
+- `backend/app/modules/cicd/service.py`
+- `backend/app/main.py`
+- `backend/app/tests/api/test_cicd_quality_center.py`
+- `docs/implementation/slices/slice-15-cicd-quality-center.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 15 Task 6：Add CI/CD analyze API。
+- 当前任务不要创建 UnitTestPatch、regression plan、QualityGateDecision、
+  TestRun 或 Report records。
+
 ## 2026-06-30 Slice 15 Task 4 Local Diff Parser 完成
 
 本轮完成：

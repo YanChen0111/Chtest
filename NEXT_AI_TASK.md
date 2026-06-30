@@ -10,12 +10,12 @@ Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Task 5: Add CI/CD run create/list/get API.
+Task 6: Add CI/CD analyze API.
 
 ## Product Value Answer
 
-After this task, Chtest can create, list, and retrieve local-first CICDRun
-records with changed file evidence.
+After this task, Chtest can add deterministic mock risk analysis evidence to a
+local-first CICDRun.
 
 ## Must Read
 
@@ -43,13 +43,12 @@ memory/08-session-handoff.md
 backend/app/modules/cicd/router.py
 backend/app/modules/cicd/service.py
 backend/app/modules/cicd/schemas.py
-backend/app/main.py
 backend/app/tests/api/test_cicd_quality_center.py
 docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-Do not create UnitTestPatch, TestRun, QualityGateDecision, or Report records in
-this task.
+Do not create UnitTestPatch, regression plan, QualityGateDecision, TestRun, or
+Report records in this task.
 
 ## Verification Command
 
@@ -57,26 +56,24 @@ this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
 ```
 
-Expected result: focused CI/CD run API tests pass.
+Expected result: focused CI/CD analyze API tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/cicd/runs`.
-- Adds `GET /api/cicd/runs`.
-- Adds `GET /api/cicd/runs/{id}`.
-- Supports V1 `source_type=local_diff`, `trigger_type=manual`,
-  `provider=local`.
-- Persists CICDChangedFile rows when diff text is supplied.
-- Does not create UnitTestPatch, TestRun, QualityGateDecision, or Report
-  records.
-- Updates handoff and sets the next task to CI/CD analyze API.
+- Adds `POST /api/cicd/runs/{id}/analyze`.
+- Creates a succeeded AITask with mock CICDChangeAnalysisAgent output.
+- Updates CICDRun status to `analyzed` and overall_risk from changed files.
+- Writes risk_analysis artifact metadata owned by CICDRun.
+- Does not create UnitTestPatch, regression plan, QualityGateDecision, TestRun,
+  or Report records.
+- Updates handoff and sets the next task to CI/CD Quality Center frontend shell.
 
 ## Commit Message
 
 ```text
-feat(cicd): add quality run api
+feat(cicd): add change analysis api
 ```
 
 ## Next Task
 
-Slice 15 Task 6: Add CI/CD analyze API.
+Slice 15 Task 7: Add CI/CD Quality Center frontend shell.

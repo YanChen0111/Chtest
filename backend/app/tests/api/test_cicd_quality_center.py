@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
+from typing import Any
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend.app.main import app
 from backend.app.models.base import Base
+from backend.app.modules.ai_runtime.models import Artifact
+from backend.app.modules.automation.models import AutomationDraft
 from backend.app.modules.cicd.models import CICDChangedFile, CICDRun
 from backend.app.modules.cicd.schemas import (
     CICDChangedFileRead,
@@ -15,7 +21,10 @@ from backend.app.modules.cicd.schemas import (
     CICDRunRead,
 )
 from backend.app.modules.cicd.service import parse_local_diff
+from backend.app.modules.execution.models import TestRun
 from backend.app.modules.projects.models import Project, Repository, Workspace
+from backend.app.modules.projects.router import get_session
+from backend.app.modules.reporting.models import Report
 
 
 def session_factory() -> sessionmaker[Session]:
@@ -27,6 +36,68 @@ def session_factory() -> sessionmaker[Session]:
     )
     Base.metadata.create_all(engine)
     return sessionmaker(engine, expire_on_commit=False, future=True)
+
+
+class ASGIResponse:
+    def __init__(self, status_code: int, body: bytes) -> None:
+        self.status_code = status_code
+        self.body = body
+
+    def json(self) -> Any:
+        return json.loads(self.body.decode("utf-8"))
+
+
+class ASGIClient:
+    def __init__(self, asgi_app: Any) -> None:
+        self.asgi_app = asgi_app
+
+    def get(self, path: str) -> ASGIResponse:
+        return asyncio.run(self._request("GET", path, None))
+
+    def post(self, path: str, json_body: dict[str, Any]) -> ASGIResponse:
+        return asyncio.run(self._request("POST", path, json_body))
+
+    async def _request(self, method: str, path: str, json_body: dict[str, Any] | None) -> ASGIResponse:
+        body = json.dumps(json_body).encode("utf-8") if json_body is not None else b""
+        status_code: int | None = None
+        body_chunks: list[bytes] = []
+        request_complete = False
+
+        async def receive() -> dict[str, Any]:
+            nonlocal request_complete
+            if not request_complete:
+                request_complete = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return {"type": "http.disconnect"}
+
+        async def send(message: dict[str, Any]) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            elif message["type"] == "http.response.body":
+                body_chunks.append(message.get("body", b""))
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": method,
+            "scheme": "http",
+            "path": path,
+            "raw_path": path.encode("utf-8"),
+            "query_string": b"",
+            "headers": [
+                (b"host", b"testserver"),
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode("ascii")),
+            ],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+        }
+
+        await self.asgi_app(scope, receive, send)
+        assert status_code is not None
+        return ASGIResponse(status_code, b"".join(body_chunks))
 
 
 def seed_project_repository(session: Session) -> tuple[Project, Repository]:
@@ -239,3 +310,77 @@ rename to package-renamed.json
     assert parsed[3].old_path == "package.json"
     assert parsed[3].risk_level == "medium"
     assert manifest["changed_files"][0]["risk_reasons"]
+
+
+def test_create_list_get_cicd_run_api_persists_local_diff_changed_files() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, repository = seed_project_repository(session)
+            session.commit()
+            project_id = project.id
+            repository_id = repository.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            "/api/cicd/runs",
+            {
+                "project_id": str(project_id),
+                "repository_id": str(repository_id),
+                "source_type": "local_diff",
+                "base_ref": "main",
+                "head_ref": "HEAD",
+                "diff_text": "diff --git a/app/coupon.py b/app/coupon.py\n--- a/app/coupon.py\n+++ b/app/coupon.py\n@@ -1 +1,2 @@\n-old\n+new\n",
+            },
+        )
+
+        assert response.status_code == 202
+        created = response.json()
+        assert created["status"] == "created"
+
+        list_response = client.get("/api/cicd/runs")
+        assert list_response.status_code == 200
+        listed = list_response.json()
+        assert listed["total"] == 1
+        assert listed["items"][0]["id"] == created["cicd_run_id"]
+        assert listed["items"][0]["changed_files"][0]["path"] == "app/coupon.py"
+
+        get_response = client.get(f"/api/cicd/runs/{created['cicd_run_id']}")
+        assert get_response.status_code == 200
+        body = get_response.json()
+        assert body["project_id"] == str(project_id)
+        assert body["repository_id"] == str(repository_id)
+        assert body["source_type"] == "local_diff"
+        assert body["trigger_type"] == "manual"
+        assert body["provider"] == "local"
+        assert body["quality_gate_status"] == "pending"
+        assert body["status"] == "created"
+        assert body["changed_files"][0]["file_role"] == "source"
+        assert body["changed_files"][0]["risk_level"] == "medium"
+
+        with SessionLocal() as session:
+            run = session.get(CICDRun, uuid.UUID(created["cicd_run_id"]))
+            changed_files = list(session.scalars(select(CICDChangedFile).where(CICDChangedFile.cicd_run_id == run.id)))
+            artifacts = list(
+                session.scalars(
+                    select(Artifact).where(
+                        Artifact.owner_entity_type == "CICDRun",
+                        Artifact.owner_entity_id == run.id,
+                    ),
+                ),
+            )
+            assert session.scalar(select(AutomationDraft)) is None
+            assert session.scalar(select(TestRun)) is None
+            assert session.scalar(select(Report)) is None
+
+        assert run is not None
+        assert len(changed_files) == 1
+        assert {artifact.artifact_type for artifact in artifacts} == {"diff_patch", "changed_files"}
+    finally:
+        app.dependency_overrides.clear()

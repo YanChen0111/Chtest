@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from backend.app.modules.ai_runtime.router import router as ai_runtime_router
 from backend.app.modules.automation.router import router as automation_router
 from backend.app.modules.cases.router import router as cases_router
+from backend.app.modules.cicd.router import router as cicd_router
 from backend.app.modules.execution.router import router as execution_router
 from backend.app.modules.projects.router import router as projects_router
 from backend.app.modules.prompt_skill.router import router as prompt_skill_router
@@ -25,6 +26,7 @@ app.include_router(cases_router, prefix="/api")
 app.include_router(automation_router, prefix="/api")
 app.include_router(execution_router, prefix="/api")
 app.include_router(reporting_router, prefix="/api")
+app.include_router(cicd_router, prefix="/api")
 
 
 @app.get("/health", response_class=PlainTextResponse)
