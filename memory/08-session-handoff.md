@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-06-30 Slice 17 Task 1 Extension Surface Plan 完成
+
+本轮完成：
+
+- 完成 Slice 17 Task 1：Add Extension Surface task plan。
+- 新增 `docs/implementation/slices/slice-17-extension-surface.md`。
+- 将 Slice 17 拆为 contract boundary、KnowledgeAdapter empty shell、RAG 知识库
+  ContextArtifact API shell、MCP-ready ToolDefinition schema、frontend shell、
+  golden smoke、completion gate。
+- 明确 RAG 知识库是 ContextArtifact 管理和使用展示表面，不是内置 RAG
+  runtime。
+- 明确 KnowledgeAdapter 在 V1 只保留空接口/配置状态，不做 retrieval。
+- 明确 MCP-ready 只落到 ToolDefinition schema metadata，不引入 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 17 Task 2：Add Extension Surface
+  contract boundary。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-17-extension-surface.md && rg -n "KnowledgeAdapter|RAG 知识库|MCP-ready|Non-goals" docs/implementation/slices/slice-17-extension-surface.md
+git diff --check
+```
+
+验证结果：
+
+- Slice 17 planning document exists and names scope/non-goals。
+- `git diff --check` clean。
+
+修改文件：
+
+- `docs/implementation/slices/slice-17-extension-surface.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 17 Task 2：Add Extension Surface contract
+  boundary。
+- 该任务只更新 contracts 和 slice task plan，不写运行时代码，不加入 RAG
+  runtime、MCP runtime、RBAC、tenants 或 permissions。
+
 ## 2026-06-30 Slice 16 Completion Gate 完成
 
 本轮完成：

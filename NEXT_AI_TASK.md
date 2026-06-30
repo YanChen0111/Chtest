@@ -10,13 +10,13 @@ Slice 17: Extension Surface.
 
 ## Current Task
 
-Task 1: Add Extension Surface task plan.
+Task 2: Add Extension Surface contract boundary.
 
 ## Product Value Answer
 
-After this task, Chtest has a scoped Slice 17 plan for the RAG 知识库 surface,
-empty KnowledgeAdapter, and MCP-ready Tool schema without adding runtime-heavy
-extension infrastructure.
+After this task, Chtest has a contract-first boundary for the RAG 知识库
+surface, empty KnowledgeAdapter, and MCP-ready ToolDefinition schema without
+adding runtime-heavy extension infrastructure.
 
 ## Must Read
 
@@ -41,37 +41,44 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-17-extension-surface.md
 ```
 
-Planning-only task. Do not add RAG runtime, vector indexing, embeddings,
-reranking, MCP runtime dependency, RBAC, tenants, or permissions.
+Contract-only task. Do not add backend runtime code, frontend code, RAG runtime,
+vector indexing, embeddings, reranking, MCP runtime dependency, RBAC, tenants,
+or permissions.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-17-extension-surface.md && rg -n "KnowledgeAdapter|RAG 知识库|MCP-ready|Non-goals" docs/implementation/slices/slice-17-extension-surface.md
+rg -n "KnowledgeAdapter|RAG 知识库|ToolDefinition|MCP-ready|Non-goals" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-17-extension-surface.md
 ```
 
-Expected result: Slice 17 planning document exists and names scope/non-goals.
+Expected result: Slice 17 contracts name extension surface scope and non-goals.
 
 ## Acceptance
 
-- Creates `docs/implementation/slices/slice-17-extension-surface.md`.
-- Splits Slice 17 into small verifiable tasks.
-- Names the RAG 知识库 page as a ContextArtifact and KnowledgeAdapter surface,
-  not an internal RAG runtime.
-- Names empty KnowledgeAdapter and MCP-ready ToolDefinition/schema boundaries.
-- Keeps RAG runtime, MCP runtime dependency, RBAC, tenants, and permissions out
-  of scope.
-- Updates handoff and sets the next task to the first Slice 17 contract task.
+- Contract names the RAG 知识库 page as a ContextArtifact management and usage
+  display surface.
+- Contract defines KnowledgeAdapter as an empty interface/configuration state in
+  V1, not a retrieval runtime.
+- Contract defines MCP-ready ToolDefinition metadata while keeping ToolAdapter
+  allowlist safety as the executable boundary.
+- Contract keeps RAG runtime, MCP runtime dependency, RBAC, tenants, and
+  permissions out of scope.
+- Updates handoff and sets the next task to the first Slice 17 implementation
+  task.
 
 ## Commit Message
 
 ```text
-docs(extension): add extension surface task plan
+docs(extension): define extension surface boundary
 ```
 
 ## Next Task
 
-Slice 17 Task 2: Add Extension Surface contract boundary.
+Slice 17 Task 3: Add KnowledgeAdapter empty interface/schema.
