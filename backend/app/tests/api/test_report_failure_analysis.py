@@ -374,3 +374,98 @@ def test_create_failure_analysis_api_returns_insufficient_evidence_without_artif
         assert body["suggested_actions"] == ["Attach stdout, stderr, and failed TestResult evidence before analysis."]
     finally:
         app.dependency_overrides.clear()
+
+
+def test_create_automation_execution_report_api_writes_evidence_artifacts() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, _ai_task, test_run, _result, artifact = seed_project_task_and_run(session)
+            session.commit()
+            project_id = project.id
+            test_run_id = test_run.id
+            artifact_id = artifact.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            "/api/reports",
+            {
+                "project_id": str(project_id),
+                "report_type": "automation_execution",
+                "related_entity_type": "TestRun",
+                "related_entity_id": str(test_run_id),
+            },
+        )
+
+        assert response.status_code == 202
+        created = response.json()
+        assert created["status"] == "ready"
+        assert created["evidence_manifest_artifact_id"] is not None
+
+        get_response = client.get(f"/api/reports/{created['report_id']}")
+        assert get_response.status_code == 200
+        body = get_response.json()
+        assert body["id"] == created["report_id"]
+        assert body["report_type"] == "automation_execution"
+        assert body["related_entity_type"] == "TestRun"
+        assert body["related_entity_id"] == str(test_run_id)
+        assert body["status"] == "ready"
+        assert body["conclusion"] == "failed"
+        assert body["metrics"]["failed"] == 1
+        assert str(artifact_id) in body["evidence_manifest"]["evidence"][0]["artifact_id"]
+        assert body["evidence_manifest"]["missing_evidence"] == []
+        artifact_types = {artifact["artifact_type"] for artifact in body["artifacts"]}
+        assert artifact_types == {"report_md", "report_json"}
+        manifest = next(
+            artifact
+            for artifact in body["artifacts"]
+            if artifact["id"] == created["evidence_manifest_artifact_id"]
+        )
+        assert manifest["metadata_json"]["manifest_kind"] == "evidence_manifest"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_create_automation_execution_report_api_does_not_pass_without_evidence() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, test_run = seed_failed_run_without_evidence(session)
+            test_run.parsed_result_json = {"total": 1, "passed": 1, "failed": 0, "skipped": 0, "error": 0}
+            test_run.status = "passed"
+            test_run.exit_code = 0
+            session.add(test_run)
+            session.commit()
+            project_id = project.id
+            test_run_id = test_run.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            "/api/reports",
+            {
+                "project_id": str(project_id),
+                "report_type": "automation_execution",
+                "related_entity_type": "TestRun",
+                "related_entity_id": str(test_run_id),
+            },
+        )
+
+        assert response.status_code == 202
+        body = client.get(f"/api/reports/{response.json()['report_id']}").json()
+        assert body["conclusion"] == "insufficient_evidence"
+        assert body["metrics"]["passed"] == 1
+        assert body["evidence_manifest"]["missing_evidence"] == ["execution_artifact"]
+    finally:
+        app.dependency_overrides.clear()

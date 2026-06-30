@@ -10,12 +10,12 @@ Slice 14: Report And Failure Analysis.
 
 ## Current Task
 
-Task 5: Add automation execution Report API.
+Task 6: Add Report and FailureAnalysis frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest can create and retrieve evidence-backed
-automation_execution Report records for TestRun results.
+After this task, users can inspect FailureAnalysis and automation_execution
+Report records from the workbench with evidence shown before AI explanation.
 
 ## Must Read
 
@@ -41,42 +41,42 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-14-report-and-failure-analysis.md
-backend/app/modules/reporting/router.py
-backend/app/modules/reporting/service.py
-backend/app/modules/reporting/schemas.py
-backend/app/tests/api/test_report_failure_analysis.py
+frontend/src/api/reporting.ts
+frontend/src/stores/reporting.ts
+frontend/src/views/reporting/ReportFailureAnalysisView.vue
+frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts
+frontend/src/router/index.ts
+frontend/src/stores/index.ts
 ```
 
-Do not create CI/CD quality reports or QualityGateDecision records in this task.
+Do not add CI/CD quality gates, RAG runtime, MCP runtime, RBAC, tenants, or
+permissions in this task.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: focused automation execution Report API tests pass.
+Expected result: focused frontend workbench tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/reports`.
-- Adds `GET /api/reports/{id}`.
-- Supports `report_type=automation_execution` with
-  `related_entity_type=TestRun`.
-- Writes report_md/report_json/evidence_manifest artifact metadata.
-- Report conclusion cites TestRun parsed_result, TestResult rows, and
-  artifacts.
-- Does not create CI/CD quality reports or QualityGateDecision records.
-- Do not add CI/CD quality gates, merge/release decisions, RAG runtime, MCP
-  runtime, RBAC, tenants, permissions, or broad report analytics.
-- Update handoff and set the next task to Report and FailureAnalysis frontend shell.
+- Adds workbench navigation for Report/FailureAnalysis.
+- Starts FailureAnalysis for a TestRun and shows classification/confidence.
+- Starts automation_execution Report generation and shows conclusion, summary,
+  metrics, artifact references, and evidence manifest status.
+- Shows evidence before AI explanation.
+- Does not add CI/CD quality gates, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions.
+- Update handoff and set the next task to automation execution report golden smoke.
 
 ## Commit Message
 
 ```text
-feat(reporting): add automation execution report api
+feat(frontend): add report failure analysis shell
 ```
 
 ## Next Task
 
-Slice 14 Task 6: Add Report and FailureAnalysis frontend shell.
+Slice 14 Task 7: Add automation execution report golden smoke.
