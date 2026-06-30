@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 14: Report And Failure Analysis.
+Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Slice 14 completion gate.
+Task 1: Add CI/CD Quality Center task plan.
 
 ## Product Value Answer
 
-After this task, Slice 14 has verified API, frontend, golden smoke, and
-handoff evidence for FailureAnalysis and automation_execution Report.
+After this task, Slice 15 has a scoped implementation plan for local-first
+CI/CD quality evidence without adding merge/release decisions.
 
 ## Must Read
 
@@ -24,14 +24,14 @@ handoff evidence for FailureAnalysis and automation_execution Report.
 3. `docs/product/01-positioning-and-scope.md`
 4. `docs/contracts/01-data-model-contract.md`
 5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
+6. `docs/contracts/03-state-machines.md`
+7. `docs/contracts/04-artifact-contract.md`
 8. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
-- CI/CD, report center, RAG runtime, MCP runtime, and migration reference docs
-  unless a concrete blocker requires them.
+- RAG runtime, MCP runtime, RBAC, tenants, permissions, release management, and
+  remote CI provider integration docs unless a concrete blocker requires them.
 
 ## Expected Files
 
@@ -43,35 +43,36 @@ memory/08-session-handoff.md
 docs/implementation/slices/slice-14-report-and-failure-analysis.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/implementation/slices/slice-14-report-and-failure-analysis.md
+docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-Do not add product behavior in this task. This is verification and handoff only.
+This is a planning-only task. Do not add product code.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/golden/test_report_failure_analysis_golden.py -q && npm --prefix frontend run test -- --run
+test -f docs/implementation/slices/slice-15-cicd-quality-center.md && rg -n "CI/CD Quality Center|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-Expected result: Slice 14 backend API, golden smoke, and frontend tests pass.
+Expected result: Slice 15 task plan exists and contains scoped task table,
+verification commands, and non-goals.
 
 ## Acceptance
 
-- Run the Slice 14 completion verification command.
-- Mark Slice 14 completion gate done in the slice task plan if verification
-  passes.
-- Record verification evidence in handoff.
-- Set the next task to the next V1 slice/task from `docs/implementation/02-v1-slice-plan.md`.
-- Do not add product behavior, broad refactors, CI/CD gates, RAG runtime, MCP
-  runtime, RBAC, tenants, or permissions.
+- Creates `docs/implementation/slices/slice-15-cicd-quality-center.md`.
+- Splits Slice 15 into small contract/model/API/frontend/golden/completion tasks.
+- Scope stays local-first: CICDRun, CICDChangedFile, local diff analysis, and
+  evidence surface.
+- Explicitly excludes merge/release decisions, remote CI provider integration,
+  RAG runtime, MCP runtime, RBAC, tenants, and permissions.
+- Updates handoff and sets the next task to Slice 15 contract boundary.
 
 ## Commit Message
 
 ```text
-docs(report): complete report failure analysis slice
+docs(cicd): add quality center task plan
 ```
 
 ## Next Task
 
-Read `docs/implementation/02-v1-slice-plan.md` and select the next smallest V1 task.
+Slice 15 Task 2: Add CI/CD Quality Center contract boundary.

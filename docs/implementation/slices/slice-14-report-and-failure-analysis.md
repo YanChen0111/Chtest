@@ -44,7 +44,7 @@ center analytics.
 | Add automation execution Report API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | `811316d` | evidence_manifest + report artifacts |
 | Add Report and FailureAnalysis frontend shell | done | `npm --prefix frontend run test -- --run` | `c4971a3` | evidence-first report/detail views |
 | Add automation execution report golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_report_failure_analysis_golden.py -q` | pending commit | TestRun -> FailureAnalysis -> Report evidence |
-| Slice 14 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/golden/test_report_failure_analysis_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
+| Slice 14 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/golden/test_report_failure_analysis_golden.py -q && npm --prefix frontend run test -- --run` | pending commit | docs and handoff only |
 
 ## Task 1: Add Report And FailureAnalysis API Contract Boundary
 
@@ -262,3 +262,15 @@ test(golden): add report failure analysis smoke
 - Golden smoke proves TestRun -> FailureAnalysis/Report evidence.
 - No CI/CD quality gates, RAG runtime, MCP runtime, RBAC, tenants, permissions,
   or broad report analytics are added.
+
+Completion evidence on 2026-06-30:
+
+- Backend API + golden smoke:
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/golden/test_report_failure_analysis_golden.py -q`
+  -> `9 passed`.
+- Frontend shell:
+  `npm --prefix frontend run test -- --run`
+  -> `12 passed`, `15 tests passed`.
+- Completed task commits:
+  `dcedd23`, `ee168bc`, `f9ebb7a`, `0f9a163`, `811316d`,
+  `c4971a3`, `04b6425`.

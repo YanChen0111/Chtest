@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-06-30 Slice 14 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 14 completion gate。
+- 确认 Slice 14 所有任务均为 `done`，并记录提交号：
+  `dcedd23`、`ee168bc`、`f9ebb7a`、`0f9a163`、`811316d`、
+  `c4971a3`、`04b6425`。
+- 完成组合验收：FailureAnalysis/Report API、golden smoke、frontend shell 均
+  已覆盖。
+- 已在 `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
+  写入 completion evidence。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 15 Task 1：Add CI/CD Quality Center
+  task plan。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/golden/test_report_failure_analysis_golden.py -q
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Report/FailureAnalysis API + golden smoke：`9 passed`
+- Frontend workbench shell：`12 passed, 15 tests passed`
+
+Slice 14 保持的非目标：
+
+- 未加入 CI/CD quality gates、merge/release decisions、RAG runtime、MCP
+  runtime、RBAC、tenants、permissions 或 broad report analytics。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 15 Task 1：Add CI/CD Quality Center task
+  plan。
+- 这是 planning-only 任务，先创建
+  `docs/implementation/slices/slice-15-cicd-quality-center.md`，不要直接改产品代码。
+
 ## 2026-06-30 Slice 14 Task 7 Report/FailureAnalysis Golden Smoke 完成
 
 本轮完成：
