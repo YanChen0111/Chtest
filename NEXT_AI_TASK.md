@@ -10,12 +10,12 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 7: Add new-test and regression API.
+Task 8: Add QualityGateDecision API.
 
 ## Product Value Answer
 
-After this task, Chtest can record new-test and regression execution evidence
-for a CICDRun without computing the final quality gate.
+After this task, Chtest can compute evidence-backed CI/CD quality decisions and
+update the CICDRun quality gate status.
 
 ## Must Read
 
@@ -47,8 +47,9 @@ backend/app/tests/api/test_unit_test_patch_regression.py
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Only create CICD-linked TestRun evidence through allowlisted local command
-records. Do not compute QualityGateDecision or create reports in this task.
+Only compute local evidence-backed QualityGateDecision records. Do not trigger
+merge, push, release, deployment, remote CI status updates, PR comments, or
+reports in this task.
 
 ## Verification Command
 
@@ -56,26 +57,26 @@ records. Do not compute QualityGateDecision or create reports in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
 ```
 
-Expected result: focused new-test and regression API tests pass.
+Expected result: focused QualityGateDecision API tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/cicd/runs/{id}/run-new-tests`.
-- Adds `POST /api/cicd/runs/{id}/select-regression`.
-- Adds `POST /api/cicd/runs/{id}/run-regression`.
-- Creates TestRun records with `cicd_run_id` set.
-- Requires an applied UnitTestPatch when `unit_test_patch_id` is provided.
-- Writes `regression_plan.json` artifact metadata.
-- Uses allowlisted TestCommand records rather than arbitrary shell strings.
-- Does not compute QualityGateDecision or create Reports.
-- Updates handoff and sets the next task to QualityGateDecision API.
+- Adds `POST /api/cicd/runs/{id}/quality-gate`.
+- Creates a new QualityGateDecision on each compute.
+- Updates `CICDRun.quality_gate_status`.
+- Returns `needs_review` when required evidence is missing.
+- Returns `failed` when blocking evidence exists.
+- Returns `passed` only when patch scope, new-test, and regression evidence are present.
+- Does not trigger merge, push, release, deployment, remote CI updates, PR
+  comments, or reports.
+- Updates handoff and sets the next task to CI/CD quality report API.
 
 ## Commit Message
 
 ```text
-feat(cicd): add new test regression api
+feat(cicd): add quality gate decision api
 ```
 
 ## Next Task
 
-Slice 16 Task 8: Add QualityGateDecision API.
+Slice 16 Task 9: Add CI/CD quality report API.

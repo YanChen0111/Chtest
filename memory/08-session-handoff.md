@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 7 New-Test/Regression API 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 7：Add new-test and regression API。
+- 新增 `POST /api/cicd/runs/{id}/run-new-tests`，通过 allowlisted
+  TestCommand 创建 `cicd_run_id` 已设置的 TestRun 证据。
+- 当请求带 `unit_test_patch_id` 时，要求对应 UnitTestPatch 已为
+  `applied` 状态。
+- 新增 `POST /api/cicd/runs/{id}/select-regression`，写入
+  `artifact_type=regression_plan`、`owner_entity_type=CICDRun` 的
+  regression plan artifact metadata。
+- 新增 `POST /api/cicd/runs/{id}/run-regression`，基于 regression plan 和
+  allowlisted TestCommand 创建 CICD-linked TestRun 记录。
+- 当前任务只排队/记录 TestRun evidence，不执行任意 shell 字符串，不计算
+  QualityGateDecision，不创建 Report。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 8：Add
+  QualityGateDecision API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
+```
+
+验证结果：
+
+- `18 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/router.py`
+- `backend/app/modules/cicd/service.py`
+- `backend/app/modules/cicd/schemas.py`
+- `backend/app/tests/api/test_unit_test_patch_regression.py`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 8：Add QualityGateDecision API。
+- 该任务只计算本地 evidence-backed gate，不触发 merge/push/release/
+  deployment/remote CI/PR comments，也不创建 Report。
+
 ## 2026-06-30 Slice 16 Task 6 UnitTestPatch Apply API 完成
 
 本轮完成：

@@ -14,7 +14,13 @@ from backend.app.modules.cicd.schemas import (
     CICDRunCreateRead,
     CICDRunCreateRequest,
     CICDRunListRead,
+    CICDRegressionRunRead,
+    CICDRegressionRunRequest,
+    CICDRegressionSelectRead,
+    CICDRegressionSelectRequest,
     CICDRunRead,
+    CICDRunNewTestsRead,
+    CICDRunNewTestsRequest,
     UnitTestPatchApplyRead,
     UnitTestPatchApplyRequest,
     UnitTestPatchGenerateRequest,
@@ -155,6 +161,62 @@ def apply_unit_test_patch(
     except service.PatchScopeRejectedError as exc:
         raise bad_request("PATCH_SCOPE_REJECTED", "Unit test patch modifies paths outside allowed test directories.") from exc
     return UnitTestPatchApplyRead(unit_test_patch_id=patch.id, status=patch.status, applied_artifact_id=artifact.id)
+
+
+@router.post("/cicd/runs/{cicd_run_id}/run-new-tests", response_model=CICDRunNewTestsRead, status_code=status.HTTP_202_ACCEPTED)
+def run_new_tests(
+    cicd_run_id: uuid.UUID,
+    data: CICDRunNewTestsRequest,
+    session: Session = Depends(get_session),
+) -> CICDRunNewTestsRead:
+    try:
+        test_run = service.run_new_tests(session, cicd_run_id, data)
+    except service.CICDRunNotFoundError as exc:
+        raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
+    except service.UnitTestPatchNotFoundError as exc:
+        raise not_found("UNIT_TEST_PATCH_NOT_FOUND", "Unit test patch not found.") from exc
+    except service.UnitTestPatchInvalidStatusError as exc:
+        raise bad_request("UNIT_TEST_PATCH_INVALID_STATUS", "Unit test patch status does not allow this action.") from exc
+    except service.TestCommandInvalidError as exc:
+        raise bad_request("TEST_COMMAND_INVALID", "Test command is not allowed for this CI/CD run.") from exc
+    return CICDRunNewTestsRead(test_run_id=test_run.id, cicd_run_id=cicd_run_id, status=test_run.status)
+
+
+@router.post("/cicd/runs/{cicd_run_id}/select-regression", response_model=CICDRegressionSelectRead)
+def select_regression(
+    cicd_run_id: uuid.UUID,
+    data: CICDRegressionSelectRequest,
+    session: Session = Depends(get_session),
+) -> CICDRegressionSelectRead:
+    try:
+        artifact, command_ids, reasons = service.select_regression(session, cicd_run_id, data)
+    except service.CICDRunNotFoundError as exc:
+        raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
+    except service.TestCommandInvalidError as exc:
+        raise bad_request("TEST_COMMAND_INVALID", "Test command is not allowed for this CI/CD run.") from exc
+    return CICDRegressionSelectRead(
+        cicd_run_id=cicd_run_id,
+        regression_plan_artifact_id=artifact.id,
+        recommended_test_command_ids=command_ids,
+        reasons=reasons,
+    )
+
+
+@router.post("/cicd/runs/{cicd_run_id}/run-regression", response_model=CICDRegressionRunRead, status_code=status.HTTP_202_ACCEPTED)
+def run_regression(
+    cicd_run_id: uuid.UUID,
+    data: CICDRegressionRunRequest,
+    session: Session = Depends(get_session),
+) -> CICDRegressionRunRead:
+    try:
+        test_runs = service.run_regression(session, cicd_run_id, data)
+    except service.CICDRunNotFoundError as exc:
+        raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
+    except service.RegressionPlanInvalidError as exc:
+        raise bad_request("REGRESSION_PLAN_INVALID", "Regression plan is invalid for this CI/CD run.") from exc
+    except service.TestCommandInvalidError as exc:
+        raise bad_request("TEST_COMMAND_INVALID", "Test command is not allowed for this CI/CD run.") from exc
+    return CICDRegressionRunRead(cicd_run_id=cicd_run_id, test_run_ids=[test_run.id for test_run in test_runs], status="tests_running")
 
 
 def cicd_run_read(session: Session, cicd_run: CICDRun) -> CICDRunRead:

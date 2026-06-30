@@ -22,7 +22,7 @@ from backend.app.modules.cicd.schemas import (
 )
 from backend.app.modules.cicd.service import evaluate_patch_scope
 from backend.app.modules.execution.models import TestRun
-from backend.app.modules.projects.models import Project, Repository, Workspace
+from backend.app.modules.projects.models import Project, Repository, TestCommand, Workspace
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.reporting.models import Report
 
@@ -708,5 +708,231 @@ def test_apply_unit_test_patch_api_rejects_unapproved_or_unsafe_patch() -> None:
             assert session.get(UnitTestPatch, unapproved_id).status == "scope_validated"
             assert session.get(UnitTestPatch, unsafe_id).status == "apply_failed"
             assert session.scalar(select(Artifact).where(Artifact.owner_entity_type == "UnitTestPatch")) is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_run_new_tests_api_creates_cicd_linked_test_run_for_applied_patch() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, cicd_run, ai_task = seed_cicd_run_and_ai_task(session)
+            command = TestCommand(
+                project_id=project.id,
+                repository_id=cicd_run.repository_id,
+                name="pytest new tests",
+                command="pytest tests/test_coupon.py -q",
+                working_directory=".",
+                command_type="pytest",
+            )
+            patch = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/tests/test_coupon.py b/tests/test_coupon.py\n",
+                scope_gate_result_json={"allowed": True},
+                test_intent="Applied tests",
+                status="applied",
+            )
+            session.add_all([command, patch])
+            session.commit()
+            cicd_run_id = cicd_run.id
+            patch_id = patch.id
+            command_id = command.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            f"/api/cicd/runs/{cicd_run_id}/run-new-tests",
+            {"unit_test_patch_id": str(patch_id), "test_command_id": str(command_id)},
+        )
+
+        assert response.status_code == 202
+        body = response.json()
+        assert body["cicd_run_id"] == str(cicd_run_id)
+        assert body["status"] == "queued"
+        assert body["test_run_id"] is not None
+
+        with SessionLocal() as session:
+            test_run = session.get(TestRun, uuid.UUID(body["test_run_id"]))
+            assert session.scalar(select(QualityGateDecision)) is None
+            assert session.scalar(select(Report)) is None
+
+        assert test_run is not None
+        assert test_run.cicd_run_id == cicd_run_id
+        assert test_run.test_command_id == command_id
+        assert test_run.name == "CI/CD new tests: pytest new tests"
+        assert test_run.command == "pytest tests/test_coupon.py -q"
+        assert test_run.status == "queued"
+        assert test_run.parsed_result_json["unit_test_patch_id"] == str(patch_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_run_new_tests_api_rejects_unapplied_patch() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, cicd_run, ai_task = seed_cicd_run_and_ai_task(session)
+            command = TestCommand(
+                project_id=project.id,
+                repository_id=cicd_run.repository_id,
+                name="pytest new tests",
+                command="pytest tests/test_coupon.py -q",
+                working_directory=".",
+                command_type="pytest",
+            )
+            patch = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/tests/test_coupon.py b/tests/test_coupon.py\n",
+                scope_gate_result_json={"allowed": True},
+                test_intent="Not applied",
+                status="approved",
+            )
+            session.add_all([command, patch])
+            session.commit()
+            cicd_run_id = cicd_run.id
+            patch_id = patch.id
+            command_id = command.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            f"/api/cicd/runs/{cicd_run_id}/run-new-tests",
+            {"unit_test_patch_id": str(patch_id), "test_command_id": str(command_id)},
+        )
+
+        assert response.status_code == 400
+        assert response.json()["error_code"] == "UNIT_TEST_PATCH_INVALID_STATUS"
+
+        with SessionLocal() as session:
+            assert session.scalar(select(TestRun)) is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_select_regression_api_writes_plan_artifact() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, cicd_run, _ai_task = seed_cicd_run_and_ai_task(session)
+            command = TestCommand(
+                project_id=project.id,
+                repository_id=cicd_run.repository_id,
+                name="pytest regression",
+                command="pytest -q",
+                working_directory=".",
+                command_type="pytest",
+            )
+            session.add(command)
+            session.commit()
+            cicd_run_id = cicd_run.id
+            command_id = command.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            f"/api/cicd/runs/{cicd_run_id}/select-regression",
+            {
+                "skill_version": "regression-selection-skill:v1",
+                "candidate_test_command_ids": [str(command_id)],
+            },
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["cicd_run_id"] == str(cicd_run_id)
+        assert body["recommended_test_command_ids"] == [str(command_id)]
+        assert body["reasons"] == ["Selected active pytest regression command."]
+
+        with SessionLocal() as session:
+            artifact = session.get(Artifact, uuid.UUID(body["regression_plan_artifact_id"]))
+
+        assert artifact is not None
+        assert artifact.artifact_type == "regression_plan"
+        assert artifact.owner_entity_type == "CICDRun"
+        assert artifact.owner_entity_id == cicd_run_id
+        assert artifact.metadata_json["recommended_test_command_ids"] == [str(command_id)]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_run_regression_api_creates_test_runs_from_allowlisted_commands() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, cicd_run, _ai_task = seed_cicd_run_and_ai_task(session)
+            command = TestCommand(
+                project_id=project.id,
+                repository_id=cicd_run.repository_id,
+                name="pytest regression",
+                command="pytest -q",
+                working_directory=".",
+                command_type="pytest",
+            )
+            session.add(command)
+            session.flush()
+            artifact = Artifact(
+                project_id=project.id,
+                owner_entity_type="CICDRun",
+                owner_entity_id=cicd_run.id,
+                artifact_type="regression_plan",
+                file_path=f"artifacts/projects/{project.id}/cicd-quality/{cicd_run.id}/regression_plan.json",
+                mime_type="application/json",
+                size_bytes=0,
+                sha256=f"sha256:regression_plan:{cicd_run.id}",
+                metadata_json={"recommended_test_command_ids": [str(command.id)]},
+            )
+            session.add(artifact)
+            session.commit()
+            cicd_run_id = cicd_run.id
+            command_id = command.id
+            artifact_id = artifact.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            f"/api/cicd/runs/{cicd_run_id}/run-regression",
+            {"regression_plan_artifact_id": str(artifact_id), "test_command_ids": [str(command_id)]},
+        )
+
+        assert response.status_code == 202
+        body = response.json()
+        assert body["cicd_run_id"] == str(cicd_run_id)
+        assert body["status"] == "tests_running"
+        assert len(body["test_run_ids"]) == 1
+
+        with SessionLocal() as session:
+            test_run = session.get(TestRun, uuid.UUID(body["test_run_ids"][0]))
+            assert session.scalar(select(QualityGateDecision)) is None
+            assert session.scalar(select(Report)) is None
+
+        assert test_run is not None
+        assert test_run.cicd_run_id == cicd_run_id
+        assert test_run.test_command_id == command_id
+        assert test_run.name == "CI/CD regression: pytest regression"
+        assert test_run.command == "pytest -q"
+        assert test_run.status == "queued"
+        assert test_run.parsed_result_json["regression_plan_artifact_id"] == str(artifact_id)
     finally:
         app.dependency_overrides.clear()

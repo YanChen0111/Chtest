@@ -108,6 +108,40 @@ class UnitTestPatchApplyRead(BaseModel):
     applied_artifact_id: uuid.UUID
 
 
+class CICDRunNewTestsRequest(BaseModel):
+    unit_test_patch_id: uuid.UUID | None = None
+    test_command_id: uuid.UUID
+
+
+class CICDRunNewTestsRead(BaseModel):
+    test_run_id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    status: str
+
+
+class CICDRegressionSelectRequest(BaseModel):
+    skill_version: str = "regression-selection-skill:v1"
+    candidate_test_command_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class CICDRegressionSelectRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    regression_plan_artifact_id: uuid.UUID
+    recommended_test_command_ids: list[uuid.UUID] = Field(default_factory=list)
+    reasons: list[str] = Field(default_factory=list)
+
+
+class CICDRegressionRunRequest(BaseModel):
+    regression_plan_artifact_id: uuid.UUID
+    test_command_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class CICDRegressionRunRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    test_run_ids: list[uuid.UUID] = Field(default_factory=list)
+    status: str
+
+
 class QualityGateDecisionCreate(BaseModel):
     project_id: uuid.UUID
     cicd_run_id: uuid.UUID

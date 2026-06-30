@@ -9,8 +9,16 @@ from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, UnitTestPatch
-from backend.app.modules.cicd.schemas import CICDRunAnalyzeRequest, CICDRunCreateRequest, UnitTestPatchGenerateRequest
-from backend.app.modules.projects.models import Project, Repository
+from backend.app.modules.cicd.schemas import (
+    CICDRegressionRunRequest,
+    CICDRegressionSelectRequest,
+    CICDRunAnalyzeRequest,
+    CICDRunCreateRequest,
+    CICDRunNewTestsRequest,
+    UnitTestPatchGenerateRequest,
+)
+from backend.app.modules.execution.models import TestRun
+from backend.app.modules.projects.models import Project, Repository, TestCommand
 
 
 class ProjectNotFoundError(Exception):
@@ -38,6 +46,14 @@ class UnitTestPatchInvalidStatusError(Exception):
 
 
 class PatchScopeRejectedError(Exception):
+    pass
+
+
+class TestCommandInvalidError(Exception):
+    pass
+
+
+class RegressionPlanInvalidError(Exception):
     pass
 
 
@@ -612,6 +628,112 @@ def apply_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID) -> tu
     session.refresh(patch)
     session.refresh(artifact)
     return patch, artifact
+
+
+def run_new_tests(session: Session, cicd_run_id: uuid.UUID, data: CICDRunNewTestsRequest) -> TestRun:
+    cicd_run = get_cicd_run(session, cicd_run_id)
+    if data.unit_test_patch_id is not None:
+        patch = get_unit_test_patch(session, data.unit_test_patch_id)
+        if patch.cicd_run_id != cicd_run.id or patch.status != "applied":
+            raise UnitTestPatchInvalidStatusError
+    command = get_active_test_command(session, cicd_run.project_id, data.test_command_id)
+    test_run = create_cicd_test_run(
+        session,
+        cicd_run,
+        command,
+        name=f"CI/CD new tests: {command.name}",
+        parsed_result={
+            "run_type": "new_tests",
+            "unit_test_patch_id": str(data.unit_test_patch_id) if data.unit_test_patch_id else None,
+        },
+    )
+    session.commit()
+    session.refresh(test_run)
+    return test_run
+
+
+def select_regression(session: Session, cicd_run_id: uuid.UUID, data: CICDRegressionSelectRequest) -> tuple[Artifact, list[uuid.UUID], list[str]]:
+    cicd_run = get_cicd_run(session, cicd_run_id)
+    commands = [get_active_test_command(session, cicd_run.project_id, command_id) for command_id in data.candidate_test_command_ids]
+    recommended_ids = [command.id for command in commands]
+    reasons = ["Selected active pytest regression command." for _command in commands]
+    artifact = Artifact(
+        project_id=cicd_run.project_id,
+        owner_entity_type="CICDRun",
+        owner_entity_id=cicd_run.id,
+        artifact_type="regression_plan",
+        file_path=f"artifacts/projects/{cicd_run.project_id}/cicd-quality/{cicd_run.id}/regression_plan.json",
+        mime_type="application/json",
+        size_bytes=0,
+        sha256=f"sha256:regression_plan:{cicd_run.id}:{len(recommended_ids)}",
+        metadata_json={
+            "skill_version": data.skill_version,
+            "recommended_test_command_ids": [str(command_id) for command_id in recommended_ids],
+            "reasons": reasons,
+        },
+    )
+    session.add(artifact)
+    session.commit()
+    session.refresh(artifact)
+    return artifact, recommended_ids, reasons
+
+
+def run_regression(session: Session, cicd_run_id: uuid.UUID, data: CICDRegressionRunRequest) -> list[TestRun]:
+    cicd_run = get_cicd_run(session, cicd_run_id)
+    artifact = session.get(Artifact, data.regression_plan_artifact_id)
+    if artifact is None or artifact.owner_entity_type != "CICDRun" or artifact.owner_entity_id != cicd_run.id or artifact.artifact_type != "regression_plan":
+        raise RegressionPlanInvalidError
+    test_runs: list[TestRun] = []
+    for command_id in data.test_command_ids:
+        command = get_active_test_command(session, cicd_run.project_id, command_id)
+        test_runs.append(
+            create_cicd_test_run(
+                session,
+                cicd_run,
+                command,
+                name=f"CI/CD regression: {command.name}",
+                parsed_result={
+                    "run_type": "regression",
+                    "regression_plan_artifact_id": str(data.regression_plan_artifact_id),
+                },
+            ),
+        )
+    session.commit()
+    for test_run in test_runs:
+        session.refresh(test_run)
+    return test_runs
+
+
+def get_active_test_command(session: Session, project_id: uuid.UUID, test_command_id: uuid.UUID) -> TestCommand:
+    command = session.get(TestCommand, test_command_id)
+    if command is None or command.project_id != project_id or command.status != "active":
+        raise TestCommandInvalidError
+    return command
+
+
+def create_cicd_test_run(
+    session: Session,
+    cicd_run: CICDRun,
+    command: TestCommand,
+    name: str,
+    parsed_result: dict,
+) -> TestRun:
+    test_run = TestRun(
+        project_id=cicd_run.project_id,
+        cicd_run_id=cicd_run.id,
+        test_command_id=command.id,
+        name=name,
+        command=command.command,
+        working_directory=command.working_directory,
+        runner_mode="local_subprocess",
+        repository_readonly=True,
+        network_enabled=False,
+        status="queued",
+        parsed_result_json=parsed_result,
+    )
+    session.add(test_run)
+    session.flush()
+    return test_run
 
 
 def get_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID) -> UnitTestPatch:
