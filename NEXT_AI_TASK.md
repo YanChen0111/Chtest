@@ -10,12 +10,13 @@ V2 Planning.
 
 ## Current Task
 
-V2 Task 3: Select next small V2 slice.
+V2 Task 4: Draft Slice 19 Deterministic Knowledge Retrieval Stub plan.
 
 ## Product Value Answer
 
-After this task, the next V2 slice is chosen from current product priorities
-without accidentally expanding Chtest into out-of-scope platform work.
+After this task, the next V2 slice has a scoped implementation plan for local,
+deterministic ContextArtifact retrieval that improves AI context evidence
+without becoming a full RAG platform.
 
 ## Must Read
 
@@ -31,6 +32,7 @@ without accidentally expanding Chtest into out-of-scope platform work.
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-18-newman-api-execution.md`
+13. `docs/implementation/slices/slice-17-extension-surface.md`
 
 ## Do Not Read Unless Needed
 
@@ -45,35 +47,43 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/slices/slice-18-newman-api-execution.md
 docs/implementation/10-v2-scope-options.md
+docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
 ```
 
-Planning-only task. Do not add product behavior. Choose the next small V2 slice
-or pause for product review.
+Planning-only task. Do not add product code, vector database, embeddings,
+reranking, background indexing, external RAG provider calls, MCP runtime, RBAC,
+tenants, permissions, marketplace, cloud sync, release automation, or remote CI
+provider integration.
 
 ## Verification Command
 
 ```bash
-rg -n "Recommended First V2 Slice|Candidate Direction|Still Out Of Scope|Slice 18" docs/implementation/10-v2-scope-options.md docs/implementation/slices/slice-18-newman-api-execution.md
+test -f docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
+rg -n "Product Value Answer|Non-goals|Task Table|Deterministic|ContextArtifact|KnowledgeAdapter" docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
 git diff --check
 ```
 
-Expected result: next V2 planning context is visible and diff check passes.
+Expected result: Slice 19 plan is visible and diff check passes.
 
 ## Acceptance
 
-- Slice 18 completion evidence is considered before choosing the next slice.
-- Next slice is small, testable, and aligned with V2 scope options.
-- RAG runtime, MCP runtime, RBAC, tenants, permissions, remote CI/CD control,
-  broad dashboards, and marketplace work remain out unless explicitly promoted.
+- Creates `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`.
+- Defines product value, task table, expected files, verification commands, and
+  non-goals.
+- Keeps the slice limited to deterministic local ContextArtifact retrieval and
+  evidence recording.
+- Does not add implementation code.
+- Does not add vector database, embeddings, reranking, background indexing,
+  external RAG provider calls, MCP runtime, RBAC, tenants, permissions, or
+  marketplace work.
 
 ## Commit Message
 
 ```text
-docs(v2): select next v2 slice
+docs(v2): add deterministic knowledge retrieval slice plan
 ```
 
 ## Next Task
 
-Choose the next V2 slice or ask for product review if priorities are unclear.
+Start Slice 19 Task 1 only after reviewing the slice plan.

@@ -26,6 +26,23 @@ Current V1 automated gate:
 - Frontend workbench suite: `14` test files passed, `17 tests passed`.
 - `git diff --check`: clean.
 
+## V2 Progress
+
+Completed first V2 slice:
+
+- `Slice 18: Newman API Execution`
+- Plan and completion evidence:
+  `docs/implementation/slices/slice-18-newman-api-execution.md`
+- Final focused verification:
+  - Newman API + golden tests: `5 passed`.
+  - Frontend shell: `15` test files passed, `18` tests passed.
+  - `git diff --check`: clean.
+
+Slice 18 moved Candidate Direction B from option to delivered value. It added a
+single allowlisted runner path without adding arbitrary shell, Postman parity,
+remote CI/CD provider control, marketplace, RAG runtime, MCP runtime, RBAC,
+tenants, or permissions.
+
 ## Candidate Direction A: RAG Knowledge Runtime
 
 Problem:
@@ -183,6 +200,63 @@ Expected output:
 - Broad dashboards, model leaderboard, or benchmark platform.
 - Unapproved AI changes to business source files.
 
+## Recommended Next V2 Slice
+
+Recommended: Candidate Direction A, but only as a deterministic local
+KnowledgeAdapter retrieval stub.
+
+Why:
+
+- Slice 18 already expanded runner coverage. The next highest product value is
+  improving AI context quality while keeping evidence visible and reviewable.
+- V1 already has ContextArtifact, RAG 知识库, KnowledgeAdapter empty state, and
+  AI task `context_artifact_ids`; a small deterministic retrieval slice can
+  reuse those contracts.
+- The user-facing RAG 知识库 surface now needs evidence-backed behavior, not a
+  full RAG platform.
+
+Next slice name:
+
+```text
+Slice 19: Deterministic Knowledge Retrieval Stub
+```
+
+Smallest useful boundary:
+
+- Search only existing ContextArtifact text/markdown/json/yaml records already
+  allowed for prompt use.
+- Use deterministic local matching, such as keyword overlap or exact term
+  scoring.
+- Record retrieved ContextArtifact ids, snippets, scores, and query terms in
+  AITask metadata/artifacts.
+- Show retrieved local context as evidence in the RAG 知识库 / AI task surfaces.
+- Keep `used_knowledge=true` only for this deterministic local
+  KnowledgeAdapter stub.
+
+Explicit non-goals:
+
+- No vector database.
+- No embeddings service.
+- No reranking service.
+- No background indexing pipeline.
+- No external RAG provider.
+- No MCP runtime or remote MCP calls.
+- No RBAC, tenants, permissions, marketplace, cloud sync, or remote CI/CD
+  provider integration.
+
+Suggested next task:
+
+```text
+V2 Task 4: Draft Slice 19 Deterministic Knowledge Retrieval Stub plan
+```
+
+Expected output:
+
+- A slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines contracts, artifacts, API behavior,
+  frontend evidence display, and non-goals.
+
 ## Next Task
 
-Draft Slice 18 Newman API Execution plan or pause for product review.
+Draft Slice 19 Deterministic Knowledge Retrieval Stub plan or pause for product
+review.

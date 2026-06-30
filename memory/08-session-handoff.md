@@ -1,5 +1,29 @@
 # Session Handoff
 
+## 2026-06-30 V2 Task 3 完成
+
+本轮完成：
+
+- 完成 V2 Task 3：Select next small V2 slice。
+- 更新 `docs/implementation/10-v2-scope-options.md`：
+  - 记录 Slice 18 Newman API Execution 已完成。
+  - 推荐下一条小切片为
+    `Slice 19: Deterministic Knowledge Retrieval Stub`。
+  - 明确这是本地确定性 ContextArtifact retrieval stub，不是完整 RAG 平台。
+  - 继续排除 vector database、embeddings、reranking、background indexing、
+    external RAG provider、MCP runtime、RBAC、tenants、permissions、
+    marketplace、remote CI/CD provider integration。
+- 已将 `NEXT_AI_TASK.md` 切换到 V2 Task 4：Draft Slice 19 Deterministic
+  Knowledge Retrieval Stub plan。
+
+下次推荐任务：
+
+- 起草
+  `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`。
+- 只做计划，不新增产品代码。
+- 先定义 contracts、artifacts、API 行为、frontend evidence display 和
+  non-goals，再开始实现。
+
 ## 2026-06-30 Slice 18 Completion Gate 完成
 
 本轮完成：

@@ -1,5 +1,28 @@
 # Development Log
 
+## 2026-06-30 V2 Next Slice Selection
+
+### Completed
+
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 18 completion
+  status.
+- Selected `Slice 19: Deterministic Knowledge Retrieval Stub` as the next small
+  V2 slice.
+- Kept the next slice scoped to local ContextArtifact retrieval evidence, not a
+  full RAG platform.
+- Updated `NEXT_AI_TASK.md` to V2 Task 4: draft the Slice 19 plan.
+
+### Verification
+
+```bash
+rg -n "V2 Progress|Recommended Next V2 Slice|Slice 19|Still Out Of Scope" docs/implementation/10-v2-scope-options.md
+git diff --check
+```
+
+### Next Step
+
+- Draft `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`.
+
 ## 2026-06-30 Slice 18 Completion Gate
 
 ### Completed
