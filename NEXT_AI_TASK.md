@@ -10,12 +10,12 @@ Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Task 1: Add CI/CD Quality Center task plan.
+Task 2: Add CI/CD Quality Center contract boundary.
 
 ## Product Value Answer
 
-After this task, Slice 15 has a scoped implementation plan for local-first
-CI/CD quality evidence without adding merge/release decisions.
+After this task, the CI/CD Quality Center foundation contract is narrowed to the
+local-first Slice 15 subset before implementation.
 
 ## Must Read
 
@@ -40,39 +40,41 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/implementation/slices/slice-14-report-and-failure-analysis.md
-NEXT_AI_TASK.md
-memory/08-session-handoff.md
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-This is a planning-only task. Do not add product code.
+This is a contract/documentation task. Do not add product code.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-15-cicd-quality-center.md && rg -n "CI/CD Quality Center|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-15-cicd-quality-center.md
+rg -n "CICDRun|CICDChangedFile|POST /api/cicd/runs|local_diff|remote CI" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-Expected result: Slice 15 task plan exists and contains scoped task table,
-verification commands, and non-goals.
+Expected result: contracts and Slice 15 plan describe the local-first foundation
+subset and remote CI exclusions.
 
 ## Acceptance
 
-- Creates `docs/implementation/slices/slice-15-cicd-quality-center.md`.
-- Splits Slice 15 into small contract/model/API/frontend/golden/completion tasks.
-- Scope stays local-first: CICDRun, CICDChangedFile, local diff analysis, and
-  evidence surface.
-- Explicitly excludes merge/release decisions, remote CI provider integration,
-  RAG runtime, MCP runtime, RBAC, tenants, and permissions.
-- Updates handoff and sets the next task to Slice 15 contract boundary.
+- Contract states Slice 15 supports local_diff/manual source only.
+- Contract separates foundation endpoints from Slice 16 UnitTestPatch,
+  regression, and QualityGateDecision work.
+- Contract defines changed file evidence and risk_analysis artifact metadata.
+- Contract explicitly excludes merge/release decisions, remote CI provider
+  integration, webhooks, PR comments, RAG runtime, MCP runtime, RBAC, tenants,
+  and permissions.
+- Updates handoff and sets the next task to CICDRun/CICDChangedFile
+  model/schema.
 
 ## Commit Message
 
 ```text
-docs(cicd): add quality center task plan
+docs(cicd): define quality center foundation boundary
 ```
 
 ## Next Task
 
-Slice 15 Task 2: Add CI/CD Quality Center contract boundary.
+Slice 15 Task 3: Add CICDRun and CICDChangedFile model/schema.

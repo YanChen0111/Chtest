@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-06-30 Slice 15 Task 1 CI/CD Quality Center Task Plan 完成
+
+本轮完成：
+
+- 完成 Slice 15 Task 1：Add CI/CD Quality Center task plan。
+- 新增 `docs/implementation/slices/slice-15-cicd-quality-center.md`。
+- 将 Slice 15 拆为 contract boundary、CICDRun/CICDChangedFile
+  model/schema、local diff parser、run create/list/get API、analyze API、
+  frontend shell、golden smoke、completion gate。
+- 明确 Slice 15 只做 local-first CICDRun、CICDChangedFile、local diff
+  analysis 和 evidence surface。
+- 明确 UnitTestPatch、regression、QualityGateDecision、CI/CD quality report
+  不在 Slice 15 实现。
+- 明确不加入 merge/release decisions、remote CI provider integration、
+  webhooks、PR comments、RAG runtime、MCP runtime、RBAC、tenants 或
+  permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 15 Task 2：Add CI/CD Quality Center
+  contract boundary。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-15-cicd-quality-center.md && rg -n "CI/CD Quality Center|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-15-cicd-quality-center.md
+```
+
+修改文件：
+
+- `docs/implementation/slices/slice-15-cicd-quality-center.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 15 Task 2：Add CI/CD Quality Center
+  contract boundary。
+- 这是 contract/documentation 任务，不要直接改产品代码。
+
 ## 2026-06-30 Slice 14 Completion Gate 完成
 
 本轮完成：
