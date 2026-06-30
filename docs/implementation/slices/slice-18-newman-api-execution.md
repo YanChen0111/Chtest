@@ -80,7 +80,7 @@ general automation platform.
 |---|---|---|---|---|
 | Add Newman API Execution task plan | done | `test -f docs/implementation/slices/slice-18-newman-api-execution.md` | `a319a6c` | planning-only scope |
 | Define Newman execution contract boundary | done | `rg -n "Newman|newman|newman_json|command_type" docs/contracts docs/implementation/slices/slice-18-newman-api-execution.md` | `c8835bc` | contract-only before code |
-| Add Newman runner/parser backend | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py -q` | `56ad111` | allowlisted local runner |
+| Add Newman runner/parser backend | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py -q` | `6cae700` | allowlisted local runner |
 | Add Newman API execution frontend shell | planned | `npm --prefix frontend run test -- --run` | pending | Chinese workbench UI |
 | Add Newman API execution golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_newman_api_execution_golden.py -q` | pending | evidence loop proof |
 | Slice 18 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py backend/app/tests/golden/test_newman_api_execution_golden.py -q && npm --prefix frontend run test -- --run` | pending | docs and handoff |
