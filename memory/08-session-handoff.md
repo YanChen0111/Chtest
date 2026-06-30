@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-06-30 Slice 10 Test Case Library Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 10 completion gate。
+- 确认 Slice 10 所有任务均为 `done`，并记录提交号：
+  `03114cd`、`11942b3`、`0e0ad8e`、`41f9518`、`b12f323`。
+- 确认 Test Case Library API contract、backend API、frontend shell、golden smoke 均已覆盖。
+- 已在 `docs/implementation/slices/slice-10-test-case-library.md` 写入 completion evidence。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 11 Task 1：Add AutomationDraft Foundation task plan。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_requirement_to_case.py -q
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Test Case Library API + golden library + requirement-to-case golden：`5 passed`
+- Frontend workbench shell tests：`8 passed, 11 tests passed`
+
+Slice 10 保持的非目标：
+
+- 未加入 AutomationDraft generation、execution、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 11 Task 1：Add AutomationDraft Foundation task plan。
+- 这是 planning-only 任务，先创建 `docs/implementation/slices/slice-11-automation-draft-foundation.md`，不要直接改产品代码。
+
 ## 2026-06-30 Slice 10 Task 5 Test Case Library Golden Smoke 完成
 
 本轮完成：

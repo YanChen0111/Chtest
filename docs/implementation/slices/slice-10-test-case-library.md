@@ -36,7 +36,7 @@ RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 | Add Test Case Library API contract and task boundary | done | `rg -n "Test Case Library|GET /api/test-cases|TestCaseList" docs/contracts/02-api-contract.md docs/implementation/slices/slice-10-test-case-library.md` | `11942b3` | contract-first endpoint shape |
 | Add Test Case Library backend API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py -q` | `0e0ad8e` | list reviewed TestCase records by project/module/status |
 | Add Test Case Library frontend shell | done | `npm --prefix frontend run test -- --run` | `41f9518` | compact searchable library view |
-| Add Test Case Library golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library_golden.py -q` | pending commit | reviewed golden cases appear in library |
+| Add Test Case Library golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library_golden.py -q` | `b12f323` | reviewed golden cases appear in library |
 | Slice 10 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py backend/app/tests/golden/test_test_case_library_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 
 ## Task 1: Add Test Case Library API Contract And Task Boundary
@@ -184,9 +184,31 @@ test(golden): add test case library smoke
 
 ## Slice Completion Gate
 
+Status: done.
+
+Product value answer:
+
+- Chtest can browse reviewed TestCase records created from case review, using a
+  contract-backed API, frontend shell, and golden fixture smoke.
+
+Verification commands:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_requirement_to_case.py -q
+npm --prefix frontend run test -- --run
+```
+
+Verification results:
+
+- Test Case Library API + golden library + requirement-to-case golden:
+  `5 passed`.
+- Frontend workbench shell tests: `8 passed, 11 tests passed`.
+
+Completion evidence:
+
 - TestCase Library API contract exists.
 - Backend library API returns reviewed TestCase records with filters.
 - Frontend shell can browse reviewed cases without automation/execution actions.
 - Golden fixture smoke proves reviewed cases enter the library.
 - No AutomationDraft, execution, reports, CI/CD quality, RAG runtime, MCP
-  runtime, RBAC, tenants, or permissions are added.
+  runtime, RBAC, tenants, or permissions were added.
