@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app.main import app
 from backend.app.models.base import Base
-from backend.app.modules.ai_runtime.models import Artifact
+from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.automation.models import AutomationDraft
 from backend.app.modules.cicd.models import CICDChangedFile, CICDRun
 from backend.app.modules.cicd.schemas import (
@@ -382,5 +382,80 @@ def test_create_list_get_cicd_run_api_persists_local_diff_changed_files() -> Non
         assert run is not None
         assert len(changed_files) == 1
         assert {artifact.artifact_type for artifact in artifacts} == {"diff_patch", "changed_files"}
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_analyze_cicd_run_api_writes_mock_risk_analysis_evidence() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, repository = seed_project_repository(session)
+            session.commit()
+            project_id = project.id
+            repository_id = repository.id
+
+        client = ASGIClient(app)
+        create_response = client.post(
+            "/api/cicd/runs",
+            {
+                "project_id": str(project_id),
+                "repository_id": str(repository_id),
+                "source_type": "local_diff",
+                "base_ref": "main",
+                "head_ref": "HEAD",
+                "diff_text": "diff --git a/app/coupon.py b/app/coupon.py\n--- a/app/coupon.py\n+++ b/app/coupon.py\n@@ -1 +1,2 @@\n-old\n+new\n",
+            },
+        )
+        cicd_run_id = create_response.json()["cicd_run_id"]
+
+        analyze_response = client.post(
+            f"/api/cicd/runs/{cicd_run_id}/analyze",
+            {
+                "prompt_version": "cicd_change_analysis:v1",
+                "skill_version": "regression-selection-skill:v1",
+                "model_provider": "mock",
+                "model_name": "mock-cicd-analysis",
+            },
+        )
+
+        assert analyze_response.status_code == 202
+        analyzed = analyze_response.json()
+        assert analyzed["cicd_run_id"] == cicd_run_id
+        assert analyzed["status"] == "analyzed"
+        assert analyzed["ai_task_id"] is not None
+        assert analyzed["risk_analysis_artifact_id"] is not None
+
+        get_response = client.get(f"/api/cicd/runs/{cicd_run_id}")
+        assert get_response.status_code == 200
+        body = get_response.json()
+        assert body["status"] == "analyzed"
+        assert body["overall_risk"] == "medium"
+        assert body["analysis_artifacts"][0]["artifact_type"] == "risk_analysis"
+
+        with SessionLocal() as session:
+            ai_task = session.get(AITask, uuid.UUID(analyzed["ai_task_id"]))
+            run = session.get(CICDRun, uuid.UUID(cicd_run_id))
+            risk_artifact = session.get(Artifact, uuid.UUID(analyzed["risk_analysis_artifact_id"]))
+            assert session.scalar(select(AutomationDraft)) is None
+            assert session.scalar(select(TestRun)) is None
+            assert session.scalar(select(Report)) is None
+
+        assert ai_task is not None
+        assert ai_task.task_type == "cicd_change_analysis"
+        assert ai_task.status == "succeeded"
+        assert ai_task.output_json["overall_risk"] == "medium"
+        assert run is not None
+        assert run.status == "analyzed"
+        assert risk_artifact is not None
+        assert risk_artifact.owner_entity_type == "CICDRun"
+        assert risk_artifact.metadata_json["overall_risk"] == "medium"
+        assert risk_artifact.metadata_json["changed_file_count"] == 1
     finally:
         app.dependency_overrides.clear()

@@ -9,6 +9,8 @@ from backend.app.modules.cicd import service
 from backend.app.modules.cicd.models import CICDChangedFile, CICDRun
 from backend.app.modules.cicd.schemas import (
     CICDChangedFileRead,
+    CICDRunAnalyzeRead,
+    CICDRunAnalyzeRequest,
     CICDRunCreateRead,
     CICDRunCreateRequest,
     CICDRunListRead,
@@ -50,7 +52,7 @@ def create_cicd_run(
 
 @router.get("/cicd/runs", response_model=CICDRunListRead)
 def list_cicd_runs(session: Session = Depends(get_session)) -> CICDRunListRead:
-    items = [cicd_run_read(cicd_run) for cicd_run in service.list_cicd_runs(session)]
+    items = [cicd_run_read(session, cicd_run) for cicd_run in service.list_cicd_runs(session)]
     return CICDRunListRead(items=items, total=len(items))
 
 
@@ -60,12 +62,30 @@ def get_cicd_run(
     session: Session = Depends(get_session),
 ) -> CICDRunRead:
     try:
-        return cicd_run_read(service.get_cicd_run(session, cicd_run_id))
+        return cicd_run_read(session, service.get_cicd_run(session, cicd_run_id))
     except service.CICDRunNotFoundError as exc:
         raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
 
 
-def cicd_run_read(cicd_run: CICDRun) -> CICDRunRead:
+@router.post("/cicd/runs/{cicd_run_id}/analyze", response_model=CICDRunAnalyzeRead, status_code=status.HTTP_202_ACCEPTED)
+def analyze_cicd_run(
+    cicd_run_id: uuid.UUID,
+    data: CICDRunAnalyzeRequest,
+    session: Session = Depends(get_session),
+) -> CICDRunAnalyzeRead:
+    try:
+        cicd_run, ai_task, artifact = service.analyze_cicd_run(session, cicd_run_id, data)
+    except service.CICDRunNotFoundError as exc:
+        raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
+    return CICDRunAnalyzeRead(
+        cicd_run_id=cicd_run.id,
+        ai_task_id=ai_task.id,
+        risk_analysis_artifact_id=artifact.id,
+        status=cicd_run.status,
+    )
+
+
+def cicd_run_read(session: Session, cicd_run: CICDRun) -> CICDRunRead:
     return CICDRunRead(
         id=cicd_run.id,
         project_id=cicd_run.project_id,
@@ -81,7 +101,7 @@ def cicd_run_read(cicd_run: CICDRun) -> CICDRunRead:
         quality_gate_status=cicd_run.quality_gate_status,
         status=cicd_run.status,
         changed_files=[changed_file_read(changed_file) for changed_file in cicd_run.changed_files],
-        analysis_artifacts=[],
+        analysis_artifacts=service.analysis_artifacts_for_run(session, cicd_run),
     )
 
 

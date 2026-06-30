@@ -25,6 +25,20 @@ class CICDRunCreateRead(BaseModel):
     status: str
 
 
+class CICDRunAnalyzeRequest(BaseModel):
+    prompt_version: str = "cicd_change_analysis:v1"
+    skill_version: str = "regression-selection-skill:v1"
+    model_provider: str = "mock"
+    model_name: str = "mock-cicd-analysis"
+
+
+class CICDRunAnalyzeRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    ai_task_id: uuid.UUID
+    risk_analysis_artifact_id: uuid.UUID
+    status: str
+
+
 class CICDChangedFileRead(BaseModel):
     id: uuid.UUID
     cicd_run_id: uuid.UUID

@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-06-30 Slice 15 Task 6 CI/CD Analyze API 完成
+
+本轮完成：
+
+- 完成 Slice 15 Task 6：Add CI/CD analyze API。
+- 新增 `POST /api/cicd/runs/{id}/analyze`。
+- Analyze 创建 succeeded AITask，`task_type=cicd_change_analysis`。
+- Analyze 根据 changed_files 更新 CICDRun status 为 `analyzed`，
+  overall_risk 为最高 changed file risk。
+- 写入 `risk_analysis` artifact，owner 为 CICDRun，metadata 包含 provider、
+  model、prompt、skill、overall_risk、changed_file_count 和 analysis_json。
+- GET CI/CD run 会返回 analysis_artifacts。
+- 未创建 UnitTestPatch、regression plan、QualityGateDecision、TestRun 或
+  Report records。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 15 Task 7：Add CI/CD Quality Center
+  frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
+```
+
+验证结果：
+
+- CI/CD Quality Center focused tests：`7 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/router.py`
+- `backend/app/modules/cicd/service.py`
+- `backend/app/modules/cicd/schemas.py`
+- `backend/app/tests/api/test_cicd_quality_center.py`
+- `docs/implementation/slices/slice-15-cicd-quality-center.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 15 Task 7：Add CI/CD Quality Center
+  frontend shell。
+- 当前任务不要展示 merge/release decisions 或 remote CI provider controls。
+
 ## 2026-06-30 Slice 15 Task 5 CI/CD Run API 完成
 
 本轮完成：

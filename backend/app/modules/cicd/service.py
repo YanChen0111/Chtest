@@ -7,9 +7,9 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.app.modules.ai_runtime.models import Artifact
+from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.cicd.models import CICDChangedFile, CICDRun
-from backend.app.modules.cicd.schemas import CICDRunCreateRequest
+from backend.app.modules.cicd.schemas import CICDRunAnalyzeRequest, CICDRunCreateRequest
 from backend.app.modules.projects.models import Project, Repository
 
 
@@ -323,3 +323,83 @@ def create_cicd_run_artifacts(
         artifacts.append(artifact)
     session.flush()
     return artifacts
+
+
+def analyze_cicd_run(session: Session, cicd_run_id: uuid.UUID, data: CICDRunAnalyzeRequest) -> tuple[CICDRun, AITask, Artifact]:
+    cicd_run = get_cicd_run(session, cicd_run_id)
+    changed_files = list(cicd_run.changed_files)
+    overall_risk = max_risk(changed_files)
+    output = {
+        "overall_risk": overall_risk,
+        "changed_file_count": len(changed_files),
+        "risk_reasons": sorted({reason for item in changed_files for reason in item.risk_reasons_json}),
+        "recommended_actions": ["Review changed files before UnitTestPatch generation."],
+    }
+    ai_task = AITask(
+        project_id=cicd_run.project_id,
+        agent_name="CICDChangeAnalysisAgent",
+        task_type="cicd_change_analysis",
+        prompt_version_id=stable_version_uuid(data.prompt_version),
+        skill_version_id=stable_version_uuid(data.skill_version),
+        model_provider=data.model_provider,
+        model_name=data.model_name,
+        status="succeeded",
+        input_json={
+            "cicd_run_id": str(cicd_run.id),
+            "changed_file_ids": [str(item.id) for item in changed_files],
+        },
+        output_json=output,
+    )
+    session.add(ai_task)
+    session.flush()
+    artifact = Artifact(
+        project_id=cicd_run.project_id,
+        owner_entity_type="CICDRun",
+        owner_entity_id=cicd_run.id,
+        artifact_type="risk_analysis",
+        file_path=f"artifacts/projects/{cicd_run.project_id}/cicd-quality/{cicd_run.id}/risk_analysis.json",
+        mime_type="application/json",
+        size_bytes=0,
+        sha256=f"sha256:risk_analysis:{cicd_run.id}",
+        metadata_json={
+            "model_provider": data.model_provider,
+            "model_name": data.model_name,
+            "prompt_version": data.prompt_version,
+            "skill_version": data.skill_version,
+            "overall_risk": overall_risk,
+            "changed_file_count": len(changed_files),
+            "analysis_json": output,
+        },
+    )
+    session.add(artifact)
+    cicd_run.overall_risk = overall_risk
+    cicd_run.status = "analyzed"
+    session.add(cicd_run)
+    session.commit()
+    session.refresh(cicd_run)
+    return cicd_run, ai_task, artifact
+
+
+def analysis_artifacts_for_run(session: Session, cicd_run: CICDRun) -> list[Artifact]:
+    return list(
+        session.scalars(
+            select(Artifact)
+            .where(
+                Artifact.owner_entity_type == "CICDRun",
+                Artifact.owner_entity_id == cicd_run.id,
+                Artifact.artifact_type == "risk_analysis",
+            )
+            .order_by(Artifact.created_at.asc()),
+        ),
+    )
+
+
+def max_risk(changed_files: list[CICDChangedFile]) -> str:
+    order = {"low": 1, "medium": 2, "high": 3}
+    if not changed_files:
+        return "medium"
+    return max((item.risk_level for item in changed_files), key=lambda value: order.get(value, 2))
+
+
+def stable_version_uuid(version: str) -> uuid.UUID:
+    return uuid.uuid5(uuid.NAMESPACE_URL, f"chtest:{version}")

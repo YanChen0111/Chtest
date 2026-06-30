@@ -10,12 +10,12 @@ Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Task 6: Add CI/CD analyze API.
+Task 7: Add CI/CD Quality Center frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest can add deterministic mock risk analysis evidence to a
-local-first CICDRun.
+After this task, users can create local_diff CICDRun records and inspect changed
+file/risk analysis evidence in the workbench.
 
 ## Must Read
 
@@ -40,15 +40,16 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-backend/app/modules/cicd/router.py
-backend/app/modules/cicd/service.py
-backend/app/modules/cicd/schemas.py
-backend/app/tests/api/test_cicd_quality_center.py
+frontend/src/api/cicd.ts
+frontend/src/stores/cicd.ts
+frontend/src/views/cicd/CicdQualityCenterView.vue
+frontend/src/views/cicd/CicdQualityCenterView.spec.ts
+frontend/src/router/index.ts
+frontend/src/stores/index.ts
 docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-Do not create UnitTestPatch, regression plan, QualityGateDecision, TestRun, or
-Report records in this task.
+Do not show merge/release decisions or remote CI provider controls in this task.
 
 ## Verification Command
 
@@ -56,24 +57,24 @@ Report records in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
 ```
 
-Expected result: focused CI/CD analyze API tests pass.
+Expected result: focused frontend workbench tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/cicd/runs/{id}/analyze`.
-- Creates a succeeded AITask with mock CICDChangeAnalysisAgent output.
-- Updates CICDRun status to `analyzed` and overall_risk from changed files.
-- Writes risk_analysis artifact metadata owned by CICDRun.
-- Does not create UnitTestPatch, regression plan, QualityGateDecision, TestRun,
-  or Report records.
-- Updates handoff and sets the next task to CI/CD Quality Center frontend shell.
+- Adds workbench navigation for `CI/CD 质量中心`.
+- Creates a local_diff CICDRun from project/repository/base/head inputs and
+  diff text fixture.
+- Shows changed files, file roles, risk levels, risk reasons, and analysis
+  artifact references.
+- Does not show merge/release decisions or remote CI provider controls.
+- Updates handoff and sets the next task to CI/CD Quality Center golden smoke.
 
 ## Commit Message
 
 ```text
-feat(cicd): add change analysis api
+feat(frontend): add cicd quality shell
 ```
 
 ## Next Task
 
-Slice 15 Task 7: Add CI/CD Quality Center frontend shell.
+Slice 15 Task 8: Add CI/CD Quality Center golden smoke.
