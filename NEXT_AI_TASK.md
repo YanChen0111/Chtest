@@ -10,12 +10,13 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 4: Add PatchScopeGate service.
+Task 5: Add UnitTestPatch generation/review API.
 
 ## Product Value Answer
 
-After this task, Chtest can validate UnitTestPatch unified diffs before review
-or application and block non-test path changes.
+After this task, Chtest can generate deterministic mock UnitTestPatch
+candidates, validate them through PatchScopeGate, and let users approve or
+reject them without applying patches.
 
 ## Must Read
 
@@ -41,13 +42,14 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 backend/app/modules/cicd/schemas.py
+backend/app/modules/cicd/router.py
 backend/app/modules/cicd/service.py
 backend/app/tests/api/test_unit_test_patch_regression.py
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Do not apply patches, mutate the repository, or run external test commands from
-the generated patch in this task.
+Do not apply patches, mutate the repository, or run external test commands in
+this task.
 
 ## Verification Command
 
@@ -55,26 +57,25 @@ the generated patch in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
 ```
 
-Expected result: focused UnitTestPatch/PatchScopeGate tests pass.
+Expected result: focused UnitTestPatch generation/review API tests pass.
 
 ## Acceptance
 
-- Parses unified diff target paths for UnitTestPatch candidates.
-- Allows test-only paths such as `tests/`, `test/`, `__tests__/`, and common
-  frontend test suffixes.
-- Rejects source, config, migration, generated artifact, and unknown non-test
-  paths with structured reasons.
-- Returns `allowed`, `checked_paths`, `blocked_paths`, `forbidden_patterns`,
-  `risk_level`, and rejection `reason` fields.
+- Adds `POST /api/cicd/runs/{id}/unit-test-patches`.
+- Creates a succeeded mock UnitTestAgent AITask.
+- Persists UnitTestPatch with `scope_gate_result_json`.
+- Returns scope gate result for review UI.
+- Adds approve and reject endpoints.
+- Prevents approving `scope_rejected` patches.
 - Does not apply patches or run tests in this task.
-- Updates handoff and sets the next task to UnitTestPatch generation/review API.
+- Updates handoff and sets the next task to UnitTestPatch apply API.
 
 ## Commit Message
 
 ```text
-feat(cicd): add patch scope gate
+feat(cicd): add unit test patch review api
 ```
 
 ## Next Task
 
-Slice 16 Task 5: Add UnitTestPatch generation/review API.
+Slice 16 Task 6: Add UnitTestPatch apply API.

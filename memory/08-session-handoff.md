@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 4 PatchScopeGate Service 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 4：Add PatchScopeGate service。
+- 新增 `evaluate_patch_scope()`，解析 UnitTestPatch unified diff 目标路径并返回
+  `allowed`、`checked_paths`、`blocked_paths`、`forbidden_patterns`、
+  `risk_level`、`reason`。
+- 允许 `tests/`、`test/`、`__tests__/`、`test_*.py`、`*_test.py`、
+  `.test.*`、`.spec.*` 等测试路径。
+- 拒绝 source、config/build、migration、generated artifact、unknown
+  non-test 路径，拒绝原因使用 `PATCH_SCOPE_REJECTED`。
+- 修复审查发现的 generated 绕过风险：`dist/`、`coverage/`、`build/`
+  等 generated 路径即使命名为 `.test/.spec` 也必须拒绝。
+- 新增 `PatchScopeGateRead` schema，字段与 `patch_scope_gate.json`
+  artifact metadata 对齐。
+- 任务未 apply patches，未修改目标仓库文件，未运行 patch 内测试命令。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 5：Add UnitTestPatch
+  generation/review API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
+```
+
+验证结果：
+
+- `9 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/service.py`
+- `backend/app/modules/cicd/schemas.py`
+- `backend/app/tests/api/test_unit_test_patch_regression.py`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 5：Add UnitTestPatch
+  generation/review API。
+- 该任务只生成、校验、审批/拒绝 UnitTestPatch，不 apply patch，不运行测试。
+
 ## 2026-06-30 Slice 16 Task 3 UnitTestPatch/QualityGateDecision Model Schema 完成
 
 本轮完成：

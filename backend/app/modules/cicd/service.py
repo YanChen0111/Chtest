@@ -55,6 +55,28 @@ class ParsedChangedFile:
         }
 
 
+@dataclass
+class PatchScopeGateResult:
+    allowed: bool
+    checked_paths: list[str]
+    blocked_paths: list[str]
+    forbidden_patterns: list[str]
+    risk_level: str
+    reason: str | None = None
+
+    def to_artifact_metadata(self) -> dict:
+        body = {
+            "allowed": self.allowed,
+            "checked_paths": self.checked_paths,
+            "blocked_paths": self.blocked_paths,
+            "forbidden_patterns": self.forbidden_patterns,
+            "risk_level": self.risk_level,
+        }
+        if self.reason is not None:
+            body["reason"] = self.reason
+        return body
+
+
 def parse_local_diff(diff_text: str) -> list[ParsedChangedFile]:
     changed_files: list[ParsedChangedFile] = []
     current: dict | None = None
@@ -100,6 +122,96 @@ def parse_local_diff(diff_text: str) -> list[ParsedChangedFile]:
     if current is not None:
         changed_files.append(build_changed_file(current))
     return changed_files
+
+
+def evaluate_patch_scope(patch_text: str) -> PatchScopeGateResult:
+    checked_paths = parse_patch_target_paths(patch_text)
+    blocked_paths: list[str] = []
+    forbidden_patterns: list[str] = []
+
+    for path in checked_paths:
+        is_allowed, reason = classify_patch_scope_path(path)
+        if not is_allowed:
+            blocked_paths.append(path)
+            forbidden_patterns.append(reason)
+
+    allowed = not blocked_paths and bool(checked_paths)
+    return PatchScopeGateResult(
+        allowed=allowed,
+        checked_paths=checked_paths,
+        blocked_paths=blocked_paths,
+        forbidden_patterns=forbidden_patterns,
+        risk_level="low" if allowed else "high",
+        reason=None if allowed else "PATCH_SCOPE_REJECTED",
+    )
+
+
+def parse_patch_target_paths(patch_text: str) -> list[str]:
+    paths: list[str] = []
+    current_path: str | None = None
+    for line in patch_text.splitlines():
+        if line.startswith("diff --git "):
+            current_path = None
+            parts = line.split()
+            if len(parts) > 3:
+                current_path = normalize_diff_path(parts[3])
+            continue
+        if line.startswith("rename to "):
+            current_path = line.removeprefix("rename to ").strip()
+            continue
+        if line.startswith("+++") and not line.startswith("++++"):
+            new_path = normalize_diff_path(line.removeprefix("+++ ").strip())
+            if new_path is not None:
+                current_path = new_path
+            continue
+        if line.startswith("---") and not line.startswith("----") and current_path is None:
+            old_path = normalize_diff_path(line.removeprefix("--- ").strip())
+            if old_path is not None:
+                current_path = old_path
+            continue
+        if current_path is not None and line.startswith("@@"):
+            if current_path not in paths:
+                paths.append(current_path)
+    return paths
+
+
+def classify_patch_scope_path(path: str) -> tuple[bool, str]:
+    if is_generated_artifact_path(path):
+        return False, f"generated artifact path modified: {path}"
+    if is_test_path(path):
+        return True, ""
+    file_role = classify_file_role(path)
+    if file_role in {"source", "config", "migration", "build"}:
+        scope_role = "config" if file_role == "build" else file_role
+        return False, f"{scope_role} path modified: {path}"
+    return False, f"unknown non-test path modified: {path}"
+
+
+def is_test_path(path: str) -> bool:
+    pure_path = PurePosixPath(path)
+    parts = set(pure_path.parts)
+    name = pure_path.name.lower()
+    suffixes = "".join(pure_path.suffixes).lower()
+    return (
+        "tests" in parts
+        or "test" in parts
+        or "__tests__" in parts
+        or name.startswith("test_")
+        or name.endswith("_test.py")
+        or ".test." in name
+        or ".spec." in name
+        or suffixes.endswith(".test.ts")
+        or suffixes.endswith(".test.tsx")
+        or suffixes.endswith(".spec.ts")
+        or suffixes.endswith(".spec.tsx")
+    )
+
+
+def is_generated_artifact_path(path: str) -> bool:
+    pure_path = PurePosixPath(path)
+    parts = set(pure_path.parts)
+    generated_parts = {"dist", "build", "coverage", ".next", ".nuxt", "node_modules", "__pycache__"}
+    return bool(parts.intersection(generated_parts))
 
 
 def start_file_block(line: str) -> dict:

@@ -12,9 +12,11 @@ from backend.app.modules.cicd.models import CICDRun, QualityGateDecision, UnitTe
 from backend.app.modules.cicd.schemas import (
     QualityGateDecisionCreate,
     QualityGateDecisionRead,
+    PatchScopeGateRead,
     UnitTestPatchCreate,
     UnitTestPatchRead,
 )
+from backend.app.modules.cicd.service import evaluate_patch_scope
 from backend.app.modules.projects.models import Project, Repository, Workspace
 
 
@@ -201,3 +203,157 @@ def test_quality_gate_decision_schemas_use_contract_field_names() -> None:
     assert body["evidence_artifact_ids"] == [str(evidence_id)]
     assert body["decided_by"] == "system"
     assert body["status_detail"] == {"regression": "missing"}
+
+
+def test_patch_scope_gate_allows_test_only_unified_diff() -> None:
+    patch_text = """diff --git a/tests/test_coupon.py b/tests/test_coupon.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_coupon.py
+@@ -0,0 +1,2 @@
++def test_coupon_boundary():
++    assert True
+diff --git a/frontend/src/cart/__tests__/coupon.spec.ts b/frontend/src/cart/__tests__/coupon.spec.ts
+--- a/frontend/src/cart/__tests__/coupon.spec.ts
++++ b/frontend/src/cart/__tests__/coupon.spec.ts
+@@ -1 +1,2 @@
+ test("coupon", () => {})
++test("coupon boundary", () => {})
+diff --git a/frontend/src/cart/coupon.test.tsx b/frontend/src/cart/coupon.test.tsx
+--- a/frontend/src/cart/coupon.test.tsx
++++ b/frontend/src/cart/coupon.test.tsx
+@@ -1 +1,2 @@
+ test("coupon", () => {})
++test("coupon ui", () => {})
+"""
+
+    result = evaluate_patch_scope(patch_text)
+
+    assert result.allowed is True
+    assert result.checked_paths == [
+        "tests/test_coupon.py",
+        "frontend/src/cart/__tests__/coupon.spec.ts",
+        "frontend/src/cart/coupon.test.tsx",
+    ]
+    assert result.blocked_paths == []
+    assert result.forbidden_patterns == []
+    assert result.risk_level == "low"
+    assert result.reason is None
+    assert result.to_artifact_metadata()["allowed"] is True
+
+
+def test_patch_scope_gate_schema_uses_artifact_metadata_field_names() -> None:
+    read = PatchScopeGateRead(
+        allowed=False,
+        checked_paths=["app/coupon.py"],
+        blocked_paths=["app/coupon.py"],
+        forbidden_patterns=["source path modified: app/coupon.py"],
+        risk_level="high",
+        reason="PATCH_SCOPE_REJECTED",
+    )
+
+    body = read.model_dump(mode="json")
+    assert body == {
+        "allowed": False,
+        "checked_paths": ["app/coupon.py"],
+        "blocked_paths": ["app/coupon.py"],
+        "forbidden_patterns": ["source path modified: app/coupon.py"],
+        "risk_level": "high",
+        "reason": "PATCH_SCOPE_REJECTED",
+    }
+
+
+def test_patch_scope_gate_rejects_empty_or_unparseable_patch() -> None:
+    result = evaluate_patch_scope("")
+
+    assert result.allowed is False
+    assert result.checked_paths == []
+    assert result.blocked_paths == []
+    assert result.forbidden_patterns == []
+    assert result.risk_level == "high"
+    assert result.reason == "PATCH_SCOPE_REJECTED"
+
+
+def test_patch_scope_gate_rejects_generated_paths_even_when_named_like_tests() -> None:
+    patch_text = """diff --git a/frontend/dist/coupon.test.tsx b/frontend/dist/coupon.test.tsx
+--- a/frontend/dist/coupon.test.tsx
++++ b/frontend/dist/coupon.test.tsx
+@@ -1 +1,2 @@
+ test("generated", () => {})
++test("generated new", () => {})
+diff --git a/coverage/foo.spec.ts b/coverage/foo.spec.ts
+--- a/coverage/foo.spec.ts
++++ b/coverage/foo.spec.ts
+@@ -1 +1,2 @@
+ test("coverage", () => {})
++test("coverage new", () => {})
+"""
+
+    result = evaluate_patch_scope(patch_text)
+
+    assert result.allowed is False
+    assert result.blocked_paths == ["frontend/dist/coupon.test.tsx", "coverage/foo.spec.ts"]
+    assert result.risk_level == "high"
+    assert result.reason == "PATCH_SCOPE_REJECTED"
+    assert "generated artifact path modified: frontend/dist/coupon.test.tsx" in result.forbidden_patterns
+    assert "generated artifact path modified: coverage/foo.spec.ts" in result.forbidden_patterns
+
+
+def test_patch_scope_gate_rejects_source_config_migration_and_generated_paths() -> None:
+    patch_text = """diff --git a/app/coupon.py b/app/coupon.py
+--- a/app/coupon.py
++++ b/app/coupon.py
+@@ -1 +1,2 @@
+ old = True
++new = True
+diff --git a/pyproject.toml b/pyproject.toml
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1 +1,2 @@
+ [tool.pytest.ini_options]
++addopts = "-q"
+diff --git a/migrations/001_coupon.sql b/migrations/001_coupon.sql
+--- a/migrations/001_coupon.sql
++++ b/migrations/001_coupon.sql
+@@ -1 +1,2 @@
+ select 1;
++select 2;
+diff --git a/frontend/dist/app.js b/frontend/dist/app.js
+--- a/frontend/dist/app.js
++++ b/frontend/dist/app.js
+@@ -1 +1,2 @@
+ console.log("old")
++console.log("new")
+diff --git a/scripts/helper.sh b/scripts/helper.sh
+--- a/scripts/helper.sh
++++ b/scripts/helper.sh
+@@ -1 +1,2 @@
+ echo old
++echo new
+"""
+
+    result = evaluate_patch_scope(patch_text)
+
+    assert result.allowed is False
+    assert result.checked_paths == [
+        "app/coupon.py",
+        "pyproject.toml",
+        "migrations/001_coupon.sql",
+        "frontend/dist/app.js",
+        "scripts/helper.sh",
+    ]
+    assert result.blocked_paths == [
+        "app/coupon.py",
+        "pyproject.toml",
+        "migrations/001_coupon.sql",
+        "frontend/dist/app.js",
+        "scripts/helper.sh",
+    ]
+    assert result.risk_level == "high"
+    assert result.reason == "PATCH_SCOPE_REJECTED"
+    assert "source path modified: app/coupon.py" in result.forbidden_patterns
+    assert "config path modified: pyproject.toml" in result.forbidden_patterns
+    assert "migration path modified: migrations/001_coupon.sql" in result.forbidden_patterns
+    assert "generated artifact path modified: frontend/dist/app.js" in result.forbidden_patterns
+    assert "unknown non-test path modified: scripts/helper.sh" in result.forbidden_patterns
+    assert result.to_artifact_metadata()["reason"] == "PATCH_SCOPE_REJECTED"

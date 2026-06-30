@@ -101,6 +101,15 @@ class QualityGateDecisionRead(BaseModel):
     status_detail: dict[str, Any] = Field(default_factory=dict)
 
 
+class PatchScopeGateRead(BaseModel):
+    allowed: bool
+    checked_paths: list[str] = Field(default_factory=list)
+    blocked_paths: list[str] = Field(default_factory=list)
+    forbidden_patterns: list[str] = Field(default_factory=list)
+    risk_level: str
+    reason: str | None = None
+
+
 class CICDRunRead(BaseModel):
     id: uuid.UUID
     project_id: uuid.UUID
