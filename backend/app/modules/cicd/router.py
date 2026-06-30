@@ -15,6 +15,8 @@ from backend.app.modules.cicd.schemas import (
     CICDRunCreateRequest,
     CICDRunListRead,
     CICDRunRead,
+    UnitTestPatchApplyRead,
+    UnitTestPatchApplyRequest,
     UnitTestPatchGenerateRequest,
     UnitTestPatchRead,
     UnitTestPatchReviewRead,
@@ -134,6 +136,25 @@ def reject_unit_test_patch(
     except service.UnitTestPatchInvalidStatusError as exc:
         raise bad_request("UNIT_TEST_PATCH_INVALID_STATUS", "Unit test patch status does not allow this action.") from exc
     return UnitTestPatchReviewRead(unit_test_patch_id=patch.id, status=patch.status)
+
+
+@router.post("/cicd/unit-test-patches/{unit_test_patch_id}/apply", response_model=UnitTestPatchApplyRead)
+def apply_unit_test_patch(
+    unit_test_patch_id: uuid.UUID,
+    data: UnitTestPatchApplyRequest,
+    session: Session = Depends(get_session),
+) -> UnitTestPatchApplyRead:
+    if not data.confirm_scope_gate_result:
+        raise bad_request("PATCH_SCOPE_CONFIRMATION_REQUIRED", "Patch scope gate confirmation is required.")
+    try:
+        patch, artifact = service.apply_unit_test_patch(session, unit_test_patch_id)
+    except service.UnitTestPatchNotFoundError as exc:
+        raise not_found("UNIT_TEST_PATCH_NOT_FOUND", "Unit test patch not found.") from exc
+    except service.UnitTestPatchInvalidStatusError as exc:
+        raise bad_request("UNIT_TEST_PATCH_INVALID_STATUS", "Unit test patch status does not allow this action.") from exc
+    except service.PatchScopeRejectedError as exc:
+        raise bad_request("PATCH_SCOPE_REJECTED", "Unit test patch modifies paths outside allowed test directories.") from exc
+    return UnitTestPatchApplyRead(unit_test_patch_id=patch.id, status=patch.status, applied_artifact_id=artifact.id)
 
 
 def cicd_run_read(session: Session, cicd_run: CICDRun) -> CICDRunRead:

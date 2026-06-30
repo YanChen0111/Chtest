@@ -37,6 +37,10 @@ class UnitTestPatchInvalidStatusError(Exception):
     pass
 
 
+class PatchScopeRejectedError(Exception):
+    pass
+
+
 @dataclass
 class ParsedChangedFile:
     path: str
@@ -571,6 +575,43 @@ def reject_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID, revi
     session.commit()
     session.refresh(patch)
     return patch
+
+
+def apply_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID) -> tuple[UnitTestPatch, Artifact]:
+    patch = get_unit_test_patch(session, unit_test_patch_id)
+    if patch.status != "approved":
+        raise UnitTestPatchInvalidStatusError
+    scope_gate_result = evaluate_patch_scope(patch.patch_text)
+    if not scope_gate_result.allowed:
+        patch.status = "apply_failed"
+        patch.scope_gate_result_json = scope_gate_result.to_artifact_metadata()
+        session.add(patch)
+        session.commit()
+        raise PatchScopeRejectedError
+
+    patch.scope_gate_result_json = scope_gate_result.to_artifact_metadata()
+    patch.status = "applied"
+    artifact = Artifact(
+        project_id=patch.cicd_run.project_id,
+        owner_entity_type="UnitTestPatch",
+        owner_entity_id=patch.id,
+        artifact_type="unit_test_patch",
+        file_path=f"artifacts/projects/{patch.cicd_run.project_id}/cicd-quality/{patch.cicd_run_id}/unit-test-patches/{patch.id}/unit_test.patch",
+        mime_type="text/x-diff",
+        size_bytes=len(patch.patch_text.encode("utf-8")),
+        sha256=f"sha256:unit_test_patch:{patch.id}",
+        metadata_json={
+            "scope_gate_result": scope_gate_result.to_artifact_metadata(),
+            "patch_text": patch.patch_text,
+            "target_framework": patch.target_framework,
+        },
+    )
+    session.add(patch)
+    session.add(artifact)
+    session.commit()
+    session.refresh(patch)
+    session.refresh(artifact)
+    return patch, artifact
 
 
 def get_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID) -> UnitTestPatch:

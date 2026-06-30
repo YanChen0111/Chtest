@@ -98,6 +98,16 @@ class UnitTestPatchReviewRead(BaseModel):
     status: str
 
 
+class UnitTestPatchApplyRequest(BaseModel):
+    confirm_scope_gate_result: bool = True
+
+
+class UnitTestPatchApplyRead(BaseModel):
+    unit_test_patch_id: uuid.UUID
+    status: str
+    applied_artifact_id: uuid.UUID
+
+
 class QualityGateDecisionCreate(BaseModel):
     project_id: uuid.UUID
     cicd_run_id: uuid.UUID

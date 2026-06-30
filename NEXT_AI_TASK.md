@@ -10,12 +10,12 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 6: Add UnitTestPatch apply API.
+Task 7: Add new-test and regression API.
 
 ## Product Value Answer
 
-After this task, Chtest can apply approved test-only UnitTestPatch records in a
-controlled local workflow and preserve patch evidence.
+After this task, Chtest can record new-test and regression execution evidence
+for a CICDRun without computing the final quality gate.
 
 ## Must Read
 
@@ -47,8 +47,8 @@ backend/app/tests/api/test_unit_test_patch_regression.py
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Only apply approved test-only patches through the new controlled service path.
-Do not modify business source files or run external test commands in this task.
+Only create CICD-linked TestRun evidence through allowlisted local command
+records. Do not compute QualityGateDecision or create reports in this task.
 
 ## Verification Command
 
@@ -56,24 +56,26 @@ Do not modify business source files or run external test commands in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
 ```
 
-Expected result: focused UnitTestPatch apply API tests pass.
+Expected result: focused new-test and regression API tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/cicd/unit-test-patches/{id}/apply`.
-- Only approved patches can be applied.
-- Re-runs PatchScopeGate before application and rejects unsafe patches.
-- Writes `unit_test.patch` artifact metadata for the original patch text.
-- Preserves original `patch_text` as evidence.
-- Does not modify business source files or run tests in this task.
-- Updates handoff and sets the next task to new-test/regression API.
+- Adds `POST /api/cicd/runs/{id}/run-new-tests`.
+- Adds `POST /api/cicd/runs/{id}/select-regression`.
+- Adds `POST /api/cicd/runs/{id}/run-regression`.
+- Creates TestRun records with `cicd_run_id` set.
+- Requires an applied UnitTestPatch when `unit_test_patch_id` is provided.
+- Writes `regression_plan.json` artifact metadata.
+- Uses allowlisted TestCommand records rather than arbitrary shell strings.
+- Does not compute QualityGateDecision or create Reports.
+- Updates handoff and sets the next task to QualityGateDecision API.
 
 ## Commit Message
 
 ```text
-feat(cicd): add unit test patch apply api
+feat(cicd): add new test regression api
 ```
 
 ## Next Task
 
-Slice 16 Task 7: Add new-test and regression API.
+Slice 16 Task 8: Add QualityGateDecision API.

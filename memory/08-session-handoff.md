@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 6 UnitTestPatch Apply API 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 6：Add UnitTestPatch apply API。
+- 新增 `POST /api/cicd/unit-test-patches/{id}/apply`。
+- Apply 只允许 `approved` UnitTestPatch。
+- Apply 前重新运行 PatchScopeGate；若 patch 修改非测试路径，返回
+  `PATCH_SCOPE_REJECTED`，patch 状态变为 `apply_failed`，不写 artifact。
+- 成功 apply 时 patch 状态变为 `applied`，并写入
+  `artifact_type=unit_test_patch`、`owner_entity_type=UnitTestPatch` 的
+  artifact metadata。
+- Artifact metadata 保留原始 `patch_text` 和最新 `scope_gate_result`。
+- 当前任务没有将 patch 应用到业务仓库文件，也没有运行测试命令，没有创建
+  TestRun、QualityGateDecision 或 Report。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 7：Add new-test and
+  regression API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
+```
+
+验证结果：
+
+- `14 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/router.py`
+- `backend/app/modules/cicd/service.py`
+- `backend/app/modules/cicd/schemas.py`
+- `backend/app/tests/api/test_unit_test_patch_regression.py`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 7：Add new-test and regression
+  API。
+- 该任务只创建 CICD-linked TestRun 和 regression_plan artifact evidence，
+  不计算 QualityGateDecision，不创建 Report。
+
 ## 2026-06-30 Slice 16 Task 5 UnitTestPatch Generation/Review API 完成
 
 本轮完成：

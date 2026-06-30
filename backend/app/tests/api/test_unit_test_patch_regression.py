@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app.main import app
 from backend.app.models.base import Base
-from backend.app.modules.ai_runtime.models import AITask
+from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.cicd.models import CICDRun, QualityGateDecision, UnitTestPatch
 from backend.app.modules.cicd.schemas import (
     QualityGateDecisionCreate,
@@ -587,5 +587,126 @@ def test_approve_and_reject_unit_test_patch_api_updates_review_status() -> None:
         assert rejected is not None
         assert rejected.status == "rejected"
         assert rejected.review_comment == "Need stronger assertions"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_apply_unit_test_patch_api_requires_approved_patch_and_writes_evidence_artifact() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, cicd_run, ai_task = seed_cicd_run_and_ai_task(session)
+            patch_text = """diff --git a/tests/test_coupon.py b/tests/test_coupon.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_coupon.py
+@@ -0,0 +1,2 @@
++def test_coupon_boundary():
++    assert True
+"""
+            patch = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text=patch_text,
+                scope_gate_result_json={"allowed": True, "checked_paths": ["tests/test_coupon.py"]},
+                test_intent="Apply me",
+                status="approved",
+            )
+            session.add(patch)
+            session.commit()
+            project_id = project.id
+            patch_id = patch.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            f"/api/cicd/unit-test-patches/{patch_id}/apply",
+            {"confirm_scope_gate_result": True},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["unit_test_patch_id"] == str(patch_id)
+        assert body["status"] == "applied"
+        assert body["applied_artifact_id"] is not None
+
+        with SessionLocal() as session:
+            applied = session.get(UnitTestPatch, patch_id)
+            artifact = session.get(Artifact, uuid.UUID(body["applied_artifact_id"]))
+            assert session.scalar(select(TestRun)) is None
+            assert session.scalar(select(QualityGateDecision)) is None
+            assert session.scalar(select(Report)) is None
+
+        assert applied is not None
+        assert applied.status == "applied"
+        assert applied.patch_text == patch_text
+        assert artifact is not None
+        assert artifact.project_id == project_id
+        assert artifact.owner_entity_type == "UnitTestPatch"
+        assert artifact.owner_entity_id == patch_id
+        assert artifact.artifact_type == "unit_test_patch"
+        assert artifact.file_path.endswith(f"/{patch_id}/unit_test.patch")
+        assert artifact.metadata_json["scope_gate_result"]["allowed"] is True
+        assert artifact.metadata_json["patch_text"] == patch_text
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_apply_unit_test_patch_api_rejects_unapproved_or_unsafe_patch() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            _project, cicd_run, ai_task = seed_cicd_run_and_ai_task(session)
+            unapproved = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/tests/test_coupon.py b/tests/test_coupon.py\n",
+                scope_gate_result_json={"allowed": True},
+                test_intent="Not approved",
+                status="scope_validated",
+            )
+            unsafe = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/app/coupon.py b/app/coupon.py\n--- a/app/coupon.py\n+++ b/app/coupon.py\n@@ -1 +1,2 @@\n-old\n+new\n",
+                scope_gate_result_json={"allowed": True},
+                test_intent="Unsafe after edit",
+                status="approved",
+            )
+            session.add_all([unapproved, unsafe])
+            session.commit()
+            unapproved_id = unapproved.id
+            unsafe_id = unsafe.id
+
+        client = ASGIClient(app)
+        unapproved_response = client.post(
+            f"/api/cicd/unit-test-patches/{unapproved_id}/apply",
+            {"confirm_scope_gate_result": True},
+        )
+        unsafe_response = client.post(
+            f"/api/cicd/unit-test-patches/{unsafe_id}/apply",
+            {"confirm_scope_gate_result": True},
+        )
+
+        assert unapproved_response.status_code == 400
+        assert unapproved_response.json()["error_code"] == "UNIT_TEST_PATCH_INVALID_STATUS"
+        assert unsafe_response.status_code == 400
+        assert unsafe_response.json()["error_code"] == "PATCH_SCOPE_REJECTED"
+
+        with SessionLocal() as session:
+            assert session.get(UnitTestPatch, unapproved_id).status == "scope_validated"
+            assert session.get(UnitTestPatch, unsafe_id).status == "apply_failed"
+            assert session.scalar(select(Artifact).where(Artifact.owner_entity_type == "UnitTestPatch")) is None
     finally:
         app.dependency_overrides.clear()
