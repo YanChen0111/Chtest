@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.app.modules.extension import service
-from backend.app.modules.extension.schemas import KnowledgeAdapterRead, KnowledgeAdapterUpdate
+from backend.app.modules.extension.schemas import (
+    KnowledgeAdapterRead,
+    KnowledgeAdapterUpdate,
+    KnowledgeBaseRead,
+)
 from backend.app.modules.projects.router import get_session
 
 
@@ -42,6 +46,17 @@ def get_knowledge_adapter(
 ) -> KnowledgeAdapterRead:
     try:
         return service.read_knowledge_adapter(session, project_id)
+    except service.KnowledgeAdapterProjectNotFoundError as exc:
+        raise project_not_found() from exc
+
+
+@router.get("/projects/{project_id}/knowledge-base", response_model=KnowledgeBaseRead)
+def get_knowledge_base(
+    project_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> KnowledgeBaseRead:
+    try:
+        return service.read_knowledge_base(session, project_id)
     except service.KnowledgeAdapterProjectNotFoundError as exc:
         raise project_not_found() from exc
 

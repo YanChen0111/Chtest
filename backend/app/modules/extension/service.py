@@ -6,8 +6,15 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.app.modules.ai_runtime.models import AITask, Artifact
+from backend.app.modules.ai_runtime.service import CONTEXT_FILE_NAMES
 from backend.app.modules.extension.models import KnowledgeAdapterConfig
-from backend.app.modules.extension.schemas import KnowledgeAdapterRead, KnowledgeAdapterUpdate
+from backend.app.modules.extension.schemas import (
+    KnowledgeAdapterRead,
+    KnowledgeAdapterUpdate,
+    KnowledgeBaseContextArtifactRead,
+    KnowledgeBaseRead,
+)
 from backend.app.modules.projects.models import Project
 
 
@@ -29,6 +36,12 @@ RUNTIME_CONFIG_KEYS = {
     "server_url",
     "mcp_transport",
 }
+KNOWLEDGE_BASE_NON_GOALS = [
+    "no_vector_index",
+    "no_embedding",
+    "no_reranking",
+    "no_external_rag_runtime",
+]
 
 
 class KnowledgeAdapterRuntimeNotAllowedError(Exception):
@@ -75,6 +88,16 @@ def read_knowledge_adapter(session: Session, project_id: uuid.UUID) -> Knowledge
     return to_read(config)
 
 
+def read_knowledge_base(session: Session, project_id: uuid.UUID) -> KnowledgeBaseRead:
+    get_project_or_raise(session, project_id)
+    return KnowledgeBaseRead(
+        project_id=project_id,
+        knowledge_adapter=read_knowledge_adapter(session, project_id),
+        context_artifacts=list_knowledge_base_context_artifacts(session, project_id),
+        non_goals=list(KNOWLEDGE_BASE_NON_GOALS),
+    )
+
+
 def update_knowledge_adapter(
     session: Session,
     project_id: uuid.UUID,
@@ -117,6 +140,58 @@ def contains_runtime_key(value: Any) -> bool:
     if isinstance(value, list):
         return any(contains_runtime_key(item) for item in value)
     return False
+
+
+def list_knowledge_base_context_artifacts(
+    session: Session,
+    project_id: uuid.UUID,
+) -> list[KnowledgeBaseContextArtifactRead]:
+    usage = context_artifact_usage(session, project_id)
+    artifacts = session.scalars(
+        select(Artifact)
+        .where(
+            Artifact.project_id == project_id,
+            Artifact.owner_entity_type == "Project",
+            Artifact.owner_entity_id == project_id,
+            Artifact.artifact_type.in_(CONTEXT_FILE_NAMES.keys()),
+        )
+        .order_by(Artifact.created_at.asc()),
+    ).all()
+    return [to_context_artifact_read(artifact, usage.get(artifact.id, {})) for artifact in artifacts]
+
+
+def context_artifact_usage(
+    session: Session,
+    project_id: uuid.UUID,
+) -> dict[uuid.UUID, dict[str, Any]]:
+    usage: dict[uuid.UUID, dict[str, Any]] = {}
+    ai_tasks = session.scalars(select(AITask).where(AITask.project_id == project_id)).all()
+    for ai_task in ai_tasks:
+        for artifact_id in ai_task.context_artifact_ids:
+            item = usage.setdefault(artifact_id, {"usage_count": 0, "latest_used_at": None})
+            item["usage_count"] += 1
+            if item["latest_used_at"] is None or ai_task.created_at > item["latest_used_at"]:
+                item["latest_used_at"] = ai_task.created_at
+    return usage
+
+
+def to_context_artifact_read(
+    artifact: Artifact,
+    usage: dict[str, Any],
+) -> KnowledgeBaseContextArtifactRead:
+    metadata = artifact.metadata_json
+    return KnowledgeBaseContextArtifactRead(
+        id=artifact.id,
+        title=str(metadata.get("title", "")),
+        artifact_type=artifact.artifact_type,
+        mime_type=artifact.mime_type,
+        source_ref=str(metadata.get("source_ref", "")),
+        safe_to_show=bool(metadata.get("safe_to_show", False)),
+        redaction_applied=bool(metadata.get("redaction_applied", False)),
+        allowed_for_prompt=bool(metadata.get("allowed_for_prompt", False)),
+        usage_count=int(usage.get("usage_count", 0)),
+        latest_used_at=usage.get("latest_used_at"),
+    )
 
 
 def to_read(config: KnowledgeAdapterConfig) -> KnowledgeAdapterRead:

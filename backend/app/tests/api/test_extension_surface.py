@@ -12,6 +12,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app.main import app
 from backend.app.models.base import Base
+from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.extension.models import KnowledgeAdapterConfig
 from backend.app.modules.projects.models import Project, Workspace
 from backend.app.modules.projects.router import get_session
@@ -195,3 +196,68 @@ def test_update_knowledge_adapter_rejects_runtime_provider_config(
 
     with SessionLocal() as session:
         assert session.query(KnowledgeAdapterConfig).count() == 0
+
+
+def test_get_knowledge_base_lists_context_artifacts_and_usage(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project = create_project(SessionLocal)
+
+    with SessionLocal() as session:
+        artifact = Artifact(
+            project_id=project.id,
+            owner_entity_type="Project",
+            owner_entity_id=project.id,
+            artifact_type="context_markdown",
+            file_path=f"projects/{project.id}/context-artifacts/context.md",
+            mime_type="text/markdown",
+            size_bytes=42,
+            sha256="abc123",
+            metadata_json={
+                "title": "coupon-api-notes.md",
+                "source_ref": "manual:coupon-api-notes.md",
+                "safe_to_show": True,
+                "redaction_applied": False,
+                "allowed_for_prompt": True,
+            },
+        )
+        session.add(artifact)
+        session.flush()
+        ai_task = AITask(
+            project_id=project.id,
+            agent_name="RequirementReviewAgent",
+            task_type="requirement_review",
+            prompt_version_id=project.id,
+            skill_version_id=project.id,
+            status="succeeded",
+            context_artifact_ids=[artifact.id],
+            output_json={"used_knowledge": False},
+        )
+        session.add(ai_task)
+        session.commit()
+
+    response = client.get(f"/api/projects/{project.id}/knowledge-base")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["project_id"] == str(project.id)
+    assert body["knowledge_adapter"]["status"] == "not_configured"
+    assert body["knowledge_adapter"]["used_knowledge"] is False
+    assert body["non_goals"] == [
+        "no_vector_index",
+        "no_embedding",
+        "no_reranking",
+        "no_external_rag_runtime",
+    ]
+    assert len(body["context_artifacts"]) == 1
+    item = body["context_artifacts"][0]
+    assert item["id"]
+    assert item["title"] == "coupon-api-notes.md"
+    assert item["source_ref"] == "manual:coupon-api-notes.md"
+    assert item["mime_type"] == "text/markdown"
+    assert item["safe_to_show"] is True
+    assert item["redaction_applied"] is False
+    assert item["allowed_for_prompt"] is True
+    assert item["usage_count"] == 1
+    assert item["latest_used_at"] is not None

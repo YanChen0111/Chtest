@@ -26,3 +26,23 @@ class KnowledgeAdapterUpdate(BaseModel):
     config: dict[str, Any] = Field(default_factory=dict)
     safety_policy: dict[str, Any] = Field(default_factory=dict)
     notes: str | None = None
+
+
+class KnowledgeBaseContextArtifactRead(BaseModel):
+    id: uuid.UUID
+    title: str
+    artifact_type: str
+    mime_type: str
+    source_ref: str
+    safe_to_show: bool
+    redaction_applied: bool
+    allowed_for_prompt: bool
+    usage_count: int = 0
+    latest_used_at: datetime | None = None
+
+
+class KnowledgeBaseRead(BaseModel):
+    project_id: uuid.UUID
+    knowledge_adapter: KnowledgeAdapterRead
+    context_artifacts: list[KnowledgeBaseContextArtifactRead] = Field(default_factory=list)
+    non_goals: list[str] = Field(default_factory=list)

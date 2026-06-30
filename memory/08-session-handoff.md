@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-30 Slice 17 Task 4 Knowledge Base Context API 完成
+
+本轮完成：
+
+- 完成 Slice 17 Task 4：Add RAG 知识库 ContextArtifact API shell。
+- 新增 `GET /api/projects/{project_id}/knowledge-base`。
+- 返回 KnowledgeAdapter 状态、ContextArtifact inventory、source_ref、
+  MIME type、redaction、allowed_for_prompt、usage_count、latest_used_at。
+- usage 只从 `AITask.context_artifact_ids` 聚合，不新增单独知识库表。
+- 返回 non_goals：`no_vector_index`、`no_embedding`、`no_reranking`、
+  `no_external_rag_runtime`。
+- 未加入 semantic search、embedding、vector index、reranking 或外部 RAG
+  provider 调用。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 17 Task 5：Add MCP-ready
+  ToolDefinition schema metadata。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q
+git diff --check
+```
+
+验证结果：
+
+- `4 passed`
+- `git diff --check` clean。
+
+修改文件：
+
+- `backend/app/modules/extension/router.py`
+- `backend/app/modules/extension/schemas.py`
+- `backend/app/modules/extension/service.py`
+- `backend/app/tests/api/test_extension_surface.py`
+- `docs/implementation/slices/slice-17-extension-surface.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 17 Task 5：Add MCP-ready ToolDefinition
+  schema metadata。
+- 该任务只补 ToolDefinition schema/readiness，不加入 MCP runtime、remote MCP
+  调用、RBAC、tenants 或 permissions。
+
 ## 2026-06-30 Slice 17 Task 3 KnowledgeAdapter Shell 完成
 
 本轮完成：

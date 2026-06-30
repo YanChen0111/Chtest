@@ -10,13 +10,13 @@ Slice 17: Extension Surface.
 
 ## Current Task
 
-Task 4: Add RAG 知识库 ContextArtifact API shell.
+Task 5: Add MCP-ready ToolDefinition schema metadata.
 
 ## Product Value Answer
 
-After this task, Chtest exposes a RAG 知识库 backend API shell backed by
-ContextArtifacts and KnowledgeAdapter state, with safety metadata and usage
-display fields but no semantic retrieval runtime.
+After this task, Chtest exposes MCP-ready ToolDefinition schema metadata while
+keeping ToolInvocation and internal allowlist rules as the only executable tool
+boundary.
 
 ## Must Read
 
@@ -63,21 +63,19 @@ Expected result: Extension surface API tests pass.
 
 ## Acceptance
 
-- Lists project ContextArtifacts with title, source, MIME type, redaction, and
-  prompt eligibility metadata.
-- Shows AI task usage references when available.
-- Reuses existing ContextArtifact creation/list contracts.
-- Does not create a separate ContextArtifact table.
-- Does not perform semantic search or external retrieval.
-- Updates handoff and sets the next task to MCP-ready ToolDefinition schema
-  metadata.
+- Exposes ToolDefinition input/output schema, risk level, approval requirement,
+  artifact policy, and allowlist metadata.
+- Allows `tool_type=mcp_proxy` as schema intent only.
+- Requires ToolInvocation to keep using allowlisted internal execution rules.
+- Does not add MCP server/client packages or runtime calls.
+- Updates handoff and sets the next task to the RAG 知识库 frontend shell.
 
 ## Commit Message
 
 ```text
-feat(extension): add knowledge context api
+feat(extension): add mcp ready tool schema
 ```
 
 ## Next Task
 
-Slice 17 Task 5: Add MCP-ready ToolDefinition schema metadata.
+Slice 17 Task 6: Add RAG 知识库 frontend shell.
