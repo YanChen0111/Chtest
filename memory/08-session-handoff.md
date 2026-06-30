@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 3 UnitTestPatch/QualityGateDecision Model Schema 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 3：Add UnitTestPatch and QualityGateDecision
+  model/schema。
+- 新增 `UnitTestPatch` 模型，覆盖 `cicd_run_id`、`ai_task_id`、
+  `patch_text`、`target_framework`、`scope_gate_result_json`、
+  `test_intent`、`coverage_target_json`、`status`、`review_comment`。
+- 新增 `QualityGateDecision` 模型，覆盖 `project_id`、`cicd_run_id`、
+  `status`、`summary`、`blocking_reasons_json`、`evidence_artifact_ids`、
+  `decided_by`、`status_detail_json`。
+- 新增 UnitTestPatch / QualityGateDecision create/read schemas，使用 API
+  层字段名 `scope_gate_result`、`coverage_target`、`blocking_reasons`、
+  `status_detail`。
+- 任务只做 persistence/schema，不 apply patches，不触发测试运行流程。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 4：Add PatchScopeGate
+  service。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
+```
+
+验证结果：
+
+- `4 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/models.py`
+- `backend/app/modules/cicd/schemas.py`
+- `backend/app/tests/api/test_unit_test_patch_regression.py`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 4：Add PatchScopeGate service。
+- 当前任务只做统一 diff 路径 scope gate，不 apply patches 或运行测试命令。
+
 ## 2026-06-30 Slice 16 Task 2 UnitTestPatch/Regression Contract Boundary 完成
 
 本轮完成：

@@ -53,6 +53,54 @@ class CICDChangedFileRead(BaseModel):
     lines_deleted: int
 
 
+class UnitTestPatchCreate(BaseModel):
+    cicd_run_id: uuid.UUID
+    ai_task_id: uuid.UUID
+    patch_text: str
+    target_framework: str = "pytest"
+    scope_gate_result: dict[str, Any] = Field(default_factory=dict)
+    test_intent: str
+    coverage_target: list[dict[str, Any]] = Field(default_factory=list)
+    status: str = "generated"
+    review_comment: str | None = None
+
+
+class UnitTestPatchRead(BaseModel):
+    id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    ai_task_id: uuid.UUID
+    patch_text: str
+    target_framework: str
+    scope_gate_result: dict[str, Any] = Field(default_factory=dict)
+    test_intent: str
+    coverage_target: list[dict[str, Any]] = Field(default_factory=list)
+    status: str
+    review_comment: str | None
+
+
+class QualityGateDecisionCreate(BaseModel):
+    project_id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    status: str = "needs_review"
+    summary: str
+    blocking_reasons: list[str] = Field(default_factory=list)
+    evidence_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    decided_by: str = "system"
+    status_detail: dict[str, Any] = Field(default_factory=dict)
+
+
+class QualityGateDecisionRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    status: str
+    summary: str
+    blocking_reasons: list[str] = Field(default_factory=list)
+    evidence_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    decided_by: str
+    status_detail: dict[str, Any] = Field(default_factory=dict)
+
+
 class CICDRunRead(BaseModel):
     id: uuid.UUID
     project_id: uuid.UUID

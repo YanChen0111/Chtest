@@ -10,12 +10,12 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 3: Add UnitTestPatch and QualityGateDecision model/schema.
+Task 4: Add PatchScopeGate service.
 
 ## Product Value Answer
 
-After this task, Chtest can persist UnitTestPatch and QualityGateDecision
-records aligned with the review-gated CI/CD quality contract.
+After this task, Chtest can validate UnitTestPatch unified diffs before review
+or application and block non-test path changes.
 
 ## Must Read
 
@@ -40,13 +40,14 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-backend/app/modules/cicd/models.py
 backend/app/modules/cicd/schemas.py
+backend/app/modules/cicd/service.py
 backend/app/tests/api/test_unit_test_patch_regression.py
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Do not apply patches or run tests in this task.
+Do not apply patches, mutate the repository, or run external test commands from
+the generated patch in this task.
 
 ## Verification Command
 
@@ -54,23 +55,26 @@ Do not apply patches or run tests in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
 ```
 
-Expected result: focused UnitTestPatch/QualityGateDecision model/schema tests
-pass.
+Expected result: focused UnitTestPatch/PatchScopeGate tests pass.
 
 ## Acceptance
 
-- Defines UnitTestPatch fields from the data model contract.
-- Defines QualityGateDecision fields from the data model contract.
-- Defines create/read schemas for patch and gate records.
+- Parses unified diff target paths for UnitTestPatch candidates.
+- Allows test-only paths such as `tests/`, `test/`, `__tests__/`, and common
+  frontend test suffixes.
+- Rejects source, config, migration, generated artifact, and unknown non-test
+  paths with structured reasons.
+- Returns `allowed`, `checked_paths`, `blocked_paths`, `forbidden_patterns`,
+  `risk_level`, and rejection `reason` fields.
 - Does not apply patches or run tests in this task.
-- Updates handoff and sets the next task to PatchScopeGate service.
+- Updates handoff and sets the next task to UnitTestPatch generation/review API.
 
 ## Commit Message
 
 ```text
-feat(cicd): add unit test patch schema
+feat(cicd): add patch scope gate
 ```
 
 ## Next Task
 
-Slice 16 Task 4: Add PatchScopeGate service.
+Slice 16 Task 5: Add UnitTestPatch generation/review API.
