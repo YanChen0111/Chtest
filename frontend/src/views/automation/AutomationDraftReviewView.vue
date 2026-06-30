@@ -2,12 +2,12 @@
   <section class="automation-draft-page" aria-labelledby="automation-draft-title">
     <div class="automation-draft-heading">
       <div>
-        <p class="eyebrow">AutomationDraft Review</p>
+        <p class="eyebrow">AutomationDraft 评审</p>
         <h2 id="automation-draft-title">自动化草稿</h2>
         <p>从已评审用例生成可审查的自动化草稿，只做编辑和审批，不在此页面执行代码。</p>
       </div>
       <a-space>
-        <a-tag color="blue">Mock AutomationDraftAgent</a-tag>
+        <a-tag color="blue">模拟 AutomationDraftAgent</a-tag>
         <a-tag color="green">审批后进入待执行状态</a-tag>
       </a-space>
     </div>

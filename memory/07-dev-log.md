@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-06-30 Frontend Chinese Copy Review
+
+### Completed
+
+- Localized ordinary English UI copy across V1 frontend pages.
+- Preserved product/domain terms such as Prompt, Skill, AutomationDraft,
+  TestCommand, TestRun, ContextArtifact, ToolDefinition, and MCP-ready.
+- Added display-only Chinese labels for common backend enums and statuses.
+- Updated affected frontend tests.
+
+### Verification
+
+```bash
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Frontend suite: `14` test files passed, `17` tests passed.
+- `git diff --check` clean.
+
+### Next Step
+
+- Continue with V2 Task 2: draft the Slice 18 Newman API Execution plan.
+
 ## 2026-06-30 V2 Scope Options
 
 ### Completed

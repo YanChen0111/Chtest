@@ -4,7 +4,7 @@
       <div>
         <p class="eyebrow">PromptVersion / SkillVersion</p>
         <h2 id="prompt-skill-title">Prompt / Skill 中心</h2>
-        <p>只读查看内置 Prompt 与 Skill 版本、hash、适用 Agent 和契约元数据，为后续 AI 任务追踪提供依据。</p>
+        <p>只读查看内置 Prompt 与 Skill 版本、Hash、适用 Agent 和契约元数据，为后续 AI 任务追踪提供依据。</p>
       </div>
       <a-space>
         <a-tag color="blue">只读注册表</a-tag>
@@ -24,7 +24,7 @@
         <strong>{{ store.skills.length }}</strong>
       </a-card>
       <a-card class="settings-panel" :bordered="false">
-        <span>Active Prompt</span>
+        <span>启用 Prompt</span>
         <strong>{{ store.activePromptCount }}</strong>
       </a-card>
       <a-card class="settings-panel" :bordered="false">
@@ -39,7 +39,7 @@
           <template #title>PromptVersion</template>
           <a-table :columns="promptColumns" :data="promptRows" :pagination="false" row-key="id" size="small">
             <template #status="{ record }">
-              <a-tag :color="record.status === 'active' ? 'green' : 'gray'">{{ record.status }}</a-tag>
+              <a-tag :color="record.status === 'active' ? 'green' : 'gray'">{{ statusLabel(record.status) }}</a-tag>
             </template>
           </a-table>
           <a-empty v-if="!store.loading && store.prompts.length === 0" description="暂无 PromptVersion" />
@@ -49,7 +49,7 @@
           <template #title>SkillVersion</template>
           <a-table :columns="skillColumns" :data="skillRows" :pagination="false" row-key="id" size="small">
             <template #status="{ record }">
-              <a-tag :color="record.status === 'active' ? 'green' : 'gray'">{{ record.status }}</a-tag>
+              <a-tag :color="record.status === 'active' ? 'green' : 'gray'">{{ statusLabel(record.status) }}</a-tag>
             </template>
           </a-table>
           <a-empty v-if="!store.loading && store.skills.length === 0" description="暂无 SkillVersion" />
@@ -106,9 +106,18 @@ const skillRows = computed(() =>
 function requiredText(schema: Record<string, unknown>): string {
   const required = schema.required;
   if (!Array.isArray(required) || required.length === 0) {
-    return 'required: none';
+    return '必填：无';
   }
-  return `required: ${required.join(', ')}`;
+  return `必填：${required.join(', ')}`;
+}
+
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    active: '启用',
+    inactive: '停用',
+    deprecated: '已废弃',
+  };
+  return labels[status] ?? status;
 }
 
 onMounted(() => {

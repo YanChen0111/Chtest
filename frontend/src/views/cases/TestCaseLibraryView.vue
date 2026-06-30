@@ -2,7 +2,7 @@
   <section class="test-case-library-page" aria-labelledby="test-case-library-title">
     <div class="test-case-library-heading">
       <div>
-        <p class="eyebrow">Test Case Library</p>
+        <p class="eyebrow">测试用例库</p>
         <h2 id="test-case-library-title">用例库</h2>
         <p>集中查看已经人工评审入库的用例，保留来源、步骤、预期结果和评审状态，作为后续自动化草稿的输入资产。</p>
       </div>
@@ -36,10 +36,10 @@
                 <a-space direction="vertical" size="mini">
                   <strong>{{ item.title }}</strong>
                   <a-space wrap>
-                    <a-tag color="red">{{ item.priority }}</a-tag>
-                    <a-tag color="blue">{{ item.test_type }}</a-tag>
-                    <a-tag>{{ item.review_status }}</a-tag>
-                    <a-tag>{{ item.status }}</a-tag>
+                    <a-tag color="red">{{ priorityLabel(item.priority) }}</a-tag>
+                    <a-tag color="blue">{{ testTypeLabel(item.test_type) }}</a-tag>
+                    <a-tag>{{ reviewStatusLabel(item.review_status) }}</a-tag>
+                    <a-tag>{{ caseStatusLabel(item.status) }}</a-tag>
                   </a-space>
                 </a-space>
               </a-list-item>
@@ -54,11 +54,11 @@
         <template v-if="selectedCase">
           <a-descriptions :column="2" bordered size="small">
             <a-descriptions-item label="标题">{{ selectedCase.title }}</a-descriptions-item>
-            <a-descriptions-item label="状态">{{ selectedCase.status }}</a-descriptions-item>
-            <a-descriptions-item label="优先级">{{ selectedCase.priority }}</a-descriptions-item>
-            <a-descriptions-item label="类型">{{ selectedCase.test_type }}</a-descriptions-item>
-            <a-descriptions-item label="评审状态">{{ selectedCase.review_status }}</a-descriptions-item>
-            <a-descriptions-item label="来源">{{ selectedCase.source_type }}</a-descriptions-item>
+            <a-descriptions-item label="状态">{{ caseStatusLabel(selectedCase.status) }}</a-descriptions-item>
+            <a-descriptions-item label="优先级">{{ priorityLabel(selectedCase.priority) }}</a-descriptions-item>
+            <a-descriptions-item label="类型">{{ testTypeLabel(selectedCase.test_type) }}</a-descriptions-item>
+            <a-descriptions-item label="评审状态">{{ reviewStatusLabel(selectedCase.review_status) }}</a-descriptions-item>
+            <a-descriptions-item label="来源">{{ sourceTypeLabel(selectedCase.source_type) }}</a-descriptions-item>
             <a-descriptions-item label="候选来源" :span="2">
               {{ selectedCase.source_candidate_id ?? '手动或外部来源' }}
             </a-descriptions-item>
@@ -120,6 +120,56 @@ const selectedCase = computed(() => {
 
 function listText(items: string[]): string {
   return items.length > 0 ? items.join(', ') : '无';
+}
+
+function priorityLabel(priority: string): string {
+  const labels: Record<string, string> = {
+    p0: 'P0',
+    p1: 'P1',
+    p2: 'P2',
+    high: '高',
+    medium: '中',
+    low: '低',
+  };
+  return labels[priority] ?? priority;
+}
+
+function testTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    functional: '功能',
+    ui: '界面',
+    api: '接口',
+    regression: '回归',
+  };
+  return labels[type] ?? type;
+}
+
+function reviewStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    approved: '已通过',
+    approved_after_edit: '编辑后通过',
+    rejected: '已拒绝',
+    needs_optimization: '需要优化',
+  };
+  return labels[status] ?? status;
+}
+
+function caseStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    active: '启用',
+    archived: '已归档',
+    draft: '草稿',
+  };
+  return labels[status] ?? status;
+}
+
+function sourceTypeLabel(sourceType: string): string {
+  const labels: Record<string, string> = {
+    generated: 'AI 生成',
+    manual: '手动',
+    imported: '导入',
+  };
+  return labels[sourceType] ?? sourceType;
 }
 
 onMounted(() => {

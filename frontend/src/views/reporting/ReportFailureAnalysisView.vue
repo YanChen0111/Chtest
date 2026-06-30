@@ -2,13 +2,13 @@
   <section class="reporting-page" aria-labelledby="reporting-title">
     <div class="reporting-heading">
       <div>
-        <p class="eyebrow">Report / FailureAnalysis</p>
+        <p class="eyebrow">报告 / 失败分析</p>
         <h2 id="reporting-title">报告与失败分析</h2>
         <p>围绕 TestRun 生成失败分析和自动化执行报告，优先呈现证据，再呈现 AI 结论。</p>
       </div>
       <a-space>
-        <a-tag color="green">evidence first</a-tag>
-        <a-tag color="blue">mock provider</a-tag>
+        <a-tag color="green">证据优先</a-tag>
+        <a-tag color="blue">模拟提供方</a-tag>
       </a-space>
     </div>
 
@@ -19,7 +19,7 @@
         <template #title>生成入口</template>
         <form class="reporting-form" @submit.prevent>
           <label>
-            <span>Project ID</span>
+            <span>项目 ID</span>
             <a-input v-model="store.projectId" />
           </label>
           <label>
@@ -52,15 +52,15 @@
           <template v-if="store.report">
             <div class="manifest-strip">
               <div>
-                <span>Conclusion</span>
+                <span>结论</span>
                 <strong>{{ store.report.conclusion }}</strong>
               </div>
               <div>
-                <span>Evidence</span>
+                <span>证据</span>
                 <strong>{{ evidenceCount }}</strong>
               </div>
               <div>
-                <span>Missing</span>
+                <span>缺失</span>
                 <strong>{{ missingEvidenceLabel }}</strong>
               </div>
             </div>
@@ -72,7 +72,7 @@
               size="small"
             />
           </template>
-          <a-empty v-else description="生成执行报告后展示 evidence_manifest" />
+          <a-empty v-else description="生成执行报告后展示证据清单" />
         </a-card>
 
         <a-card class="reporting-panel" :bordered="false">
@@ -113,7 +113,7 @@
               size="small"
             />
           </template>
-          <a-empty v-else description="生成执行报告后展示结论、指标和报告 artifacts" />
+          <a-empty v-else description="生成执行报告后展示结论、指标和报告工件" />
         </a-card>
       </div>
     </div>
@@ -153,7 +153,7 @@ const suggestedActions = computed(() => {
 const evidenceRows = computed(() => {
   return (store.report?.evidence_manifest.evidence ?? []).map((item, index) => ({
     key: `${item.artifact_id ?? item.test_result_id ?? item.metric ?? index}`,
-    label: item.artifact_type ?? item.metric ?? item.artifact_id ?? item.test_result_id ?? 'structured evidence',
+    label: item.artifact_type ?? item.metric ?? item.artifact_id ?? item.test_result_id ?? '结构化证据',
     supports_claim: item.supports_claim,
     required: item.required ? '是' : '否',
   }));
@@ -169,10 +169,10 @@ const missingEvidenceLabel = computed(() => {
 const metricItems = computed(() => {
   const metrics = store.report?.metrics ?? {};
   return [
-    { label: 'Total', value: metrics.total ?? 0 },
-    { label: 'Passed', value: metrics.passed ?? 0 },
-    { label: 'Failed', value: metrics.failed ?? 0 },
-    { label: 'Skipped', value: metrics.skipped ?? 0 },
+    { label: '总数', value: metrics.total ?? 0 },
+    { label: '通过', value: metrics.passed ?? 0 },
+    { label: '失败', value: metrics.failed ?? 0 },
+    { label: '跳过', value: metrics.skipped ?? 0 },
   ];
 });
 

@@ -91,14 +91,14 @@ describe('KnowledgeBaseView', () => {
     expect(wrapper.text()).toContain('ContextArtifact');
     expect(wrapper.text()).toContain('KnowledgeAdapter');
     expect(wrapper.text()).toContain('允许进入提示词');
-    expect(wrapper.text()).toContain('not_configured');
-    expect(wrapper.text()).toContain('used_knowledge=false');
+    expect(wrapper.text()).toContain('未配置');
+    expect(wrapper.text()).toContain('使用知识=否');
     expect(wrapper.text()).toContain('coupon-api-notes.md');
     expect(wrapper.text()).toContain('manual:coupon-api-notes.md');
-    expect(wrapper.text()).toContain('allowed');
+    expect(wrapper.text()).toContain('允许');
     expect(wrapper.text()).toContain('pytest_runner');
     expect(wrapper.text()).toContain('MCP-ready');
     expect(wrapper.text()).toContain('no_vector_index');
-    expect(wrapper.text()).not.toContain('Vector Search');
+    expect(wrapper.text()).not.toContain('向量检索');
   });
 });

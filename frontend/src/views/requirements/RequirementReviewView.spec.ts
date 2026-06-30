@@ -113,6 +113,6 @@ describe('RequirementReviewView', () => {
     expect(wrapper.text()).toContain('优惠券与积分互斥规则');
     expect(wrapper.text()).toContain('覆盖同时选择优惠券和积分时的提交阻断');
     expect(wrapper.text()).toContain('外部知识库未使用');
-    expect(wrapper.text()).toContain('context_manifest');
+    expect(wrapper.text()).toContain('上下文清单');
   });
 });

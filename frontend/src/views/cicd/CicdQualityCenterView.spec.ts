@@ -205,22 +205,22 @@ describe('CicdQualityCenterView', () => {
     });
 
     expect(wrapper.text()).toContain('CI/CD 质量中心');
-    expect(wrapper.text()).toContain('Unified Diff');
+    expect(wrapper.text()).toContain('统一 diff');
 
     await wrapper.find('[data-test="create-cicd-run"]').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain('app/coupon.py');
-    expect(wrapper.text()).toContain('source');
-    expect(wrapper.text()).toContain('medium');
-    expect(wrapper.text()).toContain('source file changed');
+    expect(wrapper.text()).toContain('源码');
+    expect(wrapper.text()).toContain('中');
+    expect(wrapper.text()).toContain('源码文件变更');
 
     await wrapper.find('[data-test="analyze-cicd-run"]').trigger('click');
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.text()).toContain('analyzed');
+    expect(wrapper.text()).toContain('已分析');
     expect(wrapper.text()).toContain('risk_analysis');
     expect(wrapper.text()).toContain('risk_analysis.json');
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/cicd/runs'), expect.objectContaining({ method: 'POST' }));
@@ -233,16 +233,16 @@ describe('CicdQualityCenterView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.text()).toContain('Cover coupon boundary change');
+    expect(wrapper.text()).toContain('覆盖优惠券边界变更');
     expect(wrapper.text()).toContain('tests/test_coupon.py');
     expect(wrapper.text()).toContain('app/coupon.py');
-    expect(wrapper.text()).toContain('scope_validated');
-    expect(wrapper.text()).toContain('PatchScopeGate: 通过');
+    expect(wrapper.text()).toContain('范围已验证');
+    expect(wrapper.text()).toContain('PatchScopeGate：通过');
 
     await wrapper.find('[data-test="approve-unit-test-patch"]').trigger('click');
     await flushPromises();
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain('approved');
+    expect(wrapper.text()).toContain('已批准');
 
     await wrapper.find('[data-test="run-new-tests"]').trigger('click');
     await flushPromises();
@@ -260,16 +260,16 @@ describe('CicdQualityCenterView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.text()).toContain('New TestRun');
-    expect(wrapper.text()).toContain('Regression Plan');
+    expect(wrapper.text()).toContain('新增 TestRun');
+    expect(wrapper.text()).toContain('回归计划');
     expect(wrapper.text()).toContain('QualityGateDecision');
-    expect(wrapper.text()).toContain('passed');
-    expect(wrapper.text()).toContain('Report');
+    expect(wrapper.text()).toContain('通过');
+    expect(wrapper.text()).toContain('报告');
     expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000001501');
 
     await wrapper.find('[data-test="reject-unit-test-patch"]').trigger('click');
     await flushPromises();
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain('rejected');
+    expect(wrapper.text()).toContain('已拒绝');
   });
 });

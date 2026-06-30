@@ -2,7 +2,7 @@
   <section class="project-settings-page" aria-labelledby="project-settings-title">
     <div class="settings-heading">
       <div>
-        <p class="eyebrow">Project Context</p>
+        <p class="eyebrow">项目上下文</p>
         <h2 id="project-settings-title">项目设置</h2>
         <p>维护项目、模块、仓库、环境和测试命令，让后续 AI 任务和执行证据使用同一套上下文。</p>
       </div>

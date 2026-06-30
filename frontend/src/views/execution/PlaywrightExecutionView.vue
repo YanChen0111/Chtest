@@ -2,13 +2,13 @@
   <section class="execution-page" aria-labelledby="playwright-execution-title">
     <div class="execution-heading">
       <div>
-        <p class="eyebrow">Playwright Execution</p>
+        <p class="eyebrow">Playwright 执行证据</p>
         <h2 id="playwright-execution-title">Playwright 执行</h2>
-        <p>从已批准 Playwright 草稿或已配置 TestCommand 启动本地 smoke run，并查看 trace 与截图证据。</p>
+        <p>从已批准 Playwright 草稿或已配置 TestCommand 启动本地冒烟运行，并查看追踪与截图证据。</p>
       </div>
       <a-space>
-        <a-tag color="green">playwright_local</a-tag>
-        <a-tag color="blue">trace / screenshot</a-tag>
+        <a-tag color="green">本地 Playwright</a-tag>
+        <a-tag color="blue">追踪 / 截图</a-tag>
       </a-space>
     </div>
 
@@ -19,7 +19,7 @@
         <template #title>执行入口</template>
         <form class="execution-form" @submit.prevent="startRun">
           <label>
-            <span>Project ID</span>
+            <span>项目 ID</span>
             <a-input v-model="store.projectId" />
           </label>
           <label>
@@ -53,10 +53,10 @@
         <a-spin :loading="store.loading">
           <template v-if="store.run">
             <a-descriptions :column="2" bordered size="small">
-              <a-descriptions-item label="状态">{{ store.run.status }}</a-descriptions-item>
+              <a-descriptions-item label="状态">{{ runStatusLabel(store.run.status) }}</a-descriptions-item>
               <a-descriptions-item label="退出码">{{ store.run.exit_code ?? '运行中' }}</a-descriptions-item>
               <a-descriptions-item label="耗时">{{ durationLabel }}</a-descriptions-item>
-              <a-descriptions-item label="Runner">{{ store.run.runner_mode }}</a-descriptions-item>
+              <a-descriptions-item label="运行器">{{ store.run.runner_mode }}</a-descriptions-item>
               <a-descriptions-item label="网络">{{ store.run.network_enabled ? '开启' : '关闭' }}</a-descriptions-item>
               <a-descriptions-item label="命令" :span="2">{{ store.run.command }}</a-descriptions-item>
             </a-descriptions>
@@ -69,7 +69,7 @@
             </div>
 
             <section class="evidence-section">
-              <h3>Trace / Screenshot</h3>
+              <h3>追踪 / 截图</h3>
               <a-table
                 :columns="artifactColumns"
                 :data="browserArtifacts"
@@ -80,7 +80,7 @@
             </section>
 
             <section class="evidence-section">
-              <h3>TestResult</h3>
+              <h3>测试结果</h3>
               <a-table
                 :columns="resultColumns"
                 :data="store.run.test_results"
@@ -127,11 +127,11 @@ const durationLabel = computed(() => {
 const metricItems = computed(() => {
   const parsed = store.run?.parsed_result ?? {};
   return [
-    { label: 'Total', value: parsed.total ?? 0 },
-    { label: 'Passed', value: parsed.passed ?? 0 },
-    { label: 'Failed', value: parsed.failed ?? 0 },
-    { label: 'Skipped', value: parsed.skipped ?? 0 },
-    { label: 'Error', value: parsed.error ?? 0 },
+    { label: '总数', value: parsed.total ?? 0 },
+    { label: '通过', value: parsed.passed ?? 0 },
+    { label: '失败', value: parsed.failed ?? 0 },
+    { label: '跳过', value: parsed.skipped ?? 0 },
+    { label: '错误', value: parsed.error ?? 0 },
   ];
 });
 
@@ -140,6 +140,17 @@ const browserArtifacts = computed(() => {
     ['playwright_trace', 'screenshot', 'stdout', 'stderr'].includes(artifact.artifact_type),
   );
 });
+
+function runStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    passed: '通过',
+    failed: '失败',
+    running: '运行中',
+    pending: '排队中',
+    error: '错误',
+  };
+  return labels[status] ?? status;
+}
 
 function startRun() {
   void store.startRun({

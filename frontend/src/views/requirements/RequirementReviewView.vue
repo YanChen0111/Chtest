@@ -2,12 +2,12 @@
   <section class="requirement-review-page" aria-labelledby="requirement-review-title">
     <div class="requirement-review-heading">
       <div>
-        <p class="eyebrow">Requirement Review</p>
+        <p class="eyebrow">需求评审</p>
         <h2 id="requirement-review-title">需求评审</h2>
         <p>把需求先转成可审查证据：评分、问题、澄清问题和风险项都在生成用例前确认。</p>
       </div>
       <a-space>
-        <a-tag color="blue">Mock RequirementReviewAgent</a-tag>
+        <a-tag color="blue">模拟 RequirementReviewAgent</a-tag>
         <a-tag color="green">人工评审前置</a-tag>
       </a-space>
     </div>
@@ -31,7 +31,7 @@
             <a-textarea v-model="form.content" :auto-size="{ minRows: 8, maxRows: 12 }" />
           </label>
           <label>
-            <span>ContextArtifact IDs</span>
+            <span>ContextArtifact ID 列表</span>
             <a-input v-model="contextIdsText" placeholder="多个 ID 用逗号分隔" />
           </label>
           <a-button html-type="submit" type="primary" :loading="store.loading">开始评审</a-button>
@@ -60,7 +60,7 @@
               <a-descriptions-item label="外部知识库">
                 {{ store.review.used_knowledge ? '已使用外部知识库' : '外部知识库未使用' }}
               </a-descriptions-item>
-              <a-descriptions-item label="context_manifest">
+              <a-descriptions-item label="上下文清单">
                 {{ store.review.context_manifest_artifact_id ?? '未生成' }}
               </a-descriptions-item>
               <a-descriptions-item label="已使用上下文" :span="2">
@@ -74,8 +74,8 @@
                 <template #item="{ item }">
                   <a-list-item>
                     <a-space direction="vertical" size="mini">
-                      <a-tag color="orange">{{ item.severity }}</a-tag>
-                      <strong>{{ item.type }}</strong>
+                      <a-tag color="orange">{{ severityLabel(item.severity) }}</a-tag>
+                      <strong>{{ issueTypeLabel(item.type) }}</strong>
                       <span>{{ item.text }}</span>
                     </a-space>
                   </a-list-item>
@@ -96,7 +96,7 @@
               <h3>风险项</h3>
               <a-table :columns="riskColumns" :data="store.review.risk_items" :pagination="false" size="small">
                 <template #risk_level="{ record }">
-                  <a-tag :color="riskColor(record.risk_level)">{{ record.risk_level }}</a-tag>
+                  <a-tag :color="riskColor(record.risk_level)">{{ riskLevelLabel(record.risk_level) }}</a-tag>
                 </template>
               </a-table>
             </div>
@@ -163,6 +163,30 @@ function riskColor(level: string): string {
     critical: 'purple',
   };
   return colors[level] ?? 'gray';
+}
+
+function riskLevelLabel(level: string): string {
+  const labels: Record<string, string> = {
+    low: '低',
+    medium: '中',
+    high: '高',
+    critical: '严重',
+  };
+  return labels[level] ?? level;
+}
+
+function severityLabel(severity: string): string {
+  return riskLevelLabel(severity);
+}
+
+function issueTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    ambiguity: '歧义',
+    missing_constraint: '约束缺失',
+    inconsistency: '不一致',
+    testability: '可测性',
+  };
+  return labels[type] ?? type.replaceAll('_', ' ');
 }
 
 function reviewStatusLabel(status: string): string {

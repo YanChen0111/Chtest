@@ -95,14 +95,14 @@ describe('PytestExecutionView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.text()).toContain('passed');
+    expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('pytest tests/test_generated_ok.py -q');
     expect(wrapper.text()).toContain('/tmp/chtest-test-run');
     expect(wrapper.text()).toContain('local_subprocess');
     expect(wrapper.text()).toContain('关闭');
     expect(wrapper.text()).toContain('stdout');
     expect(wrapper.text()).toContain('generated::test_generated_ok');
-    expect(wrapper.text()).toContain('Passed');
+    expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('1');
 
     await wrapper.find('[data-test="refresh-run"]').trigger('click');

@@ -2,13 +2,13 @@
   <section class="cicd-page" aria-labelledby="cicd-title">
     <div class="cicd-heading">
       <div>
-        <p class="eyebrow">Local CI/CD Quality</p>
+        <p class="eyebrow">本地 CI/CD 质量</p>
         <h2 id="cicd-title">CI/CD 质量中心</h2>
-        <p>从本地 diff 创建 CICDRun，查看 changed files 和 mock risk_analysis 证据。</p>
+        <p>从本地 diff 创建 CICDRun，查看变更文件和模拟风险分析证据。</p>
       </div>
       <a-space>
-        <a-tag color="green">local_diff</a-tag>
-        <a-tag color="blue">manual / local</a-tag>
+        <a-tag color="green">本地 diff</a-tag>
+        <a-tag color="blue">手动 / 本地</a-tag>
       </a-space>
     </div>
 
@@ -19,25 +19,25 @@
         <template #title>本地变更输入</template>
         <form class="cicd-form" @submit.prevent="createRun">
           <label>
-            <span>Project ID</span>
+            <span>项目 ID</span>
             <a-input v-model="store.projectId" />
           </label>
           <label>
-            <span>Repository ID</span>
+            <span>仓库 ID</span>
             <a-input v-model="store.repositoryId" />
           </label>
           <div class="ref-grid">
             <label>
-              <span>Base Ref</span>
+              <span>基准引用</span>
               <a-input v-model="store.baseRef" />
             </label>
             <label>
-              <span>Head Ref</span>
+              <span>当前引用</span>
               <a-input v-model="store.headRef" />
             </label>
           </div>
           <label>
-            <span>Unified Diff</span>
+            <span>统一 diff</span>
             <a-textarea v-model="store.diffText" :auto-size="{ minRows: 8, maxRows: 14 }" />
           </label>
           <a-space wrap>
@@ -57,27 +57,27 @@
           <template v-if="store.run">
             <div class="status-strip">
               <div>
-                <span>Status</span>
-                <strong>{{ store.run.status }}</strong>
+                <span>状态</span>
+                <strong>{{ statusLabel(store.run.status) }}</strong>
               </div>
               <div>
-                <span>Risk</span>
-                <strong>{{ store.run.overall_risk }}</strong>
+                <span>风险</span>
+                <strong>{{ riskLevelLabel(store.run.overall_risk) }}</strong>
               </div>
               <div>
-                <span>Files</span>
+                <span>文件数</span>
                 <strong>{{ store.run.changed_files.length }}</strong>
               </div>
             </div>
             <a-table
               :columns="changedFileColumns"
-              :data="store.run.changed_files"
+              :data="changedFileRows"
               :pagination="false"
               row-key="id"
               size="small"
             />
           </template>
-          <a-empty v-else description="创建后展示 changed files 证据" />
+          <a-empty v-else description="创建后展示变更文件证据" />
         </a-card>
 
         <a-card class="cicd-panel" :bordered="false">
@@ -91,7 +91,7 @@
               size="small"
             />
           </template>
-          <a-empty v-else description="生成风险分析后展示 risk_analysis artifact" />
+          <a-empty v-else description="生成风险分析后展示风险分析工件" />
         </a-card>
 
         <a-card class="cicd-panel" :bordered="false">
@@ -122,20 +122,20 @@
           <template v-if="store.unitTestPatch">
             <div class="patch-grid">
               <div>
-                <span>Patch Status</span>
-                <strong>{{ store.patchReviewStatus || store.unitTestPatch.status }}</strong>
+                <span>补丁状态</span>
+                <strong>{{ patchStatusLabel(store.patchReviewStatus || store.unitTestPatch.status) }}</strong>
               </div>
               <div>
                 <span>PatchScopeGate</span>
                 <strong>{{ store.unitTestPatch.scope_gate_result.allowed ? '通过' : '拒绝' }}</strong>
               </div>
               <div>
-                <span>Risk</span>
-                <strong>{{ store.unitTestPatch.scope_gate_result.risk_level }}</strong>
+                <span>风险</span>
+                <strong>{{ riskLevelLabel(store.unitTestPatch.scope_gate_result.risk_level) }}</strong>
               </div>
             </div>
-            <p class="evidence-line">PatchScopeGate: {{ store.unitTestPatch.scope_gate_result.allowed ? '通过' : '拒绝' }}</p>
-            <p class="evidence-line">{{ store.unitTestPatch.test_intent }}</p>
+            <p class="evidence-line">PatchScopeGate：{{ store.unitTestPatch.scope_gate_result.allowed ? '通过' : '拒绝' }}</p>
+            <p class="evidence-line">{{ testIntentLabel(store.unitTestPatch.test_intent) }}</p>
             <div class="coverage-list">
               <a-tag v-for="target in store.unitTestPatch.coverage_target" :key="target.path" color="arcoblue">
                 {{ target.path }} {{ target.reason }}
@@ -148,7 +148,7 @@
             </div>
             <pre class="patch-diff">{{ store.unitTestPatch.patch_text }}</pre>
           </template>
-          <a-empty v-else description="生成后展示 UnitTestPatch diff 和 scope gate" />
+          <a-empty v-else description="生成后展示 UnitTestPatch diff 和范围门禁" />
         </a-card>
 
         <a-card class="cicd-panel" :bordered="false">
@@ -172,23 +172,23 @@
           </a-space>
           <div class="evidence-grid">
             <div>
-              <span>New TestRun</span>
+              <span>新增 TestRun</span>
               <strong>{{ store.newTestRun?.test_run_id || '-' }}</strong>
             </div>
             <div>
-              <span>Regression Plan</span>
+              <span>回归计划</span>
               <strong>{{ store.regressionPlan?.regression_plan_artifact_id || '-' }}</strong>
             </div>
             <div>
-              <span>Regression Runs</span>
+              <span>回归运行</span>
               <strong>{{ store.regressionRun?.test_run_ids.join(', ') || '-' }}</strong>
             </div>
             <div>
               <span>QualityGateDecision</span>
-              <strong>{{ store.qualityGate?.status || '-' }}</strong>
+              <strong>{{ store.qualityGate ? statusLabel(store.qualityGate.status) : '-' }}</strong>
             </div>
             <div>
-              <span>Report</span>
+              <span>报告</span>
               <strong>{{ store.qualityReport?.report_id || '-' }}</strong>
             </div>
           </div>
@@ -196,8 +196,8 @@
         </a-card>
 
         <a-card class="cicd-panel" :bordered="false">
-          <template #title>最近 CI/CD Runs</template>
-          <a-table :columns="runColumns" :data="store.runs" :pagination="false" row-key="id" size="small" />
+          <template #title>最近 CI/CD 运行</template>
+          <a-table :columns="runColumns" :data="runRows" :pagination="false" row-key="id" size="small" />
         </a-card>
       </div>
     </div>
@@ -205,16 +205,18 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 import { useCICDStore } from '../../stores/cicd';
 
 const store = useCICDStore();
 
 const changedFileColumns = [
   { title: '路径', dataIndex: 'path' },
-  { title: '类型', dataIndex: 'change_type' },
-  { title: '角色', dataIndex: 'file_role' },
-  { title: '风险', dataIndex: 'risk_level' },
-  { title: '原因', dataIndex: 'risk_reasons' },
+  { title: '类型', dataIndex: 'changeTypeLabel' },
+  { title: '角色', dataIndex: 'fileRoleLabel' },
+  { title: '风险', dataIndex: 'riskLevelLabel' },
+  { title: '原因', dataIndex: 'riskReasonsLabel' },
 ];
 
 const artifactColumns = [
@@ -224,12 +226,30 @@ const artifactColumns = [
 ];
 
 const runColumns = [
-  { title: 'Run', dataIndex: 'id' },
-  { title: '状态', dataIndex: 'status' },
-  { title: '风险', dataIndex: 'overall_risk' },
-  { title: 'Base', dataIndex: 'base_ref' },
-  { title: 'Head', dataIndex: 'head_ref' },
+  { title: '运行', dataIndex: 'id' },
+  { title: '状态', dataIndex: 'statusLabel' },
+  { title: '风险', dataIndex: 'riskLabel' },
+  { title: '基准', dataIndex: 'base_ref' },
+  { title: '当前', dataIndex: 'head_ref' },
 ];
+
+const changedFileRows = computed(() =>
+  (store.run?.changed_files ?? []).map((file) => ({
+    ...file,
+    changeTypeLabel: changeTypeLabel(file.change_type),
+    fileRoleLabel: fileRoleLabel(file.file_role),
+    riskLevelLabel: riskLevelLabel(file.risk_level),
+    riskReasonsLabel: file.risk_reasons.map((reason) => riskReasonLabel(reason)).join('，'),
+  })),
+);
+
+const runRows = computed(() =>
+  store.runs.map((run) => ({
+    ...run,
+    statusLabel: statusLabel(run.status),
+    riskLabel: riskLevelLabel(run.overall_risk),
+  })),
+);
 
 function createRun() {
   void store.createRun();
@@ -257,6 +277,77 @@ function runNewTestsForPatch() {
 
 function selectRegressionPlan() {
   void store.selectRegressionPlan();
+}
+
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    pending: '待处理',
+    analyzed: '已分析',
+    generated: '已生成',
+    approved: '已批准',
+    rejected: '已拒绝',
+    passed: '通过',
+    failed: '失败',
+    needs_review: '需要复核',
+  };
+  return labels[status] ?? status;
+}
+
+function patchStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    scope_validated: '范围已验证',
+    generated: '已生成',
+    approved: '已批准',
+    rejected: '已拒绝',
+  };
+  return labels[status] ?? statusLabel(status);
+}
+
+function riskLevelLabel(level: string): string {
+  const labels: Record<string, string> = {
+    low: '低',
+    medium: '中',
+    high: '高',
+    critical: '严重',
+  };
+  return labels[level] ?? level;
+}
+
+function changeTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    added: '新增',
+    modified: '修改',
+    deleted: '删除',
+    renamed: '重命名',
+  };
+  return labels[type] ?? type;
+}
+
+function fileRoleLabel(role: string): string {
+  const labels: Record<string, string> = {
+    source: '源码',
+    test: '测试',
+    config: '配置',
+    docs: '文档',
+    unknown: '未知',
+  };
+  return labels[role] ?? role;
+}
+
+function riskReasonLabel(reason: string): string {
+  const labels: Record<string, string> = {
+    'source file changed': '源码文件变更',
+    'test file changed': '测试文件变更',
+    'config file changed': '配置文件变更',
+  };
+  return labels[reason] ?? reason;
+}
+
+function testIntentLabel(intent: string): string {
+  const labels: Record<string, string> = {
+    'Cover coupon boundary change': '覆盖优惠券边界变更',
+  };
+  return labels[intent] ?? intent;
 }
 
 function runRegressionPlan() {

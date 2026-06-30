@@ -2,13 +2,13 @@
   <section class="knowledge-base-page" aria-labelledby="knowledge-base-title">
     <div class="settings-heading">
       <div>
-        <p class="eyebrow">Extension Surface</p>
+        <p class="eyebrow">扩展表面</p>
         <h2 id="knowledge-base-title">RAG 知识库</h2>
         <p>查看项目上下文、提示词可用性、AI 使用记录和 MCP-ready 工具结构；V1 仅保留扩展表面。</p>
       </div>
       <a-space>
         <a-tag color="blue">ContextArtifact</a-tag>
-        <a-tag color="gray">No RAG Runtime</a-tag>
+        <a-tag color="gray">无 RAG 运行时</a-tag>
         <a-button type="primary" :loading="store.loading" @click="store.loadExtensionSurface()">刷新</a-button>
       </a-space>
     </div>
@@ -21,7 +21,7 @@
         <strong>{{ store.contextArtifactCount }}</strong>
       </a-card>
       <a-card class="settings-panel" :bordered="false">
-        <span>Safe To Show</span>
+        <span>可安全展示</span>
         <strong>{{ store.safeContextArtifactCount }}</strong>
       </a-card>
       <a-card class="settings-panel" :bordered="false">
@@ -29,7 +29,7 @@
         <strong>{{ store.promptEligibleCount }}</strong>
       </a-card>
       <a-card class="settings-panel" :bordered="false">
-        <span>MCP-ready Tools</span>
+        <span>MCP-ready 工具</span>
         <strong>{{ store.mcpReadyToolCount }}</strong>
       </a-card>
     </div>
@@ -41,22 +41,22 @@
           <div class="adapter-state">
             <div>
               <span>状态</span>
-              <strong>{{ adapterState.status }}</strong>
+              <strong>{{ adapterStatusLabel(adapterState.status) }}</strong>
             </div>
             <a-tag :color="adapterState.used_knowledge ? 'orange' : 'green'">
-              used_knowledge={{ adapterState.used_knowledge ? 'true' : 'false' }}
+              使用知识={{ adapterState.used_knowledge ? '是' : '否' }}
             </a-tag>
           </div>
           <a-descriptions :column="1" size="small" bordered>
-            <a-descriptions-item label="Adapter">{{ adapterState.adapter_name }}</a-descriptions-item>
+            <a-descriptions-item label="适配器">{{ adapterState.adapter_name }}</a-descriptions-item>
             <a-descriptions-item label="提供方">{{ adapterState.provider_type }}</a-descriptions-item>
-            <a-descriptions-item label="Last Check">{{ adapterState.last_checked_at ?? '未检查' }}</a-descriptions-item>
-            <a-descriptions-item label="Notes">{{ adapterState.notes ?? 'V1 empty adapter shell' }}</a-descriptions-item>
+            <a-descriptions-item label="最近检查">{{ adapterState.last_checked_at ?? '未检查' }}</a-descriptions-item>
+            <a-descriptions-item label="备注">{{ adapterState.notes ?? 'V1 空适配器外壳' }}</a-descriptions-item>
           </a-descriptions>
         </a-card>
 
         <a-card class="settings-panel" :bordered="false">
-          <template #title>V1 Non-goals</template>
+          <template #title>V1 非目标</template>
           <div class="non-goal-list">
             <a-tag v-for="goal in store.knowledgeBase?.non_goals ?? []" :key="goal" color="gray">{{ goal }}</a-tag>
           </div>
@@ -66,14 +66,14 @@
 
       <div class="knowledge-grid knowledge-main-grid">
         <a-card class="settings-panel" :bordered="false">
-          <template #title>ContextArtifact Inventory</template>
+          <template #title>ContextArtifact 清单</template>
           <a-table :columns="contextColumns" :data="contextRows" :pagination="false" row-key="id" size="small">
             <template #safe="{ record }">
-              <a-tag :color="record.safe_to_show ? 'green' : 'orange'">{{ record.safe_to_show ? 'safe' : 'review' }}</a-tag>
+              <a-tag :color="record.safe_to_show ? 'green' : 'orange'">{{ record.safe_to_show ? '安全' : '需复核' }}</a-tag>
             </template>
             <template #prompt="{ record }">
               <a-tag :color="record.allowed_for_prompt ? 'blue' : 'gray'">
-                {{ record.allowed_for_prompt ? 'allowed' : 'blocked' }}
+                {{ record.allowed_for_prompt ? '允许' : '阻止' }}
               </a-tag>
             </template>
           </a-table>
@@ -85,12 +85,12 @@
           <a-table :columns="toolColumns" :data="toolRows" :pagination="false" row-key="id" size="small">
             <template #ready="{ record }">
               <a-tag :color="record.is_mcp_ready ? 'green' : 'gray'">
-                {{ record.is_mcp_ready ? 'ready' : 'schema only' }}
+                {{ record.is_mcp_ready ? '就绪' : '仅结构' }}
               </a-tag>
             </template>
             <template #approval="{ record }">
               <a-tag :color="record.approval_required ? 'orange' : 'blue'">
-                {{ record.approval_required ? 'approval' : 'allowlisted' }}
+                {{ record.approval_required ? '需审批' : '已列入白名单' }}
               </a-tag>
             </template>
           </a-table>
@@ -135,7 +135,7 @@ const toolColumns = [
   { title: '风险', dataIndex: 'risk_level' },
   { title: '审批', slotName: 'approval' },
   { title: 'MCP-ready', slotName: 'ready' },
-  { title: 'Capability', dataIndex: 'capability' },
+  { title: '能力', dataIndex: 'capability' },
 ];
 
 const contextRows = computed(() =>
@@ -151,6 +151,15 @@ const toolRows = computed(() =>
     capability: typeof tool.mcp_metadata.capability_name === 'string' ? tool.mcp_metadata.capability_name : '未声明',
   })),
 );
+
+function adapterStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    not_configured: '未配置',
+    disabled: '已禁用',
+    configured_stub: '已配置占位',
+  };
+  return labels[status] ?? status;
+}
 
 onMounted(() => {
   void store.loadExtensionSurface();

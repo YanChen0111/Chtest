@@ -108,13 +108,13 @@ describe('PlaywrightExecutionView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.text()).toContain('passed');
+    expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('npx playwright test tests/checkout.spec.ts');
     expect(wrapper.text()).toContain('playwright_local');
     expect(wrapper.text()).toContain('playwright_trace');
     expect(wrapper.text()).toContain('screenshot');
     expect(wrapper.text()).toContain('generated::checkout smoke');
-    expect(wrapper.text()).toContain('Passed');
+    expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('1');
 
     await wrapper.find('[data-test="refresh-playwright-run"]').trigger('click');

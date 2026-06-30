@@ -81,7 +81,7 @@ describe('PromptSkillCenterView', () => {
     expect(wrapper.text()).toContain('RequirementReviewAgent');
     expect(wrapper.text()).toContain('sha256:aaaaaaaa');
     expect(wrapper.text()).toContain('sha256:bbbbbbbb');
-    expect(wrapper.text()).toContain('required: requirement');
+    expect(wrapper.text()).toContain('必填：requirement');
     expect(wrapper.text()).toContain('All six dimensions must be present.');
     expect(wrapper.text()).toContain('No execution tools.');
   });

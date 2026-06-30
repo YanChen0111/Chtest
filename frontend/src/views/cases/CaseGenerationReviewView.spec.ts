@@ -126,7 +126,7 @@ describe('CaseGenerationReviewView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.text()).toContain('approved_after_edit');
+    expect(wrapper.text()).toContain('编辑后通过');
     expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000000901');
     expect(wrapper.text()).toContain('采纳率');
     expect(wrapper.text()).toContain('编辑率');

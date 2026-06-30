@@ -2,12 +2,12 @@
   <section class="case-review-page" aria-labelledby="case-review-title">
     <div class="case-review-heading">
       <div>
-        <p class="eyebrow">Case Review</p>
+        <p class="eyebrow">用例评审</p>
         <h2 id="case-review-title">用例生成评审</h2>
         <p>从已评审需求生成候选用例，逐条检查步骤、预期结果和 AI 理由，再决定是否进入正式用例库。</p>
       </div>
       <a-space>
-        <a-tag color="blue">Mock CaseGenerationAgent</a-tag>
+        <a-tag color="blue">模拟 CaseGenerationAgent</a-tag>
         <a-tag color="green">评审后入库</a-tag>
       </a-space>
     </div>
@@ -31,7 +31,7 @@
             <a-input v-model="targetTypesText" />
           </label>
           <label>
-            <span>ContextArtifact IDs</span>
+            <span>ContextArtifact ID 列表</span>
             <a-input v-model="contextIdsText" placeholder="多个 ID 用逗号分隔" />
           </label>
           <a-button html-type="submit" type="primary" :loading="store.loadingGeneration">开始生成候选用例</a-button>
@@ -68,9 +68,9 @@
                   <strong>{{ item.title }}</strong>
                   <span>{{ item.ai_reason }}</span>
                   <a-space>
-                    <a-tag color="red">{{ item.priority }}</a-tag>
-                    <a-tag color="blue">{{ item.test_type }}</a-tag>
-                    <a-tag>{{ item.status }}</a-tag>
+                    <a-tag color="red">{{ priorityLabel(item.priority) }}</a-tag>
+                    <a-tag color="blue">{{ testTypeLabel(item.test_type) }}</a-tag>
+                    <a-tag>{{ candidateStatusLabel(item.status) }}</a-tag>
                   </a-space>
                 </a-space>
               </a-list-item>
@@ -85,9 +85,9 @@
         <template v-if="store.selectedCandidate">
           <a-descriptions :column="2" bordered size="small">
             <a-descriptions-item label="标题">{{ store.selectedCandidate.title }}</a-descriptions-item>
-            <a-descriptions-item label="状态">{{ store.selectedCandidate.status }}</a-descriptions-item>
-            <a-descriptions-item label="优先级">{{ store.selectedCandidate.priority }}</a-descriptions-item>
-            <a-descriptions-item label="类型">{{ store.selectedCandidate.test_type }}</a-descriptions-item>
+            <a-descriptions-item label="状态">{{ candidateStatusLabel(store.selectedCandidate.status) }}</a-descriptions-item>
+            <a-descriptions-item label="优先级">{{ priorityLabel(store.selectedCandidate.priority) }}</a-descriptions-item>
+            <a-descriptions-item label="类型">{{ testTypeLabel(store.selectedCandidate.test_type) }}</a-descriptions-item>
             <a-descriptions-item label="前置条件" :span="2">
               {{ store.selectedCandidate.precondition ?? '无' }}
             </a-descriptions-item>
@@ -121,7 +121,7 @@
           </a-space>
 
           <div v-if="store.lastReview" class="review-result">
-            <span>评审结果：{{ store.lastReview.status }}</span>
+            <span>评审结果：{{ reviewStatusLabel(store.lastReview.status) }}</span>
             <strong>TestCase：{{ store.lastReview.test_case_id ?? '未创建' }}</strong>
           </div>
           <a-alert
@@ -195,6 +195,43 @@ function submitGeneration() {
 
 function review(action: CaseReviewAction) {
   void store.reviewSelectedCandidate(action, '前端评审动作');
+}
+
+function priorityLabel(priority: string): string {
+  const labels: Record<string, string> = {
+    p0: 'P0',
+    p1: 'P1',
+    p2: 'P2',
+    high: '高',
+    medium: '中',
+    low: '低',
+  };
+  return labels[priority] ?? priority;
+}
+
+function testTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    functional: '功能',
+    ui: '界面',
+    api: '接口',
+    regression: '回归',
+  };
+  return labels[type] ?? type;
+}
+
+function candidateStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    generated: '已生成',
+    approved: '已通过',
+    approved_after_edit: '编辑后通过',
+    rejected: '已拒绝',
+    needs_optimization: '需要优化',
+  };
+  return labels[status] ?? status;
+}
+
+function reviewStatusLabel(status: string): string {
+  return candidateStatusLabel(status);
 }
 </script>
 

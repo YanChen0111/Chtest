@@ -72,7 +72,7 @@ describe('TestCaseLibraryView', () => {
     expect(wrapper.text()).toContain('可用优惠券可成功抵扣订单金额');
     expect(wrapper.text()).toContain('准备已过期优惠券');
     expect(wrapper.text()).toContain('页面提示优惠券已过期');
-    expect(wrapper.text()).toContain('approved_after_edit');
+    expect(wrapper.text()).toContain('编辑后通过');
     expect(wrapper.text()).toContain('coupon, boundary');
     expect(wrapper.text()).not.toContain('生成自动化草稿');
     expect(wrapper.text()).not.toContain('执行用例');

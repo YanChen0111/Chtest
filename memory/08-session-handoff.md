@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-06-30 Frontend Chinese Copy Review 完成
+
+本轮按用户反馈完成：
+
+- 保留 `Prompt`、`Skill`、`PromptVersion`、`SkillVersion`、`Agent`、
+  `AutomationDraft`、`TestCommand`、`TestRun`、`ContextArtifact`、
+  `ToolDefinition` 等产品/模型术语。
+- 将页面里的普通英文说明和指标文案中文化，包括：
+  - 需求评审、用例生成评审、用例库。
+  - 自动化草稿中心。
+  - pytest 执行中心与 Playwright 执行。
+  - CI/CD 质量中心。
+  - 报告中心。
+  - RAG 知识库。
+  - 项目设置。
+  - Prompt / Skill 中心状态和必填契约显示。
+- 为后端枚举增加前端显示层中文映射，不改变 API 数据：
+  - passed/failed/pending/analyzed 等状态。
+  - high/medium/low 等风险。
+  - functional/ui/api 等用例类型。
+  - approved_after_edit 等评审状态。
+  - source/modified/source file changed 等 CI/CD 变更字段。
+- 同步更新前端组件测试断言。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Frontend：`14` test files passed，`17` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 回到 `NEXT_AI_TASK.md`：V2 Task 2，起草 Slice 18 Newman API Execution
+  plan。
+
 ## 2026-06-30 V2 Task 1 完成
 
 本轮完成：
