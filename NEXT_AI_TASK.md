@@ -10,12 +10,12 @@ Slice 11: AutomationDraft Foundation.
 
 ## Current Task
 
-Task 6: Add AutomationDraft golden smoke.
+Slice 11 completion gate.
 
 ## Product Value Answer
 
-After this task, Chtest can prove a reviewed golden TestCase can produce, edit,
-and approve an AutomationDraft without execution.
+After this task, Chtest can prove the AutomationDraft Foundation slice is
+complete across model/schema, APIs, frontend shell, and golden fixture coverage.
 
 ## Must Read
 
@@ -37,42 +37,41 @@ and approve an AutomationDraft without execution.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_automation_draft.py
 docs/implementation/slices/slice-11-automation-draft-foundation.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Read existing golden requirement-to-case and Test Case Library tests as needed,
-but do not add execution behavior in this task.
+Do not modify product code unless the completion verification exposes a
+concrete bug.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_automation_draft.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_test_case_library_golden.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: AutomationDraft golden smoke passes.
+Expected result: AutomationDraft API/golden tests and frontend suite pass.
 
 ## Acceptance
 
-- Reuse golden requirement-to-case and Test Case Library setup.
-- Create an AutomationDraft for a reviewed golden TestCase.
-- Verify draft_code, suggested_file_path, execution_notes, risk_notes, and
-  status.
-- Edit then approve the draft.
-- Assert no TestRun/TestResult/report is created by this slice.
-- Do not run pytest or Playwright, copy draft files to runtime workspace, add
-  reports, CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or
-  permissions.
-- Update handoff and set the next task to Slice 11 completion gate.
+- Confirm the Slice 11 task table has commit IDs for every completed task.
+- Confirm AutomationDraft model/schema aligns with contracts.
+- Confirm generation, edit, approve APIs work without execution side effects.
+- Confirm frontend shell can review, edit, and approve drafts without run
+  buttons.
+- Confirm golden fixture smoke proves reviewed case -> approved draft.
+- Do not add TestRun/TestResult execution, reports, CI/CD quality, RAG runtime,
+  MCP runtime, RBAC, tenants, or permissions.
+- Update handoff with completion evidence and next recommended slice/task.
 
 ## Commit Message
 
 ```text
-test(golden): add automation draft smoke
+docs(automation): complete automation draft slice
 ```
 
 ## Next Task
 
-Slice 11 completion gate.
+Slice 12 Task 1: Add TestRunner Pytest Execution task plan.

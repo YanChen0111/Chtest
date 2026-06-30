@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-06-30 Slice 11 Task 6 AutomationDraft Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 11 Task 6：新增 AutomationDraft golden smoke。
+- 新增 `backend/app/tests/golden/test_automation_draft_golden.py`，复用 golden Test Case Library setup。
+- 验证 reviewed golden TestCase 可以创建 AutomationDraft，并包含 draft_code、suggested_file_path、execution_notes、risk_notes、draft_generated 状态。
+- 验证 golden draft 可以 edit 后 approve。
+- 验证 approved draft 未创建 runtime_artifact/promoted_artifact，且当前 DB 无 test_runs、test_results、reports 表，确认本 slice 没有执行/报告副作用。
+- 为复用 golden setup，`test_test_case_library_golden.py` 提取 `create_reviewed_golden_cases` helper，并给 ASGIClient 增加 PATCH 支持。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 11 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_automation_draft_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_test_case_library_golden.py -q
+```
+
+验证结果：
+
+- AutomationDraft golden smoke：`1 passed`
+- AutomationDraft API / golden draft / Test Case Library golden regression：`7 passed`
+
+修改文件：
+
+- `backend/app/tests/golden/test_automation_draft_golden.py`
+- `backend/app/tests/golden/test_test_case_library_golden.py`
+- `docs/implementation/slices/slice-11-automation-draft-foundation.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 11 completion gate。
+- 验证命令：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_test_case_library_golden.py -q`
+  和 `npm --prefix frontend run test -- --run`。
+
 ## 2026-06-30 Slice 11 Task 5 AutomationDraft Frontend Review Shell 完成
 
 本轮完成：

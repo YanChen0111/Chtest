@@ -48,6 +48,9 @@ class ASGIClient:
             path = f"{path}{separator}{urlencode(query)}"
         return self.request("GET", path)
 
+    def patch(self, path: str, json_body: dict[str, Any]) -> ASGIResponse:
+        return self.request("PATCH", path, json_body)
+
     def post(self, path: str, json_body: dict[str, Any]) -> ASGIResponse:
         return self.request("POST", path, json_body)
 
@@ -129,6 +132,23 @@ def test_golden_reviewed_cases_are_visible_in_test_case_library(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:
     client, SessionLocal = api_client
+    project, library = create_reviewed_golden_cases(client, SessionLocal)
+
+    assert library["total"] == 4
+
+    expired_case = next(item for item in library["items"] if item["title"] == "过期优惠券不可用于结算")
+    assert expired_case["review_status"] == "approved_after_edit"
+    assert expired_case["steps"][0] == "准备已过期优惠券"
+    assert expired_case["input_data"] == {"coupon_state": "expired"}
+
+    keyword_response = client.get("/api/test-cases", query={"project_id": project["id"], "keyword": "最终支付金额"})
+    assert keyword_response.status_code == 200
+    keyword_body = keyword_response.json()
+    assert keyword_body["total"] == 1
+    assert keyword_body["items"][0]["title"] == "提交订单后展示优惠后的最终支付金额"
+
+
+def create_reviewed_golden_cases(client: ASGIClient, SessionLocal: sessionmaker[Session]) -> tuple[dict[str, Any], dict[str, Any]]:
     seed_prompt_skill(SessionLocal)
 
     project_response = client.post("/api/projects", json_body={"name": "Checkout System"})
@@ -200,15 +220,4 @@ def test_golden_reviewed_cases_are_visible_in_test_case_library(
     library_response = client.get("/api/test-cases", query={"project_id": project["id"]})
     assert library_response.status_code == 200
     library = library_response.json()
-    assert library["total"] == 4
-
-    expired_case = next(item for item in library["items"] if item["title"] == "过期优惠券不可用于结算")
-    assert expired_case["review_status"] == "approved_after_edit"
-    assert expired_case["steps"][0] == "准备已过期优惠券"
-    assert expired_case["input_data"] == {"coupon_state": "expired"}
-
-    keyword_response = client.get("/api/test-cases", query={"project_id": project["id"], "keyword": "最终支付金额"})
-    assert keyword_response.status_code == 200
-    keyword_body = keyword_response.json()
-    assert keyword_body["total"] == 1
-    assert keyword_body["items"][0]["title"] == "提交订单后展示优惠后的最终支付金额"
+    return project, library
