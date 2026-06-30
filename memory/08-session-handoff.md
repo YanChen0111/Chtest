@@ -1,5 +1,41 @@
 # Session Handoff
 
+## 2026-06-30 Slice 13 Task 2 Playwright Execution Contract 完成
+
+本轮完成：
+
+- 完成 Slice 13 Task 2：Add Playwright execution API contract and task boundary。
+- 在 `docs/contracts/02-api-contract.md` 中明确 Playwright minimal execution
+  复用 `POST /api/test-runs`、`GET /api/test-runs/{id}`，通过
+  `runner_mode=playwright_local` 区分。
+- Request 支持 approved Playwright AutomationDraft 或 configured Playwright
+  TestCommand，命令必须 backend assembled 或 allowlist validated。
+- Response 复用 TestRun/TestResult evidence shape，并允许返回
+  `playwright_trace` 和 `screenshot` artifact metadata。
+- 在 `docs/contracts/04-artifact-contract.md` 补充 Playwright trace/screenshot
+  artifact rules。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 13 Task 3：Add Playwright runner
+  adapter。
+
+本轮验证：
+
+```bash
+rg -n "Playwright|POST /api/test-runs|playwright_trace|screenshot" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-13-playwright-minimal-loop.md
+```
+
+修改文件：
+
+- `docs/contracts/02-api-contract.md`
+- `docs/contracts/04-artifact-contract.md`
+- `docs/implementation/slices/slice-13-playwright-minimal-loop.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 13 Task 3：Add Playwright runner adapter。
+- 当前任务只做 adapter，不接 router/API orchestration。
+
 ## 2026-06-30 Slice 13 Task 1 Playwright Minimal Loop Task Plan 完成
 
 本轮完成：

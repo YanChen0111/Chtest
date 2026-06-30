@@ -161,6 +161,18 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | context_yaml | application/yaml | 轻量上下文 YAML |
 | context_openapi | application/yaml or application/json | OpenAPI 片段或文件 |
 
+Playwright artifact rules:
+
+- `playwright_trace` must point to a trace zip produced or copied by the
+  controlled Playwright runner.
+- `screenshot` must point to a PNG screenshot captured during the same TestRun.
+- Both artifact types use `owner_entity_type=TestRun` and
+  `owner_entity_id=test_run_id`.
+- Metadata should include `created_by_component=PlaywrightRunner`, `runner_mode`,
+  and the best available test node id or page URL.
+- Trace and screenshot artifacts are evidence only; they must not trigger report
+  generation or failure analysis automatically.
+
 ## 5. Metadata 契约
 
 Artifact 表 metadata_json 最少包含：

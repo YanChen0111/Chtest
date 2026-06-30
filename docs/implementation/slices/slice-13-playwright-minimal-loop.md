@@ -37,8 +37,8 @@ broad browser grid/device matrix work.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add Playwright Minimal Loop task plan | done | `test -f docs/implementation/slices/slice-13-playwright-minimal-loop.md && rg -n "Playwright Minimal Loop|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-13-playwright-minimal-loop.md` | pending commit | scoped Slice 13 plan |
-| Add Playwright execution API contract and task boundary | planned | `rg -n "Playwright|POST /api/playwright-runs|playwright_trace|screenshot" docs/contracts/02-api-contract.md docs/implementation/slices/slice-13-playwright-minimal-loop.md` | - | contract-first Playwright endpoint shape |
+| Add Playwright Minimal Loop task plan | done | `test -f docs/implementation/slices/slice-13-playwright-minimal-loop.md && rg -n "Playwright Minimal Loop|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-13-playwright-minimal-loop.md` | `f882a4a` | scoped Slice 13 plan |
+| Add Playwright execution API contract and task boundary | done | `rg -n "Playwright|POST /api/test-runs|playwright_trace|screenshot" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-13-playwright-minimal-loop.md` | pending commit | contract-first Playwright endpoint shape |
 | Add Playwright runner adapter | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q` | - | allowlisted local command wrapper |
 | Add Playwright execution API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q` | - | create/get Playwright TestRun evidence |
 | Add Playwright execution frontend shell | planned | `npm --prefix frontend run test -- --run` | - | inspect trace/screenshot evidence |
@@ -60,14 +60,13 @@ Expected files:
 Verification Command:
 
 ```bash
-rg -n "Playwright|POST /api/playwright-runs|playwright_trace|screenshot" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-13-playwright-minimal-loop.md
+rg -n "Playwright|POST /api/test-runs|playwright_trace|screenshot" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-13-playwright-minimal-loop.md
 ```
 
 Acceptance:
 
-- Contract defines minimal `POST /api/playwright-runs` and
-  `GET /api/playwright-runs/{id}` or explicitly maps Playwright execution onto
-  `POST /api/test-runs` with `runner_mode=playwright_local`.
+- Contract explicitly maps Playwright execution onto `POST /api/test-runs` and
+  `GET /api/test-runs/{id}` with `runner_mode=playwright_local`.
 - Request supports approved Playwright AutomationDraft or configured
   Playwright TestCommand.
 - Response reuses TestRun/TestResult read shape and includes Playwright trace

@@ -955,10 +955,10 @@ Rules:
 
 ## 6. Test Run APIs
 
-Test Run APIs execute V1 approved pytest work and return evidence records. They
-are local-first and allowlisted: the backend assembles or validates pytest
-commands from an approved AutomationDraft or configured TestCommand. Clients
-must not submit arbitrary shell strings.
+Test Run APIs execute V1 approved pytest or minimal Playwright work and return
+evidence records. They are local-first and allowlisted: the backend assembles or
+validates commands from an approved AutomationDraft or configured TestCommand.
+Clients must not submit arbitrary shell strings.
 
 ### 6.1 Create Test Run
 
@@ -981,12 +981,16 @@ Request rules:
 - Exactly one execution source is required: approved `automation_draft_id` or
   configured `test_command_id`.
 - `automation_draft_id` must reference an AutomationDraft with
-  `status=approved` and `target_framework=pytest`.
+  `status=approved` and `target_framework` matching the requested runner:
+  `pytest` for `local_subprocess`, `playwright` for `playwright_local`.
 - `test_command_id` must reference a configured TestCommand with
-  `command_type=pytest` and passing allowlist validation.
-- `runner_mode` is optional and defaults to `local_subprocess`; V1 does not
-  expose Docker runner selection through this endpoint.
-- `cicd_run_id` is not accepted by this pytest workbench endpoint. CI/CD
+  `command_type=pytest` or `command_type=playwright` and passing allowlist
+  validation.
+- `runner_mode` is optional and defaults to `local_subprocess` for pytest.
+  Playwright minimal execution uses `runner_mode=playwright_local`.
+- V1 does not expose Docker runner or browser grid selection through this
+  endpoint.
+- `cicd_run_id` is not accepted by this workbench endpoint. CI/CD
   orchestration stays under `/api/cicd`.
 
 Response 202:
@@ -1104,8 +1108,8 @@ Response 200:
 
 Contract boundary:
 
-- V1 Test Run APIs execute pytest only through backend-controlled command
-  assembly or configured TestCommand allowlists.
+- V1 Test Run APIs execute pytest and minimal Playwright work only through
+  backend-controlled command assembly or configured TestCommand allowlists.
 - The target repository is readonly when possible; generated AutomationDraft
   code is copied to a Chtest-managed runtime artifact/workspace before
   execution.
@@ -1113,9 +1117,76 @@ Contract boundary:
   `network_enabled`.
 - Runtime manifest, dependency snapshot, environment snapshot, stdout, stderr,
   and JUnit files are represented as artifact metadata when available.
+- Playwright minimal execution may additionally return `playwright_trace` and
+  `screenshot` artifacts.
 - This API does not create reports, QualityGateDecision records, CI/CD workflow
   state, FailureAnalysis records, RAG runtime calls, MCP runtime dependencies,
   RBAC, tenants, or permissions.
+
+### 6.4 Playwright Minimal Execution
+
+Playwright minimal execution reuses `POST /api/test-runs` and
+`GET /api/test-runs/{id}`. It does not introduce a separate
+`POST /api/playwright-runs` endpoint in V1.
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "automation_draft_id": "00000000-0000-0000-0000-000000001011",
+  "test_command_id": null,
+  "reason": "run approved Playwright smoke draft",
+  "runner_mode": "playwright_local"
+}
+```
+
+Request rules:
+
+- Exactly one execution source is required: approved Playwright
+  `automation_draft_id` or configured Playwright `test_command_id`.
+- `automation_draft_id` must reference an AutomationDraft with
+  `status=approved` and `target_framework=playwright`.
+- `test_command_id` must reference a configured TestCommand with
+  `command_type=playwright` and passing allowlist validation.
+- Playwright commands are backend assembled or validated from allowlisted
+  `npx playwright test ...` style commands.
+- V1 supports local Playwright smoke execution only. It does not expose
+  browser grid, device matrix, or low-code step editing.
+
+Response model: `TestRunRead` with embedded `TestResultRead` items and
+Playwright artifact metadata.
+
+Response artifact examples:
+
+```json
+[
+  {
+    "artifact_type": "stdout",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001311/stdout.log"
+  },
+  {
+    "artifact_type": "stderr",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001311/stderr.log"
+  },
+  {
+    "artifact_type": "playwright_trace",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001311/trace.zip"
+  },
+  {
+    "artifact_type": "screenshot",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001311/screenshot.png"
+  }
+]
+```
+
+Contract boundary:
+
+- Playwright minimal execution records TestRun, TestResult, stdout/stderr,
+  trace, screenshot, and runtime artifact metadata.
+- It does not create reports, FailureAnalysis, QualityGateDecision, CI/CD
+  workflow state, RAG runtime calls, MCP runtime dependencies, RBAC, tenants, or
+  permissions.
 
 ## 7. Failure Analysis APIs
 

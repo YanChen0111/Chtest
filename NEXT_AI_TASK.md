@@ -10,12 +10,12 @@ Slice 13: Playwright Minimal Loop.
 
 ## Current Task
 
-Task 2: Add Playwright execution API contract and task boundary.
+Task 3: Add Playwright runner adapter.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-first API boundary for minimal
-Playwright execution before backend implementation starts.
+After this task, Chtest has a minimal Playwright runner adapter that can wrap an
+allowlisted local command and return parsed execution evidence.
 
 ## Must Read
 
@@ -41,39 +41,39 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-13-playwright-minimal-loop.md
-docs/contracts/02-api-contract.md
-docs/contracts/04-artifact-contract.md
+backend/app/modules/execution/playwright_runner.py
+backend/app/modules/execution/schemas.py
+backend/app/tests/api/test_playwright_minimal_loop.py
 ```
 
-This is a contract/documentation task only. Do not modify product code.
+Do not add API/router orchestration in this task.
 
 ## Verification Command
 
 ```bash
-rg -n "Playwright|POST /api/playwright-runs|playwright_trace|screenshot" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-13-playwright-minimal-loop.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q
 ```
 
-Expected result: API/artifact contracts and Slice 13 plan name the minimal
-Playwright execution endpoint and evidence artifacts.
+Expected result: focused Playwright runner adapter tests pass.
 
 ## Acceptance
 
-- Contract defines minimal Playwright execution endpoint shape.
-- Request supports approved Playwright AutomationDraft or configured
-  Playwright TestCommand.
-- Response reuses TestRun/TestResult evidence shape and includes trace and
-  screenshot artifact metadata.
-- Keep V1 Playwright execution allowlisted and local-first.
-- Do not add reports, failure analysis, CI/CD quality, RAG runtime, MCP runtime,
-  RBAC, tenants, permissions, low-code UI automation, or browser matrix work.
-- Update handoff and set the next task to Playwright runner adapter.
+- Runs only Playwright-style commands assembled by backend code or configured
+  TestCommand allowlists.
+- Captures stdout, stderr, exit_code, duration_ms, and parsed pass/fail counts.
+- Produces metadata entries for Playwright trace and screenshot files when
+  available.
+- Supports local Playwright execution first.
+- Does not add browser grid, Docker runner, pytest changes, reports, or CI/CD
+  quality gates.
+- Update handoff and set the next task to Playwright execution API.
 
 ## Commit Message
 
 ```text
-docs(playwright): define minimal execution api
+feat(execution): add playwright runner adapter
 ```
 
 ## Next Task
 
-Slice 13 Task 3: Add Playwright runner adapter.
+Slice 13 Task 4: Add Playwright execution API.
