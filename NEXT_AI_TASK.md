@@ -10,12 +10,12 @@ Slice 11: AutomationDraft Foundation.
 
 ## Current Task
 
-Task 1: Add AutomationDraft Foundation task plan.
+Task 2: Add AutomationDraft model and schema alignment.
 
 ## Product Value Answer
 
-After this task, Chtest has a scoped, reviewable implementation plan for the
-AutomationDraft Foundation slice without adding execution behavior.
+After this task, Chtest has AutomationDraft backend model and schema contracts
+ready for draft generation API implementation.
 
 ## Must Read
 
@@ -24,7 +24,7 @@ AutomationDraft Foundation slice without adding execution behavior.
 3. `docs/product/01-positioning-and-scope.md`
 4. `docs/contracts/01-data-model-contract.md`
 5. `docs/contracts/02-api-contract.md`
-6. `docs/implementation/slices/slice-10-test-case-library.md`
+6. `docs/implementation/slices/slice-11-automation-draft-foundation.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
@@ -37,41 +37,41 @@ AutomationDraft Foundation slice without adding execution behavior.
 Create or update only these files for the current task:
 
 ```text
+backend/app/modules/automation/models.py
+backend/app/modules/automation/schemas.py
+backend/app/modules/automation/__init__.py
+backend/app/tests/api/test_automation_draft.py
 docs/implementation/slices/slice-11-automation-draft-foundation.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-This is a planning task only. Do not modify product code.
+Read existing module/model patterns as needed, but do not add generation,
+execution, or frontend behavior in this task.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-11-automation-draft-foundation.md
-rg -n "AutomationDraft Foundation|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-11-automation-draft-foundation.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q
 ```
 
-Expected result: Slice 11 task plan exists and names concrete tasks,
-verification commands, and non-goals.
+Expected result: AutomationDraft model/schema alignment tests pass.
 
 ## Acceptance
 
-- Create a scoped Slice 11 task plan.
-- Define AutomationDraft data/API/frontend/golden tasks with one verification
-  command per task.
-- Keep Slice 11 limited to draft generation/review foundation and approval
-  state; do not add execution behavior.
-- Do not add TestRunner execution, Playwright execution, reports, CI/CD quality,
-  RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to the first implementation task from
-  the new Slice 11 plan.
+- Add AutomationDraft model and schemas aligned with contracts.
+- Add focused tests for model persistence and schema shape.
+- Do not add draft generation endpoint, edit/approve endpoint, execution,
+  frontend, reports, CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions.
+- Update handoff and set the next task to draft generation API.
 
 ## Commit Message
 
 ```text
-docs(automation): add automation draft task plan
+feat(automation): add automation draft model schema
 ```
 
 ## Next Task
 
-Slice 11 Task 2 from the new task plan.
+Slice 11 Task 3: Add AutomationDraft generation API.

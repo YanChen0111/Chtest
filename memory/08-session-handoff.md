@@ -1,5 +1,32 @@
 # Session Handoff
 
+## 2026-06-30 Slice 11 Task 1 AutomationDraft Foundation Task Plan 完成
+
+本轮完成：
+
+- 完成 Slice 11 Task 1：新增 AutomationDraft Foundation task plan。
+- 新增 `docs/implementation/slices/slice-11-automation-draft-foundation.md`，将 Slice 11 拆为 model/schema、generation API、edit/approve API、frontend review shell、golden smoke、completion gate。
+- 明确 Slice 11 只做 draft generation/review/approval foundation，不加入 pytest/Playwright 执行、runtime copy、TestRun/TestResult、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 11 Task 2：Add AutomationDraft model and schema alignment。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-11-automation-draft-foundation.md
+rg -n "AutomationDraft Foundation|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-11-automation-draft-foundation.md
+```
+
+修改文件：
+
+- `docs/implementation/slices/slice-11-automation-draft-foundation.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 11 Task 2：Add AutomationDraft model and schema alignment。
+- 先写 `backend/app/tests/api/test_automation_draft.py` 红灯，再补 model/schema。
+
 ## 2026-06-30 Slice 10 Test Case Library Completion Gate 完成
 
 本轮完成：
