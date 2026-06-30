@@ -1,5 +1,27 @@
 # Session Handoff
 
+## 2026-06-30 V2 Task 1 完成
+
+本轮完成：
+
+- 完成 V2 Task 1：Draft V2 scope options。
+- 新增 `docs/implementation/10-v2-scope-options.md`。
+- 规划 4 个候选方向：
+  - RAG Knowledge Runtime。
+  - Tool And Runner Expansion。
+  - Team Review And Governance。
+  - CI/CD Integration Bridge。
+- 推荐第一条 V2 slice：`Slice 18: Newman API Execution`。
+- 保留仍需显式提升的 out-of-scope：full RAG platform、MCP runtime、
+  RBAC/tenants、remote CI/CD control、broad dashboards 等。
+- 已将 `NEXT_AI_TASK.md` 切换到 V2 Task 2：Draft Slice 18 Newman API
+  Execution plan。
+
+下次推荐任务：
+
+- 起草 `docs/implementation/slices/slice-18-newman-api-execution.md`。
+- 先定义 slice 计划，不直接新增产品代码。
+
 ## 2026-06-30 Post-V1 Task 4 完成
 
 本轮完成：

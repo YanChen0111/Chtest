@@ -1,5 +1,26 @@
 # Development Log
 
+## 2026-06-30 V2 Scope Options
+
+### Completed
+
+- Added `docs/implementation/10-v2-scope-options.md`.
+- Listed V2 candidate directions for RAG runtime, runner expansion, review
+  governance, and CI/CD import bridge.
+- Recommended `Slice 18: Newman API Execution` as the first V2 slice.
+- Updated `NEXT_AI_TASK.md` to V2 Task 2.
+
+### Verification
+
+```bash
+rg -n "Candidate Direction|Recommended First V2 Slice|Still Out Of Scope|Next Task" docs/implementation/10-v2-scope-options.md
+git diff --check
+```
+
+### Next Step
+
+- Draft the Slice 18 Newman API Execution plan before implementation.
+
 ## 2026-06-30 V1 Release Screenshots
 
 ### Completed

@@ -10,12 +10,12 @@ V2 Planning.
 
 ## Current Task
 
-V2 Task 1: Draft V2 scope options.
+V2 Task 2: Draft Slice 18 Newman API Execution plan.
 
 ## Product Value Answer
 
-After this task, the team has a small V2 scope options document that separates
-candidate product directions from V1 non-goals and avoids accidental scope
+After this task, the first V2 slice has a scoped implementation plan for Newman
+API execution that extends the evidence loop without broad runner or CI/CD
 expansion.
 
 ## Must Read
@@ -35,6 +35,7 @@ expansion.
 13. `docs/implementation/07-v1-release-acceptance.md`
 14. `docs/implementation/08-v1-final-acceptance-handoff.md`
 15. `docs/implementation/09-post-v1-release-packaging-plan.md`
+16. `docs/implementation/10-v2-scope-options.md`
 
 ## Do Not Read Unless Needed
 
@@ -56,6 +57,7 @@ docs/release/v1/acceptance-evidence.md
 docs/release/v1/manual-walkthrough.md
 docs/release/v1/screenshots/
 docs/implementation/10-v2-scope-options.md
+docs/implementation/slices/slice-18-newman-api-execution.md
 ```
 
 Planning-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
@@ -74,17 +76,18 @@ Expected result: all V1 golden smokes, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- Creates `docs/implementation/10-v2-scope-options.md`.
-- Lists 2-4 V2 candidate directions.
-- Separates promoted candidates from still-out-of-scope ideas.
-- Keeps V1 release package evidence linked.
+- Creates `docs/implementation/slices/slice-18-newman-api-execution.md`.
+- Defines product value, task table, expected files, verification commands, and
+  non-goals.
+- Keeps the first V2 slice limited to Newman API execution evidence.
+- Does not add implementation code.
 
 ## Commit Message
 
 ```text
-docs(v2): draft scope options
+docs(v2): add newman execution slice plan
 ```
 
 ## Next Task
 
-Choose the first V2 slice or pause for product review.
+Start Slice 18 Task 1 only after reviewing the slice plan.
