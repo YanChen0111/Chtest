@@ -10,12 +10,12 @@ Slice 14: Report And Failure Analysis.
 
 ## Current Task
 
-Task 7: Add automation execution report golden smoke.
+Slice 14 completion gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a golden smoke proving TestRun can produce
-FailureAnalysis when failed and automation_execution Report evidence.
+After this task, Slice 14 has verified API, frontend, golden smoke, and
+handoff evidence for FailureAnalysis and automation_execution Report.
 
 ## Must Read
 
@@ -41,36 +41,37 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-14-report-and-failure-analysis.md
-backend/app/tests/golden/test_report_failure_analysis_golden.py
+NEXT_AI_TASK.md
+memory/08-session-handoff.md
+docs/implementation/slices/slice-14-report-and-failure-analysis.md
 ```
 
-Do not create CI/CD QualityGateDecision records in this task.
+Do not add product behavior in this task. This is verification and handoff only.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_report_failure_analysis_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/golden/test_report_failure_analysis_golden.py -q && npm --prefix frontend run test -- --run
 ```
 
-Expected result: focused report/failure analysis golden smoke passes.
+Expected result: Slice 14 backend API, golden smoke, and frontend tests pass.
 
 ## Acceptance
 
-- Reuses golden pytest or Playwright TestRun setup.
-- Creates FailureAnalysis for a failed run or verifies skipped analysis for a
-  passed run.
-- Creates automation_execution Report for a TestRun.
-- Persists `evidence_manifest.json` artifact metadata.
-- Report conclusion references TestRun/TestResult/artifact evidence.
-- Does not create CI/CD QualityGateDecision records.
-- Update handoff and set the next task to Slice 14 completion gate.
+- Run the Slice 14 completion verification command.
+- Mark Slice 14 completion gate done in the slice task plan if verification
+  passes.
+- Record verification evidence in handoff.
+- Set the next task to the next V1 slice/task from `docs/implementation/02-v1-slice-plan.md`.
+- Do not add product behavior, broad refactors, CI/CD gates, RAG runtime, MCP
+  runtime, RBAC, tenants, or permissions.
 
 ## Commit Message
 
 ```text
-test(golden): add report failure analysis smoke
+docs(report): complete report failure analysis slice
 ```
 
 ## Next Task
 
-Slice 14 completion gate.
+Read `docs/implementation/02-v1-slice-plan.md` and select the next smallest V1 task.

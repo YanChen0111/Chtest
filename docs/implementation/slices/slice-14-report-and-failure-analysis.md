@@ -42,8 +42,8 @@ center analytics.
 | Add FailureAnalysis and Report model/schema | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | `f9ebb7a` | persisted model/schema only |
 | Add FailureAnalysis API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | `0f9a163` | deterministic mock analysis from failed TestRun evidence |
 | Add automation execution Report API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | `811316d` | evidence_manifest + report artifacts |
-| Add Report and FailureAnalysis frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | evidence-first report/detail views |
-| Add automation execution report golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_report_failure_analysis_golden.py -q` | - | TestRun -> FailureAnalysis -> Report evidence |
+| Add Report and FailureAnalysis frontend shell | done | `npm --prefix frontend run test -- --run` | `c4971a3` | evidence-first report/detail views |
+| Add automation execution report golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_report_failure_analysis_golden.py -q` | pending commit | TestRun -> FailureAnalysis -> Report evidence |
 | Slice 14 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/golden/test_report_failure_analysis_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 
 ## Task 1: Add Report And FailureAnalysis API Contract Boundary

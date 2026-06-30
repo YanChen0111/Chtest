@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-06-30 Slice 14 Task 7 Report/FailureAnalysis Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 14 Task 7：Add automation execution report golden smoke。
+- 新增 `backend/app/tests/golden/test_report_failure_analysis_golden.py`。
+- golden smoke 种子化 failed TestRun、stderr artifact 和 failed TestResult。
+- 通过 API 创建 FailureAnalysis，并验证分类为 `test_script_issue`、
+  AITask 为 `succeeded`。
+- 通过 API 创建 automation_execution Report，并验证 conclusion、metrics、
+  evidence_manifest、report artifacts 和持久化 metadata。
+- 验证没有创建 `quality_gate_decisions` 表。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 14 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_report_failure_analysis_golden.py -q
+```
+
+验证结果：
+
+- Report/FailureAnalysis golden smoke：`1 passed`
+
+修改文件：
+
+- `backend/app/tests/golden/test_report_failure_analysis_golden.py`
+- `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 14 completion gate。
+- 验证命令：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/golden/test_report_failure_analysis_golden.py -q && npm --prefix frontend run test -- --run`。
+
 ## 2026-06-30 Slice 14 Task 6 Report/FailureAnalysis Frontend Shell 完成
 
 本轮完成：
