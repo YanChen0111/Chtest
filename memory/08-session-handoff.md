@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-06-30 Slice 12 Task 6 Pytest Execution Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 12 Task 6：Add Pytest Execution Frontend Shell。
+- 新增 `frontend/src/api/execution.ts` 和 `frontend/src/stores/execution.ts`，
+  接入 `POST /api/test-runs`、`GET /api/test-runs/{id}`。
+- 新增 `frontend/src/views/execution/PytestExecutionView.vue`，支持从
+  approved AutomationDraft 或 configured TestCommand 启动 pytest run。
+- 页面展示 status、command、working_directory、exit_code、duration、
+  runner_mode、readonly/network metadata、parsed_result metrics、Artifact
+  rows 和 TestResult rows。
+- 接入 `execution/pytest` 路由，并将工作台导航里的 `执行中心` 标为就绪。
+- 新增 `PytestExecutionView.spec.ts` 覆盖启动、刷新和证据展示。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 12 Task 7：Add Pytest Execution
+  Golden Smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Frontend workbench shell tests：`10 passed, 13 tests passed`
+
+修改文件：
+
+- `frontend/src/api/execution.ts`
+- `frontend/src/stores/execution.ts`
+- `frontend/src/views/execution/PytestExecutionView.vue`
+- `frontend/src/views/execution/PytestExecutionView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 12 Task 7：Add Pytest Execution Golden
+  Smoke。
+- 复用 golden reviewed case -> approved AutomationDraft setup，验证
+  TestRun/TestResult/artifact metadata，不创建 Report 或 QualityGateDecision。
+
 ## 2026-06-30 Slice 12 Task 5 TestRun API 完成
 
 本轮完成：

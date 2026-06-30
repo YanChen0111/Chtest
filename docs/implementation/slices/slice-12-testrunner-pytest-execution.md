@@ -35,8 +35,8 @@ runtime, RBAC, tenants, or permissions.
 | Add TestRun API contract and task boundary | done | `rg -n "TestRun|POST /api/test-runs|TestResult" docs/contracts/02-api-contract.md docs/implementation/slices/slice-12-testrunner-pytest-execution.md` | `db5de11` | contract-first execution endpoint shape |
 | Add TestRun and TestResult model/schema | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | `9f6c42c` | model/schema only |
 | Add pytest runner adapter | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | `44ac287` | allowlisted local subprocess, no Playwright |
-| Add TestRun API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | pending commit | create/get run and parsed results |
-| Add pytest execution frontend shell | planned | `npm --prefix frontend run test -- --run` | - | execute approved draft/configured command, show evidence |
+| Add TestRun API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | `e40ccaa` | create/get run and parsed results |
+| Add pytest execution frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | execute approved draft/configured command, show evidence |
 | Add pytest execution golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest.py -q` | - | approved golden draft executes controlled pytest |
 | Slice 12 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 

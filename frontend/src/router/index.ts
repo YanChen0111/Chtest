@@ -5,6 +5,7 @@ import AiWorkbenchView from '../views/ai-workbench/AiWorkbenchView.vue';
 import AutomationDraftReviewView from '../views/automation/AutomationDraftReviewView.vue';
 import CaseGenerationReviewView from '../views/cases/CaseGenerationReviewView.vue';
 import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
+import PytestExecutionView from '../views/execution/PytestExecutionView.vue';
 import PromptSkillCenterView from '../views/prompt-skill/PromptSkillCenterView.vue';
 import RequirementReviewView from '../views/requirements/RequirementReviewView.vue';
 import ProjectSettingsView from '../views/settings/ProjectSettingsView.vue';
@@ -54,6 +55,14 @@ export const router = createRouter({
           component: AutomationDraftReviewView,
           meta: {
             title: '自动化草稿中心',
+          },
+        },
+        {
+          path: 'execution/pytest',
+          name: 'execution-center',
+          component: PytestExecutionView,
+          meta: {
+            title: '执行中心',
           },
         },
         {

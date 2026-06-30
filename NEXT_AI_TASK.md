@@ -10,12 +10,12 @@ Slice 12: TestRunner Pytest Execution.
 
 ## Current Task
 
-Task 6: Add Pytest Execution Frontend Shell.
+Task 7: Add Pytest Execution Golden Smoke.
 
 ## Product Value Answer
 
-After this task, users can start a controlled pytest run and inspect execution
-evidence from the frontend workbench shell.
+After this task, the golden path proves an approved AutomationDraft can execute
+through the controlled pytest runner and persist evidence records.
 
 ## Must Read
 
@@ -37,44 +37,37 @@ evidence from the frontend workbench shell.
 Create or update only these files for the current task:
 
 ```text
-frontend/src/api/execution.ts
-frontend/src/stores/execution.ts
-frontend/src/views/execution/PytestExecutionView.vue
-frontend/src/views/execution/PytestExecutionView.spec.ts
-frontend/src/router/index.ts
-frontend/src/stores/index.ts
+backend/app/tests/golden/test_testrunner_pytest.py
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-12-testrunner-pytest-execution.md
 ```
 
-Do not add Playwright, reports, CI/CD quality, RAG runtime, MCP runtime, RBAC,
-tenants, or permissions.
+Do not create Report or QualityGateDecision records.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest.py -q
 ```
 
-Expected result: frontend workbench shell tests pass.
+Expected result: golden pytest execution smoke passes.
 
 ## Acceptance
 
-- Adds workbench navigation for pytest execution.
-- Starts a run from approved AutomationDraft or configured TestCommand.
-- Shows run status, command, exit code, duration, stdout/stderr artifact
-  references, parsed result summary, and TestResult rows.
-- Does not add Playwright, reports, CI/CD quality, RAG runtime, MCP runtime,
-  RBAC, tenants, or permissions.
-- Update handoff and set the next task to pytest execution golden smoke.
+- Reuses golden reviewed case -> approved AutomationDraft setup.
+- Executes a controlled pytest command against a small generated fixture test.
+- Persists TestRun and TestResult records.
+- Captures stdout/stderr artifact metadata.
+- Does not create Report or QualityGateDecision records.
+- Update handoff and set the next task to Slice 12 completion gate.
 
 ## Commit Message
 
 ```text
-feat(frontend): add pytest execution shell
+test(golden): add pytest execution smoke
 ```
 
 ## Next Task
 
-Slice 12 Task 7: Add Pytest Execution Golden Smoke.
+Slice 12 completion gate.

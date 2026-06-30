@@ -14,7 +14,7 @@ export const useWorkbenchStore = defineStore('workbench', {
       { label: '用例生成评审', routeName: 'case-generation-review', status: '就绪' },
       { label: '用例库', routeName: 'test-case-library', status: '就绪' },
       { label: '自动化草稿中心', routeName: 'automation-draft-center', status: '就绪' },
-      { label: '执行中心', routeName: 'execution-center', status: '待接入' },
+      { label: '执行中心', routeName: 'execution-center', status: '就绪' },
       { label: 'CI/CD 质量中心', routeName: 'cicd-quality-center', status: '待接入' },
       { label: '报告中心', routeName: 'report-center', status: '待接入' },
       { label: 'Prompt / Skill 中心', routeName: 'prompt-skill-center', status: '就绪' },
