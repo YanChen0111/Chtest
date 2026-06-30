@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 10 UnitTestPatch Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 10：Add UnitTestPatch frontend shell。
+- 扩展 `frontend/src/api/cicd.ts`，加入 UnitTestPatch generation/review、
+  new-test/regression、QualityGateDecision、CI/CD quality report API 类型和调用。
+- 扩展 `frontend/src/stores/cicd.ts`，集中管理 UnitTestPatch、review status、
+  new TestRun、regression plan/run、quality gate、quality report 状态。
+- 扩展 `CicdQualityCenterView.vue`，展示 UnitTestPatch diff、test intent、
+  coverage target、PatchScopeGate result、new-test/regression evidence、
+  QualityGateDecision 和 report artifact references。
+- 前端支持 approve/reject 操作。
+- 未暴露 merge、release、deployment、remote CI provider 或 PR controls。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 11：Add UnitTestPatch golden
+  smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- `13 passed`
+- `16 tests passed`
+
+修改文件：
+
+- `frontend/src/api/cicd.ts`
+- `frontend/src/stores/cicd.ts`
+- `frontend/src/views/cicd/CicdQualityCenterView.vue`
+- `frontend/src/views/cicd/CicdQualityCenterView.spec.ts`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 11：Add UnitTestPatch golden smoke。
+- Golden smoke 需要证明 local diff -> UnitTestPatch -> tests/regression ->
+  quality gate -> report evidence 的完整链路。
+
 ## 2026-06-30 Slice 16 Task 9 CI/CD Quality Report API 完成
 
 本轮完成：

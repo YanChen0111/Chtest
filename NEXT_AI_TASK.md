@@ -41,10 +41,10 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-backend/app/modules/cicd/router.py
-backend/app/modules/cicd/schemas.py
-backend/app/modules/cicd/service.py
-backend/app/tests/api/test_unit_test_patch_regression.py
+frontend/src/api/cicd.ts
+frontend/src/stores/cicd.ts
+frontend/src/views/cicd/CicdQualityCenterView.vue
+frontend/src/views/cicd/CicdQualityCenterView.spec.ts
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
@@ -55,7 +55,7 @@ comments, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
+npm --prefix frontend run test -- --run
 ```
 
 Expected result: frontend CI/CD Quality Center tests pass.

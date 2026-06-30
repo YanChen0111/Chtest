@@ -95,6 +95,107 @@
         </a-card>
 
         <a-card class="cicd-panel" :bordered="false">
+          <template #title>UnitTestPatch 评审</template>
+          <a-space wrap class="action-row">
+            <a-button data-test="generate-unit-test-patch" :disabled="!store.run" :loading="store.loading" @click="generatePatch">
+              生成 UnitTestPatch
+            </a-button>
+            <a-button
+              data-test="approve-unit-test-patch"
+              type="primary"
+              :disabled="!store.unitTestPatch"
+              :loading="store.loading"
+              @click="approvePatch"
+            >
+              批准
+            </a-button>
+            <a-button
+              data-test="reject-unit-test-patch"
+              status="danger"
+              :disabled="!store.unitTestPatch"
+              :loading="store.loading"
+              @click="rejectPatch"
+            >
+              拒绝
+            </a-button>
+          </a-space>
+          <template v-if="store.unitTestPatch">
+            <div class="patch-grid">
+              <div>
+                <span>Patch Status</span>
+                <strong>{{ store.patchReviewStatus || store.unitTestPatch.status }}</strong>
+              </div>
+              <div>
+                <span>PatchScopeGate</span>
+                <strong>{{ store.unitTestPatch.scope_gate_result.allowed ? '通过' : '拒绝' }}</strong>
+              </div>
+              <div>
+                <span>Risk</span>
+                <strong>{{ store.unitTestPatch.scope_gate_result.risk_level }}</strong>
+              </div>
+            </div>
+            <p class="evidence-line">PatchScopeGate: {{ store.unitTestPatch.scope_gate_result.allowed ? '通过' : '拒绝' }}</p>
+            <p class="evidence-line">{{ store.unitTestPatch.test_intent }}</p>
+            <div class="coverage-list">
+              <a-tag v-for="target in store.unitTestPatch.coverage_target" :key="target.path" color="arcoblue">
+                {{ target.path }} {{ target.reason }}
+              </a-tag>
+            </div>
+            <div class="coverage-list">
+              <a-tag v-for="path in store.unitTestPatch.scope_gate_result.checked_paths" :key="path" color="green">
+                {{ path }}
+              </a-tag>
+            </div>
+            <pre class="patch-diff">{{ store.unitTestPatch.patch_text }}</pre>
+          </template>
+          <a-empty v-else description="生成后展示 UnitTestPatch diff 和 scope gate" />
+        </a-card>
+
+        <a-card class="cicd-panel" :bordered="false">
+          <template #title>测试与质量门禁</template>
+          <a-space wrap class="action-row">
+            <a-button data-test="run-new-tests" :disabled="!store.unitTestPatch" :loading="store.loading" @click="runNewTestsForPatch">
+              记录新增测试
+            </a-button>
+            <a-button data-test="select-regression" :disabled="!store.run" :loading="store.loading" @click="selectRegressionPlan">
+              选择回归
+            </a-button>
+            <a-button data-test="run-regression" :disabled="!store.regressionPlan" :loading="store.loading" @click="runRegressionPlan">
+              记录回归
+            </a-button>
+            <a-button data-test="compute-quality-gate" :disabled="!store.run" :loading="store.loading" @click="computeGate">
+              计算门禁
+            </a-button>
+            <a-button data-test="generate-cicd-report" :disabled="!store.qualityGate" :loading="store.loading" @click="generateQualityReport">
+              生成报告
+            </a-button>
+          </a-space>
+          <div class="evidence-grid">
+            <div>
+              <span>New TestRun</span>
+              <strong>{{ store.newTestRun?.test_run_id || '-' }}</strong>
+            </div>
+            <div>
+              <span>Regression Plan</span>
+              <strong>{{ store.regressionPlan?.regression_plan_artifact_id || '-' }}</strong>
+            </div>
+            <div>
+              <span>Regression Runs</span>
+              <strong>{{ store.regressionRun?.test_run_ids.join(', ') || '-' }}</strong>
+            </div>
+            <div>
+              <span>QualityGateDecision</span>
+              <strong>{{ store.qualityGate?.status || '-' }}</strong>
+            </div>
+            <div>
+              <span>Report</span>
+              <strong>{{ store.qualityReport?.report_id || '-' }}</strong>
+            </div>
+          </div>
+          <p v-if="store.qualityGate" class="evidence-line">{{ store.qualityGate.summary }}</p>
+        </a-card>
+
+        <a-card class="cicd-panel" :bordered="false">
           <template #title>最近 CI/CD Runs</template>
           <a-table :columns="runColumns" :data="store.runs" :pagination="false" row-key="id" size="small" />
         </a-card>
@@ -136,6 +237,38 @@ function createRun() {
 
 function analyzeRun() {
   void store.analyzeRun();
+}
+
+function generatePatch() {
+  void store.generatePatch();
+}
+
+function approvePatch() {
+  void store.approvePatch();
+}
+
+function rejectPatch() {
+  void store.rejectPatch();
+}
+
+function runNewTestsForPatch() {
+  void store.runNewTestsForPatch();
+}
+
+function selectRegressionPlan() {
+  void store.selectRegressionPlan();
+}
+
+function runRegressionPlan() {
+  void store.runRegressionPlan();
+}
+
+function computeGate() {
+  void store.computeGate();
+}
+
+function generateQualityReport() {
+  void store.generateQualityReport();
 }
 </script>
 
@@ -210,7 +343,9 @@ function analyzeRun() {
   margin-bottom: 14px;
 }
 
-.status-strip div {
+.status-strip div,
+.patch-grid div,
+.evidence-grid div {
   min-height: 70px;
   padding: 12px;
   border: 1px solid #dbe6f3;
@@ -219,23 +354,77 @@ function analyzeRun() {
 }
 
 .status-strip span,
-.status-strip strong {
+.status-strip strong,
+.patch-grid span,
+.patch-grid strong,
+.evidence-grid span,
+.evidence-grid strong {
   display: block;
 }
 
-.status-strip span {
+.status-strip span,
+.patch-grid span,
+.evidence-grid span {
   color: #64748b;
 }
 
-.status-strip strong {
+.status-strip strong,
+.patch-grid strong,
+.evidence-grid strong {
   margin-top: 8px;
   color: #0f172a;
-  font-size: 20px;
+  font-size: 16px;
+  word-break: break-all;
+}
+
+.action-row {
+  margin-bottom: 14px;
+}
+
+.patch-grid,
+.evidence-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.patch-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.evidence-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.evidence-line {
+  margin: 8px 0;
+  color: #344054;
+}
+
+.coverage-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.patch-diff {
+  max-height: 220px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #dbeafe;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 @media (max-width: 980px) {
   .cicd-layout,
-  .ref-grid {
+  .ref-grid,
+  .patch-grid,
+  .evidence-grid {
     grid-template-columns: 1fr;
   }
 

@@ -1,6 +1,26 @@
 import { defineStore } from 'pinia';
 
-import { analyzeCICDRun, createCICDRun, getCICDRun, listCICDRuns, type CICDRunRead } from '../api/cicd';
+import {
+  analyzeCICDRun,
+  approveUnitTestPatch,
+  computeQualityGate,
+  createCICDRun,
+  generateCICDQualityReport,
+  generateUnitTestPatch,
+  getCICDRun,
+  listCICDRuns,
+  rejectUnitTestPatch,
+  runNewTests,
+  runRegression,
+  selectRegression,
+  type CICDQualityReportRead,
+  type CICDRegressionRunRead,
+  type CICDRegressionSelectRead,
+  type CICDRunNewTestsRead,
+  type CICDRunRead,
+  type QualityGateDecisionRead,
+  type UnitTestPatchRead,
+} from '../api/cicd';
 
 const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
 const DEFAULT_REPOSITORY_ID = '00000000-0000-0000-0000-000000000301';
@@ -21,6 +41,13 @@ export const useCICDStore = defineStore('cicd', {
     diffText: DEFAULT_DIFF_TEXT,
     run: null as CICDRunRead | null,
     runs: [] as CICDRunRead[],
+    unitTestPatch: null as UnitTestPatchRead | null,
+    patchReviewStatus: '',
+    newTestRun: null as CICDRunNewTestsRead | null,
+    regressionPlan: null as CICDRegressionSelectRead | null,
+    regressionRun: null as CICDRegressionRunRead | null,
+    qualityGate: null as QualityGateDecisionRead | null,
+    qualityReport: null as CICDQualityReportRead | null,
     loading: false,
     errorMessage: '',
   }),
@@ -63,6 +90,112 @@ export const useCICDStore = defineStore('cicd', {
         await this.refreshRuns();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '风险分析失败';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async generatePatch() {
+      if (!this.run) {
+        this.errorMessage = '请先创建 CI/CD Run';
+        return;
+      }
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.unitTestPatch = await generateUnitTestPatch(this.run.id);
+        this.patchReviewStatus = this.unitTestPatch.status;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : 'UnitTestPatch 生成失败';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async approvePatch() {
+      if (!this.unitTestPatch) return;
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        const reviewed = await approveUnitTestPatch(this.unitTestPatch.id, '前端批准 UnitTestPatch');
+        this.patchReviewStatus = reviewed.status;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : 'UnitTestPatch 批准失败';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async rejectPatch() {
+      if (!this.unitTestPatch) return;
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        const reviewed = await rejectUnitTestPatch(this.unitTestPatch.id, '前端拒绝 UnitTestPatch');
+        this.patchReviewStatus = reviewed.status;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : 'UnitTestPatch 拒绝失败';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async runNewTestsForPatch() {
+      if (!this.run || !this.unitTestPatch) return;
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.newTestRun = await runNewTests(this.run.id, this.unitTestPatch.id);
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '新增测试运行记录失败';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async selectRegressionPlan() {
+      if (!this.run) return;
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.regressionPlan = await selectRegression(this.run.id);
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '回归选择失败';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async runRegressionPlan() {
+      if (!this.run || !this.regressionPlan) return;
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.regressionRun = await runRegression(
+          this.run.id,
+          this.regressionPlan.regression_plan_artifact_id,
+          this.regressionPlan.recommended_test_command_ids,
+        );
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '回归运行记录失败';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async computeGate() {
+      if (!this.run) return;
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.qualityGate = await computeQualityGate(this.run.id);
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '质量门禁计算失败';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async generateQualityReport() {
+      if (!this.run) return;
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.qualityReport = await generateCICDQualityReport(this.run.id);
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : 'CI/CD 质量报告生成失败';
       } finally {
         this.loading = false;
       }

@@ -56,6 +56,25 @@ function cicdRunBody(status = 'created') {
   };
 }
 
+const unitTestPatchBody = {
+  id: '00000000-0000-0000-0000-000000001201',
+  cicd_run_id: '00000000-0000-0000-0000-000000001101',
+  ai_task_id: '00000000-0000-0000-0000-000000001131',
+  patch_text: 'diff --git a/tests/test_coupon.py b/tests/test_coupon.py\n+def test_coupon_boundary():\n+    assert True\n',
+  target_framework: 'pytest',
+  scope_gate_result: {
+    allowed: true,
+    checked_paths: ['tests/test_coupon.py'],
+    blocked_paths: [],
+    forbidden_patterns: [],
+    risk_level: 'low',
+  },
+  test_intent: 'Cover coupon boundary change',
+  coverage_target: [{ path: 'app/coupon.py', reason: 'changed source' }],
+  status: 'scope_validated',
+  review_comment: null,
+};
+
 describe('CicdQualityCenterView', () => {
   it('creates and analyzes a local diff run with changed file evidence', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -82,6 +101,86 @@ describe('CicdQualityCenterView', () => {
             ai_task_id: '00000000-0000-0000-0000-000000001131',
             risk_analysis_artifact_id: '00000000-0000-0000-0000-000000001121',
             status: 'analyzed',
+          }),
+          { status: 202, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/cicd/runs/00000000-0000-0000-0000-000000001101/unit-test-patches')) {
+        return new Response(JSON.stringify(unitTestPatchBody), {
+          status: 202,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/cicd/unit-test-patches/00000000-0000-0000-0000-000000001201/approve')) {
+        return new Response(
+          JSON.stringify({ unit_test_patch_id: '00000000-0000-0000-0000-000000001201', status: 'approved' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/cicd/unit-test-patches/00000000-0000-0000-0000-000000001201/reject')) {
+        return new Response(
+          JSON.stringify({ unit_test_patch_id: '00000000-0000-0000-0000-000000001201', status: 'rejected' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/cicd/runs/00000000-0000-0000-0000-000000001101/run-new-tests')) {
+        return new Response(
+          JSON.stringify({
+            test_run_id: '00000000-0000-0000-0000-000000001301',
+            cicd_run_id: '00000000-0000-0000-0000-000000001101',
+            status: 'queued',
+          }),
+          { status: 202, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/cicd/runs/00000000-0000-0000-0000-000000001101/select-regression')) {
+        return new Response(
+          JSON.stringify({
+            cicd_run_id: '00000000-0000-0000-0000-000000001101',
+            regression_plan_artifact_id: '00000000-0000-0000-0000-000000001221',
+            recommended_test_command_ids: ['00000000-0000-0000-0000-000000000302'],
+            reasons: ['Selected active pytest regression command.'],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/cicd/runs/00000000-0000-0000-0000-000000001101/run-regression')) {
+        return new Response(
+          JSON.stringify({
+            cicd_run_id: '00000000-0000-0000-0000-000000001101',
+            test_run_ids: ['00000000-0000-0000-0000-000000001302'],
+            status: 'tests_running',
+          }),
+          { status: 202, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/cicd/runs/00000000-0000-0000-0000-000000001101/quality-gate')) {
+        return new Response(
+          JSON.stringify({
+            id: '00000000-0000-0000-0000-000000001401',
+            project_id: '00000000-0000-0000-0000-000000000101',
+            cicd_run_id: '00000000-0000-0000-0000-000000001101',
+            status: 'passed',
+            summary: 'CI/CD quality gate passed with patch, new-test, and regression evidence.',
+            blocking_reasons: [],
+            evidence_artifact_ids: ['00000000-0000-0000-0000-000000001211'],
+            decided_by: 'system',
+            status_detail: {
+              patch_scope_gate: { allowed: true },
+              new_tests: { status: 'succeeded' },
+              regression: { status: 'succeeded' },
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/cicd/runs/00000000-0000-0000-0000-000000001101/generate-report')) {
+        return new Response(
+          JSON.stringify({
+            report_id: '00000000-0000-0000-0000-000000001501',
+            cicd_run_id: '00000000-0000-0000-0000-000000001101',
+            status: 'generating',
+            evidence_manifest_artifact_id: '00000000-0000-0000-0000-000000001511',
           }),
           { status: 202, headers: { 'Content-Type': 'application/json' } },
         );
@@ -129,5 +228,48 @@ describe('CicdQualityCenterView', () => {
       expect.stringContaining('/cicd/runs/00000000-0000-0000-0000-000000001101/analyze'),
       expect.objectContaining({ method: 'POST' }),
     );
+
+    await wrapper.find('[data-test="generate-unit-test-patch"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('Cover coupon boundary change');
+    expect(wrapper.text()).toContain('tests/test_coupon.py');
+    expect(wrapper.text()).toContain('app/coupon.py');
+    expect(wrapper.text()).toContain('scope_validated');
+    expect(wrapper.text()).toContain('PatchScopeGate: 通过');
+
+    await wrapper.find('[data-test="approve-unit-test-patch"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain('approved');
+
+    await wrapper.find('[data-test="run-new-tests"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await wrapper.find('[data-test="select-regression"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await wrapper.find('[data-test="run-regression"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await wrapper.find('[data-test="compute-quality-gate"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await wrapper.find('[data-test="generate-cicd-report"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('New TestRun');
+    expect(wrapper.text()).toContain('Regression Plan');
+    expect(wrapper.text()).toContain('QualityGateDecision');
+    expect(wrapper.text()).toContain('passed');
+    expect(wrapper.text()).toContain('Report');
+    expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000001501');
+
+    await wrapper.find('[data-test="reject-unit-test-patch"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain('rejected');
   });
 });
