@@ -10,13 +10,12 @@ V2 Planning.
 
 ## Current Task
 
-Slice 19 Task 3: Add local KnowledgeAdapter retrieval service.
+Slice 19 Task 4: Attach retrieval evidence to AI task flows.
 
 ## Product Value Answer
 
-After this task, the backend can deterministically match eligible local
-ContextArtifacts and return bounded retrieval evidence without external RAG
-infrastructure.
+After this task, requirement review can request deterministic local knowledge
+retrieval and persist auditable retrieval evidence on the AI task.
 
 ## Must Read
 
@@ -33,7 +32,8 @@ infrastructure.
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-17-extension-surface.md`
 13. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
-14. backend extension module files needed for deterministic retrieval only
+14. backend requirement review and AI runtime files needed for retrieval
+    evidence only
 
 ## Do Not Read Unless Needed
 
@@ -49,14 +49,17 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
-backend/app/modules/extension/service.py
-backend/app/modules/extension/schemas.py
-backend/app/modules/extension/*
+backend/app/modules/requirements/service.py
+backend/app/modules/requirements/schemas.py
+backend/app/modules/requirements/router.py
+backend/app/modules/ai_runtime/service.py
+backend/app/modules/ai_runtime/providers/mock_provider.py
 backend/app/tests/api/test_deterministic_knowledge_retrieval.py
+backend/app/tests/api/test_requirement_review.py
 ```
 
-Backend-only task. Add only deterministic local retrieval service behavior and
-focused API/service tests. Do not add frontend, vector database, embeddings,
+Backend-only task. Attach deterministic retrieval evidence to the existing
+requirement review AI flow. Do not add frontend, vector database, embeddings,
 reranking, background indexing, external RAG provider calls, MCP runtime, RBAC,
 tenants, permissions, marketplace, cloud sync, release automation, or remote CI
 provider integration.
@@ -64,27 +67,31 @@ provider integration.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py -q
 git diff --check
 ```
 
-Expected result: deterministic retrieval backend tests and diff check pass.
+Expected result: deterministic retrieval service tests, requirement review flow
+tests, and diff check pass.
 
 ## Acceptance
 
-- Matches only ContextArtifacts for the same project.
-- Requires `safe_to_show=true` and `allowed_for_prompt=true`.
-- Uses deterministic local term matching with bounded result count.
-- Returns snippet text, score, matched terms, and source ContextArtifact id.
+- Requirement review can request deterministic local knowledge retrieval.
+- AITask records `used_knowledge=true` only when retrieved snippets are used.
+- AITask records exact `used_context_artifact_ids`.
+- Retrieval evidence artifact includes query terms, matched terms, snippets,
+  scores, and ContextArtifact ids.
+- Existing explicit `context_artifact_ids` behavior remains unchanged when
+  `use_knowledge=false`.
 - Does not create vector indexes, embeddings, reranking jobs, background
   workers, external provider calls, MCP calls, RBAC, tenants, or permissions.
 
 ## Commit Message
 
 ```text
-feat(extension): add deterministic knowledge retrieval
+feat(requirements): attach retrieval evidence to review tasks
 ```
 
 ## Next Task
 
-Start Slice 19 Task 4 only after the local retrieval service is committed.
+Start Slice 19 Task 5 only after retrieval evidence is attached and committed.

@@ -1,5 +1,45 @@
 # Session Handoff
 
+## 2026-06-30 Slice 19 Task 3 完成
+
+本轮完成：
+
+- 完成 Slice 19 Task 3：Add local KnowledgeAdapter retrieval service。
+- 新增 deterministic local retrieval service：
+  - 读取同项目 ContextArtifact。
+  - 仅匹配 `safe_to_show=true` 且 `allowed_for_prompt=true` 的上下文。
+  - 使用确定性关键词重合匹配，支持英文和中文词项。
+  - 返回 bounded snippet、score、matched terms、ContextArtifact id、SHA256、
+    redaction 和 prompt eligibility 信息。
+- 新增
+  `POST /api/projects/{project_id}/knowledge-adapter/retrieve`，供后续
+  workflow/frontend 使用。
+- 允许 KnowledgeAdapterConfig 使用 V2
+  `provider_type=deterministic_local`，但更新配置本身仍保持
+  `used_knowledge=false`。
+- 新增 `backend/app/tests/api/test_deterministic_knowledge_retrieval.py`：
+  覆盖 service、API、禁用/未配置 adapter、配置入口和中文 query terms。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 19 Task 4：Attach retrieval evidence
+  to AI task flows。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q
+git diff --check
+```
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 把 deterministic retrieval 接入 requirement review。
+- AITask 只有在 retrieved snippets 实际用于 prompt 时才记录
+  `used_knowledge=true`。
+- 需要写 `knowledge_retrieval` evidence artifact，并记录 query terms、
+  matched terms、scores、snippets、ContextArtifact ids。
+- 继续排除 frontend、vector database、embeddings、reranking、background
+  indexing、external RAG provider、MCP runtime、RBAC、tenants、permissions 或
+  marketplace。
+
 ## 2026-06-30 Slice 19 Task 2 完成
 
 本轮完成：

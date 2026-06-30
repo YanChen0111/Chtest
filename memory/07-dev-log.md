@@ -1,5 +1,36 @@
 # Development Log
 
+## 2026-06-30 Slice 19 Deterministic Retrieval Service
+
+### Completed
+
+- Added deterministic local retrieval service in the extension module.
+- Added `POST /api/projects/{project_id}/knowledge-adapter/retrieve`.
+- Allowed `provider_type=deterministic_local` for the V2 local stub while
+  keeping config updates from setting `used_knowledge=true`.
+- Retrieval reads only same-project ContextArtifacts with `safe_to_show=true`
+  and `allowed_for_prompt=true`.
+- Retrieval returns bounded snippets, deterministic scores, matched terms,
+  ContextArtifact ids, SHA256, and prompt eligibility metadata.
+- Added focused TDD coverage for service matching, API ordering/limits,
+  disabled/not configured adapters, deterministic local config, and Chinese
+  query terms.
+- Updated `NEXT_AI_TASK.md` to Slice 19 Task 4: attach retrieval evidence to
+  requirement review AI task flows.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q
+git diff --check
+```
+
+### Next Step
+
+- Attach retrieval evidence to requirement review AITask output and artifact
+  records without adding external RAG, MCP runtime, vector search, embeddings,
+  reranking, RBAC, tenants, or permissions.
+
 ## 2026-06-30 Slice 19 Deterministic Retrieval Contract Boundary
 
 ### Completed

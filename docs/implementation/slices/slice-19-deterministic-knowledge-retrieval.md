@@ -77,8 +77,8 @@ infrastructure, external providers, or opaque RAG behavior.
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
 | Add Deterministic Knowledge Retrieval task plan | done | `test -f docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md` | `6bd7a76` | planning-only scope |
-| Define deterministic retrieval contract boundary | done | `rg -n "Deterministic|KnowledgeAdapter|ContextArtifact|used_knowledge|retrieval" docs/contracts docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md` | pending commit | contract-only before code |
-| Add local KnowledgeAdapter retrieval service | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q` | pending | deterministic matcher only |
+| Define deterministic retrieval contract boundary | done | `rg -n "Deterministic|KnowledgeAdapter|ContextArtifact|used_knowledge|retrieval" docs/contracts docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md` | `a0f561f` | contract-only before code |
+| Add local KnowledgeAdapter retrieval service | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q` | pending commit | deterministic matcher only |
 | Attach retrieval evidence to AI task flows | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py -q` | pending | requirement review first |
 | Add retrieval evidence frontend display | planned | `npm --prefix frontend run test -- --run` | pending | RAG 知识库 / AI task evidence |
 | Add deterministic retrieval golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q` | pending | context -> retrieval -> AI task |

@@ -28,6 +28,35 @@ class KnowledgeAdapterUpdate(BaseModel):
     notes: str | None = None
 
 
+class KnowledgeRetrievalRequest(BaseModel):
+    query_text: str = Field(min_length=1)
+    adapter_name: str = Field(default="default", min_length=1, max_length=120)
+    max_results: int = Field(default=5, ge=1, le=10)
+    max_snippet_chars: int = Field(default=320, ge=40, le=1000)
+
+
+class KnowledgeRetrievalResultItem(BaseModel):
+    context_artifact_id: uuid.UUID
+    title: str
+    source_ref: str
+    score: int
+    matched_terms: list[str] = Field(default_factory=list)
+    snippet: str
+    sha256: str
+    redaction_applied: bool
+    allowed_for_prompt: bool
+
+
+class KnowledgeRetrievalRead(BaseModel):
+    adapter_name: str = "default"
+    retrieval_mode: str = "deterministic_local"
+    query_text: str
+    query_terms: list[str] = Field(default_factory=list)
+    used_knowledge: bool = False
+    used_context_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    results: list[KnowledgeRetrievalResultItem] = Field(default_factory=list)
+
+
 class KnowledgeBaseContextArtifactRead(BaseModel):
     id: uuid.UUID
     title: str

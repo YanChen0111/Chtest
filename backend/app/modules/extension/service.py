@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import re
 import uuid
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.ai_runtime.service import CONTEXT_FILE_NAMES
 from backend.app.modules.extension.models import KnowledgeAdapterConfig, ToolDefinition
@@ -14,13 +16,15 @@ from backend.app.modules.extension.schemas import (
     KnowledgeAdapterUpdate,
     KnowledgeBaseContextArtifactRead,
     KnowledgeBaseRead,
+    KnowledgeRetrievalRead,
+    KnowledgeRetrievalResultItem,
     ToolDefinitionListRead,
     ToolDefinitionRead,
 )
 from backend.app.modules.projects.models import Project
 
 
-ALLOWED_PROVIDER_TYPES = {"none", "stub"}
+ALLOWED_PROVIDER_TYPES = {"none", "stub", "deterministic_local"}
 ALLOWED_STATUSES = {"not_configured", "disabled", "configured_stub"}
 RUNTIME_CONFIG_KEYS = {
     "api_key",
@@ -44,6 +48,12 @@ KNOWLEDGE_BASE_NON_GOALS = [
     "no_reranking",
     "no_external_rag_runtime",
 ]
+DEFAULT_MAX_RESULTS = 5
+DEFAULT_MAX_SNIPPET_CHARS = 320
+MAX_RETRIEVAL_RESULTS = 10
+MAX_SNIPPET_CHARS = 1000
+MIN_SNIPPET_CHARS = 40
+TERM_PATTERN = re.compile(r"\w+", re.UNICODE)
 
 
 class KnowledgeAdapterRuntimeNotAllowedError(Exception):
@@ -113,6 +123,77 @@ def list_tool_definitions(session: Session, project_id: uuid.UUID) -> ToolDefini
     return ToolDefinitionListRead(items=items, total=len(items))
 
 
+def retrieve_deterministic_knowledge(
+    session: Session,
+    store: LocalArtifactStore,
+    project_id: uuid.UUID,
+    query_text: str,
+    *,
+    adapter_name: str = "default",
+    max_results: int | None = None,
+    max_snippet_chars: int | None = None,
+) -> KnowledgeRetrievalRead:
+    get_project_or_raise(session, project_id)
+    query_terms = normalize_terms(query_text)
+    config = get_knowledge_adapter_config(session, project_id, adapter_name)
+    limit = bounded_int(
+        max_results if max_results is not None else config_value(config, "max_results", DEFAULT_MAX_RESULTS),
+        minimum=1,
+        maximum=MAX_RETRIEVAL_RESULTS,
+    )
+    snippet_limit = bounded_int(
+        max_snippet_chars
+        if max_snippet_chars is not None
+        else config_value(config, "max_snippet_chars", DEFAULT_MAX_SNIPPET_CHARS),
+        minimum=MIN_SNIPPET_CHARS,
+        maximum=MAX_SNIPPET_CHARS,
+    )
+    min_score = bounded_int(config_value(config, "min_score", 1), minimum=1, maximum=len(query_terms) or 1)
+
+    if not is_deterministic_adapter_enabled(config) or not query_terms:
+        return KnowledgeRetrievalRead(
+            adapter_name=adapter_name,
+            query_text=query_text,
+            query_terms=query_terms,
+            used_knowledge=False,
+        )
+
+    artifacts = list_eligible_context_artifacts(session, project_id)
+    results: list[KnowledgeRetrievalResultItem] = []
+    for artifact in artifacts:
+        text = store.read_bytes(artifact.file_path).decode("utf-8", errors="replace")
+        searchable_text = "\n".join(
+            [
+                str(artifact.metadata_json.get("title", "")),
+                str(artifact.metadata_json.get("source_ref", "")),
+                text,
+            ],
+        )
+        artifact_terms = set(normalize_terms(searchable_text))
+        matched_terms = [term for term in query_terms if term in artifact_terms]
+        score = len(matched_terms)
+        if score < min_score:
+            continue
+        results.append(to_retrieval_item(artifact, text, matched_terms, score, snippet_limit))
+
+    results.sort(
+        key=lambda item: (
+            -item.score,
+            item.title.lower(),
+            str(item.context_artifact_id),
+        ),
+    )
+    bounded_results = results[:limit]
+    return KnowledgeRetrievalRead(
+        adapter_name=adapter_name,
+        query_text=query_text,
+        query_terms=query_terms,
+        used_knowledge=bool(bounded_results),
+        used_context_artifact_ids=[item.context_artifact_id for item in bounded_results],
+        results=bounded_results,
+    )
+
+
 def update_knowledge_adapter(
     session: Session,
     project_id: uuid.UUID,
@@ -155,6 +236,95 @@ def contains_runtime_key(value: Any) -> bool:
     if isinstance(value, list):
         return any(contains_runtime_key(item) for item in value)
     return False
+
+
+def is_deterministic_adapter_enabled(config: KnowledgeAdapterConfig | None) -> bool:
+    return (
+        config is not None
+        and config.status == "configured_stub"
+        and config.provider_type == "deterministic_local"
+    )
+
+
+def config_value(config: KnowledgeAdapterConfig | None, key: str, default: int) -> int:
+    if config is None:
+        return default
+    value = config.config_json.get(key, default)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def bounded_int(value: int, *, minimum: int, maximum: int) -> int:
+    return max(minimum, min(maximum, value))
+
+
+def normalize_terms(text: str) -> list[str]:
+    terms: list[str] = []
+    seen: set[str] = set()
+    for match in TERM_PATTERN.finditer(text.lower()):
+        term = match.group(0)
+        if term not in seen:
+            seen.add(term)
+            terms.append(term)
+    return terms
+
+
+def list_eligible_context_artifacts(session: Session, project_id: uuid.UUID) -> list[Artifact]:
+    artifacts = session.scalars(
+        select(Artifact)
+        .where(
+            Artifact.project_id == project_id,
+            Artifact.owner_entity_type == "Project",
+            Artifact.owner_entity_id == project_id,
+            Artifact.artifact_type.in_(CONTEXT_FILE_NAMES.keys()),
+        )
+        .order_by(Artifact.created_at.asc(), Artifact.id.asc()),
+    ).all()
+    return [
+        artifact
+        for artifact in artifacts
+        if bool(artifact.metadata_json.get("safe_to_show", False))
+        and bool(artifact.metadata_json.get("allowed_for_prompt", False))
+    ]
+
+
+def to_retrieval_item(
+    artifact: Artifact,
+    text: str,
+    matched_terms: list[str],
+    score: int,
+    max_snippet_chars: int,
+) -> KnowledgeRetrievalResultItem:
+    metadata = artifact.metadata_json
+    return KnowledgeRetrievalResultItem(
+        context_artifact_id=artifact.id,
+        title=str(metadata.get("title", "")),
+        source_ref=str(metadata.get("source_ref", "")),
+        score=score,
+        matched_terms=matched_terms,
+        snippet=snippet_for_terms(text, matched_terms, max_snippet_chars),
+        sha256=f"sha256:{artifact.sha256}",
+        redaction_applied=bool(metadata.get("redaction_applied", False)),
+        allowed_for_prompt=bool(metadata.get("allowed_for_prompt", False)),
+    )
+
+
+def snippet_for_terms(text: str, terms: list[str], max_chars: int) -> str:
+    normalized_text = " ".join(text.split())
+    if not normalized_text:
+        return ""
+
+    lower_text = normalized_text.lower()
+    positions = [lower_text.find(term) for term in terms if lower_text.find(term) >= 0]
+    start = min(positions) if positions else 0
+    if start > 0:
+        start = max(0, start - max_chars // 4)
+        next_space = normalized_text.find(" ", start)
+        if 0 <= next_space < min(len(normalized_text), start + 24):
+            start = next_space + 1
+    return normalized_text[start : start + max_chars]
 
 
 def list_knowledge_base_context_artifacts(

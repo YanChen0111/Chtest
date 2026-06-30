@@ -10,8 +10,12 @@ from backend.app.modules.extension.schemas import (
     KnowledgeAdapterRead,
     KnowledgeAdapterUpdate,
     KnowledgeBaseRead,
+    KnowledgeRetrievalRead,
+    KnowledgeRetrievalRequest,
     ToolDefinitionListRead,
 )
+from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
+from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.projects.router import get_session
 
 
@@ -74,6 +78,30 @@ def put_knowledge_adapter(
         raise project_not_found() from exc
     except service.KnowledgeAdapterRuntimeNotAllowedError as exc:
         raise runtime_not_allowed() from exc
+
+
+@router.post(
+    "/projects/{project_id}/knowledge-adapter/retrieve",
+    response_model=KnowledgeRetrievalRead,
+)
+def retrieve_knowledge_adapter_context(
+    project_id: uuid.UUID,
+    data: KnowledgeRetrievalRequest,
+    session: Session = Depends(get_session),
+    store: LocalArtifactStore = Depends(get_artifact_store),
+) -> KnowledgeRetrievalRead:
+    try:
+        return service.retrieve_deterministic_knowledge(
+            session=session,
+            store=store,
+            project_id=project_id,
+            adapter_name=data.adapter_name,
+            query_text=data.query_text,
+            max_results=data.max_results,
+            max_snippet_chars=data.max_snippet_chars,
+        )
+    except service.KnowledgeAdapterProjectNotFoundError as exc:
+        raise project_not_found() from exc
 
 
 @router.get("/projects/{project_id}/tool-definitions", response_model=ToolDefinitionListRead)
