@@ -6,17 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-V1 Completion Review.
+Post-V1 Planning.
 
 ## Current Task
 
-Task 4: Prepare final V1 acceptance handoff.
+Post-V1 Task 1: Decide release packaging and demo artifact strategy.
 
 ## Product Value Answer
 
-After this task, Chtest has a concise final V1 acceptance handoff that points to
-passing release evidence, remaining non-blocking risks, and the next post-V1
-work item.
+After this task, the team has a clear release packaging decision: either use the
+current composable golden suite as V1 acceptance evidence, or add one narrative
+end-to-end demo artifact before packaging.
 
 ## Must Read
 
@@ -33,6 +33,7 @@ work item.
 11. `docs/implementation/slices/slice-17-extension-surface.md`
 12. `docs/implementation/06-v1-completion-audit.md`
 13. `docs/implementation/07-v1-release-acceptance.md`
+14. `docs/implementation/08-v1-final-acceptance-handoff.md`
 
 ## Do Not Read Unless Needed
 
@@ -47,8 +48,8 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/07-v1-release-acceptance.md
 docs/implementation/08-v1-final-acceptance-handoff.md
+docs/implementation/09-post-v1-release-packaging-plan.md
 ```
 
 Documentation-only handoff task. Do not add product code, RAG runtime, MCP
@@ -67,17 +68,19 @@ Expected result: all V1 golden smokes, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- Creates a final V1 acceptance handoff document.
-- Links the completion audit and release acceptance report.
-- Records release recommendation and remaining non-blocking risks.
+- Decides whether the composable golden suite is sufficient for release
+  packaging or whether a narrative E2E artifact is required.
+- Creates a small post-V1 release packaging plan.
+- Keeps current V1 acceptance evidence linked.
 - Keeps V1 non-goals out of scope.
 
 ## Commit Message
 
 ```text
-docs(v1): add final acceptance handoff
+docs(post-v1): plan release packaging
 ```
 
 ## Next Task
 
-Post-V1 planning or release packaging based on the final handoff.
+Implement the chosen release packaging artifact or move to the first V2 planning
+task.
