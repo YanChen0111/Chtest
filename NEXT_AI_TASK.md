@@ -10,12 +10,12 @@ Slice 13: Playwright Minimal Loop.
 
 ## Current Task
 
-Task 6: Add Playwright golden smoke.
+Slice 13 completion gate.
 
 ## Product Value Answer
 
-After this task, the golden path proves an approved Playwright AutomationDraft
-can execute through the controlled runner and persist browser evidence metadata.
+After this task, Slice 13 is verified end-to-end and ready to hand off to the
+next V1 slice.
 
 ## Must Read
 
@@ -41,35 +41,37 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-13-playwright-minimal-loop.md
-backend/app/tests/golden/test_playwright_minimal_loop_golden.py
+NEXT_AI_TASK.md
+memory/08-session-handoff.md
+docs/implementation/slices/slice-13-playwright-minimal-loop.md
 ```
 
-Do not create Report, FailureAnalysis, or QualityGateDecision records.
+This is a verification and documentation task only. Do not modify product code
+unless verification exposes a concrete blocker.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q && npm --prefix frontend run test -- --run
 ```
 
-Expected result: golden Playwright minimal smoke passes.
+Expected result: backend Playwright API/golden tests and frontend shell tests
+pass.
 
 ## Acceptance
 
-- Reuses golden reviewed UI case -> approved Playwright AutomationDraft setup.
-- Executes a controlled Playwright smoke command against deterministic fake
-  runner output.
-- Persists TestRun and TestResult records.
-- Captures stdout/stderr plus trace/screenshot artifact metadata.
-- Does not create Report, FailureAnalysis, or QualityGateDecision records.
-- Update handoff and set the next task to Slice 13 completion gate.
+- Confirm Slice 13 task table is fully done.
+- Run backend Playwright API + golden smoke verification.
+- Run frontend workbench verification.
+- Record completion evidence in the Slice 13 task plan.
+- Update handoff and set the next task to Slice 14 planning.
 
 ## Commit Message
 
 ```text
-test(golden): add playwright minimal smoke
+docs(playwright): complete minimal loop slice
 ```
 
 ## Next Task
 
-Slice 13 completion gate.
+Slice 14 Task 1: Add Report And Failure Analysis task plan.

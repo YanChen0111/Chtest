@@ -1,5 +1,45 @@
 # Session Handoff
 
+## 2026-06-30 Slice 13 Task 6 Playwright Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 13 Task 6：Add Playwright golden smoke。
+- 新增 `backend/app/tests/golden/test_playwright_minimal_loop_golden.py`。
+- golden smoke 复用 reviewed golden UI TestCase -> AutomationDraft -> edit ->
+  approve 链路。
+- 已批准 Playwright AutomationDraft 通过 `POST /api/test-runs` +
+  `runner_mode=playwright_local` 执行 controlled Playwright path。
+- 使用 deterministic fake runner output，不依赖真实浏览器二进制。
+- 验证 TestRun、TestResult、runtime_manifest/stdout/stderr/playwright_trace/
+  screenshot Artifact metadata 均持久化。
+- 验证没有创建 Report、FailureAnalysis 或 QualityGateDecision。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 13 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q
+```
+
+验证结果：
+
+- Playwright minimal golden smoke：`1 passed`
+
+修改文件：
+
+- `backend/app/tests/api/test_playwright_minimal_loop.py`
+- `backend/app/tests/golden/test_playwright_minimal_loop_golden.py`
+- `docs/implementation/slices/slice-13-playwright-minimal-loop.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 13 completion gate。
+- 验证命令：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q && npm --prefix frontend run test -- --run`。
+
 ## 2026-06-30 Slice 13 Task 5 Playwright Execution Frontend Shell 完成
 
 本轮完成：

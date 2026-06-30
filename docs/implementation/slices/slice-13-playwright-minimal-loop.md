@@ -41,8 +41,8 @@ broad browser grid/device matrix work.
 | Add Playwright execution API contract and task boundary | done | `rg -n "Playwright|POST /api/test-runs|playwright_trace|screenshot" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-13-playwright-minimal-loop.md` | `1205e95` | contract-first Playwright endpoint shape |
 | Add Playwright runner adapter | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q` | `b7c65f2` | allowlisted local command wrapper |
 | Add Playwright execution API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q` | `ac3f7c8` | create/get Playwright TestRun evidence |
-| Add Playwright execution frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | inspect trace/screenshot evidence |
-| Add Playwright golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q` | - | approved golden draft executes controlled Playwright smoke |
+| Add Playwright execution frontend shell | done | `npm --prefix frontend run test -- --run` | `47d0618` | inspect trace/screenshot evidence |
+| Add Playwright golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q` | pending commit | approved golden draft executes controlled Playwright smoke |
 | Slice 13 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 
 ## Task 1: Add Playwright Execution API Contract And Task Boundary
