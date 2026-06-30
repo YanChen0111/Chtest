@@ -14,7 +14,7 @@ reported with traceable evidence.
 ## Package Contents
 
 - `acceptance-evidence.md`: automated release gate and evidence links.
-- `manual-walkthrough.md`: human-readable V1 walkthrough skeleton.
+- `manual-walkthrough.md`: human-readable V1 walkthrough checklist.
 - `screenshots/`: optional local frontend screenshots for release notes.
 
 ## Acceptance Status
@@ -32,6 +32,7 @@ Source reports:
 - `docs/implementation/06-v1-completion-audit.md`
 - `docs/implementation/07-v1-release-acceptance.md`
 - `docs/implementation/08-v1-final-acceptance-handoff.md`
+- `docs/implementation/09-post-v1-release-packaging-plan.md`
 
 ## V1 Non-Goals
 

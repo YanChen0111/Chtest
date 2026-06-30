@@ -1,5 +1,29 @@
 # Development Log
 
+## 2026-06-30 V1 Release Manual Walkthrough
+
+### Completed
+
+- Expanded `docs/release/v1/manual-walkthrough.md` into a release-ready manual
+  checklist.
+- Expanded `docs/release/v1/acceptance-evidence.md` with command evidence,
+  release status, coverage mapping, evidence chain, and explicit non-goals.
+- Updated `docs/release/v1/README.md`.
+- Updated `NEXT_AI_TASK.md` to Post-V1 Task 4.
+
+### Verification
+
+```bash
+rg -n "Requirement|AutomationDraft|TestRun|Report|CI/CD|RAG" docs/release/v1/manual-walkthrough.md
+rg -n "10 passed|17 tests|completion-audit|release-acceptance|final-acceptance" docs/release/v1/acceptance-evidence.md
+git diff --check
+```
+
+### Next Step
+
+- Decide whether to capture optional frontend screenshots or move directly to
+  V2 planning.
+
 ## 2026-06-30 V1 Release Package Skeleton
 
 ### Completed

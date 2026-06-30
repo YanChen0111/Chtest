@@ -1,5 +1,25 @@
 # Session Handoff
 
+## 2026-06-30 Post-V1 Task 3 完成
+
+本轮完成：
+
+- 完成 Post-V1 Task 3：Write V1 manual walkthrough and acceptance evidence
+  details。
+- 扩展 `docs/release/v1/manual-walkthrough.md` 为 release-ready checklist，
+  覆盖项目上下文、需求评审、用例生成、AutomationDraft、pytest execution、
+  failure analysis/report、CI/CD Quality Center 和 extension surfaces。
+- 扩展 `docs/release/v1/acceptance-evidence.md`，加入 release status、
+  blocker status、coverage table、evidence chain 和 non-goals。
+- 更新 `docs/release/v1/README.md`，链接 release packaging decision。
+- 已将 `NEXT_AI_TASK.md` 切换到 Post-V1 Task 4：Optional frontend
+  screenshot capture or V2 planning。
+
+下次推荐任务：
+
+- 决定是否捕获前端截图；如果不需要截图，则将 release package 标记为文档
+  complete 并切入 V2 planning。
+
 ## 2026-06-30 Post-V1 Task 2 完成
 
 本轮完成：

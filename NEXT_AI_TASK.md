@@ -10,12 +10,12 @@ Post-V1 Planning.
 
 ## Current Task
 
-Post-V1 Task 3: Write V1 manual walkthrough and acceptance evidence details.
+Post-V1 Task 4: Optional frontend screenshot capture or V2 planning.
 
 ## Product Value Answer
 
-After this task, the V1 release package contains detailed release-facing
-walkthrough and acceptance evidence content.
+After this task, the team either has optional frontend screenshots for release
+notes or a clean handoff into V2 planning.
 
 ## Must Read
 
@@ -71,19 +71,18 @@ Expected result: all V1 golden smokes, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- Expands `docs/release/v1/manual-walkthrough.md` into a release-ready manual
-  checklist.
-- Expands `docs/release/v1/acceptance-evidence.md` with detailed command
-  evidence and source links.
-- Keeps current V1 acceptance evidence linked.
+- Decides whether to capture screenshots now.
+- If screenshots are captured, links them from `docs/release/v1/README.md`.
+- If screenshots are skipped, records that the release package is documentation
+  complete and moves to V2 planning.
 - Keeps V1 non-goals out of scope.
 
 ## Commit Message
 
 ```text
-docs(release): add v1 manual walkthrough
+docs(release): finalize v1 release package
 ```
 
 ## Next Task
 
-Optionally capture frontend screenshots or move to V2 planning.
+Start V2 planning.
