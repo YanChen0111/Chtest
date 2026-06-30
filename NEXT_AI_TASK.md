@@ -6,16 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Post-V1 Planning.
+V2 Planning.
 
 ## Current Task
 
-Post-V1 Task 4: Optional frontend screenshot capture or V2 planning.
+V2 Task 1: Draft V2 scope options.
 
 ## Product Value Answer
 
-After this task, the team either has optional frontend screenshots for release
-notes or a clean handoff into V2 planning.
+After this task, the team has a small V2 scope options document that separates
+candidate product directions from V1 non-goals and avoids accidental scope
+expansion.
 
 ## Must Read
 
@@ -53,11 +54,13 @@ docs/implementation/09-post-v1-release-packaging-plan.md
 docs/release/v1/README.md
 docs/release/v1/acceptance-evidence.md
 docs/release/v1/manual-walkthrough.md
+docs/release/v1/screenshots/
+docs/implementation/10-v2-scope-options.md
 ```
 
-Documentation-only release packaging task. Do not add product code, RAG
-runtime, MCP runtime, RBAC, tenants, permissions, marketplace, cloud sync,
-release automation, or remote CI provider integration.
+Planning-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
+tenants, permissions, marketplace, cloud sync, release automation, or remote CI
+provider integration.
 
 ## Verification Command
 
@@ -71,18 +74,17 @@ Expected result: all V1 golden smokes, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- Decides whether to capture screenshots now.
-- If screenshots are captured, links them from `docs/release/v1/README.md`.
-- If screenshots are skipped, records that the release package is documentation
-  complete and moves to V2 planning.
-- Keeps V1 non-goals out of scope.
+- Creates `docs/implementation/10-v2-scope-options.md`.
+- Lists 2-4 V2 candidate directions.
+- Separates promoted candidates from still-out-of-scope ideas.
+- Keeps V1 release package evidence linked.
 
 ## Commit Message
 
 ```text
-docs(release): finalize v1 release package
+docs(v2): draft scope options
 ```
 
 ## Next Task
 
-Start V2 planning.
+Choose the first V2 slice or pause for product review.

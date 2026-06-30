@@ -1,5 +1,24 @@
 # Session Handoff
 
+## 2026-06-30 Post-V1 Task 4 完成
+
+本轮完成：
+
+- 完成 Post-V1 Task 4：Optional frontend screenshot capture or V2 planning。
+- 本地 web 已在 `http://localhost:5174/` 可访问。
+- 通过内置浏览器捕获 release screenshots：
+  - `docs/release/v1/screenshots/ai-workbench.png`
+  - `docs/release/v1/screenshots/cicd-quality-center.png`
+  - `docs/release/v1/screenshots/report-center.png`
+  - `docs/release/v1/screenshots/rag-knowledge-base.png`
+- 更新 `docs/release/v1/README.md` 链接截图。
+- 已将 `NEXT_AI_TASK.md` 切换到 V2 Task 1：Draft V2 scope options。
+
+下次推荐任务：
+
+- 起草 `docs/implementation/10-v2-scope-options.md`。
+- 只做 V2 scope options，不直接加入产品代码或运行时扩张。
+
 ## 2026-06-30 Post-V1 Task 3 完成
 
 本轮完成：

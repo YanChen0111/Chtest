@@ -15,7 +15,7 @@ reported with traceable evidence.
 
 - `acceptance-evidence.md`: automated release gate and evidence links.
 - `manual-walkthrough.md`: human-readable V1 walkthrough checklist.
-- `screenshots/`: optional local frontend screenshots for release notes.
+- `screenshots/`: local frontend screenshots for release notes.
 
 ## Acceptance Status
 
@@ -33,6 +33,13 @@ Source reports:
 - `docs/implementation/07-v1-release-acceptance.md`
 - `docs/implementation/08-v1-final-acceptance-handoff.md`
 - `docs/implementation/09-post-v1-release-packaging-plan.md`
+
+## Screenshots
+
+- AI 工作台: `screenshots/ai-workbench.png`
+- CI/CD 质量中心: `screenshots/cicd-quality-center.png`
+- 报告中心: `screenshots/report-center.png`
+- RAG 知识库: `screenshots/rag-knowledge-base.png`
 
 ## V1 Non-Goals
 

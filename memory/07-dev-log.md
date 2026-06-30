@@ -1,5 +1,25 @@
 # Development Log
 
+## 2026-06-30 V1 Release Screenshots
+
+### Completed
+
+- Captured release screenshots from `http://localhost:5174/`.
+- Added screenshots for AI 工作台, CI/CD 质量中心, 报告中心, and RAG 知识库.
+- Linked screenshots from `docs/release/v1/README.md`.
+- Updated `NEXT_AI_TASK.md` to V2 Task 1.
+
+### Verification
+
+```bash
+file docs/release/v1/screenshots/*.png
+git diff --check
+```
+
+### Next Step
+
+- Draft V2 scope options.
+
 ## 2026-06-30 V1 Release Manual Walkthrough
 
 ### Completed
