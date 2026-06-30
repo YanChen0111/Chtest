@@ -10,13 +10,13 @@ V1 Completion Review.
 
 ## Current Task
 
-Task 1: Audit V1 completion evidence and remaining gaps.
+Task 2: Run V1 release acceptance.
 
 ## Product Value Answer
 
-After this task, Chtest has a clear V1 completion audit: which evidence loops
-are implemented, which verification commands pass, which gaps remain, and what
-the next release-acceptance task should be.
+After this task, Chtest has a release-acceptance record with full golden smoke
+results, frontend verification, remaining release risks, and a clear go/no-go
+recommendation for V1.
 
 ## Must Read
 
@@ -31,6 +31,7 @@ the next release-acceptance task should be.
 9. `docs/implementation/00-v0.1-walking-skeleton.md`
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/slices/slice-17-extension-surface.md`
+12. `docs/implementation/06-v1-completion-audit.md`
 
 ## Do Not Read Unless Needed
 
@@ -45,36 +46,38 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/06-v1-completion-audit.md
+docs/implementation/07-v1-release-acceptance.md
 ```
 
-Audit-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
+Acceptance-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
 tenants, permissions, marketplace, cloud sync, release automation, or remote CI
 provider integration.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/06-v1-completion-audit.md && rg -n "Implemented|Remaining gaps|Verification|Next task" docs/implementation/06-v1-completion-audit.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_testrunner_pytest_golden.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py backend/app/tests/golden/test_report_failure_analysis_golden.py backend/app/tests/golden/test_cicd_quality_center_golden.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py backend/app/tests/golden/test_extension_surface_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
 ```
 
-Expected result: V1 completion audit exists and names evidence, gaps,
-verification, and next task.
+Expected result: all V1 golden smokes, frontend tests, and diff check pass or
+document a concrete blocker.
 
 ## Acceptance
 
-- Audits implemented V1 evidence loops against `docs/fixtures/00-v1-demo-path.md`.
-- Lists passing verification commands already available.
-- Lists remaining gaps without implementing them.
-- Names one next release-acceptance task.
+- Runs the full V1 release-acceptance verification command set.
+- Creates `docs/implementation/07-v1-release-acceptance.md`.
+- Records pass/fail results and remaining release risks.
+- Provides a go/no-go recommendation.
 - Keeps V1 non-goals out of scope.
 
 ## Commit Message
 
 ```text
-docs(v1): add completion audit
+docs(v1): add release acceptance report
 ```
 
 ## Next Task
 
-V1 release acceptance or gap closure task named by the audit.
+Release readiness cleanup or V1 acceptance handoff based on report outcome.
