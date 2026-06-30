@@ -10,12 +10,12 @@ Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Task 4: Add local diff parser service.
+Task 5: Add CI/CD run create/list/get API.
 
 ## Product Value Answer
 
-After this task, Chtest can deterministically parse local unified diff text into
-changed-file evidence for CICDRun records.
+After this task, Chtest can create, list, and retrieve local-first CICDRun
+records with changed file evidence.
 
 ## Must Read
 
@@ -40,13 +40,16 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
+backend/app/modules/cicd/router.py
 backend/app/modules/cicd/service.py
 backend/app/modules/cicd/schemas.py
+backend/app/main.py
 backend/app/tests/api/test_cicd_quality_center.py
 docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-Do not run git commands against remote providers in this task.
+Do not create UnitTestPatch, TestRun, QualityGateDecision, or Report records in
+this task.
 
 ## Verification Command
 
@@ -54,24 +57,26 @@ Do not run git commands against remote providers in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
 ```
 
-Expected result: focused local diff parser tests pass.
+Expected result: focused CI/CD run API tests pass.
 
 ## Acceptance
 
-- Parses added/modified/deleted/renamed file headers from unified diff text.
-- Classifies file_role as source, test, docs, config, migration, fixture,
-  build, or unknown.
-- Assigns deterministic low/medium/high risk from file role and line counts.
-- Produces changed_files metadata compatible with `changed_files.json`.
-- Does not run git commands against remote providers.
-- Updates handoff and sets the next task to CI/CD run create/list/get API.
+- Adds `POST /api/cicd/runs`.
+- Adds `GET /api/cicd/runs`.
+- Adds `GET /api/cicd/runs/{id}`.
+- Supports V1 `source_type=local_diff`, `trigger_type=manual`,
+  `provider=local`.
+- Persists CICDChangedFile rows when diff text is supplied.
+- Does not create UnitTestPatch, TestRun, QualityGateDecision, or Report
+  records.
+- Updates handoff and sets the next task to CI/CD analyze API.
 
 ## Commit Message
 
 ```text
-feat(cicd): add local diff parser
+feat(cicd): add quality run api
 ```
 
 ## Next Task
 
-Slice 15 Task 5: Add CI/CD run create/list/get API.
+Slice 15 Task 6: Add CI/CD analyze API.

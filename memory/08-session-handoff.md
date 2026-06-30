@@ -1,5 +1,47 @@
 # Session Handoff
 
+## 2026-06-30 Slice 15 Task 4 Local Diff Parser 完成
+
+本轮完成：
+
+- 完成 Slice 15 Task 4：Add local diff parser service。
+- 新增 `backend/app/modules/cicd/service.py`。
+- `parse_local_diff` 支持解析 modified、added、deleted、renamed unified
+  diff file blocks。
+- parser 可输出 `changed_files.json` 兼容的 manifest item。
+- 支持按路径和扩展名确定 language 与 file_role：source、test、docs、
+  config、migration、fixture、build、unknown。
+- 支持基于 file_role、change_type 和变更行数生成 deterministic risk_level
+  与 risk_reasons。
+- 未调用远程 CI provider，也未执行 git remote 操作。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 15 Task 5：Add CI/CD run
+  create/list/get API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
+```
+
+验证结果：
+
+- CI/CD Quality Center focused tests：`5 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/service.py`
+- `backend/app/tests/api/test_cicd_quality_center.py`
+- `docs/implementation/slices/slice-15-cicd-quality-center.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 15 Task 5：Add CI/CD run create/list/get
+  API。
+- 当前任务不要创建 UnitTestPatch、TestRun、QualityGateDecision 或 Report
+  records。
+
 ## 2026-06-30 Slice 15 Task 3 CICDRun/CICDChangedFile Model Schema 完成
 
 本轮完成：

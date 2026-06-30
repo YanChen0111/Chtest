@@ -14,6 +14,7 @@ from backend.app.modules.cicd.schemas import (
     CICDRunListRead,
     CICDRunRead,
 )
+from backend.app.modules.cicd.service import parse_local_diff
 from backend.app.modules.projects.models import Project, Repository, Workspace
 
 
@@ -181,3 +182,60 @@ def test_cicd_run_read_schema_embeds_changed_files() -> None:
     assert body["items"][0]["repository_id"] == str(repository_id)
     assert body["items"][0]["changed_files"][0]["path"] == "app/coupon.py"
     assert body["items"][0]["changed_files"][0]["risk_reasons"] == ["source file changed"]
+
+
+def test_parse_local_diff_returns_changed_file_evidence() -> None:
+    diff_text = """diff --git a/app/coupon.py b/app/coupon.py
+index 1111111..2222222 100644
+--- a/app/coupon.py
++++ b/app/coupon.py
+@@ -1,2 +1,5 @@
+-old line
++new line
++another line
+diff --git a/tests/test_coupon.py b/tests/test_coupon.py
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/tests/test_coupon.py
+@@ -0,0 +1,3 @@
++def test_coupon():
++    assert True
+diff --git a/docs/coupon.md b/docs/coupon.md
+deleted file mode 100644
+index 4444444..0000000
+--- a/docs/coupon.md
++++ /dev/null
+@@ -1,2 +0,0 @@
+-old docs
+diff --git a/package.json b/package.json
+similarity index 92%
+rename from package.json
+rename to package-renamed.json
+--- a/package.json
++++ b/package-renamed.json
+@@ -1 +1 @@
+-{"scripts":{}}
++{"scripts":{"test":"vitest"}}
+"""
+
+    parsed = parse_local_diff(diff_text)
+    manifest = {"changed_files": [item.to_manifest_item() for item in parsed]}
+
+    assert [item.path for item in parsed] == [
+        "app/coupon.py",
+        "tests/test_coupon.py",
+        "docs/coupon.md",
+        "package-renamed.json",
+    ]
+    assert [item.change_type for item in parsed] == ["modified", "added", "deleted", "renamed"]
+    assert [item.file_role for item in parsed] == ["source", "test", "docs", "build"]
+    assert parsed[0].language == "python"
+    assert parsed[0].lines_added == 2
+    assert parsed[0].lines_deleted == 1
+    assert parsed[0].risk_level == "medium"
+    assert parsed[1].risk_level == "low"
+    assert parsed[2].risk_level == "low"
+    assert parsed[3].old_path == "package.json"
+    assert parsed[3].risk_level == "medium"
+    assert manifest["changed_files"][0]["risk_reasons"]
