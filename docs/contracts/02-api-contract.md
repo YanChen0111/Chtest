@@ -1205,11 +1205,24 @@ Request:
 }
 ```
 
+Rules:
+
+- The TestRun must exist and belong to the default V1 workspace.
+- FailureAnalysis is evidence-first. It must inspect TestRun parsed_result,
+  TestResult rows, stdout/stderr/JUnit/trace/screenshot artifacts when
+  available.
+- Missing or weak evidence must produce
+  `classification=insufficient_evidence` and low confidence.
+- V1 uses deterministic mock provider output unless a later task explicitly
+  enables a real provider.
+- This endpoint does not create AutomationRepairTask or Report records.
+
 Response 202:
 
 ```json
 {
   "ai_task_id": "00000000-0000-0000-0000-000000001501",
+  "failure_analysis_id": "00000000-0000-0000-0000-000000001502",
   "status": "pending"
 }
 ```
@@ -1223,14 +1236,21 @@ Response 200:
 ```json
 {
   "id": "00000000-0000-0000-0000-000000001502",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "test_run_id": "00000000-0000-0000-0000-000000001301",
+  "test_result_id": null,
+  "ai_task_id": "00000000-0000-0000-0000-000000001501",
   "classification": "test_script_issue",
   "confidence": 0.82,
   "summary": "The test failed because fixture coupon_client is not defined.",
   "root_cause": "pytest fixture lookup failed before business assertion ran.",
   "evidence_artifact_ids": ["00000000-0000-0000-0000-000000001601"],
-  "suggested_actions": ["Add fixture coupon_client or update the test to use existing fixture api_client"]
+  "suggested_actions": ["Add fixture coupon_client or update the test to use existing fixture api_client"],
+  "status": "draft"
 }
 ```
+
+Response model: `FailureAnalysisRead`.
 
 ### 7.3 Create Automation Repair Task
 
@@ -1279,12 +1299,27 @@ Request:
 }
 ```
 
+Rules:
+
+- Slice 14 supports `report_type=automation_execution` only.
+- `related_entity_type` must be `TestRun`.
+- The related TestRun must have TestResult rows or execution artifacts.
+- Report generation must create `evidence_manifest.json` artifact metadata.
+- Report conclusion must be derived from TestRun parsed_result, TestResult
+  rows, FailureAnalysis when available, and artifact evidence.
+- If required evidence is missing, conclusion must be
+  `insufficient_evidence`; reports must not mark execution as passed without
+  evidence.
+- This endpoint does not create CI/CD quality reports or QualityGateDecision
+  records.
+
 Response 202:
 
 ```json
 {
   "report_id": "00000000-0000-0000-0000-000000001401",
-  "status": "generating"
+  "status": "generating",
+  "evidence_manifest_artifact_id": "00000000-0000-0000-0000-000000001402"
 }
 ```
 
@@ -1297,16 +1332,41 @@ Response 200:
 ```json
 {
   "id": "00000000-0000-0000-0000-000000001401",
+  "project_id": "00000000-0000-0000-0000-000000000101",
   "report_type": "automation_execution",
+  "title": "Automation execution report",
+  "related_entity_type": "TestRun",
+  "related_entity_id": "00000000-0000-0000-0000-000000001301",
   "status": "ready",
   "conclusion": "passed",
   "summary": "3 pytest tests passed.",
   "metrics": {"total": 3, "passed": 3, "failed": 0},
+  "artifact_ids": [
+    "00000000-0000-0000-0000-000000001402",
+    "00000000-0000-0000-0000-000000001403"
+  ],
+  "evidence_manifest": {
+    "report_id": "00000000-0000-0000-0000-000000001401",
+    "conclusion": "passed",
+    "evidence": [
+      {
+        "artifact_id": "00000000-0000-0000-0000-000000001601",
+        "artifact_type": "stdout",
+        "supports_claim": "pytest command completed successfully",
+        "required": true
+      }
+    ],
+    "missing_evidence": []
+  },
   "artifacts": [
-    {"artifact_type": "report_md", "file_path": "projects/00000000-0000-0000-0000-000000000101/reports/00000000-0000-0000-0000-000000001401/report.md"}
+    {"artifact_type": "report_md", "file_path": "projects/00000000-0000-0000-0000-000000000101/reports/00000000-0000-0000-0000-000000001401/report.md"},
+    {"artifact_type": "report_json", "file_path": "projects/00000000-0000-0000-0000-000000000101/reports/00000000-0000-0000-0000-000000001401/report.json"},
+    {"artifact_type": "report_json", "file_path": "projects/00000000-0000-0000-0000-000000000101/reports/00000000-0000-0000-0000-000000001401/evidence_manifest.json"}
   ]
 }
 ```
+
+Response model: `ReportRead`.
 
 ## 9. AI Task API
 

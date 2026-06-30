@@ -10,12 +10,12 @@ Slice 14: Report And Failure Analysis.
 
 ## Current Task
 
-Task 2: Add Report and FailureAnalysis API contract boundary.
+Task 3: Add FailureAnalysis and Report model schema.
 
 ## Product Value Answer
 
-After this task, Chtest has contract-first API boundaries for evidence-backed
-FailureAnalysis and automation_execution Reports.
+After this task, Chtest has persisted FailureAnalysis and Report model/schema
+contracts ready before API implementation starts.
 
 ## Must Read
 
@@ -41,37 +41,38 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-14-report-and-failure-analysis.md
-docs/contracts/02-api-contract.md
-docs/contracts/04-artifact-contract.md
+backend/app/modules/reporting/__init__.py
+backend/app/modules/reporting/models.py
+backend/app/modules/reporting/schemas.py
+backend/app/tests/api/test_report_failure_analysis.py
 ```
 
-This is a contract/documentation task only. Do not modify product code.
+Do not call AI providers or write report artifacts in this task.
 
 ## Verification Command
 
 ```bash
-rg -n "FailureAnalysis|POST /api/test-runs/.*/failure-analysis|POST /api/reports|evidence_manifest" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-14-report-and-failure-analysis.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q
 ```
 
-Expected result: API/artifact contracts and Slice 14 plan name FailureAnalysis,
-Report, and evidence manifest requirements.
+Expected result: focused FailureAnalysis/Report model and schema tests pass.
 
 ## Acceptance
 
-- Tighten create/get FailureAnalysis endpoint contract.
-- Tighten create/get automation_execution Report endpoint contract.
-- Require evidence_manifest artifact metadata.
-- Keep report conclusions evidence-backed.
+- Defines FailureAnalysis fields from the data model contract.
+- Defines Report fields from the data model contract.
+- Defines create/read schemas for FailureAnalysis and Report.
+- Does not call AI providers or write report artifacts in this task.
 - Do not add CI/CD quality gates, merge/release decisions, RAG runtime, MCP
   runtime, RBAC, tenants, permissions, or broad report analytics.
-- Update handoff and set the next task to model/schema.
+- Update handoff and set the next task to FailureAnalysis API.
 
 ## Commit Message
 
 ```text
-docs(report): define failure analysis api
+feat(reporting): add failure analysis report schema
 ```
 
 ## Next Task
 
-Slice 14 Task 3: Add FailureAnalysis and Report model schema.
+Slice 14 Task 4: Add FailureAnalysis API.

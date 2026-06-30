@@ -37,8 +37,8 @@ center analytics.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add Report And Failure Analysis task plan | done | `test -f docs/implementation/slices/slice-14-report-and-failure-analysis.md && rg -n "Report And Failure Analysis|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-14-report-and-failure-analysis.md` | pending commit | scoped Slice 14 plan |
-| Add Report and FailureAnalysis API contract boundary | planned | `rg -n "FailureAnalysis|POST /api/test-runs/.*/failure-analysis|POST /api/reports|evidence_manifest" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-14-report-and-failure-analysis.md` | - | contract-first report and analysis shape |
+| Add Report And Failure Analysis task plan | done | `test -f docs/implementation/slices/slice-14-report-and-failure-analysis.md && rg -n "Report And Failure Analysis|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-14-report-and-failure-analysis.md` | `dcedd23` | scoped Slice 14 plan |
+| Add Report and FailureAnalysis API contract boundary | done | `rg -n "FailureAnalysis|POST /api/test-runs/.*/failure-analysis|POST /api/reports|evidence_manifest" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-14-report-and-failure-analysis.md` | pending commit | contract-first report and analysis shape |
 | Add FailureAnalysis and Report model/schema | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | - | persisted model/schema only |
 | Add FailureAnalysis API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | - | deterministic mock analysis from failed TestRun evidence |
 | Add automation execution Report API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | - | evidence_manifest + report artifacts |

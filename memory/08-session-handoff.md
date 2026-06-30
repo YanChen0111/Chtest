@@ -1,5 +1,41 @@
 # Session Handoff
 
+## 2026-06-30 Slice 14 Task 2 Report And FailureAnalysis Contract 完成
+
+本轮完成：
+
+- 完成 Slice 14 Task 2：Add Report and FailureAnalysis API contract boundary。
+- 收紧 `docs/contracts/02-api-contract.md` 的 FailureAnalysis create/get
+  合同，要求 evidence-first、支持 deterministic mock provider、缺证据时返回
+  `insufficient_evidence`。
+- 收紧 automation_execution Report create/get 合同，要求
+  `evidence_manifest.json`、report artifact ids、TestRun/TestResult/artifact
+  evidence 支撑 conclusion。
+- 在 `docs/contracts/04-artifact-contract.md` 补充 evidence_manifest artifact
+  rules。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 14 Task 3：Add FailureAnalysis and
+  Report model schema。
+
+本轮验证：
+
+```bash
+rg -n "FailureAnalysis|POST /api/test-runs/.*/failure-analysis|POST /api/reports|evidence_manifest" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-14-report-and-failure-analysis.md
+```
+
+修改文件：
+
+- `docs/contracts/02-api-contract.md`
+- `docs/contracts/04-artifact-contract.md`
+- `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 14 Task 3：Add FailureAnalysis and Report
+  model schema。
+- 当前任务只做 model/schema，不调用 AI providers 或写 report artifacts。
+
 ## 2026-06-30 Slice 14 Task 1 Report And Failure Analysis Task Plan 完成
 
 本轮完成：

@@ -222,6 +222,19 @@ ContextArtifact metadata_json must also include:
 
 如果 missing_evidence 非空，报告 conclusion 不能是 `passed`。
 
+Evidence manifest artifact rules:
+
+- `evidence_manifest.json` is stored as an Artifact with
+  `artifact_type=report_json`, `owner_entity_type=Report`, and
+  `owner_entity_id=report_id`.
+- `metadata_json` must include `manifest_kind=evidence_manifest`,
+  `related_entity_type`, `related_entity_id`, and `evidence_count`.
+- Every evidence item must reference a persisted Artifact id or a structured
+  TestRun/TestResult metric.
+- Report conclusions must cite evidence before AI explanation. A report cannot
+  conclude `passed` when required TestRun/TestResult/artifact evidence is
+  missing.
+
 ## 7. 脱敏规则
 
 展示 stdout、stderr、raw LLM output、ContextArtifact、logs、OpenAPI、fixture 前必须执行基础脱敏：
