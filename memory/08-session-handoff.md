@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-30 Slice 11 Task 2 AutomationDraft Model Schema 完成
+
+本轮完成：
+
+- 完成 Slice 11 Task 2：新增 AutomationDraft model and schema alignment。
+- 新增 `backend/app/modules/automation` 模块。
+- 新增 `AutomationDraft` SQLAlchemy model，字段对齐数据模型合同：project_id、test_case_id、requirement_id、ai_task_id、target_framework、draft_code、execution_strategy、approval_required、status、runtime/promoted artifact 等。
+- 新增 AutomationDraft create/edit/approve/read schemas，为后续 API 任务准备。
+- 未加入 draft generation endpoint、edit/approve endpoint、execution、frontend、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 11 Task 3：Add AutomationDraft generation API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_test_case_library.py -q
+```
+
+验证结果：
+
+- AutomationDraft model/schema focused test：`2 passed`
+- AutomationDraft + Test Case Library API regression：`5 passed`
+
+修改文件：
+
+- `backend/app/modules/automation/__init__.py`
+- `backend/app/modules/automation/models.py`
+- `backend/app/modules/automation/schemas.py`
+- `backend/app/tests/api/test_automation_draft.py`
+- `docs/implementation/slices/slice-11-automation-draft-foundation.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 11 Task 3：Add AutomationDraft generation API。
+- 继续在 `backend/app/tests/api/test_automation_draft.py` 中先写红灯，再补 service/router。
+
 ## 2026-06-30 Slice 11 Task 1 AutomationDraft Foundation Task Plan 完成
 
 本轮完成：

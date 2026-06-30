@@ -10,12 +10,12 @@ Slice 11: AutomationDraft Foundation.
 
 ## Current Task
 
-Task 2: Add AutomationDraft model and schema alignment.
+Task 3: Add AutomationDraft generation API.
 
 ## Product Value Answer
 
-After this task, Chtest has AutomationDraft backend model and schema contracts
-ready for draft generation API implementation.
+After this task, Chtest can create deterministic mock AutomationDraft records
+from reviewed TestCase input without executing draft code.
 
 ## Must Read
 
@@ -38,16 +38,17 @@ Create or update only these files for the current task:
 
 ```text
 backend/app/modules/automation/models.py
+backend/app/modules/automation/router.py
+backend/app/modules/automation/service.py
 backend/app/modules/automation/schemas.py
-backend/app/modules/automation/__init__.py
 backend/app/tests/api/test_automation_draft.py
 docs/implementation/slices/slice-11-automation-draft-foundation.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Read existing module/model patterns as needed, but do not add generation,
-execution, or frontend behavior in this task.
+Read existing AI runtime and prompt/skill patterns as needed, but do not add
+edit/approve, execution, or frontend behavior in this task.
 
 ## Verification Command
 
@@ -59,19 +60,22 @@ Expected result: AutomationDraft model/schema alignment tests pass.
 
 ## Acceptance
 
-- Add AutomationDraft model and schemas aligned with contracts.
-- Add focused tests for model persistence and schema shape.
-- Do not add draft generation endpoint, edit/approve endpoint, execution,
-  frontend, reports, CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or
-  permissions.
-- Update handoff and set the next task to draft generation API.
+- Add `POST /api/automation/drafts`.
+- Require a reviewed TestCase or Requirement reference.
+- Create an AITask and persisted AutomationDraft in `draft_generated` status.
+- Mock output includes draft_code, target_framework, suggested_file_path,
+  execution_notes, risk_notes, approval_required, and execution_strategy.
+- Do not execute or write draft code into a target repository.
+- Do not add edit/approve endpoint, frontend, reports, CI/CD quality, RAG
+  runtime, MCP runtime, RBAC, tenants, or permissions.
+- Update handoff and set the next task to edit/approve API.
 
 ## Commit Message
 
 ```text
-feat(automation): add automation draft model schema
+feat(automation): add automation draft generation api
 ```
 
 ## Next Task
 
-Slice 11 Task 3: Add AutomationDraft generation API.
+Slice 11 Task 4: Add AutomationDraft edit and approve API.
