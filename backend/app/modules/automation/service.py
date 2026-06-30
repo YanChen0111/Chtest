@@ -7,7 +7,11 @@ from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.models import AITask
 from backend.app.modules.automation.models import AutomationDraft
-from backend.app.modules.automation.schemas import AutomationDraftCreateRequest
+from backend.app.modules.automation.schemas import (
+    AutomationDraftApproveRequest,
+    AutomationDraftCreateRequest,
+    AutomationDraftEditRequest,
+)
 from backend.app.modules.cases.models import TestCase
 from backend.app.modules.projects.models import Project
 from backend.app.modules.requirements.models import Requirement
@@ -26,6 +30,14 @@ class RequirementNotFoundError(Exception):
 
 
 class AutomationDraftInvalidInputError(Exception):
+    pass
+
+
+class AutomationDraftNotFoundError(Exception):
+    pass
+
+
+class AutomationDraftInvalidActionError(Exception):
     pass
 
 
@@ -84,6 +96,41 @@ def create_automation_draft(session: Session, data: AutomationDraftCreateRequest
     session.refresh(draft)
     session.refresh(ai_task)
     return draft, ai_task
+
+
+def get_automation_draft(session: Session, draft_id: uuid.UUID) -> AutomationDraft:
+    draft = session.get(AutomationDraft, draft_id)
+    if draft is None:
+        raise AutomationDraftNotFoundError
+    return draft
+
+
+def edit_automation_draft(session: Session, draft_id: uuid.UUID, data: AutomationDraftEditRequest) -> AutomationDraft:
+    draft = get_automation_draft(session, draft_id)
+    if draft.status == "approved":
+        raise AutomationDraftInvalidActionError
+    draft.draft_code = data.draft_code
+    draft.suggested_file_path = data.suggested_file_path
+    draft.execution_notes = data.execution_notes
+    draft.risk_notes = data.risk_notes
+    draft.review_comment = data.review_comment
+    draft.status = "edited"
+    session.add(draft)
+    session.commit()
+    session.refresh(draft)
+    return draft
+
+
+def approve_automation_draft(session: Session, draft_id: uuid.UUID, data: AutomationDraftApproveRequest) -> AutomationDraft:
+    draft = get_automation_draft(session, draft_id)
+    if data.action != "approve" or draft.status not in {"draft_generated", "edited"}:
+        raise AutomationDraftInvalidActionError
+    draft.status = "approved"
+    draft.review_comment = data.review_comment
+    session.add(draft)
+    session.commit()
+    session.refresh(draft)
+    return draft
 
 
 def mock_draft_code(title: str) -> str:

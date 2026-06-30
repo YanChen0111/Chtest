@@ -10,12 +10,12 @@ Slice 11: AutomationDraft Foundation.
 
 ## Current Task
 
-Task 4: Add AutomationDraft edit and approve API.
+Task 5: Add AutomationDraft frontend review shell.
 
 ## Product Value Answer
 
-After this task, Chtest can let a human reviewer fetch, edit, and approve an
-AutomationDraft without executing it.
+After this task, Chtest can review, edit, and approve AutomationDraft records
+from the frontend workbench without execution actions.
 
 ## Must Read
 
@@ -37,44 +37,47 @@ AutomationDraft without executing it.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/automation/models.py
-backend/app/modules/automation/router.py
-backend/app/modules/automation/service.py
-backend/app/modules/automation/schemas.py
-backend/app/tests/api/test_automation_draft.py
+frontend/src/api/automation.ts
+frontend/src/stores/automation.ts
+frontend/src/views/automation/AutomationDraftReviewView.vue
+frontend/src/views/automation/AutomationDraftReviewView.spec.ts
+frontend/src/router/index.ts
+frontend/src/layouts/WorkbenchLayout.vue
+frontend/src/stores/index.ts
 docs/implementation/slices/slice-11-automation-draft-foundation.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Read existing API patterns as needed, but do not add execution or frontend
-behavior in this task.
+Read existing frontend shell patterns as needed, but do not add execution/run
+buttons or backend behavior in this task.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: AutomationDraft model/schema alignment tests pass.
+Expected result: frontend test suite passes.
 
 ## Acceptance
 
-- Add `GET /api/automation/drafts/{id}`.
-- Add `PATCH /api/automation/drafts/{id}` for reviewer edits.
-- Add `POST /api/automation/drafts/{id}/approve`.
-- Enforce `edit -> edited -> approve -> approved` and reject invalid payloads.
-- Do not create TestRun, TestResult, runtime artifacts, reports, execution side
-  effects, frontend, CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or
-  permissions.
-- Update handoff and set the next task to frontend review shell.
+- Add frontend API/store wiring for AutomationDraft create, get, edit, and
+  approve.
+- Add workbench navigation for AutomationDraft review.
+- Show draft code, suggested path, execution notes, risk notes, status, and
+  approval_required.
+- Support edit and approve actions through the API.
+- Do not add execution/run buttons, report links, CI/CD quality actions, RAG
+  runtime, MCP runtime, RBAC, tenants, or permissions.
+- Update handoff and set the next task to golden smoke.
 
 ## Commit Message
 
 ```text
-feat(automation): add automation draft review api
+feat(frontend): add automation draft review shell
 ```
 
 ## Next Task
 
-Slice 11 Task 5: Add AutomationDraft frontend review shell.
+Slice 11 Task 6: Add AutomationDraft golden smoke.

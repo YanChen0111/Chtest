@@ -34,11 +34,17 @@ class ASGIClient:
     def __init__(self, asgi_app: Any) -> None:
         self.asgi_app = asgi_app
 
+    def get(self, path: str) -> ASGIResponse:
+        return asyncio.run(self._request("GET", path, None))
+
+    def patch(self, path: str, json_body: dict[str, Any]) -> ASGIResponse:
+        return asyncio.run(self._request("PATCH", path, json_body))
+
     def post(self, path: str, json_body: dict[str, Any]) -> ASGIResponse:
         return asyncio.run(self._request("POST", path, json_body))
 
-    async def _request(self, method: str, path: str, json_body: dict[str, Any]) -> ASGIResponse:
-        body = json.dumps(json_body).encode("utf-8")
+    async def _request(self, method: str, path: str, json_body: dict[str, Any] | None) -> ASGIResponse:
+        body = json.dumps(json_body).encode("utf-8") if json_body is not None else b""
         status_code: int | None = None
         body_chunks: list[bytes] = []
         request_complete = False
@@ -258,3 +264,84 @@ def test_create_automation_draft_from_reviewed_test_case(
         assert draft.promoted_artifact_id is None
         assert ai_task.agent_name == "AutomationDraftAgent"
         assert ai_task.status == "succeeded"
+
+
+def create_draft_via_api(client: ASGIClient, SessionLocal: sessionmaker[Session]) -> uuid.UUID:
+    with SessionLocal() as session:
+        project, test_case, _ai_task = seed_project_case_and_task(session)
+        session.commit()
+        project_id = project.id
+        test_case_id = test_case.id
+
+    response = client.post(
+        "/api/automation/drafts",
+        json_body={
+            "project_id": str(project_id),
+            "test_case_id": str(test_case_id),
+            "requirement_id": None,
+            "target_framework": "pytest",
+            "prompt_version": "automation_draft_generation:v1",
+            "skill_version": "automation-draft-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-automation-draft",
+        },
+    )
+    assert response.status_code == 202
+    return uuid.UUID(response.json()["automation_draft_id"])
+
+
+def test_get_edit_and_approve_automation_draft(api_client: tuple[ASGIClient, sessionmaker[Session]]) -> None:
+    client, SessionLocal = api_client
+    draft_id = create_draft_via_api(client, SessionLocal)
+
+    get_response = client.get(f"/api/automation/drafts/{draft_id}")
+    assert get_response.status_code == 200
+    body = get_response.json()
+    assert body["id"] == str(draft_id)
+    assert body["status"] == "draft_generated"
+    assert body["draft_code"].startswith("def test_expired_coupon")
+
+    edit_response = client.patch(
+        f"/api/automation/drafts/{draft_id}",
+        json_body={
+            "draft_code": "def test_expired_coupon_reviewed():\n    assert True\n",
+            "suggested_file_path": "tests/test_coupon_reviewed.py",
+            "execution_notes": "Reviewed but not executed.",
+            "risk_notes": "Fixture names still need local confirmation.",
+            "review_comment": "Adjusted naming before approval.",
+        },
+    )
+    assert edit_response.status_code == 200
+    assert edit_response.json()["status"] == "edited"
+
+    approve_response = client.post(
+        f"/api/automation/drafts/{draft_id}/approve",
+        json_body={"action": "approve", "review_comment": "Draft is safe to execute later."},
+    )
+    assert approve_response.status_code == 200
+    assert approve_response.json()["status"] == "approved"
+
+    with SessionLocal() as session:
+        draft = session.get(AutomationDraft, draft_id)
+        assert draft is not None
+        assert draft.status == "approved"
+        assert draft.draft_code.startswith("def test_expired_coupon_reviewed")
+        assert draft.suggested_file_path == "tests/test_coupon_reviewed.py"
+        assert draft.review_comment == "Draft is safe to execute later."
+        assert draft.runtime_artifact_id is None
+        assert draft.promoted_artifact_id is None
+
+
+def test_invalid_automation_draft_approve_action_returns_error(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    draft_id = create_draft_via_api(client, SessionLocal)
+
+    response = client.post(
+        f"/api/automation/drafts/{draft_id}/approve",
+        json_body={"action": "reject", "review_comment": "No."},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "AUTOMATION_DRAFT_INVALID_ACTION"
