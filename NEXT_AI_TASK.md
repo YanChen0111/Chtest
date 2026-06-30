@@ -10,12 +10,12 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 2: Add UnitTestPatch and regression contract boundary.
+Task 3: Add UnitTestPatch and QualityGateDecision model/schema.
 
 ## Product Value Answer
 
-After this task, the UnitTestPatch and regression contracts are narrowed to the
-Slice 16 review-gated local workflow before implementation.
+After this task, Chtest can persist UnitTestPatch and QualityGateDecision
+records aligned with the review-gated CI/CD quality contract.
 
 ## Must Read
 
@@ -40,42 +40,37 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
+backend/app/modules/cicd/models.py
+backend/app/modules/cicd/schemas.py
+backend/app/tests/api/test_unit_test_patch_regression.py
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-This is a contract/documentation task. Do not add product code.
+Do not apply patches or run tests in this task.
 
 ## Verification Command
 
 ```bash
-rg -n "UnitTestPatch|PatchScopeGate|QualityGateDecision|run-new-tests|run-regression" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-16-unit-test-patch-regression.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
 ```
 
-Expected result: contracts and Slice 16 plan describe review gates, scope gate,
-test/regression evidence, and non-goals.
+Expected result: focused UnitTestPatch/QualityGateDecision model/schema tests
+pass.
 
 ## Acceptance
 
-- Contract requires UnitTestPatch to be review-gated.
-- Contract requires PatchScopeGate to reject non-test path modifications.
-- Contract defines new-test and regression TestRun evidence.
-- Contract defines QualityGateDecision `passed`, `failed`, and `needs_review`
-  evidence requirements.
-- Contract excludes merge, push, release, deployment, remote CI provider
-  integration, RAG runtime, MCP runtime, RBAC, tenants, and permissions.
-- Updates handoff and sets the next task to UnitTestPatch/QualityGateDecision
-  model/schema.
+- Defines UnitTestPatch fields from the data model contract.
+- Defines QualityGateDecision fields from the data model contract.
+- Defines create/read schemas for patch and gate records.
+- Does not apply patches or run tests in this task.
+- Updates handoff and sets the next task to PatchScopeGate service.
 
 ## Commit Message
 
 ```text
-docs(cicd): define unit test patch boundary
+feat(cicd): add unit test patch schema
 ```
 
 ## Next Task
 
-Slice 16 Task 3: Add UnitTestPatch and QualityGateDecision model/schema.
+Slice 16 Task 4: Add PatchScopeGate service.

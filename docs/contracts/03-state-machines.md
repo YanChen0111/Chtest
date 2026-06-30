@@ -118,7 +118,13 @@ approved -> apply_failed
 | approved | apply_patch_failed | apply_failed | 应用失败 |
 | awaiting_review/approved | regenerate | replaced | 被新 patch 替代 |
 
-规则：scope_rejected 不能进入 approved。UnitTestPatch 只允许写测试目录。
+规则：
+
+- `scope_rejected` 不能进入 `approved`。
+- UnitTestPatch 只允许写测试目录。
+- `approved` 之前不能 apply。
+- PatchScopeGate must pass before `approved -> applied`.
+- Apply failure must preserve the original patch and error evidence.
 
 ## 7. ToolInvocation 状态机
 
@@ -181,7 +187,16 @@ passed/failed/needs_review -> new QualityGateDecision record on recompute, then 
 | pending | compute_gate_needs_review | needs_review | 证据不足、风险中等或需要人工判断 |
 | passed/failed/needs_review | recompute | passed/failed/needs_review | V1 保留旧决定，新建 QualityGateDecision 记录，并更新 CICDRun.quality_gate_status |
 
-规则：`pending` 只存在于 `CICDRun.quality_gate_status`，表示尚未产生 QualityGateDecision。QualityGateDecision 记录本身只能是 `passed`、`failed` 或 `needs_review`。QualityGateDecision 不触发 merge、push 或部署。每个结论必须引用 evidence artifacts；证据缺失时只能是 `needs_review`，不能写成 `passed`。
+规则：
+
+- `pending` 只存在于 `CICDRun.quality_gate_status`，表示尚未产生
+  QualityGateDecision。
+- QualityGateDecision 记录本身只能是 `passed`、`failed` 或
+  `needs_review`。
+- QualityGateDecision 不触发 merge、push、release、deployment、remote CI
+  status update 或 PR comment。
+- 每个结论必须引用 evidence artifacts；证据缺失时只能是
+  `needs_review`，不能写成 `passed`。
 
 ## 10. Report 状态机
 

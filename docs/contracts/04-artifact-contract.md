@@ -104,6 +104,26 @@ Slice 15 artifact boundary:
 - `unit_test.patch`, `patch_scope_gate.json`, `regression_plan.json`,
   `quality_gate.json`, and CI/CD quality report artifacts are Slice 16+.
 
+Slice 16 artifact rules:
+
+- `unit_test.patch` is stored as an Artifact with
+  `artifact_type=unit_test_patch`, `owner_entity_type=UnitTestPatch`, and
+  `owner_entity_id=unit_test_patch_id`.
+- `patch_scope_gate.json` is stored as an Artifact with
+  `artifact_type=patch_scope_gate`, `owner_entity_type=UnitTestPatch`, and
+  `owner_entity_id=unit_test_patch_id`.
+- `patch_scope_gate.json` must include `allowed`, `checked_paths`,
+  `blocked_paths`, `forbidden_patterns`, `risk_level`, and rejection `reason`
+  when blocked.
+- `regression_plan.json` is stored as an Artifact with
+  `artifact_type=regression_plan`, `owner_entity_type=CICDRun`, and
+  `owner_entity_id=cicd_run_id`.
+- `quality_gate.json` is stored as an Artifact with
+  `artifact_type=quality_gate`, `owner_entity_type=CICDRun`, and
+  `owner_entity_id=cicd_run_id`.
+- CI/CD quality reports must cite UnitTestPatch, PatchScopeGate, new-test,
+  regression, QualityGateDecision, and related artifacts when available.
+
 ### 3.6 Test Run
 
 ```text

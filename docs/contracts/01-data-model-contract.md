@@ -320,6 +320,20 @@ CICDChangedFile evidence rules:
 | status | PatchStatus | yes | generated | Status |
 | review_comment | text | no | null | Review comment |
 
+UnitTestPatch rules:
+
+- UnitTestPatch is review-gated. Generated patches must not be applied until a
+  user approves them.
+- `scope_gate_result_json` must include `allowed`, `checked_paths`,
+  `blocked_paths`, `forbidden_patterns`, `risk_level`, and `reason` when
+  rejected.
+- PatchScopeGate must reject any patch that modifies business source files,
+  configuration, migrations, generated artifacts, or files outside allowed test
+  directories.
+- `scope_rejected` patches cannot transition to `approved`.
+- Applied patches must preserve the original `patch_text` as evidence and write
+  an applied patch artifact.
+
 ## 20. TestRun
 
 | Field | Type | Required | Default | Notes |
@@ -358,6 +372,18 @@ QualityGateDecision records one computed CI/CD quality gate result for a CICDRun
 | evidence_artifact_ids | uuid[] | yes | {} | Diff, patch, JUnit, logs, failure analysis |
 | decided_by | varchar(40) | yes | system | system in V1; user_override is V2+ |
 | status_detail_json | jsonb | yes | {} | Patch/test/regression/failure-analysis signals |
+
+QualityGateDecision rules:
+
+- `passed` requires passing PatchScopeGate evidence, approved/applied
+  UnitTestPatch evidence when a patch is used, passing new-test evidence, and
+  passing regression evidence or a documented low-risk regression waiver.
+- `failed` requires at least one concrete blocking reason, such as scope
+  rejection, failed tests, failed regression, or high-risk uncovered changes.
+- `needs_review` is required when evidence is missing, ambiguous, or manually
+  risky.
+- QualityGateDecision never triggers merge, push, release, deployment, remote CI
+  status updates, or PR comments.
 
 ## 22. TestResult
 

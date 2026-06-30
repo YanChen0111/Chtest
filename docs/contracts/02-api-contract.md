@@ -820,6 +820,18 @@ Response 202:
 }
 ```
 
+Rules:
+
+- The endpoint creates a succeeded mock UnitTestAgent AITask in V1.
+- The endpoint must run PatchScopeGate before returning the candidate.
+- Generated UnitTestPatch records start as `generated`, `scope_validated`,
+  or `scope_rejected` depending on gate result.
+- The patch must remain review-gated; this endpoint must not apply patches or
+  mutate repository files.
+- `scope_gate_result_json` must be returned by the read model for review UI.
+- The endpoint must not create TestRun, QualityGateDecision, Report, merge,
+  push, release, deployment, or remote CI provider side effects.
+
 ### 5.6 Approve Unit Test Patch
 
 `POST /api/cicd/unit-test-patches/{id}/approve`
@@ -887,6 +899,9 @@ Response 200:
 
 Rules:
 
+- Only `awaiting_review` or `scope_validated` patches can be approved.
+- `scope_rejected` patches cannot be approved.
+- Approval records the user's review comment and keeps the patch immutable.
 - Only `approved` UnitTestPatch records can be applied.
 - PatchScopeGate must pass before application.
 - Application must fail with `PATCH_SCOPE_REJECTED` when the patch modifies paths outside allowed test directories.
@@ -918,6 +933,9 @@ Rules:
 
 - The endpoint creates a generic TestRun with `cicd_run_id` set.
 - The endpoint requires an applied UnitTestPatch when `unit_test_patch_id` is provided.
+- TestRun evidence must include stdout/stderr/runtime artifacts through the
+  existing TestRun artifact contract.
+- This endpoint must not compute QualityGateDecision or create Reports.
 
 ### 5.10 Select Regression
 
@@ -972,6 +990,8 @@ Rules:
 
 - Each regression command creates a generic TestRun with `cicd_run_id` set.
 - V1 regression execution must use allowed TestCommand records.
+- Regression execution must not run arbitrary shell strings.
+- This endpoint must not compute QualityGateDecision or create Reports.
 
 ### 5.12 Compute Quality Gate
 
@@ -1001,6 +1021,12 @@ Rules:
 
 - A recompute always creates a new QualityGateDecision record and updates `CICDRun.quality_gate_status`.
 - Missing required evidence returns `needs_review`, not `passed`.
+- `passed` requires PatchScopeGate pass evidence, new-test evidence, regression
+  evidence or a documented low-risk waiver, and no failed TestRun evidence.
+- `failed` requires blocking reasons, including scope rejection, failed tests,
+  failed regression, or high-risk uncovered changes.
+- QualityGateDecision does not trigger merge, push, release, deployment, remote
+  CI provider status updates, or PR comments.
 
 ### 5.13 Generate CI/CD Quality Report
 
@@ -1028,6 +1054,9 @@ Rules:
 
 - The endpoint creates a generic Report with `report_type=cicd_quality`.
 - The report conclusion must cite QualityGateDecision and evidence artifacts.
+- The report must include `quality_gate.json`, test/regression evidence, and
+  UnitTestPatch/PatchScopeGate artifacts when available.
+- The report must not override QualityGateDecision status without evidence.
 
 ## 6. Test Run APIs
 

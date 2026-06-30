@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 2 UnitTestPatch/Regression Contract Boundary 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 2：Add UnitTestPatch and regression contract boundary。
+- 在数据模型合同中补充 UnitTestPatch review-gate、PatchScopeGate
+  `scope_gate_result_json`、scope_rejected 不可 approve、applied patch
+  evidence 规则。
+- 在 API 合同中补充 UnitTestPatch generation/review/apply、run-new-tests、
+  regression、QualityGateDecision、CI/CD quality report 的证据要求和非目标。
+- 在状态机合同中补充 UnitTestPatch apply 前置条件和 QualityGateDecision
+  不触发 merge/push/release/deployment/remote CI 行为。
+- 在 artifact 合同中补充 `unit_test.patch`、`patch_scope_gate.json`、
+  `regression_plan.json`、`quality_gate.json` 的 Slice 16 artifact rules。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 3：Add UnitTestPatch and
+  QualityGateDecision model/schema。
+
+本轮验证：
+
+```bash
+rg -n "UnitTestPatch|PatchScopeGate|QualityGateDecision|run-new-tests|run-regression" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-16-unit-test-patch-regression.md
+```
+
+修改文件：
+
+- `docs/contracts/01-data-model-contract.md`
+- `docs/contracts/02-api-contract.md`
+- `docs/contracts/03-state-machines.md`
+- `docs/contracts/04-artifact-contract.md`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 3：Add UnitTestPatch and
+  QualityGateDecision model/schema。
+- 当前任务只做 model/schema，不 apply patches 或 run tests。
+
 ## 2026-06-30 Slice 16 Task 1 UnitTestPatch/Regression Task Plan 完成
 
 本轮完成：
