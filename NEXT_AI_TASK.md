@@ -10,12 +10,12 @@ V2 Planning.
 
 ## Current Task
 
-Slice 19 Task 4: Attach retrieval evidence to AI task flows.
+Slice 19 Task 5: Add retrieval evidence frontend display.
 
 ## Product Value Answer
 
-After this task, requirement review can request deterministic local knowledge
-retrieval and persist auditable retrieval evidence on the AI task.
+After this task, the RAG 知识库 page can show deterministic local retrieval
+status and latest matched evidence without becoming a vector-search product.
 
 ## Must Read
 
@@ -32,8 +32,7 @@ retrieval and persist auditable retrieval evidence on the AI task.
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-17-extension-surface.md`
 13. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
-14. backend requirement review and AI runtime files needed for retrieval
-    evidence only
+14. frontend extension API/store/view files needed for retrieval evidence display
 
 ## Do Not Read Unless Needed
 
@@ -49,49 +48,43 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
-backend/app/modules/requirements/service.py
-backend/app/modules/requirements/schemas.py
-backend/app/modules/requirements/router.py
-backend/app/modules/ai_runtime/service.py
-backend/app/modules/ai_runtime/providers/mock_provider.py
-backend/app/tests/api/test_deterministic_knowledge_retrieval.py
-backend/app/tests/api/test_requirement_review.py
+frontend/src/api/extension.ts
+frontend/src/stores/extension.ts
+frontend/src/views/extension/KnowledgeBaseView.vue
+focused frontend tests for retrieval evidence display
 ```
 
-Backend-only task. Attach deterministic retrieval evidence to the existing
-requirement review AI flow. Do not add frontend, vector database, embeddings,
-reranking, background indexing, external RAG provider calls, MCP runtime, RBAC,
-tenants, permissions, marketplace, cloud sync, release automation, or remote CI
-provider integration.
+Frontend-only task. Display existing deterministic retrieval evidence from the
+RAG 知识库 surface. Do not add vector search controls, provider runtime config,
+marketplace controls, RBAC, tenants, permissions, cloud sync, release
+automation, or remote CI provider integration.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: deterministic retrieval service tests, requirement review flow
-tests, and diff check pass.
+Expected result: focused frontend suite and diff check pass.
 
 ## Acceptance
 
-- Requirement review can request deterministic local knowledge retrieval.
-- AITask records `used_knowledge=true` only when retrieved snippets are used.
-- AITask records exact `used_context_artifact_ids`.
-- Retrieval evidence artifact includes query terms, matched terms, snippets,
-  scores, and ContextArtifact ids.
-- Existing explicit `context_artifact_ids` behavior remains unchanged when
-  `use_knowledge=false`.
-- Does not create vector indexes, embeddings, reranking jobs, background
-  workers, external provider calls, MCP calls, RBAC, tenants, or permissions.
+- RAG 知识库 shows deterministic retrieval status.
+- ContextArtifact rows can show whether they were retrieved recently.
+- The page shows latest matched terms, snippets, and scores when available.
+- UI remains Chinese-facing while preserving product terms such as
+  ContextArtifact, KnowledgeAdapter, Prompt, Skill, and MCP-ready.
+- Does not add vector search controls, provider configuration, marketplace
+  controls, RBAC, tenants, permissions, or remote sync controls.
 
 ## Commit Message
 
 ```text
-feat(requirements): attach retrieval evidence to review tasks
+feat(frontend): show deterministic knowledge evidence
 ```
 
 ## Next Task
 
-Start Slice 19 Task 5 only after retrieval evidence is attached and committed.
+Start Slice 19 Task 6 only after retrieval evidence frontend display is
+committed.

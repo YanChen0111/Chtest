@@ -174,9 +174,18 @@ def write_ai_task_artifact(
     store: LocalArtifactStore,
     ai_task: AITask,
     payload: ProviderArtifactPayload,
+    metadata_json: dict | None = None,
 ) -> Artifact:
     file_path = f"projects/{ai_task.project_id}/ai-tasks/{ai_task.id}/{payload.file_name}"
     write_result = store.write_bytes(file_path, payload.content)
+    artifact_metadata = metadata_json or {
+        "created_by_component": "AITaskWorker",
+        "source_entity_type": "AITask",
+        "source_entity_id": str(ai_task.id),
+        "safe_to_show": is_ai_task_artifact_safe_to_show(payload),
+        "redaction_applied": False,
+        "description": f"AI task artifact {payload.file_name}",
+    }
     artifact = Artifact(
         project_id=ai_task.project_id,
         owner_entity_type="AITask",
@@ -186,14 +195,7 @@ def write_ai_task_artifact(
         mime_type=payload.mime_type,
         size_bytes=write_result.size_bytes,
         sha256=write_result.sha256,
-        metadata_json={
-            "created_by_component": "AITaskWorker",
-            "source_entity_type": "AITask",
-            "source_entity_id": str(ai_task.id),
-            "safe_to_show": is_ai_task_artifact_safe_to_show(payload),
-            "redaction_applied": False,
-            "description": f"AI task artifact {payload.file_name}",
-        },
+        metadata_json=artifact_metadata,
     )
     session.add(artifact)
     session.flush()

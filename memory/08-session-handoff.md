@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-30 Slice 19 Task 4 完成
+
+本轮完成：
+
+- 完成 Slice 19 Task 4：Attach retrieval evidence to AI task flows。
+- Requirement Review 在 `use_knowledge=true` 时会调用 deterministic local
+  retrieval。
+- 只有实际检索到 snippets 时才记录：
+  - `used_knowledge=true`
+  - `used_context_artifact_ids`
+  - `retrieval_evidence_artifact_id`
+- 新增 `knowledge_retrieval.json` evidence artifact：
+  - owner 为 AITask。
+  - `artifact_type=knowledge_retrieval`。
+  - metadata 包含 `created_by_component=DeterministicKnowledgeAdapter`、
+    `retrieval_mode=deterministic_local`、query terms、result count、retrieved
+    ContextArtifact ids、redaction 状态。
+  - 文件内容包含 query text、query terms、matched terms、scores、snippets、
+    SHA256、ContextArtifact ids、allowed_for_prompt 和 redaction 信息。
+- 保持旧行为：
+  - `use_knowledge=false` 不触发 retrieval。
+  - 显式 `context_artifact_ids` 仍进入 AI task context manifest。
+  - adapter 未配置或无命中时 `used_knowledge=false`，不写
+    `knowledge_retrieval` artifact。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 19 Task 5：Add retrieval evidence
+  frontend display。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py -q
+git diff --check
+```
+
+验证结果：
+
+- `16 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 在 RAG 知识库前端展示 deterministic retrieval evidence。
+- 前端只展示已有 evidence，不新增 vector search、provider runtime config、
+  MCP runtime、RBAC、tenants、permissions、marketplace 或 remote sync 控件。
+
 ## 2026-06-30 Slice 19 Task 3 完成
 
 本轮完成：

@@ -17,6 +17,7 @@ from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
 from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
+from backend.app.modules.extension.models import KnowledgeAdapterConfig
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.requirements.models import RequirementReview, RiskItem
@@ -34,6 +35,7 @@ class ASGIResponse:
 class ASGIClient:
     def __init__(self, asgi_app: Any) -> None:
         self.asgi_app = asgi_app
+        self.artifact_root: Path | None = None
 
     def get(self, path: str) -> ASGIResponse:
         return self.request("GET", path)
@@ -109,7 +111,10 @@ def api_client(tmp_path: Path) -> Iterator[tuple[ASGIClient, sessionmaker[Sessio
     app.dependency_overrides[get_session] = override_get_session
     app.dependency_overrides[get_artifact_store] = override_get_artifact_store
 
-    yield ASGIClient(app), SessionLocal
+    client = ASGIClient(app)
+    client.artifact_root = artifact_root
+
+    yield client, SessionLocal
 
     app.dependency_overrides.clear()
 
@@ -152,20 +157,40 @@ def create_requirement(client: ASGIClient) -> dict[str, Any]:
     return response.json()
 
 
-def create_context_artifact(client: ASGIClient, project_id: str) -> str:
+def create_context_artifact(
+    client: ASGIClient,
+    project_id: str,
+    *,
+    title: str = "coupon-api-notes.md",
+    content: str = "# Coupon API Notes\nCoupons are validated before order submit.",
+) -> str:
     response = client.post(
         "/api/context-artifacts",
         json_body={
             "project_id": project_id,
-            "title": "coupon-api-notes.md",
+            "title": title,
             "artifact_type": "context_markdown",
             "mime_type": "text/markdown",
-            "content": "# Coupon API Notes\nCoupons are validated before order submit.",
-            "source_ref": "manual:coupon-api-notes.md",
+            "content": content,
+            "source_ref": f"manual:{title}",
         },
     )
     assert response.status_code == 201
     return response.json()["id"]
+
+
+def configure_deterministic_adapter(SessionLocal: sessionmaker[Session], project_id: str) -> None:
+    with SessionLocal() as session:
+        session.add(
+            KnowledgeAdapterConfig(
+                project_id=uuid.UUID(project_id),
+                adapter_name="default",
+                status="configured_stub",
+                provider_type="deterministic_local",
+                config_json={"match_mode": "keyword_overlap", "max_results": 5, "max_snippet_chars": 320},
+            ),
+        )
+        session.commit()
 
 
 def test_start_requirement_review_persists_review_risks_and_ai_evidence(
@@ -219,6 +244,208 @@ def test_start_requirement_review_persists_review_risks_and_ai_evidence(
         assert ai_task.context_artifact_ids == [uuid.UUID(context_id)]
         assert session.scalar(select(RequirementReview).where(RequirementReview.requirement_id == uuid.UUID(requirement["id"])))
         assert len(list(session.scalars(select(RiskItem)))) >= 2
+
+
+def test_requirement_review_attaches_deterministic_retrieval_evidence(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    context_id = create_context_artifact(client, requirement["project_id"])
+    configure_deterministic_adapter(SessionLocal, requirement["project_id"])
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": True,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert body["used_knowledge"] is True
+    assert body["used_context_artifact_ids"] == [context_id]
+
+    review_response = client.get(f"/api/requirements/{requirement['id']}/review")
+    assert review_response.status_code == 200
+    review = review_response.json()
+    assert review["used_knowledge"] is True
+    assert review["used_context_artifact_ids"] == [context_id]
+
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert ai_task is not None
+        assert ai_task.output_json["used_knowledge"] is True
+        assert ai_task.output_json["used_context_artifact_ids"] == [context_id]
+        evidence_artifact_id = uuid.UUID(ai_task.output_json["retrieval_evidence_artifact_id"])
+        evidence_artifact = session.get(Artifact, evidence_artifact_id)
+        assert evidence_artifact is not None
+        assert evidence_artifact.owner_entity_type == "AITask"
+        assert evidence_artifact.owner_entity_id == ai_task.id
+        assert evidence_artifact.artifact_type == "knowledge_retrieval"
+        assert evidence_artifact.mime_type == "application/json"
+        assert (
+            evidence_artifact.file_path
+            == f"projects/{ai_task.project_id}/ai-tasks/{ai_task.id}/knowledge_retrieval.json"
+        )
+        assert ai_task.output_json["retrieval_evidence_artifact_id"] == str(evidence_artifact.id)
+        assert evidence_artifact.metadata_json["created_by_component"] == "DeterministicKnowledgeAdapter"
+        assert evidence_artifact.metadata_json["source_entity_type"] == "AITask"
+        assert evidence_artifact.metadata_json["source_entity_id"] == str(ai_task.id)
+        assert evidence_artifact.metadata_json["safe_to_show"] is True
+        assert evidence_artifact.metadata_json["redaction_applied"] is False
+        assert evidence_artifact.metadata_json["retrieval_mode"] == "deterministic_local"
+        assert evidence_artifact.metadata_json["used_context_artifact_ids"] == [context_id]
+
+        assert client.artifact_root is not None
+        evidence = json.loads((client.artifact_root / evidence_artifact.file_path).read_text())
+        assert evidence["retrieval_mode"] == "deterministic_local"
+        assert evidence["query_text"] == requirement["content"]
+        assert "coupon" in evidence["query_terms"]
+        assert evidence["used_knowledge"] is True
+        assert evidence["used_context_artifact_ids"] == [context_id]
+        assert evidence["results"][0]["context_artifact_id"] == context_id
+        assert evidence["results"][0]["title"] == "coupon-api-notes.md"
+        assert evidence["results"][0]["source_ref"] == "manual:coupon-api-notes.md"
+        assert evidence["results"][0]["score"] >= 1
+        assert "coupon" in evidence["results"][0]["matched_terms"]
+        assert "Coupon API Notes" in evidence["results"][0]["snippet"]
+        assert evidence["results"][0]["sha256"].startswith("sha256:")
+        assert evidence["results"][0]["allowed_for_prompt"] is True
+        assert evidence["results"][0]["redaction_applied"] is False
+
+
+def test_requirement_review_merges_explicit_and_retrieved_context_ids(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    explicit_id = create_context_artifact(
+        client,
+        requirement["project_id"],
+        title="shipping-note.md",
+        content="# Shipping Note\nShipping cutoff is 18:00.",
+    )
+    retrieved_id = create_context_artifact(client, requirement["project_id"])
+    configure_deterministic_adapter(SessionLocal, requirement["project_id"])
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": True,
+            "context_artifact_ids": [explicit_id],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert body["used_knowledge"] is True
+    assert body["used_context_artifact_ids"] == [explicit_id, retrieved_id]
+
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert ai_task is not None
+        assert ai_task.context_artifact_ids == [uuid.UUID(explicit_id), uuid.UUID(retrieved_id)]
+        assert ai_task.output_json["used_context_artifact_ids"] == [explicit_id, retrieved_id]
+        evidence_artifact = session.get(Artifact, uuid.UUID(ai_task.output_json["retrieval_evidence_artifact_id"]))
+        assert evidence_artifact is not None
+        assert evidence_artifact.metadata_json["used_context_artifact_ids"] == [retrieved_id]
+
+
+def test_requirement_review_does_not_retrieve_when_use_knowledge_false(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    context_id = create_context_artifact(client, requirement["project_id"])
+    configure_deterministic_adapter(SessionLocal, requirement["project_id"])
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": False,
+            "context_artifact_ids": [context_id],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert body["used_knowledge"] is False
+    assert body["used_context_artifact_ids"] == [context_id]
+
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert ai_task is not None
+        assert ai_task.context_artifact_ids == [uuid.UUID(context_id)]
+        assert ai_task.output_json["used_knowledge"] is False
+        assert ai_task.output_json["used_context_artifact_ids"] == [context_id]
+        assert "retrieval_evidence_artifact_id" not in ai_task.output_json
+        retrieval_artifacts = list(
+            session.scalars(
+                select(Artifact).where(
+                    Artifact.owner_entity_id == ai_task.id,
+                    Artifact.artifact_type == "knowledge_retrieval",
+                ),
+            ),
+        )
+        assert retrieval_artifacts == []
+
+
+def test_requirement_review_keeps_used_knowledge_false_when_adapter_not_configured(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    create_context_artifact(client, requirement["project_id"])
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": True,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert body["used_knowledge"] is False
+    assert body["used_context_artifact_ids"] == []
+
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert ai_task is not None
+        assert ai_task.output_json["used_knowledge"] is False
+        assert ai_task.output_json["used_context_artifact_ids"] == []
+        retrieval_artifacts = list(
+            session.scalars(
+                select(Artifact).where(
+                    Artifact.owner_entity_id == ai_task.id,
+                    Artifact.artifact_type == "knowledge_retrieval",
+                ),
+            ),
+        )
+        assert retrieval_artifacts == []
 
 
 def test_schema_invalid_review_does_not_write_business_tables(

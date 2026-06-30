@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 
 from sqlalchemy import select
@@ -8,6 +9,8 @@ from sqlalchemy.orm import Session
 from backend.app.modules.ai_runtime import service as ai_runtime_service
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
+from backend.app.modules.ai_runtime.providers.base import ProviderArtifactPayload
+from backend.app.modules.extension import service as extension_service
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.projects.models import Module, Project
 from backend.app.modules.requirements.models import Requirement, RequirementReview, RiskItem
@@ -113,6 +116,17 @@ def start_requirement_review(
     requirement = get_requirement(session, requirement_id)
     prompt = get_prompt_version_by_ref(session, data.prompt_version)
     skill = get_skill_version_by_ref(session, data.skill_version)
+    retrieval = None
+    retrieval_context_artifact_ids: list[uuid.UUID] = []
+    if data.use_knowledge:
+        retrieval = extension_service.retrieve_deterministic_knowledge(
+            session=session,
+            store=store,
+            project_id=requirement.project_id,
+            query_text=requirement.content,
+        )
+        retrieval_context_artifact_ids = retrieval.used_context_artifact_ids
+    context_artifact_ids = list(dict.fromkeys([*data.context_artifact_ids, *retrieval_context_artifact_ids]))
     ai_task = AITask(
         project_id=requirement.project_id,
         agent_name="RequirementReviewAgent",
@@ -126,11 +140,12 @@ def start_requirement_review(
             "requirement": requirement.content,
             "requirement_id": str(requirement.id),
             "use_knowledge": data.use_knowledge,
-            "context_artifact_ids": [str(context_id) for context_id in data.context_artifact_ids],
-            "context_manifest": context_manifest(session, requirement.project_id, data.context_artifact_ids),
+            "context_artifact_ids": [str(context_id) for context_id in context_artifact_ids],
+            "context_manifest": context_manifest(session, requirement.project_id, context_artifact_ids),
+            "knowledge_retrieval": retrieval.model_dump(mode="json") if retrieval and retrieval.used_knowledge else None,
             "mock_mode": data.mock_mode,
         },
-        context_artifact_ids=data.context_artifact_ids,
+        context_artifact_ids=context_artifact_ids,
     )
     session.add(ai_task)
     session.commit()
@@ -150,6 +165,8 @@ def start_requirement_review(
     except RequirementReviewSchemaInvalidError:
         mark_review_schema_invalid(session, ai_task)
         raise
+    if retrieval is not None and retrieval.used_knowledge:
+        attach_retrieval_evidence_artifact(session, store, ai_task, retrieval.model_dump(mode="json"), context_artifact_ids)
     review = persist_requirement_review(session, requirement, ai_task, output)
     return ai_task, review
 
@@ -281,6 +298,53 @@ def mark_review_schema_invalid(session: Session, ai_task: AITask) -> None:
         session.add(llm_log)
     session.add(ai_task)
     session.commit()
+
+
+def attach_retrieval_evidence_artifact(
+    session: Session,
+    store: LocalArtifactStore,
+    ai_task: AITask,
+    retrieval_payload: dict,
+    used_context_artifact_ids: list[uuid.UUID],
+) -> Artifact:
+    retrieved_context_artifact_ids = list(retrieval_payload.get("used_context_artifact_ids", []))
+    payload = ProviderArtifactPayload(
+        artifact_type="knowledge_retrieval",
+        file_name="knowledge_retrieval.json",
+        mime_type="application/json",
+        content=json.dumps(retrieval_payload, ensure_ascii=False, sort_keys=True).encode("utf-8"),
+    )
+    artifact = ai_runtime_service.write_ai_task_artifact(
+        session,
+        store,
+        ai_task,
+        payload,
+        metadata_json={
+            "created_by_component": "DeterministicKnowledgeAdapter",
+            "source_entity_type": "AITask",
+            "source_entity_id": str(ai_task.id),
+            "safe_to_show": True,
+            "redaction_applied": any(
+                bool(result.get("redaction_applied", False)) for result in retrieval_payload.get("results", [])
+            ),
+            "description": "Deterministic local knowledge retrieval evidence",
+            "retrieval_mode": "deterministic_local",
+            "query_terms": list(retrieval_payload.get("query_terms", [])),
+            "result_count": len(retrieval_payload.get("results", [])),
+            "used_context_artifact_ids": retrieved_context_artifact_ids,
+        },
+    )
+    output_json = dict(ai_task.output_json)
+    output_json["used_knowledge"] = True
+    output_json["used_context_artifact_ids"] = [str(context_id) for context_id in used_context_artifact_ids]
+    output_json["retrieval_evidence_artifact_id"] = str(artifact.id)
+    ai_task.output_json = output_json
+    session.add(ai_task)
+    session.add(artifact)
+    session.commit()
+    session.refresh(ai_task)
+    session.refresh(artifact)
+    return artifact
 
 
 def persist_requirement_review(

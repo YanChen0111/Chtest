@@ -1,5 +1,45 @@
 # Development Log
 
+## 2026-06-30 Slice 19 Retrieval Evidence On Requirement Review
+
+### Completed
+
+- Attached deterministic local retrieval to requirement review when
+  `use_knowledge=true`.
+- Requirement review now injects retrieved ContextArtifact ids into the AI task
+  context manifest only when snippets are actually retrieved.
+- Added `knowledge_retrieval.json` evidence artifacts owned by AITask with
+  query terms, matched terms, scores, snippets, ContextArtifact ids, SHA256,
+  and redaction/prompt eligibility metadata.
+- AITask output now records `used_knowledge=true`,
+  `used_context_artifact_ids`, and `retrieval_evidence_artifact_id` only when
+  retrieval evidence exists.
+- Preserved `use_knowledge=false` behavior, including explicit
+  `context_artifact_ids`.
+- Added regression coverage for configured-but-disabled retrieval paths,
+  adapter-not-configured paths, mixed explicit/retrieved context ids, and
+  persisted evidence artifact content.
+- Updated `NEXT_AI_TASK.md` to Slice 19 Task 5: retrieval evidence frontend
+  display.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py -q
+git diff --check
+```
+
+Results:
+
+- Deterministic retrieval + requirement review tests: `16 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Display latest deterministic retrieval evidence on the RAG 知识库 frontend
+  without adding vector search, external provider config, MCP runtime, RBAC,
+  tenants, permissions, marketplace, cloud sync, or remote CI provider controls.
+
 ## 2026-06-30 Slice 19 Deterministic Retrieval Service
 
 ### Completed

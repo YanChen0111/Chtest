@@ -53,6 +53,12 @@ class MockLLMProvider:
 
     def _success_output(self, request: LLMProviderRequest) -> dict:
         context_ids = [str(context_id) for context_id in request.context_artifact_ids]
+        knowledge_retrieval = request.input_json.get("knowledge_retrieval")
+        used_knowledge = bool(
+            isinstance(knowledge_retrieval, dict)
+            and knowledge_retrieval.get("used_knowledge")
+            and knowledge_retrieval.get("results"),
+        )
         if request.model_name == "mock-requirement-review":
             return {
                 "overall_score": 82,
@@ -92,7 +98,7 @@ class MockLLMProvider:
                         "suggestion": "覆盖优惠券金额大于订单金额时的金额计算和错误提示",
                     },
                 ],
-                "used_knowledge": False,
+                "used_knowledge": used_knowledge,
                 "used_context_artifact_ids": context_ids,
             }
 
