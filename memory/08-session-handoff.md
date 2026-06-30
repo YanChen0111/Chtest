@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-30 Slice 19 Task 2 完成
+
+本轮完成：
+
+- 完成 Slice 19 Task 2：Define deterministic retrieval contract boundary。
+- 更新 `docs/contracts/01-data-model-contract.md`：
+  - AITask `input_json` / `output_json` 记录 deterministic retrieval 约定。
+  - KnowledgeAdapterConfig `provider_type` 增加 V2
+    `deterministic_local` 受限模式。
+  - Artifact type 增加 `knowledge_retrieval`。
+- 更新 `docs/contracts/02-api-contract.md`：
+  - `use_knowledge=true` 只在 deterministic local retrieval 有证据时允许。
+  - RAG 知识库 surface 可展示 latest retrieval evidence。
+  - KnowledgeAdapter config 可配置本地 deterministic matching 参数。
+- 更新 `docs/contracts/03-state-machines.md`：
+  - retrieval 不新增 AITask 状态，只写 evidence artifact。
+  - `disabled` / `not_configured` 强制 `used_knowledge=false`。
+- 更新 `docs/contracts/04-artifact-contract.md`：
+  - 增加 `knowledge_retrieval.json` 路径和 artifact shape。
+  - 记录 query terms、matched terms、scores、snippets、ContextArtifact ids。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 19 Task 3：Add local
+  KnowledgeAdapter retrieval service。
+
+本轮验证：
+
+```bash
+rg -n "Deterministic|KnowledgeAdapter|ContextArtifact|used_knowledge|retrieval|retrieved" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 新增 deterministic retrieval backend service 和 focused
+  tests。
+- 不要加入 frontend、vector database、embeddings、reranking、background
+  indexing、external RAG provider、MCP runtime、RBAC、tenants、permissions 或
+  marketplace。
+
 ## 2026-06-30 Slice 19 Task 1 完成
 
 本轮完成：

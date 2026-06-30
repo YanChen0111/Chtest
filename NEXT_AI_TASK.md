@@ -10,12 +10,13 @@ V2 Planning.
 
 ## Current Task
 
-Slice 19 Task 2: Define deterministic retrieval contract boundary.
+Slice 19 Task 3: Add local KnowledgeAdapter retrieval service.
 
 ## Product Value Answer
 
-After this task, contracts explicitly define deterministic local
-ContextArtifact retrieval before implementation starts.
+After this task, the backend can deterministically match eligible local
+ContextArtifacts and return bounded retrieval evidence without external RAG
+infrastructure.
 
 ## Must Read
 
@@ -32,6 +33,7 @@ ContextArtifact retrieval before implementation starts.
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-17-extension-surface.md`
 13. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
+14. backend extension module files needed for deterministic retrieval only
 
 ## Do Not Read Unless Needed
 
@@ -46,14 +48,15 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
+backend/app/modules/extension/service.py
+backend/app/modules/extension/schemas.py
+backend/app/modules/extension/*
+backend/app/tests/api/test_deterministic_knowledge_retrieval.py
 ```
 
-Contract-only task. Do not add product code, vector database, embeddings,
+Backend-only task. Add only deterministic local retrieval service behavior and
+focused API/service tests. Do not add frontend, vector database, embeddings,
 reranking, background indexing, external RAG provider calls, MCP runtime, RBAC,
 tenants, permissions, marketplace, cloud sync, release automation, or remote CI
 provider integration.
@@ -61,30 +64,27 @@ provider integration.
 ## Verification Command
 
 ```bash
-rg -n "Deterministic|KnowledgeAdapter|ContextArtifact|used_knowledge|retrieval|retrieved" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q
 git diff --check
 ```
 
-Expected result: deterministic retrieval contract boundaries are visible and
-diff check passes.
+Expected result: deterministic retrieval backend tests and diff check pass.
 
 ## Acceptance
 
-- Contract defines deterministic local retrieval as a KnowledgeAdapter stub.
-- Contract defines retrieved snippet evidence, scores, matched terms, and
-  ContextArtifact ids.
-- Contract explains when `used_knowledge=true` is allowed.
-- Artifact contract defines retrieval evidence artifact shape.
-- Non-goals still exclude vectors, embeddings, reranking, background indexing,
-  external providers, MCP runtime, RBAC, tenants, and permissions.
+- Matches only ContextArtifacts for the same project.
+- Requires `safe_to_show=true` and `allowed_for_prompt=true`.
+- Uses deterministic local term matching with bounded result count.
+- Returns snippet text, score, matched terms, and source ContextArtifact id.
+- Does not create vector indexes, embeddings, reranking jobs, background
+  workers, external provider calls, MCP calls, RBAC, tenants, or permissions.
 
 ## Commit Message
 
 ```text
-docs(v2): define deterministic retrieval contract
+feat(extension): add deterministic knowledge retrieval
 ```
 
 ## Next Task
 
-Start Slice 19 Task 3 only after the deterministic retrieval contract boundary
-is committed.
+Start Slice 19 Task 4 only after the local retrieval service is committed.

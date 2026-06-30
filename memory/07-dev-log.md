@@ -1,5 +1,27 @@
 # Development Log
 
+## 2026-06-30 Slice 19 Deterministic Retrieval Contract Boundary
+
+### Completed
+
+- Updated data, API, state-machine, and artifact contracts for deterministic
+  local knowledge retrieval.
+- Added `provider_type=deterministic_local` as a V2 KnowledgeAdapter stub mode.
+- Added `knowledge_retrieval` artifact contract and evidence shape.
+- Clarified when `used_knowledge=true` is valid.
+- Updated `NEXT_AI_TASK.md` to Slice 19 Task 3: add local retrieval service.
+
+### Verification
+
+```bash
+rg -n "Deterministic|KnowledgeAdapter|ContextArtifact|used_knowledge|retrieval|retrieved" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
+git diff --check
+```
+
+### Next Step
+
+- Implement deterministic local retrieval service with focused backend tests.
+
 ## 2026-06-30 Slice 19 Deterministic Knowledge Retrieval Plan
 
 ### Completed

@@ -507,6 +507,21 @@ Rules:
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
+Deterministic knowledge retrieval rules:
+
+- V2 Slice 19 may store deterministic local retrieval summaries in
+  `input_json` and `output_json`.
+- `input_json` may include `use_knowledge=true`, `knowledge_query_text`,
+  `knowledge_query_terms`, and requested retrieval limits.
+- `output_json` must include `used_knowledge=true` only when retrieved snippets
+  were actually injected into the AI task prompt.
+- `output_json.used_context_artifact_ids` must list the exact ContextArtifact
+  ids used by deterministic retrieval.
+- `output_json.retrieval_evidence_artifact_id` may reference an Artifact with
+  `artifact_type=knowledge_retrieval`.
+- Retrieval evidence must not be inferred from model text alone; it must cite
+  persisted ContextArtifact ids and artifact evidence.
+
 ## 27. LLMCallLog
 
 LLMCallLog records each provider call made inside an AITask. AITask is the workflow-level task; LLMCallLog is the per-model-call audit log.
@@ -630,7 +645,7 @@ configuration state only; it does not perform retrieval.
 | project_id | uuid | yes | none | FK Project |
 | adapter_name | varchar(120) | yes | default | Name inside project |
 | status | KnowledgeAdapterStatus | yes | not_configured | Empty adapter state |
-| provider_type | varchar(80) | yes | none | none, stub |
+| provider_type | varchar(80) | yes | none | none, stub, deterministic_local |
 | config_json | jsonb | yes | {} | Non-secret display/config state |
 | safety_policy_json | jsonb | yes | {} | Prompt eligibility and safety notes |
 | last_checked_at | timestamptz | no | null | Last local validation time |
@@ -649,6 +664,23 @@ V1 KnowledgeAdapter rules:
   content, rank search results, or call external providers.
 - AI task responses must keep `used_knowledge=false` unless a future version
   implements a real KnowledgeAdapter runtime.
+
+V2 deterministic KnowledgeAdapter rules:
+
+- Slice 19 may set `provider_type=deterministic_local` with
+  `status=configured_stub` to enable the deterministic local retrieval stub.
+- `config_json` may include non-secret values such as `match_mode`,
+  `max_results`, `max_snippet_chars`, `min_score`, and `case_sensitive=false`.
+- Retrieval may read only same-project ContextArtifact rows that are safe to
+  show and allowed for prompt use.
+- Retrieval must return deterministic scores, matched terms, bounded snippets,
+  and exact ContextArtifact ids.
+- `used_knowledge=true` is allowed only when this local deterministic stub
+  contributes retrieved snippets to an AI task.
+- Slice 19 still must not create vector indexes, chunking pipelines,
+  embeddings, reranking jobs, external provider calls, MCP runtime calls, RBAC,
+  tenant, permission, marketplace, cloud sync, release, or remote CI/CD
+  behavior.
 
 ## 32. ToolInvocation
 
@@ -679,7 +711,7 @@ V1 KnowledgeAdapter rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, knowledge_retrieval |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -694,6 +726,14 @@ V1 ContextArtifact rule:
 - AITask rows that use context must copy the selected ids into `context_artifact_ids`.
 - A prompt input artifact must include `context_manifest.json` with the exact context artifact ids, hashes, titles, MIME types, and redaction flags used for that AI task.
 - Artifact owner fields must never be null for ContextArtifact.
+
+Deterministic retrieval Artifact rule:
+
+- Slice 19 retrieval evidence uses `artifact_type=knowledge_retrieval`.
+- `owner_entity_type=AITask` and `owner_entity_id=ai_task_id`.
+- `metadata_json` must include `created_by_component=DeterministicKnowledgeAdapter`,
+  `retrieval_mode=deterministic_local`, `query_terms`, `result_count`,
+  `used_context_artifact_ids`, and redaction status.
 
 ## 34. AutomationQualityMetric
 

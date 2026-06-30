@@ -28,6 +28,7 @@ Docker 环境中挂载为 volume：
 artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   input.json
   context_manifest.json
+  knowledge_retrieval.json
   raw_output.json
   parsed_output.json
   schema_validation.json
@@ -206,6 +207,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | context_json | application/json | 轻量上下文 JSON、fixture |
 | context_yaml | application/yaml | 轻量上下文 YAML |
 | context_openapi | application/yaml or application/json | OpenAPI 片段或文件 |
+| knowledge_retrieval | application/json | 确定性本地知识检索证据 |
 
 Playwright artifact rules:
 
@@ -264,6 +266,41 @@ ContextArtifact metadata_json must also include:
   "allowed_for_prompt": true
 }
 ```
+
+Knowledge retrieval artifact content must include:
+
+```json
+{
+  "adapter_name": "default",
+  "retrieval_mode": "deterministic_local",
+  "query_text": "expired coupon validation",
+  "query_terms": ["expired", "coupon", "validation"],
+  "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+  "results": [
+    {
+      "context_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "title": "coupon-api-notes.md",
+      "source_ref": "manual:coupon-api-notes.md",
+      "score": 2,
+      "matched_terms": ["expired", "coupon"],
+      "snippet": "Expired coupons cannot be applied during checkout.",
+      "sha256": "sha256:example",
+      "redaction_applied": false,
+      "allowed_for_prompt": true
+    }
+  ]
+}
+```
+
+Knowledge retrieval artifact rules:
+
+- `artifact_type=knowledge_retrieval`.
+- `owner_entity_type=AITask` and `owner_entity_id=ai_task_id`.
+- `results` must cite persisted ContextArtifact ids; free-floating snippets are
+  not valid evidence.
+- Snippets must be bounded and safe to show.
+- Secret-like values must be redacted before persistence.
+- Scores must be deterministic for the same input artifacts and query terms.
 
 ## 6. Evidence Manifest
 
@@ -333,9 +370,13 @@ Extension Surface artifact rules:
 - If an AI task uses project context, its prompt input artifact must include
   `context_manifest.json` with exact ContextArtifact ids and hashes.
 - AI tasks must keep `used_knowledge=false` while KnowledgeAdapter is
-  `not_configured`, `disabled`, or `configured_stub`.
+  `not_configured`, `disabled`, or V1 `configured_stub`.
+- V2 Slice 19 may create `knowledge_retrieval.json` only for deterministic
+  local retrieval from eligible ContextArtifacts.
 - V1 must not create vector index, embedding, chunk, reranking, MCP transport, or
   external provider response artifacts.
+- Slice 19 still must not create vector index, embedding, chunk, reranking, MCP
+  transport, or external provider response artifacts.
 
 ## 8. 保留与清理
 

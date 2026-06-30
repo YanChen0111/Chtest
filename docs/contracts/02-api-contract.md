@@ -19,7 +19,10 @@ Context rules:
 - `use_knowledge=false` only means external RAG/KnowledgeAdapter is not used.
 - `context_artifact_ids` are still injected into prompts when provided, even when `use_knowledge=false`.
 - AI responses that used local context must return `used_context_artifact_ids`.
-- AI responses that used external RAG/KnowledgeAdapter must return `used_knowledge=true`; otherwise return `used_knowledge=false`.
+- AI responses that used deterministic local KnowledgeAdapter retrieval must
+  return `used_knowledge=true`; otherwise return `used_knowledge=false`.
+- `used_knowledge=true` must be supported by retrieval evidence, not by model
+  text alone.
 
 Extension surface rules:
 
@@ -31,6 +34,19 @@ Extension surface rules:
 - V1 APIs must not add vector indexing, embeddings, reranking, external
   KnowledgeAdapter calls, MCP server/client runtime calls, RBAC, tenants, or
   permissions.
+
+Deterministic retrieval rules:
+
+- V2 Slice 19 may expose deterministic local KnowledgeAdapter retrieval evidence
+  through existing AI task and RAG 知识库 surfaces.
+- Deterministic retrieval reads only same-project ContextArtifacts that are safe
+  to show and allowed for prompt use.
+- Retrieval evidence must include ContextArtifact ids, snippets, scores, matched
+  terms, and query terms.
+- APIs must not expose vector search controls, embedding configuration,
+  external provider configuration, reranking controls, MCP runtime controls,
+  RBAC, tenants, permissions, marketplace, cloud sync, or remote CI/CD provider
+  controls.
 
 Newman execution rules:
 
@@ -330,8 +346,8 @@ Response 200:
 
 The RAG 知识库 surface is backed by ContextArtifacts and KnowledgeAdapterConfig.
 It is used to show project knowledge inventory, safety metadata, prompt
-eligibility, and evidence usage. It must not perform semantic search or external
-retrieval.
+eligibility, and evidence usage. V2 Slice 19 may also show deterministic local
+retrieval evidence. It must not perform semantic search or external retrieval.
 
 Response 200:
 
@@ -340,9 +356,10 @@ Response 200:
   "project_id": "00000000-0000-0000-0000-000000000101",
   "knowledge_adapter": {
     "adapter_name": "default",
-    "status": "not_configured",
-    "provider_type": "none",
-    "used_knowledge": false
+    "status": "configured_stub",
+    "provider_type": "deterministic_local",
+    "used_knowledge": true,
+    "retrieval_mode": "deterministic_local"
   },
   "context_artifacts": [
     {
@@ -355,7 +372,19 @@ Response 200:
       "redaction_applied": false,
       "allowed_for_prompt": true,
       "usage_count": 2,
-      "latest_used_at": "2026-06-18T10:00:00Z"
+      "latest_used_at": "2026-06-18T10:00:00Z",
+      "retrieved_count": 1,
+      "latest_retrieved_at": "2026-06-30T10:00:00Z"
+    }
+  ],
+  "latest_retrievals": [
+    {
+      "ai_task_id": "00000000-0000-0000-0000-000000000501",
+      "retrieval_evidence_artifact_id": "00000000-0000-0000-0000-000000000391",
+      "query_terms": ["coupon", "expired"],
+      "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+      "snippet_count": 1,
+      "created_at": "2026-06-30T10:00:00Z"
     }
   ],
   "non_goals": [
@@ -372,9 +401,13 @@ Hard rules:
 - `context_artifacts` are Artifact rows with `owner_entity_type=Project`.
 - `usage_count` and `latest_used_at` are derived from AITask
   `context_artifact_ids` or prompt input manifest evidence when available.
-- `knowledge_adapter.used_knowledge` must be `false` in V1.
+- `retrieved_count`, `latest_retrieved_at`, and `latest_retrievals` are derived
+  from `knowledge_retrieval` artifacts and AITask output metadata when
+  available.
+- `knowledge_adapter.used_knowledge` must be `false` in V1. In V2 Slice 19 it
+  may be `true` only when deterministic local retrieval evidence exists.
 - The endpoint must not create vector indexes, chunk content, call embedding
-  models, rank results, or call external providers.
+  models, semantically rank results, or call external providers.
 
 ### 2.13 Get KnowledgeAdapter Config
 
@@ -405,9 +438,13 @@ Request:
 {
   "adapter_name": "default",
   "status": "configured_stub",
-  "provider_type": "stub",
+  "provider_type": "deterministic_local",
   "config": {
-    "display_name": "Future company knowledge adapter"
+    "display_name": "Local deterministic knowledge adapter",
+    "match_mode": "keyword_overlap",
+    "max_results": 5,
+    "max_snippet_chars": 320,
+    "min_score": 1
   },
   "safety_policy": {
     "allowed_for_prompt": false
@@ -421,10 +458,13 @@ Response 200 returns KnowledgeAdapter read model.
 Hard rules:
 
 - `provider_type` must be `none` or `stub` in V1.
+- `provider_type=deterministic_local` is allowed only for the V2 Slice 19 local
+  retrieval stub.
 - Secret-like fields, remote provider URLs, vector DB settings, embedding model
   settings, OAuth state, and MCP transport settings are rejected.
-- Updating KnowledgeAdapterConfig must not change AITask behavior or set
-  `used_knowledge=true`.
+- Updating KnowledgeAdapterConfig alone must not set `used_knowledge=true`.
+  `used_knowledge=true` requires a later AI task to produce deterministic
+  retrieval evidence.
 
 ### 2.15 List MCP-ready ToolDefinitions
 

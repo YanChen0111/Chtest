@@ -28,6 +28,20 @@ pending/running/waiting_review/waiting_approval -> cancelled
 
 规则：schema 校验失败不能写业务主表，必须保存 raw output artifact。
 
+Deterministic retrieval 规则：
+
+- `use_knowledge=true` may run deterministic local retrieval before or during
+  `pending -> running`.
+- Retrieval success does not add a new AITask status; it is recorded as
+  `knowledge_retrieval` artifact evidence and AITask output metadata.
+- Retrieval failure may continue with `used_knowledge=false` only when the
+  workflow explicitly allows fallback and records the retrieval error evidence.
+- `used_knowledge=true` is invalid without retrieved snippets and exact
+  `used_context_artifact_ids`.
+- Deterministic retrieval must not enqueue background indexing, embedding,
+  reranking, external provider, MCP runtime, RBAC, tenant, or permission
+  behavior.
+
 ## 3. GeneratedCaseCandidate 状态机
 
 ```text
@@ -182,9 +196,18 @@ disabled -> not_configured
 规则：
 
 - KnowledgeAdapterConfig 状态变化只影响配置展示，不触发 retrieval。
-- `configured_stub` 仍然必须返回 `used_knowledge=false`。
+- V1 `configured_stub` 仍然必须返回 `used_knowledge=false`。
 - 状态机不得创建 vector index、embedding、reranking job、external provider
   call、MCP runtime call、RBAC、tenant 或 permission 行为。
+
+V2 deterministic retrieval 规则：
+
+- Slice 19 may use `configured_stub` with `provider_type=deterministic_local`
+  as a local retrieval stub.
+- Configuration changes still do not trigger retrieval by themselves.
+- Retrieval is scoped to an AI task invocation and writes evidence artifacts;
+  it does not create a long-running adapter state transition.
+- `disabled` and `not_configured` always force `used_knowledge=false`.
 
 ## 8. TestRun 状态机
 
