@@ -10,13 +10,13 @@ Slice 17: Extension Surface.
 
 ## Current Task
 
-Task 6: Add RAG 知识库 frontend shell.
+Task 7: Add Extension Surface golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest has a light workbench-style RAG 知识库 frontend shell
-that displays ContextArtifacts, KnowledgeAdapter state, and MCP-ready
-ToolDefinition readiness without runtime provider controls.
+After this task, Chtest has a golden smoke proving ContextArtifact project
+knowledge, empty KnowledgeAdapter state, and MCP-ready ToolDefinition schema
+work together without hidden RAG/MCP runtime infrastructure.
 
 ## Must Read
 
@@ -52,39 +52,38 @@ frontend/src/api/extension.ts
 frontend/src/stores/extension.ts
 frontend/src/views/extension/KnowledgeBaseView.vue
 frontend/src/views/extension/KnowledgeBaseView.spec.ts
-navigation files needed to expose the page
+backend/app/tests/golden/test_extension_surface_golden.py
+docs/fixtures/06-extension-surface-golden.md
 ```
 
-Frontend shell task. Do not add RAG runtime, vector indexing, embeddings,
+Golden smoke task. Do not add RAG runtime, vector indexing, embeddings,
 reranking, MCP runtime dependency, RBAC, tenants, permissions, marketplace, or
 cloud sync controls.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_extension_surface_golden.py -q
 ```
 
-Expected result: frontend tests pass.
+Expected result: Extension Surface golden smoke passes.
 
 ## Acceptance
 
-- Uses a light workbench UI aligned with the final Chtest frontend direction.
-- Shows ContextArtifact inventory, safety metadata, prompt eligibility, and AI
-  usage references.
-- Shows KnowledgeAdapter configuration as empty/not configured state.
-- Shows MCP-ready ToolDefinition schema/readiness without executable MCP
-  controls.
-- Does not add RBAC, tenant, marketplace, cloud sync, vector search, or runtime
-  provider controls.
-- Updates handoff and sets the next task to Extension Surface golden smoke.
+- Creates or references ContextArtifacts as project knowledge.
+- Runs an AI task that records `used_context_artifact_ids`.
+- Confirms `used_knowledge=false` while KnowledgeAdapter remains empty.
+- Confirms ToolDefinition schema metadata is visible but no MCP runtime executes.
+- Confirms no vector/RAG/MCP/RBAC/tenant/permission tables or dependencies are
+  introduced.
+- Updates handoff and sets the next task to Slice 17 completion gate.
 
 ## Commit Message
 
 ```text
-feat(frontend): add knowledge base shell
+test(extension): add extension surface golden smoke
 ```
 
 ## Next Task
 
-Slice 17 Task 7: Add Extension Surface golden smoke.
+Slice 17 completion gate.

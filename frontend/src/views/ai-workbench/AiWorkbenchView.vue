@@ -2,7 +2,7 @@
   <section class="ai-workbench-page" aria-labelledby="ai-workbench-title">
     <div class="workbench-heading">
       <div>
-        <p class="eyebrow">Evidence Loop</p>
+        <p class="eyebrow">证据闭环</p>
         <h2 id="ai-workbench-title">AI 工作台</h2>
         <p>查看最近 AI 任务、上下文使用、工件安全标记和大模型调用日志，先确认状态再进入评审动作。</p>
       </div>
@@ -59,18 +59,18 @@
         <a-spin :loading="store.loadingDetail">
           <template v-if="store.selectedTask">
             <a-descriptions :column="2" bordered size="small">
-              <a-descriptions-item label="Agent">{{ store.selectedTask.agent_name }}</a-descriptions-item>
+              <a-descriptions-item label="智能体">{{ readableAgentName(store.selectedTask.agent_name) }}</a-descriptions-item>
               <a-descriptions-item label="状态">
                 <a-tag :color="statusColor(store.selectedTask.status)">
                   {{ statusLabel(store.selectedTask.status) }}
                 </a-tag>
               </a-descriptions-item>
-              <a-descriptions-item label="Prompt">{{ store.selectedTask.prompt_version_id }}</a-descriptions-item>
-              <a-descriptions-item label="Skill">{{ store.selectedTask.skill_version_id }}</a-descriptions-item>
+              <a-descriptions-item label="提示词版本">{{ store.selectedTask.prompt_version_id }}</a-descriptions-item>
+              <a-descriptions-item label="技能版本">{{ store.selectedTask.skill_version_id }}</a-descriptions-item>
               <a-descriptions-item label="模型">
-                {{ store.selectedTask.model_provider }} / {{ store.selectedTask.model_name }}
+                {{ store.selectedTask.model_provider }} / {{ readableModelName(store.selectedTask.model_name) }}
               </a-descriptions-item>
-              <a-descriptions-item label="Token">
+              <a-descriptions-item label="令牌用量">
                 {{ compactJson(store.selectedTask.token_usage) }}
               </a-descriptions-item>
               <a-descriptions-item label="上下文工件" :span="2">
@@ -134,16 +134,16 @@ const healthLabel = ref('检测中');
 const healthDetail = ref('正在检查后端 /health');
 
 const taskColumns = [
-  { title: 'Agent', dataIndex: 'agent_name' },
-  { title: '任务类型', dataIndex: 'task_type' },
-  { title: '状态', slotName: 'status' },
-  { title: '模型', dataIndex: 'model_name' },
-  { title: '上下文数', slotName: 'contextCount' },
+  { title: '智能体', dataIndex: 'agentLabel', width: 220 },
+  { title: '任务类型', dataIndex: 'taskTypeLabel', width: 180 },
+  { title: '状态', slotName: 'status', width: 110 },
+  { title: '模型', dataIndex: 'modelLabel', ellipsis: true, tooltip: true },
+  { title: '上下文数量', slotName: 'contextCount', width: 120 },
 ];
 
 const artifactColumns = [
   { title: '工件类型', dataIndex: 'artifact_type' },
-  { title: 'MIME', dataIndex: 'mime_type' },
+  { title: '文件格式', dataIndex: 'mime_type' },
   { title: '路径', dataIndex: 'file_path' },
   { title: '大小', dataIndex: 'sizeText' },
   { title: 'SHA256', dataIndex: 'sha256' },
@@ -153,12 +153,12 @@ const artifactColumns = [
 
 const llmCallColumns = [
   { title: '序号', dataIndex: 'call_index' },
-  { title: 'Provider', dataIndex: 'provider' },
+  { title: '模型提供方', dataIndex: 'provider' },
   { title: '模型', dataIndex: 'model_name' },
   { title: '状态', slotName: 'status' },
   { title: '响应工件', dataIndex: 'responseArtifactText' },
   { title: '耗时', dataIndex: 'latencyText' },
-  { title: 'Token', dataIndex: 'tokenUsageText' },
+  { title: '令牌用量', dataIndex: 'tokenUsageText' },
 ];
 
 const metrics = computed(() => [
@@ -168,7 +168,14 @@ const metrics = computed(() => [
   { label: '上下文工件', value: String(store.contextArtifactCount) },
 ]);
 
-const taskRows = computed(() => store.tasks);
+const taskRows = computed(() =>
+  store.tasks.map((task) => ({
+    ...task,
+    agentLabel: readableAgentName(task.agent_name),
+    taskTypeLabel: taskTypeLabel(task.task_type),
+    modelLabel: readableModelName(task.model_name),
+  })),
+);
 const artifactRows = computed(
   () =>
     store.selectedTask?.artifacts.map((artifact) => ({
@@ -201,6 +208,38 @@ function statusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
+function taskTypeLabel(taskType: string): string {
+  const labels: Record<string, string> = {
+    requirement_review: '需求评审',
+    case_generation: '用例生成',
+    automation_draft: '自动化草稿',
+    failure_analysis: '失败分析',
+    cicd_change_analysis: '代码变更分析',
+    unit_test_patch: '单测补丁',
+  };
+  return labels[taskType] ?? taskType.replaceAll('_', ' ');
+}
+
+function readableAgentName(agentName: string): string {
+  const labels: Record<string, string> = {
+    RequirementReviewAgent: '需求评审智能体',
+    RiskAgent: '风险分析智能体',
+    CaseGenerationAgent: '用例生成智能体',
+    AutomationDraftAgent: '自动化草稿智能体',
+    ToolExecutionAgent: '工具执行智能体',
+    ReportAgent: '报告智能体',
+    CICDChangeAnalysisAgent: 'CI/CD 变更分析智能体',
+    UnitTestAgent: '单测补丁智能体',
+  };
+  return labels[agentName] ?? agentName;
+}
+
+function readableModelName(modelName: string): string {
+  return modelName
+    .replace(/^mock-/, '模拟模型 · ')
+    .replaceAll('-', ' ');
+}
+
 function statusColor(status: string): string {
   const colors: Record<string, string> = {
     created: 'gray',
@@ -217,8 +256,17 @@ function statusColor(status: string): string {
 
 function compactJson(value: Record<string, unknown>): string {
   return Object.entries(value)
-    .map(([key, rawValue]) => `${key}: ${String(rawValue)}`)
+    .map(([key, rawValue]) => `${tokenLabel(key)}: ${String(rawValue)}`)
     .join(', ');
+}
+
+function tokenLabel(key: string): string {
+  const labels: Record<string, string> = {
+    prompt_tokens: '提示词令牌',
+    completion_tokens: '输出令牌',
+    total_tokens: '总令牌',
+  };
+  return labels[key] ?? key;
 }
 
 function idListText(ids: string[]): string {
@@ -320,13 +368,29 @@ onMounted(() => {
 
 .ai-task-layout {
   display: grid;
-  grid-template-columns: minmax(420px, 0.95fr) minmax(520px, 1.3fr);
+  grid-template-columns: 1fr;
   gap: 16px;
-  align-items: start;
 }
 
 .detail-panel {
   min-width: 0;
+}
+
+:deep(.arco-table-th),
+:deep(.arco-table-td) {
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+:deep(.arco-descriptions-item-label) {
+  min-width: 112px;
+  color: #667085;
+  white-space: nowrap;
+}
+
+:deep(.arco-descriptions-item-value) {
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 .detail-section {
@@ -337,12 +401,6 @@ onMounted(() => {
   margin: 0 0 10px;
   color: #1d2129;
   font-size: 15px;
-}
-
-@media (max-width: 1120px) {
-  .ai-task-layout {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 960px) {

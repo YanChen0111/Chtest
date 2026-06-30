@@ -1,5 +1,64 @@
 # Session Handoff
 
+## 2026-06-30 Slice 17 Task 6 RAG 知识库 Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 17 Task 6：Add RAG 知识库 frontend shell。
+- 新增 `frontend/src/api/extension.ts` 和 `frontend/src/stores/extension.ts`。
+- 新增 `frontend/src/views/extension/KnowledgeBaseView.vue` 与组件测试。
+- 在导航中加入 `RAG 知识库` 页面。
+- 页面展示 ContextArtifact inventory、safe_to_show、allowed_for_prompt、
+  usage_count、KnowledgeAdapter 状态、non-goals 和 MCP-ready ToolDefinition
+  readiness。
+- 按用户验收反馈优化 `AI 工作台`：最近 AI 任务和任务详情改为上下布局，
+  避免左右挤压；将主要英文标签中文化。
+- 同步中文化全局 `Mock Provider`、`Evidence Loop`、
+  `Prompt / Skill 中心` 等可见文案。
+- 未加入 vector search、RAG runtime、MCP runtime、marketplace、cloud sync、
+  RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 17 Task 7：Add Extension Surface
+  golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Frontend：`14 passed`，`17 tests passed`
+- `git diff --check` clean。
+- Web 验收：`http://localhost:5174/` 和 `RAG 知识库` 页面均可打开；
+  AI 工作台已为上下布局。
+
+修改文件：
+
+- `frontend/src/api/extension.ts`
+- `frontend/src/stores/extension.ts`
+- `frontend/src/views/extension/KnowledgeBaseView.vue`
+- `frontend/src/views/extension/KnowledgeBaseView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `frontend/src/styles/global.css`
+- `frontend/src/layouts/WorkbenchLayout.vue`
+- `frontend/src/layouts/WorkbenchLayout.spec.ts`
+- `frontend/src/views/ai-workbench/AiWorkbenchView.vue`
+- `frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- `docs/implementation/slices/slice-17-extension-surface.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 17 Task 7：Add Extension Surface golden
+  smoke。
+- Golden smoke 应证明 ContextArtifact、KnowledgeAdapter empty state、
+  MCP-ready ToolDefinition schema 和 AI task context evidence 串联可用，
+  同时确认没有 RAG/MCP runtime、RBAC、tenants 或 permissions。
+
 ## 2026-06-30 Slice 17 Task 5 MCP-ready Tool Schema 完成
 
 本轮完成：

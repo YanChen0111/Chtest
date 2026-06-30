@@ -58,7 +58,7 @@ without the cost or risk of a real RAG/MCP runtime in V1.
 | Add KnowledgeAdapter empty interface/schema | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | `afffbc9` | no retrieval runtime |
 | Add RAG 知识库 ContextArtifact API shell | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | pending commit | project context management surface |
 | Add MCP-ready ToolDefinition schema metadata | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | pending commit | schema only, no MCP runtime |
-| Add RAG 知识库 frontend shell | planned | `npm --prefix frontend run test -- --run` | - | light workbench UI |
+| Add RAG 知识库 frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | light workbench UI |
 | Add Extension Surface golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_extension_surface_golden.py -q` | - | context -> AI task -> evidence |
 | Slice 17 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 

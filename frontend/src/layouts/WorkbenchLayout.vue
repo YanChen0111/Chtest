@@ -30,7 +30,7 @@
           <h1>{{ currentTitle }}</h1>
         </div>
         <a-space>
-          <a-tag color="blue">Mock Provider</a-tag>
+          <a-tag color="blue">模拟模型提供方</a-tag>
           <a-tag>中文界面</a-tag>
         </a-space>
       </a-layout-header>

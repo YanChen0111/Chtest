@@ -146,11 +146,12 @@ describe('AiWorkbenchView', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain('最近 AI 任务');
-    expect(wrapper.text()).toContain('RequirementReviewAgent');
-    expect(wrapper.text()).toContain('mock-requirement-review');
+    expect(wrapper.text()).toContain('需求评审智能体');
+    expect(wrapper.text()).toContain('模拟模型 · requirement review');
     expect(wrapper.text()).toContain('任务详情');
-    expect(wrapper.text()).toContain('Prompt');
-    expect(wrapper.text()).toContain('Skill');
+    expect(wrapper.text()).toContain('提示词版本');
+    expect(wrapper.text()).toContain('技能版本');
+    expect(wrapper.text()).toContain('令牌用量');
     expect(wrapper.text()).toContain('上下文工件');
     expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000000371');
     expect(wrapper.text()).toContain('工件摘要');
@@ -160,7 +161,7 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.text()).toContain('不可直接展示');
     expect(wrapper.text()).toContain('未脱敏');
     expect(wrapper.text()).toContain('大模型调用日志');
-    expect(wrapper.text()).toContain('prompt_tokens');
+    expect(wrapper.text()).toContain('提示词令牌');
     expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000000901');
     expect(wrapper.text()).toContain('42 ms');
     expect(wrapper.text()).not.toContain('raw content');

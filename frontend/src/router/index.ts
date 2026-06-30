@@ -8,6 +8,7 @@ import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
 import CicdQualityCenterView from '../views/cicd/CicdQualityCenterView.vue';
 import PlaywrightExecutionView from '../views/execution/PlaywrightExecutionView.vue';
 import PytestExecutionView from '../views/execution/PytestExecutionView.vue';
+import KnowledgeBaseView from '../views/extension/KnowledgeBaseView.vue';
 import PromptSkillCenterView from '../views/prompt-skill/PromptSkillCenterView.vue';
 import ReportFailureAnalysisView from '../views/reporting/ReportFailureAnalysisView.vue';
 import RequirementReviewView from '../views/requirements/RequirementReviewView.vue';
@@ -105,7 +106,15 @@ export const router = createRouter({
           name: 'prompt-skill-center',
           component: PromptSkillCenterView,
           meta: {
-            title: 'Prompt / Skill 中心',
+            title: '提示词 / 技能中心',
+          },
+        },
+        {
+          path: 'extension/knowledge-base',
+          name: 'knowledge-base',
+          component: KnowledgeBaseView,
+          meta: {
+            title: 'RAG 知识库',
           },
         },
       ],
