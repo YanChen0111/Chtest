@@ -31,8 +31,8 @@ runtime, RBAC, tenants, or permissions.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add TestRunner Pytest Execution task plan | done | `test -f docs/implementation/slices/slice-12-testrunner-pytest-execution.md && rg -n "TestRunner Pytest Execution|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-12-testrunner-pytest-execution.md` | pending commit | scoped Slice 12 plan |
-| Add TestRun API contract and task boundary | planned | `rg -n "TestRun|POST /api/test-runs|TestResult" docs/contracts/02-api-contract.md docs/implementation/slices/slice-12-testrunner-pytest-execution.md` | - | contract-first execution endpoint shape |
+| Add TestRunner Pytest Execution task plan | done | `test -f docs/implementation/slices/slice-12-testrunner-pytest-execution.md && rg -n "TestRunner Pytest Execution|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-12-testrunner-pytest-execution.md` | `bcd8974` | scoped Slice 12 plan |
+| Add TestRun API contract and task boundary | done | `rg -n "TestRun|POST /api/test-runs|TestResult" docs/contracts/02-api-contract.md docs/implementation/slices/slice-12-testrunner-pytest-execution.md` | pending commit | contract-first execution endpoint shape |
 | Add TestRun and TestResult model/schema | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | - | model/schema only |
 | Add pytest runner adapter | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | - | allowlisted local subprocess, no Playwright |
 | Add TestRun API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | - | create/get run and parsed results |

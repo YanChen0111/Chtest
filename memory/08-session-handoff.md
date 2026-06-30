@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-06-30 Slice 12 Task 2 TestRun API Contract 完成
+
+本轮完成：
+
+- 完成 Slice 12 Task 2：Add TestRun API contract and task boundary。
+- 优化 `docs/contracts/02-api-contract.md` 的 Test Run API 合同，明确
+  `POST /api/test-runs`、`GET /api/test-runs/{id}` 和 TestResult 明细返回。
+- 规定 V1 TestRun 只接受 approved AutomationDraft 或 configured
+  TestCommand 作为执行源，pytest 命令由后端组装或通过 allowlist 验证。
+- 明确 `runner_mode=local_subprocess`、repository readonly、network disabled、
+  runtime/dependency/environment artifacts、stdout/stderr/JUnit artifact metadata。
+- 明确该 API 不创建 reports、QualityGateDecision、CI/CD workflow state、
+  FailureAnalysis、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 12 Task 3：Add TestRun and TestResult
+  model schema。
+
+本轮验证：
+
+```bash
+rg -n "TestRun|POST /api/test-runs|TestResult" docs/contracts/02-api-contract.md docs/implementation/slices/slice-12-testrunner-pytest-execution.md
+```
+
+修改文件：
+
+- `docs/contracts/02-api-contract.md`
+- `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 12 Task 3：Add TestRun and TestResult
+  model schema。
+- 先写 `backend/app/tests/api/test_testrunner_pytest.py` 红灯，再补
+  `backend/app/modules/execution/models.py` 和 `schemas.py`。
+- 当前任务不要加入 subprocess execution。
+
 ## 2026-06-30 Slice 12 Task 1 TestRunner Pytest Execution Task Plan 完成
 
 本轮完成：

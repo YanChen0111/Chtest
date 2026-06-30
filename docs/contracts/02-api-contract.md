@@ -955,6 +955,11 @@ Rules:
 
 ## 6. Test Run APIs
 
+Test Run APIs execute V1 approved pytest work and return evidence records. They
+are local-first and allowlisted: the backend assembles or validates pytest
+commands from an approved AutomationDraft or configured TestCommand. Clients
+must not submit arbitrary shell strings.
+
 ### 6.1 Create Test Run
 
 `POST /api/test-runs`
@@ -966,29 +971,56 @@ Request:
   "project_id": "00000000-0000-0000-0000-000000000101",
   "test_command_id": "00000000-0000-0000-0000-000000000302",
   "automation_draft_id": "00000000-0000-0000-0000-000000001001",
-  "cicd_run_id": null,
-  "reason": "run approved automation draft"
+  "reason": "run approved automation draft",
+  "runner_mode": "local_subprocess"
 }
 ```
+
+Request rules:
+
+- Exactly one execution source is required: approved `automation_draft_id` or
+  configured `test_command_id`.
+- `automation_draft_id` must reference an AutomationDraft with
+  `status=approved` and `target_framework=pytest`.
+- `test_command_id` must reference a configured TestCommand with
+  `command_type=pytest` and passing allowlist validation.
+- `runner_mode` is optional and defaults to `local_subprocess`; V1 does not
+  expose Docker runner selection through this endpoint.
+- `cicd_run_id` is not accepted by this pytest workbench endpoint. CI/CD
+  orchestration stays under `/api/cicd`.
 
 Response 202:
 
 ```json
 {
-  "test_run_id": "00000000-0000-0000-0000-000000001301",
+  "id": "00000000-0000-0000-0000-000000001301",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "automation_draft_id": "00000000-0000-0000-0000-000000001001",
+  "test_command_id": null,
   "tool_invocation_id": "00000000-0000-0000-0000-000000001302",
   "status": "queued",
+  "name": "pytest approved draft",
+  "command": "python -m pytest tests/test_coupon_rule.py -q --junitxml=artifacts/junit.xml",
+  "working_directory": "/Users/yanchen/VscodeProject/sample-app",
   "runner_mode": "local_subprocess",
   "run_workspace": "artifacts/projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/workspace",
   "repository_readonly": true,
   "network_enabled": false,
   "runtime_artifact_ids": ["00000000-0000-0000-0000-000000001201"],
   "dependency_snapshot_artifact_id": "00000000-0000-0000-0000-000000001202",
-  "environment_snapshot_artifact_id": "00000000-0000-0000-0000-000000001203"
+  "environment_snapshot_artifact_id": "00000000-0000-0000-0000-000000001203",
+  "exit_code": null,
+  "duration_ms": null,
+  "parsed_result": {},
+  "test_results": [],
+  "artifacts": []
 }
 ```
 
-The created TestRun must record runner sandbox metadata: `runner_mode`, `run_workspace`, `repository_readonly`, `network_enabled`, `runtime_artifact_ids`, `dependency_snapshot_artifact_id`, and `environment_snapshot_artifact_id`.
+The created TestRun must record runner sandbox metadata: `runner_mode`,
+`run_workspace`, `repository_readonly`, `network_enabled`,
+`runtime_artifact_ids`, `dependency_snapshot_artifact_id`, and
+`environment_snapshot_artifact_id`.
 
 ### 6.2 Get Test Run
 
@@ -999,7 +1031,14 @@ Response 200:
 ```json
 {
   "id": "00000000-0000-0000-0000-000000001301",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "automation_draft_id": "00000000-0000-0000-0000-000000001001",
+  "test_command_id": null,
+  "tool_invocation_id": "00000000-0000-0000-0000-000000001302",
   "status": "passed",
+  "name": "pytest approved draft",
+  "command": "python -m pytest tests/test_coupon_rule.py -q --junitxml=artifacts/junit.xml",
+  "working_directory": "/Users/yanchen/VscodeProject/sample-app",
   "runner_mode": "local_subprocess",
   "run_workspace": "artifacts/projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/workspace",
   "repository_readonly": true,
@@ -1016,7 +1055,20 @@ Response 200:
     "skipped": 0,
     "error": 0
   },
-  "test_results": [],
+  "test_results": [
+    {
+      "id": "00000000-0000-0000-0000-000000001331",
+      "project_id": "00000000-0000-0000-0000-000000000101",
+      "test_run_id": "00000000-0000-0000-0000-000000001301",
+      "test_name": "tests/test_coupon.py::test_expired_coupon",
+      "test_file": "tests/test_coupon.py",
+      "status": "passed",
+      "duration_ms": 123,
+      "failure_message": null,
+      "failure_artifact_ids": [],
+      "metadata": {"classname": "tests.test_coupon"}
+    }
+  ],
   "artifacts": [
     {"artifact_type": "runtime_manifest", "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/runtime_manifest.json"},
     {"artifact_type": "dependency_snapshot", "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001301/dependency_snapshot.json"},
@@ -1025,6 +1077,8 @@ Response 200:
   ]
 }
 ```
+
+Response model: `TestRunRead` with embedded `TestResultRead` items.
 
 ### 6.3 List Test Results
 
@@ -1047,6 +1101,21 @@ Response 200:
   "total": 1
 }
 ```
+
+Contract boundary:
+
+- V1 Test Run APIs execute pytest only through backend-controlled command
+  assembly or configured TestCommand allowlists.
+- The target repository is readonly when possible; generated AutomationDraft
+  code is copied to a Chtest-managed runtime artifact/workspace before
+  execution.
+- Network access is disabled by default and must be represented in
+  `network_enabled`.
+- Runtime manifest, dependency snapshot, environment snapshot, stdout, stderr,
+  and JUnit files are represented as artifact metadata when available.
+- This API does not create reports, QualityGateDecision records, CI/CD workflow
+  state, FailureAnalysis records, RAG runtime calls, MCP runtime dependencies,
+  RBAC, tenants, or permissions.
 
 ## 7. Failure Analysis APIs
 
