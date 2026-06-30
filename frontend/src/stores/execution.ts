@@ -16,7 +16,8 @@ export const useExecutionStore = defineStore('execution', {
     errorMessage: '',
   }),
   actions: {
-    async startRun() {
+    async startRun(options: { runnerMode?: string; reason?: string } = {}) {
+      const runnerMode = options.runnerMode ?? 'local_subprocess';
       this.loading = true;
       this.errorMessage = '';
       try {
@@ -24,11 +25,11 @@ export const useExecutionStore = defineStore('execution', {
           project_id: this.projectId,
           automation_draft_id: this.sourceMode === 'automation_draft' ? this.automationDraftId : null,
           test_command_id: this.sourceMode === 'test_command' ? this.testCommandId : null,
-          reason: 'frontend pytest execution',
-          runner_mode: 'local_subprocess',
+          reason: options.reason ?? 'frontend pytest execution',
+          runner_mode: runnerMode,
         });
       } catch (error) {
-        this.errorMessage = error instanceof Error ? error.message : 'pytest 执行失败';
+        this.errorMessage = error instanceof Error ? error.message : '执行失败';
       } finally {
         this.loading = false;
       }

@@ -1,0 +1,255 @@
+<template>
+  <section class="execution-page" aria-labelledby="playwright-execution-title">
+    <div class="execution-heading">
+      <div>
+        <p class="eyebrow">Playwright Execution</p>
+        <h2 id="playwright-execution-title">Playwright 执行</h2>
+        <p>从已批准 Playwright 草稿或已配置 TestCommand 启动本地 smoke run，并查看 trace 与截图证据。</p>
+      </div>
+      <a-space>
+        <a-tag color="green">playwright_local</a-tag>
+        <a-tag color="blue">trace / screenshot</a-tag>
+      </a-space>
+    </div>
+
+    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+
+    <div class="execution-layout">
+      <a-card class="execution-panel" :bordered="false">
+        <template #title>执行入口</template>
+        <form class="execution-form" @submit.prevent="startRun">
+          <label>
+            <span>Project ID</span>
+            <a-input v-model="store.projectId" />
+          </label>
+          <label>
+            <span>执行来源</span>
+            <a-radio-group v-model="store.sourceMode" type="button">
+              <a-radio value="automation_draft">AutomationDraft</a-radio>
+              <a-radio value="test_command">TestCommand</a-radio>
+            </a-radio-group>
+          </label>
+          <label v-if="store.sourceMode === 'automation_draft'">
+            <span>AutomationDraft ID</span>
+            <a-input v-model="store.automationDraftId" />
+          </label>
+          <label v-else>
+            <span>TestCommand ID</span>
+            <a-input v-model="store.testCommandId" />
+          </label>
+          <a-space wrap>
+            <a-button data-test="start-playwright-run" html-type="submit" type="primary" :loading="store.loading">
+              启动 Playwright
+            </a-button>
+            <a-button data-test="refresh-playwright-run" :disabled="!store.run" :loading="store.loading" @click="refreshRun">
+              刷新结果
+            </a-button>
+          </a-space>
+        </form>
+      </a-card>
+
+      <a-card class="execution-panel execution-result-panel" :bordered="false">
+        <template #title>浏览器证据</template>
+        <a-spin :loading="store.loading">
+          <template v-if="store.run">
+            <a-descriptions :column="2" bordered size="small">
+              <a-descriptions-item label="状态">{{ store.run.status }}</a-descriptions-item>
+              <a-descriptions-item label="退出码">{{ store.run.exit_code ?? '运行中' }}</a-descriptions-item>
+              <a-descriptions-item label="耗时">{{ durationLabel }}</a-descriptions-item>
+              <a-descriptions-item label="Runner">{{ store.run.runner_mode }}</a-descriptions-item>
+              <a-descriptions-item label="网络">{{ store.run.network_enabled ? '开启' : '关闭' }}</a-descriptions-item>
+              <a-descriptions-item label="命令" :span="2">{{ store.run.command }}</a-descriptions-item>
+            </a-descriptions>
+
+            <div class="result-metrics">
+              <div v-for="item in metricItems" :key="item.label" class="metric-tile">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+            </div>
+
+            <section class="evidence-section">
+              <h3>Trace / Screenshot</h3>
+              <a-table
+                :columns="artifactColumns"
+                :data="browserArtifacts"
+                :pagination="false"
+                row-key="id"
+                size="small"
+              />
+            </section>
+
+            <section class="evidence-section">
+              <h3>TestResult</h3>
+              <a-table
+                :columns="resultColumns"
+                :data="store.run.test_results"
+                :pagination="false"
+                row-key="id"
+                size="small"
+              />
+            </section>
+          </template>
+
+          <a-empty v-else description="启动后展示 Playwright 浏览器证据" />
+        </a-spin>
+      </a-card>
+    </div>
+  </section>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+
+import { useExecutionStore } from '../../stores/execution';
+
+const store = useExecutionStore();
+
+const artifactColumns = [
+  { title: '类型', dataIndex: 'artifact_type' },
+  { title: '路径', dataIndex: 'file_path' },
+  { title: '大小', dataIndex: 'size_bytes' },
+];
+
+const resultColumns = [
+  { title: '测试', dataIndex: 'test_name' },
+  { title: '状态', dataIndex: 'status' },
+  { title: '失败信息', dataIndex: 'failure_message' },
+];
+
+const durationLabel = computed(() => {
+  if (!store.run || store.run.duration_ms === null) {
+    return '运行中';
+  }
+  return `${store.run.duration_ms} ms`;
+});
+
+const metricItems = computed(() => {
+  const parsed = store.run?.parsed_result ?? {};
+  return [
+    { label: 'Total', value: parsed.total ?? 0 },
+    { label: 'Passed', value: parsed.passed ?? 0 },
+    { label: 'Failed', value: parsed.failed ?? 0 },
+    { label: 'Skipped', value: parsed.skipped ?? 0 },
+    { label: 'Error', value: parsed.error ?? 0 },
+  ];
+});
+
+const browserArtifacts = computed(() => {
+  return (store.run?.artifacts ?? []).filter((artifact) =>
+    ['playwright_trace', 'screenshot', 'stdout', 'stderr'].includes(artifact.artifact_type),
+  );
+});
+
+function startRun() {
+  void store.startRun({
+    runnerMode: 'playwright_local',
+    reason: 'frontend playwright execution',
+  });
+}
+
+function refreshRun() {
+  void store.refreshRun();
+}
+</script>
+
+<style scoped>
+.execution-page {
+  display: grid;
+  gap: 18px;
+}
+
+.execution-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.execution-heading h2,
+.execution-heading p {
+  margin: 0;
+}
+
+.execution-heading h2 {
+  font-size: 26px;
+}
+
+.execution-heading p:not(.eyebrow) {
+  margin-top: 10px;
+  max-width: 760px;
+  color: #5b6472;
+  line-height: 1.7;
+}
+
+.execution-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.72fr) minmax(0, 1.5fr);
+  gap: 16px;
+}
+
+.execution-panel {
+  border-radius: 8px;
+}
+
+.execution-form {
+  display: grid;
+  gap: 14px;
+}
+
+.execution-form label {
+  display: grid;
+  gap: 7px;
+  color: #344054;
+  font-weight: 700;
+}
+
+.result-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(86px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.metric-tile {
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.metric-tile span,
+.metric-tile strong {
+  display: block;
+}
+
+.metric-tile span {
+  color: #64748b;
+}
+
+.metric-tile strong {
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 22px;
+}
+
+.evidence-section {
+  margin-top: 18px;
+}
+
+.evidence-section h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+@media (max-width: 980px) {
+  .execution-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .result-metrics {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
+</style>

@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-06-30 Slice 13 Task 5 Playwright Execution Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 13 Task 5：Add Playwright execution frontend shell。
+- 扩展 `frontend/src/stores/execution.ts`，支持传入 `runnerMode` 和
+  Playwright reason。
+- 新增 `frontend/src/views/execution/PlaywrightExecutionView.vue`，通过
+  `runner_mode=playwright_local` 启动 Playwright run。
+- 页面展示 status、command、exit_code、duration、runner_mode、
+  parsed_result metrics、trace/screenshot artifacts 和 TestResult rows。
+- 新增 `PlaywrightExecutionView.spec.ts` 覆盖启动、刷新、trace/screenshot
+  证据展示。
+- 接入 `execution/playwright` 路由，并在工作台导航中加入
+  `Playwright 执行`。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 13 Task 6：Add Playwright golden
+  smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Frontend workbench shell tests：`11 passed, 14 tests passed`
+
+修改文件：
+
+- `frontend/src/stores/execution.ts`
+- `frontend/src/views/execution/PlaywrightExecutionView.vue`
+- `frontend/src/views/execution/PlaywrightExecutionView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `docs/implementation/slices/slice-13-playwright-minimal-loop.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 13 Task 6：Add Playwright golden smoke。
+- golden smoke 使用 deterministic fake runner output，不依赖真实浏览器二进制。
+
 ## 2026-06-30 Slice 13 Task 4 Playwright Execution API 完成
 
 本轮完成：

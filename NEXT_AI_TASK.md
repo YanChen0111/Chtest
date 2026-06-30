@@ -10,12 +10,12 @@ Slice 13: Playwright Minimal Loop.
 
 ## Current Task
 
-Task 5: Add Playwright execution frontend shell.
+Task 6: Add Playwright golden smoke.
 
 ## Product Value Answer
 
-After this task, users can start a controlled Playwright run and inspect
-trace/screenshot evidence from the frontend workbench shell.
+After this task, the golden path proves an approved Playwright AutomationDraft
+can execute through the controlled runner and persist browser evidence metadata.
 
 ## Must Read
 
@@ -41,43 +41,35 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-13-playwright-minimal-loop.md
-frontend/src/api/execution.ts
-frontend/src/stores/execution.ts
-frontend/src/views/execution/PlaywrightExecutionView.vue
-frontend/src/views/execution/PlaywrightExecutionView.spec.ts
-frontend/src/router/index.ts
-frontend/src/stores/index.ts
+backend/app/tests/golden/test_playwright_minimal_loop_golden.py
 ```
 
-Do not add low-code automation editing, report generation, CI/CD quality, RAG
-runtime, MCP runtime, RBAC, tenants, or permissions.
+Do not create Report, FailureAnalysis, or QualityGateDecision records.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q
 ```
 
-Expected result: frontend workbench shell tests pass.
+Expected result: golden Playwright minimal smoke passes.
 
 ## Acceptance
 
-- Adds workbench navigation for Playwright minimal execution.
-- Starts a run from approved Playwright AutomationDraft or configured
-  Playwright TestCommand.
-- Shows run status, command, exit code, duration, stdout/stderr artifact
-  references, trace/screenshot references, parsed result summary, and
-  TestResult rows.
-- Does not add low-code automation editing, report generation, CI/CD quality,
-  RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to Playwright golden smoke.
+- Reuses golden reviewed UI case -> approved Playwright AutomationDraft setup.
+- Executes a controlled Playwright smoke command against deterministic fake
+  runner output.
+- Persists TestRun and TestResult records.
+- Captures stdout/stderr plus trace/screenshot artifact metadata.
+- Does not create Report, FailureAnalysis, or QualityGateDecision records.
+- Update handoff and set the next task to Slice 13 completion gate.
 
 ## Commit Message
 
 ```text
-feat(frontend): add playwright execution shell
+test(golden): add playwright minimal smoke
 ```
 
 ## Next Task
 
-Slice 13 Task 6: Add Playwright golden smoke.
+Slice 13 completion gate.

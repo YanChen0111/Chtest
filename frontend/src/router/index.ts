@@ -5,6 +5,7 @@ import AiWorkbenchView from '../views/ai-workbench/AiWorkbenchView.vue';
 import AutomationDraftReviewView from '../views/automation/AutomationDraftReviewView.vue';
 import CaseGenerationReviewView from '../views/cases/CaseGenerationReviewView.vue';
 import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
+import PlaywrightExecutionView from '../views/execution/PlaywrightExecutionView.vue';
 import PytestExecutionView from '../views/execution/PytestExecutionView.vue';
 import PromptSkillCenterView from '../views/prompt-skill/PromptSkillCenterView.vue';
 import RequirementReviewView from '../views/requirements/RequirementReviewView.vue';
@@ -63,6 +64,14 @@ export const router = createRouter({
           component: PytestExecutionView,
           meta: {
             title: '执行中心',
+          },
+        },
+        {
+          path: 'execution/playwright',
+          name: 'playwright-execution-center',
+          component: PlaywrightExecutionView,
+          meta: {
+            title: 'Playwright 执行',
           },
         },
         {
