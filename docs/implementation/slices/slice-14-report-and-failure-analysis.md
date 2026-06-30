@@ -39,8 +39,8 @@ center analytics.
 |---|---|---|---|---|
 | Add Report And Failure Analysis task plan | done | `test -f docs/implementation/slices/slice-14-report-and-failure-analysis.md && rg -n "Report And Failure Analysis|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-14-report-and-failure-analysis.md` | `dcedd23` | scoped Slice 14 plan |
 | Add Report and FailureAnalysis API contract boundary | done | `rg -n "FailureAnalysis|POST /api/test-runs/.*/failure-analysis|POST /api/reports|evidence_manifest" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-14-report-and-failure-analysis.md` | `ee168bc` | contract-first report and analysis shape |
-| Add FailureAnalysis and Report model/schema | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | pending commit | persisted model/schema only |
-| Add FailureAnalysis API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | - | deterministic mock analysis from failed TestRun evidence |
+| Add FailureAnalysis and Report model/schema | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | `f9ebb7a` | persisted model/schema only |
+| Add FailureAnalysis API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | pending commit | deterministic mock analysis from failed TestRun evidence |
 | Add automation execution Report API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q` | - | evidence_manifest + report artifacts |
 | Add Report and FailureAnalysis frontend shell | planned | `npm --prefix frontend run test -- --run` | - | evidence-first report/detail views |
 | Add automation execution report golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_report_failure_analysis_golden.py -q` | - | TestRun -> FailureAnalysis -> Report evidence |

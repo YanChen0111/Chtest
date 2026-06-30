@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-06-30 Slice 14 Task 4 FailureAnalysis API 完成
+
+本轮完成：
+
+- 完成 Slice 14 Task 4：Add FailureAnalysis API。
+- 新增 `backend/app/modules/reporting/service.py`，从 TestRun、
+  TestResult 和 TestRun artifacts 生成 deterministic mock FailureAnalysis。
+- 新增 `backend/app/modules/reporting/router.py` 并在 `backend/app/main.py`
+  挂载 `/api/test-runs/{id}/failure-analysis`。
+- `POST /api/test-runs/{id}/failure-analysis` 会创建 succeeded AITask 和
+  draft FailureAnalysis，不创建 Report 或 repair task。
+- `GET /api/test-runs/{id}/failure-analysis` 返回 evidence-first read model。
+- 缺少 stdout/stderr/TestResult/artifact evidence 时返回
+  `classification=insufficient_evidence`。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 14 Task 5：Add automation execution
+  Report API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q
+```
+
+验证结果：
+
+- FailureAnalysis API focused tests：`6 passed`
+
+修改文件：
+
+- `backend/app/modules/reporting/router.py`
+- `backend/app/modules/reporting/service.py`
+- `backend/app/main.py`
+- `backend/app/tests/api/test_report_failure_analysis.py`
+- `docs/contracts/02-api-contract.md`
+- `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 14 Task 5：Add automation execution Report
+  API。
+- 当前任务不要创建 CI/CD quality reports 或 QualityGateDecision records。
+
 ## 2026-06-30 Slice 14 Task 3 FailureAnalysis/Report Model Schema 完成
 
 本轮完成：

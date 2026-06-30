@@ -1223,7 +1223,7 @@ Response 202:
 {
   "ai_task_id": "00000000-0000-0000-0000-000000001501",
   "failure_analysis_id": "00000000-0000-0000-0000-000000001502",
-  "status": "pending"
+  "status": "draft"
 }
 ```
 

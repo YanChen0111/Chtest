@@ -10,12 +10,12 @@ Slice 14: Report And Failure Analysis.
 
 ## Current Task
 
-Task 4: Add FailureAnalysis API.
+Task 5: Add automation execution Report API.
 
 ## Product Value Answer
 
-After this task, Chtest can create and retrieve deterministic evidence-backed
-FailureAnalysis records for TestRun failures.
+After this task, Chtest can create and retrieve evidence-backed
+automation_execution Report records for TestRun results.
 
 ## Must Read
 
@@ -41,15 +41,13 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-14-report-and-failure-analysis.md
-backend/app/modules/reporting/__init__.py
 backend/app/modules/reporting/router.py
 backend/app/modules/reporting/service.py
 backend/app/modules/reporting/schemas.py
-backend/app/main.py
 backend/app/tests/api/test_report_failure_analysis.py
 ```
 
-Do not create repair tasks or reports in this task.
+Do not create CI/CD quality reports or QualityGateDecision records in this task.
 
 ## Verification Command
 
@@ -57,26 +55,28 @@ Do not create repair tasks or reports in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q
 ```
 
-Expected result: focused FailureAnalysis API tests pass.
+Expected result: focused automation execution Report API tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/test-runs/{id}/failure-analysis`.
-- Adds `GET /api/test-runs/{id}/failure-analysis`.
-- Creates a succeeded AITask with mock FailureAnalysis output.
-- Classifies from available stdout/stderr/TestResult/artifact evidence.
-- Returns `insufficient_evidence` when evidence is missing.
-- Does not create repair tasks or reports.
+- Adds `POST /api/reports`.
+- Adds `GET /api/reports/{id}`.
+- Supports `report_type=automation_execution` with
+  `related_entity_type=TestRun`.
+- Writes report_md/report_json/evidence_manifest artifact metadata.
+- Report conclusion cites TestRun parsed_result, TestResult rows, and
+  artifacts.
+- Does not create CI/CD quality reports or QualityGateDecision records.
 - Do not add CI/CD quality gates, merge/release decisions, RAG runtime, MCP
   runtime, RBAC, tenants, permissions, or broad report analytics.
-- Update handoff and set the next task to automation execution Report API.
+- Update handoff and set the next task to Report and FailureAnalysis frontend shell.
 
 ## Commit Message
 
 ```text
-feat(reporting): add failure analysis api
+feat(reporting): add automation execution report api
 ```
 
 ## Next Task
 
-Slice 14 Task 5: Add automation execution Report API.
+Slice 14 Task 6: Add Report and FailureAnalysis frontend shell.
