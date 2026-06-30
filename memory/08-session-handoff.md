@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-06-30 Slice 09 Task 3 Case Metrics API 完成
+
+本轮完成：
+
+- 完成 Slice 09 Task 3：新增 Case Metrics API。
+- 新增 `GET /api/case-generation/tasks/{generation_task_id}/metrics`，返回 batch-level case metrics。
+- API 复用 Task 2 的 `calculate_case_metrics`，不新增 metric table。
+- 未加入 frontend、Test Case Library、AutomationDraft、执行、reports、CI/CD、RAG runtime 或 MCP runtime。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 09 Task 4：Add Case Metrics frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_case_metrics.py -q
+git diff --check
+```
+
+验证结果：
+
+- Case Metrics focused test：`4 passed`
+- Case Generation / Case Review / Case Metrics regression：`12 passed`
+- `git diff --check` 无输出。
+
+修改文件：
+
+- `backend/app/modules/cases/router.py`
+- `backend/app/tests/api/test_case_metrics.py`
+- `docs/implementation/slices/slice-09-case-metrics.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 09 Task 4：Add Case Metrics frontend shell。
+- 验证命令：`npm --prefix frontend run test -- --run`。
+
 ## 2026-06-29 Slice 09 Task 2 Case Metrics Backend Calculation 完成
 
 本轮完成：

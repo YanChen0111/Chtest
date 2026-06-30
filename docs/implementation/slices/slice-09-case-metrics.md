@@ -32,8 +32,8 @@ reports, CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add Case Metrics backend calculation | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q` | pending commit | generated_count, approved_count, rejected_count, acceptance_rate, edit_rate, review_progress |
-| Add Case Metrics API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q` | - | batch endpoint for CaseGenerationTask metrics |
+| Add Case Metrics backend calculation | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q` | `470fa23` | generated_count, approved_count, rejected_count, acceptance_rate, edit_rate, review_progress |
+| Add Case Metrics API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q` | pending commit | batch endpoint for CaseGenerationTask metrics |
 | Add Case Metrics frontend shell | planned | `npm --prefix frontend run test -- --run` | - | metric strip and review progress for generated batch |
 | Add Case Metrics golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case_metrics.py -q` | - | fixture-aligned metric assertions |
 
