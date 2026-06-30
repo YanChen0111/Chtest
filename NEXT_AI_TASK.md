@@ -10,12 +10,12 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 1: Add UnitTestPatch And Regression task plan.
+Task 2: Add UnitTestPatch and regression contract boundary.
 
 ## Product Value Answer
 
-After this task, Slice 16 has a scoped implementation plan for UnitTestPatch,
-PatchScopeGate, pytest regression, and QualityGateDecision evidence.
+After this task, the UnitTestPatch and regression contracts are narrowed to the
+Slice 16 review-gated local workflow before implementation.
 
 ## Must Read
 
@@ -40,38 +40,42 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-NEXT_AI_TASK.md
-memory/08-session-handoff.md
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-This is a planning-only task. Do not add product code.
+This is a contract/documentation task. Do not add product code.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-16-unit-test-patch-regression.md && rg -n "UnitTestPatch|PatchScopeGate|Verification Command|Non-goals" docs/implementation/slices/slice-16-unit-test-patch-regression.md
+rg -n "UnitTestPatch|PatchScopeGate|QualityGateDecision|run-new-tests|run-regression" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Expected result: Slice 16 task plan exists and contains scoped task table,
-verification commands, and non-goals.
+Expected result: contracts and Slice 16 plan describe review gates, scope gate,
+test/regression evidence, and non-goals.
 
 ## Acceptance
 
-- Creates `docs/implementation/slices/slice-16-unit-test-patch-regression.md`.
-- Splits Slice 16 into small contract/model/API/frontend/golden/completion tasks.
-- Scope covers UnitTestPatch, PatchScopeGate, pytest regression, and
-  QualityGateDecision evidence.
-- Explicitly excludes merge/release actions, remote CI provider integration,
-  RAG runtime, MCP runtime, RBAC, tenants, and permissions.
-- Updates handoff and sets the next task to Slice 16 contract boundary.
+- Contract requires UnitTestPatch to be review-gated.
+- Contract requires PatchScopeGate to reject non-test path modifications.
+- Contract defines new-test and regression TestRun evidence.
+- Contract defines QualityGateDecision `passed`, `failed`, and `needs_review`
+  evidence requirements.
+- Contract excludes merge, push, release, deployment, remote CI provider
+  integration, RAG runtime, MCP runtime, RBAC, tenants, and permissions.
+- Updates handoff and sets the next task to UnitTestPatch/QualityGateDecision
+  model/schema.
 
 ## Commit Message
 
 ```text
-docs(cicd): add unit test patch task plan
+docs(cicd): define unit test patch boundary
 ```
 
 ## Next Task
 
-Slice 16 Task 2: Add UnitTestPatch and regression contract boundary.
+Slice 16 Task 3: Add UnitTestPatch and QualityGateDecision model/schema.

@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 1 UnitTestPatch/Regression Task Plan 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 1：Add UnitTestPatch And Regression task plan。
+- 新增 `docs/implementation/slices/slice-16-unit-test-patch-regression.md`。
+- 将 Slice 16 拆为 contract boundary、UnitTestPatch/QualityGateDecision
+  model/schema、PatchScopeGate、patch generation/review、patch apply、
+  new-test/regression API、QualityGateDecision API、CI/CD quality report API、
+  frontend shell、golden smoke、completion gate。
+- 明确 Slice 16 覆盖 review-gated UnitTestPatch、PatchScopeGate、pytest
+  regression、QualityGateDecision 和 CI/CD quality report evidence。
+- 明确不加入 merge/push/release/deployment、remote CI provider integration、
+  RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 2：Add UnitTestPatch and
+  regression contract boundary。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-16-unit-test-patch-regression.md && rg -n "UnitTestPatch|PatchScopeGate|Verification Command|Non-goals" docs/implementation/slices/slice-16-unit-test-patch-regression.md
+```
+
+修改文件：
+
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 2：Add UnitTestPatch and regression
+  contract boundary。
+- 这是 contract/documentation 任务，不要直接改产品代码。
+
 ## 2026-06-30 Slice 15 Completion Gate 完成
 
 本轮完成：
