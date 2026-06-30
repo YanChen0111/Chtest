@@ -5,6 +5,7 @@ export interface KnowledgeAdapterRead {
   readonly adapter_name: string;
   readonly status: string;
   readonly provider_type: string;
+  readonly retrieval_mode?: string;
   readonly config: Record<string, unknown>;
   readonly safety_policy: Record<string, unknown>;
   readonly last_checked_at: string | null;
@@ -23,12 +24,37 @@ export interface KnowledgeBaseContextArtifactRead {
   readonly allowed_for_prompt: boolean;
   readonly usage_count: number;
   readonly latest_used_at: string | null;
+  readonly retrieved_count?: number;
+  readonly latest_retrieved_at?: string | null;
+}
+
+export interface KnowledgeRetrievalResultRead {
+  readonly context_artifact_id: string;
+  readonly title: string;
+  readonly source_ref: string;
+  readonly score: number;
+  readonly matched_terms: string[];
+  readonly snippet: string;
+  readonly sha256: string;
+  readonly redaction_applied: boolean;
+  readonly allowed_for_prompt: boolean;
+}
+
+export interface KnowledgeRetrievalSummaryRead {
+  readonly ai_task_id: string;
+  readonly retrieval_evidence_artifact_id: string;
+  readonly query_terms: string[];
+  readonly used_context_artifact_ids: string[];
+  readonly snippet_count: number;
+  readonly created_at: string;
+  readonly results?: KnowledgeRetrievalResultRead[];
 }
 
 export interface KnowledgeBaseRead {
   readonly project_id: string;
   readonly knowledge_adapter: KnowledgeAdapterRead;
   readonly context_artifacts: KnowledgeBaseContextArtifactRead[];
+  readonly latest_retrievals?: KnowledgeRetrievalSummaryRead[];
   readonly non_goals: string[];
 }
 

@@ -1,5 +1,41 @@
 # Development Log
 
+## 2026-06-30 Slice 19 Retrieval Evidence Frontend Display
+
+### Completed
+
+- RAG 知识库 frontend now displays deterministic retrieval evidence.
+- Added latest retrieval summary types in the frontend extension API.
+- Added store getter for latest retrievals.
+- KnowledgeBaseView now shows:
+  - retrieval evidence count;
+  - KnowledgeAdapter retrieval mode;
+  - ContextArtifact retrieved count and latest retrieved time;
+  - latest retrieval query terms, matched terms, scores, snippets, and source
+    ContextArtifact titles.
+- Added empty state for pages without retrieval evidence.
+- Added a narrow backend extension surface derivation so `/knowledge-base`
+  returns `retrieved_count`, `latest_retrieved_at`, and `latest_retrievals`
+  from `knowledge_retrieval` artifacts.
+
+### Verification
+
+```bash
+npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q
+git diff --check
+```
+
+Results:
+
+- Frontend suite: `15` files passed, `19` tests passed.
+- Extension + deterministic retrieval API tests: `12 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Add deterministic retrieval golden smoke fixture and test.
+
 ## 2026-06-30 Slice 19 Retrieval Evidence On Requirement Review
 
 ### Completed

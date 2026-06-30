@@ -12,6 +12,7 @@ class KnowledgeAdapterRead(BaseModel):
     adapter_name: str
     status: str
     provider_type: str
+    retrieval_mode: str | None = None
     config: dict[str, Any] = Field(default_factory=dict)
     safety_policy: dict[str, Any] = Field(default_factory=dict)
     last_checked_at: datetime | None = None
@@ -68,12 +69,37 @@ class KnowledgeBaseContextArtifactRead(BaseModel):
     allowed_for_prompt: bool
     usage_count: int = 0
     latest_used_at: datetime | None = None
+    retrieved_count: int = 0
+    latest_retrieved_at: datetime | None = None
+
+
+class KnowledgeBaseRetrievalResultRead(BaseModel):
+    context_artifact_id: uuid.UUID
+    title: str
+    source_ref: str
+    score: int
+    matched_terms: list[str] = Field(default_factory=list)
+    snippet: str
+    sha256: str
+    redaction_applied: bool
+    allowed_for_prompt: bool
+
+
+class KnowledgeBaseLatestRetrievalRead(BaseModel):
+    ai_task_id: uuid.UUID
+    retrieval_evidence_artifact_id: uuid.UUID
+    query_terms: list[str] = Field(default_factory=list)
+    used_context_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    snippet_count: int
+    created_at: datetime
+    results: list[KnowledgeBaseRetrievalResultRead] = Field(default_factory=list)
 
 
 class KnowledgeBaseRead(BaseModel):
     project_id: uuid.UUID
     knowledge_adapter: KnowledgeAdapterRead
     context_artifacts: list[KnowledgeBaseContextArtifactRead] = Field(default_factory=list)
+    latest_retrievals: list[KnowledgeBaseLatestRetrievalRead] = Field(default_factory=list)
     non_goals: list[str] = Field(default_factory=list)
 
 

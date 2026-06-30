@@ -216,7 +216,7 @@ body {
 
 .prompt-skill-metrics,
 .knowledge-metrics {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
 .prompt-skill-metrics span,
@@ -281,6 +281,73 @@ body {
 .adapter-state strong {
   margin-top: 4px;
   font-size: 22px;
+}
+
+.muted-label {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.retrieval-panel {
+  min-width: 0;
+}
+
+.retrieval-list {
+  display: grid;
+  gap: 12px;
+}
+
+.retrieval-item,
+.retrieval-result {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dde3ee;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.retrieval-item__header,
+.retrieval-result__meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.retrieval-item__header strong,
+.retrieval-result__meta strong {
+  overflow-wrap: anywhere;
+}
+
+.retrieval-terms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.retrieval-terms span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.retrieval-results {
+  display: grid;
+  gap: 10px;
+}
+
+.retrieval-result {
+  background: #ffffff;
+}
+
+.retrieval-result p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .non-goal-list {

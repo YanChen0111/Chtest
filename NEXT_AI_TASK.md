@@ -10,12 +10,12 @@ V2 Planning.
 
 ## Current Task
 
-Slice 19 Task 5: Add retrieval evidence frontend display.
+Slice 19 Task 6: Add deterministic retrieval golden smoke.
 
 ## Product Value Answer
 
-After this task, the RAG 知识库 page can show deterministic local retrieval
-status and latest matched evidence without becoming a vector-search product.
+After this task, a golden smoke proves ContextArtifact retrieval can improve
+requirement review context while preserving auditable evidence.
 
 ## Must Read
 
@@ -32,7 +32,7 @@ status and latest matched evidence without becoming a vector-search product.
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-17-extension-surface.md`
 13. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
-14. frontend extension API/store/view files needed for retrieval evidence display
+14. golden deterministic retrieval fixture and tests only
 
 ## Do Not Read Unless Needed
 
@@ -48,43 +48,43 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
-frontend/src/api/extension.ts
-frontend/src/stores/extension.ts
-frontend/src/views/extension/KnowledgeBaseView.vue
-focused frontend tests for retrieval evidence display
+docs/fixtures/08-deterministic-knowledge-retrieval-golden.md
+backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py
 ```
 
-Frontend-only task. Display existing deterministic retrieval evidence from the
-RAG 知识库 surface. Do not add vector search controls, provider runtime config,
-marketplace controls, RBAC, tenants, permissions, cloud sync, release
-automation, or remote CI provider integration.
+Golden-smoke task. Prove the existing deterministic retrieval evidence loop with
+fixtures only. Do not add frontend, vector database, embeddings, reranking,
+background indexing, external RAG provider calls, MCP runtime, RBAC, tenants,
+permissions, marketplace, cloud sync, release automation, or remote CI provider
+integration.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
 git diff --check
 ```
 
-Expected result: focused frontend suite and diff check pass.
+Expected result: deterministic retrieval golden smoke and diff check pass.
 
 ## Acceptance
 
-- RAG 知识库 shows deterministic retrieval status.
-- ContextArtifact rows can show whether they were retrieved recently.
-- The page shows latest matched terms, snippets, and scores when available.
-- UI remains Chinese-facing while preserving product terms such as
-  ContextArtifact, KnowledgeAdapter, Prompt, Skill, and MCP-ready.
-- Does not add vector search controls, provider configuration, marketplace
-  controls, RBAC, tenants, permissions, or remote sync controls.
+- Creates safe ContextArtifacts with coupon/API knowledge.
+- Runs requirement review with deterministic retrieval enabled.
+- Confirms retrieved ContextArtifact ids, snippets, scores, and matched terms
+  are persisted as evidence.
+- Confirms `used_knowledge=true` and exact `used_context_artifact_ids`.
+- Confirms RAG 知识库 surface can read the resulting latest retrieval evidence.
+- Does not add vector database, embeddings, reranking, background workers,
+  external providers, MCP runtime, RBAC, tenants, or permissions.
 
 ## Commit Message
 
 ```text
-feat(frontend): show deterministic knowledge evidence
+test(golden): add deterministic knowledge retrieval smoke
 ```
 
 ## Next Task
 
-Start Slice 19 Task 6 only after retrieval evidence frontend display is
-committed.
+Start Slice 19 completion gate only after the deterministic retrieval golden
+smoke is committed.

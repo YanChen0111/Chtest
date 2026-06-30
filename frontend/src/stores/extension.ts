@@ -23,6 +23,7 @@ export const useExtensionStore = defineStore('extension', {
       state.knowledgeBase?.context_artifacts.filter((artifact) => artifact.safe_to_show).length ?? 0,
     promptEligibleCount: (state) =>
       state.knowledgeBase?.context_artifacts.filter((artifact) => artifact.allowed_for_prompt).length ?? 0,
+    latestRetrievals: (state) => state.knowledgeBase?.latest_retrievals ?? [],
     mcpReadyToolCount: (state) => state.toolDefinitions.filter((tool) => tool.is_mcp_ready).length,
   },
   actions: {

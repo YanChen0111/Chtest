@@ -259,6 +259,117 @@ def test_get_knowledge_base_lists_context_artifacts_and_usage(
     assert item["safe_to_show"] is True
     assert item["redaction_applied"] is False
     assert item["allowed_for_prompt"] is True
+
+
+def test_get_knowledge_base_includes_deterministic_retrieval_evidence(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project = create_project(SessionLocal)
+
+    with SessionLocal() as session:
+        context_artifact = Artifact(
+            project_id=project.id,
+            owner_entity_type="Project",
+            owner_entity_id=project.id,
+            artifact_type="context_markdown",
+            file_path=f"projects/{project.id}/context-artifacts/context.md",
+            mime_type="text/markdown",
+            size_bytes=42,
+            sha256="ctx123",
+            metadata_json={
+                "title": "coupon-api-notes.md",
+                "source_ref": "manual:coupon-api-notes.md",
+                "safe_to_show": True,
+                "redaction_applied": False,
+                "allowed_for_prompt": True,
+            },
+        )
+        session.add(context_artifact)
+        session.flush()
+        ai_task = AITask(
+            project_id=project.id,
+            agent_name="RequirementReviewAgent",
+            task_type="requirement_review",
+            prompt_version_id=project.id,
+            skill_version_id=project.id,
+            status="succeeded",
+            context_artifact_ids=[context_artifact.id],
+            output_json={
+                "used_knowledge": True,
+                "used_context_artifact_ids": [str(context_artifact.id)],
+            },
+        )
+        session.add(ai_task)
+        session.flush()
+        retrieval_artifact = Artifact(
+            project_id=project.id,
+            owner_entity_type="AITask",
+            owner_entity_id=ai_task.id,
+            artifact_type="knowledge_retrieval",
+            file_path=f"projects/{project.id}/ai-tasks/{ai_task.id}/knowledge_retrieval.json",
+            mime_type="application/json",
+            size_bytes=256,
+            sha256="retrieval123",
+            metadata_json={
+                "created_by_component": "DeterministicKnowledgeAdapter",
+                "retrieval_mode": "deterministic_local",
+                "query_terms": ["coupon", "expired"],
+                "result_count": 1,
+                "used_context_artifact_ids": [str(context_artifact.id)],
+                "redaction_applied": False,
+                "results": [
+                    {
+                        "context_artifact_id": str(context_artifact.id),
+                        "title": "coupon-api-notes.md",
+                        "source_ref": "manual:coupon-api-notes.md",
+                        "score": 2,
+                        "matched_terms": ["coupon", "expired"],
+                        "snippet": "Expired coupon validation blocks checkout.",
+                        "sha256": "sha256:ctx123",
+                        "redaction_applied": False,
+                        "allowed_for_prompt": True,
+                    },
+                ],
+            },
+        )
+        session.add(retrieval_artifact)
+        session.flush()
+        output_json = dict(ai_task.output_json)
+        output_json["retrieval_evidence_artifact_id"] = str(retrieval_artifact.id)
+        ai_task.output_json = output_json
+        session.add(ai_task)
+        session.commit()
+
+    response = client.get(f"/api/projects/{project.id}/knowledge-base")
+
+    assert response.status_code == 200
+    body = response.json()
+    item = body["context_artifacts"][0]
+    assert item["retrieved_count"] == 1
+    assert item["latest_retrieved_at"]
+    assert body["knowledge_adapter"]["used_knowledge"] is True
+    assert len(body["latest_retrievals"]) == 1
+    retrieval = body["latest_retrievals"][0]
+    assert retrieval["ai_task_id"] == str(ai_task.id)
+    assert retrieval["retrieval_evidence_artifact_id"] == str(retrieval_artifact.id)
+    assert retrieval["query_terms"] == ["coupon", "expired"]
+    assert retrieval["used_context_artifact_ids"] == [str(context_artifact.id)]
+    assert retrieval["snippet_count"] == 1
+    assert retrieval["created_at"]
+    assert retrieval["results"] == [
+        {
+            "context_artifact_id": str(context_artifact.id),
+            "title": "coupon-api-notes.md",
+            "source_ref": "manual:coupon-api-notes.md",
+            "score": 2,
+            "matched_terms": ["coupon", "expired"],
+            "snippet": "Expired coupon validation blocks checkout.",
+            "sha256": "sha256:ctx123",
+            "redaction_applied": False,
+            "allowed_for_prompt": True,
+        },
+    ]
     assert item["usage_count"] == 1
     assert item["latest_used_at"] is not None
 

@@ -15,7 +15,9 @@ from backend.app.modules.extension.schemas import (
     KnowledgeAdapterRead,
     KnowledgeAdapterUpdate,
     KnowledgeBaseContextArtifactRead,
+    KnowledgeBaseLatestRetrievalRead,
     KnowledgeBaseRead,
+    KnowledgeBaseRetrievalResultRead,
     KnowledgeRetrievalRead,
     KnowledgeRetrievalResultItem,
     ToolDefinitionListRead,
@@ -84,7 +86,12 @@ def get_knowledge_adapter_config(
     )
 
 
-def read_knowledge_adapter(session: Session, project_id: uuid.UUID) -> KnowledgeAdapterRead:
+def read_knowledge_adapter(
+    session: Session,
+    project_id: uuid.UUID,
+    *,
+    used_knowledge: bool = False,
+) -> KnowledgeAdapterRead:
     get_project_or_raise(session, project_id)
     config = get_knowledge_adapter_config(session, project_id)
     if config is None:
@@ -95,17 +102,21 @@ def read_knowledge_adapter(session: Session, project_id: uuid.UUID) -> Knowledge
             provider_type="none",
             config={},
             safety_policy={},
-            used_knowledge=False,
+            used_knowledge=used_knowledge,
         )
-    return to_read(config)
+    return to_read(config, used_knowledge=used_knowledge)
 
 
 def read_knowledge_base(session: Session, project_id: uuid.UUID) -> KnowledgeBaseRead:
     get_project_or_raise(session, project_id)
+    retrieval_artifacts = knowledge_retrieval_evidence(session, project_id)
+    latest_retrievals = [to_latest_retrieval_read(artifact) for artifact in retrieval_artifacts]
+    retrieval_usage = context_artifact_retrieval_usage(retrieval_artifacts)
     return KnowledgeBaseRead(
         project_id=project_id,
-        knowledge_adapter=read_knowledge_adapter(session, project_id),
-        context_artifacts=list_knowledge_base_context_artifacts(session, project_id),
+        knowledge_adapter=read_knowledge_adapter(session, project_id, used_knowledge=bool(latest_retrievals)),
+        context_artifacts=list_knowledge_base_context_artifacts(session, project_id, retrieval_usage),
+        latest_retrievals=latest_retrievals,
         non_goals=list(KNOWLEDGE_BASE_NON_GOALS),
     )
 
@@ -330,8 +341,10 @@ def snippet_for_terms(text: str, terms: list[str], max_chars: int) -> str:
 def list_knowledge_base_context_artifacts(
     session: Session,
     project_id: uuid.UUID,
+    retrieval_usage: dict[uuid.UUID, dict[str, Any]] | None = None,
 ) -> list[KnowledgeBaseContextArtifactRead]:
     usage = context_artifact_usage(session, project_id)
+    retrieval_usage = retrieval_usage or {}
     artifacts = session.scalars(
         select(Artifact)
         .where(
@@ -342,7 +355,10 @@ def list_knowledge_base_context_artifacts(
         )
         .order_by(Artifact.created_at.asc()),
     ).all()
-    return [to_context_artifact_read(artifact, usage.get(artifact.id, {})) for artifact in artifacts]
+    return [
+        to_context_artifact_read(artifact, usage.get(artifact.id, {}), retrieval_usage.get(artifact.id, {}))
+        for artifact in artifacts
+    ]
 
 
 def context_artifact_usage(
@@ -360,9 +376,83 @@ def context_artifact_usage(
     return usage
 
 
+def knowledge_retrieval_evidence(session: Session, project_id: uuid.UUID) -> list[Artifact]:
+    return list(
+        session.scalars(
+            select(Artifact)
+            .where(
+                Artifact.project_id == project_id,
+                Artifact.owner_entity_type == "AITask",
+                Artifact.artifact_type == "knowledge_retrieval",
+            )
+            .order_by(Artifact.created_at.desc(), Artifact.id.desc()),
+        ),
+    )
+
+
+def context_artifact_retrieval_usage(
+    retrieval_artifacts: list[Artifact],
+) -> dict[uuid.UUID, dict[str, Any]]:
+    usage: dict[uuid.UUID, dict[str, Any]] = {}
+    for artifact in retrieval_artifacts:
+        for context_artifact_id in metadata_context_artifact_ids(artifact.metadata_json):
+            item = usage.setdefault(context_artifact_id, {"retrieved_count": 0, "latest_retrieved_at": None})
+            item["retrieved_count"] += 1
+            if item["latest_retrieved_at"] is None or artifact.created_at > item["latest_retrieved_at"]:
+                item["latest_retrieved_at"] = artifact.created_at
+    return usage
+
+
+def metadata_context_artifact_ids(metadata: dict[str, Any]) -> list[uuid.UUID]:
+    ids: list[uuid.UUID] = []
+    for value in metadata.get("used_context_artifact_ids", []):
+        try:
+            ids.append(uuid.UUID(str(value)))
+        except ValueError:
+            continue
+    return ids
+
+
+def to_latest_retrieval_read(artifact: Artifact) -> KnowledgeBaseLatestRetrievalRead:
+    metadata = artifact.metadata_json
+    results = [
+        result
+        for raw_result in metadata.get("results", [])
+        if (result := to_latest_retrieval_result_read(raw_result)) is not None
+    ]
+    return KnowledgeBaseLatestRetrievalRead(
+        ai_task_id=artifact.owner_entity_id,
+        retrieval_evidence_artifact_id=artifact.id,
+        query_terms=[str(term) for term in metadata.get("query_terms", [])],
+        used_context_artifact_ids=metadata_context_artifact_ids(metadata),
+        snippet_count=len(results),
+        created_at=artifact.created_at,
+        results=results,
+    )
+
+
+def to_latest_retrieval_result_read(result: dict[str, Any]) -> KnowledgeBaseRetrievalResultRead | None:
+    try:
+        context_artifact_id = uuid.UUID(str(result.get("context_artifact_id")))
+    except ValueError:
+        return None
+    return KnowledgeBaseRetrievalResultRead(
+        context_artifact_id=context_artifact_id,
+        title=str(result.get("title", "")),
+        source_ref=str(result.get("source_ref", "")),
+        score=int(result.get("score", 0)),
+        matched_terms=[str(term) for term in result.get("matched_terms", [])],
+        snippet=str(result.get("snippet", "")),
+        sha256=str(result.get("sha256", "")),
+        redaction_applied=bool(result.get("redaction_applied", False)),
+        allowed_for_prompt=bool(result.get("allowed_for_prompt", False)),
+    )
+
+
 def to_context_artifact_read(
     artifact: Artifact,
     usage: dict[str, Any],
+    retrieval_usage: dict[str, Any],
 ) -> KnowledgeBaseContextArtifactRead:
     metadata = artifact.metadata_json
     return KnowledgeBaseContextArtifactRead(
@@ -376,20 +466,23 @@ def to_context_artifact_read(
         allowed_for_prompt=bool(metadata.get("allowed_for_prompt", False)),
         usage_count=int(usage.get("usage_count", 0)),
         latest_used_at=usage.get("latest_used_at"),
+        retrieved_count=int(retrieval_usage.get("retrieved_count", 0)),
+        latest_retrieved_at=retrieval_usage.get("latest_retrieved_at"),
     )
 
 
-def to_read(config: KnowledgeAdapterConfig) -> KnowledgeAdapterRead:
+def to_read(config: KnowledgeAdapterConfig, *, used_knowledge: bool = False) -> KnowledgeAdapterRead:
     return KnowledgeAdapterRead(
         project_id=config.project_id,
         adapter_name=config.adapter_name,
         status=config.status,
         provider_type=config.provider_type,
+        retrieval_mode="deterministic_local" if config.provider_type == "deterministic_local" else None,
         config=config.config_json,
         safety_policy=config.safety_policy_json,
         last_checked_at=config.last_checked_at,
         notes=config.notes,
-        used_knowledge=False,
+        used_knowledge=used_knowledge,
     )
 
 

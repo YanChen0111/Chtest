@@ -1,5 +1,47 @@
 # Session Handoff
 
+## 2026-06-30 Slice 19 Task 5 完成
+
+本轮完成：
+
+- 完成 Slice 19 Task 5：Add retrieval evidence frontend display。
+- RAG 知识库页面新增 deterministic retrieval evidence 展示：
+  - 检索证据计数。
+  - KnowledgeAdapter 检索模式。
+  - ContextArtifact 行展示检索次数和最近检索时间。
+  - 最近检索证据展示 query terms、matched terms、scores、snippets 和来源
+    ContextArtifact。
+  - 无 evidence 时显示空态，不暴露检索发起控件。
+- 前端类型/store 已支持 `latest_retrievals`、`retrieved_count`、
+  `latest_retrieved_at`。
+- 为了让页面展示真实 evidence，补了很窄的 backend extension surface：
+  `/knowledge-base` 从 `knowledge_retrieval` artifacts 派生
+  `latest_retrievals`、`retrieved_count`、`latest_retrieved_at`。
+- 没有新增 vector search、Embedding、provider runtime config、MCP runtime、
+  RBAC、tenants、permissions、marketplace 或 remote sync 控件。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 19 Task 6：Add deterministic
+  retrieval golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q
+git diff --check
+```
+
+验证结果：
+
+- Frontend suite：`15` files passed，`19` tests passed。
+- Extension + deterministic retrieval API tests：`12 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 新增 deterministic retrieval golden smoke。
+- Golden 需要证明 ContextArtifact -> deterministic retrieval -> requirement
+  review -> knowledge_retrieval evidence -> RAG 知识库 surface。
+
 ## 2026-06-30 Slice 19 Task 4 完成
 
 本轮完成：
