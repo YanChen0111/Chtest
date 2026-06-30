@@ -10,6 +10,7 @@ from backend.app.modules.extension.schemas import (
     KnowledgeAdapterRead,
     KnowledgeAdapterUpdate,
     KnowledgeBaseRead,
+    ToolDefinitionListRead,
 )
 from backend.app.modules.projects.router import get_session
 
@@ -73,3 +74,14 @@ def put_knowledge_adapter(
         raise project_not_found() from exc
     except service.KnowledgeAdapterRuntimeNotAllowedError as exc:
         raise runtime_not_allowed() from exc
+
+
+@router.get("/projects/{project_id}/tool-definitions", response_model=ToolDefinitionListRead)
+def list_tool_definitions(
+    project_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> ToolDefinitionListRead:
+    try:
+        return service.list_tool_definitions(session, project_id)
+    except service.KnowledgeAdapterProjectNotFoundError as exc:
+        raise project_not_found() from exc

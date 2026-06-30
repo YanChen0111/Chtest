@@ -57,7 +57,7 @@ without the cost or risk of a real RAG/MCP runtime in V1.
 | Add Extension Surface contract boundary | done | `rg -n "KnowledgeAdapter|RAG 知识库|ToolDefinition|MCP-ready|Non-goals" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-17-extension-surface.md` | `f2812cf` | contract-only boundary |
 | Add KnowledgeAdapter empty interface/schema | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | `afffbc9` | no retrieval runtime |
 | Add RAG 知识库 ContextArtifact API shell | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | pending commit | project context management surface |
-| Add MCP-ready ToolDefinition schema metadata | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | - | schema only, no MCP runtime |
+| Add MCP-ready ToolDefinition schema metadata | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | pending commit | schema only, no MCP runtime |
 | Add RAG 知识库 frontend shell | planned | `npm --prefix frontend run test -- --run` | - | light workbench UI |
 | Add Extension Surface golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_extension_surface_golden.py -q` | - | context -> AI task -> evidence |
 | Slice 17 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |

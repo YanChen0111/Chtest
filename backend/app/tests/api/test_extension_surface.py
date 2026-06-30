@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 from backend.app.main import app
 from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.models import AITask, Artifact
-from backend.app.modules.extension.models import KnowledgeAdapterConfig
+from backend.app.modules.extension.models import KnowledgeAdapterConfig, ToolDefinition
 from backend.app.modules.projects.models import Project, Workspace
 from backend.app.modules.projects.router import get_session
 
@@ -261,3 +261,59 @@ def test_get_knowledge_base_lists_context_artifacts_and_usage(
     assert item["allowed_for_prompt"] is True
     assert item["usage_count"] == 1
     assert item["latest_used_at"] is not None
+
+
+def test_list_tool_definitions_exposes_mcp_ready_schema_without_runtime(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project = create_project(SessionLocal)
+
+    with SessionLocal() as session:
+        tool_definition = ToolDefinition(
+            project_id=project.id,
+            name="pytest_runner",
+            description="Run allowlisted pytest commands",
+            tool_type="test_runner",
+            input_schema_json={"type": "object"},
+            output_schema_json={"type": "object"},
+            risk_level="medium",
+            approval_required=False,
+            command_allowlist_json=["pytest {path}"],
+            allowed_working_directories_json=["/workspace"],
+            artifact_policy_json={"stdout": True},
+            is_mcp_ready=True,
+            mcp_metadata_json={"schema_version": "v1", "capability_name": "pytest_runner"},
+        )
+        mcp_proxy = ToolDefinition(
+            project_id=project.id,
+            name="future_mcp_proxy",
+            description="Future MCP schema intent only",
+            tool_type="mcp_proxy",
+            input_schema_json={"type": "object"},
+            output_schema_json={"type": "object"},
+            risk_level="high",
+            approval_required=True,
+            is_mcp_ready=True,
+            mcp_metadata_json={"schema_version": "v1", "capability_name": "future_proxy"},
+        )
+        session.add_all([tool_definition, mcp_proxy])
+        session.commit()
+
+    response = client.get(f"/api/projects/{project.id}/tool-definitions")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 2
+    first = body["items"][0]
+    assert first["name"] == "future_mcp_proxy"
+    assert first["tool_type"] == "mcp_proxy"
+    assert first["approval_required"] is True
+    assert first["is_mcp_ready"] is True
+    assert first["mcp_metadata"] == {"schema_version": "v1", "capability_name": "future_proxy"}
+    assert "server_url" not in first["mcp_metadata"]
+    second = body["items"][1]
+    assert second["name"] == "pytest_runner"
+    assert second["command_allowlist"] == ["pytest {path}"]
+    assert second["allowed_working_directories"] == ["/workspace"]
+    assert second["artifact_policy"] == {"stdout": True}

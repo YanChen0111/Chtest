@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-06-30 Slice 17 Task 5 MCP-ready Tool Schema 完成
+
+本轮完成：
+
+- 完成 Slice 17 Task 5：Add MCP-ready ToolDefinition schema metadata。
+- 新增 `ToolDefinition` model，用于保存 tool schema、risk、approval、
+  allowlist、artifact policy、`is_mcp_ready` 和 `mcp_metadata_json`。
+- 新增 `GET /api/projects/{project_id}/tool-definitions`。
+- API 返回 built-in/project ToolDefinition schema/readiness。
+- `tool_type=mcp_proxy` 仅作为 schema intent 展示，不触发 MCP runtime。
+- 未加入 MCP server/client 包、远程 MCP 调用、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 17 Task 6：Add RAG 知识库 frontend
+  shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q
+git diff --check
+```
+
+验证结果：
+
+- `5 passed`
+- `git diff --check` clean。
+
+修改文件：
+
+- `backend/app/modules/extension/__init__.py`
+- `backend/app/modules/extension/models.py`
+- `backend/app/modules/extension/router.py`
+- `backend/app/modules/extension/schemas.py`
+- `backend/app/modules/extension/service.py`
+- `backend/app/tests/api/test_extension_surface.py`
+- `docs/implementation/slices/slice-17-extension-surface.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 17 Task 6：Add RAG 知识库 frontend shell。
+- 前端使用浅色工作台 UI，展示 ContextArtifact、KnowledgeAdapter 和
+  MCP-ready ToolDefinition readiness，不加入 vector search、RAG runtime、MCP
+  runtime、marketplace、cloud sync、RBAC、tenants 或 permissions。
+
 ## 2026-06-30 Slice 17 Task 4 Knowledge Base Context API 完成
 
 本轮完成：

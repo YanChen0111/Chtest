@@ -8,12 +8,14 @@ from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.ai_runtime.service import CONTEXT_FILE_NAMES
-from backend.app.modules.extension.models import KnowledgeAdapterConfig
+from backend.app.modules.extension.models import KnowledgeAdapterConfig, ToolDefinition
 from backend.app.modules.extension.schemas import (
     KnowledgeAdapterRead,
     KnowledgeAdapterUpdate,
     KnowledgeBaseContextArtifactRead,
     KnowledgeBaseRead,
+    ToolDefinitionListRead,
+    ToolDefinitionRead,
 )
 from backend.app.modules.projects.models import Project
 
@@ -96,6 +98,19 @@ def read_knowledge_base(session: Session, project_id: uuid.UUID) -> KnowledgeBas
         context_artifacts=list_knowledge_base_context_artifacts(session, project_id),
         non_goals=list(KNOWLEDGE_BASE_NON_GOALS),
     )
+
+
+def list_tool_definitions(session: Session, project_id: uuid.UUID) -> ToolDefinitionListRead:
+    get_project_or_raise(session, project_id)
+    tool_definitions = session.scalars(
+        select(ToolDefinition)
+        .where(
+            (ToolDefinition.project_id == project_id) | (ToolDefinition.project_id.is_(None)),
+        )
+        .order_by(ToolDefinition.name.asc()),
+    ).all()
+    items = [to_tool_definition_read(tool_definition) for tool_definition in tool_definitions]
+    return ToolDefinitionListRead(items=items, total=len(items))
 
 
 def update_knowledge_adapter(
@@ -205,4 +220,28 @@ def to_read(config: KnowledgeAdapterConfig) -> KnowledgeAdapterRead:
         last_checked_at=config.last_checked_at,
         notes=config.notes,
         used_knowledge=False,
+    )
+
+
+def to_tool_definition_read(tool_definition: ToolDefinition) -> ToolDefinitionRead:
+    return ToolDefinitionRead(
+        id=tool_definition.id,
+        project_id=tool_definition.project_id,
+        name=tool_definition.name,
+        description=tool_definition.description,
+        tool_type=tool_definition.tool_type,
+        input_schema=tool_definition.input_schema_json,
+        output_schema=tool_definition.output_schema_json,
+        risk_level=tool_definition.risk_level,
+        approval_required=tool_definition.approval_required,
+        timeout_seconds=tool_definition.timeout_seconds,
+        command_allowlist=tool_definition.command_allowlist_json,
+        allowed_working_directories=tool_definition.allowed_working_directories_json,
+        forbidden_shell_operators=tool_definition.forbidden_shell_operators_json,
+        max_stdout_bytes=tool_definition.max_stdout_bytes,
+        max_stderr_bytes=tool_definition.max_stderr_bytes,
+        artifact_policy=tool_definition.artifact_policy_json,
+        is_mcp_ready=tool_definition.is_mcp_ready,
+        mcp_metadata=tool_definition.mcp_metadata_json,
+        status=tool_definition.status,
     )

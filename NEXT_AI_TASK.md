@@ -10,13 +10,13 @@ Slice 17: Extension Surface.
 
 ## Current Task
 
-Task 5: Add MCP-ready ToolDefinition schema metadata.
+Task 6: Add RAG 知识库 frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest exposes MCP-ready ToolDefinition schema metadata while
-keeping ToolInvocation and internal allowlist rules as the only executable tool
-boundary.
+After this task, Chtest has a light workbench-style RAG 知识库 frontend shell
+that displays ContextArtifacts, KnowledgeAdapter state, and MCP-ready
+ToolDefinition readiness without runtime provider controls.
 
 ## Must Read
 
@@ -48,34 +48,43 @@ backend/app/modules/extension/schemas.py
 backend/app/modules/extension/router.py
 backend/app/modules/extension/service.py
 backend/app/tests/api/test_extension_surface.py
+frontend/src/api/extension.ts
+frontend/src/stores/extension.ts
+frontend/src/views/extension/KnowledgeBaseView.vue
+frontend/src/views/extension/KnowledgeBaseView.spec.ts
+navigation files needed to expose the page
 ```
 
-Backend API shell task. Do not add frontend code, RAG runtime, vector indexing,
-embeddings, reranking, MCP runtime dependency, RBAC, tenants, or permissions.
+Frontend shell task. Do not add RAG runtime, vector indexing, embeddings,
+reranking, MCP runtime dependency, RBAC, tenants, permissions, marketplace, or
+cloud sync controls.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: Extension surface API tests pass.
+Expected result: frontend tests pass.
 
 ## Acceptance
 
-- Exposes ToolDefinition input/output schema, risk level, approval requirement,
-  artifact policy, and allowlist metadata.
-- Allows `tool_type=mcp_proxy` as schema intent only.
-- Requires ToolInvocation to keep using allowlisted internal execution rules.
-- Does not add MCP server/client packages or runtime calls.
-- Updates handoff and sets the next task to the RAG 知识库 frontend shell.
+- Uses a light workbench UI aligned with the final Chtest frontend direction.
+- Shows ContextArtifact inventory, safety metadata, prompt eligibility, and AI
+  usage references.
+- Shows KnowledgeAdapter configuration as empty/not configured state.
+- Shows MCP-ready ToolDefinition schema/readiness without executable MCP
+  controls.
+- Does not add RBAC, tenant, marketplace, cloud sync, vector search, or runtime
+  provider controls.
+- Updates handoff and sets the next task to Extension Surface golden smoke.
 
 ## Commit Message
 
 ```text
-feat(extension): add mcp ready tool schema
+feat(frontend): add knowledge base shell
 ```
 
 ## Next Task
 
-Slice 17 Task 6: Add RAG 知识库 frontend shell.
+Slice 17 Task 7: Add Extension Surface golden smoke.

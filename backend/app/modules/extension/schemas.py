@@ -46,3 +46,30 @@ class KnowledgeBaseRead(BaseModel):
     knowledge_adapter: KnowledgeAdapterRead
     context_artifacts: list[KnowledgeBaseContextArtifactRead] = Field(default_factory=list)
     non_goals: list[str] = Field(default_factory=list)
+
+
+class ToolDefinitionRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID | None
+    name: str
+    description: str | None
+    tool_type: str
+    input_schema: dict[str, Any] = Field(default_factory=dict)
+    output_schema: dict[str, Any] = Field(default_factory=dict)
+    risk_level: str
+    approval_required: bool
+    timeout_seconds: int
+    command_allowlist: list[Any] = Field(default_factory=list)
+    allowed_working_directories: list[Any] = Field(default_factory=list)
+    forbidden_shell_operators: list[Any] = Field(default_factory=list)
+    max_stdout_bytes: int
+    max_stderr_bytes: int
+    artifact_policy: dict[str, Any] = Field(default_factory=dict)
+    is_mcp_ready: bool
+    mcp_metadata: dict[str, Any] = Field(default_factory=dict)
+    status: str
+
+
+class ToolDefinitionListRead(BaseModel):
+    items: list[ToolDefinitionRead] = Field(default_factory=list)
+    total: int

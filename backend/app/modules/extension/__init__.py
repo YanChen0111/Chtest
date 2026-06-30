@@ -1,3 +1,3 @@
-from backend.app.modules.extension.models import KnowledgeAdapterConfig
+from backend.app.modules.extension.models import KnowledgeAdapterConfig, ToolDefinition
 
-__all__ = ["KnowledgeAdapterConfig"]
+__all__ = ["KnowledgeAdapterConfig", "ToolDefinition"]
