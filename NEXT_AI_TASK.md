@@ -10,12 +10,12 @@ Slice 10: Test Case Library.
 
 ## Current Task
 
-Task 1: Add Test Case Library task plan.
+Task 2: Add Test Case Library API contract and task boundary.
 
 ## Product Value Answer
 
-After this task, Chtest has a scoped, reviewable implementation plan for the
-Test Case Library slice without expanding into automation or execution work.
+After this task, Chtest has a contract-first Test Case Library API boundary for
+browsing reviewed cases before backend implementation starts.
 
 ## Must Read
 
@@ -24,7 +24,7 @@ Test Case Library slice without expanding into automation or execution work.
 3. `docs/product/01-positioning-and-scope.md`
 4. `docs/contracts/01-data-model-contract.md`
 5. `docs/contracts/02-api-contract.md`
-6. `memory/08-session-handoff.md`
+6. `docs/implementation/slices/slice-10-test-case-library.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
@@ -39,40 +39,39 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-10-test-case-library.md
+docs/contracts/02-api-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-This is a planning task only. Do not modify product code.
+This is a contract/documentation task only. Do not modify product code.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-10-test-case-library.md
-rg -n "Test Case Library|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-10-test-case-library.md
+rg -n "Test Case Library|GET /api/test-cases|TestCaseList" docs/contracts/02-api-contract.md docs/implementation/slices/slice-10-test-case-library.md
 ```
 
-Expected result: Slice 10 task plan exists and names concrete tasks,
-verification commands, and non-goals.
+Expected result: API contract and Slice 10 plan both name the Test Case Library
+endpoint and response model.
 
 ## Acceptance
 
-- Create a scoped Slice 10 task plan.
-- Define TestCase Library API/frontend/golden tasks with one verification
-  command per task.
-- Keep Slice 10 limited to browsing/searching existing reviewed TestCase records
-  and basic suite capability if already supported by contracts.
+- Add `GET /api/test-cases` to the API contract.
+- Define response fields for reviewed TestCase library items.
+- Define query filters for project_id, module_id, status, test_type, priority,
+  and keyword.
+- Keep Slice 10 limited to browsing/searching existing reviewed TestCase records.
 - Do not add AutomationDraft, execution, reports, CI/CD quality, RAG runtime,
   MCP runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to the first implementation task from
-  the new Slice 10 plan.
+- Update handoff and set the next task to backend API implementation.
 
 ## Commit Message
 
 ```text
-docs(cases): add test case library task plan
+docs(cases): define test case library api
 ```
 
 ## Next Task
 
-Slice 10 Task 2 from the new task plan.
+Slice 10 Task 3: Add Test Case Library backend API.

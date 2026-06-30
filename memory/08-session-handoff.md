@@ -1,5 +1,32 @@
 # Session Handoff
 
+## 2026-06-30 Slice 10 Task 1 Test Case Library Task Plan 完成
+
+本轮完成：
+
+- 完成 Slice 10 Task 1：新增 Test Case Library task plan。
+- 新增 `docs/implementation/slices/slice-10-test-case-library.md`，将 Slice 10 拆为 API contract、backend API、frontend shell、golden smoke、completion gate。
+- 明确 Slice 10 只浏览/搜索已评审 TestCase，不加入 AutomationDraft、执行、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 10 Task 2：Add Test Case Library API contract and task boundary。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-10-test-case-library.md
+rg -n "Test Case Library|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-10-test-case-library.md
+```
+
+修改文件：
+
+- `docs/implementation/slices/slice-10-test-case-library.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 10 Task 2：Add Test Case Library API contract and task boundary。
+- 这是 contract/documentation 任务，不要直接改产品代码。
+
 ## 2026-06-30 Slice 09 Case Metrics Completion Gate 完成
 
 本轮完成：
