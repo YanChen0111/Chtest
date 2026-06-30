@@ -10,12 +10,12 @@ Slice 14: Report And Failure Analysis.
 
 ## Current Task
 
-Task 3: Add FailureAnalysis and Report model schema.
+Task 4: Add FailureAnalysis API.
 
 ## Product Value Answer
 
-After this task, Chtest has persisted FailureAnalysis and Report model/schema
-contracts ready before API implementation starts.
+After this task, Chtest can create and retrieve deterministic evidence-backed
+FailureAnalysis records for TestRun failures.
 
 ## Must Read
 
@@ -42,12 +42,14 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-14-report-and-failure-analysis.md
 backend/app/modules/reporting/__init__.py
-backend/app/modules/reporting/models.py
+backend/app/modules/reporting/router.py
+backend/app/modules/reporting/service.py
 backend/app/modules/reporting/schemas.py
+backend/app/main.py
 backend/app/tests/api/test_report_failure_analysis.py
 ```
 
-Do not call AI providers or write report artifacts in this task.
+Do not create repair tasks or reports in this task.
 
 ## Verification Command
 
@@ -55,24 +57,26 @@ Do not call AI providers or write report artifacts in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q
 ```
 
-Expected result: focused FailureAnalysis/Report model and schema tests pass.
+Expected result: focused FailureAnalysis API tests pass.
 
 ## Acceptance
 
-- Defines FailureAnalysis fields from the data model contract.
-- Defines Report fields from the data model contract.
-- Defines create/read schemas for FailureAnalysis and Report.
-- Does not call AI providers or write report artifacts in this task.
+- Adds `POST /api/test-runs/{id}/failure-analysis`.
+- Adds `GET /api/test-runs/{id}/failure-analysis`.
+- Creates a succeeded AITask with mock FailureAnalysis output.
+- Classifies from available stdout/stderr/TestResult/artifact evidence.
+- Returns `insufficient_evidence` when evidence is missing.
+- Does not create repair tasks or reports.
 - Do not add CI/CD quality gates, merge/release decisions, RAG runtime, MCP
   runtime, RBAC, tenants, permissions, or broad report analytics.
-- Update handoff and set the next task to FailureAnalysis API.
+- Update handoff and set the next task to automation execution Report API.
 
 ## Commit Message
 
 ```text
-feat(reporting): add failure analysis report schema
+feat(reporting): add failure analysis api
 ```
 
 ## Next Task
 
-Slice 14 Task 4: Add FailureAnalysis API.
+Slice 14 Task 5: Add automation execution Report API.

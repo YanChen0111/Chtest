@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-06-30 Slice 14 Task 3 FailureAnalysis/Report Model Schema 完成
+
+本轮完成：
+
+- 完成 Slice 14 Task 3：Add FailureAnalysis and Report model schema。
+- 新增 `backend/app/modules/reporting/` 模块，包含 FailureAnalysis/Report
+  SQLAlchemy models 和 create/read schemas。
+- FailureAnalysis 覆盖 project、test_run、test_result、ai_task、
+  classification、confidence、evidence_artifact_ids、summary、root_cause、
+  suggested_actions 和 status。
+- Report 覆盖 project、report_type、title、related entity、status、
+  conclusion、summary、metrics_json 和 artifact_ids。
+- 新增 `backend/app/tests/api/test_report_failure_analysis.py`，验证模型默认值、
+  UUID artifact list 持久化、schema 字段名和 evidence_manifest response。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 14 Task 4：Add FailureAnalysis API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_report_failure_analysis.py -q
+```
+
+验证结果：
+
+- FailureAnalysis/Report focused model/schema tests：`4 passed`
+
+修改文件：
+
+- `backend/app/modules/reporting/__init__.py`
+- `backend/app/modules/reporting/models.py`
+- `backend/app/modules/reporting/schemas.py`
+- `backend/app/tests/api/test_report_failure_analysis.py`
+- `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 14 Task 4：Add FailureAnalysis API。
+- 当前任务不要创建 repair tasks 或 reports。
+
 ## 2026-06-30 Slice 14 Task 2 Report And FailureAnalysis Contract 完成
 
 本轮完成：
