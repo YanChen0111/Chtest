@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-30 Slice 18 Task 2 完成
+
+本轮完成：
+
+- 完成 Slice 18 Task 2：Define Newman execution contract boundary。
+- 更新 `docs/contracts/01-data-model-contract.md`：
+  - `TestCommand.command_type` 增加 `newman`。
+  - `TestRun.runner_mode` 增加 `newman_local`。
+  - 定义 Newman TestRun/TestResult 解析字段和脱敏规则。
+  - 定义 `newman_collection_run` ToolDefinition allowlist 边界。
+- 更新 `docs/contracts/02-api-contract.md`：
+  - Newman 复用 `/api/test-runs`。
+  - 不新增 `POST /api/newman-runs`。
+  - 定义 Newman request rules、parsed_result shape 和 artifact response。
+- 更新 `docs/contracts/03-state-machines.md`：
+  - Newman 仍走 ToolInvocation allowlist。
+  - Newman assertion failure 映射为 TestRun `failed`。
+  - 启动、超时、allowlist、解析器错误映射为 `error` 或 `timeout`。
+- 更新 `docs/contracts/04-artifact-contract.md`：
+  - 增加 `newman_json` artifact type。
+  - 明确 `parsed_output`、optional `junit`、脱敏和非触发规则。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 18 Task 3：Add Newman
+  runner/parser backend。
+
+本轮验证：
+
+```bash
+rg -n "Newman|newman|newman_json|command_type|ToolDefinition" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-18-newman-api-execution.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 新增 Newman backend runner/parser。
+- 先写 `backend/app/tests/api/test_newman_execution.py` 的确定性 fixture 测试。
+- 不要加入 frontend、Postman cloud、collection editor、remote CI/CD、RAG/MCP
+  runtime、RBAC、tenants 或 permissions。
+
 ## 2026-06-30 Slice 18 Task 1 完成
 
 本轮完成：

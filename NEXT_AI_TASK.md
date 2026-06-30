@@ -10,12 +10,13 @@ Slice 18: Newman API Execution.
 
 ## Current Task
 
-Slice 18 Task 2: Define Newman execution contract boundary.
+Slice 18 Task 3: Add Newman runner/parser backend.
 
 ## Product Value Answer
 
-After this task, the contracts explicitly define Newman API execution as an
-allowlisted local evidence path before implementation starts.
+After this task, the backend can execute an allowlisted local Newman API
+collection, persist execution artifacts, and parse request/assertion evidence
+into TestRun/TestResult records.
 
 ## Must Read
 
@@ -31,6 +32,7 @@ allowlisted local evidence path before implementation starts.
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-18-newman-api-execution.md`
+13. backend execution module and tests needed for Newman only
 
 ## Do Not Read Unless Needed
 
@@ -45,45 +47,45 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-18-newman-api-execution.md
+backend/app/modules/execution/newman_runner.py
+backend/app/modules/execution/*
+backend/app/tests/api/test_newman_execution.py
+backend/app/tests/fixtures/*
 ```
 
-Contract-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
-tenants, permissions, marketplace, cloud sync, release automation, remote CI
-provider integration, Postman workspace parity, collection editor, or arbitrary
-shell execution.
+Backend-only task. Add only the Newman runner/parser and focused tests needed
+for Slice 18. Do not add frontend, RAG runtime, MCP runtime, RBAC, tenants,
+permissions, marketplace, cloud sync, release automation, remote CI provider
+integration, Postman workspace parity, collection editor, or arbitrary shell
+execution.
 
 ## Verification Command
 
 ```bash
-rg -n "Newman|newman|newman_json|command_type|ToolDefinition" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-18-newman-api-execution.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py -q
 git diff --check
 ```
 
-Expected result: Newman contract boundaries are visible and diff check passes.
+Expected result: Newman backend tests and diff check pass.
 
 ## Acceptance
 
-- Data contract allows `TestCommand.command_type=newman`.
-- Artifact contract defines Newman output artifacts and parsed result
-  expectations.
-- State-machine contract keeps Newman under ToolDefinition allowlists and
-  TestRun status rules.
-- API contract names the API execution evidence surface without adding a
-  collection editor or remote CI/CD provider integration.
-- Non-goals still exclude arbitrary shell, Postman parity, RAG/MCP runtime,
-  RBAC, tenants, and permissions.
+- Runs only approved Newman TestCommand/ToolDefinition entries.
+- Captures stdout, stderr, runtime manifest, dependency snapshot, environment
+  snapshot, Newman JSON, and parsed result artifacts.
+- Maps Newman collection/request/assertion results into TestRun/TestResult
+  evidence.
+- Uses deterministic local fixtures in tests.
+- Rejects arbitrary command text and unapproved command types.
+- Does not call remote CI/CD providers or require Postman cloud accounts.
 
 ## Commit Message
 
 ```text
-docs(v2): define newman execution contract
+feat(execution): add newman runner
 ```
 
 ## Next Task
 
-Start Slice 18 Task 3 only after the Newman contract boundary is committed.
+Start Slice 18 Task 4 only after the Newman backend runner/parser is committed.

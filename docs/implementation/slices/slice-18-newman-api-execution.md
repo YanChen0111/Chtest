@@ -78,8 +78,8 @@ general automation platform.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add Newman API Execution task plan | in progress | `test -f docs/implementation/slices/slice-18-newman-api-execution.md` | pending | planning-only scope |
-| Define Newman execution contract boundary | planned | `rg -n "Newman|newman|newman_json|command_type" docs/contracts docs/implementation/slices/slice-18-newman-api-execution.md` | pending | contract-only before code |
+| Add Newman API Execution task plan | done | `test -f docs/implementation/slices/slice-18-newman-api-execution.md` | `a319a6c` | planning-only scope |
+| Define Newman execution contract boundary | done | `rg -n "Newman|newman|newman_json|command_type" docs/contracts docs/implementation/slices/slice-18-newman-api-execution.md` | `c8835bc` | contract-only before code |
 | Add Newman runner/parser backend | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_newman_execution.py -q` | pending | allowlisted local runner |
 | Add Newman API execution frontend shell | planned | `npm --prefix frontend run test -- --run` | pending | Chinese workbench UI |
 | Add Newman API execution golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_newman_api_execution_golden.py -q` | pending | evidence loop proof |

@@ -1,5 +1,28 @@
 # Development Log
 
+## 2026-06-30 Slice 18 Newman Contract Boundary
+
+### Completed
+
+- Updated data, API, state-machine, and artifact contracts for Newman API
+  execution.
+- Added `command_type=newman`, `runner_mode=newman_local`, Newman parsed result
+  expectations, and `newman_json` artifact rules.
+- Kept Newman under TestCommand/ToolDefinition allowlists and `/api/test-runs`.
+- Updated `NEXT_AI_TASK.md` to Slice 18 Task 3: add the Newman backend
+  runner/parser.
+
+### Verification
+
+```bash
+rg -n "Newman|newman|newman_json|command_type|ToolDefinition" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-18-newman-api-execution.md
+git diff --check
+```
+
+### Next Step
+
+- Implement the backend Newman runner/parser with deterministic API tests.
+
 ## 2026-06-30 Slice 18 Newman API Execution Plan
 
 ### Completed

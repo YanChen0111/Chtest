@@ -32,6 +32,17 @@ Extension surface rules:
   KnowledgeAdapter calls, MCP server/client runtime calls, RBAC, tenants, or
   permissions.
 
+Newman execution rules:
+
+- V2 Newman API execution reuses Test Run APIs and TestCommand settings.
+- Newman execution must use configured `TestCommand.command_type=newman` and a
+  ToolDefinition allowlist such as `newman_collection_run`.
+- Newman execution returns TestRun, TestResult, stdout/stderr, `newman_json`,
+  optional `junit`, and `parsed_result` evidence.
+- Newman execution must not add a collection editor, Postman cloud integration,
+  arbitrary shell execution, remote CI/CD provider control, RAG runtime, MCP
+  runtime, RBAC, tenants, or permissions.
+
 ## 2. Project Settings APIs
 
 ### 2.1 Create Project
@@ -1211,10 +1222,10 @@ Rules:
 
 ## 6. Test Run APIs
 
-Test Run APIs execute V1 approved pytest or minimal Playwright work and return
-evidence records. They are local-first and allowlisted: the backend assembles or
-validates commands from an approved AutomationDraft or configured TestCommand.
-Clients must not submit arbitrary shell strings.
+Test Run APIs execute approved pytest, minimal Playwright, or Newman API work
+and return evidence records. They are local-first and allowlisted: the backend
+assembles or validates commands from an approved AutomationDraft or configured
+TestCommand. Clients must not submit arbitrary shell strings.
 
 ### 6.1 Create Test Run
 
@@ -1240,10 +1251,11 @@ Request rules:
   `status=approved` and `target_framework` matching the requested runner:
   `pytest` for `local_subprocess`, `playwright` for `playwright_local`.
 - `test_command_id` must reference a configured TestCommand with
-  `command_type=pytest` or `command_type=playwright` and passing allowlist
-  validation.
+  `command_type=pytest`, `command_type=playwright`, or
+  `command_type=newman` and passing allowlist validation.
 - `runner_mode` is optional and defaults to `local_subprocess` for pytest.
-  Playwright minimal execution uses `runner_mode=playwright_local`.
+  Playwright minimal execution uses `runner_mode=playwright_local`. Newman API
+  execution uses `runner_mode=newman_local`.
 - V1 does not expose Docker runner or browser grid selection through this
   endpoint.
 - `cicd_run_id` is not accepted by this workbench endpoint. CI/CD
@@ -1375,6 +1387,8 @@ Contract boundary:
   and JUnit files are represented as artifact metadata when available.
 - Playwright minimal execution may additionally return `playwright_trace` and
   `screenshot` artifacts.
+- Newman API execution may additionally return `newman_json` and optional
+  `junit` artifacts.
 - This API does not create reports, QualityGateDecision records, CI/CD workflow
   state, FailureAnalysis records, RAG runtime calls, MCP runtime dependencies,
   RBAC, tenants, or permissions.
@@ -1440,6 +1454,93 @@ Contract boundary:
 
 - Playwright minimal execution records TestRun, TestResult, stdout/stderr,
   trace, screenshot, and runtime artifact metadata.
+- It does not create reports, FailureAnalysis, QualityGateDecision, CI/CD
+  workflow state, RAG runtime calls, MCP runtime dependencies, RBAC, tenants, or
+  permissions.
+
+### 6.5 Newman API Execution
+
+Newman API execution reuses `POST /api/test-runs` and
+`GET /api/test-runs/{id}`. It does not introduce a separate
+`POST /api/newman-runs` endpoint in Slice 18.
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "automation_draft_id": null,
+  "test_command_id": "00000000-0000-0000-0000-000000000322",
+  "reason": "run approved API collection",
+  "runner_mode": "newman_local"
+}
+```
+
+Request rules:
+
+- Exactly one execution source is required. For Newman in Slice 18 it must be a
+  configured `test_command_id`.
+- `test_command_id` must reference a configured TestCommand with
+  `command_type=newman` and passing allowlist validation.
+- Newman commands are backend assembled or validated from allowlisted
+  `npx newman run ... --reporters json,junit` style command templates.
+- Collection and environment file paths must be under the repository path or a
+  Chtest-managed runtime workspace.
+- Secret values in environment variables must be redacted in
+  `environment_snapshot`.
+- Slice 18 supports local Newman collection execution only. It does not expose
+  a collection editor, environment secret manager, Postman cloud account,
+  monitor, mock server, or remote CI/CD trigger.
+
+Response model: `TestRunRead` with embedded `TestResultRead` items and Newman
+artifact metadata.
+
+Expected `parsed_result` shape:
+
+```json
+{
+  "total": 4,
+  "passed": 3,
+  "failed": 1,
+  "skipped": 0,
+  "error": 0,
+  "request_count": 2,
+  "assertion_count": 4,
+  "collection_name": "coupon-api",
+  "duration_ms": 812
+}
+```
+
+Response artifact examples:
+
+```json
+[
+  {
+    "artifact_type": "stdout",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001321/stdout.log"
+  },
+  {
+    "artifact_type": "stderr",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001321/stderr.log"
+  },
+  {
+    "artifact_type": "newman_json",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001321/newman-report.json"
+  },
+  {
+    "artifact_type": "parsed_output",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001321/parsed_result.json"
+  }
+]
+```
+
+Contract boundary:
+
+- Newman API execution records TestRun, TestResult, stdout/stderr,
+  `newman_json`, parsed result, runtime manifest, dependency snapshot, and
+  environment snapshot artifact metadata.
+- Assertion failures map to TestResult rows. Parser/runtime failures map to
+  TestRun `error`.
 - It does not create reports, FailureAnalysis, QualityGateDecision, CI/CD
   workflow state, RAG runtime calls, MCP runtime dependencies, RBAC, tenants, or
   permissions.

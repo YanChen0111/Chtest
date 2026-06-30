@@ -135,6 +135,7 @@ artifacts/projects/{project_id}/test-runs/{test_run_id}/
   stderr.log
   junit.xml
   coverage.xml
+  newman-report.json
   playwright-trace.zip
   screenshot.png
   parsed_result.json
@@ -145,6 +146,10 @@ artifacts/projects/{project_id}/test-runs/{test_run_id}/
 `dependency_snapshot.json` records runner version, Python/Node version, lockfile hashes, package manager metadata, and runner image when available.
 
 `environment_snapshot.json` records environment variable names and safe non-secret values used by the run. Secret values must appear only as redacted references.
+
+Newman API execution adds `newman-report.json` with
+`artifact_type=newman_json`. The parsed Newman summary is stored in
+`parsed_result.json` as `artifact_type=parsed_output`.
 
 ### 3.7 Report
 
@@ -190,6 +195,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | stderr | text/plain | 标准错误 |
 | junit | application/xml | JUnit 结果 |
 | coverage | application/xml | 覆盖率结果 |
+| newman_json | application/json | Newman JSON 结果 |
 | playwright_trace | application/zip | Playwright trace |
 | screenshot | image/png | 截图 |
 | report_md | text/markdown | Markdown 报告 |
@@ -212,6 +218,25 @@ Playwright artifact rules:
   and the best available test node id or page URL.
 - Trace and screenshot artifacts are evidence only; they must not trigger report
   generation or failure analysis automatically.
+
+Newman artifact rules:
+
+- `newman_json` must point to the JSON reporter output produced or copied by
+  the controlled Newman runner.
+- `parsed_output` for a Newman TestRun must summarize `total`, `passed`,
+  `failed`, `skipped`, `error`, `request_count`, `assertion_count`,
+  `collection_name`, and `duration_ms` when available.
+- Optional Newman JUnit output may use the existing `junit` artifact type.
+- Newman artifacts use `owner_entity_type=TestRun` and
+  `owner_entity_id=test_run_id`.
+- Metadata should include `created_by_component=NewmanRunner`,
+  `runner_mode=newman_local`, `collection_name`, `request_count`,
+  `assertion_count`, and redaction status.
+- Artifact content and metadata must not store secrets, bearer tokens, cookies,
+  or raw environment values.
+- Newman artifacts are evidence only; they must not trigger report generation,
+  FailureAnalysis, QualityGateDecision, remote CI/CD provider calls, or Postman
+  cloud synchronization automatically.
 
 ## 5. Metadata 契约
 

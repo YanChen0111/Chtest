@@ -149,6 +149,16 @@ running -> failed / timeout / cancelled
 
 规则：ToolInvocation 必须来自 ToolDefinition allowlist，禁止任意 shell。
 
+Newman 规则：
+
+- Newman execution uses a ToolInvocation created from the
+  `newman_collection_run` ToolDefinition or equivalent built-in allowlisted
+  tool.
+- The ToolInvocation input must reference an approved `TestCommand` with
+  `command_type=newman`; it must not carry arbitrary shell text from the client.
+- Shell chaining, redirection, command substitution, and pipes remain forbidden
+  even when the underlying executable is Newman.
+
 ## 7.1 KnowledgeAdapterConfig 状态机
 
 ```text
@@ -197,6 +207,17 @@ running -> timeout
 | created/queued/running | cancel | cancelled | 用户取消 |
 
 规则：failed 与 error 不等价。failed 是测试断言失败，error 是环境、命令、解析器或执行器异常。
+
+Newman 规则：
+
+- Newman follows the same TestRun statuses.
+- Newman assertion failures produce `failed`.
+- Newman process launch failure, timeout, allowlist rejection, missing
+  collection, malformed output, or parser failure produces `error` unless the
+  run was cancelled or timed out by the user/runtime.
+- Newman `parsed_result_json` and `newman_json` artifacts must be written before
+  marking the run `passed` or `failed` when the runner produced parseable
+  output.
 
 ## 9. QualityGateDecision 状态机
 

@@ -128,7 +128,7 @@ Constraint: level between 1 and 5.
 | name | varchar(160) | yes | none | Example `pytest unit` |
 | command | text | yes | none | Must match allowlist rules |
 | working_directory | text | yes | none | Must be under repository path |
-| command_type | varchar(40) | yes | pytest | pytest, npm, playwright |
+| command_type | varchar(40) | yes | pytest | pytest, npm, playwright, newman |
 | timeout_seconds | int | yes | 600 | Max runtime |
 | parse_junit | bool | yes | true | Parse JUnit output |
 | parse_coverage | bool | yes | false | Parse coverage output |
@@ -256,6 +256,11 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 
 V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed artifact runtime directory before execution. It is not written directly into the target business repository.
 
+V2 Newman rule: Newman API execution uses configured TestCommand records with
+`command_type=newman`. It is not generated from AutomationDraft in Slice 18.
+The command must match Newman allowlist rules and must not contain arbitrary
+shell operators.
+
 ## 17. CICDRun
 
 | Field | Type | Required | Default | Notes |
@@ -347,7 +352,7 @@ UnitTestPatch rules:
 | name | varchar(255) | yes | none | Run name |
 | command | text | yes | none | Executed command |
 | working_directory | text | yes | none | Working directory |
-| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, docker_runner |
+| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, playwright_local, newman_local, docker_runner |
 | run_workspace | text | no | null | Isolated execution workspace |
 | repository_readonly | bool | yes | true | Target repository mounted/read as readonly when possible |
 | network_enabled | bool | yes | false | Network access during run |
@@ -358,6 +363,19 @@ UnitTestPatch rules:
 | exit_code | int | no | null | Exit code |
 | duration_ms | int | no | null | Duration |
 | parsed_result_json | jsonb | yes | {} | Parsed aggregate result |
+
+Newman TestRun rules:
+
+- `runner_mode=newman_local` is used for approved local Newman API execution.
+- Newman TestRuns must reference `test_command_id`; Slice 18 does not execute
+  Newman from AutomationDraft.
+- `parsed_result_json` must include aggregate request/assertion counts:
+  `total`, `passed`, `failed`, `skipped`, `error`, `request_count`, and
+  `assertion_count`.
+- `failed` means Newman completed and one or more API assertions failed.
+- `error` means Newman could not run, timed out, or produced unparseable output.
+- `network_enabled` remains explicit. Local fixture tests should keep it false;
+  any future live API collection must display the chosen network policy.
 
 ## 21. QualityGateDecision
 
@@ -399,6 +417,18 @@ QualityGateDecision rules:
 | failure_message | text | no | null | Failure summary |
 | failure_artifact_ids | uuid[] | yes | {} | Related artifacts |
 | metadata_json | jsonb | yes | {} | Parser-specific metadata |
+
+Newman TestResult metadata rules:
+
+- Newman results are mapped at assertion granularity when available.
+- `test_name` should be deterministic, for example
+  `collection/folder/request::assertion`.
+- `test_file` may be the collection path when known.
+- `metadata_json` should include safe fields such as `collection_name`,
+  `folder_name`, `request_name`, `assertion_name`, `method`, `url_template`,
+  and `iteration`.
+- `metadata_json` must not store secrets, bearer tokens, cookies, or raw
+  environment values.
 
 ## 23. FailureAnalysis
 
@@ -574,6 +604,21 @@ MCP-ready ToolDefinition rules:
   transport settings, or plugin marketplace references.
 - `tool_type=mcp_proxy` is schema intent only in V1 and must not trigger an MCP
   runtime dependency.
+
+Newman ToolDefinition rules:
+
+- Built-in Newman execution uses a ToolDefinition such as
+  `newman_collection_run`.
+- `tool_type` remains `test_runner`.
+- `command_allowlist_json` must constrain commands to backend-approved Newman
+  templates, for example `npx newman run <collection> --reporters json,junit`.
+- `allowed_working_directories_json` must keep execution under the repository
+  path or Chtest-managed runtime workspace.
+- `artifact_policy_json` must name stdout, stderr, `newman_json`, optional
+  `junit`, runtime manifest, dependency snapshot, environment snapshot, and
+  parsed result artifacts.
+- Forbidden shell operators remain rejected. A Newman command cannot use shell
+  chaining, redirection, command substitution, or pipes.
 
 ## 31. KnowledgeAdapterConfig
 
