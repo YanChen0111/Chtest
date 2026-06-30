@@ -35,7 +35,7 @@ MCP runtime, or add RBAC, tenants, or permissions.
 | Add AutomationDraft generation API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q` | `7824172` | mock draft from reviewed TestCase |
 | Add AutomationDraft edit and approve API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q` | `bb6162a` | edit -> edited -> approve -> approved |
 | Add AutomationDraft frontend review shell | done | `npm --prefix frontend run test -- --run` | `b75dc1a` | draft review, edit, approve shell only |
-| Add AutomationDraft golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_automation_draft_golden.py -q` | pending commit | reviewed golden case produces approved draft |
+| Add AutomationDraft golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_automation_draft_golden.py -q` | `9a821df` | reviewed golden case produces approved draft |
 | Slice 11 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/golden/test_automation_draft_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 
 ## Task 1: Add AutomationDraft Model And Schema Alignment
@@ -209,10 +209,32 @@ test(golden): add automation draft smoke
 
 ## Slice Completion Gate
 
+Status: done.
+
+Product value answer:
+
+- Chtest can turn a reviewed TestCase into a review-gated AutomationDraft, let a
+  human edit and approve it, and prove no execution/report side effects happen
+  in this foundation slice.
+
+Verification commands:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_test_case_library_golden.py -q
+npm --prefix frontend run test -- --run
+```
+
+Verification results:
+
+- AutomationDraft API + golden draft + Test Case Library golden: `7 passed`.
+- Frontend workbench shell tests: `9 passed, 12 tests passed`.
+
+Completion evidence:
+
 - AutomationDraft model/schema aligns with contracts.
 - Draft generation API creates review-gated draft records from reviewed cases.
 - Edit and approve APIs work without execution side effects.
 - Frontend can review, edit, and approve drafts without run buttons.
 - Golden smoke proves reviewed case -> approved draft.
 - No TestRun/TestResult execution, reports, CI/CD quality, RAG runtime, MCP
-  runtime, RBAC, tenants, or permissions are added.
+  runtime, RBAC, tenants, or permissions were added.

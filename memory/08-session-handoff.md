@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-06-30 Slice 11 AutomationDraft Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 11 completion gate。
+- 确认 Slice 11 所有任务均为 `done`，并记录提交号：
+  `7704bbf`、`2d5bdec`、`7824172`、`bb6162a`、`b75dc1a`、`9a821df`。
+- 确认 AutomationDraft model/schema、generation API、review API、frontend shell、golden smoke 均已覆盖。
+- 已在 `docs/implementation/slices/slice-11-automation-draft-foundation.md` 写入 completion evidence。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 12 Task 1：Add TestRunner Pytest Execution task plan。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_test_case_library_golden.py -q
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- AutomationDraft API + golden draft + Test Case Library golden：`7 passed`
+- Frontend workbench shell tests：`9 passed, 12 tests passed`
+
+Slice 11 保持的非目标：
+
+- 未加入 TestRun/TestResult execution、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 12 Task 1：Add TestRunner Pytest Execution task plan。
+- 这是 planning-only 任务，先创建 `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`，不要直接改产品代码。
+
 ## 2026-06-30 Slice 11 Task 6 AutomationDraft Golden Smoke 完成
 
 本轮完成：
