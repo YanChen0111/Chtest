@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-06-30 Slice 09 Task 5 Case Metrics Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 09 Task 5：新增 Case Metrics golden smoke。
+- 新增 `backend/app/tests/golden/test_requirement_to_case_metrics.py`，复用现有 golden requirement-to-case fixture setup。
+- golden smoke 按优惠券结算评审计划提交 approve、approve_after_edit、needs_optimization 动作后，调用 metrics API 验证 batch 指标。
+- 断言 `generated_count >= 5`、`approved_count == 3`、`edited_count == 1`、`optimization_count == 1`、`review_progress >= 1.0`、`acceptance_rate == 0.8`。
+- 未加入 browser automation、frontend、execution、AutomationDraft、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 09 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case_metrics.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py backend/app/tests/api/test_case_metrics.py -q
+```
+
+验证结果：
+
+- Case Metrics golden smoke：`1 passed`
+- Requirement To Case golden / Case Metrics golden / Case Metrics API regression：`6 passed`
+
+修改文件：
+
+- `backend/app/tests/golden/test_requirement_to_case_metrics.py`
+- `docs/implementation/slices/slice-09-case-metrics.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 09 completion gate。
+- 验证命令：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py -q`
+  和 `npm --prefix frontend run test -- --run`。
+
 ## 2026-06-30 Slice 09 Task 4 Case Metrics Frontend Shell 完成
 
 本轮完成：

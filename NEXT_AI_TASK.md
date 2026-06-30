@@ -10,12 +10,12 @@ Slice 09: Case Metrics.
 
 ## Current Task
 
-Task 5: Add Case Metrics golden smoke.
+Slice 09 completion gate.
 
 ## Product Value Answer
 
-After this task, Chtest can prove the golden requirement-to-case fixture
-produces stable batch-level case generation metrics after review actions.
+After this task, Chtest can prove the Case Metrics slice is complete across
+backend calculation, API, frontend shell, and golden fixture coverage.
 
 ## Must Read
 
@@ -23,8 +23,8 @@ produces stable batch-level case generation metrics after review actions.
 2. `docs/implementation/slices/slice-09-case-metrics.md`
 3. `docs/product/04-ai-quality-metrics.md`
 4. `docs/fixtures/01-golden-requirement-to-case.md`
-5. `backend/app/tests/golden/test_requirement_to_case.py`
-6. `backend/app/modules/cases/service.py`
+5. `docs/implementation/02-v1-slice-plan.md`
+6. `memory/08-session-handoff.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
@@ -38,39 +38,41 @@ produces stable batch-level case generation metrics after review actions.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_requirement_to_case_metrics.py
+docs/implementation/slices/slice-09-case-metrics.md
+NEXT_AI_TASK.md
+memory/08-session-handoff.md
 ```
 
-Read the existing golden requirement-to-case smoke only as needed to reuse its
-fixture setup and review pattern.
+Do not modify product code unless the completion verification exposes a concrete
+bug.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case_metrics.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: golden metrics smoke passes.
+Expected result: Case Metrics backend/golden tests and frontend test suite pass.
 
 ## Acceptance
 
-- Add a fixture-aligned golden smoke for case metrics.
-- Assert generated_count is at least 5.
-- Assert approved_count is 3, edited_count is 1, and optimization_count is 1 for
-  the golden review plan.
-- Assert review_progress is at least 1.0 after the reviewed golden batch.
-- Assert acceptance_rate includes approved and approved_after_edit candidates.
-- Do not add browser automation, frontend, execution, AutomationDraft, reports,
-  CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- `git status --short` shows only the expected golden test file and required
-  task docs before commit.
+- Confirm the Slice 09 task table has commit IDs for every completed task.
+- Confirm case metrics can be calculated from persisted records.
+- Confirm metrics API returns generated_count, approved_count, rejected_count,
+  acceptance_rate, edit_rate, and review_progress.
+- Confirm frontend can show batch metrics without a broad dashboard.
+- Confirm golden fixture metric smoke passes.
+- Do not add AutomationDraft, execution, reports, CI/CD quality, RAG runtime,
+  MCP runtime, RBAC, tenants, or permissions.
+- Update handoff with completion evidence and next recommended slice/task.
 
 ## Commit Message
 
 ```text
-test(golden): add case metrics smoke
+docs(metrics): complete case metrics slice
 ```
 
 ## Next Task
 
-Slice 09 completion gate.
+Select the next smallest V1 task from `docs/implementation/02-v1-slice-plan.md`.
