@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-06-30 Slice 12 Task 5 TestRun API 完成
+
+本轮完成：
+
+- 完成 Slice 12 Task 5：Add TestRun API。
+- 新增 `backend/app/modules/execution/service.py` 和 `router.py`，接入
+  `POST /api/test-runs`、`GET /api/test-runs/{id}`。
+- `POST /api/test-runs` 支持 approved AutomationDraft 和 configured
+  TestCommand 两条来源。
+- approved AutomationDraft 会复制到 Chtest-managed 临时运行目录后通过
+  pytest runner 执行；未批准 draft 返回 `TEST_RUN_INVALID_INPUT`。
+- 执行结果会持久化 TestRun、TestResult、stdout/stderr/runtime_manifest
+  Artifact metadata。
+- 已在 `backend/app/main.py` 注册 execution router。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 12 Task 6：Add Pytest Execution
+  Frontend Shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q
+```
+
+验证结果：
+
+- TestRun API focused tests：`10 passed`
+
+修改文件：
+
+- `backend/app/main.py`
+- `backend/app/modules/execution/router.py`
+- `backend/app/modules/execution/service.py`
+- `backend/app/tests/api/test_testrunner_pytest.py`
+- `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 12 Task 6：Add Pytest Execution Frontend
+  Shell。
+- 前端只做 pytest execution workbench shell，不加入 report/quality gate。
+
 ## 2026-06-30 Slice 12 Task 4 Pytest Runner Adapter 完成
 
 本轮完成：

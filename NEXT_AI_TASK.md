@@ -10,12 +10,12 @@ Slice 12: TestRunner Pytest Execution.
 
 ## Current Task
 
-Task 5: Add TestRun API.
+Task 6: Add Pytest Execution Frontend Shell.
 
 ## Product Value Answer
 
-After this task, Chtest can create and retrieve controlled pytest TestRun
-records through the backend API.
+After this task, users can start a controlled pytest run and inspect execution
+evidence from the frontend workbench shell.
 
 ## Must Read
 
@@ -37,45 +37,44 @@ records through the backend API.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/execution/__init__.py
-backend/app/modules/execution/router.py
-backend/app/modules/execution/service.py
-backend/app/modules/execution/schemas.py
-backend/app/main.py
-backend/app/tests/api/test_testrunner_pytest.py
+frontend/src/api/execution.ts
+frontend/src/stores/execution.ts
+frontend/src/views/execution/PytestExecutionView.vue
+frontend/src/views/execution/PytestExecutionView.spec.ts
+frontend/src/router/index.ts
+frontend/src/stores/index.ts
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-12-testrunner-pytest-execution.md
 ```
 
-Do not generate reports or quality gate decisions in this task.
+Do not add Playwright, reports, CI/CD quality, RAG runtime, MCP runtime, RBAC,
+tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: focused TestRun API tests pass.
+Expected result: frontend workbench shell tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/test-runs`.
-- Adds `GET /api/test-runs/{id}`.
-- Requires approved AutomationDraft or configured TestCommand input.
-- Persists stdout/stderr/JUnit/runtime artifact metadata where available.
-- Persists TestResult rows from parsed pytest output.
-- Does not generate reports or quality gate decisions.
-- Do not add Playwright execution, reports, CI/CD quality, RAG runtime, MCP
-  runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to pytest execution frontend shell.
+- Adds workbench navigation for pytest execution.
+- Starts a run from approved AutomationDraft or configured TestCommand.
+- Shows run status, command, exit code, duration, stdout/stderr artifact
+  references, parsed result summary, and TestResult rows.
+- Does not add Playwright, reports, CI/CD quality, RAG runtime, MCP runtime,
+  RBAC, tenants, or permissions.
+- Update handoff and set the next task to pytest execution golden smoke.
 
 ## Commit Message
 
 ```text
-feat(execution): add pytest test run api
+feat(frontend): add pytest execution shell
 ```
 
 ## Next Task
 
-Slice 12 Task 6: Add Pytest Execution Frontend Shell.
+Slice 12 Task 7: Add Pytest Execution Golden Smoke.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import uuid
 from pathlib import Path
+from typing import Any
 
 import pytest
 from sqlalchemy import create_engine, select
@@ -17,7 +18,9 @@ from backend.app.modules.execution.pytest_runner import PytestRunner, PytestRunn
 from backend.app.modules.execution.schemas import TestResultRead as ResultRead
 from backend.app.modules.execution.schemas import TestRunCreateRequest as RunCreateRequest
 from backend.app.modules.execution.schemas import TestRunRead as RunRead
+from backend.app.modules.projects.router import get_session
 from backend.app.modules.projects.models import Project, TestCommand, Workspace
+from backend.app.main import app
 
 
 def session_factory() -> sessionmaker[Session]:
@@ -39,6 +42,76 @@ def seed_project(session: Session) -> Project:
     session.add(project)
     session.flush()
     return project
+
+
+class ASGIResponse:
+    def __init__(self, status_code: int, body: bytes) -> None:
+        self.status_code = status_code
+        self.body = body
+
+    def json(self) -> Any:
+        import json
+
+        return json.loads(self.body.decode("utf-8"))
+
+
+class ASGIClient:
+    def __init__(self, asgi_app: Any) -> None:
+        self.asgi_app = asgi_app
+
+    def get(self, path: str) -> ASGIResponse:
+        import asyncio
+
+        return asyncio.run(self._request("GET", path, None))
+
+    def post(self, path: str, json_body: dict[str, Any]) -> ASGIResponse:
+        import asyncio
+
+        return asyncio.run(self._request("POST", path, json_body))
+
+    async def _request(self, method: str, path: str, json_body: dict[str, Any] | None) -> ASGIResponse:
+        import json
+
+        body = json.dumps(json_body).encode("utf-8") if json_body is not None else b""
+        status_code: int | None = None
+        body_chunks: list[bytes] = []
+        request_complete = False
+
+        async def receive() -> dict[str, Any]:
+            nonlocal request_complete
+            if not request_complete:
+                request_complete = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return {"type": "http.disconnect"}
+
+        async def send(message: dict[str, Any]) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            elif message["type"] == "http.response.body":
+                body_chunks.append(message.get("body", b""))
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": method,
+            "scheme": "http",
+            "path": path,
+            "raw_path": path.encode("utf-8"),
+            "query_string": b"",
+            "headers": [
+                (b"host", b"testserver"),
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode("ascii")),
+            ],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+        }
+
+        await self.asgi_app(scope, receive, send)
+        assert status_code is not None
+        return ASGIResponse(status_code, b"".join(body_chunks))
 
 
 def test_test_run_model_persists_contract_fields() -> None:
@@ -236,3 +309,145 @@ def test_pytest_runner_rejects_non_pytest_command(tmp_path: Path) -> None:
 
     with pytest.raises(PytestRunnerCommandError):
         runner.run("python -m pytest tests -q", working_directory=tmp_path)
+
+
+def test_create_test_run_from_approved_automation_draft(tmp_path: Path) -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project = seed_project(session)
+            draft = AutomationDraft(
+                project_id=project.id,
+                ai_task_id=uuid.uuid4(),
+                target_framework="pytest",
+                title="pytest draft for checkout",
+                draft_code="def test_generated_ok():\n    assert True\n",
+                draft_language="python",
+                suggested_file_path="tests/test_generated_ok.py",
+                status="approved",
+            )
+            session.add(draft)
+            session.commit()
+            draft_id = draft.id
+            project_id = project.id
+
+        client = ASGIClient(app)
+        response = client.post(
+            "/api/test-runs",
+            {
+                "project_id": str(project_id),
+                "automation_draft_id": str(draft_id),
+                "reason": "run approved draft",
+            },
+        )
+
+        assert response.status_code == 202
+        body = response.json()
+        assert body["automation_draft_id"] == str(draft_id)
+        assert body["status"] == "passed"
+        assert body["exit_code"] == 0
+        assert body["network_enabled"] is False
+        assert body["parsed_result"]["passed"] == 1
+        assert body["test_results"][0]["status"] == "passed"
+        assert body["artifacts"]
+
+        get_response = client.get(f"/api/test-runs/{body['id']}")
+        assert get_response.status_code == 200
+        fetched = get_response.json()
+        assert fetched["id"] == body["id"]
+        assert fetched["test_results"][0]["test_name"].endswith("test_generated_ok")
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_create_test_run_rejects_unapproved_automation_draft() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project = seed_project(session)
+            draft = AutomationDraft(
+                project_id=project.id,
+                ai_task_id=uuid.uuid4(),
+                target_framework="pytest",
+                title="pytest draft for checkout",
+                draft_code="def test_generated_ok():\n    assert True\n",
+                draft_language="python",
+                suggested_file_path="tests/test_generated_ok.py",
+                status="draft_generated",
+            )
+            session.add(draft)
+            session.commit()
+            draft_id = draft.id
+            project_id = project.id
+
+        response = ASGIClient(app).post(
+            "/api/test-runs",
+            {
+                "project_id": str(project_id),
+                "automation_draft_id": str(draft_id),
+                "reason": "run unapproved draft",
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json()["error_code"] == "TEST_RUN_INVALID_INPUT"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_create_test_run_from_configured_test_command(tmp_path: Path) -> None:
+    test_file = tmp_path / "test_command_path.py"
+    test_file.write_text("def test_command_ok():\n    assert True\n", encoding="utf-8")
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project = seed_project(session)
+            command = TestCommand(
+                project_id=project.id,
+                name="pytest command",
+                command="pytest test_command_path.py -q",
+                working_directory=str(tmp_path),
+                command_type="pytest",
+                status="active",
+            )
+            session.add(command)
+            session.commit()
+            command_id = command.id
+            project_id = project.id
+
+        response = ASGIClient(app).post(
+            "/api/test-runs",
+            {
+                "project_id": str(project_id),
+                "test_command_id": str(command_id),
+                "reason": "run configured command",
+            },
+        )
+
+        assert response.status_code == 202
+        body = response.json()
+        assert body["test_command_id"] == str(command_id)
+        assert body["automation_draft_id"] is None
+        assert body["status"] == "passed"
+        assert body["parsed_result"]["passed"] == 1
+        assert body["test_results"][0]["test_name"] == "pytest::session"
+    finally:
+        app.dependency_overrides.clear()
