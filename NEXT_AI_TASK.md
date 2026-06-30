@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 13: Playwright Minimal Loop.
+Slice 14: Report And Failure Analysis.
 
 ## Current Task
 
-Slice 13 completion gate.
+Task 1: Add Report And Failure Analysis task plan.
 
 ## Product Value Answer
 
-After this task, Slice 13 is verified end-to-end and ready to hand off to the
-next V1 slice.
+After this task, Chtest has a scoped Slice 14 task plan for evidence-backed
+FailureAnalysis and Report work.
 
 ## Must Read
 
@@ -43,35 +43,35 @@ memory/08-session-handoff.md
 docs/implementation/slices/slice-13-playwright-minimal-loop.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/implementation/slices/slice-13-playwright-minimal-loop.md
+docs/implementation/slices/slice-14-report-and-failure-analysis.md
 ```
 
-This is a verification and documentation task only. Do not modify product code
-unless verification exposes a concrete blocker.
+This is a planning/documentation task only. Do not modify product code.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q && npm --prefix frontend run test -- --run
+test -f docs/implementation/slices/slice-14-report-and-failure-analysis.md && rg -n "Report And Failure Analysis|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-14-report-and-failure-analysis.md
 ```
 
-Expected result: backend Playwright API/golden tests and frontend shell tests
-pass.
+Expected result: Slice 14 task plan exists and contains task table,
+verification commands, and non-goals.
 
 ## Acceptance
 
-- Confirm Slice 13 task table is fully done.
-- Run backend Playwright API + golden smoke verification.
-- Run frontend workbench verification.
-- Record completion evidence in the Slice 13 task plan.
-- Update handoff and set the next task to Slice 14 planning.
+- Create a scoped Slice 14 Report And Failure Analysis task plan.
+- Keep Slice 14 limited to FailureAnalysis, evidence manifest, and
+  automation_execution Report.
+- Do not add CI/CD quality gates, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions.
+- Update handoff and set the next task to Slice 14 API contract/task boundary.
 
 ## Commit Message
 
 ```text
-docs(playwright): complete minimal loop slice
+docs(report): add failure analysis task plan
 ```
 
 ## Next Task
 
-Slice 14 Task 1: Add Report And Failure Analysis task plan.
+Slice 14 Task 2: Add Report and FailureAnalysis API contract boundary.

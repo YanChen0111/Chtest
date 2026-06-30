@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-30 Slice 13 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 13 completion gate。
+- 确认 Slice 13 所有任务均为 `done`，并记录提交号：
+  `f882a4a`、`1205e95`、`b7c65f2`、`ac3f7c8`、`47d0618`、`a201335`。
+- 完成组合验收：Playwright contract、runner adapter、execution API、
+  frontend shell、golden smoke 均已覆盖。
+- 已在 `docs/implementation/slices/slice-13-playwright-minimal-loop.md` 写入
+  completion evidence。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 14 Task 1：Add Report And Failure
+  Analysis task plan。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Playwright API + golden smoke：`9 passed`
+- Frontend workbench shell：`11 passed, 14 tests passed`
+
+Slice 13 保持的非目标：
+
+- 未加入 reports、failure analysis、CI/CD quality、RAG runtime、MCP runtime、
+  RBAC、tenants、permissions、low-code UI automation 或 browser matrix。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 14 Task 1：Add Report And Failure Analysis
+  task plan。
+- 这是 planning-only 任务，先创建
+  `docs/implementation/slices/slice-14-report-and-failure-analysis.md`，不要直接改产品代码。
+
 ## 2026-06-30 Slice 13 Task 6 Playwright Golden Smoke 完成
 
 本轮完成：

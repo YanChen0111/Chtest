@@ -42,8 +42,8 @@ broad browser grid/device matrix work.
 | Add Playwright runner adapter | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q` | `b7c65f2` | allowlisted local command wrapper |
 | Add Playwright execution API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py -q` | `ac3f7c8` | create/get Playwright TestRun evidence |
 | Add Playwright execution frontend shell | done | `npm --prefix frontend run test -- --run` | `47d0618` | inspect trace/screenshot evidence |
-| Add Playwright golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q` | pending commit | approved golden draft executes controlled Playwright smoke |
-| Slice 13 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
+| Add Playwright golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q` | `a201335` | approved golden draft executes controlled Playwright smoke |
+| Slice 13 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q && npm --prefix frontend run test -- --run` | pending commit | docs and handoff only |
 
 ## Task 1: Add Playwright Execution API Contract And Task Boundary
 
@@ -234,3 +234,22 @@ test(golden): add playwright minimal smoke
 - No reports, failure analysis, CI/CD quality, RAG runtime, MCP runtime, RBAC,
   tenants, permissions, low-code UI automation, or broad browser matrix are
   added.
+
+Completion evidence:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py -q
+npm --prefix frontend run test -- --run
+```
+
+Verification result:
+
+- Playwright API + golden smoke: `9 passed`
+- Frontend workbench shell: `11 passed, 14 tests passed`
+
+Notes:
+
+- Golden smoke uses deterministic fake Playwright runner output and does not
+  require browser binaries.
+- Next Slice is set to Slice 14 Report And Failure Analysis planning. Slice 14
+  must remain a separate scoped task and must not be folded into Slice 13.
