@@ -10,12 +10,12 @@ Slice 10: Test Case Library.
 
 ## Current Task
 
-Task 3: Add Test Case Library backend API.
+Task 4: Add Test Case Library frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest can list reviewed TestCase records through a scoped
-backend API for the Test Case Library.
+After this task, Chtest can browse reviewed TestCase records from the frontend
+workbench without adding automation or execution actions.
 
 ## Must Read
 
@@ -39,42 +39,46 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-10-test-case-library.md
-backend/app/modules/cases/router.py
-backend/app/modules/cases/service.py
-backend/app/modules/cases/schemas.py
-backend/app/tests/api/test_test_case_library.py
+frontend/src/api/cases.ts
+frontend/src/stores/cases.ts
+frontend/src/views/cases/TestCaseLibraryView.vue
+frontend/src/views/cases/TestCaseLibraryView.spec.ts
+frontend/src/router/index.ts
+frontend/src/layouts/WorkbenchLayout.vue
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Read nearby cases tests and models as needed, but keep writes inside the files
-above unless a concrete blocker requires an explained contract/doc update.
+Read existing frontend cases/requirements shells as needed, but keep writes
+inside the files above unless a concrete blocker requires an explained
+contract/doc update.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py -q
+npm --prefix frontend run test -- --run
 ```
 
-Expected result: Test Case Library backend API tests pass.
+Expected result: frontend test suite passes.
 
 ## Acceptance
 
-- Add `GET /api/test-cases`.
-- Return only persisted TestCase records, not generated candidates.
-- Support project_id filtering and optional module_id, status, test_type,
-  priority, and keyword filters.
-- Return deterministic `items` and `total`.
-- Do not add TestCase mutation, AutomationDraft, execution, reports, CI/CD
-  quality, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to frontend shell.
+- Add frontend API/store wiring for `GET /api/test-cases`.
+- Add a workbench navigation entry for Test Case Library.
+- Show a compact searchable/filterable list of reviewed cases.
+- Show selected case title, priority, type, status, steps, expected results,
+  tags, and review/source metadata.
+- Do not add AutomationDraft buttons, execution buttons, reports, broad
+  dashboard widgets, chart dependencies, RAG runtime, MCP runtime, RBAC,
+  tenants, or permissions.
+- Update handoff and set the next task to golden smoke.
 
 ## Commit Message
 
 ```text
-feat(cases): add test case library api
+feat(frontend): add test case library shell
 ```
 
 ## Next Task
 
-Slice 10 Task 4: Add Test Case Library frontend shell.
+Slice 10 Task 5: Add Test Case Library golden smoke.

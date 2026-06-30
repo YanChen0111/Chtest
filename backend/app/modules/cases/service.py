@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime import service as ai_runtime_service
@@ -14,6 +14,7 @@ from backend.app.modules.cases.schemas import (
     CaseMetricsRead,
     CaseReviewRequest,
     GeneratedCaseCandidateListItemRead,
+    TestCaseListItemRead,
 )
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.projects.models import Project
@@ -167,6 +168,63 @@ def list_candidates(session: Session, generation_task_id: uuid.UUID) -> list[Gen
             status=candidate.status,
         )
         for candidate in candidates
+    ]
+
+
+def list_test_cases(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    module_id: uuid.UUID | None = None,
+    status: str | None = None,
+    test_type: str | None = None,
+    priority: str | None = None,
+    keyword: str | None = None,
+) -> list[TestCaseListItemRead]:
+    if session.get(Project, project_id) is None:
+        raise ProjectNotFoundError
+
+    query = select(TestCase).where(TestCase.project_id == project_id)
+    if module_id is not None:
+        query = query.where(TestCase.module_id == module_id)
+    if status is not None:
+        query = query.where(TestCase.status == status)
+    if test_type is not None:
+        query = query.where(TestCase.test_type == test_type)
+    if priority is not None:
+        query = query.where(TestCase.priority == priority)
+    if keyword:
+        keyword_pattern = f"%{keyword}%"
+        query = query.where(
+            or_(
+                TestCase.title.ilike(keyword_pattern),
+                TestCase.precondition.ilike(keyword_pattern),
+                cast(TestCase.steps_json, String).ilike(keyword_pattern),
+                cast(TestCase.expected_results_json, String).ilike(keyword_pattern),
+                cast(TestCase.input_data_json, String).ilike(keyword_pattern),
+                cast(TestCase.tags, String).ilike(keyword_pattern),
+            ),
+        )
+    test_cases = list(session.scalars(query.order_by(TestCase.created_at.asc(), TestCase.id.asc())))
+    return [
+        TestCaseListItemRead(
+            id=test_case.id,
+            project_id=test_case.project_id,
+            module_id=test_case.module_id,
+            source_candidate_id=test_case.source_candidate_id,
+            title=test_case.title,
+            priority=test_case.priority,
+            test_type=test_case.test_type,
+            precondition=test_case.precondition,
+            steps=test_case.steps_json,
+            expected_results=test_case.expected_results_json,
+            input_data=test_case.input_data_json,
+            tags=test_case.tags,
+            source_type=test_case.source_type,
+            review_status=test_case.review_status,
+            status=test_case.status,
+        )
+        for test_case in test_cases
     ]
 
 

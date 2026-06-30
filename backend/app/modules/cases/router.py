@@ -15,6 +15,7 @@ from backend.app.modules.cases.schemas import (
     CaseReviewRead,
     CaseReviewRequest,
     GeneratedCaseCandidateListRead,
+    TestCaseListRead,
 )
 from backend.app.modules.projects.router import get_session
 
@@ -118,6 +119,31 @@ def get_case_metrics(
         return service.calculate_case_metrics(session, generation_task_id)
     except service.CaseGenerationTaskNotFoundError as exc:
         raise not_found("CASE_GENERATION_TASK_NOT_FOUND", "Case generation task not found.") from exc
+
+
+@router.get("/test-cases", response_model=TestCaseListRead)
+def list_test_cases(
+    project_id: uuid.UUID,
+    module_id: uuid.UUID | None = None,
+    status: str | None = None,
+    test_type: str | None = None,
+    priority: str | None = None,
+    keyword: str | None = None,
+    session: Session = Depends(get_session),
+) -> TestCaseListRead:
+    try:
+        items = service.list_test_cases(
+            session,
+            project_id=project_id,
+            module_id=module_id,
+            status=status,
+            test_type=test_type,
+            priority=priority,
+            keyword=keyword,
+        )
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    return TestCaseListRead(items=items, total=len(items))
 
 
 @router.post("/case-review/items/{candidate_id}/approve", response_model=CaseReviewRead)

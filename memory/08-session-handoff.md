@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-06-30 Slice 10 Task 3 Test Case Library Backend API 完成
+
+本轮完成：
+
+- 完成 Slice 10 Task 3：新增 Test Case Library backend API。
+- 新增 `GET /api/test-cases`，返回已持久化的 TestCase records，不返回未评审 GeneratedCaseCandidate。
+- 支持 `project_id` 必填过滤，以及 module_id、status、test_type、priority、keyword 可选过滤。
+- keyword 覆盖 title、precondition、steps、expected_results、input_data、tags 的简单匹配。
+- 响应返回 `items` 和 `total`，并包含 TestCase Library 合同字段。
+- 未新增 TestCase mutation、AutomationDraft、execution、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 10 Task 4：Add Test Case Library frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_test_case_library.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_case_metrics.py backend/app/tests/api/test_test_case_library.py -q
+```
+
+验证结果：
+
+- Test Case Library API focused test：`3 passed`
+- Case Generation / Case Review / Case Metrics / Test Case Library API regression：`15 passed`
+
+修改文件：
+
+- `backend/app/modules/cases/router.py`
+- `backend/app/modules/cases/service.py`
+- `backend/app/modules/cases/schemas.py`
+- `backend/app/tests/api/test_test_case_library.py`
+- `docs/implementation/slices/slice-10-test-case-library.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 10 Task 4：Add Test Case Library frontend shell。
+- 先写 `frontend/src/views/cases/TestCaseLibraryView.spec.ts` 红灯，再补 API/store/router/layout/view。
+
 ## 2026-06-30 Slice 10 Task 2 Test Case Library API Contract 完成
 
 本轮完成：

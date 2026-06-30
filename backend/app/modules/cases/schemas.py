@@ -149,3 +149,26 @@ class TestCaseRead(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+
+
+class TestCaseListItemRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    module_id: uuid.UUID | None
+    source_candidate_id: uuid.UUID | None
+    title: str
+    priority: str
+    test_type: str
+    precondition: str | None
+    steps: list[Any]
+    expected_results: list[Any]
+    input_data: dict[str, Any]
+    tags: list[str]
+    source_type: str
+    review_status: str
+    status: str
+
+
+class TestCaseListRead(BaseModel):
+    items: list[TestCaseListItemRead]
+    total: int
