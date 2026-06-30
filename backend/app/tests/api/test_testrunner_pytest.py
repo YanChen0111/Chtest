@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import sys
 import uuid
+from pathlib import Path
 
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -10,6 +13,7 @@ from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.automation.models import AutomationDraft
 from backend.app.modules.execution.models import TestResult, TestRun
+from backend.app.modules.execution.pytest_runner import PytestRunner, PytestRunnerCommandError
 from backend.app.modules.execution.schemas import TestResultRead as ResultRead
 from backend.app.modules.execution.schemas import TestRunCreateRequest as RunCreateRequest
 from backend.app.modules.execution.schemas import TestRunRead as RunRead
@@ -202,3 +206,33 @@ def test_test_run_read_schema_embeds_test_results() -> None:
     assert body["parsed_result"]["passed"] == 1
     assert body["test_results"][0]["id"] == str(result_id)
     assert body["test_results"][0]["test_name"].endswith("test_expired_coupon")
+
+
+def test_pytest_runner_executes_allowlisted_command(tmp_path: Path) -> None:
+    test_file = tmp_path / "test_sample.py"
+    test_file.write_text("def test_ok():\n    assert True\n", encoding="utf-8")
+    runner = PytestRunner(python_executable=sys.executable)
+
+    result = runner.run("pytest test_sample.py -q", working_directory=tmp_path)
+
+    assert result.exit_code == 0
+    assert result.duration_ms >= 0
+    assert "1 passed" in result.stdout
+    assert result.stderr == ""
+    assert result.parsed_result["total"] == 1
+    assert result.parsed_result["passed"] == 1
+    assert result.parsed_result["failed"] == 0
+
+
+def test_pytest_runner_rejects_forbidden_shell_operator(tmp_path: Path) -> None:
+    runner = PytestRunner(python_executable=sys.executable)
+
+    with pytest.raises(PytestRunnerCommandError):
+        runner.run("pytest tests -q && rm -rf /tmp/example", working_directory=tmp_path)
+
+
+def test_pytest_runner_rejects_non_pytest_command(tmp_path: Path) -> None:
+    runner = PytestRunner(python_executable=sys.executable)
+
+    with pytest.raises(PytestRunnerCommandError):
+        runner.run("python -m pytest tests -q", working_directory=tmp_path)

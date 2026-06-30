@@ -10,12 +10,12 @@ Slice 12: TestRunner Pytest Execution.
 
 ## Current Task
 
-Task 4: Add Pytest Runner Adapter.
+Task 5: Add TestRun API.
 
 ## Product Value Answer
 
-After this task, Chtest can run an allowlisted local pytest command through a
-small deterministic adapter and return parsed execution evidence.
+After this task, Chtest can create and retrieve controlled pytest TestRun
+records through the backend API.
 
 ## Must Read
 
@@ -38,15 +38,17 @@ Create or update only these files for the current task:
 
 ```text
 backend/app/modules/execution/__init__.py
-backend/app/modules/execution/pytest_runner.py
+backend/app/modules/execution/router.py
+backend/app/modules/execution/service.py
 backend/app/modules/execution/schemas.py
+backend/app/main.py
 backend/app/tests/api/test_testrunner_pytest.py
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-12-testrunner-pytest-execution.md
 ```
 
-Do not add router/API orchestration in this task.
+Do not generate reports or quality gate decisions in this task.
 
 ## Verification Command
 
@@ -54,26 +56,26 @@ Do not add router/API orchestration in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q
 ```
 
-Expected result: focused pytest runner adapter tests pass.
+Expected result: focused TestRun API tests pass.
 
 ## Acceptance
 
-- Runs only pytest-style commands assembled by backend code, not arbitrary shell
-  strings.
-- Captures stdout, stderr, exit_code, duration_ms, and parsed pass/fail counts.
-- Supports local_subprocess runner mode first.
-- Network is disabled by default in TestRun metadata.
-- Does not add Docker runner or Playwright in this task.
+- Adds `POST /api/test-runs`.
+- Adds `GET /api/test-runs/{id}`.
+- Requires approved AutomationDraft or configured TestCommand input.
+- Persists stdout/stderr/JUnit/runtime artifact metadata where available.
+- Persists TestResult rows from parsed pytest output.
+- Does not generate reports or quality gate decisions.
 - Do not add Playwright execution, reports, CI/CD quality, RAG runtime, MCP
   runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to TestRun API.
+- Update handoff and set the next task to pytest execution frontend shell.
 
 ## Commit Message
 
 ```text
-feat(execution): add pytest runner adapter
+feat(execution): add pytest test run api
 ```
 
 ## Next Task
 
-Slice 12 Task 5: Add TestRun API.
+Slice 12 Task 6: Add Pytest Execution Frontend Shell.

@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-06-30 Slice 12 Task 4 Pytest Runner Adapter 完成
+
+本轮完成：
+
+- 完成 Slice 12 Task 4：Add Pytest Runner Adapter。
+- 新增 `backend/app/modules/execution/pytest_runner.py`，提供
+  `PytestRunner`、`PytestRunnerResult` 和 `PytestRunnerCommandError`。
+- adapter 复用 TestCommand allowlist 口径，只接受 `pytest ...` 命令并拒绝
+  forbidden shell operators。
+- adapter 使用 `python -m pytest` 执行已验证命令，捕获 stdout、stderr、
+  exit_code、duration_ms，并解析 passed/failed/skipped/error/total 计数。
+- 新增测试覆盖成功执行、拒绝 shell operator、拒绝非 allowlisted
+  `python -m pytest` 输入。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 12 Task 5：Add TestRun API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q
+```
+
+验证结果：
+
+- TestRun/TestResult model/schema + pytest runner adapter：`7 passed`
+
+修改文件：
+
+- `backend/app/modules/execution/pytest_runner.py`
+- `backend/app/tests/api/test_testrunner_pytest.py`
+- `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 12 Task 5：Add TestRun API。
+- 需要接 router/service/main，创建和读取 TestRun/TestResult evidence。
+- 不要生成 report 或 QualityGateDecision。
+
 ## 2026-06-30 Slice 12 Task 3 TestRun/TestResult Model Schema 完成
 
 本轮完成：
