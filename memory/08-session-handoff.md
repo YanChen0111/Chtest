@@ -1,5 +1,25 @@
 # Session Handoff
 
+## 2026-06-30 Post-V1 Task 1 完成
+
+本轮完成：
+
+- 完成 Post-V1 Task 1：Decide release packaging and demo artifact strategy。
+- 新增 `docs/implementation/09-post-v1-release-packaging-plan.md`。
+- 决策：V1 自动化验收采用当前 composable golden suite；不在 V1 packaging 前
+  新增大型 narrative E2E 自动化测试。
+- 决策：补轻量 release package，包含 release note、manual walkthrough、
+  acceptance evidence，截图作为可选材料。
+- 更新 `docs/implementation/08-v1-final-acceptance-handoff.md` 的剩余决策。
+- 已将 `NEXT_AI_TASK.md` 切换到 Post-V1 Task 2：Create V1 release package
+  skeleton。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 创建 `docs/release/v1/` 文档骨架。
+- 继续保持 documentation-only，不加入 RAG runtime、MCP runtime、RBAC、
+  tenants、permissions 或 remote CI provider integration。
+
 ## 2026-06-30 V1 Completion Review Task 4 完成
 
 本轮完成：

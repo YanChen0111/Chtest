@@ -73,10 +73,10 @@ Accepted:
 
 Remaining non-blocking decisions:
 
-- Decide whether to add a single narrative end-to-end V1 demo test in addition
-  to the composable golden smoke suite.
-- Decide whether release packaging needs screenshots or a lightweight manual
-  walkthrough artifact.
+- Release packaging decision is recorded in
+  `docs/implementation/09-post-v1-release-packaging-plan.md`: use the current
+  composable golden suite as automated acceptance evidence, and add a
+  lightweight release package with manual walkthrough and optional screenshots.
 - Clean older historical slice tables that still mention stale pending commit
   entries if those docs will be used for public release notes.
 
@@ -95,18 +95,19 @@ The V1 acceptance evidence does not include or require:
 
 ## Recommended Next Step
 
-Start Post-V1 planning.
+Create the V1 release package skeleton.
 
-Recommended first post-V1 task:
+Recommended next task:
 
 ```text
-Post-V1 Task 1: Decide release packaging and demo artifact strategy
+Post-V1 Task 2: Create V1 release package skeleton
 ```
 
 Expected output:
 
-- Choose whether the current composable golden suite is sufficient for the V1
-  release artifact, or add one narrative end-to-end demo test/report.
-- Decide whether to include frontend screenshots in release notes.
+- Create `docs/release/v1/README.md`,
+  `docs/release/v1/acceptance-evidence.md`, and
+  `docs/release/v1/manual-walkthrough.md`.
+- Keep screenshots optional and separate from acceptance.
 - Keep RAG runtime, MCP runtime, RBAC, tenants, permissions, and remote CI
   integrations out unless explicitly promoted into a V2 plan.

@@ -1,5 +1,28 @@
 # Development Log
 
+## 2026-06-30 Post-V1 Release Packaging Decision
+
+### Completed
+
+- Added `docs/implementation/09-post-v1-release-packaging-plan.md`.
+- Decided to use the current composable golden suite as V1 automated acceptance
+  evidence.
+- Deferred any new narrative automated E2E test until after V1 packaging.
+- Planned a lightweight release package with release notes, manual walkthrough,
+  acceptance evidence, and optional frontend screenshots.
+- Updated final acceptance handoff and `NEXT_AI_TASK.md`.
+
+### Verification
+
+```bash
+rg -n "Decision|Release Package Contents|Implementation Plan|Next Task" docs/implementation/09-post-v1-release-packaging-plan.md
+git diff --check
+```
+
+### Next Step
+
+- Create the `docs/release/v1/` release package skeleton.
+
 ## 2026-06-30 V1 Final Acceptance Handoff
 
 ### Completed

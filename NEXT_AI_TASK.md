@@ -10,13 +10,12 @@ Post-V1 Planning.
 
 ## Current Task
 
-Post-V1 Task 1: Decide release packaging and demo artifact strategy.
+Post-V1 Task 2: Create V1 release package skeleton.
 
 ## Product Value Answer
 
-After this task, the team has a clear release packaging decision: either use the
-current composable golden suite as V1 acceptance evidence, or add one narrative
-end-to-end demo artifact before packaging.
+After this task, the V1 release package has a stable documentation skeleton for
+release notes, acceptance evidence, and manual walkthrough content.
 
 ## Must Read
 
@@ -34,6 +33,7 @@ end-to-end demo artifact before packaging.
 12. `docs/implementation/06-v1-completion-audit.md`
 13. `docs/implementation/07-v1-release-acceptance.md`
 14. `docs/implementation/08-v1-final-acceptance-handoff.md`
+15. `docs/implementation/09-post-v1-release-packaging-plan.md`
 
 ## Do Not Read Unless Needed
 
@@ -50,11 +50,14 @@ memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/08-v1-final-acceptance-handoff.md
 docs/implementation/09-post-v1-release-packaging-plan.md
+docs/release/v1/README.md
+docs/release/v1/acceptance-evidence.md
+docs/release/v1/manual-walkthrough.md
 ```
 
-Documentation-only handoff task. Do not add product code, RAG runtime, MCP
-runtime, RBAC, tenants, permissions, marketplace, cloud sync, release
-automation, or remote CI provider integration.
+Documentation-only release packaging task. Do not add product code, RAG
+runtime, MCP runtime, RBAC, tenants, permissions, marketplace, cloud sync,
+release automation, or remote CI provider integration.
 
 ## Verification Command
 
@@ -68,19 +71,18 @@ Expected result: all V1 golden smokes, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- Decides whether the composable golden suite is sufficient for release
-  packaging or whether a narrative E2E artifact is required.
-- Creates a small post-V1 release packaging plan.
+- Creates `docs/release/v1/README.md`.
+- Creates `docs/release/v1/acceptance-evidence.md`.
+- Creates `docs/release/v1/manual-walkthrough.md`.
 - Keeps current V1 acceptance evidence linked.
 - Keeps V1 non-goals out of scope.
 
 ## Commit Message
 
 ```text
-docs(post-v1): plan release packaging
+docs(release): add v1 release package skeleton
 ```
 
 ## Next Task
 
-Implement the chosen release packaging artifact or move to the first V2 planning
-task.
+Write the V1 manual walkthrough and acceptance evidence details.
