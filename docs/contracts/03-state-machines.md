@@ -149,6 +149,33 @@ running -> failed / timeout / cancelled
 
 规则：ToolInvocation 必须来自 ToolDefinition allowlist，禁止任意 shell。
 
+## 7.1 KnowledgeAdapterConfig 状态机
+
+```text
+not_configured -> configured_stub
+not_configured -> disabled
+configured_stub -> disabled
+disabled -> configured_stub
+configured_stub -> not_configured
+disabled -> not_configured
+```
+
+| 当前状态 | 动作 | 目标状态 | 说明 |
+|---|---|---|---|
+| not_configured | save_stub_config | configured_stub | 只保存 V1 占位配置 |
+| not_configured | disable | disabled | 显式禁用 |
+| configured_stub | disable | disabled | 禁用占位配置 |
+| disabled | enable_stub | configured_stub | 重新启用占位配置 |
+| configured_stub | clear | not_configured | 清空配置 |
+| disabled | clear | not_configured | 清空配置 |
+
+规则：
+
+- KnowledgeAdapterConfig 状态变化只影响配置展示，不触发 retrieval。
+- `configured_stub` 仍然必须返回 `used_knowledge=false`。
+- 状态机不得创建 vector index、embedding、reranking job、external provider
+  call、MCP runtime call、RBAC、tenant 或 permission 行为。
+
 ## 8. TestRun 状态机
 
 ```text

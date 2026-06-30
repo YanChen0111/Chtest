@@ -21,6 +21,17 @@ Context rules:
 - AI responses that used local context must return `used_context_artifact_ids`.
 - AI responses that used external RAG/KnowledgeAdapter must return `used_knowledge=true`; otherwise return `used_knowledge=false`.
 
+Extension surface rules:
+
+- The RAG 知识库 API is a ContextArtifact management and evidence-usage surface,
+  not a built-in RAG runtime.
+- KnowledgeAdapter APIs expose empty configuration state only in V1.
+- MCP-ready ToolDefinition APIs expose stable schema metadata only; ToolInvocation
+  remains the executable boundary.
+- V1 APIs must not add vector indexing, embeddings, reranking, external
+  KnowledgeAdapter calls, MCP server/client runtime calls, RBAC, tenants, or
+  permissions.
+
 ## 2. Project Settings APIs
 
 ### 2.1 Create Project
@@ -301,6 +312,146 @@ Response 200:
   "total": 1
 }
 ```
+
+### 2.12 Get RAG 知识库 Surface
+
+`GET /api/projects/{project_id}/knowledge-base`
+
+The RAG 知识库 surface is backed by ContextArtifacts and KnowledgeAdapterConfig.
+It is used to show project knowledge inventory, safety metadata, prompt
+eligibility, and evidence usage. It must not perform semantic search or external
+retrieval.
+
+Response 200:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "knowledge_adapter": {
+    "adapter_name": "default",
+    "status": "not_configured",
+    "provider_type": "none",
+    "used_knowledge": false
+  },
+  "context_artifacts": [
+    {
+      "id": "00000000-0000-0000-0000-000000000371",
+      "title": "coupon-api-notes.md",
+      "artifact_type": "context_markdown",
+      "mime_type": "text/markdown",
+      "source_ref": "manual:coupon-api-notes.md",
+      "safe_to_show": true,
+      "redaction_applied": false,
+      "allowed_for_prompt": true,
+      "usage_count": 2,
+      "latest_used_at": "2026-06-18T10:00:00Z"
+    }
+  ],
+  "non_goals": [
+    "no_vector_index",
+    "no_embedding",
+    "no_reranking",
+    "no_external_rag_runtime"
+  ]
+}
+```
+
+Hard rules:
+
+- `context_artifacts` are Artifact rows with `owner_entity_type=Project`.
+- `usage_count` and `latest_used_at` are derived from AITask
+  `context_artifact_ids` or prompt input manifest evidence when available.
+- `knowledge_adapter.used_knowledge` must be `false` in V1.
+- The endpoint must not create vector indexes, chunk content, call embedding
+  models, rank results, or call external providers.
+
+### 2.13 Get KnowledgeAdapter Config
+
+`GET /api/projects/{project_id}/knowledge-adapter`
+
+Response 200:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "adapter_name": "default",
+  "status": "not_configured",
+  "provider_type": "none",
+  "config": {},
+  "safety_policy": {},
+  "last_checked_at": null,
+  "used_knowledge": false
+}
+```
+
+### 2.14 Update KnowledgeAdapter Config
+
+`PUT /api/projects/{project_id}/knowledge-adapter`
+
+Request:
+
+```json
+{
+  "adapter_name": "default",
+  "status": "configured_stub",
+  "provider_type": "stub",
+  "config": {
+    "display_name": "Future company knowledge adapter"
+  },
+  "safety_policy": {
+    "allowed_for_prompt": false
+  },
+  "notes": "V1 placeholder only"
+}
+```
+
+Response 200 returns KnowledgeAdapter read model.
+
+Hard rules:
+
+- `provider_type` must be `none` or `stub` in V1.
+- Secret-like fields, remote provider URLs, vector DB settings, embedding model
+  settings, OAuth state, and MCP transport settings are rejected.
+- Updating KnowledgeAdapterConfig must not change AITask behavior or set
+  `used_knowledge=true`.
+
+### 2.15 List MCP-ready ToolDefinitions
+
+`GET /api/projects/{project_id}/tool-definitions`
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000801",
+      "name": "pytest_runner",
+      "tool_type": "test_runner",
+      "description": "Run allowlisted pytest commands",
+      "input_schema": {},
+      "output_schema": {},
+      "risk_level": "medium",
+      "approval_required": false,
+      "artifact_policy": {},
+      "is_mcp_ready": true,
+      "mcp_metadata": {
+        "schema_version": "v1",
+        "capability_name": "pytest_runner"
+      },
+      "status": "active"
+    }
+  ],
+  "total": 1
+}
+```
+
+Hard rules:
+
+- The API exposes ToolDefinition schema/readiness only.
+- Tool execution still requires ToolInvocation and the internal allowlist rules.
+- `is_mcp_ready=true` must not expose MCP transport controls or execute remote
+  MCP calls.
 
 ## 3. Requirement To Case APIs
 

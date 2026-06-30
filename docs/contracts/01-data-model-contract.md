@@ -44,6 +44,7 @@ V1 is single-user, but owner fields are kept for later extension.
 | PromptStatus | draft, active, deprecated |
 | SkillStatus | draft, active, deprecated |
 | ToolDefinitionStatus | active, disabled, archived |
+| KnowledgeAdapterStatus | not_configured, disabled, configured_stub |
 | FailureClassification | product_defect, test_script_issue, environment_issue, test_data_issue, dependency_issue, flaky_test, insufficient_evidence |
 | ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation |
 | LLMCallStatus | started, succeeded, failed, timeout, schema_invalid |
@@ -554,11 +555,57 @@ Unique constraint: name + version.
 | max_stdout_bytes | int | yes | 1048576 | Captured stdout limit |
 | max_stderr_bytes | int | yes | 1048576 | Captured stderr limit |
 | artifact_policy_json | jsonb | yes | {} | Artifact capture rules |
+| is_mcp_ready | bool | yes | false | Schema can be exposed through future MCP layer |
+| mcp_metadata_json | jsonb | yes | {} | MCP-ready metadata, not runtime config |
 | status | ToolDefinitionStatus | yes | active | Status |
 
 Unique constraint: project_id + name, treating null project_id as built-in scope.
 
-## 31. ToolInvocation
+MCP-ready ToolDefinition rules:
+
+- `is_mcp_ready=true` means the tool has stable name, description,
+  input/output schema, risk, approval, timeout, allowlist, and artifact policy
+  metadata suitable for future MCP exposure.
+- V1 execution still goes through ToolInvocation and internal Tool Adapter
+  allowlist rules.
+- `mcp_metadata_json` may store `schema_version`, `capability_name`,
+  `safe_description`, and `exposure_notes`.
+- `mcp_metadata_json` must not store MCP server URLs, tokens, OAuth state, remote
+  transport settings, or plugin marketplace references.
+- `tool_type=mcp_proxy` is schema intent only in V1 and must not trigger an MCP
+  runtime dependency.
+
+## 31. KnowledgeAdapterConfig
+
+KnowledgeAdapterConfig records the V1 empty KnowledgeAdapter surface. It is
+configuration state only; it does not perform retrieval.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| adapter_name | varchar(120) | yes | default | Name inside project |
+| status | KnowledgeAdapterStatus | yes | not_configured | Empty adapter state |
+| provider_type | varchar(80) | yes | none | none, stub |
+| config_json | jsonb | yes | {} | Non-secret display/config state |
+| safety_policy_json | jsonb | yes | {} | Prompt eligibility and safety notes |
+| last_checked_at | timestamptz | no | null | Last local validation time |
+| notes | text | no | null | Human-readable notes |
+
+Unique constraint: project_id + adapter_name.
+
+V1 KnowledgeAdapter rules:
+
+- KnowledgeAdapterConfig is optional; missing config means `not_configured`.
+- `provider_type` must be `none` or `stub` in V1.
+- `config_json` must not contain API keys, provider credentials, vector database
+  settings, embedding model settings, remote URLs, OAuth state, or MCP transport
+  details.
+- KnowledgeAdapterConfig must not create vector indexes, chunk documents, embed
+  content, rank search results, or call external providers.
+- AI task responses must keep `used_knowledge=false` unless a future version
+  implements a real KnowledgeAdapter runtime.
+
+## 32. ToolInvocation
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -580,7 +627,7 @@ Unique constraint: project_id + name, treating null project_id as built-in scope
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 32. Artifact
+## 33. Artifact
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -603,7 +650,7 @@ V1 ContextArtifact rule:
 - A prompt input artifact must include `context_manifest.json` with the exact context artifact ids, hashes, titles, MIME types, and redaction flags used for that AI task.
 - Artifact owner fields must never be null for ContextArtifact.
 
-## 33. AutomationQualityMetric
+## 34. AutomationQualityMetric
 
 AutomationQualityMetric stores batch-level AutomationDraft generation, execution, and repair quality. Ratio fields use `0.00-1.00`; UI may render percentages.
 
@@ -638,6 +685,7 @@ AutomationQualityMetric stores batch-level AutomationDraft generation, execution
 Workspace -> Project
 Project -> Module / Repository / Environment / TestCommand
 Project -> Artifact (ContextArtifact)
+Project -> KnowledgeAdapterConfig
 Project -> Requirement -> RequirementReview -> RiskItem
 Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report

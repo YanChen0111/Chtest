@@ -53,8 +53,8 @@ without the cost or risk of a real RAG/MCP runtime in V1.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add Extension Surface task plan | done | `test -f docs/implementation/slices/slice-17-extension-surface.md && rg -n "KnowledgeAdapter|RAG 知识库|MCP-ready|Non-goals" docs/implementation/slices/slice-17-extension-surface.md` | pending commit | planning-only scope |
-| Add Extension Surface contract boundary | planned | `rg -n "KnowledgeAdapter|RAG 知识库|ToolDefinition|MCP-ready|Non-goals" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-17-extension-surface.md` | - | contract-only boundary |
+| Add Extension Surface task plan | done | `test -f docs/implementation/slices/slice-17-extension-surface.md && rg -n "KnowledgeAdapter|RAG 知识库|MCP-ready|Non-goals" docs/implementation/slices/slice-17-extension-surface.md` | `73a1885` | planning-only scope |
+| Add Extension Surface contract boundary | done | `rg -n "KnowledgeAdapter|RAG 知识库|ToolDefinition|MCP-ready|Non-goals" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-17-extension-surface.md` | pending commit | contract-only boundary |
 | Add KnowledgeAdapter empty interface/schema | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | - | no retrieval runtime |
 | Add RAG 知识库 ContextArtifact API shell | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | - | project context management surface |
 | Add MCP-ready ToolDefinition schema metadata | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | - | schema only, no MCP runtime |

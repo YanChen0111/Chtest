@@ -299,6 +299,19 @@ ContextArtifact 安全规则：
 - V1 单个 ContextArtifact 最大 1 MiB；单个 AITask 最多注入 10 个 ContextArtifact，合计不超过 2 MiB。
 - 二进制文件、压缩包、图片、视频不能作为 ContextArtifact 注入 prompt；它们只能作为普通 Artifact 证据保存。
 
+Extension Surface artifact rules:
+
+- RAG 知识库页面展示的 project knowledge must come from ContextArtifact
+  Artifact rows.
+- KnowledgeAdapterConfig is configuration state and must not create retrieval
+  artifact types in V1.
+- If an AI task uses project context, its prompt input artifact must include
+  `context_manifest.json` with exact ContextArtifact ids and hashes.
+- AI tasks must keep `used_knowledge=false` while KnowledgeAdapter is
+  `not_configured`, `disabled`, or `configured_stub`.
+- V1 must not create vector index, embedding, chunk, reranking, MCP transport, or
+  external provider response artifacts.
+
 ## 8. 保留与清理
 
 V1 默认不自动删除 artifact。后续可加清理策略：

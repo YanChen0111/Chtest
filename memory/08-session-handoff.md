@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-06-30 Slice 17 Task 2 Extension Surface Contract Boundary 完成
+
+本轮完成：
+
+- 完成 Slice 17 Task 2：Add Extension Surface contract boundary。
+- 在 data model contract 中定义 `KnowledgeAdapterStatus`、
+  `KnowledgeAdapterConfig`、ToolDefinition MCP-ready metadata 边界。
+- 在 API contract 中定义 RAG 知识库 surface、KnowledgeAdapter config、
+  MCP-ready ToolDefinition schema API 边界。
+- 在 state machine contract 中定义 KnowledgeAdapterConfig 状态机。
+- 在 artifact contract 中明确 Extension Surface artifact rules。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 17 Task 3：Add KnowledgeAdapter empty
+  interface/schema。
+
+本轮验证：
+
+```bash
+rg -n "KnowledgeAdapter|RAG 知识库|ToolDefinition|MCP-ready|Non-goals" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-17-extension-surface.md
+git diff --check
+```
+
+验证结果：
+
+- Slice 17 contracts name extension surface scope and non-goals。
+- `git diff --check` clean。
+
+修改文件：
+
+- `docs/contracts/01-data-model-contract.md`
+- `docs/contracts/02-api-contract.md`
+- `docs/contracts/03-state-machines.md`
+- `docs/contracts/04-artifact-contract.md`
+- `docs/implementation/slices/slice-17-extension-surface.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 17 Task 3：Add KnowledgeAdapter empty
+  interface/schema。
+- 该任务只做 backend shell，不加入 RAG runtime、MCP runtime、RBAC、tenants
+  或 permissions。
+
 ## 2026-06-30 Slice 17 Task 1 Extension Surface Plan 完成
 
 本轮完成：

@@ -10,13 +10,13 @@ Slice 17: Extension Surface.
 
 ## Current Task
 
-Task 2: Add Extension Surface contract boundary.
+Task 3: Add KnowledgeAdapter empty interface/schema.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-first boundary for the RAG 知识库
-surface, empty KnowledgeAdapter, and MCP-ready ToolDefinition schema without
-adding runtime-heavy extension infrastructure.
+After this task, Chtest has a backend KnowledgeAdapter empty interface/schema
+that records V1 configuration state without adding retrieval, vector, embedding,
+reranking, or external RAG behavior.
 
 ## Must Read
 
@@ -28,6 +28,7 @@ adding runtime-heavy extension infrastructure.
 6. `docs/contracts/03-state-machines.md`
 7. `docs/contracts/04-artifact-contract.md`
 8. `docs/implementation/04-ai-vibecoding-governance.md`
+9. `docs/implementation/slices/slice-17-extension-surface.md`
 
 ## Do Not Read Unless Needed
 
@@ -41,44 +42,43 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-17-extension-surface.md
+backend/app/modules/extension/models.py
+backend/app/modules/extension/schemas.py
+backend/app/modules/extension/router.py
+backend/app/modules/extension/service.py
+backend/app/tests/api/test_extension_surface.py
 ```
 
-Contract-only task. Do not add backend runtime code, frontend code, RAG runtime,
-vector indexing, embeddings, reranking, MCP runtime dependency, RBAC, tenants,
-or permissions.
+Backend shell task. Do not add frontend code, RAG runtime, vector indexing,
+embeddings, reranking, MCP runtime dependency, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-rg -n "KnowledgeAdapter|RAG 知识库|ToolDefinition|MCP-ready|Non-goals" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-17-extension-surface.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q
 ```
 
-Expected result: Slice 17 contracts name extension surface scope and non-goals.
+Expected result: KnowledgeAdapter shell API tests pass.
 
 ## Acceptance
 
-- Contract names the RAG 知识库 page as a ContextArtifact management and usage
-  display surface.
-- Contract defines KnowledgeAdapter as an empty interface/configuration state in
-  V1, not a retrieval runtime.
-- Contract defines MCP-ready ToolDefinition metadata while keeping ToolAdapter
-  allowlist safety as the executable boundary.
-- Contract keeps RAG runtime, MCP runtime dependency, RBAC, tenants, and
-  permissions out of scope.
-- Updates handoff and sets the next task to the first Slice 17 implementation
-  task.
+- Provides an empty KnowledgeAdapter read model or configuration state for a
+  project.
+- Records status such as `not_configured`, `disabled`, or `configured_stub`.
+- Returns `used_knowledge=false` unless a future runtime explicitly implements
+  retrieval.
+- Does not call external RAG providers, create vector indexes, embed content, or
+  rank search results.
+- Updates handoff and sets the next task to the RAG 知识库 ContextArtifact API
+  shell task.
 
 ## Commit Message
 
 ```text
-docs(extension): define extension surface boundary
+feat(extension): add knowledge adapter shell
 ```
 
 ## Next Task
 
-Slice 17 Task 3: Add KnowledgeAdapter empty interface/schema.
+Slice 17 Task 4: Add RAG 知识库 ContextArtifact API shell.
