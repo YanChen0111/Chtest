@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-06-30 Slice 09 Case Metrics Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 09 completion gate。
+- 确认 Slice 09 所有任务均为 `done`，并记录提交号：
+  `470fa23`、`0e1c81d`、`da6b606`、`46580ea`。
+- 确认 Case Metrics 后端计算、API、前端 shell、golden metrics smoke 均已覆盖。
+- 已在 `docs/implementation/slices/slice-09-case-metrics.md` 写入 completion evidence。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 10 Task 1：Add Test Case Library task plan。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py -q
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Case Metrics API + golden requirement-to-case + golden metrics smoke：`6 passed`
+- Frontend workbench shell tests：`7 passed, 10 tests passed`
+
+Slice 09 保持的非目标：
+
+- 未加入 Test Case Library workflow、AutomationDraft、执行、reports、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 10 Task 1：Add Test Case Library task plan。
+- 这是 planning-only 任务，先创建 `docs/implementation/slices/slice-10-test-case-library.md`，不要直接改产品代码。
+
 ## 2026-06-30 Slice 09 Task 5 Case Metrics Golden Smoke 完成
 
 本轮完成：

@@ -6,73 +6,73 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 09: Case Metrics.
+Slice 10: Test Case Library.
 
 ## Current Task
 
-Slice 09 completion gate.
+Task 1: Add Test Case Library task plan.
 
 ## Product Value Answer
 
-After this task, Chtest can prove the Case Metrics slice is complete across
-backend calculation, API, frontend shell, and golden fixture coverage.
+After this task, Chtest has a scoped, reviewable implementation plan for the
+Test Case Library slice without expanding into automation or execution work.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
-2. `docs/implementation/slices/slice-09-case-metrics.md`
-3. `docs/product/04-ai-quality-metrics.md`
-4. `docs/fixtures/01-golden-requirement-to-case.md`
-5. `docs/implementation/02-v1-slice-plan.md`
+2. `docs/implementation/02-v1-slice-plan.md`
+3. `docs/product/01-positioning-and-scope.md`
+4. `docs/contracts/01-data-model-contract.md`
+5. `docs/contracts/02-api-contract.md`
 6. `memory/08-session-handoff.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
-- Frontend, AutomationDraft, execution, Playwright, CI/CD, report center, RAG
-  runtime, MCP runtime, and migration reference docs unless a concrete blocker
-  requires them.
+- AutomationDraft, execution, Playwright, CI/CD, report center, RAG runtime,
+  MCP runtime, and migration reference docs unless a concrete blocker requires
+  them.
 
 ## Expected Files
 
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-09-case-metrics.md
+docs/implementation/slices/slice-10-test-case-library.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Do not modify product code unless the completion verification exposes a concrete
-bug.
+This is a planning task only. Do not modify product code.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py -q
-npm --prefix frontend run test -- --run
+test -f docs/implementation/slices/slice-10-test-case-library.md
+rg -n "Test Case Library|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-10-test-case-library.md
 ```
 
-Expected result: Case Metrics backend/golden tests and frontend test suite pass.
+Expected result: Slice 10 task plan exists and names concrete tasks,
+verification commands, and non-goals.
 
 ## Acceptance
 
-- Confirm the Slice 09 task table has commit IDs for every completed task.
-- Confirm case metrics can be calculated from persisted records.
-- Confirm metrics API returns generated_count, approved_count, rejected_count,
-  acceptance_rate, edit_rate, and review_progress.
-- Confirm frontend can show batch metrics without a broad dashboard.
-- Confirm golden fixture metric smoke passes.
+- Create a scoped Slice 10 task plan.
+- Define TestCase Library API/frontend/golden tasks with one verification
+  command per task.
+- Keep Slice 10 limited to browsing/searching existing reviewed TestCase records
+  and basic suite capability if already supported by contracts.
 - Do not add AutomationDraft, execution, reports, CI/CD quality, RAG runtime,
   MCP runtime, RBAC, tenants, or permissions.
-- Update handoff with completion evidence and next recommended slice/task.
+- Update handoff and set the next task to the first implementation task from
+  the new Slice 10 plan.
 
 ## Commit Message
 
 ```text
-docs(metrics): complete case metrics slice
+docs(cases): add test case library task plan
 ```
 
 ## Next Task
 
-Select the next smallest V1 task from `docs/implementation/02-v1-slice-plan.md`.
+Slice 10 Task 2 from the new task plan.

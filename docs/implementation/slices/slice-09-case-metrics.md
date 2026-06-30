@@ -35,7 +35,7 @@ reports, CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 | Add Case Metrics backend calculation | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q` | `470fa23` | generated_count, approved_count, rejected_count, acceptance_rate, edit_rate, review_progress |
 | Add Case Metrics API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py -q` | `0e1c81d` | batch endpoint for CaseGenerationTask metrics |
 | Add Case Metrics frontend shell | done | `npm --prefix frontend run test -- --run` | `da6b606` | metric strip and review progress for generated batch |
-| Add Case Metrics golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case_metrics.py -q` | pending commit | fixture-aligned metric assertions |
+| Add Case Metrics golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case_metrics.py -q` | `46580ea` | fixture-aligned metric assertions |
 
 ## Task 1: Add Case Metrics Backend Calculation
 
@@ -189,10 +189,36 @@ test(golden): add case metrics smoke
 
 ## Slice Completion Gate
 
-- Case generation batch metrics can be calculated from persisted records.
+Status: done.
+
+Product value answer:
+
+- Chtest can measure AI case generation quality for a reviewed requirement
+  batch across persisted records, API response, frontend shell, and the golden
+  requirement-to-case fixture.
+
+Verification commands:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_metrics.py backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py -q
+npm --prefix frontend run test -- --run
+```
+
+Verification results:
+
+- Case Metrics API + golden requirement-to-case + golden metrics smoke:
+  `6 passed`.
+- Frontend workbench shell tests: `7 passed, 10 tests passed`.
+
+Completion evidence:
+
+- Case generation batch metrics are calculated from persisted
+  CaseGenerationTask and GeneratedCaseCandidate records.
 - Metrics API returns generated_count, approved_count, rejected_count,
   acceptance_rate, edit_rate, and review_progress.
-- Frontend can show batch metrics without a broad dashboard.
-- Golden fixture metric smoke passes.
+- The Case Generation Review frontend shell shows batch metrics without a broad
+  dashboard route or chart dependency.
+- Golden fixture metric smoke passes after the approved, edited, and
+  optimization review plan.
 - No AutomationDraft, execution, reports, CI/CD quality, RAG runtime, MCP
-  runtime, RBAC, tenants, or permissions are added.
+  runtime, RBAC, tenants, or permissions were added.
