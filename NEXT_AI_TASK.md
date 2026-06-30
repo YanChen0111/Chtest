@@ -6,17 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-V2 Planning.
+Slice 18: Newman API Execution.
 
 ## Current Task
 
-V2 Task 2: Draft Slice 18 Newman API Execution plan.
+Slice 18 Task 2: Define Newman execution contract boundary.
 
 ## Product Value Answer
 
-After this task, the first V2 slice has a scoped implementation plan for Newman
-API execution that extends the evidence loop without broad runner or CI/CD
-expansion.
+After this task, the contracts explicitly define Newman API execution as an
+allowlisted local evidence path before implementation starts.
 
 ## Must Read
 
@@ -30,12 +29,8 @@ expansion.
 8. `docs/implementation/04-ai-vibecoding-governance.md`
 9. `docs/implementation/00-v0.1-walking-skeleton.md`
 10. `docs/fixtures/00-v1-demo-path.md`
-11. `docs/implementation/slices/slice-17-extension-surface.md`
-12. `docs/implementation/06-v1-completion-audit.md`
-13. `docs/implementation/07-v1-release-acceptance.md`
-14. `docs/implementation/08-v1-final-acceptance-handoff.md`
-15. `docs/implementation/09-post-v1-release-packaging-plan.md`
-16. `docs/implementation/10-v2-scope-options.md`
+11. `docs/implementation/10-v2-scope-options.md`
+12. `docs/implementation/slices/slice-18-newman-api-execution.md`
 
 ## Do Not Read Unless Needed
 
@@ -50,44 +45,45 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/08-v1-final-acceptance-handoff.md
-docs/implementation/09-post-v1-release-packaging-plan.md
-docs/release/v1/README.md
-docs/release/v1/acceptance-evidence.md
-docs/release/v1/manual-walkthrough.md
-docs/release/v1/screenshots/
-docs/implementation/10-v2-scope-options.md
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-18-newman-api-execution.md
 ```
 
-Planning-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
-tenants, permissions, marketplace, cloud sync, release automation, or remote CI
-provider integration.
+Contract-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
+tenants, permissions, marketplace, cloud sync, release automation, remote CI
+provider integration, Postman workspace parity, collection editor, or arbitrary
+shell execution.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case.py backend/app/tests/golden/test_requirement_to_case_metrics.py backend/app/tests/golden/test_test_case_library_golden.py backend/app/tests/golden/test_automation_draft_golden.py backend/app/tests/golden/test_testrunner_pytest_golden.py backend/app/tests/golden/test_playwright_minimal_loop_golden.py backend/app/tests/golden/test_report_failure_analysis_golden.py backend/app/tests/golden/test_cicd_quality_center_golden.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py backend/app/tests/golden/test_extension_surface_golden.py -q
-npm --prefix frontend run test -- --run
+rg -n "Newman|newman|newman_json|command_type|ToolDefinition" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-18-newman-api-execution.md
 git diff --check
 ```
 
-Expected result: all V1 golden smokes, frontend tests, and diff check pass.
+Expected result: Newman contract boundaries are visible and diff check passes.
 
 ## Acceptance
 
-- Creates `docs/implementation/slices/slice-18-newman-api-execution.md`.
-- Defines product value, task table, expected files, verification commands, and
-  non-goals.
-- Keeps the first V2 slice limited to Newman API execution evidence.
-- Does not add implementation code.
+- Data contract allows `TestCommand.command_type=newman`.
+- Artifact contract defines Newman output artifacts and parsed result
+  expectations.
+- State-machine contract keeps Newman under ToolDefinition allowlists and
+  TestRun status rules.
+- API contract names the API execution evidence surface without adding a
+  collection editor or remote CI/CD provider integration.
+- Non-goals still exclude arbitrary shell, Postman parity, RAG/MCP runtime,
+  RBAC, tenants, and permissions.
 
 ## Commit Message
 
 ```text
-docs(v2): add newman execution slice plan
+docs(v2): define newman execution contract
 ```
 
 ## Next Task
 
-Start Slice 18 Task 1 only after reviewing the slice plan.
+Start Slice 18 Task 3 only after the Newman contract boundary is committed.

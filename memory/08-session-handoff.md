@@ -1,5 +1,27 @@
 # Session Handoff
 
+## 2026-06-30 Slice 18 Task 1 完成
+
+本轮完成：
+
+- 完成 Slice 18 Task 1：Add Newman API Execution task plan。
+- 新增 `docs/implementation/slices/slice-18-newman-api-execution.md`。
+- 将第一个 V2 slice 收敛为 Newman API execution evidence：
+  - approved `TestCommand.command_type=newman`。
+  - ToolDefinition/TestCommand allowlist。
+  - stdout/stderr、Newman JSON、parsed_result、TestResult evidence。
+  - API 执行页面只展示执行证据，不做 Postman workspace parity。
+- 明确排除 arbitrary shell、Postman cloud/editor、remote CI/CD provider、
+  runner marketplace、RAG/MCP runtime、RBAC、tenants、permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 18 Task 2：Define Newman execution
+  contract boundary。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 更新四份 contracts。
+- 先定义 `command_type=newman`、Newman artifact、parsed result 和
+  ToolDefinition allowlist 边界，再写产品代码。
+
 ## 2026-06-30 Frontend Chinese Copy Review 完成
 
 本轮按用户反馈完成：

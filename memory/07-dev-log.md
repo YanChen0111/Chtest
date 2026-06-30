@@ -1,5 +1,28 @@
 # Development Log
 
+## 2026-06-30 Slice 18 Newman API Execution Plan
+
+### Completed
+
+- Added `docs/implementation/slices/slice-18-newman-api-execution.md`.
+- Scoped the first V2 slice to local Newman API execution evidence.
+- Defined task table, expected files, verification commands, and non-goals.
+- Updated `NEXT_AI_TASK.md` to Slice 18 Task 2: define the Newman contract
+  boundary.
+
+### Verification
+
+```bash
+test -f docs/implementation/slices/slice-18-newman-api-execution.md
+rg -n "Product Value Answer|Non-goals|Task Table|Task 2" docs/implementation/slices/slice-18-newman-api-execution.md
+git diff --check
+```
+
+### Next Step
+
+- Update contracts for `command_type=newman`, Newman artifacts, parsed result
+  expectations, and ToolDefinition allowlist boundaries before implementation.
+
 ## 2026-06-30 Frontend Chinese Copy Review
 
 ### Completed
