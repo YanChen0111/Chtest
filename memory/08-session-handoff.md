@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 16 completion gate。
+- 确认 Slice 16 所有任务均为 `done`，并记录提交号：
+  `c0db91c`、`c164d88`、`ae601ff`、`f8c4156`、`c22f6e5`、
+  `824cb4b`、`f4bbc73`、`f6333c5`、`e27cc7b`、`e17ec01`、
+  `b0ee6b8`。
+- 完成组合验收：UnitTestPatch regression API、golden smoke、frontend shell
+  均已覆盖。
+- 已在 `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+  写入 completion evidence。
+- 已在 `memory/07-dev-log.md` 写入 Slice 16 completion log。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 17 Task 1：Add Extension Surface task
+  plan。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- UnitTestPatch regression API + golden smoke：`23 passed`
+- Frontend shell：`13 passed`，`16 tests passed`
+- `git diff --check` clean
+
+Slice 16 保持的非目标：
+
+- 未触发 merge、push、release、deployment。
+- 未集成 remote CI provider、webhooks、PR comments。
+- 未加入 RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- UnitTestPatch 不允许修改业务源码。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 17 Task 1：Add Extension Surface task plan。
+- 这是 planning-only 任务，先创建
+  `docs/implementation/slices/slice-17-extension-surface.md`，不要直接改产品代码。
+
 ## 2026-06-30 Slice 16 Task 11 UnitTestPatch Golden Smoke 完成
 
 本轮完成：

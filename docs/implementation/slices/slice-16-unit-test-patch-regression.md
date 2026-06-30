@@ -384,6 +384,32 @@ test(golden): add unit test patch smoke
 - Golden smoke proves local diff -> UnitTestPatch -> tests/regression -> gate ->
   report evidence.
 
+Completion evidence:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
+npm --prefix frontend run test -- --run
+```
+
+Results:
+
+- UnitTestPatch regression API + golden smoke: `23 passed`.
+- Frontend shell tests: `13 passed`, `16 tests passed`.
+
+Completed commits:
+
+- `c0db91c` Add UnitTestPatch And Regression task plan.
+- `c164d88` Add UnitTestPatch and regression contract boundary.
+- `ae601ff` Add UnitTestPatch and QualityGateDecision model/schema.
+- `f8c4156` Add PatchScopeGate service.
+- `c22f6e5` Add UnitTestPatch generation/review API.
+- `824cb4b` Add UnitTestPatch apply API.
+- `f4bbc73` Add new-test and regression API.
+- `f6333c5` Add QualityGateDecision API.
+- `e27cc7b` Add CI/CD quality report API.
+- `e17ec01` Add UnitTestPatch frontend shell.
+- `b0ee6b8` Add UnitTestPatch golden smoke.
+
 ## Non-goals
 
 - Do not trigger merge, push, release, or deployment actions.

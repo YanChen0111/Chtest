@@ -6,16 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 16: UnitTestPatch And Regression.
+Slice 17: Extension Surface.
 
 ## Current Task
 
-Slice 16 completion gate.
+Task 1: Add Extension Surface task plan.
 
 ## Product Value Answer
 
-After this task, Slice 16 is verified end-to-end across backend API, golden
-smoke, and frontend shell.
+After this task, Chtest has a scoped Slice 17 plan for the RAG 知识库 surface,
+empty KnowledgeAdapter, and MCP-ready Tool schema without adding runtime-heavy
+extension infrastructure.
 
 ## Must Read
 
@@ -40,37 +41,37 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/implementation/slices/slice-16-unit-test-patch-regression.md
+docs/implementation/slices/slice-17-extension-surface.md
 ```
 
-Only run the Slice 16 completion verification and update docs/handoff. Do not
-add new product behavior unless a verification failure requires a focused fix.
+Planning-only task. Do not add RAG runtime, vector indexing, embeddings,
+reranking, MCP runtime dependency, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
-npm --prefix frontend run test -- --run
+test -f docs/implementation/slices/slice-17-extension-surface.md && rg -n "KnowledgeAdapter|RAG 知识库|MCP-ready|Non-goals" docs/implementation/slices/slice-17-extension-surface.md
 ```
 
-Expected result: Slice 16 backend API, golden smoke, and frontend shell tests pass.
+Expected result: Slice 17 planning document exists and names scope/non-goals.
 
 ## Acceptance
 
-- Runs backend UnitTestPatch regression API tests.
-- Runs UnitTestPatch golden smoke.
-- Runs frontend CI/CD Quality Center shell tests.
-- Confirms Slice 16 task table is complete.
-- Updates handoff with completion evidence.
-- Sets next task according to the next Slice 17 plan or leaves a clear planning
-  handoff if no Slice 17 task exists.
+- Creates `docs/implementation/slices/slice-17-extension-surface.md`.
+- Splits Slice 17 into small verifiable tasks.
+- Names the RAG 知识库 page as a ContextArtifact and KnowledgeAdapter surface,
+  not an internal RAG runtime.
+- Names empty KnowledgeAdapter and MCP-ready ToolDefinition/schema boundaries.
+- Keeps RAG runtime, MCP runtime dependency, RBAC, tenants, and permissions out
+  of scope.
+- Updates handoff and sets the next task to the first Slice 17 contract task.
 
 ## Commit Message
 
 ```text
-docs(cicd): complete unit test patch regression slice
+docs(extension): add extension surface task plan
 ```
 
 ## Next Task
 
-Slice 17 planning or next V1 priority.
+Slice 17 Task 2: Add Extension Surface contract boundary.

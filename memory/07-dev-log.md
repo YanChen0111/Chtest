@@ -1,5 +1,47 @@
 # Development Log
 
+## 2026-06-30 Slice 16 UnitTestPatch And Regression Completion
+
+### Completed
+
+- Completed Slice 16 UnitTestPatch And Regression.
+- Added UnitTestPatch and QualityGateDecision model/schema.
+- Added PatchScopeGate and blocked source/config/migration/generated/unknown
+  non-test path changes.
+- Added UnitTestPatch generation/review/apply APIs with review-gated lifecycle.
+- Added new-test and regression APIs that create CICD-linked TestRun evidence
+  from allowlisted TestCommand records.
+- Added QualityGateDecision API with passed/failed/needs_review evidence rules.
+- Added CI/CD quality Report API backed by latest QualityGateDecision and
+  evidence artifacts.
+- Added frontend CI/CD Quality Center shell for patch review, scope gate,
+  new-test/regression evidence, quality gate, and report references.
+- Added golden smoke for local diff -> UnitTestPatch -> tests/regression ->
+  quality gate -> report evidence.
+- Kept merge, push, release, deployment, remote CI provider integration, PR
+  comments, RAG runtime, MCP runtime, RBAC, tenants, and permissions out of
+  this slice.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- UnitTestPatch regression API + golden smoke: `23 passed`.
+- Frontend shell tests: `13 passed`, `16 tests passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Start Slice 17 Extension Surface by creating a scoped task plan for the RAG
+  知识库 surface, empty KnowledgeAdapter, and MCP-ready Tool schema without
+  building RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+
 ## 2026-06-30 Slice 15 CI/CD Quality Center Foundation Completion
 
 ### Completed
