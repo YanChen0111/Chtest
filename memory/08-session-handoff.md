@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-30 Slice 09 Task 4 Case Metrics Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 09 Task 4：新增 Case Metrics frontend shell。
+- 前端 API 新增 `GET /api/case-generation/tasks/{generation_task_id}/metrics` wiring。
+- Pinia case store 在生成候选用例后加载 batch metrics，并在评审动作成功后刷新 metrics。
+- `用例生成评审` shell 新增紧凑批次指标条，展示生成总数、直接通过、拒绝、采纳率、编辑率、评审进度、字段完整率。
+- 未新增 dashboard route、chart dependency、Test Case Library、AutomationDraft、执行、reports、CI/CD、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 09 Task 5：Add Case Metrics golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/cases/CaseGenerationReviewView.spec.ts
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Case Generation Review frontend focused test：`1 passed`
+- Frontend test suite：`7 passed, 10 tests passed`
+
+修改文件：
+
+- `frontend/src/api/cases.ts`
+- `frontend/src/stores/cases.ts`
+- `frontend/src/views/cases/CaseGenerationReviewView.vue`
+- `frontend/src/views/cases/CaseGenerationReviewView.spec.ts`
+- `docs/implementation/slices/slice-09-case-metrics.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 09 Task 5：Add Case Metrics golden smoke。
+- 验证命令：`backend/.venv/bin/python -m pytest backend/app/tests/golden/test_requirement_to_case_metrics.py -q`。
+
 ## 2026-06-30 Slice 09 Task 3 Case Metrics API 完成
 
 本轮完成：

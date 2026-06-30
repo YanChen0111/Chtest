@@ -41,6 +41,22 @@ export interface GeneratedCaseCandidateListRead {
   readonly total: number;
 }
 
+export interface CaseMetricsRead {
+  readonly generation_task_id: string;
+  readonly generated_count: number;
+  readonly approved_count: number;
+  readonly edited_count: number;
+  readonly rejected_count: number;
+  readonly optimization_count: number;
+  readonly reviewed_count: number;
+  readonly acceptance_rate: number;
+  readonly edit_rate: number;
+  readonly rejection_rate: number;
+  readonly optimization_rate: number;
+  readonly review_progress: number;
+  readonly field_complete_rate: number;
+}
+
 export type CaseReviewAction = 'approve' | 'approve_after_edit' | 'reject' | 'needs_optimization';
 
 export interface CaseReviewEditedCase {
@@ -72,6 +88,10 @@ export async function startCaseGeneration(data: CaseGenerationStartRequest): Pro
 
 export async function listCaseCandidates(generationTaskId: string): Promise<GeneratedCaseCandidateListRead> {
   return apiClient.getJson<GeneratedCaseCandidateListRead>(`/case-generation/tasks/${generationTaskId}/candidates`);
+}
+
+export async function getCaseMetrics(generationTaskId: string): Promise<CaseMetricsRead> {
+  return apiClient.getJson<CaseMetricsRead>(`/case-generation/tasks/${generationTaskId}/metrics`);
 }
 
 export async function reviewCaseCandidate(candidateId: string, data: CaseReviewRequest): Promise<CaseReviewRead> {

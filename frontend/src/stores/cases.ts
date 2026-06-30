@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
 
 import {
+  getCaseMetrics,
   listCaseCandidates,
   reviewCaseCandidate,
   startCaseGeneration,
   type CaseGenerationStartRead,
+  type CaseMetricsRead,
   type CaseReviewAction,
   type CaseReviewRead,
   type GeneratedCaseCandidateListItem,
@@ -21,6 +23,7 @@ export const useCasesStore = defineStore('cases', {
     requirementReviewId: DEFAULT_REVIEW_ID,
     generation: null as CaseGenerationStartRead | null,
     candidates: [] as GeneratedCaseCandidateListItem[],
+    metrics: null as CaseMetricsRead | null,
     totalCandidates: 0,
     selectedCandidateId: '',
     lastReview: null as CaseReviewRead | null,
@@ -43,6 +46,7 @@ export const useCasesStore = defineStore('cases', {
       this.loadingGeneration = true;
       this.errorMessage = '';
       this.candidates = [];
+      this.metrics = null;
       this.totalCandidates = 0;
       this.lastReview = null;
       this.requirementId = data.requirementId;
@@ -64,6 +68,7 @@ export const useCasesStore = defineStore('cases', {
         this.candidates = candidates.items;
         this.totalCandidates = candidates.total;
         this.selectedCandidateId = this.candidates[0]?.id ?? '';
+        this.metrics = await getCaseMetrics(this.generation.case_generation_task_id);
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '候选用例生成失败';
       } finally {
@@ -99,6 +104,9 @@ export const useCasesStore = defineStore('cases', {
         this.candidates = this.candidates.map((item) =>
           item.id === candidate.id ? { ...item, status: this.lastReview?.status ?? item.status } : item,
         );
+        if (this.generation) {
+          this.metrics = await getCaseMetrics(this.generation.case_generation_task_id);
+        }
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '候选用例评审失败';
       } finally {

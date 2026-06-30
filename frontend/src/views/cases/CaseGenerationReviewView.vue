@@ -44,6 +44,14 @@
             <strong>{{ store.generation?.status ?? '未生成' }}</strong>
           </div>
         </div>
+
+        <div v-if="store.metrics" class="case-metrics-strip" aria-label="批次指标">
+          <span class="metrics-strip-title">批次指标</span>
+          <div v-for="metric in metricItems" :key="metric.label" class="metric-item">
+            <span>{{ metric.label }}</span>
+            <strong>{{ metric.value }}</strong>
+          </div>
+        </div>
       </a-card>
 
       <a-card class="case-panel candidate-list-panel" :bordered="false">
@@ -132,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import type { CaseReviewAction } from '../../api/cases';
 import { useCasesStore } from '../../stores/cases';
 
@@ -155,6 +163,26 @@ function commaList(value: string): string[] {
 function listText(items: string[]): string {
   return items.length > 0 ? items.join(', ') : '无';
 }
+
+function formatRate(value: number | undefined): string {
+  return `${Math.round((value ?? 0) * 100)}%`;
+}
+
+const metricItems = computed(() => {
+  const metrics = store.metrics;
+  if (!metrics) {
+    return [];
+  }
+  return [
+    { label: '生成总数', value: String(metrics.generated_count) },
+    { label: '直接通过', value: String(metrics.approved_count) },
+    { label: '拒绝', value: String(metrics.rejected_count) },
+    { label: '采纳率', value: formatRate(metrics.acceptance_rate) },
+    { label: '编辑率', value: formatRate(metrics.edit_rate) },
+    { label: '评审进度', value: formatRate(metrics.review_progress) },
+    { label: '字段完整率', value: formatRate(metrics.field_complete_rate) },
+  ];
+});
 
 function submitGeneration() {
   void store.generateCandidates({
@@ -251,6 +279,41 @@ function review(action: CaseReviewAction) {
 .generation-status strong {
   margin-top: 6px;
   font-size: 20px;
+}
+
+.case-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5eaf2;
+}
+
+.metrics-strip-title {
+  grid-column: 1 / -1;
+  color: #475569;
+  font-weight: 700;
+}
+
+.metric-item {
+  display: grid;
+  gap: 4px;
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.metric-item span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.metric-item strong {
+  color: #0f172a;
+  font-size: 18px;
 }
 
 .candidate-list-item {
