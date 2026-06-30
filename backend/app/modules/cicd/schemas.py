@@ -146,6 +146,17 @@ class QualityGateComputeRequest(BaseModel):
     include_failure_analysis: bool = True
 
 
+class CICDQualityReportRequest(BaseModel):
+    report_format: list[str] = Field(default_factory=lambda: ["markdown", "html", "json"])
+
+
+class CICDQualityReportRead(BaseModel):
+    report_id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    status: str
+    evidence_manifest_artifact_id: uuid.UUID | None = None
+
+
 class QualityGateDecisionCreate(BaseModel):
     project_id: uuid.UUID
     cicd_run_id: uuid.UUID

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import create_engine, select
@@ -1117,6 +1118,136 @@ def test_quality_gate_api_returns_passed_and_recomputes_new_decision_with_comple
             decisions = list(session.scalars(select(QualityGateDecision).where(QualityGateDecision.cicd_run_id == cicd_run_id)))
             assert session.scalar(select(Report)) is None
 
+        assert run is not None
+        assert run.quality_gate_status == "passed"
+        assert len(decisions) == 2
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_generate_cicd_quality_report_api_creates_report_from_latest_gate_evidence() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, cicd_run, ai_task = seed_cicd_run_and_ai_task(session)
+            cicd_run.quality_gate_status = "passed"
+            patch = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/tests/test_coupon.py b/tests/test_coupon.py\n",
+                scope_gate_result_json={"allowed": True, "checked_paths": ["tests/test_coupon.py"]},
+                test_intent="Applied tests",
+                status="applied",
+            )
+            session.add(patch)
+            session.flush()
+            patch_artifact = Artifact(
+                project_id=project.id,
+                owner_entity_type="UnitTestPatch",
+                owner_entity_id=patch.id,
+                artifact_type="unit_test_patch",
+                file_path="artifacts/unit_test.patch",
+                mime_type="text/x-diff",
+                size_bytes=42,
+                sha256="sha256:unit_test_patch",
+                metadata_json={"scope_gate_result": {"allowed": True}},
+            )
+            regression_plan = Artifact(
+                project_id=project.id,
+                owner_entity_type="CICDRun",
+                owner_entity_id=cicd_run.id,
+                artifact_type="regression_plan",
+                file_path="artifacts/regression_plan.json",
+                mime_type="application/json",
+                size_bytes=0,
+                sha256="sha256:regression_plan",
+                metadata_json={"recommended_test_command_ids": []},
+            )
+            new_test = TestRun(
+                project_id=project.id,
+                cicd_run_id=cicd_run.id,
+                name="CI/CD new tests: pytest new tests",
+                command="pytest tests/test_coupon.py -q",
+                working_directory=".",
+                status="succeeded",
+                exit_code=0,
+                parsed_result_json={"run_type": "new_tests"},
+            )
+            regression = TestRun(
+                project_id=project.id,
+                cicd_run_id=cicd_run.id,
+                name="CI/CD regression: pytest regression",
+                command="pytest -q",
+                working_directory=".",
+                status="succeeded",
+                exit_code=0,
+                parsed_result_json={"run_type": "regression"},
+            )
+            session.add_all([patch_artifact, regression_plan, new_test, regression])
+            session.flush()
+            older_gate = QualityGateDecision(
+                project_id=project.id,
+                cicd_run_id=cicd_run.id,
+                status="needs_review",
+                summary="Older gate",
+                blocking_reasons_json=["missing evidence"],
+                status_detail_json={},
+                created_at=datetime(2026, 6, 30, 8, 0, tzinfo=timezone.utc),
+                updated_at=datetime(2026, 6, 30, 8, 0, tzinfo=timezone.utc),
+            )
+            latest_gate = QualityGateDecision(
+                project_id=project.id,
+                cicd_run_id=cicd_run.id,
+                status="passed",
+                summary="Latest gate passed",
+                blocking_reasons_json=[],
+                evidence_artifact_ids=[patch_artifact.id],
+                status_detail_json={"patch_scope_gate": {"allowed": True}},
+                created_at=datetime(2026, 6, 30, 8, 0, tzinfo=timezone.utc) + timedelta(minutes=1),
+                updated_at=datetime(2026, 6, 30, 8, 0, tzinfo=timezone.utc) + timedelta(minutes=1),
+            )
+            session.add_all([older_gate, latest_gate])
+            session.commit()
+            cicd_run_id = cicd_run.id
+            latest_gate_id = latest_gate.id
+
+        client = ASGIClient(app)
+        response = client.post(f"/api/cicd/runs/{cicd_run_id}/generate-report", {"report_format": ["json"]})
+
+        assert response.status_code == 202
+        body = response.json()
+        assert body["cicd_run_id"] == str(cicd_run_id)
+        assert body["status"] == "generating"
+        assert body["report_id"] is not None
+
+        with SessionLocal() as session:
+            report = session.get(Report, uuid.UUID(body["report_id"]))
+            run = session.get(CICDRun, cicd_run_id)
+            manifest = session.get(Artifact, uuid.UUID(body["evidence_manifest_artifact_id"]))
+            decisions = list(session.scalars(select(QualityGateDecision).where(QualityGateDecision.cicd_run_id == cicd_run_id)))
+
+        assert report is not None
+        assert report.report_type == "cicd_quality"
+        assert report.related_entity_type == "CICDRun"
+        assert report.related_entity_id == cicd_run_id
+        assert report.conclusion == "passed"
+        assert report.status == "ready"
+        assert report.metrics_json["quality_gate_decision_id"] == str(latest_gate_id)
+        assert report.metrics_json["quality_gate_status"] == "passed"
+        assert report.metrics_json["unit_test_patch_status"] == "applied"
+        assert manifest is not None
+        assert manifest.owner_entity_type == "Report"
+        assert manifest.artifact_type == "report_json"
+        assert manifest.metadata_json["manifest_kind"] == "cicd_quality_evidence_manifest"
+        assert manifest.metadata_json["manifest_json"]["quality_gate_decision_id"] == str(latest_gate_id)
+        assert "unit_test_patch" in manifest.metadata_json["manifest_json"]["evidence_kinds"]
+        assert "regression_plan" in manifest.metadata_json["manifest_json"]["evidence_kinds"]
         assert run is not None
         assert run.quality_gate_status == "passed"
         assert len(decisions) == 2

@@ -10,12 +10,13 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 9: Add CI/CD quality report API.
+Task 10: Add UnitTestPatch frontend shell.
 
 ## Product Value Answer
 
-After this task, Chtest can generate CI/CD quality reports backed by the latest
-QualityGateDecision and related evidence artifacts.
+After this task, users can review UnitTestPatch candidates, scope gate results,
+test/regression evidence, QualityGateDecision, and CI/CD quality report
+references in the frontend CI/CD Quality Center shell.
 
 ## Must Read
 
@@ -47,9 +48,9 @@ backend/app/tests/api/test_unit_test_patch_regression.py
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Only generate local evidence-backed Report records. Do not recompute or override
-QualityGateDecision status without evidence, and do not trigger merge, push,
-release, deployment, remote CI status updates, or PR comments.
+Only add the frontend shell for the existing local-first CI/CD quality workflow.
+Do not expose merge, release, deployment, remote CI provider controls, PR
+comments, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 
 ## Verification Command
 
@@ -57,24 +58,23 @@ release, deployment, remote CI status updates, or PR comments.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
 ```
 
-Expected result: focused CI/CD quality report API tests pass.
+Expected result: frontend CI/CD Quality Center tests pass.
 
 ## Acceptance
 
-- Adds `POST /api/cicd/runs/{id}/generate-report`.
-- Creates Report with `report_type=cicd_quality`.
-- Report conclusion cites latest QualityGateDecision and evidence artifacts.
-- Includes UnitTestPatch/PatchScopeGate/new-test/regression evidence references.
-- Does not override QualityGateDecision status without evidence.
-- Does not trigger merge, push, release, deployment, remote CI updates, or PR comments.
-- Updates handoff and sets the next task to UnitTestPatch frontend shell.
+- Shows UnitTestPatch diff, test intent, coverage target, and scope gate result.
+- Supports approve/reject actions.
+- Shows new-test and regression TestRun summaries.
+- Shows QualityGateDecision and report artifact references.
+- Does not expose merge, release, deployment, remote CI provider, or PR controls.
+- Updates handoff and sets the next task to UnitTestPatch golden smoke.
 
 ## Commit Message
 
 ```text
-feat(cicd): add cicd quality report api
+feat(frontend): add unit test patch shell
 ```
 
 ## Next Task
 
-Slice 16 Task 10: Add UnitTestPatch frontend shell.
+Slice 16 Task 11: Add UnitTestPatch golden smoke.

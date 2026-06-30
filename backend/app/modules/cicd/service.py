@@ -12,6 +12,7 @@ from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, QualityGat
 from backend.app.modules.cicd.schemas import (
     CICDRegressionRunRequest,
     CICDRegressionSelectRequest,
+    CICDQualityReportRequest,
     CICDRunAnalyzeRequest,
     CICDRunCreateRequest,
     CICDRunNewTestsRequest,
@@ -20,6 +21,7 @@ from backend.app.modules.cicd.schemas import (
 )
 from backend.app.modules.execution.models import TestRun
 from backend.app.modules.projects.models import Project, Repository, TestCommand
+from backend.app.modules.reporting.models import Report
 
 
 class ProjectNotFoundError(Exception):
@@ -55,6 +57,10 @@ class TestCommandInvalidError(Exception):
 
 
 class RegressionPlanInvalidError(Exception):
+    pass
+
+
+class QualityGateDecisionMissingError(Exception):
     pass
 
 
@@ -762,6 +768,120 @@ def compute_quality_gate(session: Session, cicd_run_id: uuid.UUID, data: Quality
     session.refresh(decision)
     session.refresh(cicd_run)
     return decision
+
+
+def generate_cicd_quality_report(
+    session: Session,
+    cicd_run_id: uuid.UUID,
+    data: CICDQualityReportRequest,
+) -> tuple[Report, Artifact]:
+    cicd_run = get_cicd_run(session, cicd_run_id)
+    decision = latest_quality_gate_decision(session, cicd_run.id)
+    if decision is None:
+        raise QualityGateDecisionMissingError
+    patch = latest_unit_test_patch(session, cicd_run.id)
+    new_tests = test_runs_by_type(session, cicd_run.id, "new_tests")
+    regression = test_runs_by_type(session, cicd_run.id, "regression")
+    evidence_artifacts = collect_cicd_quality_evidence_artifacts(session, cicd_run.id)
+    manifest = build_cicd_quality_manifest(cicd_run, decision, patch, new_tests, regression, evidence_artifacts, data.report_format)
+    report = Report(
+        project_id=cicd_run.project_id,
+        report_type="cicd_quality",
+        title="CI/CD quality report",
+        related_entity_type="CICDRun",
+        related_entity_id=cicd_run.id,
+        status="ready",
+        conclusion=decision.status,
+        summary=f"CI/CD quality gate is {decision.status}: {decision.summary}",
+        metrics_json={
+            "quality_gate_decision_id": str(decision.id),
+            "quality_gate_status": decision.status,
+            "unit_test_patch_status": patch.status if patch is not None else "missing",
+            "new_test_run_count": len(new_tests),
+            "regression_run_count": len(regression),
+            "evidence_artifact_count": len(evidence_artifacts),
+        },
+        artifact_ids=[],
+    )
+    session.add(report)
+    session.flush()
+    manifest_artifact = Artifact(
+        project_id=cicd_run.project_id,
+        owner_entity_type="Report",
+        owner_entity_id=report.id,
+        artifact_type="report_json",
+        file_path=f"artifacts/projects/{cicd_run.project_id}/cicd-quality/{cicd_run.id}/reports/{report.id}/evidence_manifest.json",
+        mime_type="application/json",
+        size_bytes=0,
+        sha256=f"sha256:cicd_quality_manifest:{report.id}",
+        metadata_json={
+            "manifest_kind": "cicd_quality_evidence_manifest",
+            "quality_gate_decision_id": str(decision.id),
+            "manifest_json": manifest,
+        },
+    )
+    session.add(manifest_artifact)
+    session.flush()
+    report.artifact_ids = [manifest_artifact.id]
+    session.add(report)
+    session.commit()
+    session.refresh(report)
+    session.refresh(manifest_artifact)
+    return report, manifest_artifact
+
+
+def latest_quality_gate_decision(session: Session, cicd_run_id: uuid.UUID) -> QualityGateDecision | None:
+    return session.scalar(
+        select(QualityGateDecision)
+        .where(QualityGateDecision.cicd_run_id == cicd_run_id)
+        .order_by(QualityGateDecision.created_at.desc()),
+    )
+
+
+def collect_cicd_quality_evidence_artifacts(session: Session, cicd_run_id: uuid.UUID) -> list[Artifact]:
+    unit_test_patch_artifacts = patch_artifacts_for_run(session, cicd_run_id)
+    cicd_run_artifacts = list(
+        session.scalars(
+            select(Artifact).where(
+                Artifact.owner_entity_type == "CICDRun",
+                Artifact.owner_entity_id == cicd_run_id,
+                Artifact.artifact_type.in_({"regression_plan", "quality_gate"}),
+            ),
+        ),
+    )
+    return unit_test_patch_artifacts + cicd_run_artifacts
+
+
+def build_cicd_quality_manifest(
+    cicd_run: CICDRun,
+    decision: QualityGateDecision,
+    patch: UnitTestPatch | None,
+    new_tests: list[TestRun],
+    regression: list[TestRun],
+    artifacts: list[Artifact],
+    report_format: list[str],
+) -> dict:
+    evidence_kinds = list(dict.fromkeys([artifact.artifact_type for artifact in artifacts]))
+    if patch is not None:
+        evidence_kinds.append("patch_scope_gate")
+    if new_tests:
+        evidence_kinds.append("new_tests")
+    if regression:
+        evidence_kinds.append("regression")
+    return {
+        "cicd_run_id": str(cicd_run.id),
+        "quality_gate_decision_id": str(decision.id),
+        "quality_gate_status": decision.status,
+        "quality_gate_summary": decision.summary,
+        "blocking_reasons": decision.blocking_reasons_json,
+        "unit_test_patch_id": str(patch.id) if patch is not None else None,
+        "unit_test_patch_status": patch.status if patch is not None else "missing",
+        "new_test_run_ids": [str(test_run.id) for test_run in new_tests],
+        "regression_run_ids": [str(test_run.id) for test_run in regression],
+        "evidence_artifact_ids": [str(artifact.id) for artifact in artifacts],
+        "evidence_kinds": evidence_kinds,
+        "report_format": report_format,
+    }
 
 
 def decide_quality_gate_status(blocking_reasons: list[str]) -> str:

@@ -1,5 +1,47 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 9 CI/CD Quality Report API 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 9：Add CI/CD quality report API。
+- 新增 `POST /api/cicd/runs/{id}/generate-report`。
+- 创建 `report_type=cicd_quality` 的 Report，关联 `related_entity_type=CICDRun`。
+- Report conclusion 使用最新 QualityGateDecision status，不重算或覆盖
+  `CICDRun.quality_gate_status`。
+- 生成 `cicd_quality_evidence_manifest` artifact，引用 QualityGateDecision、
+  UnitTestPatch/PatchScopeGate、new-test、regression 和 evidence artifacts。
+- 当前任务未触发 merge/push/release/deployment/remote CI/PR comments。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 10：Add UnitTestPatch
+  frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
+```
+
+验证结果：
+
+- `22 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/router.py`
+- `backend/app/modules/cicd/service.py`
+- `backend/app/modules/cicd/schemas.py`
+- `backend/app/tests/api/test_unit_test_patch_regression.py`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 10：Add UnitTestPatch frontend
+  shell。
+- 该任务只补前端 CI/CD Quality Center shell，不加入 merge/release/remote CI
+  provider/PR controls。
+
 ## 2026-06-30 Slice 16 Task 8 QualityGateDecision API 完成
 
 本轮完成：

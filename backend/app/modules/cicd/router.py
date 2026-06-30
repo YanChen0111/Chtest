@@ -14,6 +14,8 @@ from backend.app.modules.cicd.schemas import (
     CICDRunCreateRead,
     CICDRunCreateRequest,
     CICDRunListRead,
+    CICDQualityReportRead,
+    CICDQualityReportRequest,
     CICDRegressionRunRead,
     CICDRegressionRunRequest,
     CICDRegressionSelectRead,
@@ -232,6 +234,26 @@ def compute_quality_gate(
     except service.CICDRunNotFoundError as exc:
         raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
     return quality_gate_decision_read(decision)
+
+
+@router.post("/cicd/runs/{cicd_run_id}/generate-report", response_model=CICDQualityReportRead, status_code=status.HTTP_202_ACCEPTED)
+def generate_cicd_quality_report(
+    cicd_run_id: uuid.UUID,
+    data: CICDQualityReportRequest,
+    session: Session = Depends(get_session),
+) -> CICDQualityReportRead:
+    try:
+        report, manifest_artifact = service.generate_cicd_quality_report(session, cicd_run_id, data)
+    except service.CICDRunNotFoundError as exc:
+        raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
+    except service.QualityGateDecisionMissingError as exc:
+        raise bad_request("QUALITY_GATE_DECISION_MISSING", "Quality gate decision is required before report generation.") from exc
+    return CICDQualityReportRead(
+        report_id=report.id,
+        cicd_run_id=cicd_run_id,
+        status="generating",
+        evidence_manifest_artifact_id=manifest_artifact.id,
+    )
 
 
 def cicd_run_read(session: Session, cicd_run: CICDRun) -> CICDRunRead:
