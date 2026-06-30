@@ -37,8 +37,8 @@ runtime, RBAC, tenants, or permissions.
 | Add pytest runner adapter | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | `44ac287` | allowlisted local subprocess, no Playwright |
 | Add TestRun API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q` | `e40ccaa` | create/get run and parsed results |
 | Add pytest execution frontend shell | done | `npm --prefix frontend run test -- --run` | `fef7559` | execute approved draft/configured command, show evidence |
-| Add pytest execution golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest.py -q` | pending commit | approved golden draft executes controlled pytest |
-| Slice 12 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
+| Add pytest execution golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest_golden.py -q` | `7185e5b` | approved golden draft executes controlled pytest |
+| Slice 12 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest_golden.py -q && npm --prefix frontend run test -- --run` | pending commit | docs and handoff only |
 
 ## Task 1: Add TestRun API Contract And Task Boundary
 
@@ -213,12 +213,12 @@ controlled pytest runner and produce evidence records.
 
 Expected files:
 
-- `backend/app/tests/golden/test_testrunner_pytest.py`
+- `backend/app/tests/golden/test_testrunner_pytest_golden.py`
 
 Verification Command:
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest_golden.py -q
 ```
 
 Acceptance:
@@ -250,3 +250,23 @@ test(golden): add pytest execution smoke
 - Golden smoke proves approved draft -> pytest evidence.
 - No Playwright, reports, CI/CD quality, RAG runtime, MCP runtime, RBAC,
   tenants, or permissions are added.
+
+Completion evidence:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest_golden.py -q
+npm --prefix frontend run test -- --run
+```
+
+Verification result:
+
+- TestRunner API + golden smoke: `11 passed`
+- Frontend workbench shell: `10 passed, 13 tests passed`
+
+Notes:
+
+- Golden smoke filename is `test_testrunner_pytest_golden.py` to avoid pytest
+  module import mismatch with `backend/app/tests/api/test_testrunner_pytest.py`
+  during combined collection.
+- Next Slice is set to Slice 13 Playwright Minimal Loop planning. Slice 13 must
+  remain a separate scoped task and must not be folded into Slice 12.

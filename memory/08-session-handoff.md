@@ -1,11 +1,52 @@
 # Session Handoff
 
+## 2026-06-30 Slice 12 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 12 completion gate。
+- 确认 Slice 12 所有任务均为 `done`，并记录提交号：
+  `bcd8974`、`db5de11`、`9f6c42c`、`44ac287`、`e40ccaa`、
+  `fef7559`、`7185e5b`。
+- 完成组合验收：TestRun/TestResult model/schema、pytest runner adapter、
+  TestRun API、frontend execution shell、golden smoke 均已覆盖。
+- 修复 pytest combined collection 的 import mismatch：golden smoke 文件名从
+  `test_testrunner_pytest.py` 调整为 `test_testrunner_pytest_golden.py`。
+- 已在 `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
+  写入 completion evidence。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 13 Task 1：Add Playwright Minimal
+  Loop task plan。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest_golden.py -q
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- TestRunner API + golden smoke：`11 passed`
+- Frontend workbench shell：`10 passed, 13 tests passed`
+
+Slice 12 保持的非目标：
+
+- 未加入 Playwright execution、reports、CI/CD quality、RAG runtime、MCP
+  runtime、RBAC、tenants 或 permissions。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 13 Task 1：Add Playwright Minimal Loop task
+  plan。
+- 这是 planning-only 任务，先创建
+  `docs/implementation/slices/slice-13-playwright-minimal-loop.md`，不要直接改产品代码。
+
 ## 2026-06-30 Slice 12 Task 7 Pytest Execution Golden Smoke 完成
 
 本轮完成：
 
 - 完成 Slice 12 Task 7：Add Pytest Execution Golden Smoke。
-- 新增 `backend/app/tests/golden/test_testrunner_pytest.py`。
+- 新增 `backend/app/tests/golden/test_testrunner_pytest_golden.py`。
 - golden smoke 复用 reviewed golden TestCase -> AutomationDraft -> edit ->
   approve 链路。
 - 已批准 AutomationDraft 通过 `POST /api/test-runs` 执行 controlled pytest。
@@ -17,7 +58,7 @@
 本轮验证：
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pytest_golden.py -q
 ```
 
 验证结果：
@@ -26,7 +67,7 @@ backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pyte
 
 修改文件：
 
-- `backend/app/tests/golden/test_testrunner_pytest.py`
+- `backend/app/tests/golden/test_testrunner_pytest_golden.py`
 - `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
 - `NEXT_AI_TASK.md`
 - `memory/08-session-handoff.md`
@@ -35,7 +76,7 @@ backend/.venv/bin/python -m pytest backend/app/tests/golden/test_testrunner_pyte
 
 - 按 `NEXT_AI_TASK.md` 执行 Slice 12 completion gate。
 - 验证命令：
-  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest.py -q && npm --prefix frontend run test -- --run`。
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest_golden.py -q && npm --prefix frontend run test -- --run`。
 - 完成后在 Slice 12 文档记录 completion evidence，并选择下一 V1 slice。
 
 ## 2026-06-30 Slice 12 Task 6 Pytest Execution Frontend Shell 完成

@@ -6,16 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 12: TestRunner Pytest Execution.
+Slice 13: Playwright Minimal Loop.
 
 ## Current Task
 
-Slice 12 completion gate.
+Task 1: Add Playwright Minimal Loop task plan.
 
 ## Product Value Answer
 
-After this task, Slice 12 is verified end-to-end and ready to hand off to the
-next V1 slice.
+After this task, Chtest has a scoped Slice 13 task plan for minimal Playwright
+execution without expanding reports, CI/CD, RAG, MCP, RBAC, tenants, or
+permissions.
 
 ## Must Read
 
@@ -29,8 +30,8 @@ next V1 slice.
 
 ## Do Not Read Unless Needed
 
-- Playwright, CI/CD, report center, RAG runtime, MCP runtime, and migration
-  reference docs unless a concrete blocker requires them.
+- CI/CD, report center, RAG runtime, MCP runtime, and migration reference docs
+  unless a concrete blocker requires them.
 
 ## Expected Files
 
@@ -39,35 +40,35 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/implementation/slices/slice-12-testrunner-pytest-execution.md
+docs/implementation/slices/slice-13-playwright-minimal-loop.md
 ```
 
-This is a verification and documentation task only. Do not modify product code
-unless verification exposes a concrete blocker.
+This is a planning/documentation task only. Do not modify product code.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/golden/test_testrunner_pytest.py -q && npm --prefix frontend run test -- --run
+test -f docs/implementation/slices/slice-13-playwright-minimal-loop.md && rg -n "Playwright Minimal Loop|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-13-playwright-minimal-loop.md
 ```
 
-Expected result: backend pytest execution API/golden tests and frontend shell
-tests pass.
+Expected result: Slice 13 task plan exists and contains task table,
+verification commands, and non-goals.
 
 ## Acceptance
 
-- Confirm Slice 12 task table is fully done.
-- Run backend API + golden pytest execution verification.
-- Run frontend workbench verification.
-- Record completion evidence in the Slice 12 task plan.
-- Update handoff and set the next task to the next V1 slice.
+- Create a scoped Slice 13 Playwright Minimal Loop task plan.
+- Keep Slice 13 limited to minimal Playwright execution, trace/screenshot
+  evidence, and frontend inspection.
+- Do not add reports, CI/CD quality gates, RAG runtime, MCP runtime, RBAC,
+  tenants, or permissions.
+- Update handoff and set the next task to Slice 13 API contract/task boundary.
 
 ## Commit Message
 
 ```text
-docs(execution): complete pytest runner slice
+docs(playwright): add minimal loop task plan
 ```
 
 ## Next Task
 
-Next V1 slice selection.
+Slice 13 Task 2: Add Playwright execution API contract and task boundary.
