@@ -620,6 +620,23 @@ They may create or return generic `AITask`, `TestRun`, `FailureAnalysis`, and
 `Report` records, but the endpoint names stay under `/api/cicd` so the frontend
 can drive the CI/CD quality workflow without guessing cross-module orchestration.
 
+Slice 15 foundation boundary:
+
+- Slice 15 implements only local-first CI/CD evidence setup:
+  `POST /api/cicd/runs`, `GET /api/cicd/runs`,
+  `GET /api/cicd/runs/{id}`, and `POST /api/cicd/runs/{id}/analyze`.
+- Slice 15 supports `source_type=local_diff` and manual local inputs only,
+  `trigger_type=manual`, and `provider=local`.
+- Slice 15 may create `CICDRun`, `CICDChangedFile`, `AITask`, `Artifact`, and
+  risk analysis evidence.
+- Slice 15 must not create `UnitTestPatch`, `TestRun`, `QualityGateDecision`,
+  `FailureAnalysis`, or `Report` records.
+- Endpoints in sections 5.5-5.13 are Slice 16+ unless a later task explicitly
+  narrows and activates them.
+- V1 does not integrate remote CI providers, webhooks, PR comments, merge,
+  push, release, deployment, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions in Slice 15.
+
 ### 5.1 Create CI/CD Run
 
 `POST /api/cicd/runs`
@@ -631,10 +648,23 @@ Request:
   "project_id": "00000000-0000-0000-0000-000000000101",
   "repository_id": "00000000-0000-0000-0000-000000000301",
   "source_type": "local_diff",
+  "diff_text": "diff --git a/app/coupon.py b/app/coupon.py\n...",
   "base_ref": "main",
   "head_ref": "HEAD"
 }
 ```
+
+Rules:
+
+- `diff_text` is optional but recommended in Slice 15. When supplied, the API
+  persists CICDChangedFile rows and a `changed_files.json` artifact.
+- If `diff_text` is omitted, the run remains `created` with no changed files
+  until manual changed-file evidence is supplied by a later task.
+- `source_type` must be `local_diff` or `manual_check`.
+- `trigger_type` is implicitly `manual`; `provider` is implicitly `local`.
+- Requests for `github_actions`, `gitlab_ci`, `jenkins`, webhook, PR, scheduled,
+  merge, release, or deployment behavior must be rejected or ignored as
+  out-of-scope for Slice 15.
 
 Response 202:
 
@@ -668,6 +698,8 @@ Response 200:
       "project_id": "00000000-0000-0000-0000-000000000101",
       "repository_id": "00000000-0000-0000-0000-000000000301",
       "source_type": "local_diff",
+      "trigger_type": "manual",
+      "provider": "local",
       "base_ref": "main",
       "head_ref": "HEAD",
       "overall_risk": "medium",
@@ -694,7 +726,25 @@ Response 200:
   "overall_risk": "medium",
   "quality_gate_status": "pending",
   "status": "analyzed",
-  "changed_files": [],
+  "changed_files": [
+    {
+      "path": "app/coupon.py",
+      "old_path": null,
+      "change_type": "modified",
+      "language": "python",
+      "file_role": "source",
+      "risk_level": "medium",
+      "risk_reasons": ["source file changed"],
+      "lines_added": 12,
+      "lines_deleted": 4
+    }
+  ],
+  "analysis_artifacts": [
+    {
+      "artifact_type": "risk_analysis",
+      "file_path": "artifacts/projects/00000000-0000-0000-0000-000000000101/cicd-quality/00000000-0000-0000-0000-000000001101/risk_analysis.json"
+    }
+  ],
   "unit_test_patches": [],
   "test_runs": [],
   "quality_gate_decision": null,
@@ -718,6 +768,32 @@ Request:
 ```
 
 Response 202 returns AITask reference.
+
+Rules:
+
+- Analyze uses deterministic mock output in V1.
+- Analyze creates a succeeded AITask and a `risk_analysis.json` artifact owned by
+  the CICDRun.
+- Analyze updates `CICDRun.status` to `analyzed`.
+- Analyze may update `CICDRun.overall_risk` from changed file risks.
+- Analyze does not create UnitTestPatch, TestRun, QualityGateDecision,
+  FailureAnalysis, or Report records in Slice 15.
+
+### 5.5+ Slice 16 And Later Endpoints
+
+The endpoints below are contract placeholders for Slice 16+ work:
+
+- `POST /api/cicd/runs/{id}/unit-test-patches`
+- `POST /api/cicd/unit-test-patches/{id}/approve`
+- `POST /api/cicd/unit-test-patches/{id}/reject`
+- `POST /api/cicd/unit-test-patches/{id}/apply`
+- `POST /api/cicd/runs/{id}/run-new-tests`
+- `POST /api/cicd/runs/{id}/select-regression`
+- `POST /api/cicd/runs/{id}/run-regression`
+- `POST /api/cicd/runs/{id}/quality-gate`
+- `POST /api/cicd/runs/{id}/generate-report`
+
+Do not implement these endpoints in Slice 15.
 
 ### 5.5 Generate Unit Test Patch
 

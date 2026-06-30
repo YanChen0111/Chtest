@@ -10,12 +10,12 @@ Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Task 2: Add CI/CD Quality Center contract boundary.
+Task 3: Add CICDRun and CICDChangedFile model/schema.
 
 ## Product Value Answer
 
-After this task, the CI/CD Quality Center foundation contract is narrowed to the
-local-first Slice 15 subset before implementation.
+After this task, Chtest can persist CICDRun and CICDChangedFile records aligned
+with the local-first CI/CD Quality Center contract.
 
 ## Must Read
 
@@ -40,41 +40,39 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/04-artifact-contract.md
+backend/app/modules/cicd/__init__.py
+backend/app/modules/cicd/models.py
+backend/app/modules/cicd/schemas.py
+backend/app/tests/api/test_cicd_quality_center.py
 docs/implementation/slices/slice-15-cicd-quality-center.md
 ```
 
-This is a contract/documentation task. Do not add product code.
+Do not create UnitTestPatch, QualityGateDecision, TestRun, or Report records in
+this task.
 
 ## Verification Command
 
 ```bash
-rg -n "CICDRun|CICDChangedFile|POST /api/cicd/runs|local_diff|remote CI" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-15-cicd-quality-center.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
 ```
 
-Expected result: contracts and Slice 15 plan describe the local-first foundation
-subset and remote CI exclusions.
+Expected result: focused CICDRun/CICDChangedFile model/schema tests pass.
 
 ## Acceptance
 
-- Contract states Slice 15 supports local_diff/manual source only.
-- Contract separates foundation endpoints from Slice 16 UnitTestPatch,
-  regression, and QualityGateDecision work.
-- Contract defines changed file evidence and risk_analysis artifact metadata.
-- Contract explicitly excludes merge/release decisions, remote CI provider
-  integration, webhooks, PR comments, RAG runtime, MCP runtime, RBAC, tenants,
-  and permissions.
-- Updates handoff and sets the next task to CICDRun/CICDChangedFile
-  model/schema.
+- Defines CICDRun fields from the data model contract.
+- Defines CICDChangedFile fields from the data model contract.
+- Defines create/read/list schemas for CICDRun and changed files.
+- Does not create UnitTestPatch, QualityGateDecision, TestRun, or Report
+  records in this task.
+- Updates handoff and sets the next task to local diff parser service.
 
 ## Commit Message
 
 ```text
-docs(cicd): define quality center foundation boundary
+feat(cicd): add quality center run schema
 ```
 
 ## Next Task
 
-Slice 15 Task 3: Add CICDRun and CICDChangedFile model/schema.
+Slice 15 Task 4: Add local diff parser service.

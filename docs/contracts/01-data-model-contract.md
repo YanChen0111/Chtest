@@ -272,6 +272,17 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | quality_gate_status | varchar(40) | yes | pending | pending, passed, failed, needs_review |
 | status | varchar(40) | yes | created | created, analyzed, patch_ready, tests_running, reported, archived |
 
+V1 Slice 15 boundary:
+
+- `source_type` supports `local_diff` and `manual_check`; `uploaded_diff` is
+  accepted only as stored diff text, not as remote provider ingestion.
+- `trigger_type` is `manual` only.
+- `provider` is `local` only.
+- `quality_gate_status` remains `pending` in Slice 15 because
+  QualityGateDecision belongs to Slice 16.
+- Slice 15 must not trigger merge, push, release, deployment, webhook handling,
+  PR comments, or remote CI provider synchronization.
+
 ## 18. CICDChangedFile
 
 | Field | Type | Required | Default | Notes |
@@ -286,6 +297,14 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | risk_reasons_json | jsonb | yes | [] | Risk reasons |
 | lines_added | int | yes | 0 | Added lines |
 | lines_deleted | int | yes | 0 | Deleted lines |
+
+CICDChangedFile evidence rules:
+
+- Rows are derived from local unified diff text or manual changed-file input.
+- `file_role` is deterministic from path and extension.
+- `risk_reasons_json` must explain why `risk_level` was assigned.
+- Every changed file in `changed_files.json` should have a matching
+  CICDChangedFile row.
 
 ## 19. UnitTestPatch
 

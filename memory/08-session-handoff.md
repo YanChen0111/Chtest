@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-06-30 Slice 15 Task 2 CI/CD Quality Contract Boundary 完成
+
+本轮完成：
+
+- 完成 Slice 15 Task 2：Add CI/CD Quality Center contract boundary。
+- 在数据模型合同中明确 CICDRun 的 Slice 15 边界：`local_diff` /
+  `manual_check`、`trigger_type=manual`、`provider=local`，且
+  `quality_gate_status` 在 Slice 15 保持 `pending`。
+- 在 API 合同中明确 Slice 15 只实现 `/api/cicd/runs` create/list/get 和
+  `/api/cicd/runs/{id}/analyze`。
+- 将 UnitTestPatch、run-new-tests、regression、QualityGateDecision 和
+  CI/CD quality report endpoints 标记为 Slice 16+ placeholder。
+- 在 artifact 合同中定义 `diff.patch`、`changed_files.json`、
+  `risk_analysis.json` 的 Slice 15 artifact 边界和 metadata 要求。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 15 Task 3：Add CICDRun and
+  CICDChangedFile model/schema。
+
+本轮验证：
+
+```bash
+rg -n "CICDRun|CICDChangedFile|POST /api/cicd/runs|local_diff|remote CI" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-15-cicd-quality-center.md
+```
+
+修改文件：
+
+- `docs/contracts/01-data-model-contract.md`
+- `docs/contracts/02-api-contract.md`
+- `docs/contracts/04-artifact-contract.md`
+- `docs/implementation/slices/slice-15-cicd-quality-center.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 15 Task 3：Add CICDRun and CICDChangedFile
+  model/schema。
+- 当前任务只做 model/schema，不创建 UnitTestPatch、QualityGateDecision、
+  TestRun 或 Report records。
+
 ## 2026-06-30 Slice 15 Task 1 CI/CD Quality Center Task Plan 完成
 
 本轮完成：

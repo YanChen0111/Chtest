@@ -84,6 +84,26 @@ artifacts/projects/{project_id}/cicd-quality/{cicd_run_id}/
   cicd_quality_report.html
 ```
 
+Slice 15 artifact boundary:
+
+- Slice 15 may create only `diff.patch`, `changed_files.json`, and
+  `risk_analysis.json`.
+- `diff.patch` is stored as an Artifact with
+  `artifact_type=diff_patch`, `owner_entity_type=CICDRun`, and
+  `owner_entity_id=cicd_run_id`.
+- `changed_files.json` is stored as an Artifact with
+  `artifact_type=changed_files`, `owner_entity_type=CICDRun`, and
+  `owner_entity_id=cicd_run_id`.
+- `risk_analysis.json` is stored as an Artifact with
+  `artifact_type=risk_analysis`, `owner_entity_type=CICDRun`, and
+  `owner_entity_id=cicd_run_id`.
+- `changed_files.json` must include one item per persisted CICDChangedFile.
+- `risk_analysis.json` metadata must include `model_provider`, `model_name`,
+  `prompt_version`, `skill_version`, `overall_risk`, and
+  `changed_file_count`.
+- `unit_test.patch`, `patch_scope_gate.json`, `regression_plan.json`,
+  `quality_gate.json`, and CI/CD quality report artifacts are Slice 16+.
+
 ### 3.6 Test Run
 
 ```text
