@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 8 QualityGateDecision API 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 8：Add QualityGateDecision API。
+- 新增 `POST /api/cicd/runs/{id}/quality-gate`。
+- 每次 compute 都创建新的 QualityGateDecision，并更新
+  `CICDRun.quality_gate_status`。
+- required evidence 缺失时返回 `needs_review`，不会误判为 `passed`。
+- new-test 或 regression evidence 失败时返回 `failed`，并写入具体
+  blocking reason。
+- patch scope、applied UnitTestPatch、new-test、regression evidence 齐全且无
+  failure 时返回 `passed`。
+- 当前任务未触发 merge/push/release/deployment/remote CI/PR comments，也未创建
+  Report。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 Task 9：Add CI/CD quality report
+  API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q
+```
+
+验证结果：
+
+- `21 passed`
+
+修改文件：
+
+- `backend/app/modules/cicd/router.py`
+- `backend/app/modules/cicd/service.py`
+- `backend/app/modules/cicd/schemas.py`
+- `backend/app/tests/api/test_unit_test_patch_regression.py`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 16 Task 9：Add CI/CD quality report API。
+- 该任务只生成本地 evidence-backed Report，不重算/覆盖
+  QualityGateDecision，不触发外部 CI 或 PR 行为。
+
 ## 2026-06-30 Slice 16 Task 7 New-Test/Regression API 完成
 
 本轮完成：

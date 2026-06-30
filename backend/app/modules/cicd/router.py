@@ -21,6 +21,8 @@ from backend.app.modules.cicd.schemas import (
     CICDRunRead,
     CICDRunNewTestsRead,
     CICDRunNewTestsRequest,
+    QualityGateComputeRequest,
+    QualityGateDecisionRead,
     UnitTestPatchApplyRead,
     UnitTestPatchApplyRequest,
     UnitTestPatchGenerateRequest,
@@ -219,6 +221,19 @@ def run_regression(
     return CICDRegressionRunRead(cicd_run_id=cicd_run_id, test_run_ids=[test_run.id for test_run in test_runs], status="tests_running")
 
 
+@router.post("/cicd/runs/{cicd_run_id}/quality-gate", response_model=QualityGateDecisionRead)
+def compute_quality_gate(
+    cicd_run_id: uuid.UUID,
+    data: QualityGateComputeRequest,
+    session: Session = Depends(get_session),
+) -> QualityGateDecisionRead:
+    try:
+        decision = service.compute_quality_gate(session, cicd_run_id, data)
+    except service.CICDRunNotFoundError as exc:
+        raise not_found("CICD_RUN_NOT_FOUND", "CI/CD run not found.") from exc
+    return quality_gate_decision_read(decision)
+
+
 def cicd_run_read(session: Session, cicd_run: CICDRun) -> CICDRunRead:
     return CICDRunRead(
         id=cicd_run.id,
@@ -236,6 +251,20 @@ def cicd_run_read(session: Session, cicd_run: CICDRun) -> CICDRunRead:
         status=cicd_run.status,
         changed_files=[changed_file_read(changed_file) for changed_file in cicd_run.changed_files],
         analysis_artifacts=service.analysis_artifacts_for_run(session, cicd_run),
+    )
+
+
+def quality_gate_decision_read(decision) -> QualityGateDecisionRead:
+    return QualityGateDecisionRead(
+        id=decision.id,
+        project_id=decision.project_id,
+        cicd_run_id=decision.cicd_run_id,
+        status=decision.status,
+        summary=decision.summary,
+        blocking_reasons=decision.blocking_reasons_json,
+        evidence_artifact_ids=decision.evidence_artifact_ids,
+        decided_by=decision.decided_by,
+        status_detail=decision.status_detail_json,
     )
 
 

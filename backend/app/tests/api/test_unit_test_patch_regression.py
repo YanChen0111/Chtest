@@ -936,3 +936,189 @@ def test_run_regression_api_creates_test_runs_from_allowlisted_commands() -> Non
         assert test_run.parsed_result_json["regression_plan_artifact_id"] == str(artifact_id)
     finally:
         app.dependency_overrides.clear()
+
+
+def test_quality_gate_api_returns_needs_review_when_required_evidence_is_missing() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            _project, cicd_run, _ai_task = seed_cicd_run_and_ai_task(session)
+            session.commit()
+            cicd_run_id = cicd_run.id
+
+        client = ASGIClient(app)
+        response = client.post(f"/api/cicd/runs/{cicd_run_id}/quality-gate", {})
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["cicd_run_id"] == str(cicd_run_id)
+        assert body["status"] == "needs_review"
+        assert "missing applied UnitTestPatch evidence" in body["blocking_reasons"]
+        assert "missing new-test evidence" in body["blocking_reasons"]
+        assert "missing regression evidence" in body["blocking_reasons"]
+
+        with SessionLocal() as session:
+            run = session.get(CICDRun, cicd_run_id)
+            decisions = list(session.scalars(select(QualityGateDecision)))
+            assert session.scalar(select(Report)) is None
+
+        assert run is not None
+        assert run.quality_gate_status == "needs_review"
+        assert len(decisions) == 1
+        assert decisions[0].status == "needs_review"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_quality_gate_api_returns_failed_when_test_evidence_fails() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, cicd_run, ai_task = seed_cicd_run_and_ai_task(session)
+            patch = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/tests/test_coupon.py b/tests/test_coupon.py\n",
+                scope_gate_result_json={"allowed": True},
+                test_intent="Applied tests",
+                status="applied",
+            )
+            new_test = TestRun(
+                project_id=project.id,
+                cicd_run_id=cicd_run.id,
+                name="CI/CD new tests: pytest new tests",
+                command="pytest tests/test_coupon.py -q",
+                working_directory=".",
+                status="failed",
+                exit_code=1,
+                parsed_result_json={"run_type": "new_tests"},
+            )
+            regression = TestRun(
+                project_id=project.id,
+                cicd_run_id=cicd_run.id,
+                name="CI/CD regression: pytest regression",
+                command="pytest -q",
+                working_directory=".",
+                status="queued",
+                parsed_result_json={"run_type": "regression"},
+            )
+            session.add_all([patch, new_test, regression])
+            session.commit()
+            cicd_run_id = cicd_run.id
+
+        client = ASGIClient(app)
+        response = client.post(f"/api/cicd/runs/{cicd_run_id}/quality-gate", {})
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "failed"
+        assert "new-test evidence failed" in body["blocking_reasons"]
+
+        with SessionLocal() as session:
+            run = session.get(CICDRun, cicd_run_id)
+            decision = session.get(QualityGateDecision, uuid.UUID(body["id"]))
+
+        assert run is not None
+        assert run.quality_gate_status == "failed"
+        assert decision is not None
+        assert decision.status == "failed"
+        assert decision.status_detail_json["new_tests"]["status"] == "failed"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_quality_gate_api_returns_passed_and_recomputes_new_decision_with_complete_evidence() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, cicd_run, ai_task = seed_cicd_run_and_ai_task(session)
+            patch = UnitTestPatch(
+                cicd_run_id=cicd_run.id,
+                ai_task_id=ai_task.id,
+                patch_text="diff --git a/tests/test_coupon.py b/tests/test_coupon.py\n",
+                scope_gate_result_json={"allowed": True, "checked_paths": ["tests/test_coupon.py"]},
+                test_intent="Applied tests",
+                status="applied",
+            )
+            patch_artifact = Artifact(
+                project_id=project.id,
+                owner_entity_type="UnitTestPatch",
+                owner_entity_id=patch.id,
+                artifact_type="unit_test_patch",
+                file_path="artifacts/unit_test.patch",
+                mime_type="text/x-diff",
+                size_bytes=42,
+                sha256="sha256:unit_test_patch",
+                metadata_json={"scope_gate_result": {"allowed": True}},
+            )
+            new_test = TestRun(
+                project_id=project.id,
+                cicd_run_id=cicd_run.id,
+                name="CI/CD new tests: pytest new tests",
+                command="pytest tests/test_coupon.py -q",
+                working_directory=".",
+                status="succeeded",
+                exit_code=0,
+                parsed_result_json={"run_type": "new_tests"},
+            )
+            regression = TestRun(
+                project_id=project.id,
+                cicd_run_id=cicd_run.id,
+                name="CI/CD regression: pytest regression",
+                command="pytest -q",
+                working_directory=".",
+                status="succeeded",
+                exit_code=0,
+                parsed_result_json={"run_type": "regression"},
+            )
+            session.add(patch)
+            session.flush()
+            patch_artifact.owner_entity_id = patch.id
+            session.add_all([patch_artifact, new_test, regression])
+            session.commit()
+            cicd_run_id = cicd_run.id
+
+        client = ASGIClient(app)
+        first_response = client.post(f"/api/cicd/runs/{cicd_run_id}/quality-gate", {})
+        second_response = client.post(f"/api/cicd/runs/{cicd_run_id}/quality-gate", {})
+
+        assert first_response.status_code == 200
+        assert second_response.status_code == 200
+        first = first_response.json()
+        second = second_response.json()
+        assert first["status"] == "passed"
+        assert second["status"] == "passed"
+        assert first["id"] != second["id"]
+        assert first["blocking_reasons"] == []
+        assert first["status_detail"]["patch_scope_gate"]["allowed"] is True
+        assert first["status_detail"]["new_tests"]["status"] == "succeeded"
+        assert first["status_detail"]["regression"]["status"] == "succeeded"
+
+        with SessionLocal() as session:
+            run = session.get(CICDRun, cicd_run_id)
+            decisions = list(session.scalars(select(QualityGateDecision).where(QualityGateDecision.cicd_run_id == cicd_run_id)))
+            assert session.scalar(select(Report)) is None
+
+        assert run is not None
+        assert run.quality_gate_status == "passed"
+        assert len(decisions) == 2
+    finally:
+        app.dependency_overrides.clear()

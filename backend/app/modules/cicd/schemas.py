@@ -142,6 +142,10 @@ class CICDRegressionRunRead(BaseModel):
     status: str
 
 
+class QualityGateComputeRequest(BaseModel):
+    include_failure_analysis: bool = True
+
+
 class QualityGateDecisionCreate(BaseModel):
     project_id: uuid.UUID
     cicd_run_id: uuid.UUID

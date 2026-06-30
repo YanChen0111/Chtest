@@ -45,8 +45,8 @@ runtime, MCP runtime, RBAC, tenants, or permissions work.
 | Add PatchScopeGate service | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | `f8c4156` | blocks non-test path changes |
 | Add UnitTestPatch generation/review API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | `c22f6e5` | generate/approve/reject only |
 | Add UnitTestPatch apply API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | `824cb4b` | applies approved test-only patch artifact |
-| Add run-new-tests and regression API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | pending commit | creates CICD-linked TestRun records |
-| Add QualityGateDecision API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | - | passed/failed/needs_review evidence |
+| Add run-new-tests and regression API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | `f4bbc73` | creates CICD-linked TestRun records |
+| Add QualityGateDecision API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | pending commit | passed/failed/needs_review evidence |
 | Add CI/CD quality report API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | - | Report with report_type=cicd_quality |
 | Add UnitTestPatch frontend shell | planned | `npm --prefix frontend run test -- --run` | - | patch review, scope gate, regression status |
 | Add UnitTestPatch golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q` | - | golden diff -> patch -> tests -> gate/report |

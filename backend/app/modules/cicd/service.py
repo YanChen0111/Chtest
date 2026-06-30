@@ -8,13 +8,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.models import AITask, Artifact
-from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, UnitTestPatch
+from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, QualityGateDecision, UnitTestPatch
 from backend.app.modules.cicd.schemas import (
     CICDRegressionRunRequest,
     CICDRegressionSelectRequest,
     CICDRunAnalyzeRequest,
     CICDRunCreateRequest,
     CICDRunNewTestsRequest,
+    QualityGateComputeRequest,
     UnitTestPatchGenerateRequest,
 )
 from backend.app.modules.execution.models import TestRun
@@ -702,6 +703,127 @@ def run_regression(session: Session, cicd_run_id: uuid.UUID, data: CICDRegressio
     for test_run in test_runs:
         session.refresh(test_run)
     return test_runs
+
+
+def compute_quality_gate(session: Session, cicd_run_id: uuid.UUID, data: QualityGateComputeRequest) -> QualityGateDecision:
+    cicd_run = get_cicd_run(session, cicd_run_id)
+    patch = latest_unit_test_patch(session, cicd_run.id)
+    new_tests = test_runs_by_type(session, cicd_run.id, "new_tests")
+    regression = test_runs_by_type(session, cicd_run.id, "regression")
+    patch_artifacts = patch_artifacts_for_run(session, cicd_run.id)
+
+    blocking_reasons: list[str] = []
+    status_detail = {
+        "patch_scope_gate": patch.scope_gate_result_json if patch is not None else {},
+        "unit_test_patch": {
+            "id": str(patch.id) if patch is not None else None,
+            "status": patch.status if patch is not None else "missing",
+        },
+        "new_tests": summarize_test_runs(new_tests),
+        "regression": summarize_test_runs(regression),
+        "failure_analysis": "not_requested" if not data.include_failure_analysis else "not_available",
+    }
+
+    if patch is None or patch.status != "applied":
+        blocking_reasons.append("missing applied UnitTestPatch evidence")
+    elif not patch.scope_gate_result_json.get("allowed", False):
+        blocking_reasons.append("patch scope gate rejected")
+
+    if not new_tests:
+        blocking_reasons.append("missing new-test evidence")
+    elif any_test_run_failed(new_tests):
+        blocking_reasons.append("new-test evidence failed")
+
+    if not regression:
+        blocking_reasons.append("missing regression evidence")
+    elif any_test_run_failed(regression):
+        blocking_reasons.append("regression evidence failed")
+
+    status_value = decide_quality_gate_status(blocking_reasons)
+    summary = {
+        "passed": "CI/CD quality gate passed with patch, new-test, and regression evidence.",
+        "failed": "CI/CD quality gate failed due to blocking evidence.",
+        "needs_review": "CI/CD quality gate needs review because required evidence is missing.",
+    }[status_value]
+    decision = QualityGateDecision(
+        project_id=cicd_run.project_id,
+        cicd_run_id=cicd_run.id,
+        status=status_value,
+        summary=summary,
+        blocking_reasons_json=blocking_reasons,
+        evidence_artifact_ids=[artifact.id for artifact in patch_artifacts],
+        decided_by="system",
+        status_detail_json=status_detail,
+    )
+    cicd_run.quality_gate_status = status_value
+    session.add(decision)
+    session.add(cicd_run)
+    session.commit()
+    session.refresh(decision)
+    session.refresh(cicd_run)
+    return decision
+
+
+def decide_quality_gate_status(blocking_reasons: list[str]) -> str:
+    if not blocking_reasons:
+        return "passed"
+    if any("failed" in reason or "rejected" in reason for reason in blocking_reasons):
+        return "failed"
+    return "needs_review"
+
+
+def latest_unit_test_patch(session: Session, cicd_run_id: uuid.UUID) -> UnitTestPatch | None:
+    return session.scalar(
+        select(UnitTestPatch)
+        .where(UnitTestPatch.cicd_run_id == cicd_run_id)
+        .order_by(UnitTestPatch.created_at.desc()),
+    )
+
+
+def test_runs_by_type(session: Session, cicd_run_id: uuid.UUID, run_type: str) -> list[TestRun]:
+    runs = list(
+        session.scalars(
+            select(TestRun)
+            .where(TestRun.cicd_run_id == cicd_run_id)
+            .order_by(TestRun.created_at.asc()),
+        ),
+    )
+    return [test_run for test_run in runs if test_run.parsed_result_json.get("run_type") == run_type]
+
+
+def summarize_test_runs(test_runs: list[TestRun]) -> dict:
+    if not test_runs:
+        return {"status": "missing", "test_run_ids": []}
+    if any_test_run_failed(test_runs):
+        status_value = "failed"
+    elif all(test_run.status == "succeeded" and test_run.exit_code == 0 for test_run in test_runs):
+        status_value = "succeeded"
+    else:
+        status_value = "pending"
+    return {
+        "status": status_value,
+        "test_run_ids": [str(test_run.id) for test_run in test_runs],
+    }
+
+
+def any_test_run_failed(test_runs: list[TestRun]) -> bool:
+    return any(test_run.status == "failed" or (test_run.exit_code is not None and test_run.exit_code != 0) for test_run in test_runs)
+
+
+def patch_artifacts_for_run(session: Session, cicd_run_id: uuid.UUID) -> list[Artifact]:
+    patches = list(session.scalars(select(UnitTestPatch).where(UnitTestPatch.cicd_run_id == cicd_run_id)))
+    patch_ids = {patch.id for patch in patches}
+    if not patch_ids:
+        return []
+    return list(
+        session.scalars(
+            select(Artifact).where(
+                Artifact.owner_entity_type == "UnitTestPatch",
+                Artifact.owner_entity_id.in_(patch_ids),
+                Artifact.artifact_type == "unit_test_patch",
+            ),
+        ),
+    )
 
 
 def get_active_test_command(session: Session, project_id: uuid.UUID, test_command_id: uuid.UUID) -> TestCommand:
