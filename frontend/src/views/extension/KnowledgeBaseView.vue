@@ -67,7 +67,14 @@
       <div class="knowledge-grid knowledge-main-grid">
         <a-card class="settings-panel" :bordered="false">
           <template #title>ContextArtifact 清单</template>
-          <a-table :columns="contextColumns" :data="contextRows" :pagination="false" row-key="id" size="small">
+          <a-table
+            :columns="contextColumns"
+            :data="contextRows"
+            :pagination="false"
+            :scroll="{ x: 980 }"
+            row-key="id"
+            size="small"
+          >
             <template #safe="{ record }">
               <a-tag :color="record.safe_to_show ? 'green' : 'orange'">{{ record.safe_to_show ? '安全' : '需复核' }}</a-tag>
             </template>
@@ -82,7 +89,14 @@
 
         <a-card class="settings-panel" :bordered="false">
           <template #title>MCP-ready ToolDefinition</template>
-          <a-table :columns="toolColumns" :data="toolRows" :pagination="false" row-key="id" size="small">
+          <a-table
+            :columns="toolColumns"
+            :data="toolRows"
+            :pagination="false"
+            :scroll="{ x: 920 }"
+            row-key="id"
+            size="small"
+          >
             <template #ready="{ record }">
               <a-tag :color="record.is_mcp_ready ? 'green' : 'gray'">
                 {{ record.is_mcp_ready ? '就绪' : '仅结构' }}
@@ -120,22 +134,22 @@ const emptyAdapter = {
 const adapterState = computed(() => store.knowledgeBase?.knowledge_adapter ?? emptyAdapter);
 
 const contextColumns = [
-  { title: '标题', dataIndex: 'title' },
-  { title: '来源', dataIndex: 'source_ref' },
-  { title: '文件格式', dataIndex: 'mime_type' },
-  { title: '展示安全', slotName: 'safe' },
-  { title: '提示词', slotName: 'prompt' },
-  { title: '使用次数', dataIndex: 'usage_count' },
-  { title: '最近使用', dataIndex: 'latestUsedAt' },
+  { title: '标题', dataIndex: 'title', width: 220 },
+  { title: '来源', dataIndex: 'source_ref', width: 260 },
+  { title: '文件格式', dataIndex: 'mime_type', width: 150 },
+  { title: '展示安全', slotName: 'safe', width: 120 },
+  { title: '提示词', slotName: 'prompt', width: 110 },
+  { title: '使用次数', dataIndex: 'usage_count', width: 110 },
+  { title: '最近使用', dataIndex: 'latestUsedAt', width: 180 },
 ];
 
 const toolColumns = [
-  { title: '名称', dataIndex: 'name' },
-  { title: '类型', dataIndex: 'tool_type' },
-  { title: '风险', dataIndex: 'risk_level' },
-  { title: '审批', slotName: 'approval' },
-  { title: 'MCP-ready', slotName: 'ready' },
-  { title: '能力', dataIndex: 'capability' },
+  { title: '名称', dataIndex: 'name', width: 220 },
+  { title: '类型', dataIndex: 'tool_type', width: 150 },
+  { title: '风险', dataIndex: 'risk_level', width: 100 },
+  { title: '审批', slotName: 'approval', width: 150 },
+  { title: 'MCP', slotName: 'ready', width: 110 },
+  { title: '能力', dataIndex: 'capability', width: 190 },
 ];
 
 const contextRows = computed(() =>
