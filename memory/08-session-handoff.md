@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-06-30 Slice 11 Task 3 AutomationDraft Generation API 完成
+
+本轮完成：
+
+- 完成 Slice 11 Task 3：新增 AutomationDraft generation API。
+- 新增 `POST /api/automation/drafts`。
+- 创建 deterministic mock AutomationDraft，并同步创建 succeeded AITask。
+- Draft 包含 draft_code、target_framework、suggested_file_path、execution_notes、risk_notes、approval_required、execution_strategy。
+- 只生成 review-gated draft，不执行、不写入目标仓库、不创建 TestRun/TestResult/runtime artifact/report。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 11 Task 4：Add AutomationDraft edit and approve API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_test_case_library.py -q
+```
+
+验证结果：
+
+- AutomationDraft focused test：`3 passed`
+- AutomationDraft + Test Case Library API regression：`6 passed`
+
+修改文件：
+
+- `backend/app/main.py`
+- `backend/app/modules/automation/router.py`
+- `backend/app/modules/automation/service.py`
+- `backend/app/tests/api/test_automation_draft.py`
+- `docs/implementation/slices/slice-11-automation-draft-foundation.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 11 Task 4：Add AutomationDraft edit and approve API。
+- 继续在 `backend/app/tests/api/test_automation_draft.py` 中先写红灯，再补 get/edit/approve service/router。
+
 ## 2026-06-30 Slice 11 Task 2 AutomationDraft Model Schema 完成
 
 本轮完成：

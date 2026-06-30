@@ -1,17 +1,83 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
+from collections.abc import Iterator
+from typing import Any
 
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend.app.main import app
 from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.models import AITask
 from backend.app.modules.automation.models import AutomationDraft
 from backend.app.modules.automation.schemas import AutomationDraftRead
 from backend.app.modules.cases.models import TestCase as CaseModel
 from backend.app.modules.projects.models import Project, Workspace
+from backend.app.modules.projects.router import get_session
+
+
+class ASGIResponse:
+    def __init__(self, status_code: int, body: bytes) -> None:
+        self.status_code = status_code
+        self.body = body
+
+    def json(self) -> Any:
+        return json.loads(self.body.decode("utf-8"))
+
+
+class ASGIClient:
+    def __init__(self, asgi_app: Any) -> None:
+        self.asgi_app = asgi_app
+
+    def post(self, path: str, json_body: dict[str, Any]) -> ASGIResponse:
+        return asyncio.run(self._request("POST", path, json_body))
+
+    async def _request(self, method: str, path: str, json_body: dict[str, Any]) -> ASGIResponse:
+        body = json.dumps(json_body).encode("utf-8")
+        status_code: int | None = None
+        body_chunks: list[bytes] = []
+        request_complete = False
+
+        async def receive() -> dict[str, Any]:
+            nonlocal request_complete
+            if not request_complete:
+                request_complete = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return {"type": "http.disconnect"}
+
+        async def send(message: dict[str, Any]) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            elif message["type"] == "http.response.body":
+                body_chunks.append(message.get("body", b""))
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": method,
+            "scheme": "http",
+            "path": path,
+            "raw_path": path.encode("utf-8"),
+            "query_string": b"",
+            "headers": [
+                (b"host", b"testserver"),
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode("ascii")),
+            ],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+        }
+
+        await self.asgi_app(scope, receive, send)
+        assert status_code is not None
+        return ASGIResponse(status_code, b"".join(body_chunks))
 
 
 def session_factory() -> sessionmaker[Session]:
@@ -23,6 +89,19 @@ def session_factory() -> sessionmaker[Session]:
     )
     Base.metadata.create_all(engine)
     return sessionmaker(engine, expire_on_commit=False, future=True)
+
+
+@pytest.fixture()
+def api_client() -> Iterator[tuple[ASGIClient, sessionmaker[Session]]]:
+    SessionLocal = session_factory()
+
+    def override_get_session() -> Iterator[Session]:
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    yield ASGIClient(app), SessionLocal
+    app.dependency_overrides.clear()
 
 
 def seed_project_case_and_task(session: Session) -> tuple[Project, CaseModel, AITask]:
@@ -129,3 +208,53 @@ def test_automation_draft_read_schema_uses_contract_field_names() -> None:
     assert body["draft_code"].startswith("def test_expired_coupon")
     assert body["execution_strategy"] == "artifact_runtime_copy"
     assert body["approval_required"] is True
+
+
+def test_create_automation_draft_from_reviewed_test_case(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    with SessionLocal() as session:
+        project, test_case, _ai_task = seed_project_case_and_task(session)
+        session.commit()
+        project_id = project.id
+        test_case_id = test_case.id
+
+    response = client.post(
+        "/api/automation/drafts",
+        json_body={
+            "project_id": str(project_id),
+            "test_case_id": str(test_case_id),
+            "requirement_id": None,
+            "target_framework": "pytest",
+            "prompt_version": "automation_draft_generation:v1",
+            "skill_version": "automation-draft-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-automation-draft",
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert body["automation_draft_id"]
+    assert body["ai_task_id"]
+    assert body["status"] == "draft_generated"
+
+    with SessionLocal() as session:
+        draft = session.get(AutomationDraft, uuid.UUID(body["automation_draft_id"]))
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert draft is not None
+        assert ai_task is not None
+        assert draft.project_id == project_id
+        assert draft.test_case_id == test_case_id
+        assert draft.ai_task_id == ai_task.id
+        assert draft.status == "draft_generated"
+        assert draft.target_framework == "pytest"
+        assert draft.suggested_file_path == "tests/test_expired_coupon_cannot_submit_order.py"
+        assert "Expired coupon cannot submit order" in draft.draft_code
+        assert draft.execution_strategy == "artifact_runtime_copy"
+        assert draft.approval_required is True
+        assert draft.runtime_artifact_id is None
+        assert draft.promoted_artifact_id is None
+        assert ai_task.agent_name == "AutomationDraftAgent"
+        assert ai_task.status == "succeeded"

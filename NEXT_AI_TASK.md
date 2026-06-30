@@ -10,12 +10,12 @@ Slice 11: AutomationDraft Foundation.
 
 ## Current Task
 
-Task 3: Add AutomationDraft generation API.
+Task 4: Add AutomationDraft edit and approve API.
 
 ## Product Value Answer
 
-After this task, Chtest can create deterministic mock AutomationDraft records
-from reviewed TestCase input without executing draft code.
+After this task, Chtest can let a human reviewer fetch, edit, and approve an
+AutomationDraft without executing it.
 
 ## Must Read
 
@@ -47,8 +47,8 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Read existing AI runtime and prompt/skill patterns as needed, but do not add
-edit/approve, execution, or frontend behavior in this task.
+Read existing API patterns as needed, but do not add execution or frontend
+behavior in this task.
 
 ## Verification Command
 
@@ -60,22 +60,21 @@ Expected result: AutomationDraft model/schema alignment tests pass.
 
 ## Acceptance
 
-- Add `POST /api/automation/drafts`.
-- Require a reviewed TestCase or Requirement reference.
-- Create an AITask and persisted AutomationDraft in `draft_generated` status.
-- Mock output includes draft_code, target_framework, suggested_file_path,
-  execution_notes, risk_notes, approval_required, and execution_strategy.
-- Do not execute or write draft code into a target repository.
-- Do not add edit/approve endpoint, frontend, reports, CI/CD quality, RAG
-  runtime, MCP runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to edit/approve API.
+- Add `GET /api/automation/drafts/{id}`.
+- Add `PATCH /api/automation/drafts/{id}` for reviewer edits.
+- Add `POST /api/automation/drafts/{id}/approve`.
+- Enforce `edit -> edited -> approve -> approved` and reject invalid payloads.
+- Do not create TestRun, TestResult, runtime artifacts, reports, execution side
+  effects, frontend, CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions.
+- Update handoff and set the next task to frontend review shell.
 
 ## Commit Message
 
 ```text
-feat(automation): add automation draft generation api
+feat(automation): add automation draft review api
 ```
 
 ## Next Task
 
-Slice 11 Task 4: Add AutomationDraft edit and approve API.
+Slice 11 Task 5: Add AutomationDraft frontend review shell.
