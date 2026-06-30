@@ -53,7 +53,7 @@ export interface TestRunRead {
   readonly status: string;
   readonly exit_code: number | null;
   readonly duration_ms: number | null;
-  readonly parsed_result: Record<string, number>;
+  readonly parsed_result: Record<string, number | string>;
   readonly test_results: TestResultRead[];
   readonly artifacts: TestRunArtifactRead[];
 }

@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-06-30 Slice 18 Newman Frontend Shell
+
+### Completed
+
+- Added `frontend/src/views/execution/NewmanExecutionView.vue`.
+- Added focused Newman frontend test.
+- Added `/execution/newman` route and `API 执行` navigation item.
+- Reused execution store with `runner_mode=newman_local` and TestCommand-only
+  source.
+- Updated `NEXT_AI_TASK.md` to Slice 18 Task 5: add Newman golden smoke.
+
+### Verification
+
+```bash
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Frontend suite: `15` test files passed, `18` tests passed.
+- `git diff --check` clean.
+
+### Next Step
+
+- Add Newman API execution golden smoke and fixture documentation.
+
 ## 2026-06-30 Slice 18 Newman Backend Runner
 
 ### Completed

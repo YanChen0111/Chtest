@@ -10,12 +10,13 @@ Slice 18: Newman API Execution.
 
 ## Current Task
 
-Slice 18 Task 4: Add Newman API execution frontend shell.
+Slice 18 Task 5: Add Newman API execution golden smoke.
 
 ## Product Value Answer
 
-After this task, users can inspect Newman API execution evidence in the
-frontend using the existing light workbench UI.
+After this task, the Newman API execution path is proven by a golden smoke that
+creates project settings, runs a deterministic Newman collection, and verifies
+the evidence chain.
 
 ## Must Read
 
@@ -31,7 +32,8 @@ frontend using the existing light workbench UI.
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-18-newman-api-execution.md`
-13. frontend Newman execution view and tests needed for Slice 18 only
+13. `backend/app/tests/golden/test_newman_api_execution_golden.py`
+14. `docs/fixtures/07-newman-api-execution-golden.md`
 
 ## Do Not Read Unless Needed
 
@@ -47,15 +49,12 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-18-newman-api-execution.md
-frontend/src/api/*
-frontend/src/stores/*
-frontend/src/views/*
-frontend/src/router/*
-frontend/src/layouts/*
+backend/app/tests/golden/test_newman_api_execution_golden.py
+docs/fixtures/07-newman-api-execution-golden.md
 ```
 
-Frontend-only task. Add only the Newman API execution shell and focused tests
-needed for Slice 18. Do not add backend behavior, RAG runtime, MCP runtime,
+Golden-only task. Add only deterministic Newman API execution evidence proof.
+Do not add new backend features, frontend changes, RAG runtime, MCP runtime,
 RBAC, tenants, permissions, marketplace, cloud sync, release automation, remote
 CI provider integration, Postman workspace parity, collection editor, or
 arbitrary shell execution.
@@ -63,29 +62,28 @@ arbitrary shell execution.
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_newman_api_execution_golden.py -q
 git diff --check
 ```
 
-Expected result: frontend tests and diff check pass.
+Expected result: Newman golden smoke and diff check pass.
 
 ## Acceptance
 
-- Adds a Chinese-facing API execution page aligned with the current light
-  workbench UI.
-- Keeps technical terms such as Newman, TestCommand, TestRun, Prompt, Skill,
-  and Artifact unchanged when they are model/product terms.
-- Shows command approval state, execution status, request/assertion summary,
-  failure details, and artifact links.
-- Does not add a collection editor, environment secret manager, remote CI/CD
-  controls, RBAC, tenants, or marketplace controls.
+- Creates a project and approved Newman TestCommand fixture.
+- Executes a deterministic Newman API collection fixture.
+- Persists TestRun, TestResult, stdout/stderr, Newman JSON, parsed result, and
+  environment/runtime evidence artifacts.
+- Confirms failed assertions are visible as evidence, not hidden in logs.
+- Confirms no arbitrary shell, Postman cloud, remote CI/CD, RAG/MCP runtime,
+  RBAC, tenant, or permission dependency is introduced.
 
 ## Commit Message
 
 ```text
-feat(frontend): add newman execution shell
+test(v2): add newman execution golden
 ```
 
 ## Next Task
 
-Start Slice 18 Task 5 only after the Newman frontend shell is committed.
+Start Slice 18 completion gate only after the Newman golden smoke is committed.

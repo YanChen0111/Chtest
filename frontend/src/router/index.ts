@@ -6,6 +6,7 @@ import AutomationDraftReviewView from '../views/automation/AutomationDraftReview
 import CaseGenerationReviewView from '../views/cases/CaseGenerationReviewView.vue';
 import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
 import CicdQualityCenterView from '../views/cicd/CicdQualityCenterView.vue';
+import NewmanExecutionView from '../views/execution/NewmanExecutionView.vue';
 import PlaywrightExecutionView from '../views/execution/PlaywrightExecutionView.vue';
 import PytestExecutionView from '../views/execution/PytestExecutionView.vue';
 import KnowledgeBaseView from '../views/extension/KnowledgeBaseView.vue';
@@ -75,6 +76,14 @@ export const router = createRouter({
           component: PlaywrightExecutionView,
           meta: {
             title: 'Playwright 执行',
+          },
+        },
+        {
+          path: 'execution/newman',
+          name: 'newman-execution-center',
+          component: NewmanExecutionView,
+          meta: {
+            title: 'API 执行',
           },
         },
         {

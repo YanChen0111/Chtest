@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-06-30 Slice 18 Task 4 完成
+
+本轮完成：
+
+- 完成 Slice 18 Task 4：Add Newman API execution frontend shell。
+- 新增 `frontend/src/views/execution/NewmanExecutionView.vue`：
+  - 中文页面标题 `API 执行`。
+  - 只接受 TestCommand ID，不展示 AutomationDraft 入口。
+  - 使用 `runner_mode=newman_local`。
+  - 展示集合名、状态、退出码、耗时、请求数、断言数。
+  - 展示 `newman_json`、`parsed_output`、stdout/stderr/JUnit 工件。
+  - 展示断言级 TestResult 和失败信息。
+- 新增 `frontend/src/views/execution/NewmanExecutionView.spec.ts`。
+- 更新 router 和导航，加入 `execution/newman` / `API 执行`。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 18 Task 5：Add Newman API execution
+  golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Frontend suite：`15` test files passed，`18` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 新增 Newman golden smoke 和 fixture 文档。
+- 继续保持 deterministic local fixture，不加入 Postman cloud、collection
+  editor、remote CI/CD、RAG/MCP runtime、RBAC、tenants 或 permissions。
+
 ## 2026-06-30 Slice 18 Task 3 完成
 
 本轮完成：
