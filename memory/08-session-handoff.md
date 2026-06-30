@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-06-30 Slice 17 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 17 completion gate。
+- 确认 Slice 17 所有任务均为 `done`，并记录提交号：
+  `73a1885`、`f2812cf`、`afffbc9`、`fbbde4f`、`b1d8f5d`、
+  `94fbf21`、`2322e42`。
+- 完成组合验收：Extension Surface API、golden smoke、frontend shell 均已
+  覆盖。
+- 已在 `docs/implementation/slices/slice-17-extension-surface.md` 写入
+  completion evidence。
+- 已在 `memory/07-dev-log.md` 写入 Slice 17 completion log。
+- 已将 `NEXT_AI_TASK.md` 切换到 V1 Completion Review Task 1：Audit V1
+  completion evidence and remaining gaps。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Extension Surface API + golden smoke：`6 passed`
+- Frontend shell：`14 passed`，`17 tests passed`
+- `git diff --check` clean
+
+Slice 17 保持的非目标：
+
+- 未加入 vector index、embedding、reranking 或外部 RAG provider。
+- 未加入 MCP server/client runtime、remote MCP call 或插件市场。
+- 未加入 RBAC、tenants、permissions、marketplace、cloud sync。
+- 未触发 release、deployment 或 remote CI provider integration。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 V1 Completion Review Task 1。
+- 这是 audit-only 任务，先梳理 V1 completion evidence 和 remaining gaps，
+  不直接新增产品代码。
+
 ## 2026-06-30 Slice 17 Task 7 Extension Surface Golden Smoke 完成
 
 本轮完成：

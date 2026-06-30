@@ -6,17 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 17: Extension Surface.
+V1 Completion Review.
 
 ## Current Task
 
-Slice 17 completion gate.
+Task 1: Audit V1 completion evidence and remaining gaps.
 
 ## Product Value Answer
 
-After this task, Slice 17 is fully verified and documented: backend API tests,
-Extension Surface golden smoke, frontend tests, slice evidence, and handoff are
-all complete.
+After this task, Chtest has a clear V1 completion audit: which evidence loops
+are implemented, which verification commands pass, which gaps remain, and what
+the next release-acceptance task should be.
 
 ## Must Read
 
@@ -28,7 +28,9 @@ all complete.
 6. `docs/contracts/03-state-machines.md`
 7. `docs/contracts/04-artifact-contract.md`
 8. `docs/implementation/04-ai-vibecoding-governance.md`
-9. `docs/implementation/slices/slice-17-extension-surface.md`
+9. `docs/implementation/00-v0.1-walking-skeleton.md`
+10. `docs/fixtures/00-v1-demo-path.md`
+11. `docs/implementation/slices/slice-17-extension-surface.md`
 
 ## Do Not Read Unless Needed
 
@@ -42,47 +44,37 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-docs/implementation/slices/slice-17-extension-surface.md
-backend/app/modules/extension/models.py
-backend/app/modules/extension/schemas.py
-backend/app/modules/extension/router.py
-backend/app/modules/extension/service.py
-backend/app/tests/api/test_extension_surface.py
-frontend/src/api/extension.ts
-frontend/src/stores/extension.ts
-frontend/src/views/extension/KnowledgeBaseView.vue
-frontend/src/views/extension/KnowledgeBaseView.spec.ts
-backend/app/tests/golden/test_extension_surface_golden.py
-docs/fixtures/06-extension-surface-golden.md
 memory/07-dev-log.md
+docs/implementation/06-v1-completion-audit.md
 ```
 
-Completion-only task. Do not add RAG runtime, vector indexing, embeddings,
-reranking, MCP runtime dependency, RBAC, tenants, permissions, marketplace, or
-cloud sync controls.
+Audit-only task. Do not add product code, RAG runtime, MCP runtime, RBAC,
+tenants, permissions, marketplace, cloud sync, release automation, or remote CI
+provider integration.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q && npm --prefix frontend run test -- --run
+test -f docs/implementation/06-v1-completion-audit.md && rg -n "Implemented|Remaining gaps|Verification|Next task" docs/implementation/06-v1-completion-audit.md
 ```
 
-Expected result: backend extension tests, golden smoke, and frontend tests pass.
+Expected result: V1 completion audit exists and names evidence, gaps,
+verification, and next task.
 
 ## Acceptance
 
-- All Slice 17 task rows are marked done with commit ids.
-- Completion evidence records backend API, golden smoke, and frontend
-  verification.
-- Handoff names the next V1 slice or completion task.
-- Non-goals remain excluded.
+- Audits implemented V1 evidence loops against `docs/fixtures/00-v1-demo-path.md`.
+- Lists passing verification commands already available.
+- Lists remaining gaps without implementing them.
+- Names one next release-acceptance task.
+- Keeps V1 non-goals out of scope.
 
 ## Commit Message
 
 ```text
-docs(extension): complete extension surface slice
+docs(v1): add completion audit
 ```
 
 ## Next Task
 
-Pick next V1 slice or V1 completion task.
+V1 release acceptance or gap closure task named by the audit.

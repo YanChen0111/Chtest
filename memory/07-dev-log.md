@@ -1,5 +1,45 @@
 # Development Log
 
+## 2026-06-30 Slice 17 Extension Surface Completion
+
+### Completed
+
+- Completed Slice 17 Extension Surface.
+- Added contract boundary for RAG 知识库 as ContextArtifact management and usage
+  display, not internal RAG runtime.
+- Added empty KnowledgeAdapter shell with `not_configured`, `disabled`, and
+  `configured_stub` states.
+- Added RAG 知识库 backend API backed by ContextArtifact and AITask usage.
+- Added MCP-ready ToolDefinition schema/readiness metadata without MCP runtime.
+- Added frontend RAG 知识库 shell using the light Chtest workbench style.
+- Adjusted AI 工作台 based on visual review: recent tasks and task details are
+  now vertically stacked, and key visible labels were translated into Chinese.
+- Added Extension Surface golden smoke and fixture.
+- Kept vector index, embeddings, reranking, external RAG provider calls, MCP
+  runtime, RBAC, tenants, permissions, marketplace, cloud sync, release, and
+  deployment out of this slice.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Extension Surface API + golden smoke: `6 passed`.
+- Frontend shell tests: `14 passed`, `17 tests passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Start V1 completion review / acceptance planning, since Slice 17 is the last
+  item in `docs/implementation/02-v1-slice-plan.md`.
+  The next task should verify the full V1 evidence spine and document any
+  remaining gaps before release acceptance.
+
 ## 2026-06-30 Slice 16 UnitTestPatch And Regression Completion
 
 ### Completed

@@ -59,8 +59,8 @@ without the cost or risk of a real RAG/MCP runtime in V1.
 | Add RAG 知识库 ContextArtifact API shell | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | pending commit | project context management surface |
 | Add MCP-ready ToolDefinition schema metadata | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py -q` | pending commit | schema only, no MCP runtime |
 | Add RAG 知识库 frontend shell | done | `npm --prefix frontend run test -- --run` | `94fbf21` | light workbench UI |
-| Add Extension Surface golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_extension_surface_golden.py -q` | pending commit | context -> AI task -> evidence |
-| Slice 17 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
+| Add Extension Surface golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_extension_surface_golden.py -q` | `2322e42` | context -> AI task -> evidence |
+| Slice 17 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q && npm --prefix frontend run test -- --run` | pending commit | docs and handoff only |
 
 ## Task 2: Add Extension Surface Contract Boundary
 
@@ -297,3 +297,47 @@ Commit message:
 ```text
 docs(extension): complete extension surface slice
 ```
+
+## Completion Evidence
+
+Completed on 2026-06-30.
+
+Commits:
+
+- `73a1885` docs(extension): add extension surface task plan
+- `f2812cf` docs(extension): define extension surface boundary
+- `afffbc9` feat(extension): add knowledge adapter shell
+- `fbbde4f` feat(extension): add knowledge context api
+- `b1d8f5d` feat(extension): add mcp ready tool schema
+- `94fbf21` feat(frontend): add knowledge base shell
+- `2322e42` test(extension): add extension surface golden smoke
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Extension Surface API + golden smoke: `6 passed`.
+- Frontend shell: `14 passed`, `17 tests passed`.
+- `git diff --check` clean.
+
+Completion notes:
+
+- RAG 知识库 is implemented as a ContextArtifact and KnowledgeAdapter surface,
+  not an internal RAG runtime.
+- KnowledgeAdapter remains empty/configuration-only and returns
+  `used_knowledge=false`.
+- ToolDefinition is MCP-ready through schema metadata only; no MCP runtime
+  dependency or remote MCP call was added.
+- Frontend RAG 知识库 page is exposed in navigation and uses the light workbench
+  UI.
+- AI 工作台 was adjusted during frontend review to use vertical task/detail
+  layout and more Chinese-facing labels.
+- No vector index, embedding, reranking, RAG runtime, MCP runtime, RBAC,
+  tenants, permissions, marketplace, cloud sync, release, deployment, or remote
+  CI provider integration was added.
