@@ -10,13 +10,12 @@ Slice 13: Playwright Minimal Loop.
 
 ## Current Task
 
-Task 1: Add Playwright Minimal Loop task plan.
+Task 2: Add Playwright execution API contract and task boundary.
 
 ## Product Value Answer
 
-After this task, Chtest has a scoped Slice 13 task plan for minimal Playwright
-execution without expanding reports, CI/CD, RAG, MCP, RBAC, tenants, or
-permissions.
+After this task, Chtest has a contract-first API boundary for minimal
+Playwright execution before backend implementation starts.
 
 ## Must Read
 
@@ -25,8 +24,9 @@ permissions.
 3. `docs/product/01-positioning-and-scope.md`
 4. `docs/contracts/01-data-model-contract.md`
 5. `docs/contracts/02-api-contract.md`
-6. `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
-7. `docs/implementation/04-ai-vibecoding-governance.md`
+6. `docs/contracts/04-artifact-contract.md`
+7. `docs/implementation/slices/slice-13-playwright-minimal-loop.md`
+8. `docs/implementation/04-ai-vibecoding-governance.md`
 
 ## Do Not Read Unless Needed
 
@@ -41,34 +41,39 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-13-playwright-minimal-loop.md
+docs/contracts/02-api-contract.md
+docs/contracts/04-artifact-contract.md
 ```
 
-This is a planning/documentation task only. Do not modify product code.
+This is a contract/documentation task only. Do not modify product code.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-13-playwright-minimal-loop.md && rg -n "Playwright Minimal Loop|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-13-playwright-minimal-loop.md
+rg -n "Playwright|POST /api/playwright-runs|playwright_trace|screenshot" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-13-playwright-minimal-loop.md
 ```
 
-Expected result: Slice 13 task plan exists and contains task table,
-verification commands, and non-goals.
+Expected result: API/artifact contracts and Slice 13 plan name the minimal
+Playwright execution endpoint and evidence artifacts.
 
 ## Acceptance
 
-- Create a scoped Slice 13 Playwright Minimal Loop task plan.
-- Keep Slice 13 limited to minimal Playwright execution, trace/screenshot
-  evidence, and frontend inspection.
-- Do not add reports, CI/CD quality gates, RAG runtime, MCP runtime, RBAC,
-  tenants, or permissions.
-- Update handoff and set the next task to Slice 13 API contract/task boundary.
+- Contract defines minimal Playwright execution endpoint shape.
+- Request supports approved Playwright AutomationDraft or configured
+  Playwright TestCommand.
+- Response reuses TestRun/TestResult evidence shape and includes trace and
+  screenshot artifact metadata.
+- Keep V1 Playwright execution allowlisted and local-first.
+- Do not add reports, failure analysis, CI/CD quality, RAG runtime, MCP runtime,
+  RBAC, tenants, permissions, low-code UI automation, or browser matrix work.
+- Update handoff and set the next task to Playwright runner adapter.
 
 ## Commit Message
 
 ```text
-docs(playwright): add minimal loop task plan
+docs(playwright): define minimal execution api
 ```
 
 ## Next Task
 
-Slice 13 Task 2: Add Playwright execution API contract and task boundary.
+Slice 13 Task 3: Add Playwright runner adapter.

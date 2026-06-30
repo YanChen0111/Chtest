@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-06-30 Slice 13 Task 1 Playwright Minimal Loop Task Plan 完成
+
+本轮完成：
+
+- 完成 Slice 13 Task 1：Add Playwright Minimal Loop task plan。
+- 新增 `docs/implementation/slices/slice-13-playwright-minimal-loop.md`。
+- 将 Slice 13 拆为 API/artifact contract、Playwright runner adapter、
+  Playwright execution API、frontend shell、golden smoke、completion gate。
+- 明确 Slice 13 只做 minimal Playwright smoke execution、trace/screenshot
+  evidence 和 frontend inspection。
+- 明确不加入 reports、failure analysis、CI/CD quality gates、RAG runtime、
+  MCP runtime、RBAC、tenants、permissions、low-code UI automation 或 browser
+  matrix。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 13 Task 2：Add Playwright execution API
+  contract and task boundary。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-13-playwright-minimal-loop.md
+rg -n "Playwright Minimal Loop|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-13-playwright-minimal-loop.md
+```
+
+修改文件：
+
+- `docs/implementation/slices/slice-13-playwright-minimal-loop.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 13 Task 2：Add Playwright execution API
+  contract and task boundary。
+- 这是 contract/documentation 任务，不要直接改产品代码。
+
 ## 2026-06-30 Slice 12 Completion Gate 完成
 
 本轮完成：
