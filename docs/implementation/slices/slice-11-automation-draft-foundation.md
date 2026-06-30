@@ -33,8 +33,8 @@ MCP runtime, or add RBAC, tenants, or permissions.
 | Add AutomationDraft task plan | done | `test -f docs/implementation/slices/slice-11-automation-draft-foundation.md && rg -n "AutomationDraft Foundation|Task Table|Verification Command|Non-goals" docs/implementation/slices/slice-11-automation-draft-foundation.md` | `7704bbf` | scoped Slice 11 plan |
 | Add AutomationDraft model and schema alignment | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q` | `2d5bdec` | model/schema/read contracts only |
 | Add AutomationDraft generation API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q` | `7824172` | mock draft from reviewed TestCase |
-| Add AutomationDraft edit and approve API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q` | pending commit | edit -> edited -> approve -> approved |
-| Add AutomationDraft frontend review shell | planned | `npm --prefix frontend run test -- --run` | - | draft review, edit, approve shell only |
+| Add AutomationDraft edit and approve API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py -q` | `bb6162a` | edit -> edited -> approve -> approved |
+| Add AutomationDraft frontend review shell | done | `npm --prefix frontend run test -- --run` | pending commit | draft review, edit, approve shell only |
 | Add AutomationDraft golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_automation_draft.py -q` | - | reviewed golden case produces approved draft |
 | Slice 11 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/golden/test_automation_draft.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 

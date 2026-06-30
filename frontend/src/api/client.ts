@@ -55,6 +55,21 @@ export class ApiClient {
     }
     return response.json() as Promise<TResponse>;
   }
+
+  async patchJson<TResponse, TBody extends Record<string, unknown>>(path: string, body: TBody): Promise<TResponse> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PATCH',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new ApiError(response.status, `请求失败：${response.status}`);
+    }
+    return response.json() as Promise<TResponse>;
+  }
 }
 
 export const apiClient = new ApiClient();

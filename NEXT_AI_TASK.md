@@ -10,12 +10,12 @@ Slice 11: AutomationDraft Foundation.
 
 ## Current Task
 
-Task 5: Add AutomationDraft frontend review shell.
+Task 6: Add AutomationDraft golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest can review, edit, and approve AutomationDraft records
-from the frontend workbench without execution actions.
+After this task, Chtest can prove a reviewed golden TestCase can produce, edit,
+and approve an AutomationDraft without execution.
 
 ## Must Read
 
@@ -37,47 +37,42 @@ from the frontend workbench without execution actions.
 Create or update only these files for the current task:
 
 ```text
-frontend/src/api/automation.ts
-frontend/src/stores/automation.ts
-frontend/src/views/automation/AutomationDraftReviewView.vue
-frontend/src/views/automation/AutomationDraftReviewView.spec.ts
-frontend/src/router/index.ts
-frontend/src/layouts/WorkbenchLayout.vue
-frontend/src/stores/index.ts
+backend/app/tests/golden/test_automation_draft.py
 docs/implementation/slices/slice-11-automation-draft-foundation.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Read existing frontend shell patterns as needed, but do not add execution/run
-buttons or backend behavior in this task.
+Read existing golden requirement-to-case and Test Case Library tests as needed,
+but do not add execution behavior in this task.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_automation_draft.py -q
 ```
 
-Expected result: frontend test suite passes.
+Expected result: AutomationDraft golden smoke passes.
 
 ## Acceptance
 
-- Add frontend API/store wiring for AutomationDraft create, get, edit, and
-  approve.
-- Add workbench navigation for AutomationDraft review.
-- Show draft code, suggested path, execution notes, risk notes, status, and
-  approval_required.
-- Support edit and approve actions through the API.
-- Do not add execution/run buttons, report links, CI/CD quality actions, RAG
-  runtime, MCP runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to golden smoke.
+- Reuse golden requirement-to-case and Test Case Library setup.
+- Create an AutomationDraft for a reviewed golden TestCase.
+- Verify draft_code, suggested_file_path, execution_notes, risk_notes, and
+  status.
+- Edit then approve the draft.
+- Assert no TestRun/TestResult/report is created by this slice.
+- Do not run pytest or Playwright, copy draft files to runtime workspace, add
+  reports, CI/CD quality, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions.
+- Update handoff and set the next task to Slice 11 completion gate.
 
 ## Commit Message
 
 ```text
-feat(frontend): add automation draft review shell
+test(golden): add automation draft smoke
 ```
 
 ## Next Task
 
-Slice 11 Task 6: Add AutomationDraft golden smoke.
+Slice 11 completion gate.

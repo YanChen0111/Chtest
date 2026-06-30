@@ -1,5 +1,47 @@
 # Session Handoff
 
+## 2026-06-30 Slice 11 Task 5 AutomationDraft Frontend Review Shell 完成
+
+本轮完成：
+
+- 完成 Slice 11 Task 5：新增 AutomationDraft frontend review shell。
+- 新增 `frontend/src/api/automation.ts` 和 `frontend/src/stores/automation.ts`，支持 create/get/edit/approve API wiring。
+- 新增 `AutomationDraftReviewView.vue`，展示草稿代码、建议路径、执行说明、风险说明、状态、审批要求，并支持保存评审编辑和批准草稿。
+- 接入 `automation/drafts` 路由，并将工作台导航里的 `自动化草稿中心` 标为就绪。
+- 扩展 `ApiClient.patchJson` 以支持合同中的 PATCH endpoint。
+- 未添加执行/运行按钮、report 链接、CI/CD quality action、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 11 Task 6：Add AutomationDraft golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/automation/AutomationDraftReviewView.spec.ts
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- AutomationDraft frontend focused test：`1 passed`
+- Frontend test suite：`9 passed, 12 tests passed`
+
+修改文件：
+
+- `frontend/src/api/client.ts`
+- `frontend/src/api/automation.ts`
+- `frontend/src/stores/automation.ts`
+- `frontend/src/views/automation/AutomationDraftReviewView.vue`
+- `frontend/src/views/automation/AutomationDraftReviewView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `docs/implementation/slices/slice-11-automation-draft-foundation.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 11 Task 6：Add AutomationDraft golden smoke。
+- 复用 golden Test Case Library setup，验证 reviewed golden TestCase -> edit -> approve AutomationDraft 且无执行副作用。
+
 ## 2026-06-30 Slice 11 Task 4 AutomationDraft Review API 完成
 
 本轮完成：
