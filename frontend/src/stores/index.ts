@@ -12,7 +12,7 @@ export const useWorkbenchStore = defineStore('workbench', {
       { label: 'AI 工作台', routeName: 'ai-workbench', status: '就绪' },
       { label: '需求评审', routeName: 'requirement-review', status: '就绪' },
       { label: '用例生成评审', routeName: 'case-generation-review', status: '就绪' },
-      { label: '用例库', routeName: 'test-case-library', status: '待接入' },
+      { label: '用例库', routeName: 'test-case-library', status: '就绪' },
       { label: '自动化草稿中心', routeName: 'automation-draft-center', status: '待接入' },
       { label: '执行中心', routeName: 'execution-center', status: '待接入' },
       { label: 'CI/CD 质量中心', routeName: 'cicd-quality-center', status: '待接入' },

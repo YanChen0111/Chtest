@@ -1,5 +1,45 @@
 # Session Handoff
 
+## 2026-06-30 Slice 10 Task 4 Test Case Library Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 10 Task 4：新增 Test Case Library frontend shell。
+- 前端 API/store 新增 `GET /api/test-cases` wiring。
+- 新增 `frontend/src/views/cases/TestCaseLibraryView.vue`，展示已评审用例列表、关键词筛选、步骤、预期结果、标签、评审状态和来源信息。
+- 接入 `cases/library` 路由，并将工作台导航里的 `用例库` 标为就绪。
+- 未添加 AutomationDraft 按钮、执行按钮、reports、dashboard 图表、CI/CD quality、RAG runtime、MCP runtime、RBAC、tenants 或 permissions。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 10 Task 5：Add Test Case Library golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/cases/TestCaseLibraryView.spec.ts
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Test Case Library frontend focused test：`1 passed`
+- Frontend test suite：`8 passed, 11 tests passed`
+
+修改文件：
+
+- `frontend/src/api/cases.ts`
+- `frontend/src/stores/cases.ts`
+- `frontend/src/views/cases/TestCaseLibraryView.vue`
+- `frontend/src/views/cases/TestCaseLibraryView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `docs/implementation/slices/slice-10-test-case-library.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 10 Task 5：Add Test Case Library golden smoke。
+- 复用 golden requirement-to-case fixture setup，验证已评审用例能从 library API 查询。
+
 ## 2026-06-30 Slice 10 Task 3 Test Case Library Backend API 完成
 
 本轮完成：

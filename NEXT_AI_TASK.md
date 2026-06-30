@@ -10,12 +10,12 @@ Slice 10: Test Case Library.
 
 ## Current Task
 
-Task 4: Add Test Case Library frontend shell.
+Task 5: Add Test Case Library golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest can browse reviewed TestCase records from the frontend
-workbench without adding automation or execution actions.
+After this task, Chtest can prove golden reviewed cases are visible through the
+Test Case Library API after the requirement-to-case review plan.
 
 ## Must Read
 
@@ -39,46 +39,39 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-10-test-case-library.md
-frontend/src/api/cases.ts
-frontend/src/stores/cases.ts
-frontend/src/views/cases/TestCaseLibraryView.vue
-frontend/src/views/cases/TestCaseLibraryView.spec.ts
-frontend/src/router/index.ts
-frontend/src/layouts/WorkbenchLayout.vue
+backend/app/tests/golden/test_test_case_library.py
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 ```
 
-Read existing frontend cases/requirements shells as needed, but keep writes
-inside the files above unless a concrete blocker requires an explained
-contract/doc update.
+Read existing golden requirement-to-case tests as needed, but keep writes inside
+the files above unless a concrete blocker requires an explained contract/doc
+update.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_case_library.py -q
 ```
 
-Expected result: frontend test suite passes.
+Expected result: Test Case Library golden smoke passes.
 
 ## Acceptance
 
-- Add frontend API/store wiring for `GET /api/test-cases`.
-- Add a workbench navigation entry for Test Case Library.
-- Show a compact searchable/filterable list of reviewed cases.
-- Show selected case title, priority, type, status, steps, expected results,
-  tags, and review/source metadata.
-- Do not add AutomationDraft buttons, execution buttons, reports, broad
-  dashboard widgets, chart dependencies, RAG runtime, MCP runtime, RBAC,
-  tenants, or permissions.
-- Update handoff and set the next task to golden smoke.
+- Reuse the golden requirement-to-case fixture setup and review plan.
+- Assert the library returns 4 reviewed TestCase records after review.
+- Assert the edited expired-coupon case keeps the edited step and input data.
+- Assert keyword filtering can find a golden case by title or requirement text.
+- Do not add browser automation, AutomationDraft, execution, reports, CI/CD
+  quality, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+- Update handoff and set the next task to Slice 10 completion gate.
 
 ## Commit Message
 
 ```text
-feat(frontend): add test case library shell
+test(golden): add test case library smoke
 ```
 
 ## Next Task
 
-Slice 10 Task 5: Add Test Case Library golden smoke.
+Slice 10 completion gate.

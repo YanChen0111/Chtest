@@ -57,6 +57,29 @@ export interface CaseMetricsRead {
   readonly field_complete_rate: number;
 }
 
+export interface TestCaseListItem {
+  readonly id: string;
+  readonly project_id: string;
+  readonly module_id: string | null;
+  readonly source_candidate_id: string | null;
+  readonly title: string;
+  readonly priority: string;
+  readonly test_type: string;
+  readonly precondition: string | null;
+  readonly steps: string[];
+  readonly expected_results: string[];
+  readonly input_data: Record<string, unknown>;
+  readonly tags: string[];
+  readonly source_type: string;
+  readonly review_status: string;
+  readonly status: string;
+}
+
+export interface TestCaseListRead {
+  readonly items: TestCaseListItem[];
+  readonly total: number;
+}
+
 export type CaseReviewAction = 'approve' | 'approve_after_edit' | 'reject' | 'needs_optimization';
 
 export interface CaseReviewEditedCase {
@@ -92,6 +115,10 @@ export async function listCaseCandidates(generationTaskId: string): Promise<Gene
 
 export async function getCaseMetrics(generationTaskId: string): Promise<CaseMetricsRead> {
   return apiClient.getJson<CaseMetricsRead>(`/case-generation/tasks/${generationTaskId}/metrics`);
+}
+
+export async function listTestCases(projectId: string): Promise<TestCaseListRead> {
+  return apiClient.getJson<TestCaseListRead>(`/test-cases?project_id=${projectId}`);
 }
 
 export async function reviewCaseCandidate(candidateId: string, data: CaseReviewRequest): Promise<CaseReviewRead> {

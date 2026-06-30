@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import WorkbenchLayout from '../layouts/WorkbenchLayout.vue';
 import AiWorkbenchView from '../views/ai-workbench/AiWorkbenchView.vue';
 import CaseGenerationReviewView from '../views/cases/CaseGenerationReviewView.vue';
+import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
 import PromptSkillCenterView from '../views/prompt-skill/PromptSkillCenterView.vue';
 import RequirementReviewView from '../views/requirements/RequirementReviewView.vue';
 import ProjectSettingsView from '../views/settings/ProjectSettingsView.vue';
@@ -36,6 +37,14 @@ export const router = createRouter({
           component: CaseGenerationReviewView,
           meta: {
             title: '用例生成评审',
+          },
+        },
+        {
+          path: 'cases/library',
+          name: 'test-case-library',
+          component: TestCaseLibraryView,
+          meta: {
+            title: '用例库',
           },
         },
         {

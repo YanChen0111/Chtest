@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import {
   getCaseMetrics,
   listCaseCandidates,
+  listTestCases,
   reviewCaseCandidate,
   startCaseGeneration,
   type CaseGenerationStartRead,
@@ -10,6 +11,7 @@ import {
   type CaseReviewAction,
   type CaseReviewRead,
   type GeneratedCaseCandidateListItem,
+  type TestCaseListItem,
 } from '../api/cases';
 
 const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
@@ -24,6 +26,9 @@ export const useCasesStore = defineStore('cases', {
     generation: null as CaseGenerationStartRead | null,
     candidates: [] as GeneratedCaseCandidateListItem[],
     metrics: null as CaseMetricsRead | null,
+    testCases: [] as TestCaseListItem[],
+    totalTestCases: 0,
+    selectedTestCaseId: '',
     totalCandidates: 0,
     selectedCandidateId: '',
     lastReview: null as CaseReviewRead | null,
@@ -35,8 +40,25 @@ export const useCasesStore = defineStore('cases', {
     selectedCandidate(state) {
       return state.candidates.find((candidate) => candidate.id === state.selectedCandidateId) ?? state.candidates[0] ?? null;
     },
+    selectedTestCase(state) {
+      return state.testCases.find((testCase) => testCase.id === state.selectedTestCaseId) ?? state.testCases[0] ?? null;
+    },
   },
   actions: {
+    async loadTestCases() {
+      this.loadingGeneration = true;
+      this.errorMessage = '';
+      try {
+        const library = await listTestCases(this.projectId);
+        this.testCases = library.items;
+        this.totalTestCases = library.total;
+        this.selectedTestCaseId = this.testCases[0]?.id ?? '';
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '用例库加载失败';
+      } finally {
+        this.loadingGeneration = false;
+      }
+    },
     async generateCandidates(data: {
       requirementId: string;
       requirementReviewId: string;
