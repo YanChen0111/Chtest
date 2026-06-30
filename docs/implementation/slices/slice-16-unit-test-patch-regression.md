@@ -48,8 +48,8 @@ runtime, MCP runtime, RBAC, tenants, or permissions work.
 | Add run-new-tests and regression API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | `f4bbc73` | creates CICD-linked TestRun records |
 | Add QualityGateDecision API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | `f6333c5` | passed/failed/needs_review evidence |
 | Add CI/CD quality report API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py -q` | `e27cc7b` | Report with report_type=cicd_quality |
-| Add UnitTestPatch frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | patch review, scope gate, regression status |
-| Add UnitTestPatch golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q` | - | golden diff -> patch -> tests -> gate/report |
+| Add UnitTestPatch frontend shell | done | `npm --prefix frontend run test -- --run` | `e17ec01` | patch review, scope gate, regression status |
+| Add UnitTestPatch golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q` | pending commit | golden diff -> patch -> tests -> gate/report |
 | Slice 16 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 
 ## Task 1: Add UnitTestPatch And Regression Contract Boundary

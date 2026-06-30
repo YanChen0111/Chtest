@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-06-30 Slice 16 Task 11 UnitTestPatch Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 16 Task 11：Add UnitTestPatch golden smoke。
+- 新增 `backend/app/tests/golden/test_unit_test_patch_regression_golden.py`。
+- Golden smoke 使用 `docs/fixtures/03-golden-cicd-quality.md` 的 local diff
+  和 UnitTestPatch 语义。
+- 验证 local diff -> CICDRun -> risk analysis -> UnitTestPatch ->
+  PatchScopeGate -> approve/apply -> new-test/regression TestRun ->
+  QualityGateDecision -> CI/CD quality Report 完整链路。
+- 验证 UnitTestPatch 只修改 `tests/test_coupon.py`，PatchScopeGate 通过。
+- 验证没有 AutomationDraft，也没有 tenants/roles/permissions/RAG/MCP
+  相关表行为。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 16 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
+```
+
+验证结果：
+
+- `1 passed`
+
+修改文件：
+
+- `backend/app/tests/golden/test_unit_test_patch_regression_golden.py`
+- `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 执行 Slice 16 completion gate：
+  `backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q`
+  和 `npm --prefix frontend run test -- --run`。
+- 完成后记录 Slice 16 completion evidence，并寻找 Slice 17 或下一 V1
+  优先级。
+
 ## 2026-06-30 Slice 16 Task 10 UnitTestPatch Frontend Shell 完成
 
 本轮完成：

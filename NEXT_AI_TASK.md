@@ -10,13 +10,12 @@ Slice 16: UnitTestPatch And Regression.
 
 ## Current Task
 
-Task 10: Add UnitTestPatch frontend shell.
+Slice 16 completion gate.
 
 ## Product Value Answer
 
-After this task, users can review UnitTestPatch candidates, scope gate results,
-test/regression evidence, QualityGateDecision, and CI/CD quality report
-references in the frontend CI/CD Quality Center shell.
+After this task, Slice 16 is verified end-to-end across backend API, golden
+smoke, and frontend shell.
 
 ## Must Read
 
@@ -41,40 +40,37 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-frontend/src/api/cicd.ts
-frontend/src/stores/cicd.ts
-frontend/src/views/cicd/CicdQualityCenterView.vue
-frontend/src/views/cicd/CicdQualityCenterView.spec.ts
 docs/implementation/slices/slice-16-unit-test-patch-regression.md
 ```
 
-Only add the frontend shell for the existing local-first CI/CD quality workflow.
-Do not expose merge, release, deployment, remote CI provider controls, PR
-comments, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+Only run the Slice 16 completion verification and update docs/handoff. Do not
+add new product behavior unless a verification failure requires a focused fix.
 
 ## Verification Command
 
 ```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
 npm --prefix frontend run test -- --run
 ```
 
-Expected result: frontend CI/CD Quality Center tests pass.
+Expected result: Slice 16 backend API, golden smoke, and frontend shell tests pass.
 
 ## Acceptance
 
-- Shows UnitTestPatch diff, test intent, coverage target, and scope gate result.
-- Supports approve/reject actions.
-- Shows new-test and regression TestRun summaries.
-- Shows QualityGateDecision and report artifact references.
-- Does not expose merge, release, deployment, remote CI provider, or PR controls.
-- Updates handoff and sets the next task to UnitTestPatch golden smoke.
+- Runs backend UnitTestPatch regression API tests.
+- Runs UnitTestPatch golden smoke.
+- Runs frontend CI/CD Quality Center shell tests.
+- Confirms Slice 16 task table is complete.
+- Updates handoff with completion evidence.
+- Sets next task according to the next Slice 17 plan or leaves a clear planning
+  handoff if no Slice 17 task exists.
 
 ## Commit Message
 
 ```text
-feat(frontend): add unit test patch shell
+docs(cicd): complete unit test patch regression slice
 ```
 
 ## Next Task
 
-Slice 16 Task 11: Add UnitTestPatch golden smoke.
+Slice 17 planning or next V1 priority.
