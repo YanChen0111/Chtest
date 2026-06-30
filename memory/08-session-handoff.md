@@ -1,5 +1,47 @@
 # Session Handoff
 
+## 2026-06-30 Slice 12 Task 3 TestRun/TestResult Model Schema 完成
+
+本轮完成：
+
+- 完成 Slice 12 Task 3：Add TestRun and TestResult model schema。
+- 新增 `backend/app/modules/execution/` 模块，包含 TestRun/TestResult SQLAlchemy
+  models 和 create/read schemas。
+- TestRun 覆盖 project、automation_draft、test_command、command、working
+  directory、runner metadata、artifact ids、status、exit_code、duration 和
+  parsed_result_json。
+- TestResult 覆盖 test_run、test_name、test_file、status、duration、
+  failure_message、failure_artifact_ids 和 parser metadata。
+- 新增 `backend/app/tests/api/test_testrunner_pytest.py`，验证模型默认值、
+  UUID artifact list 持久化、schema 字段名和 embedded TestResult response。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 12 Task 4：Add Pytest Runner Adapter。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q
+```
+
+验证结果：
+
+- TestRun/TestResult focused model/schema tests：`4 passed`
+
+修改文件：
+
+- `backend/app/modules/execution/__init__.py`
+- `backend/app/modules/execution/models.py`
+- `backend/app/modules/execution/schemas.py`
+- `backend/app/tests/api/test_testrunner_pytest.py`
+- `docs/implementation/slices/slice-12-testrunner-pytest-execution.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 12 Task 4：Add Pytest Runner Adapter。
+- 当前任务只做 adapter，不接 router/API orchestration。
+- 继续保持 pytest-only、local_subprocess、allowlisted command、no Playwright。
+
 ## 2026-06-30 Slice 12 Task 2 TestRun API Contract 完成
 
 本轮完成：

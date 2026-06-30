@@ -10,12 +10,12 @@ Slice 12: TestRunner Pytest Execution.
 
 ## Current Task
 
-Task 3: Add TestRun and TestResult model schema.
+Task 4: Add Pytest Runner Adapter.
 
 ## Product Value Answer
 
-After this task, Chtest has persisted TestRun/TestResult model and schema
-contracts ready before adding subprocess execution.
+After this task, Chtest can run an allowlisted local pytest command through a
+small deterministic adapter and return parsed execution evidence.
 
 ## Must Read
 
@@ -38,7 +38,7 @@ Create or update only these files for the current task:
 
 ```text
 backend/app/modules/execution/__init__.py
-backend/app/modules/execution/models.py
+backend/app/modules/execution/pytest_runner.py
 backend/app/modules/execution/schemas.py
 backend/app/tests/api/test_testrunner_pytest.py
 NEXT_AI_TASK.md
@@ -46,7 +46,7 @@ memory/08-session-handoff.md
 docs/implementation/slices/slice-12-testrunner-pytest-execution.md
 ```
 
-Do not add subprocess execution in this task.
+Do not add router/API orchestration in this task.
 
 ## Verification Command
 
@@ -54,24 +54,26 @@ Do not add subprocess execution in this task.
 backend/.venv/bin/python -m pytest backend/app/tests/api/test_testrunner_pytest.py -q
 ```
 
-Expected result: focused TestRun/TestResult model and schema tests pass.
+Expected result: focused pytest runner adapter tests pass.
 
 ## Acceptance
 
-- Define TestRun fields from the data model contract.
-- Define TestResult fields from the data model contract.
-- Define request/read schemas for create/get run aligned with the API contract.
-- Keep this task model/schema only; do not execute subprocesses.
+- Runs only pytest-style commands assembled by backend code, not arbitrary shell
+  strings.
+- Captures stdout, stderr, exit_code, duration_ms, and parsed pass/fail counts.
+- Supports local_subprocess runner mode first.
+- Network is disabled by default in TestRun metadata.
+- Does not add Docker runner or Playwright in this task.
 - Do not add Playwright execution, reports, CI/CD quality, RAG runtime, MCP
   runtime, RBAC, tenants, or permissions.
-- Update handoff and set the next task to pytest runner adapter.
+- Update handoff and set the next task to TestRun API.
 
 ## Commit Message
 
 ```text
-feat(execution): add test run model schema
+feat(execution): add pytest runner adapter
 ```
 
 ## Next Task
 
-Slice 12 Task 4: Add Pytest Runner Adapter.
+Slice 12 Task 5: Add TestRun API.
