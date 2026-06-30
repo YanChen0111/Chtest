@@ -17,7 +17,7 @@ export const useWorkbenchStore = defineStore('workbench', {
       { label: '执行中心', routeName: 'execution-center', status: '就绪' },
       { label: 'Playwright 执行', routeName: 'playwright-execution-center', status: '就绪' },
       { label: 'CI/CD 质量中心', routeName: 'cicd-quality-center', status: '待接入' },
-      { label: '报告中心', routeName: 'report-center', status: '待接入' },
+      { label: '报告中心', routeName: 'report-center', status: '就绪' },
       { label: 'Prompt / Skill 中心', routeName: 'prompt-skill-center', status: '就绪' },
       { label: '设置', routeName: 'project-settings', status: '就绪' },
     ] satisfies NavigationItem[],

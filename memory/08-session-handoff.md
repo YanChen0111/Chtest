@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-06-30 Slice 14 Task 6 Report/FailureAnalysis Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 14 Task 6：Add Report and FailureAnalysis frontend shell。
+- 新增 `frontend/src/api/reporting.ts`，覆盖 FailureAnalysis create/get 和
+  automation_execution Report create/get。
+- 新增 `frontend/src/stores/reporting.ts`，串联 TestRun ID、FailureAnalysis
+  和 Report 状态。
+- 新增 `frontend/src/views/reporting/ReportFailureAnalysisView.vue`，页面先展示
+  evidence_manifest，再展示失败分析和报告结论。
+- 报告中心导航由 `待接入` 更新为 `就绪`，路由为
+  `/reports/failure-analysis`。
+- 新增 `ReportFailureAnalysisView.spec.ts`，验证失败分析、执行报告和
+  evidence-first 展示顺序。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 14 Task 7：Add automation execution
+  report golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Frontend workbench tests：`12 passed, 15 tests passed`
+
+修改文件：
+
+- `frontend/src/api/reporting.ts`
+- `frontend/src/stores/reporting.ts`
+- `frontend/src/views/reporting/ReportFailureAnalysisView.vue`
+- `frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `docs/implementation/slices/slice-14-report-and-failure-analysis.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 14 Task 7：Add automation execution report
+  golden smoke。
+- 当前任务只补 golden smoke，不添加 CI/CD QualityGateDecision records。
+
 ## 2026-06-30 Slice 14 Task 5 Automation Execution Report API 完成
 
 本轮完成：

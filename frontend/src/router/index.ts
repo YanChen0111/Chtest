@@ -8,6 +8,7 @@ import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
 import PlaywrightExecutionView from '../views/execution/PlaywrightExecutionView.vue';
 import PytestExecutionView from '../views/execution/PytestExecutionView.vue';
 import PromptSkillCenterView from '../views/prompt-skill/PromptSkillCenterView.vue';
+import ReportFailureAnalysisView from '../views/reporting/ReportFailureAnalysisView.vue';
 import RequirementReviewView from '../views/requirements/RequirementReviewView.vue';
 import ProjectSettingsView from '../views/settings/ProjectSettingsView.vue';
 
@@ -72,6 +73,14 @@ export const router = createRouter({
           component: PlaywrightExecutionView,
           meta: {
             title: 'Playwright 执行',
+          },
+        },
+        {
+          path: 'reports/failure-analysis',
+          name: 'report-center',
+          component: ReportFailureAnalysisView,
+          meta: {
+            title: '报告中心',
           },
         },
         {

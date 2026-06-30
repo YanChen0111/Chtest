@@ -10,12 +10,12 @@ Slice 14: Report And Failure Analysis.
 
 ## Current Task
 
-Task 6: Add Report and FailureAnalysis frontend shell.
+Task 7: Add automation execution report golden smoke.
 
 ## Product Value Answer
 
-After this task, users can inspect FailureAnalysis and automation_execution
-Report records from the workbench with evidence shown before AI explanation.
+After this task, Chtest has a golden smoke proving TestRun can produce
+FailureAnalysis when failed and automation_execution Report evidence.
 
 ## Must Read
 
@@ -41,42 +41,36 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 docs/implementation/slices/slice-14-report-and-failure-analysis.md
-frontend/src/api/reporting.ts
-frontend/src/stores/reporting.ts
-frontend/src/views/reporting/ReportFailureAnalysisView.vue
-frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts
-frontend/src/router/index.ts
-frontend/src/stores/index.ts
+backend/app/tests/golden/test_report_failure_analysis_golden.py
 ```
 
-Do not add CI/CD quality gates, RAG runtime, MCP runtime, RBAC, tenants, or
-permissions in this task.
+Do not create CI/CD QualityGateDecision records in this task.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_report_failure_analysis_golden.py -q
 ```
 
-Expected result: focused frontend workbench tests pass.
+Expected result: focused report/failure analysis golden smoke passes.
 
 ## Acceptance
 
-- Adds workbench navigation for Report/FailureAnalysis.
-- Starts FailureAnalysis for a TestRun and shows classification/confidence.
-- Starts automation_execution Report generation and shows conclusion, summary,
-  metrics, artifact references, and evidence manifest status.
-- Shows evidence before AI explanation.
-- Does not add CI/CD quality gates, RAG runtime, MCP runtime, RBAC, tenants, or
-  permissions.
-- Update handoff and set the next task to automation execution report golden smoke.
+- Reuses golden pytest or Playwright TestRun setup.
+- Creates FailureAnalysis for a failed run or verifies skipped analysis for a
+  passed run.
+- Creates automation_execution Report for a TestRun.
+- Persists `evidence_manifest.json` artifact metadata.
+- Report conclusion references TestRun/TestResult/artifact evidence.
+- Does not create CI/CD QualityGateDecision records.
+- Update handoff and set the next task to Slice 14 completion gate.
 
 ## Commit Message
 
 ```text
-feat(frontend): add report failure analysis shell
+test(golden): add report failure analysis smoke
 ```
 
 ## Next Task
 
-Slice 14 Task 7: Add automation execution report golden smoke.
+Slice 14 completion gate.
