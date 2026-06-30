@@ -10,13 +10,13 @@ Slice 17: Extension Surface.
 
 ## Current Task
 
-Task 7: Add Extension Surface golden smoke.
+Slice 17 completion gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a golden smoke proving ContextArtifact project
-knowledge, empty KnowledgeAdapter state, and MCP-ready ToolDefinition schema
-work together without hidden RAG/MCP runtime infrastructure.
+After this task, Slice 17 is fully verified and documented: backend API tests,
+Extension Surface golden smoke, frontend tests, slice evidence, and handoff are
+all complete.
 
 ## Must Read
 
@@ -54,36 +54,35 @@ frontend/src/views/extension/KnowledgeBaseView.vue
 frontend/src/views/extension/KnowledgeBaseView.spec.ts
 backend/app/tests/golden/test_extension_surface_golden.py
 docs/fixtures/06-extension-surface-golden.md
+memory/07-dev-log.md
 ```
 
-Golden smoke task. Do not add RAG runtime, vector indexing, embeddings,
+Completion-only task. Do not add RAG runtime, vector indexing, embeddings,
 reranking, MCP runtime dependency, RBAC, tenants, permissions, marketplace, or
 cloud sync controls.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_extension_surface_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_extension_surface_golden.py -q && npm --prefix frontend run test -- --run
 ```
 
-Expected result: Extension Surface golden smoke passes.
+Expected result: backend extension tests, golden smoke, and frontend tests pass.
 
 ## Acceptance
 
-- Creates or references ContextArtifacts as project knowledge.
-- Runs an AI task that records `used_context_artifact_ids`.
-- Confirms `used_knowledge=false` while KnowledgeAdapter remains empty.
-- Confirms ToolDefinition schema metadata is visible but no MCP runtime executes.
-- Confirms no vector/RAG/MCP/RBAC/tenant/permission tables or dependencies are
-  introduced.
-- Updates handoff and sets the next task to Slice 17 completion gate.
+- All Slice 17 task rows are marked done with commit ids.
+- Completion evidence records backend API, golden smoke, and frontend
+  verification.
+- Handoff names the next V1 slice or completion task.
+- Non-goals remain excluded.
 
 ## Commit Message
 
 ```text
-test(extension): add extension surface golden smoke
+docs(extension): complete extension surface slice
 ```
 
 ## Next Task
 
-Slice 17 completion gate.
+Pick next V1 slice or V1 completion task.

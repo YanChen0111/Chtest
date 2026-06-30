@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-06-30 Slice 17 Task 7 Extension Surface Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 17 Task 7：Add Extension Surface golden smoke。
+- 新增 `docs/fixtures/06-extension-surface-golden.md`。
+- 新增 `backend/app/tests/golden/test_extension_surface_golden.py`。
+- Golden smoke 验证 Project -> ContextArtifact -> AITask
+  `context_artifact_ids` -> KnowledgeAdapter empty state -> RAG 知识库 surface
+  -> MCP-ready ToolDefinition schema。
+- 验证 `used_knowledge=false`，同时 `used_context_artifact_ids` 正确记录。
+- 验证 ToolDefinition 仅暴露 schema/readiness，不包含 MCP server URL 或
+  transport。
+- 验证没有 `rag_indexes`、`embeddings`、`mcp_servers`、`mcp_clients`、
+  `tenants`、`roles`、`permissions` 表。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 17 completion gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_extension_surface_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Extension Surface golden smoke：`1 passed`
+- `git diff --check` clean。
+
+修改文件：
+
+- `backend/app/tests/golden/test_extension_surface_golden.py`
+- `docs/fixtures/06-extension-surface-golden.md`
+- `docs/implementation/slices/slice-17-extension-surface.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 17 completion gate。
+- 组合验证 backend extension API、golden smoke 和 frontend tests，记录
+  completion evidence，再选择下一 V1 任务。
+
 ## 2026-06-30 Slice 17 Task 6 RAG 知识库 Frontend Shell 完成
 
 本轮完成：
