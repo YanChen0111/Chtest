@@ -1,5 +1,29 @@
 # Session Handoff
 
+## 2026-06-30 Slice 19 Task 1 完成
+
+本轮完成：
+
+- 完成 Slice 19 Task 1：Add Deterministic Knowledge Retrieval task plan。
+- 新增
+  `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`。
+- 将 Slice 19 收敛为本地 deterministic ContextArtifact retrieval stub：
+  - 只读取同项目已有 ContextArtifact。
+  - 只匹配 safe_to_show 且 allowed_for_prompt 的上下文。
+  - 使用确定性关键词/精确匹配，不使用向量库或外部 provider。
+  - 记录 retrieved ContextArtifact ids、snippets、scores、matched terms。
+  - `used_knowledge=true` 只允许在 deterministic local stub 实际使用证据时出现。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 19 Task 2：Define deterministic
+  retrieval contract boundary。
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 更新四份 contracts。
+- 先定义 retrieval evidence artifact、`used_knowledge=true` 条件、API/状态边界，
+  再写产品代码。
+- 继续排除 vector database、embeddings、reranking、background indexing、
+  external RAG provider、MCP runtime、RBAC、tenants、permissions、marketplace。
+
 ## 2026-06-30 V2 Task 3 完成
 
 本轮完成：

@@ -10,13 +10,12 @@ V2 Planning.
 
 ## Current Task
 
-V2 Task 4: Draft Slice 19 Deterministic Knowledge Retrieval Stub plan.
+Slice 19 Task 2: Define deterministic retrieval contract boundary.
 
 ## Product Value Answer
 
-After this task, the next V2 slice has a scoped implementation plan for local,
-deterministic ContextArtifact retrieval that improves AI context evidence
-without becoming a full RAG platform.
+After this task, contracts explicitly define deterministic local
+ContextArtifact retrieval before implementation starts.
 
 ## Must Read
 
@@ -31,8 +30,8 @@ without becoming a full RAG platform.
 9. `docs/implementation/00-v0.1-walking-skeleton.md`
 10. `docs/fixtures/00-v1-demo-path.md`
 11. `docs/implementation/10-v2-scope-options.md`
-12. `docs/implementation/slices/slice-18-newman-api-execution.md`
-13. `docs/implementation/slices/slice-17-extension-surface.md`
+12. `docs/implementation/slices/slice-17-extension-surface.md`
+13. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
 
 ## Do Not Read Unless Needed
 
@@ -47,11 +46,14 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/10-v2-scope-options.md
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
 ```
 
-Planning-only task. Do not add product code, vector database, embeddings,
+Contract-only task. Do not add product code, vector database, embeddings,
 reranking, background indexing, external RAG provider calls, MCP runtime, RBAC,
 tenants, permissions, marketplace, cloud sync, release automation, or remote CI
 provider integration.
@@ -59,31 +61,30 @@ provider integration.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
-rg -n "Product Value Answer|Non-goals|Task Table|Deterministic|ContextArtifact|KnowledgeAdapter" docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
+rg -n "Deterministic|KnowledgeAdapter|ContextArtifact|used_knowledge|retrieval|retrieved" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
 git diff --check
 ```
 
-Expected result: Slice 19 plan is visible and diff check passes.
+Expected result: deterministic retrieval contract boundaries are visible and
+diff check passes.
 
 ## Acceptance
 
-- Creates `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`.
-- Defines product value, task table, expected files, verification commands, and
-  non-goals.
-- Keeps the slice limited to deterministic local ContextArtifact retrieval and
-  evidence recording.
-- Does not add implementation code.
-- Does not add vector database, embeddings, reranking, background indexing,
-  external RAG provider calls, MCP runtime, RBAC, tenants, permissions, or
-  marketplace work.
+- Contract defines deterministic local retrieval as a KnowledgeAdapter stub.
+- Contract defines retrieved snippet evidence, scores, matched terms, and
+  ContextArtifact ids.
+- Contract explains when `used_knowledge=true` is allowed.
+- Artifact contract defines retrieval evidence artifact shape.
+- Non-goals still exclude vectors, embeddings, reranking, background indexing,
+  external providers, MCP runtime, RBAC, tenants, and permissions.
 
 ## Commit Message
 
 ```text
-docs(v2): add deterministic knowledge retrieval slice plan
+docs(v2): define deterministic retrieval contract
 ```
 
 ## Next Task
 
-Start Slice 19 Task 1 only after reviewing the slice plan.
+Start Slice 19 Task 3 only after the deterministic retrieval contract boundary
+is committed.
