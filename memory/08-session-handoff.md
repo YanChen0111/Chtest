@@ -1,5 +1,52 @@
 # Session Handoff
 
+## 2026-06-30 Slice 15 Task 7 CI/CD Quality Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 15 Task 7：Add CI/CD Quality Center frontend shell。
+- 新增 `frontend/src/api/cicd.ts`，覆盖 CICDRun create/get/list/analyze。
+- 新增 `frontend/src/stores/cicd.ts`，管理 local_diff 输入、run 状态和
+  analysis 刷新。
+- 新增 `frontend/src/views/cicd/CicdQualityCenterView.vue`。
+- 页面支持输入 Project/Repository/Base/Head/diff_text，创建 CICDRun 并触发
+  mock risk_analysis。
+- 页面展示 changed files、file_role、risk_level、risk_reasons 和
+  risk_analysis artifact。
+- CI/CD 质量中心导航由 `待接入` 更新为 `就绪`。
+- 未展示 merge/release decisions 或 remote CI provider controls。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 15 Task 8：Add CI/CD Quality Center
+  golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run
+```
+
+验证结果：
+
+- Frontend workbench tests：`13 passed, 16 tests passed`
+
+修改文件：
+
+- `frontend/src/api/cicd.ts`
+- `frontend/src/stores/cicd.ts`
+- `frontend/src/views/cicd/CicdQualityCenterView.vue`
+- `frontend/src/views/cicd/CicdQualityCenterView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `docs/implementation/slices/slice-15-cicd-quality-center.md`
+- `NEXT_AI_TASK.md`
+- `memory/08-session-handoff.md`
+
+下次推荐任务：
+
+- 按 `NEXT_AI_TASK.md` 执行 Slice 15 Task 8：Add CI/CD Quality Center golden
+  smoke。
+- 当前任务不要创建 UnitTestPatch、QualityGateDecision、TestRun 或 Report
+  records。
+
 ## 2026-06-30 Slice 15 Task 6 CI/CD Analyze API 完成
 
 本轮完成：

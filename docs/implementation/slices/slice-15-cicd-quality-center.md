@@ -38,8 +38,8 @@ RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 | Add CICDRun and CICDChangedFile model/schema | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | `788d6c0` | persistence only, no patch/gate |
 | Add local diff parser service | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | `a0391fa` | deterministic parser for unified diff text |
 | Add CI/CD run create/list/get API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | `2e51d06` | `/api/cicd/runs` local_diff only |
-| Add CI/CD analyze API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | pending commit | mock risk_analysis artifact |
-| Add CI/CD Quality Center frontend shell | planned | `npm --prefix frontend run test -- --run` | - | local diff evidence view; no quality gate decision |
+| Add CI/CD analyze API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q` | `3a6df10` | mock risk_analysis artifact |
+| Add CI/CD Quality Center frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | local diff evidence view; no quality gate decision |
 | Add CI/CD Quality Center golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_center_golden.py -q` | - | local diff -> CICDRun -> changed files -> analysis artifact |
 | Slice 15 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/golden/test_cicd_quality_center_golden.py -q && npm --prefix frontend run test -- --run` | - | docs and handoff only |
 

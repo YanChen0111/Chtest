@@ -10,12 +10,12 @@ Slice 15: CI/CD Quality Center Foundation.
 
 ## Current Task
 
-Task 7: Add CI/CD Quality Center frontend shell.
+Task 8: Add CI/CD Quality Center golden smoke.
 
 ## Product Value Answer
 
-After this task, users can create local_diff CICDRun records and inspect changed
-file/risk analysis evidence in the workbench.
+After this task, Chtest has a golden smoke proving local diff evidence can
+create a CICDRun, changed files, and a mock analysis artifact.
 
 ## Must Read
 
@@ -40,41 +40,36 @@ Create or update only these files for the current task:
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
-frontend/src/api/cicd.ts
-frontend/src/stores/cicd.ts
-frontend/src/views/cicd/CicdQualityCenterView.vue
-frontend/src/views/cicd/CicdQualityCenterView.spec.ts
-frontend/src/router/index.ts
-frontend/src/stores/index.ts
-docs/implementation/slices/slice-15-cicd-quality-center.md
+backend/app/tests/golden/test_cicd_quality_center_golden.py
 ```
 
-Do not show merge/release decisions or remote CI provider controls in this task.
+Do not create UnitTestPatch, QualityGateDecision, TestRun, or Report records in
+this task.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_center_golden.py -q
 ```
 
-Expected result: focused frontend workbench tests pass.
+Expected result: focused CI/CD Quality Center golden smoke passes.
 
 ## Acceptance
 
-- Adds workbench navigation for `CI/CD 质量中心`.
-- Creates a local_diff CICDRun from project/repository/base/head inputs and
-  diff text fixture.
-- Shows changed files, file roles, risk levels, risk reasons, and analysis
-  artifact references.
-- Does not show merge/release decisions or remote CI provider controls.
-- Updates handoff and sets the next task to CI/CD Quality Center golden smoke.
+- Uses `docs/fixtures/03-golden-cicd-quality.md` as scenario intent.
+- Creates Project/Repository fixture records.
+- Creates CICDRun from local diff input.
+- Persists CICDChangedFile rows and risk_analysis artifact metadata.
+- Verifies no UnitTestPatch, QualityGateDecision, TestRun, or Report records are
+  created in Slice 15.
+- Updates handoff and sets the next task to Slice 15 completion gate.
 
 ## Commit Message
 
 ```text
-feat(frontend): add cicd quality shell
+test(golden): add cicd quality smoke
 ```
 
 ## Next Task
 
-Slice 15 Task 8: Add CI/CD Quality Center golden smoke.
+Slice 15 completion gate.

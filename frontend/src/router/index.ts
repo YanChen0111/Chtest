@@ -5,6 +5,7 @@ import AiWorkbenchView from '../views/ai-workbench/AiWorkbenchView.vue';
 import AutomationDraftReviewView from '../views/automation/AutomationDraftReviewView.vue';
 import CaseGenerationReviewView from '../views/cases/CaseGenerationReviewView.vue';
 import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
+import CicdQualityCenterView from '../views/cicd/CicdQualityCenterView.vue';
 import PlaywrightExecutionView from '../views/execution/PlaywrightExecutionView.vue';
 import PytestExecutionView from '../views/execution/PytestExecutionView.vue';
 import PromptSkillCenterView from '../views/prompt-skill/PromptSkillCenterView.vue';
@@ -73,6 +74,14 @@ export const router = createRouter({
           component: PlaywrightExecutionView,
           meta: {
             title: 'Playwright 执行',
+          },
+        },
+        {
+          path: 'cicd/quality',
+          name: 'cicd-quality-center',
+          component: CicdQualityCenterView,
+          meta: {
+            title: 'CI/CD 质量中心',
           },
         },
         {
