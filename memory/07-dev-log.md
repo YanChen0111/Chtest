@@ -1,5 +1,50 @@
 # Development Log
 
+## 2026-07-01 V2 Next Slice Selection After Slice 20
+
+### Completed
+
+- Completed the planning task to select the next V2 small slice after Slice 20.
+- Ran parallel subagent reviews for:
+  - Candidate Direction B follow-up: JMeter local execution evidence.
+  - Candidate Direction C: local review attribution/history.
+- Selected Candidate Direction C, renamed and narrowed to:
+  `Slice 21: Local Review Attribution History`.
+- Rationale:
+  - Slice 18, Slice 19, and Slice 20 added more evidence sources.
+  - The next highest value is making the human review side of the evidence loop
+    more traceable.
+  - Local review history strengthens Chtest's human-reviewed, evidence-backed
+    positioning without requiring external tools.
+  - JMeter local execution evidence remains a strong follow-up candidate, but it
+    depends on another runner/tool path.
+- Added `docs/implementation/slices/slice-21-local-review-attribution-history.md`.
+- Updated `docs/implementation/10-v2-scope-options.md`:
+  - records Slice 20 completion;
+  - recommends Slice 21 local review attribution/history;
+  - keeps JMeter local execution evidence as a future candidate.
+- Updated `NEXT_AI_TASK.md` to Slice 21 Task 2: define review history contract
+  boundary.
+
+### Verification
+
+```bash
+test -f docs/implementation/slices/slice-21-local-review-attribution-history.md
+rg -n "Local Review Attribution History|Product Value Answer|Non-goals|Task Table|append-only|RBAC|permissions" docs/implementation/slices/slice-21-local-review-attribution-history.md docs/implementation/10-v2-scope-options.md
+git diff --check
+```
+
+Results:
+
+- Slice 21 plan file exists.
+- Scope keywords found in Slice 21 plan and V2 scope options.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `docs(v2): add local review history slice plan`.
+- Continue Slice 21 Task 2: define review history contract boundary.
+
 ## 2026-07-01 Slice 20 Completion Gate
 
 ### Completed

@@ -58,6 +58,21 @@ display without adding a vector database, embeddings, reranking, external RAG
 provider runtime, MCP runtime, RBAC, tenants, permissions, marketplace, cloud
 sync, or remote CI/CD provider integration.
 
+- `Slice 20: CI Run Metadata Import`
+- Plan and completion evidence:
+  `docs/implementation/slices/slice-20-ci-run-metadata-import.md`
+- Final focused verification:
+  - CI import API + golden tests: `54 passed`.
+  - Frontend shell: `15` test files passed, `20` tests passed.
+  - `git diff --check`: clean.
+
+Slice 20 moved Candidate Direction D from option to delivered value in a narrow
+form. It added import-only CI metadata evidence, imported changed files,
+frontend-readable `ci_run_metadata`, and inert artifact references without
+adding remote CI provider calls, webhooks, pipeline triggers, reruns, PR
+comments, deploy/release controls, credentials, RBAC, tenants, permissions,
+marketplace, RAG runtime, or MCP runtime.
+
 ## Candidate Direction A: RAG Knowledge Runtime
 
 Problem:
@@ -325,7 +340,89 @@ Expected output:
 - No product code until contracts define the import payload, evidence artifacts,
   API boundary, state behavior, and non-goals.
 
+## Completed Next V2 Slice
+
+Completed: Candidate Direction D, as an import-only CI evidence bridge.
+
+Why it was selected:
+
+- Slice 18 expanded local runner evidence and Slice 19 improved AI context
+  evidence. The next practical value was connecting external CI facts into the
+  existing evidence workbench without letting Chtest control remote providers.
+- Slice 15 and Slice 16 already had CICDRun, CICDChangedFile,
+  UnitTestPatch, QualityGateDecision, artifacts, and CI/CD 管理 surfaces that
+  could receive imported evidence.
+- Import-only CI metadata strengthened the CI/CD Quality Center while preserving
+  the product boundary: evidence in, no remote actions out.
+
+Completed slice name:
+
+```text
+Slice 20: CI Run Metadata Import
+```
+
+Delivered output:
+
+- Slice plan, contract updates, deterministic parser, import API, frontend
+  evidence display, golden smoke, and completion gate.
+- Imported CI conclusion remains evidence only; it does not automatically pass
+  QualityGateDecision.
+- Imported artifact references are inert references only.
+
+## Recommended Next V2 Slice
+
+Recommended: Candidate Direction C, but renamed and narrowed to local review
+attribution/history.
+
+Why:
+
+- Slice 18, Slice 19, and Slice 20 added more evidence sources. The next
+  highest product value is making the human review side of that evidence loop
+  more traceable.
+- Chtest's core positioning is human-reviewed, evidence-backed testing work.
+  Local attribution/history strengthens trust without requiring external tools.
+- JMeter local execution evidence remains valuable and should stay a strong
+  follow-up candidate, but it depends on another runner/tool path. Review
+  attribution improves the existing workflows first and avoids immediate tool
+  installation variability.
+
+Next slice name:
+
+```text
+Slice 21: Local Review Attribution History
+```
+
+Smallest useful boundary:
+
+- Add append-only local review events for existing review-gated workflows.
+- Record entity, action, status transition, reviewer, comment, timestamp, and
+  evidence artifact references.
+- Use deterministic local reviewer attribution, such as `Default User`.
+- Show compact review history in existing review surfaces.
+
+Explicit non-goals:
+
+- No RBAC, roles, permissions, tenants, departments, SSO, enterprise audit, or
+  login/session redesign.
+- No assignment workflow, approval delegation, notifications, team inbox, or
+  comment threads.
+- No remote CI provider governance, PR comments, deploy/release controls, or
+  provider credentials.
+- No RAG runtime, MCP runtime, marketplace, cloud sync, or release automation.
+
+Suggested next task:
+
+```text
+Slice 21 Task 1: Add Local Review Attribution History task plan
+```
+
+Expected output:
+
+- A slice plan under `docs/implementation/slices/`.
+- No product code until contracts define review history data, API surface,
+  state-machine relationship, and non-goals.
+
 ## Next Task
 
-Start Slice 20 Task 1 from
-`docs/implementation/slices/slice-20-ci-run-metadata-import.md`.
+Start Slice 21 Task 1 from
+`docs/implementation/slices/slice-21-local-review-attribution-history.md`.

@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-07-01 V2 Next Slice Selection 完成
+
+本轮完成：
+
+- 选择 Slice 20 后的下一条 V2 小切片。
+- 并发启动两个只读子代理：
+  - Candidate Direction B follow-up：JMeter local execution evidence；
+  - Candidate Direction C：local review attribution/history。
+- 两个方向都可行；最终选择 Candidate Direction C，并收窄命名为：
+  `Slice 21: Local Review Attribution History`。
+- 选择理由：
+  - Slice 18/19/20 已分别补强 runner evidence、knowledge evidence、CI
+    import evidence。
+  - 下一步更应该补强 human-reviewed evidence loop 的可追溯性。
+  - 本地 review attribution/history 不依赖外部工具安装，也不需要引入
+    RBAC/权限/团队治理。
+  - JMeter local execution evidence 保留为后续强候选。
+- 新增计划文档：
+  `docs/implementation/slices/slice-21-local-review-attribution-history.md`。
+- 更新 V2 scope options：
+  - 记录 Slice 20 已完成；
+  - 推荐 Slice 21；
+  - 明确非目标：RBAC、roles、permissions、tenants、SSO、enterprise audit、
+    assignment、notifications、team inbox、remote provider governance。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 21 Task 2：
+  Define review history contract boundary。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-21-local-review-attribution-history.md
+rg -n "Local Review Attribution History|Product Value Answer|Non-goals|Task Table|append-only|RBAC|permissions" docs/implementation/slices/slice-21-local-review-attribution-history.md docs/implementation/10-v2-scope-options.md
+git diff --check
+```
+
+验证结果：
+
+- Slice 21 plan file exists。
+- Scope keywords found in Slice 21 plan and V2 scope options。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交本 planning task：`docs(v2): add local review history slice plan`。
+- 继续 Slice 21 Task 2：define review history contract boundary。
+
 ## 2026-07-01 Slice 20 Completion Gate 完成
 
 本轮完成：
