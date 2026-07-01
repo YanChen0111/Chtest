@@ -669,3 +669,87 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines endpoint boundaries, frontend link
   behavior, artifact ownership checks, verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Artifact evidence access links, as read-only local TestRun artifact
+links.
+
+Why it was selected:
+
+- Recent runner slices showed artifact paths, but reviewers could not yet open
+  the local evidence artifact from the workbench.
+- Slice 24 added the read-only local artifact access endpoint and execution
+  table links while keeping external imported artifact references inert.
+- The work strengthened stdout, stderr, parsed output, JTL, Newman JSON, traces,
+  screenshots, and future runner evidence without adding cloud storage,
+  sharing, upload, delete, RBAC, tenants, permissions, RAG runtime, MCP runtime,
+  or runner behavior changes.
+
+Completed slice name:
+
+```text
+Slice 24: Local Artifact Access Links
+```
+
+Delivered output:
+
+- Slice plan, contract boundary, backend local artifact download API, frontend
+  execution artifact links, golden smoke, and completion gate.
+- Local artifact access remains read-only and local-first. It does not fetch
+  external URLs, mutate artifacts, create reports, compute quality gates, or add
+  broad artifact browsing.
+
+## Recommended Next V2 Slice
+
+Recommended: Execution evidence summary, narrowed to existing TestRun and
+Report evidence.
+
+Why:
+
+- Slice 24 made artifacts openable. The next product value is explaining what
+  those artifacts prove: which claim they support, whether evidence is required,
+  whether it is missing, and whether the local artifact can be opened.
+- Chtest's positioning is evidence-backed testing work, so a compact evidence
+  summary strengthens the report/review loop without expanding into dashboards
+  or analytics.
+- Existing Report APIs already return `evidence_manifest` and report artifacts,
+  so the slice can stay small and mostly frontend/contract driven.
+
+Next slice name:
+
+```text
+Slice 25: Execution Evidence Summary
+```
+
+Smallest useful boundary:
+
+- Define a read-only evidence summary shape from existing
+  `ReportRead.evidence_manifest`, TestRun evidence, and Artifact metadata.
+- Add a compact report-page evidence summary with local artifact links.
+- Keep missing evidence visible and not downloadable.
+- Add one golden smoke proving summary evidence cites persisted artifacts and
+  artifact downloads preserve metadata.
+
+Explicit non-goals:
+
+- No report generation redesign, new report types, report editor, report
+  dashboard, analytics, trend charts, or export workflow.
+- No automatic Report, FailureAnalysis, QualityGateDecision, repair task, or
+  runner behavior changes.
+- No artifact upload, mutation, delete, sharing, signed URL, cloud storage,
+  retention, indexing, search, broad artifact browser, external provider fetch,
+  credentials, RBAC, tenants, permissions, RAG runtime, MCP runtime,
+  marketplace, or model benchmark.
+
+Suggested next task:
+
+```text
+Slice 25 Task 1: Add Execution Evidence Summary task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines evidence summary behavior, contracts,
+  verification, and non-goals.

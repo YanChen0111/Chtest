@@ -1,5 +1,28 @@
 # Session Handoff
 
+## 2026-07-01 Slice 25 Task 1 Execution Evidence Summary Plan 完成
+
+本轮完成：
+
+- 选择 Slice 25：Execution Evidence Summary。
+- 选择原因：
+  - Slice 24 已让 execution artifacts 可打开；
+  - 下一步应该解释这些 artifact 支撑什么结论、是否必需、是否缺失、
+    是否可本地打开；
+  - 该方向承接 report evidence manifest 和本地 artifact access，不需要改
+    runner 或 report generation。
+- 新增 Slice 25 计划：
+  `docs/implementation/slices/slice-25-execution-evidence-summary.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充 Slice 24 完成记录和
+  Slice 25 推荐。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 25 Task 2：Define execution evidence summary contract。
+
+下次推荐任务：
+
+- 提交 Task 1：`docs(v2): add execution evidence summary plan`。
+- 继续 Slice 25 Task 2：Define execution evidence summary contract。
+
 ## 2026-07-01 Slice 24 Completion Gate 完成
 
 本轮完成：

@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-01 Slice 25 Execution Evidence Summary Plan
+
+### Completed
+
+- Selected Slice 25: Execution Evidence Summary.
+- Added `docs/implementation/slices/slice-25-execution-evidence-summary.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 24 completion
+  and Slice 25 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 25 Task 2: Define execution evidence
+  summary contract.
+
+### Rationale
+
+- Slice 24 made execution artifacts openable.
+- The next evidence-loop value is showing what those artifacts prove: required
+  evidence, supporting claims, missing evidence, and local downloadability.
+- The slice stays small by deriving summary rows from existing Report/TestRun
+  evidence and not changing report generation, FailureAnalysis, runner behavior,
+  or QualityGateDecision behavior.
+
+### Next Step
+
+- Commit `docs(v2): add execution evidence summary plan`.
+- Continue Slice 25 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 24 Completion Gate
 
 ### Completed

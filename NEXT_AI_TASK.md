@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Select the next V2 small slice after Slice 24 completion.
+Slice 25: Execution Evidence Summary.
 
 ## Current Task
 
-Choose and plan the next narrow V2 slice.
+Slice 25 Task 2: Define execution evidence summary contract.
 
 ## Product Value Answer
 
-After this task, the next V2 slice is selected with a small task plan before
-any product code changes.
+After this task, execution evidence summary rows have an explicit read-only
+contract before frontend or golden smoke work begins.
 
 ## Must Read
 
@@ -28,7 +28,8 @@ any product code changes.
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-24-local-artifact-access-links.md`
 9. `docs/implementation/10-v2-scope-options.md`
-10. recent session handoff and dev log
+10. `docs/implementation/slices/slice-25-execution-evidence-summary.md`
+11. recent session handoff and dev log
 
 ## Do Not Read Unless Needed
 
@@ -49,44 +50,45 @@ docs/implementation/slices/slice-22-jmeter-local-execution.md
 docs/implementation/10-v2-scope-options.md
 docs/implementation/slices/slice-23-frontend-build-baseline.md
 docs/implementation/slices/slice-24-local-artifact-access-links.md
+docs/implementation/slices/slice-25-execution-evidence-summary.md
 docs/contracts/02-api-contract.md
 docs/contracts/04-artifact-contract.md
 backend/app/tests/golden/test_artifact_access_golden.py
 docs/fixtures/12-local-artifact-access-golden.md
 ```
 
-Planning task. Do not add frontend code, backend feature code, migrations,
-package upgrades, artifact upload/mutation/delete, cloud storage, external
-provider integration, RBAC, tenants, permissions, broad redesign work, or runner
-behavior changes.
+Contract task. Do not add frontend code, backend feature code, migrations,
+package upgrades, report generation behavior, artifact upload/mutation/delete,
+cloud storage, external provider integration, RBAC, tenants, permissions, broad
+redesign work, or runner behavior changes.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/<next-slice-file>.md
-rg -n "<next slice name>|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/<next-slice-file>.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md
+rg -n "execution evidence summary|evidence summary|download|missing evidence" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-25-execution-evidence-summary.md
 git diff --check
 ```
 
-Expected result: next slice plan exists, scope is narrow and local-first, and
-diff check passes.
+Expected result: execution evidence summary contract text is present and diff
+check passes.
 
 ## Acceptance
 
-- Slice 24 completion is recorded as done in handoff and dev log.
-- `docs/implementation/10-v2-scope-options.md` records Slice 24 completion and
-  recommends one next V2 slice.
-- A new slice plan defines product value, non-goals, task table, expected files,
-  verification commands, and commit messages.
-- `NEXT_AI_TASK.md` points to the first implementation task for the selected
-  slice.
+- API contract defines how report evidence summary rows align
+  `evidence_manifest.evidence[]`, local Artifact metadata, downloadability, and
+  missing evidence.
+- Artifact contract states evidence summary display is read-only and must use
+  the existing local artifact access endpoint for local Artifact rows.
+- External imported artifact references remain inert and not locally openable.
+- Contract excludes report generation, runner behavior, QualityGateDecision,
+  and broad artifact browser changes.
 
 ## Commit Message
 
 ```text
-docs(v2): add next v2 slice plan
+docs(v2): define execution evidence summary contract
 ```
 
 ## Next Task
 
-First implementation task from the selected next V2 slice.
+Slice 25 Task 3: Add report evidence summary frontend.
