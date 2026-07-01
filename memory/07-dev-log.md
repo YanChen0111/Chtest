@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-01 Slice 30 Test Knowledge Card Golden Fixture
+
+### Completed
+
+- Added `docs/fixtures/18-test-knowledge-card-contract-golden.md`.
+- Fixture defines checkout coupon requirement text, source ContextArtifacts,
+  TestKnowledgeCard examples, KnowledgeEvidence examples, and three
+  GeneratedCaseCandidate evidence conditions.
+- Fixture covers accepted, needs-review, and rejected candidate evidence.
+- Fixture states provider payloads must be normalized into KnowledgeEvidence
+  before generated cases cite them.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 4: Add Contract Smoke For
+  Generated-Case Evidence Fields.
+
+### Verification
+
+- `test -f docs/fixtures/18-test-knowledge-card-contract-golden.md`
+- `rg -n "TestKnowledgeCard|KnowledgeEvidence|GeneratedCaseCandidate|review_findings|coverage_gap_notes" docs/fixtures/18-test-knowledge-card-contract-golden.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(fixtures): add test knowledge card contract golden`.
+- Continue Slice 30 Task 4 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 30 TestKnowledgeCard Contract
 
 ### Completed

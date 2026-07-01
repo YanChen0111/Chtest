@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-01 Slice 30 Task 3 Golden Fixture 完成
+
+本轮完成：
+
+- 完成 Slice 30 Task 3：Add Test Knowledge Card Golden Fixture。
+- 新增 fixture：
+  `docs/fixtures/18-test-knowledge-card-contract-golden.md`。
+- Fixture 覆盖：
+  - coupon checkout requirement；
+  - source ContextArtifact references；
+  - TestKnowledgeCard examples；
+  - KnowledgeEvidence examples；
+  - accepted / needs-review / rejected GeneratedCaseCandidate evidence
+    conditions；
+  - review_findings 和 coverage_gap_notes；
+  - provider payload 必须先 normalize 成 Chtest KnowledgeEvidence。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 30 Task 4：Add Contract Smoke For Generated-Case Evidence Fields。
+
+本轮验证：
+
+```bash
+test -f docs/fixtures/18-test-knowledge-card-contract-golden.md
+rg -n "TestKnowledgeCard|KnowledgeEvidence|GeneratedCaseCandidate|review_findings|coverage_gap_notes" docs/fixtures/18-test-knowledge-card-contract-golden.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 3：`docs(fixtures): add test knowledge card contract golden`。
+- 继续 Slice 30 Task 4：Add Contract Smoke For Generated-Case Evidence
+  Fields。
+
 ## 2026-07-01 Slice 30 Task 2 TestKnowledgeCard Contract 完成
 
 本轮完成：

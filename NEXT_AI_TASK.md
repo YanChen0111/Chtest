@@ -10,13 +10,13 @@ Slice 30: Test Knowledge Card Contract.
 
 ## Current Task
 
-Slice 30 Task 3: Add Test Knowledge Card Golden Fixture.
+Slice 30 Task 4: Add Contract Smoke For Generated-Case Evidence Fields.
 
 ## Product Value Answer
 
-After this task, Chtest has an AI-readable fixture showing how structured
-testing knowledge evidence supports generated cases, review findings, and
-coverage gap notes without enabling a RAG runtime.
+After this task, a focused golden smoke proves generated-case evidence fields
+can be serialized and read back without creating runtime retrieval behavior or
+review bypasses.
 
 ## Must Read
 
@@ -27,11 +27,10 @@ coverage gap notes without enabling a RAG runtime.
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
-8. `docs/implementation/10-v2-scope-options.md`
-9. `docs/implementation/11-final-rag-agent-strategy.md`
-10. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
-11. `memory/08-session-handoff.md`
-12. `memory/07-dev-log.md`
+8. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+9. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
+10. `memory/08-session-handoff.md`
+11. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -45,49 +44,51 @@ coverage gap notes without enabling a RAG runtime.
 Create or update only these files for the current task:
 
 ```text
-docs/fixtures/18-test-knowledge-card-contract-golden.md
+backend/app/tests/golden/test_test_knowledge_card_contract_golden.py
+backend/app/schemas/*.py
+backend/app/models/*.py
+backend/app/api/*.py
 docs/implementation/slices/slice-30-test-knowledge-card-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Fixture task. Do not add frontend code, backend runtime feature code,
-migrations, package upgrades, external provider integrations, vector database,
-embeddings, reranking, background indexing, graph runtime, MCP runtime,
-artifact upload/mutation/delete, generated-case auto-approval, runner behavior
-changes, report generation behavior changes, remote CI provider behavior, RBAC,
-tenants, or permissions.
+Only touch backend schema/model/API files if required by the existing
+implementation shape. Do not add frontend code, migrations unless the current
+model implementation already requires them, package upgrades, external provider
+integrations, vector database, embeddings, reranking, background indexing,
+graph runtime, MCP runtime, artifact upload/mutation/delete, generated-case
+auto-approval, runner behavior changes, report generation behavior changes,
+remote CI provider behavior, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-test -f docs/fixtures/18-test-knowledge-card-contract-golden.md
-rg -n "TestKnowledgeCard|KnowledgeEvidence|GeneratedCaseCandidate|review_findings|coverage_gap_notes" docs/fixtures/18-test-knowledge-card-contract-golden.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: fixture defines requirement text, source artifacts,
-TestKnowledgeCard examples, KnowledgeEvidence examples, generated candidates,
-review findings, coverage gap notes, and explicit runtime non-goals; diff check
-passes.
+Expected result: golden smoke passes and proves generated-case evidence fields
+are structured evidence only; diff check passes.
 
 ## Acceptance
 
-- Fixture includes a compact requirement, source ContextArtifact references,
-  TestKnowledgeCard examples, KnowledgeEvidence examples, generated case
-  candidates, review findings, coverage gap notes, and evidence ids.
-- Fixture shows accepted, needs-review, and rejected evidence conditions.
-- Fixture explains provider schemas are normalized into Chtest evidence.
-- Fixture does not imply vector database, external provider, graph runtime,
-  auto-approval, frontend behavior, or execution behavior exists.
+- Golden proves generated-case evidence fields can be serialized and read back
+  through the relevant schema or API boundary.
+- Golden proves knowledge evidence references are structured data and do not
+  create TestCase records, runner executions, reports, external provider calls,
+  retrieval jobs, vector indexes, graph jobs, or artifact mutations.
+- If database models are not yet implemented, the task stays schema/fixture
+  level and documents the missing implementation as the next task instead of
+  inventing a runtime.
 
 ## Commit Message
 
 ```text
-docs(fixtures): add test knowledge card contract golden
+test(golden): add test knowledge card contract smoke
 ```
 
 ## Next Task
 
-Slice 30 Task 4: Add Contract Smoke For Generated-Case Evidence Fields.
+Slice 30 Completion Gate.
