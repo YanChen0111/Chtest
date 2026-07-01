@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-07-01 Slice 22 Task 4 JMeter Local Runner Backend 完成
+
+本轮完成：
+
+- 完成 Slice 22 Task 4：Add JMeter runner backend。
+- `backend/app/modules/execution/jmeter_runner.py` 新增：
+  - `JMeterRunner`；
+  - JMeter allowlist 校验；
+  - non-GUI command 规范：`jmeter -n -t <plan.jmx> -l <result.jtl>`；
+  - JTL output path 校验；
+  - fake executable 友好的 subprocess 执行。
+- `backend/app/modules/projects/service.py` 支持 `command_type=jmeter` allowlist。
+- `backend/app/modules/execution/service.py` 支持：
+  - `runner_mode=jmeter_local`；
+  - active `TestCommand(command_type=jmeter)`；
+  - stdout/stderr、`jmeter_jtl`、parsed_output artifacts；
+  - JMeter TestResult rows。
+- `backend/app/tests/api/test_jmeter_execution.py` 新增：
+  - fake JMeter executable 成功路径；
+  - forbidden shell operator 拒绝路径。
+- Slice 22 table 已记录 Task 3 commit `0d1a666`，Task 4 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 22 Task 5：Add JMeter execution frontend shell。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py backend/app/tests/api/test_newman_execution.py backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/api/test_playwright_minimal_loop.py -q
+git diff --check
+```
+
+验证结果：
+
+- JMeter runner/API tests：`5 passed`。
+- JMeter + Newman + pytest + Playwright execution tests：`27 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`feat(execution): add jmeter local runner`。
+- 继续 Slice 22 Task 5：Add JMeter execution frontend shell。
+
 ## 2026-07-01 Slice 22 Task 3 JMeter Parser 完成
 
 本轮完成：

@@ -1,5 +1,47 @@
 # Development Log
 
+## 2026-07-01 Slice 22 JMeter Local Runner Backend
+
+### Completed
+
+- Completed Slice 22 Task 4: Add JMeter runner backend.
+- Extended `backend/app/modules/execution/jmeter_runner.py` with:
+  - `JMeterRunner`;
+  - allowlisted command validation;
+  - non-GUI `jmeter -n -t <plan.jmx> -l <result.jtl>` command normalization;
+  - JTL output path validation;
+  - fake-executable-friendly subprocess execution.
+- Extended project command allowlist for `command_type=jmeter`.
+- Extended execution service with `runner_mode=jmeter_local` from configured
+  active TestCommand.
+- Persisted JMeter stdout/stderr, `jmeter_jtl`, parsed_result artifacts, and
+  JMeter TestResult rows.
+- Added API tests for successful fake JMeter execution and forbidden shell
+  operator rejection.
+- Updated Slice 22 table with Task 3 commit `0d1a666` and Task 4 done pending
+  commit.
+- Updated `NEXT_AI_TASK.md` to Slice 22 Task 5: Add JMeter execution frontend
+  shell.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py backend/app/tests/api/test_newman_execution.py backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/api/test_playwright_minimal_loop.py -q
+git diff --check
+```
+
+Results:
+
+- JMeter runner/API tests: `5 passed`.
+- JMeter + Newman + pytest + Playwright execution tests: `27 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `feat(execution): add jmeter local runner`.
+- Continue Slice 22 Task 5: add JMeter execution frontend shell.
+
 ## 2026-07-01 Slice 22 JMeter Parser
 
 ### Completed

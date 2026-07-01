@@ -11,6 +11,11 @@ from sqlalchemy.orm import Session
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.automation.models import AutomationDraft
 from backend.app.modules.execution.models import TestResult, TestRun
+from backend.app.modules.execution.jmeter_runner import (
+    JMeterRunner,
+    JMeterRunnerCommandError,
+    JMeterRunnerResult,
+)
 from backend.app.modules.execution.newman_runner import (
     NewmanRunner,
     NewmanRunnerCommandError,
@@ -93,6 +98,8 @@ def create_test_run_from_command(session: Session, data: TestRunCreateRequest) -
         return create_playwright_test_run_from_command(session, data, test_command)
     if data.runner_mode == "newman_local":
         return create_newman_test_run_from_command(session, data, test_command)
+    if data.runner_mode == "jmeter_local":
+        return create_jmeter_test_run_from_command(session, data, test_command)
     if test_command.command_type != "pytest" or test_command.status != "active":
         raise TestRunInvalidInputError
 
@@ -180,6 +187,29 @@ def create_newman_test_run_from_command(
     session.add(test_run)
     session.flush()
     return execute_newman_and_persist(session, test_run, workdir, timeout_seconds=test_command.timeout_seconds)
+
+
+def create_jmeter_test_run_from_command(
+    session: Session,
+    data: TestRunCreateRequest,
+    test_command: TestCommand,
+) -> TestRun:
+    if test_command.command_type != "jmeter" or test_command.status != "active":
+        raise TestRunInvalidInputError
+    workdir = Path(test_command.working_directory).expanduser().resolve()
+    test_run = TestRun(
+        project_id=data.project_id,
+        test_command_id=test_command.id,
+        name=test_command.name,
+        command=test_command.command,
+        working_directory=str(workdir),
+        runner_mode="jmeter_local",
+        run_workspace=str(workdir),
+        status="running",
+    )
+    session.add(test_run)
+    session.flush()
+    return execute_jmeter_and_persist(session, test_run, workdir, timeout_seconds=test_command.timeout_seconds)
 
 
 def execute_and_persist(
@@ -287,6 +317,46 @@ def execute_newman_and_persist(
     return test_run
 
 
+def execute_jmeter_and_persist(
+    session: Session,
+    test_run: TestRun,
+    working_directory: Path,
+    timeout_seconds: int = 600,
+) -> TestRun:
+    try:
+        result = JMeterRunner().run(test_run.command, working_directory, timeout_seconds=timeout_seconds)
+    except JMeterRunnerCommandError as exc:
+        test_run.status = "error"
+        test_run.parsed_result_json = {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "error": 1,
+            "sampler_count": 0,
+            "assertion_count": 0,
+        }
+        session.add(test_run)
+        session.commit()
+        raise TestRunInvalidInputError from exc
+
+    test_run.exit_code = result.exit_code
+    test_run.duration_ms = result.duration_ms
+    test_run.parsed_result_json = result.parsed_result
+    test_run.status = status_from_jmeter_result(result)
+    session.add(test_run)
+    session.flush()
+
+    artifacts = create_execution_artifacts(session, test_run, result.stdout, result.stderr, "JMeterRunner")
+    artifacts.extend(create_jmeter_artifacts(session, test_run, result))
+    test_run.runtime_artifact_ids = [artifact.id for artifact in artifacts if artifact.artifact_type == "runtime_manifest"]
+    create_jmeter_results(session, test_run, result)
+    session.add(test_run)
+    session.commit()
+    session.refresh(test_run)
+    return test_run
+
+
 def write_draft_file(run_workspace: Path, draft: AutomationDraft) -> Path:
     relative_path = Path(draft.suggested_file_path or "tests/test_generated_draft.py")
     if relative_path.is_absolute() or ".." in relative_path.parts:
@@ -381,7 +451,56 @@ def create_newman_artifacts(session: Session, test_run: TestRun, result: NewmanR
     return artifacts
 
 
+def create_jmeter_artifacts(session: Session, test_run: TestRun, result: JMeterRunnerResult) -> list[Artifact]:
+    jtl_content = result.jtl_path.read_text(encoding="utf-8")
+    parsed_content = json.dumps(result.parsed_result, ensure_ascii=False, sort_keys=True) + "\n"
+    artifact_specs = [
+        ("jmeter_jtl", "results.jtl", jtl_content, jmeter_jtl_mime_type(result.jtl_path)),
+        ("parsed_output", "parsed_result.json", parsed_content, "application/json"),
+    ]
+    artifacts: list[Artifact] = []
+    for artifact_type, name, content, mime_type in artifact_specs:
+        artifact = Artifact(
+            project_id=test_run.project_id,
+            owner_entity_type="TestRun",
+            owner_entity_id=test_run.id,
+            artifact_type=artifact_type,
+            file_path=f"test-runs/{test_run.id}/{name}",
+            mime_type=mime_type,
+            size_bytes=len(content.encode("utf-8")),
+            sha256=f"sha256:{artifact_type}:{test_run.id}",
+            metadata_json={
+                "created_by_component": "JMeterRunner",
+                "runner_mode": test_run.runner_mode,
+                "sampler_count": result.parsed_result.get("sampler_count"),
+                "assertion_count": result.parsed_result.get("assertion_count"),
+                "jtl_format": "xml" if result.jtl_path.suffix.lower() == ".xml" else "csv",
+                "redaction_applied": False,
+            },
+        )
+        session.add(artifact)
+        artifacts.append(artifact)
+    session.flush()
+    return artifacts
+
+
 def create_newman_results(session: Session, test_run: TestRun, result: NewmanRunnerResult) -> None:
+    for candidate in result.test_results:
+        session.add(
+            TestResult(
+                project_id=test_run.project_id,
+                test_run_id=test_run.id,
+                test_name=candidate.test_name,
+                test_file=candidate.test_file,
+                status=candidate.status,
+                duration_ms=candidate.duration_ms,
+                failure_message=candidate.failure_message,
+                metadata_json=candidate.metadata,
+            ),
+        )
+
+
+def create_jmeter_results(session: Session, test_run: TestRun, result: JMeterRunnerResult) -> None:
     for candidate in result.test_results:
         session.add(
             TestResult(
@@ -457,3 +576,17 @@ def status_from_newman_result(result: NewmanRunnerResult) -> str:
     if result.exit_code == 0:
         return "passed"
     return "error"
+
+
+def status_from_jmeter_result(result: JMeterRunnerResult) -> str:
+    if result.parsed_result.get("error", 0) > 0:
+        return "error"
+    if result.parsed_result.get("failed", 0) > 0:
+        return "failed"
+    if result.exit_code == 0:
+        return "passed"
+    return "error"
+
+
+def jmeter_jtl_mime_type(path: Path) -> str:
+    return "application/xml" if path.suffix.lower() == ".xml" else "text/csv"

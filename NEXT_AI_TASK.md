@@ -10,14 +10,13 @@ Slice 22: JMeter Local Execution Evidence.
 
 ## Current Task
 
-Slice 22 Task 4: Add JMeter runner backend.
+Slice 22 Task 5: Add JMeter execution frontend shell.
 
 ## Product Value Answer
 
-After this task, an approved `TestCommand(command_type=jmeter)` can create a
-local `TestRun` with `runner_mode=jmeter_local`, persisted stdout/stderr,
-`jmeter_jtl`, parsed_result, and TestResult evidence without requiring a real
-JMeter installation in tests.
+After this task, the frontend execution surface can display local JMeter
+execution evidence: TestRun status, sampler/assertion totals, durations,
+failure/error counts, and artifact links.
 
 ## Must Read
 
@@ -29,7 +28,7 @@ JMeter installation in tests.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-22-jmeter-local-execution.md`
-9. `docs/implementation/slices/slice-18-newman-api-execution.md`
+9. existing frontend execution views and stores
 
 ## Do Not Read Unless Needed
 
@@ -47,39 +46,45 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-22-jmeter-local-execution.md
-backend/app/modules/execution/jmeter_runner.py
-backend/app/modules/execution/service.py
-backend/app/tests/api/test_jmeter_execution.py
+frontend/src/api/execution.ts
+frontend/src/stores/execution.ts
+frontend/src/views/execution/*JMeter*.vue
+frontend/src/views/execution/*JMeter*.spec.ts
+frontend/src/router/index.ts
+frontend/src/layouts/WorkbenchLayout.vue
 ```
 
-Runner task. Do not add frontend code, golden tests, JMX editing, performance
-dashboards, distributed runners, arbitrary shell execution, secrets management,
-CI provider controls, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+Frontend shell task. Do not add backend code, golden tests, JMX editing,
+performance dashboards, distributed runners, arbitrary shell execution, secrets
+management, CI provider controls, RAG runtime, MCP runtime, RBAC, tenants, or
+permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: JMeter runner/API tests and diff check pass.
+Expected result: frontend tests and diff check pass.
 
 ## Acceptance
 
-- Approved `TestCommand(command_type=jmeter)` can create a TestRun using
-  `runner_mode=jmeter_local`.
-- Runner creates stdout/stderr, `jmeter_jtl`, and parsed_result artifacts.
-- Runner rejects shell operators, unsafe paths, and unapproved command shapes.
-- Runner handles timeout/error states through existing TestRun state rules.
-- Tests do not depend on a real JMeter installation.
+- UI exposes JMeter as an execution mode only when using approved local
+  commands.
+- UI shows TestRun status, total/passed/failed/error sampler counts, duration,
+  and artifact links.
+- UI uses Chinese-facing labels while keeping product terms such as TestRun,
+  TestResult, JMeter, and JTL unchanged.
+- Does not add a JMX editor, performance dashboard, distributed runner controls,
+  secrets UI, CI provider controls, RBAC, tenants, or permissions.
 
 ## Commit Message
 
 ```text
-feat(execution): add jmeter local runner
+feat(frontend): show jmeter execution evidence
 ```
 
 ## Next Task
 
-Slice 22 Task 5: Add JMeter execution frontend shell.
+Slice 22 Task 6: Add JMeter local execution golden smoke.
