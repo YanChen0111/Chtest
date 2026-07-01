@@ -1,5 +1,45 @@
 # Session Handoff
 
+## 2026-07-01 Slice 28 Task 3 CI/CD Quality Gate Frontend Summary 完成
+
+本轮完成：
+
+- 完成 Slice 28 Task 3：Add CI/CD quality gate frontend summary。
+- `CicdQualityCenterView.vue`：
+  - 质量门禁卡片新增 `门禁证据摘要`；
+  - 展示 UnitTestPatch / PatchScopeGate、新增测试证据、回归证据；
+  - blocking reasons 显示中文标签；
+  - 仅 persisted UnitTestPatch Artifact id 显示本地 `打开` 链接；
+  - 新测试/回归保持结构化证据，不伪装成本地 artifact 下载。
+- `CicdQualityCenterView.spec.ts` 覆盖：
+  - 必需证据行可见；
+  - missing new-test 显示 `缺失不可打开`；
+  - UnitTestPatch artifact 有 `/api/artifacts/{id}/download` 链接；
+  - regression plan/test run id 不被渲染为 artifact 下载链接；
+  - 页面不出现 remote provider control 文案。
+- Slice 28 table 已记录 Task 2 commit `b7ddd13`，Task 3 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 28 Task 4：Add quality gate evidence summary golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/cicd/CicdQualityCenterView.spec.ts
+npm --prefix frontend run build
+git diff --check
+```
+
+验证结果：
+
+- CI/CD focused frontend test：`1` file passed，`2` tests passed。
+- Frontend build：passed，保留 Vite large chunk warning。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：`feat(frontend): summarize quality gate evidence`。
+- 继续 Slice 28 Task 4：Add quality gate evidence summary golden smoke。
+
 ## 2026-07-01 Slice 28 Task 2 Quality Gate Evidence Summary Contract 完成
 
 本轮完成：

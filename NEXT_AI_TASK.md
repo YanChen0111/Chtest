@@ -10,13 +10,13 @@ Slice 28: CI/CD Quality Gate Evidence Summary.
 
 ## Current Task
 
-Slice 28 Task 3: Add CI/CD quality gate frontend summary.
+Slice 28 Task 4: Add quality gate evidence summary golden smoke.
 
 ## Product Value Answer
 
-After this task, CI/CD Quality Center shows quality gate required evidence,
-blocking reasons, and local artifact availability without changing gate
-computation.
+After this task, a golden smoke proves QualityGateDecision keeps summary inputs
+for required evidence, blocking reasons, and artifact ids without changing gate
+behavior.
 
 ## Must Read
 
@@ -60,48 +60,39 @@ docs/implementation/slices/slice-25-execution-evidence-summary.md
 docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md
 docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md
 docs/implementation/slices/slice-28-cicd-quality-gate-evidence-summary.md
-docs/contracts/02-api-contract.md
-docs/contracts/04-artifact-contract.md
-backend/app/tests/golden/test_artifact_access_golden.py
-docs/fixtures/12-local-artifact-access-golden.md
-backend/app/tests/golden/test_execution_evidence_summary_golden.py
-docs/fixtures/13-execution-evidence-summary-golden.md
-backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py
-docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md
+backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py
+docs/fixtures/16-cicd-quality-gate-evidence-summary-golden.md
 ```
 
-Frontend task. Do not add backend feature code, migrations, package upgrades,
-artifact upload/mutation/delete, cloud storage, external provider integration,
-RBAC, tenants, permissions, broad redesign work, report generation behavior,
-runner behavior changes, quality gate computation changes, RAG runtime, or MCP
-runtime.
+Golden smoke task. Do not add frontend code, backend feature code beyond the
+focused test, migrations, package upgrades, artifact upload/mutation/delete,
+cloud storage, external provider integration, RBAC, tenants, permissions, broad
+redesign work, report generation behavior, runner behavior changes, quality
+gate computation changes, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run src/views/cicd/CicdQualityCenterView.spec.ts
-npm --prefix frontend run build
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py -q
 git diff --check
 ```
 
-Expected result: CI/CD focused frontend test, frontend build, and diff check
-pass.
+Expected result: quality gate evidence summary golden smoke and diff check pass.
 
 ## Acceptance
 
-- Quality gate panel shows status, summary, required evidence, and blocking
-  reasons in readable Chinese.
-- Missing UnitTestPatch, new-test, or regression evidence is visible as
-  unavailable evidence.
-- Local artifact links are rendered only for persisted local Artifact ids.
-- Page still excludes remote provider control wording or actions.
+- Golden proves QualityGateDecision keeps `status_detail`, blocking reasons,
+  and evidence Artifact ids available for summary display.
+- Golden proves missing evidence produces `needs_review` rather than `passed`.
+- Golden proves summary display inputs do not create Report, FailureAnalysis,
+  remote provider side effects, or artifact mutations.
 
 ## Commit Message
 
 ```text
-feat(frontend): summarize quality gate evidence
+test(golden): add quality gate evidence summary smoke
 ```
 
 ## Next Task
 
-Slice 28 Task 4: Add quality gate evidence summary golden smoke.
+Slice 28 Completion Gate.

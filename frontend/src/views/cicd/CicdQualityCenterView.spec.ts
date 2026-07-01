@@ -277,14 +277,15 @@ describe('CicdQualityCenterView', () => {
             id: '00000000-0000-0000-0000-000000001401',
             project_id: '00000000-0000-0000-0000-000000000101',
             cicd_run_id: '00000000-0000-0000-0000-000000001101',
-            status: 'passed',
-            summary: 'CI/CD quality gate passed with patch, new-test, and regression evidence.',
-            blocking_reasons: [],
+            status: 'needs_review',
+            summary: 'CI/CD quality gate needs review because new-test evidence is missing.',
+            blocking_reasons: ['missing new-test evidence'],
             evidence_artifact_ids: ['00000000-0000-0000-0000-000000001211'],
             decided_by: 'system',
             status_detail: {
               patch_scope_gate: { allowed: true },
-              new_tests: { status: 'succeeded' },
+              unit_test_patch: { id: '00000000-0000-0000-0000-000000001201', status: 'applied' },
+              new_tests: { status: 'missing', test_run_ids: [] },
               regression: { status: 'succeeded' },
             },
           }),
@@ -462,7 +463,16 @@ describe('CicdQualityCenterView', () => {
     expect(wrapper.text()).toContain('新增 TestRun');
     expect(wrapper.text()).toContain('回归计划');
     expect(wrapper.text()).toContain('QualityGateDecision');
-    expect(wrapper.text()).toContain('通过');
+    expect(wrapper.text()).toContain('需要复核');
+    expect(wrapper.text()).toContain('门禁证据摘要');
+    expect(wrapper.text()).toContain('UnitTestPatch / PatchScopeGate');
+    expect(wrapper.text()).toContain('新增测试证据');
+    expect(wrapper.text()).toContain('缺失不可打开');
+    expect(wrapper.text()).toContain('回归证据');
+    expect(wrapper.text()).toContain('阻塞原因');
+    expect(wrapper.text()).toContain('缺少新增测试证据');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001211/download"]').exists()).toBe(true);
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001221/download"]').exists()).toBe(false);
     expect(wrapper.text()).toContain('计算门禁');
     expect(wrapper.text()).toContain('待处理 -> 通过');
     expect(wrapper.text()).toContain('本地质量门禁计算');
@@ -477,6 +487,10 @@ describe('CicdQualityCenterView', () => {
     expect(wrapper.text()).toContain('已批准 -> 已拒绝');
     expect(wrapper.text()).toContain('前端拒绝 UnitTestPatch');
     expect(wrapper.text()).toContain('证据 0');
+    expect(wrapper.text()).not.toContain('重新运行流水线');
+    expect(wrapper.text()).not.toContain('PR 评论');
+    expect(wrapper.text()).not.toContain('部署');
+    expect(wrapper.text()).not.toContain('发布');
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/review-history?project_id=00000000-0000-0000-0000-000000000101&entity_type=UnitTestPatch&entity_id=00000000-0000-0000-0000-000000001201&limit=20',
       expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),

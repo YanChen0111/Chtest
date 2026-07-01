@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-01 Slice 28 CI/CD Quality Gate Frontend Summary
+
+### Completed
+
+- CI/CD Quality Center quality gate panel now shows a compact evidence summary.
+- Summary includes UnitTestPatch/PatchScopeGate, new-test, and regression
+  required evidence rows.
+- Blocking reasons are visible in readable Chinese labels.
+- Only the UnitTestPatch persisted Artifact id receives a local open link;
+  new-test and regression rows remain structured evidence.
+- Updated `NEXT_AI_TASK.md` to Slice 28 Task 4: Add quality gate evidence
+  summary golden smoke.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/cicd/CicdQualityCenterView.spec.ts`
+- Result: `1` file passed, `2` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `feat(frontend): summarize quality gate evidence`.
+- Continue Slice 28 Task 4 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 28 Quality Gate Evidence Summary Contract
 
 ### Completed

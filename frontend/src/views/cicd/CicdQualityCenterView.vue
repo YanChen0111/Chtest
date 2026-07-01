@@ -243,6 +243,28 @@
             </div>
           </div>
           <p v-if="store.qualityGate" class="evidence-line">{{ store.qualityGate.summary }}</p>
+          <section v-if="store.qualityGate" class="quality-summary-panel" aria-label="门禁证据摘要">
+            <h3>门禁证据摘要</h3>
+            <div class="quality-summary-list">
+              <div v-for="item in qualityEvidenceRows" :key="item.key" class="quality-summary-item">
+                <div>
+                  <strong>{{ item.label }}</strong>
+                  <span>{{ item.statusLabel }}</span>
+                </div>
+                <small>{{ item.required ? '必需证据' : '辅助证据' }}</small>
+                <a-link v-if="item.downloadUrl" :href="item.downloadUrl" target="_blank" rel="noreferrer">
+                  打开
+                </a-link>
+                <span v-else class="muted-text">{{ item.availabilityLabel }}</span>
+              </div>
+            </div>
+            <div v-if="blockingReasonRows.length" class="blocking-list">
+              <strong>阻塞原因</strong>
+              <a-tag v-for="reason in blockingReasonRows" :key="reason" color="orange">
+                {{ reason }}
+              </a-tag>
+            </div>
+          </section>
           <section v-if="store.gateReviewHistory.length" class="review-history-panel" aria-label="QualityGateDecision 本地评审历史">
             <h3>本地评审历史</h3>
             <div v-for="item in store.gateReviewHistory" :key="item.id" class="review-history-item">
@@ -331,6 +353,22 @@ const artifactReferenceRows = computed(() =>
 const riskAnalysisArtifacts = computed(() => store.run?.analysis_artifacts.filter((artifact) => artifact.artifact_type === 'risk_analysis') ?? []);
 
 const isImportedRun = computed(() => store.run?.source_type === 'ci_import' || Boolean(ciImportArtifact.value));
+
+const qualityEvidenceRows = computed(() => {
+  if (!store.qualityGate) return [];
+  const detail = store.qualityGate.status_detail;
+  const unitPatch = readStatusDetail(detail.unit_test_patch);
+  const newTests = readStatusDetail(detail.new_tests);
+  const regression = readStatusDetail(detail.regression);
+  const artifactIds = store.qualityGate.evidence_artifact_ids;
+  return [
+    qualityEvidenceRow('unit_test_patch', 'UnitTestPatch / PatchScopeGate', unitPatch.status, artifactIds[0]),
+    qualityEvidenceRow('new_tests', '新增测试证据', newTests.status),
+    qualityEvidenceRow('regression', '回归证据', regression.status),
+  ];
+});
+
+const blockingReasonRows = computed(() => (store.qualityGate?.blocking_reasons ?? []).map((reason) => blockingReasonLabel(reason)));
 
 function createRun() {
   void store.createRun();
@@ -474,6 +512,49 @@ function riskReasonLabel(reason: string): string {
     'config file changed': '配置文件变更',
   };
   return labels[reason] ?? reason;
+}
+
+function blockingReasonLabel(reason: string): string {
+  const labels: Record<string, string> = {
+    'missing applied UnitTestPatch evidence': '缺少已应用 UnitTestPatch 证据',
+    'patch scope gate rejected': 'PatchScopeGate 被拒绝',
+    'missing new-test evidence': '缺少新增测试证据',
+    'new-test evidence failed': '新增测试证据失败',
+    'missing regression evidence': '缺少回归证据',
+    'regression evidence failed': '回归证据失败',
+  };
+  return labels[reason] ?? reason;
+}
+
+function readStatusDetail(value: unknown): { status: string } {
+  if (isRecord(value) && typeof value.status === 'string') {
+    return { status: value.status };
+  }
+  return { status: 'missing' };
+}
+
+function qualityEvidenceRow(key: string, label: string, status: string, artifactId?: string) {
+  const hasArtifact = typeof artifactId === 'string' && artifactId.length > 0;
+  return {
+    key,
+    label,
+    statusLabel: qualityEvidenceStatusLabel(status),
+    required: true,
+    downloadUrl: hasArtifact ? `/api/artifacts/${artifactId}/download` : '',
+    availabilityLabel: status === 'missing' ? '缺失不可打开' : '结构化证据',
+  };
+}
+
+function qualityEvidenceStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    applied: '已应用',
+    passed: '通过',
+    succeeded: '成功',
+    failed: '失败',
+    pending: '待处理',
+    missing: '缺失',
+  };
+  return labels[status] ?? statusLabel(status);
 }
 
 function testIntentLabel(intent: string): string {
@@ -688,6 +769,51 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   margin-top: 16px;
 }
 
+.quality-summary-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.quality-summary-panel h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.quality-summary-list {
+  display: grid;
+  gap: 8px;
+}
+
+.quality-summary-item {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(90px, 0.7fr) minmax(90px, 0.6fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.quality-summary-item div {
+  display: grid;
+  gap: 4px;
+}
+
+.quality-summary-item span,
+.quality-summary-item small,
+.muted-text {
+  color: #64748b;
+}
+
+.blocking-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .review-history-panel h3 {
   margin: 0;
   font-size: 16px;
@@ -713,7 +839,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   .patch-grid,
   .evidence-grid,
   .import-grid,
-  .reference-item {
+  .reference-item,
+  .quality-summary-item {
     grid-template-columns: 1fr;
   }
 
