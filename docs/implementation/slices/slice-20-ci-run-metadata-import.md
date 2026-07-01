@@ -80,8 +80,8 @@ CI/CD Quality Center without Chtest controlling any remote CI provider.
 | Add deterministic CI metadata parser | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q` | `21ce127` | parse static JSON only |
 | Add CI run import API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q` | `554e74c` | import-only endpoint |
 | Add CI import frontend evidence display | done | `npm --prefix frontend run test -- --run` | `6aedab0` | CI/CD 管理 import evidence |
-| Add CI import golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q` | pending commit | fixture -> CICDRun evidence |
-| Slice 20 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
+| Add CI import golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q` | `499ec1d` | fixture -> CICDRun evidence |
+| Slice 20 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending commit | docs and handoff |
 
 ## Task 1: Add CI Run Metadata Import Task Plan
 

@@ -1,5 +1,45 @@
 # Development Log
 
+## 2026-07-01 Slice 20 Completion Gate
+
+### Completed
+
+- Completed Slice 20: CI Run Metadata Import.
+- Ran completion verification:
+  - CI import API tests;
+  - CI import golden smoke;
+  - full frontend suite;
+  - diff whitespace check.
+- Confirmed Slice 20 remains import-only and evidence-first:
+  - no remote CI provider calls;
+  - no webhook receiver;
+  - no pipeline trigger/rerun/cancel/schedule;
+  - no PR comment, deploy, release, credential, RBAC, tenant, permission,
+    marketplace, RAG runtime, or MCP runtime expansion.
+- Updated Slice 20 task table:
+  - Task 6 commit recorded as `499ec1d`;
+  - completion gate marked done pending commit.
+- Updated `NEXT_AI_TASK.md` to select the next V2 small slice after Slice 20.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Slice 20 API + golden tests: `54 passed`.
+- Frontend suite: `15` files passed, `20` tests passed.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit completion gate with `docs(v2): complete ci metadata import slice`.
+- Select the next V2 small slice.
+
 ## 2026-07-01 Slice 20 CI Import Golden Smoke
 
 ### Completed

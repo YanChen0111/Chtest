@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 20: CI Run Metadata Import.
+Next V2 slice selection after Slice 20 completion.
 
 ## Current Task
 
-Slice 20 Completion Gate.
+Select the next V2 small slice after Slice 20 completion.
 
 ## Product Value Answer
 
-After this task, Slice 20 is closed with backend API, golden smoke, frontend
-tests, and documentation proving CI metadata import is evidence-only.
+After this task, the next small V2 slice is selected from current product value,
+contracts, and completed Slice 20 evidence without expanding forbidden scope.
 
 ## Must Read
 
@@ -28,6 +28,7 @@ tests, and documentation proving CI metadata import is evidence-only.
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-15-cicd-quality-center.md`
 9. `docs/implementation/slices/slice-20-ci-run-metadata-import.md`
+10. `docs/implementation/10-v2-scope-options.md`
 
 ## Do Not Read Unless Needed
 
@@ -43,46 +44,39 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/slices/slice-20-ci-run-metadata-import.md
-backend/app/tests/api/test_ci_run_metadata_import.py
-backend/app/tests/golden/test_ci_run_metadata_import_golden.py
-docs/fixtures/09-ci-run-metadata-import-golden.md
-frontend/src/api/cicd.ts
-frontend/src/views/cicd/CicdQualityCenterView.vue
-frontend/src/views/cicd/CicdQualityCenterView.spec.ts
+docs/implementation/10-v2-scope-options.md
+docs/implementation/slices/<next-slice>.md
 ```
 
-Completion gate task. User approved development after the V2 document-design
-review. Do not add new feature scope, migrations, remote CI provider calls,
-webhooks, pipeline triggers, reruns, PR comments, deploy/release controls,
-credentials, RBAC, tenants, permissions, marketplace, RAG runtime, or MCP
-runtime.
+Planning task only. Do not add implementation code, frontend code, migrations,
+remote CI provider calls, webhooks, pipeline triggers, reruns, PR comments,
+deploy/release controls, credentials, RBAC, tenants, permissions, marketplace,
+RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q
-npm --prefix frontend run test -- --run
+rg -n "Slice 20|CI Run Metadata Import|next V2|recommended" docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: Slice 20 backend, golden, frontend, and diff checks pass.
+Expected result: next V2 slice selection docs and diff check pass.
 
 ## Acceptance
 
-- Runs Slice 20 API and golden tests.
-- Runs the frontend test suite.
-- Confirms `git diff --check` is clean.
-- Updates Slice 20 task table with Task 6 commit.
-- Marks Slice 20 completion gate done pending commit.
-- Selects the next V2 task or slice without expanding remote CI/provider scope.
+- Records Slice 20 completion in V2 scope options.
+- Selects one next small V2 slice with product value, non-goals, task table,
+  expected files, and verification commands.
+- Updates `NEXT_AI_TASK.md` to the first task of that slice.
+- Keeps forbidden scope excluded unless a later approved task explicitly changes
+  contracts.
 
 ## Commit Message
 
 ```text
-docs(v2): complete ci metadata import slice
+docs(v2): select next slice after ci import
 ```
 
 ## Next Task
 
-Select the next V2 small slice after Slice 20 completion.
+First task of the selected next V2 slice.

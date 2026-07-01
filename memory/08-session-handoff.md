@@ -1,5 +1,45 @@
 # Session Handoff
 
+## 2026-07-01 Slice 20 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 20：CI Run Metadata Import。
+- 已运行 completion gate 验证：
+  - CI import API tests；
+  - CI import golden smoke；
+  - frontend suite；
+  - `git diff --check`。
+- 确认 Slice 20 仍是 import-only / evidence-first：
+  - 不调用 remote CI provider；
+  - 不接收 webhook；
+  - 不触发 pipeline / rerun / cancel / schedule；
+  - 不增加 PR comment、deploy、release、credentials、RBAC、tenants、
+    permissions、marketplace、RAG runtime 或 MCP runtime。
+- Slice 20 task table 已记录 Task 6 commit `499ec1d`，completion gate done
+  pending commit。
+- 已将 `NEXT_AI_TASK.md` 切换到：
+  Select the next V2 small slice after Slice 20 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Slice 20 API + golden tests：`54 passed`。
+- Frontend suite：`15` files passed，`20` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 completion gate：`docs(v2): complete ci metadata import slice`。
+- 选择下一条 V2 小切片。
+
 ## 2026-07-01 Slice 20 Task 6 完成
 
 本轮完成：
