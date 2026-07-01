@@ -1,5 +1,25 @@
 # Development Log
 
+## 2026-07-01 Slice 29 Execution Run Manifest Contract
+
+### Completed
+
+- Defined execution run manifest as read-only presentation derived from
+  existing TestRun fields and Artifact metadata.
+- Required command, working directory, runner mode, workspace,
+  repository-readonly policy, network policy, parsed result, and artifact
+  availability to remain visible.
+- Required missing runtime/dependency/environment snapshots to stay visible as
+  unavailable evidence.
+- Preserved the no runner behavior, report generation, FailureAnalysis,
+  QualityGateDecision, remote provider, RAG runtime, or MCP runtime boundary.
+- Updated `NEXT_AI_TASK.md` to Slice 29 Task 3: Add frontend run manifest panel.
+
+### Next Step
+
+- Commit `docs(v2): define execution run manifest contract`.
+- Continue Slice 29 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 29 Execution Run Manifest Plan
 
 ### Completed

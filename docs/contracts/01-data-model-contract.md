@@ -426,6 +426,31 @@ JMeter TestRun rules:
 - Local fixture tests must not require a real JMeter installation; they may use
   deterministic JTL files or a fake executable.
 
+Slice 29 execution run manifest rules:
+
+- Execution run manifest is read-only presentation derived from existing
+  TestRun fields and Artifact metadata. It does not add a new table.
+- Manifest identity fields are `id`, `name`, `status`, `automation_draft_id`,
+  `test_command_id`, and `tool_invocation_id`.
+- Manifest command fields are `command`, `working_directory`, `runner_mode`,
+  and `run_workspace`.
+- Manifest safety fields are `repository_readonly` and `network_enabled`.
+  `network_enabled=false` is the default local safety policy;
+  `network_enabled=true` must remain visible and must not be hidden behind a
+  passed status.
+- Manifest snapshot fields are `runtime_artifact_ids`,
+  `dependency_snapshot_artifact_id`, and `environment_snapshot_artifact_id`.
+  Missing snapshot ids remain meaningful unavailable evidence and must not be
+  treated as passing evidence.
+- Manifest result fields are `exit_code`, `duration_ms`, and
+  `parsed_result_json`.
+- Manifest artifact rows are existing Artifact rows owned by the TestRun or
+  cited by these snapshot fields. The manifest does not create, rewrite, or
+  delete Artifact rows.
+- Execution run manifest must not mutate TestRun, TestResult, Artifact, Report,
+  FailureAnalysis, QualityGateDecision, AutomationDraft, ToolDefinition,
+  ToolInvocation, CI metadata, or review history.
+
 ## 21. QualityGateDecision
 
 QualityGateDecision records one computed CI/CD quality gate result for a CICDRun. V1 computes it from local diff risk, PatchScopeGate, new test results, regression results, and failure analysis evidence. It does not trigger merge, push, or deployment automatically. Recomputing the gate creates a new QualityGateDecision record and updates `CICDRun.quality_gate_status`; old decisions remain as evidence history.

@@ -10,12 +10,12 @@ Slice 29: Execution Run Manifest.
 
 ## Current Task
 
-Slice 29 Task 2: Define execution run manifest contract.
+Slice 29 Task 3: Add frontend run manifest panel.
 
 ## Product Value Answer
 
-After this task, the execution run manifest is defined as read-only presentation
-from existing TestRun fields and Artifact metadata before frontend changes.
+After this task, the pytest execution page shows a compact run manifest from
+existing TestRun fields and Artifact metadata.
 
 ## Must Read
 
@@ -47,13 +47,12 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-29-execution-run-manifest.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/04-artifact-contract.md
+frontend/src/views/execution/PytestExecutionView.vue
+frontend/src/views/execution/PytestExecutionView.spec.ts
 ```
 
-Contract task. Do not add frontend code, backend feature code, tests,
-migrations, package upgrades, artifact upload/mutation/delete, cloud storage,
+Frontend task. Do not add backend feature code, migrations, package upgrades,
+artifact upload/mutation/delete, cloud storage,
 external provider integration, RBAC, tenants, permissions, broad redesign work,
 report generation behavior, runner behavior changes, quality gate computation
 changes, RAG runtime, or MCP runtime.
@@ -61,30 +60,32 @@ changes, RAG runtime, or MCP runtime.
 ## Verification Command
 
 ```bash
-rg -n "execution run manifest|runtime artifact|dependency snapshot|environment snapshot|network policy" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-29-execution-run-manifest.md
+npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts
+npm --prefix frontend run build
 git diff --check
 ```
 
-Expected result: execution run manifest contract language is present and diff
-check passes.
+Expected result: pytest execution focused frontend test, frontend build, and
+diff check pass.
 
 ## Acceptance
 
-- Data/API/artifact contracts define execution run manifest as presentation
-  derived from existing TestRun fields and Artifact metadata.
-- Contract states missing runtime/dependency/environment snapshots remain
-  visible but unavailable.
-- Contract states local open links are allowed only for persisted local Artifact
-  ids through the existing artifact access endpoint.
-- Contract preserves the no runner, report, failure analysis, quality gate,
-  remote provider, RAG runtime, or MCP runtime behavior change boundary.
+- Pytest execution page shows a compact `执行运行清单` panel.
+- Panel shows command, working directory, runner mode, workspace, repository
+  read-only flag, and network policy in readable Chinese.
+- Panel shows runtime/dependency/environment snapshot rows and output artifact
+  availability.
+- Local links are rendered only for persisted local Artifact ids.
+- Missing snapshots remain visible as unavailable.
+- Page does not add new execution actions, rerun controls, report generation,
+  remote provider controls, or broad redesign.
 
 ## Commit Message
 
 ```text
-docs(v2): define execution run manifest contract
+feat(frontend): show execution run manifest
 ```
 
 ## Next Task
 
-Slice 29 Task 3: Add frontend run manifest panel.
+Slice 29 Task 4: Add execution run manifest golden smoke.

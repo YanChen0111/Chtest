@@ -1583,6 +1583,53 @@ Response 200:
 
 Response model: `TestRunRead` with embedded `TestResultRead` items.
 
+### 6.2.1 Execution Run Manifest
+
+Slice 29 may show a read-only execution run manifest in execution pages. The
+manifest is derived from existing `TestRunRead` fields, `TestRunRead.artifacts`,
+and existing Artifact metadata. It does not require a new endpoint.
+
+Frontend manifest rows may preserve:
+
+```json
+{
+  "manifest_key": "runtime_manifest",
+  "label": "Runtime manifest",
+  "status": "available",
+  "required": true,
+  "artifact_id": "00000000-0000-0000-0000-000000001201",
+  "artifact_type": "runtime_manifest",
+  "download_url": "/api/artifacts/00000000-0000-0000-0000-000000001201/download",
+  "availability": "local_artifact"
+}
+```
+
+Rules:
+
+- Execution run manifest rows are presentation-only and derived from existing
+  `TestRunRead` fields and Artifact metadata already available to the UI.
+- Manifest must show command, working directory, `runner_mode`,
+  `run_workspace`, repository read-only policy, network policy, exit code,
+  duration, parsed result summary, and artifact availability.
+- Manifest must keep runtime artifact ids, dependency snapshot id, and
+  environment snapshot id visible. Missing snapshot ids must be shown as
+  unavailable evidence, not hidden.
+- `network_enabled=false` should be displayed as local network disabled.
+  `network_enabled=true` must remain visible as an explicit network policy; it
+  must not be converted into a generic passed/safe badge.
+- Rows may expose local open links only for persisted local Artifact ids through
+  `GET /api/artifacts/{artifact_id}/download`.
+- TestResult rows, parsed result metrics, missing snapshot ids, and raw command
+  metadata are structured evidence references, not local Artifact files, unless
+  they explicitly cite a persisted Artifact id.
+- This manifest must not mutate TestRun, TestResult, Artifact, Report,
+  FailureAnalysis, QualityGateDecision, AutomationDraft, ToolDefinition,
+  ToolInvocation, CI metadata, or review history.
+- Slice 29 must not change runner execution, command assembly, allowlists,
+  TestRun state transitions, report generation, failure analysis, quality gate
+  computation, remote provider behavior, PR comments, deploy/release controls,
+  credentials, RBAC, tenants, permissions, RAG runtime, or MCP runtime.
+
 ### 6.3 List Test Results
 
 `GET /api/test-runs/{id}/results`

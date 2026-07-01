@@ -1,5 +1,30 @@
 # Session Handoff
 
+## 2026-07-01 Slice 29 Task 2 Execution Run Manifest Contract 完成
+
+本轮完成：
+
+- 完成 Slice 29 Task 2：Define execution run manifest contract。
+- `docs/contracts/01-data-model-contract.md` 明确 execution run manifest
+  使用现有 TestRun 字段和 Artifact metadata，不新增表。
+- `docs/contracts/02-api-contract.md` 明确 manifest 是 `TestRunRead` 的只读
+  展示，不新增 endpoint。
+- `docs/contracts/04-artifact-contract.md` 明确 runtime/dependency/environment
+  snapshot 缺失时仍要可见但不可打开。
+- 合同保留边界：
+  - 不修改 runner 执行；
+  - 不修改命令组装或 allowlist；
+  - 不生成 Report、FailureAnalysis、QualityGateDecision；
+  - 不引入 remote provider、RAG runtime、MCP runtime、RBAC、tenant。
+- Slice 29 table 已记录 Task 1 done pending commit，Task 2 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 29 Task 3：Add frontend run manifest panel。
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define execution run manifest contract`。
+- 继续 Slice 29 Task 3：Add frontend run manifest panel。
+
 ## 2026-07-01 Slice 29 Task 1 Execution Run Manifest Plan 完成
 
 本轮完成：

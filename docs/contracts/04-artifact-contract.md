@@ -218,6 +218,26 @@ Newman API execution adds `newman-report.json` with
 `artifact_type=newman_json`. The parsed Newman summary is stored in
 `parsed_result.json` as `artifact_type=parsed_output`.
 
+Slice 29 execution run manifest artifact rules:
+
+- Execution run manifest display is read-only and derived from existing
+  TestRun fields plus persisted Artifact metadata.
+- Runtime, dependency, and environment snapshot rows must remain visible even
+  when the corresponding Artifact id is missing.
+- Missing snapshot rows are unavailable evidence and must not be rendered as
+  local artifact links.
+- Local open links may be rendered only for persisted local Artifact rows
+  through `GET /api/artifacts/{artifact_id}/download`.
+- `runtime_manifest`, `dependency_snapshot`, `environment_snapshot`, `stdout`,
+  `stderr`, `parsed_output`, `junit`, `coverage`, `trace`, `screenshot`,
+  `newman_json`, and `jmeter_jtl` artifacts all remain evidence files. Opening
+  them must not trigger runner execution, report generation, failure analysis,
+  quality gate computation, artifact mutation, remote provider fetch, RAG
+  runtime, or MCP runtime.
+- Raw command text, parsed result metrics, and TestResult rows are structured
+  evidence references, not downloadable artifact files, unless they cite a
+  persisted Artifact id.
+
 ### 3.7 Report
 
 ```text
