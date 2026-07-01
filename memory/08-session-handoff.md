@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-07-01 Slice 28 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 28：CI/CD Quality Gate Evidence Summary。
+- Slice 28 task table 已记录：
+  - Task 1：`3ca3db0`
+  - Task 2：`b7ddd13`
+  - Task 3：`760f56d`
+  - Task 4：`2c0bd91`
+  - Completion Gate：done pending commit。
+- 验证 CI/CD 质量中心可以展示质量门禁证据摘要：
+  - UnitTestPatch/PatchScopeGate；
+  - 新增测试证据；
+  - 回归证据；
+  - blocking reasons；
+  - persisted UnitTestPatch Artifact 本地打开链接。
+- 验证缺失必需证据返回 `needs_review`，不会被展示或记录成 `passed`。
+- 验证没有新增质量门计算逻辑、报告生成行为、runner 行为、远程 CI provider
+  行为、PR 评论、部署/发布、RBAC、tenant、RAG runtime 或 MCP runtime。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select and plan the next narrow V2 task after Slice 28 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Backend golden checks：`2` passed。
+- Frontend build：passed，保留 Vite large chunk warning。
+- Frontend tests：`16` files passed，`21` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Completion Gate：`docs(v2): complete quality gate evidence summary slice`。
+- 继续 `NEXT_AI_TASK.md`，选择并规划下一个窄 V2 slice。
+
 ## 2026-07-01 Slice 28 Task 4 Quality Gate Evidence Summary Golden Smoke 完成
 
 本轮完成：
