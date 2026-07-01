@@ -1,5 +1,22 @@
 # Development Log
 
+## 2026-07-01 Slice 25 Execution Evidence Summary Contract
+
+### Completed
+
+- Defined execution evidence summary as a read-only presentation concept in the
+  API contract.
+- Documented summary row derivation from `ReportRead.evidence_manifest`,
+  Artifact metadata, local downloadability, and missing evidence.
+- Added artifact contract rules for local-only evidence summary links.
+- Updated `NEXT_AI_TASK.md` to Slice 25 Task 3: Add report evidence summary
+  frontend.
+
+### Next Step
+
+- Commit `docs(v2): define execution evidence summary contract`.
+- Continue Slice 25 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 25 Execution Evidence Summary Plan
 
 ### Completed

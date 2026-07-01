@@ -1,5 +1,26 @@
 # Session Handoff
 
+## 2026-07-01 Slice 25 Task 2 Execution Evidence Summary Contract 完成
+
+本轮完成：
+
+- 完成 Slice 25 Task 2：Define execution evidence summary contract。
+- `docs/contracts/02-api-contract.md` 新增 Execution Evidence Summary：
+  - 从 `ReportRead.evidence_manifest`、Report/TestRun Artifact metadata 派生；
+  - local Artifact row 可使用 `GET /api/artifacts/{artifact_id}/download`；
+  - metric / TestResult reference 不显示为可下载；
+  - missing evidence 必须保持可见且不可下载；
+  - 不修改 Report/TestRun/Artifact/FailureAnalysis/QualityGateDecision。
+- `docs/contracts/04-artifact-contract.md` 新增 Slice 25 summary artifact rules。
+- Slice 25 table 已记录 Task 2 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 25 Task 3：Add report evidence summary frontend。
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define execution evidence summary contract`。
+- 继续 Slice 25 Task 3：Add report evidence summary frontend。
+
 ## 2026-07-01 Slice 25 Task 1 Execution Evidence Summary Plan 完成
 
 本轮完成：

@@ -2026,6 +2026,46 @@ Response 200:
 
 Response model: `ReportRead`.
 
+### 8.3 Execution Evidence Summary
+
+Execution evidence summary is a read-only presentation concept derived from
+`ReportRead.evidence_manifest`, `ReportRead.artifacts`, and Artifact metadata.
+Slice 25 does not require a new endpoint.
+
+Frontend summary rows must preserve these fields when present:
+
+```json
+{
+  "artifact_id": "00000000-0000-0000-0000-000000001601",
+  "artifact_type": "stdout",
+  "supports_claim": "pytest command completed successfully",
+  "required": true,
+  "download_url": "/api/artifacts/00000000-0000-0000-0000-000000001601/download",
+  "downloadable": true,
+  "availability": "local_artifact"
+}
+```
+
+Rules:
+
+- Summary rows are derived from `evidence_manifest.evidence[]` in response
+  order.
+- When an evidence item has an `artifact_id` that matches a local Artifact row
+  returned by Report/TestRun APIs, the row may expose `download_url` using
+  `GET /api/artifacts/{artifact_id}/download`.
+- When an evidence item is a metric or TestResult reference, it must remain a
+  structured evidence row and must not be shown as downloadable.
+- `evidence_manifest.missing_evidence[]` must remain visible as missing
+  evidence and must not be converted into a passing or downloadable row.
+- Report-owned artifacts returned in `ReportRead.artifacts` may expose the same
+  local download URL when they are persisted local Artifact rows.
+- External imported artifact references remain inert and not locally openable.
+- This summary must not mutate Report, TestRun, TestResult, Artifact,
+  FailureAnalysis, QualityGateDecision, CI metadata, or review history.
+- Slice 25 must not change report generation, runner execution, failure
+  analysis, quality gate decisions, artifact storage, or remote provider
+  behavior.
+
 ## 9. AI Task API
 
 `GET /api/ai-tasks/{id}`

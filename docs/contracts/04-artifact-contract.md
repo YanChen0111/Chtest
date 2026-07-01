@@ -322,6 +322,32 @@ Slice 24 local artifact access rules:
   permissions, RAG runtime, MCP runtime, marketplace, or remote provider
   behavior.
 
+Slice 25 execution evidence summary rules:
+
+- Execution evidence summary is a read-only display of existing Report,
+  TestRun, TestResult, and Artifact evidence.
+- Summary display may link only persisted local Artifact rows through
+  `GET /api/artifacts/{artifact_id}/download`.
+- Summary display must keep `evidence_manifest.evidence[]` support claims,
+  `required` flags, artifact ids, artifact types, metric rows, TestResult rows,
+  and `missing_evidence` visible.
+- Missing evidence is not downloadable and must not be treated as passing
+  evidence.
+- Metric rows and TestResult rows are structured evidence references, not
+  artifact files, unless they explicitly cite a persisted Artifact id.
+- Report artifacts such as `report.md`, `report.json`, and
+  `evidence_manifest.json` remain local read-only evidence files and can use the
+  same local artifact access rules as TestRun artifacts.
+- External imported artifact references remain inert and must not be shown as
+  locally downloadable unless a separate persisted local Artifact row exists.
+- Evidence summary must not mutate Artifact rows, artifact files, Report,
+  TestRun, TestResult, FailureAnalysis, QualityGateDecision, CI metadata, or
+  review history.
+- Evidence summary must not introduce report generation changes, runner
+  behavior changes, cloud storage, signed URLs, sharing, upload, delete,
+  indexing, search, broad artifact browsing, RBAC, tenants, permissions, RAG
+  runtime, MCP runtime, marketplace, or remote provider behavior.
+
 ## 5. Metadata 契约
 
 Artifact 表 metadata_json 最少包含：
