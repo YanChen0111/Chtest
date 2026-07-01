@@ -10,12 +10,13 @@ Slice 26: CI Imported Artifact Reference Clarity.
 
 ## Current Task
 
-Slice 26 Task 4: Add imported reference inert golden smoke.
+Slice 26 Completion Gate.
 
 ## Product Value Answer
 
-After this task, a golden smoke proves imported external artifact references
-remain inert, not locally openable, and free of remote-provider side effects.
+After this task, Slice 26 is fully verified and handed off with imported
+external artifact references clearly marked as inert, not locally openable, and
+free of remote-provider side effects.
 
 ## Must Read
 
@@ -60,38 +61,43 @@ backend/app/tests/golden/test_artifact_access_golden.py
 docs/fixtures/12-local-artifact-access-golden.md
 backend/app/tests/golden/test_execution_evidence_summary_golden.py
 docs/fixtures/13-execution-evidence-summary-golden.md
+backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py
+docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md
 ```
 
-Golden smoke task. Do not add frontend code, backend feature code beyond the
-focused test, migrations, package upgrades, artifact upload/mutation/delete,
-cloud storage, external provider integration, RBAC, tenants, permissions, broad
-redesign work, report generation behavior, or runner behavior changes.
+Completion gate task. Do not add frontend or backend feature code, migrations,
+package upgrades, artifact upload/mutation/delete, cloud storage, external
+provider integration, RBAC, tenants, permissions, broad redesign work, report
+generation behavior, or runner behavior changes.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
 git diff --check
 ```
 
-Expected result: imported reference inert golden smoke and diff check pass.
+Expected result: Slice 26 frontend checks, artifact golden checks, and diff
+check pass.
 
 ## Acceptance
 
-- Golden proves imported artifact references are stored as metadata with inert
-  status.
-- Golden proves no remote fetch was performed.
-- Golden proves local artifact access rejects the external reference with
-  `ARTIFACT_NOT_LOCAL`.
-- Golden proves no TestRun, Report, FailureAnalysis, QualityGateDecision, or
-  remote-provider side effect is created by import-only metadata.
+- Slice 26 task table records Task 1-4 completion and commit ids.
+- Completion evidence records frontend build/test, golden checks, and diff
+  verification.
+- Imported external artifact references remain inert, not locally openable,
+  and not remotely fetched.
+- No TestRun, Report, FailureAnalysis, QualityGateDecision, or remote-provider
+  side effect is created by import-only metadata.
 
 ## Commit Message
 
 ```text
-test(golden): add ci imported reference clarity smoke
+docs(v2): complete ci imported reference clarity slice
 ```
 
 ## Next Task
 
-Slice 26 Completion Gate.
+Select next V2 small slice after Slice 26 completion.

@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-01 Slice 26 Imported Reference Inert Golden Smoke
+
+### Completed
+
+- Added `backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py`.
+- Added `docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md`.
+- Golden proves imported external artifact references remain inert metadata.
+- Golden proves local artifact access rejects the external reference with
+  `ARTIFACT_NOT_LOCAL`.
+- Golden proves local `ci_run_metadata.json` remains readable as local
+  evidence.
+- Golden proves imported reference metadata does not create TestRun, Report,
+  FailureAnalysis, QualityGateDecision, UnitTestPatch, or AutomationDraft rows.
+- Updated `NEXT_AI_TASK.md` to Slice 26 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py -q`
+- Result: `1 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add ci imported reference clarity smoke`.
+- Continue Slice 26 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 26 CI Imported Reference Frontend Clarity
 
 ### Completed

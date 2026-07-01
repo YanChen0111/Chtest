@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-07-01 Slice 26 Task 4 Imported Reference Inert Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 26 Task 4：Add imported reference inert golden smoke。
+- 新增 `backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py`。
+- 新增 `docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md`。
+- Golden 覆盖：
+  - imported external artifact reference 是 inert metadata；
+  - 外部引用通过 local artifact access 返回 `ARTIFACT_NOT_LOCAL`；
+  - 本地 `ci_run_metadata.json` Artifact 仍可读取；
+  - import-only metadata 不创建 TestRun、Report、FailureAnalysis、
+    QualityGateDecision、UnitTestPatch 或 AutomationDraft。
+- Slice 26 table 已记录：
+  - Task 1：`82e888d`
+  - Task 2：`ae599d2`
+  - Task 3：`2fe5088`
+  - Task 4：done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 26 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- CI imported artifact reference clarity golden：`1 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`test(golden): add ci imported reference clarity smoke`。
+- 继续 Slice 26 Completion Gate。
+
 ## 2026-07-01 Slice 26 Task 3 CI Imported Reference Frontend Clarity 完成
 
 本轮完成：
