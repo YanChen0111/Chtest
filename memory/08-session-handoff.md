@@ -1,5 +1,47 @@
 # Session Handoff
 
+## 2026-07-01 Slice 25 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 25：Execution Evidence Summary。
+- Slice 25 task table 已记录：
+  - Task 1：`e790ed0`
+  - Task 2：`faa3cce`
+  - Task 3：`5e64c18`
+  - Task 4：`41c8f46`
+  - Completion Gate：done pending commit。
+- 确认 Slice 25 保持 read-only evidence summary：
+  - 不修改 report generation；
+  - 不自动创建 Report、FailureAnalysis、QualityGateDecision 或 repair task；
+  - 不修改 runner 行为；
+  - 不新增 artifact upload/mutation/delete/sharing/cloud storage/signed URL；
+  - 不引入 broad artifact browser、RAG runtime、MCP runtime、RBAC、tenants、
+    permissions。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select the next V2 small slice after Slice 25 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Execution evidence summary + artifact access golden：`2 passed`。
+- Frontend build：passed，保留 Vite large chunk warning。
+- Full frontend suite：`16` files passed，`21` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 completion gate：`docs(v2): complete execution evidence summary slice`。
+- 选择并规划下一条 V2 小切片。
+
 ## 2026-07-01 Slice 25 Task 4 Execution Evidence Summary Golden Smoke 完成
 
 本轮完成：

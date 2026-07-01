@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 25: Execution Evidence Summary.
+Select the next V2 small slice after Slice 25 completion.
 
 ## Current Task
 
-Slice 25 Completion Gate.
+Choose and plan the next narrow V2 slice.
 
 ## Product Value Answer
 
-After this task, Slice 25 is closed with the contract, frontend evidence
-summary, and golden smoke verified together.
+After this task, the next V2 slice is selected with a small task plan before
+any product code changes.
 
 ## Must Read
 
@@ -29,7 +29,8 @@ summary, and golden smoke verified together.
 8. `docs/implementation/slices/slice-24-local-artifact-access-links.md`
 9. `docs/implementation/10-v2-scope-options.md`
 10. `docs/implementation/slices/slice-25-execution-evidence-summary.md`
-11. recent session handoff and dev log
+11. `docs/implementation/10-v2-scope-options.md`
+12. recent session handoff and dev log
 
 ## Do Not Read Unless Needed
 
@@ -59,36 +60,38 @@ backend/app/tests/golden/test_execution_evidence_summary_golden.py
 docs/fixtures/13-execution-evidence-summary-golden.md
 ```
 
-Completion gate task. Do not add frontend feature code, backend feature code,
-migrations, package upgrades, report generation behavior, artifact
-upload/mutation/delete, cloud storage, external provider integration, RBAC,
-tenants, permissions, broad redesign work, or runner behavior changes.
+Planning task. Do not add frontend code, backend feature code, migrations,
+package upgrades, artifact upload/mutation/delete, cloud storage, external
+provider integration, RBAC, tenants, permissions, broad redesign work, report
+generation behavior, or runner behavior changes.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
-npm --prefix frontend run build
-npm --prefix frontend run test -- --run
+test -f docs/implementation/slices/<next-slice-file>.md
+rg -n "<next slice name>|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/<next-slice-file>.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: Slice 25 golden smoke, artifact access golden, frontend build,
-frontend suite, and diff check pass.
+Expected result: next slice plan exists, scope is narrow and local-first, and
+diff check passes.
 
 ## Acceptance
 
-- Slice 25 task table records completed task commits through Task 4.
-- Golden smoke and artifact access golden pass together.
-- Frontend report evidence summary still builds and passes full frontend tests.
-- Handoff names the next V2 small slice selection task.
+- Slice 25 completion is recorded as done in handoff and dev log.
+- `docs/implementation/10-v2-scope-options.md` records Slice 25 completion and
+  recommends one next V2 slice.
+- A new slice plan defines product value, non-goals, task table, expected files,
+  verification commands, and commit messages.
+- `NEXT_AI_TASK.md` points to the first implementation task for the selected
+  slice.
 
 ## Commit Message
 
 ```text
-docs(v2): complete execution evidence summary slice
+docs(v2): add next v2 slice plan
 ```
 
 ## Next Task
 
-Select the next V2 small slice after Slice 25 completion.
+First implementation task from the selected next V2 slice.
