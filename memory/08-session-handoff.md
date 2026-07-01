@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-07-01 Slice 28 Task 4 Quality Gate Evidence Summary Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 28 Task 4：Add quality gate evidence summary golden smoke。
+- 新增 golden：
+  `backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py`。
+- 新增 fixture：
+  `docs/fixtures/16-cicd-quality-gate-evidence-summary-golden.md`。
+- Golden 覆盖：
+  - 完整证据下 QualityGateDecision 为 `passed`；
+  - `status_detail` 保留 UnitTestPatch/PatchScopeGate、新增测试、回归证据；
+  - `evidence_artifact_ids` 只包含 persisted UnitTestPatch Artifact id；
+  - 缺失必需证据时返回 `needs_review`，不是 `passed`；
+  - 门禁摘要输入不创建 Report、FailureAnalysis、AutomationDraft、新 Artifact，
+    也不修改既有 Artifact。
+- Slice 28 table 已记录 Task 3 commit `760f56d`，Task 4 done pending commit。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`1` passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`test(golden): add quality gate evidence summary smoke`。
+- 继续 Slice 28 Completion Gate。
+
 ## 2026-07-01 Slice 28 Task 3 CI/CD Quality Gate Frontend Summary 完成
 
 本轮完成：

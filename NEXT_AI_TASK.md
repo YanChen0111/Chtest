@@ -10,13 +10,12 @@ Slice 28: CI/CD Quality Gate Evidence Summary.
 
 ## Current Task
 
-Slice 28 Task 4: Add quality gate evidence summary golden smoke.
+Slice 28 Completion Gate.
 
 ## Product Value Answer
 
-After this task, a golden smoke proves QualityGateDecision keeps summary inputs
-for required evidence, blocking reasons, and artifact ids without changing gate
-behavior.
+After this task, Slice 28 is fully verified and handed off with evidence that
+CI/CD quality gate summaries remain readable, local, and evidence-only.
 
 ## Must Read
 
@@ -52,47 +51,41 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/slices/slice-22-jmeter-local-execution.md
-docs/implementation/10-v2-scope-options.md
-docs/implementation/slices/slice-23-frontend-build-baseline.md
-docs/implementation/slices/slice-24-local-artifact-access-links.md
-docs/implementation/slices/slice-25-execution-evidence-summary.md
-docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md
-docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md
 docs/implementation/slices/slice-28-cicd-quality-gate-evidence-summary.md
-backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py
-docs/fixtures/16-cicd-quality-gate-evidence-summary-golden.md
 ```
 
-Golden smoke task. Do not add frontend code, backend feature code beyond the
-focused test, migrations, package upgrades, artifact upload/mutation/delete,
-cloud storage, external provider integration, RBAC, tenants, permissions, broad
-redesign work, report generation behavior, runner behavior changes, quality
-gate computation changes, RAG runtime, or MCP runtime.
+Completion gate task. Do not add frontend code, backend feature code, tests,
+migrations, package upgrades, artifact upload/mutation/delete, cloud storage,
+external provider integration, RBAC, tenants, permissions, broad redesign work,
+report generation behavior, runner behavior changes, quality gate computation
+changes, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: quality gate evidence summary golden smoke and diff check pass.
+Expected result: Slice 28 golden checks, frontend build, frontend tests, and
+diff check pass.
 
 ## Acceptance
 
-- Golden proves QualityGateDecision keeps `status_detail`, blocking reasons,
-  and evidence Artifact ids available for summary display.
-- Golden proves missing evidence produces `needs_review` rather than `passed`.
-- Golden proves summary display inputs do not create Report, FailureAnalysis,
-  remote provider side effects, or artifact mutations.
+- All Slice 28 task rows are marked done with commit ids.
+- Completion evidence records frontend build/test, golden checks, and diff
+  verification.
+- Non-goals remain excluded.
+- Handoff names the next V2 slice or planning task.
 
 ## Commit Message
 
 ```text
-test(golden): add quality gate evidence summary smoke
+docs(v2): complete quality gate evidence summary slice
 ```
 
 ## Next Task
 
-Slice 28 Completion Gate.
+Select and plan the next narrow V2 task after Slice 28 completion.

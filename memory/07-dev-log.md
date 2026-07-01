@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-01 Slice 28 Quality Gate Evidence Summary Golden Smoke
+
+### Completed
+
+- Added a Slice 28 golden smoke for CI/CD quality gate evidence summary inputs.
+- Golden covers a passed quality gate with UnitTestPatch/PatchScopeGate,
+  new-test, and regression evidence.
+- Golden covers a missing-evidence quality gate returning `needs_review`.
+- Golden asserts summary inputs do not create Report, FailureAnalysis,
+  AutomationDraft, new Artifact rows, existing Artifact mutation, or
+  remote-provider side effects.
+- Added fixture documentation:
+  `docs/fixtures/16-cicd-quality-gate-evidence-summary-golden.md`.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_cicd_quality_gate_evidence_summary_golden.py -q`
+- Result: `1` passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add quality gate evidence summary smoke`.
+- Continue Slice 28 Completion Gate.
+
 ## 2026-07-01 Slice 28 CI/CD Quality Gate Frontend Summary
 
 ### Completed
