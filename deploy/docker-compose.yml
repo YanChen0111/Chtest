@@ -1,0 +1,78 @@
+name: chtest
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: chtest-postgres
+    environment:
+      POSTGRES_DB: ${CHTEST_POSTGRES_DB:-chtest}
+      POSTGRES_USER: ${CHTEST_POSTGRES_USER:-chtest}
+      POSTGRES_PASSWORD: ${CHTEST_POSTGRES_PASSWORD:-chtest}
+    ports:
+      - "${CHTEST_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${CHTEST_POSTGRES_USER:-chtest} -d ${CHTEST_POSTGRES_DB:-chtest}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  redis:
+    image: redis:7
+    container_name: chtest-redis
+    ports:
+      - "${CHTEST_REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: chtest-backend
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://chtest:chtest@postgres:5432/chtest}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ARTIFACT_ROOT: ${ARTIFACT_ROOT:-/opt/chtest/artifacts}
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      TOOL_EXECUTION_MODE: ${TOOL_EXECUTION_MODE:-local}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${CHTEST_BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ../artifacts:/opt/chtest/artifacts
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: chtest-frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "${CHTEST_FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ../frontend:/app/frontend
+      - frontend-node-modules:/app/frontend/node_modules
+
+volumes:
+  postgres-data:
+  frontend-node-modules:

@@ -6,7 +6,6 @@
 
 每个 Slice 完成前必须具备：
 
-- 产品价值答案：本 Slice 让用户能理解、信任、执行或决策什么。
 - 数据模型或明确不需要数据模型。
 - API 契约或明确只做内部能力。
 - 状态机或复用现有状态机。
@@ -15,7 +14,6 @@
 - UI 或 API 验证入口。
 - artifact/log。
 - 失败状态。
-- 对 `docs/fixtures/00-v1-demo-path.md` 的影响说明。
 - 更新 `memory/07-dev-log.md` 和 `memory/08-session-handoff.md`。
 
 ## Slice 1: Repository and Deploy Skeleton
@@ -24,7 +22,7 @@
 
 交付：`backend/`、`frontend/`、`worker/`、`deploy/`、`prompts/`、`skills/`、`mcp_tools/`、`artifacts/` 目录；`deploy/docker-compose.yml`；`.env.example`。
 
-验收：PostgreSQL、Redis 可启动；backend health check 可访问；worker 能连接 Redis。
+验收：平台目录、PostgreSQL、Redis、backend/worker/frontend 容器占位配置可通过 `docker compose -f deploy/docker-compose.yml config` 校验。Backend health check 和 worker Redis ping 属于 Slice 2 及后续任务。
 
 ## Slice 2: Backend Core
 
@@ -34,19 +32,11 @@
 
 验收：后端启动成功；`/ready` 能检查 PostgreSQL 和 Redis；Alembic 能创建首批基础表。
 
-## Slice 2.5: Frontend Foundation
-
-目标：在进入 Slice 3 前建立 Vue 3 + TypeScript + Vite + Arco 前端基础工程。
-
-交付：`frontend/package.json`、Vite 配置、Vue app、Arco Design Vue、router、store、API client、WorkbenchLayout、AI Workbench 空壳、frontend Docker dev command。
-
-验收：`npm --prefix frontend run build` 通过；`npm --prefix frontend run test -- --run` 通过；`docker compose -f deploy/docker-compose.yml config` 通过。
-
 ## Slice 3: Project Core
 
 目标：平台能管理项目上下文。
 
-交付：Workspace、User、Project、Module、Repository、Environment、TestCommand models；CRUD API；Project Settings 页面。前端任务必须依赖 Slice 2.5，不允许临时手写一套 ad hoc frontend 结构。
+交付：Workspace、User、Project、Module、Repository、Environment、TestCommand models；CRUD API；基础 Vue 页面。
 
 验收：UI/API 可以创建项目、模块、仓库、环境、测试命令；数据写入 PostgreSQL。
 
@@ -54,17 +44,17 @@
 
 目标：所有 AI/执行任务可追踪。
 
-交付：AITask、Artifact、ContextArtifact metadata、LLMCallLog、Redis queue、Worker 消费示例任务、任务列表和详情页。
+交付：AITask、Artifact、LLMCallLog、Redis queue、Worker 消费示例任务、任务列表和详情页。
 
-验收：UI/API 创建任务；Worker 推进 created -> pending -> running -> succeeded/failed；artifact 可查看；AI task 记录 context artifact ids 或空列表。
+验收：UI/API 创建任务；Worker 推进 created -> pending -> running -> succeeded/failed；artifact 可查看。
 
 ## Slice 5: Prompt And Skill Registry
 
 目标：统一管理 PromptVersion 和 SkillVersion。
 
-交付：PromptVersion、SkillVersion models；文件加载；hash；JSON schema 输出校验；调用日志；mock-provider eval bench 初版。
+交付：PromptVersion、SkillVersion models；文件加载；hash；JSON schema 输出校验；调用日志。
 
-验收：mock LLM 调用保存 prompt/skill 版本、输入输出、token、耗时；schema 失败保存 raw artifact；eval bench 输出 schema_valid_rate、evidence_complete_rate、unsafe_output_rate。
+验收：mock LLM 调用保存 prompt/skill 版本、输入输出、token、耗时；schema 失败保存 raw artifact。
 
 ## Slice 6: Requirement Review
 
@@ -118,9 +108,9 @@
 
 目标：V1 P0 执行闭环。
 
-交付：ToolDefinition、ToolInvocation、TestRun、TestResult 初版、TestRunnerTool、pytest allowlist 执行、docker runner preference、AutomationDraft runtime artifact 追踪、runner sandbox metadata、runtime_manifest、dependency_snapshot、environment_snapshot、stdout/stderr/JUnit artifact。
+交付：ToolDefinition、ToolInvocation、TestRun、TestResult 初版、TestRunnerTool、pytest allowlist 执行、stdout/stderr/JUnit artifact。
 
-验收：审批后的 AutomationDraft 可触发 pytest TestRun；TestRun 记录实际执行的 `runtime_artifact_ids`、runtime manifest、dependency snapshot、environment snapshot 和 runner sandbox metadata；docker runner 可用时作为产品验收路径，不可用时记录 fallback 原因；执行结果结构化入库。
+验收：审批后的 AutomationDraft 可触发 pytest TestRun；执行结果结构化入库。
 
 ## Slice 13: Playwright Minimal Loop
 
@@ -134,30 +124,30 @@
 
 目标：生成有证据的质量报告。
 
-交付：FailureAnalysis、Report、evidence_manifest、Report Center、AutomationDraft repair task 入口。
+交付：FailureAnalysis、Report、evidence_manifest、Report Center。
 
-验收：失败有证据链；失败的 AutomationDraft 可创建 review-gated repair task；报告输出 md/html/json；无证据时不能给出 passed 结论；V1 Minimum Demo report 能回答 AI 分析了什么、执行了哪个 runtime artifact、证据是什么、失败后下一步是什么。
+验收：失败有证据链；报告输出 md/html/json；无证据时不能给出 passed 结论。
 
-## Slice 15: Git Quality Foundation
+## Slice 15: CI/CD Quality Foundation
 
-目标：支线能力：本地 diff 有质量视图。
+目标：支线能力：本地 diff 有 CI/CD 质量视图和风险摘要。
 
-交付：GitChangeSet、GitChangedFile、diff 导入 API、本地 git diff 解析、Git 质量任务列表和详情页。
+交付：CICDRun、CICDChangedFile、diff 导入 API、本地 git diff 解析、CI/CD 质量中心任务列表和详情页。
 
-验收：使用 `docs/fixtures/03-golden-git-quality.md` 的 diff 可看到变更文件、类型和风险摘要。
+验收：使用 `docs/fixtures/03-golden-cicd-quality.md` 的 diff 可看到变更文件、类型和风险摘要。
 
-## Slice 16: UnitTestPatch And Regression
+## Slice 16: CI/CD Test Patch And Quality Gate
 
-目标：根据 diff 生成单测 patch 并跑 pytest 回归。
+目标：根据 diff 生成单测 patch、跑 pytest 回归并生成质量门禁结论。
 
-交付：UnitTestPatch、UnitTestAgent、PatchScopeGate、Patch 评审页面、RegressionPlan、pytest 回归执行。
+交付：UnitTestPatch、UnitTestAgent、PatchScopeGate、Patch 评审页面、RegressionPlan、pytest 回归执行、QualityGateDecision。
 
-验收：AI 生成 patch；patch 默认只包含测试目录变更；用户审批后应用；新增测试和回归结果进入 Git Quality Center。
+验收：AI 生成 patch；patch 默认只包含测试目录变更；用户审批后应用；新增测试和回归结果进入 CI/CD 质量中心；质量门禁输出 passed / failed / needs_review。
 
 ## Slice 17: Extension Surface
 
-目标：预留后续 RAG/MCP 扩展接口。
+目标：预留后续 RAG/MCP 扩展接口，并提供 RAG 知识库管理页面。
 
-交付：KnowledgeAdapter 空实现、McpServerConfig placeholder、ToolDefinition schema MCP-ready、文档更新。
+交付：RAG 知识库 surface、KnowledgeAdapter 空实现、McpServerConfig placeholder、ToolDefinition schema MCP-ready、文档更新。
 
 验收：未配置 RAG/MCP 时主流程仍可运行；后续可接外部 RAG 和 GitHub MCP。

@@ -4,28 +4,9 @@
 
 ## 1. 项目一句话
 
-Chtest V1 是面向个人测试工程师、自动化测试工程师的 AI 测试证据工作台。它把需求和本地代码变更转成经过人工评审、sandbox 执行、证据完整、质量可度量的测试资产。长期方向是小团队 AI 测试工作台 + Agent / Skill / MCP 测试工具生态。
+Chtest V1 是面向个人测试工程师、自动化测试工程师的 AI 测试设计与自动化落地工作台。长期方向是小团队 AI 测试工作台 + Agent / Skill / MCP 测试工具生态。
 
-## 2. V1 Release Spine
-
-第一优先级是 `docs/fixtures/00-v1-demo-path.md`：
-
-```text
-需求输入
-  -> AI 需求评审和风险分析
-  -> 候选用例
-  -> 人工评审
-  -> AutomationDraft
-  -> 人工审批
-  -> runner 执行
-  -> artifacts 和 snapshots
-  -> 失败归因或 repair 候选
-  -> 证据报告
-```
-
-不要用宽功能替代这个最小证据闭环。
-
-## 3. V1 三条最小闭环
+## 2. V1 三条最小闭环
 
 ### 主线 A：需求到用例
 
@@ -51,20 +32,20 @@ Chtest V1 是面向个人测试工程师、自动化测试工程师的 AI 测试
   -> 报告
 ```
 
-### 支线 C：代码到质量
+### 支线 C：CI/CD 到质量
 
 ```text
-本地 Git diff
+CI/CD 质量中心中的本地 Git diff
   -> 变更风险分析
   -> AI 生成 UnitTestPatch
   -> 人工审批
   -> pytest 新增测试和回归
-  -> Git 质量报告
+  -> CI/CD 质量报告
 ```
 
-Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
+CI/CD 质量中心是 V1 支线能力，不压过需求到自动化主线。用户可见页面名使用 `CI/CD 质量中心`；当前底层数据和契约名使用 `CICDRun`、`CICDChangedFile`、`UnitTestPatch`。
 
-## 4. 硬约束
+## 3. 硬约束
 
 - 项目位置：`/Users/yanchen/VscodeProject/Chtest`。
 - 第一版单用户，不做 RBAC、多租户、团队协作。
@@ -76,76 +57,68 @@ Git Quality Center 是 V1 支线能力，不压过需求到自动化主线。
 - AI 生成 UnitTestPatch 必须人工审批，只允许写测试目录。
 - V1 禁止 AI 自动修改业务源码。
 - RAG 不内置，只保留 Knowledge/RAG Adapter。
-- 轻量 ContextArtifact 先于完整 RAG；AI task 必须记录使用的 context artifact ids，或显式记录空列表。
+- RAG 知识库是 ContextArtifact、KnowledgeAdapter 配置状态和 evidence 展示页面，不是内置向量库、chunking 或 rerank 平台。
+- V1 支持轻量 ContextArtifact：复用 Artifact 表，`owner_entity_type=Project`，`owner_entity_id=project_id`；ContextArtifact 可注入 Prompt，但不等同外部 RAG。
+- `use_knowledge=false` 只表示不使用外部 RAG/KnowledgeAdapter，不表示禁用 `context_artifact_ids`。
 - MCP 不作为 V1 强依赖，先实现 Internal Tool Adapter。
 - ToolInvocation 只能执行 ToolDefinition allowlist。
-- Runner sandbox 是 V1 安全边界：每个 TestRun 必须记录独立运行工作区、runtime_manifest、dependency_snapshot、environment_snapshot、网络设置和 artifact 追踪。
-- `docker_runner` 是优先产品验收 runner；`local_subprocess` 只作为开发和 fallback 路径。
-- AutomationDraft 执行失败后可进入证据驱动 repair loop，但修复候选仍必须人工评审，不能自动覆盖已审批草稿。
-- Mock-provider eval bench 是 V1 质量基线，至少追踪 schema_valid_rate、evidence_complete_rate、unsafe_output_rate、first_run_pass_rate、manual_edit_rate、repair_success_rate。
 - 每个完成 Task 必须测试并 commit；Slice 完成或重大上下文变化时更新 `memory/07-dev-log.md` 和 `memory/08-session-handoff.md`；会话结束但 Slice 未完成时更新 handoff 的 Task table。
 
-## 5. 必读文档顺序
+## 4. 必读文档顺序
 
 后续 AI 开工前按顺序读：
 
-1. `memory/README.md`
-2. `memory/13-ai-readable-project-brief.md`
-3. `docs/product/01-positioning-and-scope.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `docs/contracts/04-artifact-contract.md`
-8. `docs/contracts/05-prompt-skill-contract.md`
-9. `docs/product/07-ai-testing-evidence-workbench-optimization.md`
-10. `docs/implementation/01-v1-development-process.md`
-11. `docs/implementation/02-v1-slice-plan.md`
-12. `memory/11-implementation-slices.md`
-13. `memory/08-session-handoff.md`
+1. `START_HERE_FOR_AI.md`
+2. `memory/README.md`
+3. `memory/13-ai-readable-project-brief.md`
+4. `docs/product/01-positioning-and-scope.md`
+5. `docs/product/08-frontend-design-spec.md` when implementing frontend pages
+6. `docs/implementation/00-v0.1-walking-skeleton.md`
+7. `docs/contracts/01-data-model-contract.md`
+8. `docs/contracts/02-api-contract.md`
+9. `docs/contracts/03-state-machines.md`
+10. `docs/contracts/04-artifact-contract.md`
+11. `docs/contracts/05-prompt-skill-contract.md`
+12. `docs/implementation/01-v1-development-process.md`
+13. `docs/implementation/02-v1-slice-plan.md`
+14. `memory/11-implementation-slices.md`
+15. `memory/08-session-handoff.md`
 
 按任务追加 fixtures：
 
 - 需求到用例：`docs/fixtures/01-golden-requirement-to-case.md`
 - 用例到自动化：`docs/fixtures/02-golden-case-to-playwright.md`
-- Git 质量：`docs/fixtures/03-golden-git-quality.md`
+- CI/CD 本地 diff 质量：`docs/fixtures/03-golden-cicd-quality.md`
 
-## 6. 当前优先级
+## 5. 当前优先级
 
 当前应进入 V1 实施，而不是继续扩写大而全规划。
 
-推荐下一个开发切片顺序：
+当前推荐继续 `NEXT_AI_TASK.md` 指向的 Slice 03 Task 1：Add Project Core models and migration.
 
-```text
-Slice 1 -> Slice 2 -> Slice 2.5 -> Slice 3
-Repository and Deploy Skeleton -> Backend Core -> Frontend Foundation -> Project Core
-```
+早期工程检查点：`docs/implementation/00-v0.1-walking-skeleton.md`。完成 Slice 1-5 后优先跑通 Project -> ContextArtifact -> Mock AITask -> artifacts -> minimal pytest execution -> minimal report JSON。
 
 具体任务：
 
-- 创建 backend/frontend/worker/deploy/prompts/skills/mcp_tools 目录。
-- 写 Docker Compose。
-- 启动 PostgreSQL 和 Redis。
-- 建 FastAPI health/ready。
-- 建 Alembic。
+- 继续 `NEXT_AI_TASK.md` 指向的当前任务。
+- 已完成 backend/frontend/worker/deploy/prompts/skills/mcp_tools/artifacts 目录初始化。
+- 已完成 PostgreSQL、Redis 和 backend placeholder Docker Compose 基础。
+- 已完成 Slice 02.5 Frontend Foundation：Vue + Arco 基础布局、中文主导航、AI 工作台、Pinia、Vue Router、API client 和 `/health` smoke。
+- 下一步按 `NEXT_AI_TASK.md` 建 Project Core models/migration。
 - 建单用户上下文。
-- 建 Vue + Vite + Arco + router/store/API 前端基础布局。
-- 建 Project / Module / Repository / Environment / TestCommand API 和 Project Settings 前端入口。
 
-后续 Slice 必须持续推动 V1 Minimum Demo，而不是先铺完整后台。
+## 6. 不要做什么
 
-## 7. 不要做什么
-
-- 不要先做完整 RAG。
+- 不要先做完整 RAG，也不要把 RAG 知识库做成内置向量检索平台。
 - 不要先做企业权限。
 - 不要先做插件市场。
 - 不要先做复杂低代码 UI 自动化。
 - 不要让 AI 结果绕过人工评审。
 - 不要让工具执行任意 shell。
 - 不要让 AI 自动修改业务源码。
-- 不要先做复杂模型榜单；先做 mock-provider eval bench。
 - 不要把 WHartTest 或 MeterSphere 大段源码直接复制进来。
 
-## 8. 参考框架使用方式
+## 7. 参考框架使用方式
 
 参考源码在：
 
@@ -159,7 +132,7 @@ Repository and Deploy Skeleton -> Backend Core -> Frontend Foundation -> Project
 - 只迁移能力，不迁移企业复杂度。
 - 只借鉴结构，不复制大段源码。
 
-## 9. 每次开发后的交接格式
+## 8. 每次开发后的交接格式
 
 如果 Slice 完成，更新 `memory/07-dev-log.md` 和 `memory/08-session-handoff.md`，并在 handoff 至少写：
 
@@ -174,6 +147,6 @@ Repository and Deploy Skeleton -> Backend Core -> Frontend Foundation -> Project
 
 如果 Slice 未完成，只需要更新 `memory/08-session-handoff.md` 的 Task table，记录当前 Task 状态、未验证事项、风险和下一步；不强制更新 `memory/07-dev-log.md`，除非出现重大上下文变化。
 
-## 10. 给后续 AI 的一句话
+## 9. 给后续 AI 的一句话
 
-优先把 Chtest 做成可运行、可评审、可执行、可报告、可追踪证据的个人 AI 测试工作台。任何新能力都必须服务 V1 Minimum Demo 和“需求到用例”“用例到自动化”“Git 到质量报告”三条最小闭环。
+优先把 Chtest 做成可运行、可评审、可执行、可报告的个人 AI 测试设计与自动化落地工作台。任何新能力都必须服务“需求到用例”“用例到自动化”“CI/CD 质量中心到质量报告”三条最小闭环。

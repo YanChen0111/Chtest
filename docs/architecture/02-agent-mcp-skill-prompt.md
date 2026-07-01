@@ -19,7 +19,7 @@
 - CaseGenerationAgent.
 - CaseReviewAgent.
 - AutomationDraftAgent.
-- GitDiffAgent.
+- CICDChangeAnalysisAgent.
 - UnitTestAgent.
 - RegressionAgent.
 - ToolExecutionAgent.
@@ -35,7 +35,6 @@
 - `unit-test-generation-skill`.
 - `regression-selection-skill`.
 - `tool-execution-skill`.
-- `playwright-web-testing-skill`.
 - `failure-analysis-skill`.
 - `report-generation-skill`.
 
@@ -49,9 +48,8 @@ prompts/
   risk_matrix/v1.md
   case_generation/v1.md
   case_review/v1.md
-  case_optimization/v1.md
   automation_draft_generation/v1.md
-  git_diff_analysis/v1.md
+  cicd_change_analysis/v1.md
   unit_test_generation/v1.md
   regression_selection/v1.md
   tool_execution/v1.md
@@ -72,3 +70,14 @@ MCP servers can later map into the same ToolDefinition fields: name, input schem
 ## RAG Integration Boundary
 
 V1 only implements Knowledge Adapter. When no external knowledge provider is configured, it returns empty evidence. Agents must continue normally and record `used_knowledge=false`.
+
+## Final RAG And Agent Direction
+
+Final-version knowledge-driven case generation is documented in
+`docs/implementation/11-final-rag-agent-strategy.md`.
+
+The target is a testing knowledge evidence system, not a generic chat knowledge
+base. Future work should add structured `TestKnowledgeCard` and
+`KnowledgeEvidence` contracts first, then optional Haystack/LlamaIndex provider
+integration, and only later GraphRAG-style relationship reasoning after Chtest
+has enough reviewed requirements, cases, failures, and reports.

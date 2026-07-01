@@ -234,7 +234,7 @@ Recommended scopes:
 ```text
 repo, backend, frontend, worker, deploy, db, api, models, schemas,
 ai-runtime, prompt, skill, tool, artifact, requirement, case,
-automation, git-quality, report, docs, memory, test
+automation, cicd-quality, report, docs, memory, test
 ```
 
 Examples:
@@ -244,7 +244,7 @@ feat(backend): add health check endpoint
 feat(db): add project and module models
 feat(ai-runtime): add mock llm provider
 feat(automation): add automation draft state machine
-feat(git-quality): add patch scope gate
+feat(cicd-quality): add patch scope gate
 test(api): cover requirement review creation
 docs(contracts): add repository api contract
 chore(deploy): add docker compose services
@@ -316,7 +316,7 @@ What:
 - Return DRAFT_NOT_APPROVED when draft is not approved.
 
 Validation:
-- pytest backend/app/tests/api/test_automation_drafts.py -q
+- cd backend && uv run pytest app/tests/api/test_automation_drafts.py -q
 
 Refs:
 - docs/contracts/03-state-machines.md
@@ -454,8 +454,8 @@ When changing database models:
 Minimum verification:
 
 ```bash
-alembic upgrade head
-pytest backend/app/tests/db -q
+cd backend && uv run alembic upgrade head
+cd backend && uv run pytest app/tests/db -q
 ```
 
 If the project does not yet have Alembic or DB tests, the Task must create the minimal smoke path.
@@ -476,38 +476,12 @@ Rules:
 Minimum verification:
 
 ```bash
-pytest backend/app/tests/ai_runtime -q
+cd backend && uv run pytest app/tests/ai_runtime -q
 ```
 
 If schema validation tooling does not exist yet, the Task must add a minimal validator or record the exact gap.
 
-## 11. Tool And Runtime Safety Rules
-
-Any Task that implements ToolDefinition, ToolInvocation, TestCommand execution, AutomationDraft execution, PatchScopeGate, or artifact runtime files must enforce these rules before execution:
-
-- Use allowlisted TestCommand or ToolDefinition only.
-- Execute through argv / non-shell mode; do not use `shell=True`.
-- Reject shell operators: `;`, `&&`, `||`, `|`, `>`, `>>`, `<`, `$(`, and backticks.
-- Canonicalize working directory and artifact path before use.
-- Confirm canonical working directory is under the configured repository or tool allowlist.
-- Confirm canonical artifact path is under artifact root.
-- Enforce timeout and stdout/stderr size limits.
-- Redact secrets before storing or displaying stdout, stderr, raw provider output, and reports.
-- Require approval for medium/high risk tools and for AutomationDraft execution.
-- Use an isolated per-run workspace/runtime directory.
-- Treat repository paths as read-only unless the Task explicitly defines a writable output path.
-- Record runner mode, dependency snapshot, environment snapshot, runtime artifacts, and network setting for every TestRun.
-- Default runner network access to disabled unless TestCommand or Environment explicitly enables it.
-
-Minimum verification for such Tasks:
-
-```bash
-pytest backend/app/tests/tools -q
-```
-
-If the tools test directory does not exist yet, the Task that first introduces tool execution must create focused allowlist and path-safety tests before implementing execution.
-
-## 12. Dependency Change Rules
+## 11. Dependency Change Rules
 
 Adding dependencies requires an explicit reason.
 
@@ -533,7 +507,7 @@ Validation:
 - Install/build/test command and result.
 ```
 
-## 13. Failure Handling
+## 12. Failure Handling
 
 When verification fails:
 
@@ -559,7 +533,7 @@ Risk:
 Next suggested command:
 ```
 
-## 14. Rollback Rules
+## 13. Rollback Rules
 
 Every Task commit must be reversible.
 
@@ -571,7 +545,7 @@ Rules:
 - Record the latest known stable commit in handoff when a session ends after multiple commits.
 - If a WIP checkpoint exists, the next session must complete or revert it first.
 
-## 15. Memory Update Policy
+## 14. Memory Update Policy
 
 Memory 不是 Git 的重复记录。Memory 的职责是让下一轮 AI 能快速、准确地接上当前项目状态。
 
@@ -583,7 +557,7 @@ Memory 不是 Git 的重复记录。Memory 的职责是让下一轮 AI 能快速
 每个重大变化：立即更新 memory。
 ```
 
-### 15.1 Task 级别
+### 14.1 Task 级别
 
 每个 Task 完成后必须：
 
@@ -607,7 +581,7 @@ Task 完成后默认不强制更新 `memory/07-dev-log.md`，避免 memory 变�
 - 出现阻塞，需要下一轮 AI 接手。
 - 用户临时改变优先级。
 
-### 15.2 Slice 级别
+### 14.2 Slice 级别
 
 每个 Slice 完成后必须更新：
 
@@ -631,7 +605,7 @@ Slice 结束时，handoff 必须记录：
 - 下一轮推荐 Task。
 - 最新稳定 commit。
 
-### 15.3 Memory 写作规范
+### 14.3 Memory 写作规范
 
 - `memory/07-dev-log.md` 写长期摘要，不写每个小改动。
 - `memory/08-session-handoff.md` 写给下一轮 AI，必须具体、可执行。
@@ -639,7 +613,7 @@ Slice 结束时，handoff 必须记录：
 - contracts/docs 只在事实变化时更新，不因为普通实现进度更新。
 - memory 不重复粘贴完整 git diff，只记录 commit hash、结论、风险和下一步。
 
-### 15.4 立即更新 Memory 的判断门禁
+### 14.4 立即更新 Memory 的判断门禁
 
 开发过程中只要出现下面任意一个问题答案为“是”，AI 必须暂停 coding，先更新 memory 或对应 docs：
 
@@ -651,14 +625,14 @@ contracts、范围或状态机是否发生变化？
 是否需要下一轮 AI 特别注意某个风险？
 ```
 
-## 16. Task Progress Table
+## 15. Task Progress Table
 
 Each active Slice should maintain a progress table in `memory/08-session-handoff.md` or the relevant implementation plan:
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Backend health API | done | `pytest backend/app/tests/test_health.py -q` | `abc123` | pass |
-| Redis ready check | doing | `pytest backend/app/tests/test_ready.py -q` | - | investigating timeout |
+| Backend health API | done | `cd backend && uv run pytest app/tests/test_health.py -q` | `abc123` | pass |
+| Redis ready check | doing | `cd backend && uv run pytest app/tests/test_ready.py -q` | - | investigating timeout |
 
 Allowed statuses:
 
@@ -666,7 +640,7 @@ Allowed statuses:
 planned, doing, blocked, done, reverted
 ```
 
-## 17. Handoff Requirements
+## 16. Handoff Requirements
 
 At the end of each Slice or when immediate memory update conditions are met, update `memory/08-session-handoff.md` with:
 
@@ -687,12 +661,12 @@ Commit table template:
 
 | Commit | Content | Verification |
 |---|---|---|
-| `abc123` | `feat(backend): add health check endpoint` | `pytest backend/app/tests/test_health.py -q` |
+| `abc123` | `feat(backend): add health check endpoint` | `cd backend && uv run pytest app/tests/test_health.py -q` |
 | `def456` | `docs(memory): update slice handoff` | doc self-check |
 
 `memory/07-dev-log.md` records long-term Slice summaries. `memory/08-session-handoff.md` records operational details for the next session.
 
-## 18. Standard Start Prompt
+## 17. Standard Start Prompt
 
 ```text
 Please start by reading:
@@ -710,7 +684,7 @@ For the Task, write or run focused verification, implement the minimal change, v
 Do not push unless I explicitly ask.
 ```
 
-## 19. Standard Finish Checklist
+## 18. Standard Finish Checklist
 
 Before ending a session, AI must confirm:
 
@@ -731,18 +705,18 @@ Next Task:
 
 If there is no commit, explain why the Task is not complete or why the session only changed planning documents.
 
-## 20. Examples
+## 19. Examples
 
-### 20.1 Good Task Commit
+### 19.1 Good Task Commit
 
 ```bash
 git status --short
-pytest backend/app/tests/test_health.py -q
+cd backend && uv run pytest app/tests/test_health.py -q
 git add backend/app/main.py backend/app/tests/test_health.py
 git commit -m "feat(backend): add health check endpoint"
 ```
 
-### 20.2 Good Contract-Then-Code Sequence
+### 19.2 Good Contract-Then-Code Sequence
 
 ```text
 docs(contracts): add tool definition model contract
@@ -751,7 +725,7 @@ test(tool): cover tool definition allowlist validation
 docs(memory): record slice 8 completion handoff
 ```
 
-### 20.3 Good Slice Commit Series
+### 19.3 Good Slice Commit Series
 
 ```text
 chore(repo): initialize backend workspace

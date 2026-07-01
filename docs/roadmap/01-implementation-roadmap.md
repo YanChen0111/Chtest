@@ -2,19 +2,16 @@
 
 ## 1. 总体路线
 
-V1 先证明一条 AI 测试证据闭环，再扩展三条最小闭环路线：需求到用例、用例到自动化、Git 到质量报告。每个阶段必须可运行、可验证、可回滚。
-
-`docs/fixtures/00-v1-demo-path.md` 是 release spine。任何宽功能都不能替代这个最小证据闭环。
+V1 采用三条最小闭环路线：需求到用例、用例到自动化、CI/CD 到质量报告。每个阶段必须可运行、可验证、可回滚。
 
 ```text
 Foundation
   -> AI Runtime Core
-  -> V1 Minimum Demo Evidence Loop
   -> Requirement To Case
   -> AutomationDraft + Pytest
   -> Playwright Minimal Loop
   -> Reports / Failure Analysis
-  -> Git Quality Supporting Flow
+  -> CI/CD Quality Supporting Flow
   -> MCP/RAG Extension Surface
 ```
 
@@ -28,13 +25,13 @@ Foundation
 - PostgreSQL / Redis。
 - FastAPI app。
 - Alembic。
+- Vue 3 + Arco shell。
 - 单用户上下文。
-- 按 Slice 2.5 Frontend Foundation 建 Vue 3 + Vite + Arco 前端基础工程。
 - Project / Module / Repository / Environment / TestCommand CRUD。
 
 验收：
 
-- `docker compose up` 启动服务。
+- `docker compose -f deploy/docker-compose.yml up` 启动服务。
 - `/health`、`/ready` 通过。
 - 可以创建项目、模块、仓库和测试命令。
 
@@ -50,8 +47,6 @@ Foundation
 - Redis worker。
 - Mock LLM Provider。
 - AI Workbench 基础页面。
-- ContextArtifact metadata。
-- Mock-provider eval bench。
 
 验收：
 
@@ -59,8 +54,6 @@ Foundation
 - Worker 消费并写回状态。
 - Prompt/Skill/model/token/artifact 可追踪。
 - schema 校验失败能保存 raw output。
-- AI task 能记录使用的 context artifact ids 或空列表。
-- mock-provider eval bench 输出 schema_valid_rate、evidence_complete_rate、unsafe_output_rate。
 
 ## 4. Phase 3: Requirement Review
 
@@ -108,9 +101,6 @@ Foundation
 - TestRun/TestResult。
 - TestRunnerTool。
 - pytest allowlist 执行。
-- docker runner mode 优先产品验收，local subprocess 作为开发 fallback。
-- runner sandbox metadata。
-- runtime_manifest、dependency_snapshot、environment_snapshot。
 - stdout/stderr/JUnit artifact。
 
 验收：
@@ -118,8 +108,6 @@ Foundation
 - 使用 `docs/fixtures/02-golden-case-to-playwright.md` 的 pytest 示例生成草稿。
 - 未审批 AutomationDraft 不能执行。
 - 审批后 pytest 可执行并结构化保存结果。
-- TestRun 记录实际执行的 AutomationDraft runtime artifact、`runtime_manifest.json`、`dependency_snapshot.json`、`environment_snapshot.json` 和 runner sandbox metadata。
-- V1 Minimum Demo 能从需求走到报告，并展示证据链。
 
 ## 7. Phase 6: Playwright Minimal Loop
 
@@ -143,7 +131,6 @@ Foundation
 交付：
 
 - FailureAnalysis。
-- AutomationRepairTask。
 - Report。
 - Evidence manifest。
 - Report Center。
@@ -153,34 +140,35 @@ Foundation
 验收：
 
 - 失败有证据链。
-- 失败的 AutomationDraft 可创建 review-gated repair task。
 - 报告输出 md/html/json。
 - 未归因失败不能给出通过结论。
 
-## 9. Phase 8: Git Quality Supporting Flow
+## 9. Phase 8: CI/CD Quality Supporting Flow
 
-目标：覆盖本地 diff 后单测生成和 pytest 回归，但作为 V1 支线能力。
+目标：覆盖本地 diff 后单测生成、pytest 回归、质量门禁和证据报告，但作为 V1 支线能力。V1 不接远程 CI webhook，不做真实 CD 发布。
 
 交付：
 
-- GitChangeSet。
-- GitChangedFile。
-- GitRiskAnalysis。
+- CICDRun。
+- CICDChangedFile。
+- `risk_analysis.json` artifact。
 - UnitTestPatch。
 - RegressionPlan。
+- QualityGateDecision。
 - diff 导入和 base/head 分析。
 - patch 评审。
 - pytest 新增测试和回归。
 
 验收：
 
-- 使用 `docs/fixtures/03-golden-git-quality.md`。
+- 使用 `docs/fixtures/03-golden-cicd-quality.md`。
 - 读取 diff。
 - 生成风险摘要。
 - 生成 UnitTestPatch。
 - PatchScopeGate 阻止业务源码修改。
 - 审批后执行 pytest 回归。
-- 生成 GitQualityReport。
+- 生成 passed / failed / needs_review 的质量门禁结论。
+- 生成 CICDQualityReport。
 
 ## 10. Phase 9: Extension Surface
 

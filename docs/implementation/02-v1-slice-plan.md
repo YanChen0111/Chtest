@@ -6,7 +6,7 @@ This document is the executable V1 slice plan. Each Slice must be independently 
 
 All coding work must follow `docs/implementation/04-ai-vibecoding-governance.md`.
 
-The V1 release spine is `docs/fixtures/00-v1-demo-path.md`. Slice work must optimize for one credible evidence loop before adding broad platform features.
+The V1 release spine is `docs/fixtures/00-v1-demo-path.md`. Slice work must optimize for one credible evidence loop before adding broad platform features. `docs/implementation/00-v0.1-walking-skeleton.md` is the early engineering checkpoint used to prove the platform spine before the full V1 Minimum Demo is complete.
 
 ## 2. Slice List
 
@@ -27,9 +27,9 @@ The V1 release spine is `docs/fixtures/00-v1-demo-path.md`. Slice work must opti
 | 12 | TestRunner Pytest Execution | pytest allowlist execution, docker runner preference, stdout/stderr/JUnit artifact, runtime snapshots |
 | 13 | Playwright Minimal Loop | Playwright draft/existing test execution, trace/screenshot |
 | 14 | Report And Failure Analysis | FailureAnalysis, Report, evidence manifest |
-| 15 | Git Quality Foundation | GitChangeSet, GitChangedFile, diff analysis |
+| 15 | CI/CD Quality Center Foundation | CICDRun, CICDChangedFile, local diff analysis |
 | 16 | UnitTestPatch And Regression | UnitTestPatch, PatchScopeGate, pytest regression |
-| 17 | Extension Surface | Empty KnowledgeAdapter, MCP-ready Tool schema |
+| 17 | Extension Surface | RAG 知识库 surface, empty KnowledgeAdapter, MCP-ready Tool schema |
 
 ## 3. P0 Development Batches
 
@@ -38,6 +38,13 @@ Batch 1: Slice 1-5, including Slice 2.5.
 - Goal: platform starts, connects DB/Redis, has a Vue/Arco frontend shell, creates projects, creates AI tasks, records context artifact metadata, loads Prompt/Skill.
 - Real LLM is not required; use mock provider first.
 - Eval bench starts with mock provider and records schema/evidence metrics.
+- After Batch 1, run or implement the V0.1 Walking Skeleton smoke before expanding into all requirement/case pages.
+
+Batch 1.5: V0.1 Walking Skeleton.
+
+- Goal: API-first evidence spine: Project -> ContextArtifact -> mock AITask -> artifacts -> minimal pytest execution -> minimal report JSON.
+- Source: `docs/implementation/00-v0.1-walking-skeleton.md`.
+- This is an engineering checkpoint, not the final V1 product acceptance demo.
 
 Batch 2: Slice 6-10.
 
@@ -49,7 +56,7 @@ Batch 3: Slice 11-14.
 
 Batch 4: Slice 15-16.
 
-- Goal: Golden Path 3, Git to quality report.
+- Goal: Golden Path 3, local-first CI/CD quality gate and evidence report.
 
 ## 4. Slice Task Table Template
 
@@ -57,7 +64,7 @@ Each active Slice must maintain a Task table in the implementation plan or `memo
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Backend health API | planned | `pytest backend/app/tests/test_health.py -q` | - | - |
+| Backend health API | planned | `cd backend && uv run pytest app/tests/test_health.py -q` | - | - |
 
 Allowed statuses:
 
@@ -89,13 +96,6 @@ Each Slice must also name one product value answer:
 Product value answer:
 ```
 
-Examples:
-
-- The user can see what AI analyzed.
-- The user can approve or reject AI output.
-- The user can trace which runtime artifact executed.
-- The user can trust the report because it links to evidence.
-
 ## 6. Slice Completion Gate
 
 A Slice is complete only when:
@@ -121,6 +121,7 @@ A Slice is complete only when:
 
 ## 8. Detailed Slice Task Plans
 
+- `docs/implementation/00-v0.1-walking-skeleton.md`
 - `docs/implementation/slices/slice-01-platform-foundation.md`
 - `docs/implementation/slices/slice-02-backend-core.md`
 - `docs/implementation/slices/slice-02-frontend-foundation.md`

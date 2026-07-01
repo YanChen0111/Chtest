@@ -1,24 +1,22 @@
 # Chtest Memory Index
 
-This directory is the long-term memory for Chtest. Read it before every new AI development session and update it at the end of each session.
+This directory is the long-term memory for Chtest. Read it before every new AI development session and update it at the end of each session. For the shortest implementation entry, read `../START_HERE_FOR_AI.md` first.
 
 The purpose is to let long-running vibe coding continue from stable project facts instead of transient chat context.
 
 ## One-Sentence Product Definition
 
-Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers.
+Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers.
 
-It uses ideas from WHartTest's AI testing workflow and MeterSphere's case review, test asset, and report experience. It helps one engineer turn requirements and local code changes into reviewed, sandbox-executed, evidence-backed, and quality-measured testing assets.
+It uses ideas from WHartTest's AI testing workflow and MeterSphere's case review, test asset, and report experience. It helps one engineer complete requirement review, case generation, case review, AutomationDraft generation, pytest/Playwright execution, CI/CD Quality Center local diff support, failure analysis, quality gates, and report output.
 
 Chtest is not an enterprise collaboration test management platform. V1 focuses on personal testing design and automation productivity. The long-term direction is a small-team AI testing workbench plus Agent/Skill/MCP testing tool ecosystem.
 
 ## V1 Loops
 
-The first release spine is `docs/fixtures/00-v1-demo-path.md`: Requirement -> AI review -> candidate case -> human review -> AutomationDraft -> approval -> runner execution -> artifacts -> evidence report.
-
 1. Requirement to cases: Requirement -> AI requirement review -> AI case generation -> human review -> case library.
 2. Case to automation: Requirement/TestCase -> AI AutomationDraft -> approval -> pytest/Playwright execution -> report.
-3. Code to quality: Local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
+3. Code to quality: CI/CD Quality Center local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
 
 The first and second loops are mainlines. The third loop is a support workflow.
 
@@ -28,18 +26,13 @@ The first and second loops are mainlines. The third loop is a support workflow.
 - PostgreSQL + Redis are the default infrastructure.
 - Frozen stack: FastAPI, SQLAlchemy 2, Pydantic v2, Alembic, Vue 3, Arco Design Vue, Redis + RQ, Docker Compose.
 - RAG is not built in; only KnowledgeAdapter is provided.
-- Lightweight ContextArtifact inputs come before full RAG; AI tasks must record used context artifact ids or an explicit empty list.
+- RAG 知识库 is a ContextArtifact and KnowledgeAdapter management page, not an internal RAG runtime.
 - AI-generated cases must enter a review window before becoming TestCase records.
 - AutomationDraft must be approved before execution and cannot directly write target repositories.
-- Approved AutomationDraft execution uses Chtest artifact runtime copies, not direct writes into the target repository.
-- Runner sandbox is a V1 safety boundary: TestRun must record runtime manifest, dependency snapshot, environment snapshot, network setting, and artifact trace.
-- `docker_runner` is the preferred product acceptance runner when available; `local_subprocess` is a development fallback.
-- Failed AutomationDraft execution can enter an evidence-driven repair loop, but repair candidates remain review-gated.
 - UnitTestPatch must be approved before application and can only write test directories.
 - AI cannot automatically modify business source files.
 - AI quality metrics must track generation count, acceptance rate, rejection rate, edit rate, execution pass rate, and failure reason distribution.
-- Mock-provider eval bench must track schema_valid_rate, evidence_complete_rate, unsafe_output_rate, usefulness, first-run pass, manual edit, and repair success signals.
-- Git Quality Center is a support page for local diff, unit test generation, regression execution, and quality reports.
+- CI/CD 质量中心 is a support page for local diff, unit test generation, regression execution, and quality reports. Current contract names include `CICDRun`, `CICDChangedFile`, and `UnitTestPatch`.
 - Agent orchestrates workflows; Prompt constrains output; Skill stores testing methods; Tool Adapter/MCP handles tool calls.
 - Reference framework source is local study material and is excluded from the Chtest repository commit set.
 
@@ -47,57 +40,57 @@ The first and second loops are mainlines. The third loop is a support workflow.
 
 Full order:
 
-1. `README.md`
-2. `00-ai-session-protocol.md`
-3. `13-ai-readable-project-brief.md`
-4. `01-product-prd.md`
-5. `02-platform-spec.md`
-6. `03-tech-stack.md`
-7. `04-project-constraints.md`
-8. `05-roadmap.md`
-9. `06-architecture-decisions.md`
-10. `07-dev-log.md`
-11. `08-session-handoff.md`
-12. `09-reference-framework-review.md`
-13. `10-superpowers-review.md`
-14. `11-implementation-slices.md`
-15. `12-agent-mcp-skill-design.md`
+1. `../START_HERE_FOR_AI.md`
+2. `README.md`
+3. `00-ai-session-protocol.md`
+4. `13-ai-readable-project-brief.md`
+5. `01-product-prd.md`
+6. `02-platform-spec.md`
+7. `03-tech-stack.md`
+8. `04-project-constraints.md`
+9. `05-roadmap.md`
+10. `06-architecture-decisions.md`
+11. `07-dev-log.md`
+12. `08-session-handoff.md`
+13. `09-reference-framework-review.md`
+14. `10-superpowers-review.md`
+15. `11-implementation-slices.md`
+16. `12-agent-mcp-skill-design.md`
 
 Required docs:
 
 1. `docs/product/01-positioning-and-scope.md`
-2. `docs/contracts/01-data-model-contract.md`
-3. `docs/contracts/02-api-contract.md`
-4. `docs/contracts/03-state-machines.md`
-5. `docs/contracts/04-artifact-contract.md`
-6. `docs/contracts/05-prompt-skill-contract.md`
-7. `docs/contracts/06-error-code-contract.md`
-8. `docs/contracts/07-seed-data-contract.md`
-9. `docs/contracts/08-mock-provider-contract.md`
-10. `docs/implementation/01-v1-development-process.md`
-11. `docs/implementation/02-v1-slice-plan.md`
-12. `docs/implementation/04-ai-vibecoding-governance.md`
-13. `docs/product/07-ai-testing-evidence-workbench-optimization.md`
-14. `docs/reviews/2026-06-22-ai-testing-product-review.md`
-15. `docs/product/06-frontend-ui-guidelines.md` when implementing frontend views
+2. `docs/implementation/00-v0.1-walking-skeleton.md`
+3. `docs/contracts/01-data-model-contract.md`
+4. `docs/contracts/02-api-contract.md`
+5. `docs/contracts/03-state-machines.md`
+6. `docs/contracts/04-artifact-contract.md`
+7. `docs/contracts/05-prompt-skill-contract.md`
+8. `docs/contracts/06-error-code-contract.md`
+9. `docs/contracts/07-seed-data-contract.md`
+10. `docs/contracts/08-mock-provider-contract.md`
+11. `docs/implementation/01-v1-development-process.md`
+12. `docs/implementation/02-v1-slice-plan.md`
+13. `docs/implementation/04-ai-vibecoding-governance.md`
 
 Task-specific fixtures:
 
 - V1 minimum demo: `docs/fixtures/00-v1-demo-path.md`
 - Requirement to cases: `docs/fixtures/01-golden-requirement-to-case.md`
 - Case to automation: `docs/fixtures/02-golden-case-to-playwright.md`
-- Git quality: `docs/fixtures/03-golden-git-quality.md`
+- CI/CD local diff quality: `docs/fixtures/03-golden-cicd-quality.md`
 
 Minimum reading set under tight context:
 
-1. `README.md`
-2. `13-ai-readable-project-brief.md`
-3. `docs/product/01-positioning-and-scope.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `11-implementation-slices.md`
-8. `08-session-handoff.md`
+1. `../START_HERE_FOR_AI.md`
+2. `README.md`
+3. `13-ai-readable-project-brief.md`
+4. `docs/product/01-positioning-and-scope.md`
+5. `docs/contracts/01-data-model-contract.md`
+6. `docs/contracts/02-api-contract.md`
+7. `docs/contracts/03-state-machines.md`
+8. `11-implementation-slices.md`
+9. `08-session-handoff.md`
 
 ## Canonical Source Of Truth
 
@@ -111,6 +104,8 @@ When documents disagree, follow this order:
 6. `docs/fixtures/*`.
 7. `docs/architecture/*`.
 8. `docs/reference/*`, `docs/reviews/*`, and `docs/superpowers/*`.
+
+`docs/implementation/00-v0.1-walking-skeleton.md` is an early engineering checkpoint. It guides implementation order, but it does not override product scope, contracts, or safety governance.
 
 ## Update Rules After Development
 
@@ -129,7 +124,6 @@ Update related files when scope changes:
 - Data/API/state changes: `docs/contracts/*`.
 - Golden Path changes: `docs/fixtures/*`.
 - Agent/MCP/Skill/Prompt changes: `12-agent-mcp-skill-design.md` and `docs/contracts/05-prompt-skill-contract.md`.
-- Evidence-loop strategy changes: `docs/product/07-ai-testing-evidence-workbench-optimization.md`.
 
 ## Memory File Roles
 
@@ -158,9 +152,6 @@ Update related files when scope changes:
 - Page PRD: `docs/product/03-user-journey-and-page-prd.md`
 - AI metrics: `docs/product/04-ai-quality-metrics.md`
 - Version boundaries: `docs/product/05-non-goals-and-version-boundaries.md`
-- Frontend UI guidelines: `docs/product/06-frontend-ui-guidelines.md`
-- Evidence workbench optimization: `docs/product/07-ai-testing-evidence-workbench-optimization.md`
-- Current AI testing product review: `docs/reviews/2026-06-22-ai-testing-product-review.md`
 - Data model contract: `docs/contracts/01-data-model-contract.md`
 - API contract: `docs/contracts/02-api-contract.md`
 - State machines: `docs/contracts/03-state-machines.md`
@@ -172,27 +163,25 @@ Update related files when scope changes:
 - Golden Path 0: `docs/fixtures/00-v1-demo-path.md`
 - Golden Path 1: `docs/fixtures/01-golden-requirement-to-case.md`
 - Golden Path 2: `docs/fixtures/02-golden-case-to-playwright.md`
-- Golden Path 3: `docs/fixtures/03-golden-git-quality.md`
+- Golden Path 3: `docs/fixtures/03-golden-cicd-quality.md`
 - Platform architecture: `docs/architecture/01-platform-architecture.md`
 - Agent summary: `docs/architecture/02-agent-mcp-skill-prompt.md`
 - Technical guide: `docs/architecture/03-implementation-technology.md`
 - Agent workflow: `docs/architecture/04-agent-workflow-design.md`
-- Git Quality design: `docs/architecture/05-git-quality-center-design.md`
+- CI/CD Quality Center design: `docs/architecture/05-cicd-quality-center-design.md`
+- Start here: `START_HERE_FOR_AI.md`
+- Final frontend design: `docs/product/08-frontend-design-spec.md`
+- V0.1 Walking Skeleton: `docs/implementation/00-v0.1-walking-skeleton.md`
 - Development process: `docs/implementation/01-v1-development-process.md`
 - Delivery plan: `docs/implementation/01-v1-delivery-plan.md`
 - Slice plan: `docs/implementation/02-v1-slice-plan.md`
 - Slice 1 Task plan: `docs/implementation/slices/slice-01-platform-foundation.md`
 - Slice 2 Task plan: `docs/implementation/slices/slice-02-backend-core.md`
-- Slice 2.5 Task plan: `docs/implementation/slices/slice-02-frontend-foundation.md`
-- Slice 3 Task plan: `docs/implementation/slices/slice-03-project-core.md`
-- Slice 4 Task plan: `docs/implementation/slices/slice-04-ai-runtime-core.md`
-- Slice 5 Task plan: `docs/implementation/slices/slice-05-prompt-skill-registry.md`
 - Testing acceptance: `docs/implementation/03-testing-and-acceptance.md`
 - AI vibecoding governance: `docs/implementation/04-ai-vibecoding-governance.md`
 - Docker environment: `docs/deployment/01-docker-environment.md`
 - Roadmap: `docs/roadmap/01-implementation-roadmap.md`
 - Project review: `docs/reviews/2026-06-18-project-review.md`
-- Current AI testing market/product/architecture review: `docs/reviews/2026-06-22-ai-testing-product-review.md`
 
 ## Repositories And References
 
@@ -204,11 +193,9 @@ Update related files when scope changes:
 
 ## Current State
 
-- Phase: V1 implementation-ready documentation, contracts, Golden Paths, and Slice 1-5 Task plans are complete, including Slice 2.5 Frontend Foundation.
-- Focus: start Slice 1 Task 1, then proceed through Slice 1, Slice 2, Slice 2.5, and Slice 3 with Task-level verification and commits.
+- Phase: V1 implementation has started. Slice 02.5 Frontend Foundation is complete, and `NEXT_AI_TASK.md` points to Slice 03 Task 1.
+- Focus: start from `START_HERE_FOR_AI.md`, then `NEXT_AI_TASK.md`, and continue the active task with Task-level verification and commits.
 - Principle: real, maintainable, extensible implementation; no throwaway demo and no enterprise collaboration platform.
-- Latest P0 optimization: Strategy B evidence-loop-first delivery, runner sandbox, ContextArtifact trace, mock-provider eval bench, AutomationDraft repair loop, AutomationQualityMetric, and Golden Path product value checks are now part of the current docs.
-- Latest review lock: 2026-06-22 current AI testing product review confirms the direction, stack, and vibe coding constraints; next work should move to Slice 1 runnable foundation instead of broadening planning.
 
 ## Implementation Principles
 
@@ -216,6 +203,7 @@ Update related files when scope changes:
 - Use MeterSphere case review, pass-rate progress, test asset governance, and report views as supporting references.
 - Use a modular monolith with Redis queue and PostgreSQL storage.
 - Keep RAG as an adapter until an external RAG service is available.
+- Use `docs/product/08-frontend-design-spec.md` for future frontend page design: light A direction, Chinese-first copy, CI/CD 质量中心 naming, and RAG 知识库 boundaries.
 - Use Internal Git Tool Adapter first; GitHub MCP is a later integration.
 - Each module must be runnable, verifiable, committed, and easy to roll back. Update memory after every iteration.
 - Every completed Task follows `docs/implementation/04-ai-vibecoding-governance.md`: focused verification, git diff self-review, and commit.

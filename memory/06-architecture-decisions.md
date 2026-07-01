@@ -12,7 +12,7 @@ Reason: The product needs fast iteration, clear module boundaries, and low opera
 
 Implementation:
 
-- Backend modules: project, requirement, case, automation, execution, git_quality, ai_runtime, report, artifact.
+- Backend modules: project, requirement, case, automation, execution, cicd_quality, ai_runtime, report, artifact.
 - Module boundaries are enforced by service interfaces and database contracts.
 - Workers handle AI tasks and tool execution.
 
@@ -114,7 +114,7 @@ Implementation:
 
 ## ADR-0010: Final Product Positioning
 
-Decision: Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers.
+Decision: Chtest V1 is an AI Testing Workbench for individual test engineers and automation test engineers.
 
 Reason: This positioning keeps the first release focused on the highest-value personal testing loops and avoids unnecessary enterprise collaboration complexity.
 
@@ -149,17 +149,18 @@ Implementation:
 - AutomationDraft stores draft code, framework, suggested path, execution notes, and risk notes.
 - AutomationDraft requires review before execution.
 
-## ADR-0013: Git Quality Is A Support Workflow
+## ADR-0013: CI/CD Quality Center Is A Support Workflow
 
-Decision: Git Quality is included in V1 as a support workflow, not the main product path.
+Decision: CI/CD Quality Center is included in V1 as a local-first support workflow, not the main product path and not a cloud CI/CD platform.
 
 Reason: The user wants push/diff-driven unit test generation and regression support, but the core product value is AI-assisted testing lifecycle work.
 
 Implementation:
 
-- Git diff analysis generates GitChangeSet and GitChangedFile.
+- Git diff analysis generates CICDRun and CICDChangedFile.
 - UnitTestPatch is approval-gated and test-directory scoped.
 - RegressionAgent recommends commands and explains selection.
+- User-facing UI name is `CI/CD 质量中心`; current internal data and agent names are `CICDRun`, `CICDChangedFile`, and `CICDChangeAnalysisAgent`.
 
 ## ADR-0014: Final Documentation Priority
 
@@ -171,33 +172,5 @@ Implementation:
 
 - Product positioning defines scope.
 - Contracts define data/API/state names.
-- AI vibecoding governance defines safe implementation rules and completion gates.
 - Implementation plan defines delivery order.
 - Memory documents preserve active context for the next AI session.
-
-## ADR-0015: Runner Sandbox Is A V1 Safety Boundary
-
-Decision: V1 treats the runner as an explicit sandbox boundary, not only a future optional enhancement.
-
-Reason: Chtest executes user-project tests and AI-generated AutomationDraft runtime files. Allowlisted commands reduce risk, but execution still needs controlled workspace, environment, artifact, network, timeout, and resource boundaries.
-
-Implementation:
-
-- Pytest and Playwright execution must run through ToolDefinition/TestCommand allowlists.
-- Each TestRun receives an isolated per-run workspace or runtime directory.
-- Repository paths are mounted read-only unless the Task explicitly requires a writable test output directory.
-- Artifact paths are writable only under the configured Chtest artifact root.
-- Environment variables are built from Environment records plus safe system defaults, with secret values referenced and redacted.
-- Runner mode can start as local subprocess in dev, but the contract must expose sandbox fields so Docker runner can become the default without changing TestRun semantics.
-
-## ADR-0016: AutomationDraft Repair Loop Is Part Of The Automation Mainline
-
-Decision: V1 tracks AutomationDraft repair attempts after failed execution.
-
-Reason: AI-generated automation is rarely perfect on the first run. The product value is not a single generation event; it is the feedback loop from execution evidence to a reviewed, improved draft.
-
-Implementation:
-
-- A failed AutomationDraft execution can create an AutomationRepairTask linked to AutomationDraft, TestRun, FailureAnalysis, PromptVersion, SkillVersion, and model.
-- Repair output stays review-gated and cannot overwrite an approved draft silently.
-- Repair quality metrics include first-run pass rate, repair success rate, retry count, and evidence completeness.

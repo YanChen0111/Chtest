@@ -1,0 +1,269 @@
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from backend.app.modules.ai_runtime.schemas import ArtifactRead
+
+
+class CICDRunCreateRequest(BaseModel):
+    project_id: uuid.UUID
+    repository_id: uuid.UUID | None = None
+    source_type: str = "local_diff"
+    trigger_type: str = "manual"
+    provider: str = "local"
+    pipeline_name: str | None = None
+    base_ref: str | None = None
+    head_ref: str | None = None
+    diff_text: str | None = None
+
+
+class CICDRunCreateRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    status: str
+
+
+class CICDRunAnalyzeRequest(BaseModel):
+    prompt_version: str = "cicd_change_analysis:v1"
+    skill_version: str = "regression-selection-skill:v1"
+    model_provider: str = "mock"
+    model_name: str = "mock-cicd-analysis"
+
+
+class CICDRunAnalyzeRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    ai_task_id: uuid.UUID
+    risk_analysis_artifact_id: uuid.UUID
+    status: str
+
+
+class CICDImportChangedFile(BaseModel):
+    path: str
+    old_path: str | None = None
+    change_type: str
+    lines_added: int = 0
+    lines_deleted: int = 0
+
+
+class CICDImportArtifactReference(BaseModel):
+    name: str
+    kind: str
+    external_url: str | None = None
+    sha256: str | None = None
+    size_bytes: int | None = None
+
+
+class CICDRunMetadataImportRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    project_id: uuid.UUID | None = None
+    repository_id: uuid.UUID | None = None
+    source_type: str = "ci_import"
+    provider: str = "imported"
+    trigger_type: str = "imported"
+    external_run_id: str
+    pipeline_name: str
+    job_name: str | None = None
+    conclusion: str
+    status: str | None = None
+    base_ref: str | None = None
+    head_ref: str | None = None
+    commit_sha: str | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
+    duration_ms: int | None = None
+    duration: int | None = None
+    external_url: str | None = None
+    changed_files: list[CICDImportChangedFile] = Field(default_factory=list)
+    artifact_references: list[CICDImportArtifactReference] = Field(default_factory=list)
+
+
+class CICDImportCreatedArtifactRead(BaseModel):
+    artifact_type: str
+    file_name: str
+
+
+class CICDRunMetadataImportRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    source_type: str
+    provider: str
+    trigger_type: str
+    import_status: str
+    quality_gate_status: str
+    ci_conclusion: str
+    created_artifacts: list[CICDImportCreatedArtifactRead] = Field(default_factory=list)
+
+
+class CICDChangedFileRead(BaseModel):
+    id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    path: str
+    old_path: str | None
+    change_type: str
+    language: str | None
+    file_role: str
+    risk_level: str
+    risk_reasons: list[str] = Field(default_factory=list)
+    lines_added: int
+    lines_deleted: int
+
+
+class UnitTestPatchCreate(BaseModel):
+    cicd_run_id: uuid.UUID
+    ai_task_id: uuid.UUID
+    patch_text: str
+    target_framework: str = "pytest"
+    scope_gate_result: dict[str, Any] = Field(default_factory=dict)
+    test_intent: str
+    coverage_target: list[dict[str, Any]] = Field(default_factory=list)
+    status: str = "generated"
+    review_comment: str | None = None
+
+
+class UnitTestPatchGenerateRequest(BaseModel):
+    patch_text: str | None = None
+    target_framework: str = "pytest"
+    test_intent: str = "Cover changed behavior with a focused unit test."
+    coverage_target: list[dict[str, Any]] = Field(default_factory=list)
+    prompt_version: str = "unit_test_patch:v1"
+    skill_version: str = "unit-test-patch-skill:v1"
+    model_provider: str = "mock"
+    model_name: str = "mock-unit-test-patch"
+
+
+class UnitTestPatchRead(BaseModel):
+    id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    ai_task_id: uuid.UUID
+    patch_text: str
+    target_framework: str
+    scope_gate_result: dict[str, Any] = Field(default_factory=dict)
+    test_intent: str
+    coverage_target: list[dict[str, Any]] = Field(default_factory=list)
+    status: str
+    review_comment: str | None
+
+
+class UnitTestPatchReviewRequest(BaseModel):
+    review_comment: str | None = None
+
+
+class UnitTestPatchReviewRead(BaseModel):
+    unit_test_patch_id: uuid.UUID
+    status: str
+
+
+class UnitTestPatchApplyRequest(BaseModel):
+    confirm_scope_gate_result: bool = True
+
+
+class UnitTestPatchApplyRead(BaseModel):
+    unit_test_patch_id: uuid.UUID
+    status: str
+    applied_artifact_id: uuid.UUID
+
+
+class CICDRunNewTestsRequest(BaseModel):
+    unit_test_patch_id: uuid.UUID | None = None
+    test_command_id: uuid.UUID
+
+
+class CICDRunNewTestsRead(BaseModel):
+    test_run_id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    status: str
+
+
+class CICDRegressionSelectRequest(BaseModel):
+    skill_version: str = "regression-selection-skill:v1"
+    candidate_test_command_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class CICDRegressionSelectRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    regression_plan_artifact_id: uuid.UUID
+    recommended_test_command_ids: list[uuid.UUID] = Field(default_factory=list)
+    reasons: list[str] = Field(default_factory=list)
+
+
+class CICDRegressionRunRequest(BaseModel):
+    regression_plan_artifact_id: uuid.UUID
+    test_command_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class CICDRegressionRunRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    test_run_ids: list[uuid.UUID] = Field(default_factory=list)
+    status: str
+
+
+class QualityGateComputeRequest(BaseModel):
+    include_failure_analysis: bool = True
+
+
+class CICDQualityReportRequest(BaseModel):
+    report_format: list[str] = Field(default_factory=lambda: ["markdown", "html", "json"])
+
+
+class CICDQualityReportRead(BaseModel):
+    report_id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    status: str
+    evidence_manifest_artifact_id: uuid.UUID | None = None
+
+
+class QualityGateDecisionCreate(BaseModel):
+    project_id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    status: str = "needs_review"
+    summary: str
+    blocking_reasons: list[str] = Field(default_factory=list)
+    evidence_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    decided_by: str = "system"
+    status_detail: dict[str, Any] = Field(default_factory=dict)
+
+
+class QualityGateDecisionRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    cicd_run_id: uuid.UUID
+    status: str
+    summary: str
+    blocking_reasons: list[str] = Field(default_factory=list)
+    evidence_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    decided_by: str
+    status_detail: dict[str, Any] = Field(default_factory=dict)
+
+
+class PatchScopeGateRead(BaseModel):
+    allowed: bool
+    checked_paths: list[str] = Field(default_factory=list)
+    blocked_paths: list[str] = Field(default_factory=list)
+    forbidden_patterns: list[str] = Field(default_factory=list)
+    risk_level: str
+    reason: str | None = None
+
+
+class CICDRunRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    repository_id: uuid.UUID | None
+    source_type: str
+    trigger_type: str
+    provider: str
+    pipeline_name: str | None
+    base_ref: str | None
+    head_ref: str | None
+    summary: str | None
+    overall_risk: str
+    quality_gate_status: str
+    status: str
+    changed_files: list[CICDChangedFileRead] = Field(default_factory=list)
+    analysis_artifacts: list[ArtifactRead | dict[str, Any]] = Field(default_factory=list)
+
+
+class CICDRunListRead(BaseModel):
+    items: list[CICDRunRead] = Field(default_factory=list)
+    total: int

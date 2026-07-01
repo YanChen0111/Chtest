@@ -38,19 +38,6 @@ Chtest V1 should follow this pattern for testing work:
 - Reports must cite evidence.
 - Metrics must expose whether AI improved testing efficiency and reliability.
 
-Public market and engineering evidence points to the same decision:
-
-| Signal | What It Means For Chtest |
-|---|---|
-| GitHub Copilot cloud agent researches repositories, creates plans, changes branches, runs tests/linters in an ephemeral environment, and exposes commits/logs/PR metrics. | Chtest should make plan, execution, artifact, and review traces first-class rather than only showing generated text. |
-| OpenAI Codex emphasizes isolated sandbox execution, terminal logs, test outputs, manual review, and repository instructions. | Chtest should treat runner sandbox metadata, test output, and project instructions as product trust boundaries. |
-| Google Jules follows repo selection, Cloud VM plan, diff review, and PR flow. | Chtest should preserve human approval and diff/artifact review before promotion. |
-| Meta TestGen-LLM reports build, reliable-pass, coverage-improvement, and engineer-acceptance rates. | Chtest should measure usefulness, pass rate, repair success, edit rate, and acceptance rather than generation count. |
-| Google OSS-Fuzz LLM work evaluates generated fuzz targets by compilation, execution, coverage, and retry-on-error. | Chtest should keep the mock-provider eval bench and failed-run repair loop evidence-driven. |
-| DORA 2025 frames AI as an amplifier of existing organizational strengths and weaknesses. | Chtest should improve the testing system itself: context quality, execution reliability, review gates, and metric feedback. |
-
-The product decision remains: do not build a generic AI chat surface, model leaderboard, or test management clone before the evidence loop works.
-
 ## 3. V1 Strategy
 
 Use Strategy B: evidence closed loop first.
@@ -155,7 +142,7 @@ After the minimum evidence loop is stable:
 - Productize AutomationRepairTask as failed evidence -> AI repair candidate -> human review -> new draft.
 - Export Markdown, HTML, JSON, JUnit XML, and CSV/Excel-friendly reports.
 - Add Prompt/Skill/model effectiveness views.
-- Add Git Quality report as a supporting PR/change validation workflow.
+- Add CI/CD quality report as a supporting local diff/change validation workflow.
 - Add flaky retry and unresolved failure metrics.
 
 ## 6. P2 Deferred Work
@@ -182,7 +169,7 @@ Do not put these in V1 critical path:
 | Slice 11-12 | AutomationDraft execution must record runtime artifact, runner sandbox metadata, and snapshots. |
 | Slice 12 | Docker runner should be the preferred product acceptance path when available. |
 | Slice 13-14 | Failure analysis and reports must cite evidence before drawing conclusions. |
-| Slice 15-16 | Git Quality remains a support workflow and must not overtake the main evidence loop. |
+| Slice 15-16 | CI/CD Quality Center remains a support workflow and must not overtake the main evidence loop. |
 
 ## 8. Vibe Coding Constraints
 
@@ -196,28 +183,7 @@ Hard rules:
 - Every runner execution records artifacts and snapshots.
 - After two or three failed repair attempts, stop generating changes and write a failure report.
 - Do not add broad platform features before `docs/fixtures/00-v1-demo-path.md` passes.
-- Every generated artifact must be inspectable from UI or API before it is promoted.
-- Every implementation Slice must preserve the plan -> diff -> verification -> commit -> handoff loop.
-- If an AI task lacks enough project context, record `insufficient_context` or an explicit empty context list instead of relying on hidden knowledge.
 
-## 9. Architecture Fit Review
-
-The current stack is reasonable for V1 and should stay frozen:
-
-- FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, and PostgreSQL fit contract-heavy workflows, schema validation, state machines, and evidence persistence.
-- Redis + RQ is enough for V1 AI/tool/report jobs because the first release needs reliable background execution, not a complex workflow engine.
-- Vue 3, TypeScript, Vite, and Arco Design Vue fit a dense workbench UI with tables, drawers, approvals, evidence views, and execution status.
-- Docker Compose is the right local-first deployment target because Chtest needs PostgreSQL, Redis, backend, worker, frontend, and runner consistency.
-- Mock Provider + OpenAI-compatible Provider is the right model strategy because the evidence loop must be deterministic before real-model tuning.
-
-Architecture watchlist:
-
-- RQ jobs must be idempotent enough for retry and crash recovery before real provider calls.
-- Artifact storage must be treated as product data, not temporary logs.
-- `docker_runner` should become the acceptance path as early as practical; `local_subprocess` must remain a development fallback.
-- Frontend scaffold from Slice 2.5 must be completed before feature pages so the UI does not drift into disconnected ad hoc screens.
-- Git Quality must remain a support workflow until the requirement -> case -> automation -> evidence path is demonstrably usable.
-
-## 10. Current Product Definition
+## 9. Current Product Definition
 
 Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers. It helps users turn requirements and code changes into human-reviewed, sandbox-executed, evidence-backed, and quality-measured testing assets.

@@ -24,13 +24,13 @@ Load, validate, version, expose, and benchmark built-in PromptVersion and SkillV
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add PromptVersion and SkillVersion models | planned | `pytest backend/app/tests/db/test_prompt_skill_models.py -q` | - | Migration included |
-| Add built-in prompt files | planned | `pytest backend/app/tests/prompt_skill/test_prompt_files.py -q` | - | JSON output schema required |
-| Add built-in skill files | planned | `pytest backend/app/tests/prompt_skill/test_skill_files.py -q` | - | Quality gates and forbidden actions |
-| Add registry loader and hash logic | planned | `pytest backend/app/tests/prompt_skill/test_registry_loader.py -q` | - | Idempotent seed |
-| Add mock-provider eval bench | planned | `pytest backend/app/tests/prompt_skill/test_eval_bench.py -q` | - | Deterministic schema/evidence/unsafe metrics |
-| Add Prompt/Skill API | planned | `pytest backend/app/tests/api/test_prompt_skill_registry.py -q` | - | List and detail only |
-| Add Prompt/Skill frontend shell | planned | `npm --prefix frontend run test -- --run` | - | Version list and detail smoke |
+| Add PromptVersion and SkillVersion models | done | `pytest backend/app/tests/db/test_prompt_skill_models.py -q` | pending commit | Migration included |
+| Add built-in prompt files | done | `backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_prompt_files.py -q` | pending commit | JSON output schema required |
+| Add built-in skill files | done | `backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_skill_files.py -q` | pending commit | Quality gates and forbidden actions |
+| Add registry loader and hash logic | done | `backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py -q` | pending commit | Idempotent seed |
+| Add mock-provider eval bench | done | `backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_eval_bench.py -q` | pending commit | Deterministic schema/evidence/unsafe metrics |
+| Add Prompt/Skill API | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_prompt_skill_registry.py -q` | pending commit | List and detail only |
+| Add Prompt/Skill frontend shell | done | `npm --prefix frontend run test -- --run` | pending commit | Version list and detail smoke |
 
 ## Task 1: Add PromptVersion And SkillVersion Models
 
@@ -70,9 +70,8 @@ Expected files:
 - `prompts/risk_matrix/v1.md`
 - `prompts/case_generation/v1.md`
 - `prompts/case_review/v1.md`
-- `prompts/case_optimization/v1.md`
 - `prompts/automation_draft_generation/v1.md`
-- `prompts/git_diff_analysis/v1.md`
+- `prompts/cicd_change_analysis/v1.md`
 - `prompts/unit_test_generation/v1.md`
 - `prompts/regression_selection/v1.md`
 - `prompts/tool_execution/v1.md`
@@ -110,7 +109,6 @@ Expected files:
 - `skills/unit-test-generation-skill/v1.md`
 - `skills/regression-selection-skill/v1.md`
 - `skills/tool-execution-skill/v1.md`
-- `skills/playwright-web-testing-skill/v1.md`
 - `skills/failure-analysis-skill/v1.md`
 - `skills/report-generation-skill/v1.md`
 - `backend/app/tests/prompt_skill/test_skill_files.py`

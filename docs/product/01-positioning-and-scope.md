@@ -4,11 +4,11 @@
 
 Chtest V1 is an AI testing evidence workbench for individual test engineers and automation test engineers.
 
-It focuses on one practical outcome: turn requirements and code changes into human-reviewed, sandbox-executed, evidence-backed, and quality-measured testing assets.
+It focuses on one practical outcome: turn requirements and local code changes into human-reviewed, sandbox-executed, evidence-backed, and quality-measured testing assets.
 
 The first version is single-user, local-first, review-driven, and measurable. It must feel like a serious daily testing tool, not a demo and not a team management platform.
 
-V1 should not be positioned as only an AI test-case generator. Generation is useful only when the result can be reviewed, executed, traced to artifacts, and measured.
+V1 should not be positioned as only an AI test-case generator or a broad test management platform. Generation is useful only when the result can be reviewed, executed, traced to artifacts, and measured.
 
 ## 2. V1 North Star
 
@@ -26,7 +26,7 @@ Requirement or local code change
   -> AI quality metrics
 ```
 
-`docs/fixtures/00-v1-demo-path.md` is the minimum product proof. V1 is not accepted until a user can follow that path and understand what AI analyzed, what was approved, what executed, what evidence supports the conclusion, and what happens next after failure.
+`docs/fixtures/00-v1-demo-path.md` is the minimum product proof. V1 is not accepted until a user can follow that path and understand what AI analyzed, which context artifacts were used, what was approved, what executed, what evidence supports the conclusion, and what happens next after failure.
 
 ## 3. Product Boundary
 
@@ -40,12 +40,13 @@ Requirement or local code change
 - AutomationDraft generation for pytest and Playwright.
 - Approval-gated automation execution.
 - TestRun, TestResult, artifacts, failure analysis, and reports.
-- V1 minimum evidence demo: requirement -> reviewed case -> approved AutomationDraft -> sandboxed execution -> evidence report.
-- Lightweight context artifacts for requirement documents, API samples, logs, fixtures, and bug summaries.
-- Small model/prompt evaluation bench for schema validity, usefulness, execution success, repair success, and evidence completeness.
-- Local Git diff analysis, scoped unit test patch generation, approval, and regression execution.
+- V1 minimum evidence demo: requirement -> ContextArtifact -> reviewed case -> approved AutomationDraft -> sandboxed execution -> evidence report.
+- Runner sandbox metadata, runtime manifest, dependency snapshot, and environment snapshot for AutomationDraft execution.
+- CI/CD Quality Center support: local Git diff analysis, scoped unit test patch generation, approval, and regression execution.
+- CI/CD Quality Center quality gate: local diff risk, patch scope, test evidence, regression evidence, and a passed/failed/needs_review decision.
 - Prompt, Skill, ToolDefinition, ToolInvocation, and AI quality measurement.
 - KnowledgeAdapter interface for future RAG connection.
+- RAG 知识库 page surface for ContextArtifact management, KnowledgeAdapter configuration state, safety metadata, and evidence usage display.
 
 ### Out Of Scope For V1
 
@@ -87,19 +88,20 @@ TestCase / Requirement
   -> ReportAgent
 ```
 
-### Support Workflow: Git Quality
+### Support Workflow: CI/CD Quality Center
 
 ```text
-Local Git Diff
-  -> GitDiffAgent
+Local Git Diff / CI/CD Change
+  -> CICDChangeAnalysisAgent
   -> UnitTestAgent
   -> UnitTestPatch Review
   -> TestRunner
   -> RegressionAgent
+  -> QualityGateDecision
   -> ReportAgent
 ```
 
-Git Quality supports code-change validation. It does not replace the main product loop.
+CI/CD Quality Center supports local code-change validation. In V1 it is a local-first support workflow, not a cloud CI/CD platform, and it does not replace the main product loop.
 
 ## 5. Tool Priority
 

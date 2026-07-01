@@ -15,8 +15,12 @@ Required seed data:
 - Project: `Checkout System`.
 - Module: `订单结算`.
 - Repository: local sample repository under an allowlisted path.
+- Sample repository fixture: `examples/sample-checkout-app` or an equivalent
+  allowlisted local path with a minimal coupon validation target and `tests/`
+  directory.
 - Environment: `local`.
 - TestCommand: `pytest tests -q --junitxml=artifacts/junit.xml`.
+- ContextArtifact: `coupon-api-notes.md`, stored as `context_markdown`, owner `Project`.
 - Mock Provider enabled.
 - Built-in PromptVersion loaded.
 - Built-in SkillVersion loaded.
@@ -24,62 +28,59 @@ Required seed data:
 
 ## 3. Minimum Flow
 
+Precondition: the sample repository fixture exists and the configured
+Repository/TestCommand can run in a controlled runner workspace. If this fixture
+does not exist yet, create it before starting the V0.1 or V1 runner smoke.
+
 1. Create Project.
 2. Create Module.
 3. Create Repository.
 4. Create Environment.
 5. Create TestCommand.
-6. Input coupon requirement.
-7. Mock RequirementReviewAgent generates requirement review.
-8. Mock CaseGenerationAgent generates candidate cases.
-9. User approves at least one candidate case.
-10. Mock AutomationDraftAgent generates pytest AutomationDraft.
-11. User approves AutomationDraft.
-12. TestRunnerTool runs pytest.
-13. Chtest saves TestRun, TestResult, and Artifact.
-14. ReportAgent generates `automation_execution` report.
+6. Create ContextArtifact `coupon-api-notes.md`.
+7. Input coupon requirement.
+8. Mock RequirementReviewAgent generates requirement review using `context_artifact_ids`.
+9. Mock CaseGenerationAgent generates candidate cases using the same ContextArtifact.
+10. User approves at least one candidate case.
+11. Mock AutomationDraftAgent generates pytest AutomationDraft.
+12. User approves AutomationDraft.
+13. TestRunnerTool runs pytest.
+14. Chtest saves TestRun, TestResult, and Artifact.
+15. ReportAgent generates `automation_execution` report.
 
 ## 4. Success Criteria
 
 - At least one `TestCase` has `review_status=approved`.
 - At least one `AutomationDraft` has `status=approved`.
 - At least one `TestRun` has `status=passed`.
-- TestRun records `runtime_artifact_ids`, `runtime_manifest.json`, `dependency_snapshot.json`, and `environment_snapshot.json`.
-- TestRun records runner sandbox metadata: runner mode, isolated run workspace, repository readonly setting, and network setting.
 - At least one `Report` has `status=ready` and `report_type=automation_execution`.
 - All related AITask records can trace PromptVersion, SkillVersion, model, input artifact, and output artifact.
+- RequirementReview and CaseGeneration AITask records include `context_artifact_ids`.
+- AI task artifact directory includes `context_manifest.json` with the exact ContextArtifact id, sha256, title, MIME type, and redaction flag.
+- TestRun records `runtime_artifact_ids`, `runtime_manifest.json`, `dependency_snapshot.json`, and `environment_snapshot.json`.
+- TestRun records runner sandbox metadata: runner mode, isolated run workspace, repository readonly setting, and network setting.
 - ToolInvocation is linked to TestRun and captures stdout/stderr/JUnit artifacts.
 
-## 5. Product Value Acceptance
-
-The demo is acceptable only when the user can answer these questions from the UI or generated report:
-
-- What requirement did AI analyze?
-- Which generated cases were approved or edited?
-- Which AutomationDraft was approved and what exact runtime file was executed?
-- Did the approved draft run successfully on the first execution?
-- What evidence supports the execution conclusion?
-- Which Prompt, Skill, model, and mock provider output produced the result?
-- What would the user do next if the TestRun failed?
-
-## 6. Minimum Evidence
+## 5. Minimum Evidence
 
 The demo must show:
 
 - Project Settings payload.
+- ContextArtifact list with `coupon-api-notes.md`, `safe_to_show`, and `redaction_applied`.
 - RequirementReview result.
+- RequirementReview context usage: `used_knowledge=false` and `used_context_artifact_ids=[coupon-api-notes.md id]`.
 - GeneratedCaseCandidate list.
 - Approved TestCase.
 - Approved AutomationDraft.
 - TestRun detail with parsed result.
-- Runtime manifest, dependency snapshot, and environment snapshot.
+- Runtime manifest, dependency snapshot, environment snapshot, and runner sandbox metadata.
 - Report detail with evidence/artifact references.
 
-## 7. Out Of Scope For This Demo
+## 6. Out Of Scope For This Demo
 
 - Real LLM provider.
-- RAG evidence retrieval.
+- External RAG/KnowledgeAdapter evidence retrieval.
 - Playwright execution.
-- Git Quality workflow.
+- CI/CD Quality workflow.
 - Newman/JMeter/Appium/traffic capture.
 - Multi-user collaboration.

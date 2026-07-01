@@ -36,7 +36,6 @@ V1 is single-user, but owner fields are kept for later extension.
 | AITaskStatus | created, pending, running, waiting_review, waiting_approval, succeeded, failed, cancelled |
 | CandidateStatus | generated, under_review, approved, approved_after_edit, rejected, needs_optimization, optimization_pending_review, archived |
 | AutomationDraftStatus | draft_generated, under_review, approved, edited, rejected, execution_pending, executed, execution_failed, promoted, archived |
-| AutomationRepairStatus | created, running, generated, under_review, approved, rejected, superseded, failed |
 | PatchStatus | generated, scope_validated, scope_rejected, awaiting_review, approved, rejected, edited, applied, apply_failed, replaced |
 | ToolInvocationStatus | created, waiting_approval, approved, rejected, running, succeeded, failed, timeout, cancelled |
 | TestRunStatus | created, queued, running, passed, failed, error, cancelled, timeout |
@@ -45,9 +44,12 @@ V1 is single-user, but owner fields are kept for later extension.
 | PromptStatus | draft, active, deprecated |
 | SkillStatus | draft, active, deprecated |
 | ToolDefinitionStatus | active, disabled, archived |
-| LLMCallStatus | started, succeeded, failed, timeout, schema_failed |
-| MCPServerStatus | active, disabled, archived |
+| KnowledgeAdapterStatus | not_configured, disabled, configured_stub |
 | FailureClassification | product_defect, test_script_issue, environment_issue, test_data_issue, dependency_issue, flaky_test, insufficient_evidence |
+| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation |
+| LLMCallStatus | started, succeeded, failed, timeout, schema_invalid |
+| AutomationRepairStatus | created, running, candidate_generated, waiting_review, approved, rejected, failed |
+| ReviewHistoryAction | open_review, approve, approve_after_edit, reject, edit, request_optimization, compute_quality_gate, recompute_quality_gate |
 
 ## 3. Workspace
 
@@ -79,7 +81,7 @@ Relationship: Workspace 1:N Project.
 | default_test_type | TestType | no | functional | Default test type |
 | status | EntityStatus | yes | active | Status |
 
-Relationship: Project 1:N Module, Repository, Environment, TestCommand, Requirement, TestCase, AITask, LLMCallLog, Report.
+Relationship: Project 1:N Module, Repository, Environment, TestCommand, Requirement, TestCase, AITask, Report.
 
 ## 6. Module
 
@@ -127,11 +129,20 @@ Constraint: level between 1 and 5.
 | name | varchar(160) | yes | none | Example `pytest unit` |
 | command | text | yes | none | Must match allowlist rules |
 | working_directory | text | yes | none | Must be under repository path |
-| command_type | varchar(40) | yes | pytest | pytest, npm, playwright |
+| command_type | varchar(40) | yes | pytest | pytest, npm, playwright, newman, jmeter |
 | timeout_seconds | int | yes | 600 | Max runtime |
 | parse_junit | bool | yes | true | Parse JUnit output |
 | parse_coverage | bool | yes | false | Parse coverage output |
 | status | EntityStatus | yes | active | Status |
+
+JMeter TestCommand rules:
+
+- `command_type=jmeter` is used only for approved local JMeter non-GUI
+  execution in Slice 22.
+- The command must pass the JMeter ToolDefinition allowlist and must not carry
+  arbitrary shell text from the client.
+- JMX plan paths and JTL output paths must stay under the repository path or a
+  Chtest-managed runtime workspace.
 
 ## 10. Requirement
 
@@ -246,16 +257,329 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | suggested_file_path | text | no | null | Suggested test path |
 | execution_notes | text | no | null | How to run and prerequisites |
 | risk_notes | text | no | null | Known risks and review focus |
-| execution_strategy | varchar(60) | yes | artifact_runtime_copy | artifact_runtime_copy in V1; manual_export is future |
+| execution_strategy | varchar(60) | yes | artifact_runtime_copy | artifact_runtime_copy in V1 |
 | approval_required | bool | yes | true | Must be approved in V1 |
 | status | AutomationDraftStatus | yes | draft_generated | Status |
 | review_comment | text | no | null | Review comment |
 | runtime_artifact_id | uuid | no | null | Artifact for approved temporary runtime file |
 | promoted_artifact_id | uuid | no | null | Promoted artifact |
 
-V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed artifact runtime directory before execution. It is not written directly into the target business repository. The copied runtime file is stored as an Artifact and referenced by `runtime_artifact_id`.
+V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed artifact runtime directory before execution. It is not written directly into the target business repository.
 
-## 17. AutomationRepairTask
+V2 Newman rule: Newman API execution uses configured TestCommand records with
+`command_type=newman`. It is not generated from AutomationDraft in Slice 18.
+The command must match Newman allowlist rules and must not contain arbitrary
+shell operators.
+
+## 17. CICDRun
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| repository_id | uuid | no | null | FK Repository |
+| source_type | varchar(40) | yes | local_diff | local_diff, uploaded_diff, manual_check, ci_import |
+| trigger_type | varchar(40) | yes | manual | manual in V1; imported in Slice 20; webhook, pr, scheduled are future only |
+| provider | varchar(40) | yes | local | local in V1; imported/github_actions/gitlab_ci/jenkins/circleci/buildkite/other labels are evidence only in Slice 20 |
+| pipeline_name | varchar(160) | no | null | Optional local pipeline/check name |
+| base_ref | varchar(160) | no | null | Base commit or branch |
+| head_ref | varchar(160) | no | null | Head commit or branch |
+| summary | text | no | null | Change summary |
+| overall_risk | RiskLevel | yes | medium | Overall risk |
+| quality_gate_status | varchar(40) | yes | pending | pending, passed, failed, needs_review |
+| status | varchar(40) | yes | created | created, imported, import_failed, analyzed, patch_ready, tests_running, reported, archived |
+
+V1 Slice 15 boundary:
+
+- `source_type` supports `local_diff` and `manual_check`; `uploaded_diff` is
+  accepted only as stored diff text, not as remote provider ingestion.
+- `trigger_type` is `manual` only.
+- `provider` is `local` only.
+- `quality_gate_status` remains `pending` in Slice 15 because
+  QualityGateDecision belongs to Slice 16.
+- Slice 15 must not trigger merge, push, release, deployment, webhook handling,
+  PR comments, or remote CI provider synchronization.
+
+V2 Slice 20 import boundary:
+
+- `source_type=ci_import` is allowed only for static CI metadata imported into
+  Chtest as evidence.
+- `trigger_type=imported` may be used to distinguish imported facts from local
+  manual runs. It must not imply webhook, PR, scheduled, or remote-triggered
+  execution.
+- `provider` may store inert labels such as `imported`, `github_actions`,
+  `gitlab_ci`, or `jenkins` only as source metadata. Provider labels must not
+  enable provider APIs, credential lookup, webhook processing, pipeline
+  triggering, reruns, PR comments, deployment, release, or remote status update.
+- Imported CI metadata may include pipeline name, job name, inert run URL,
+  commit SHA, base/head refs, conclusion, started/finished timestamps, duration,
+  changed files, and artifact references. These values live in
+  `ci_run_metadata.json` Artifact content and metadata unless a later contract
+  explicitly promotes individual fields onto CICDRun. They are not remote
+  integration configuration.
+- Imported CI conclusion is evidence only. It must not automatically create a
+  `QualityGateDecision` or change `quality_gate_status` to `passed`.
+
+## 18. CICDChangedFile
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| cicd_run_id | uuid | yes | none | FK CICDRun |
+| path | text | yes | none | File path |
+| old_path | text | no | null | Rename source path |
+| change_type | varchar(40) | yes | modified | added, modified, deleted, renamed |
+| language | varchar(60) | no | null | Language |
+| file_role | varchar(60) | yes | unknown | source, test, docs, config, migration, fixture, build, unknown |
+| risk_level | RiskLevel | yes | medium | File risk |
+| risk_reasons_json | jsonb | yes | [] | Risk reasons |
+| lines_added | int | yes | 0 | Added lines |
+| lines_deleted | int | yes | 0 | Deleted lines |
+
+CICDChangedFile evidence rules:
+
+- Rows are derived from local unified diff text, manual changed-file input, or
+  Slice 20 static CI metadata imports.
+- `file_role` is deterministic from path and extension.
+- `risk_reasons_json` must explain why `risk_level` was assigned.
+- Every changed file in `changed_files.json` should have a matching
+  CICDChangedFile row.
+- Imported changed files must preserve provider-supplied path/change metadata
+  only as local evidence. They must not cause repository checkout, fetch, merge,
+  pull, push, or remote comparison.
+
+## 19. UnitTestPatch
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| cicd_run_id | uuid | yes | none | FK CICDRun |
+| ai_task_id | uuid | yes | none | FK AITask |
+| patch_text | text | yes | none | Unified diff |
+| target_framework | varchar(60) | yes | pytest | pytest/jest/vitest |
+| scope_gate_result_json | jsonb | yes | {} | Path gate result |
+| test_intent | text | yes | none | Test intent |
+| coverage_target_json | jsonb | yes | [] | Coverage target |
+| status | PatchStatus | yes | generated | Status |
+| review_comment | text | no | null | Review comment |
+
+UnitTestPatch rules:
+
+- UnitTestPatch is review-gated. Generated patches must not be applied until a
+  user approves them.
+- `scope_gate_result_json` must include `allowed`, `checked_paths`,
+  `blocked_paths`, `forbidden_patterns`, `risk_level`, and `reason` when
+  rejected.
+- PatchScopeGate must reject any patch that modifies business source files,
+  configuration, migrations, generated artifacts, or files outside allowed test
+  directories.
+- `scope_rejected` patches cannot transition to `approved`.
+- Applied patches must preserve the original `patch_text` as evidence and write
+  an applied patch artifact.
+
+## 20. TestRun
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| cicd_run_id | uuid | no | null | FK CICDRun |
+| automation_draft_id | uuid | no | null | FK AutomationDraft |
+| test_command_id | uuid | no | null | FK TestCommand |
+| tool_invocation_id | uuid | no | null | FK ToolInvocation |
+| name | varchar(255) | yes | none | Run name |
+| command | text | yes | none | Executed command |
+| working_directory | text | yes | none | Working directory |
+| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, playwright_local, newman_local, jmeter_local, docker_runner |
+| run_workspace | text | no | null | Isolated execution workspace |
+| repository_readonly | bool | yes | true | Target repository mounted/read as readonly when possible |
+| network_enabled | bool | yes | false | Network access during run |
+| runtime_artifact_ids | uuid[] | yes | {} | Exact runtime files executed |
+| dependency_snapshot_artifact_id | uuid | no | null | Python/Node/lockfile/image snapshot |
+| environment_snapshot_artifact_id | uuid | no | null | Redacted environment snapshot |
+| status | TestRunStatus | yes | created | Status |
+| exit_code | int | no | null | Exit code |
+| duration_ms | int | no | null | Duration |
+| parsed_result_json | jsonb | yes | {} | Parsed aggregate result |
+
+Newman TestRun rules:
+
+- `runner_mode=newman_local` is used for approved local Newman API execution.
+- Newman TestRuns must reference `test_command_id`; Slice 18 does not execute
+  Newman from AutomationDraft.
+- `parsed_result_json` must include aggregate request/assertion counts:
+  `total`, `passed`, `failed`, `skipped`, `error`, `request_count`, and
+  `assertion_count`.
+- `failed` means Newman completed and one or more API assertions failed.
+- `error` means Newman could not run, timed out, or produced unparseable output.
+- `network_enabled` remains explicit. Local fixture tests should keep it false;
+  any future live API collection must display the chosen network policy.
+
+JMeter TestRun rules:
+
+- `runner_mode=jmeter_local` is used for approved local JMeter non-GUI
+  execution.
+- JMeter TestRuns must reference `test_command_id`; Slice 22 does not execute
+  JMeter from AutomationDraft.
+- `parsed_result_json` must include aggregate sampler/assertion counts:
+  `total`, `passed`, `failed`, `skipped`, `error`, `sampler_count`,
+  `assertion_count`, `duration_ms`, and `average_latency_ms` when available.
+- `failed` means JMeter completed and one or more samplers/assertions failed.
+- `error` means JMeter could not run, timed out, or produced unparseable JTL
+  output.
+- Local fixture tests must not require a real JMeter installation; they may use
+  deterministic JTL files or a fake executable.
+
+Slice 29 execution run manifest rules:
+
+- Execution run manifest is read-only presentation derived from existing
+  TestRun fields and Artifact metadata. It does not add a new table.
+- Manifest identity fields are `id`, `name`, `status`, `automation_draft_id`,
+  `test_command_id`, and `tool_invocation_id`.
+- Manifest command fields are `command`, `working_directory`, `runner_mode`,
+  and `run_workspace`.
+- Manifest safety fields are `repository_readonly` and `network_enabled`.
+  `network_enabled=false` is the default local safety policy;
+  `network_enabled=true` must remain visible and must not be hidden behind a
+  passed status.
+- Manifest snapshot fields are `runtime_artifact_ids`,
+  `dependency_snapshot_artifact_id`, and `environment_snapshot_artifact_id`.
+  Missing snapshot ids remain meaningful unavailable evidence and must not be
+  treated as passing evidence.
+- Manifest result fields are `exit_code`, `duration_ms`, and
+  `parsed_result_json`.
+- Manifest artifact rows are existing Artifact rows owned by the TestRun or
+  cited by these snapshot fields. The manifest does not create, rewrite, or
+  delete Artifact rows.
+- Execution run manifest must not mutate TestRun, TestResult, Artifact, Report,
+  FailureAnalysis, QualityGateDecision, AutomationDraft, ToolDefinition,
+  ToolInvocation, CI metadata, or review history.
+
+## 21. QualityGateDecision
+
+QualityGateDecision records one computed CI/CD quality gate result for a CICDRun. V1 computes it from local diff risk, PatchScopeGate, new test results, regression results, and failure analysis evidence. It does not trigger merge, push, or deployment automatically. Recomputing the gate creates a new QualityGateDecision record and updates `CICDRun.quality_gate_status`; old decisions remain as evidence history.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| cicd_run_id | uuid | yes | none | FK CICDRun |
+| status | varchar(40) | yes | needs_review | passed, failed, needs_review |
+| summary | text | yes | none | Human-readable gate conclusion |
+| blocking_reasons_json | jsonb | yes | [] | Reasons blocking merge/release readiness |
+| evidence_artifact_ids | uuid[] | yes | {} | Diff, patch, JUnit, logs, failure analysis |
+| decided_by | varchar(40) | yes | system | system in V1; user_override is V2+ |
+| status_detail_json | jsonb | yes | {} | Patch/test/regression/failure-analysis signals |
+
+QualityGateDecision rules:
+
+- `passed` requires passing PatchScopeGate evidence, approved/applied
+  UnitTestPatch evidence when a patch is used, passing new-test evidence, and
+  passing regression evidence or a documented low-risk regression waiver.
+- `failed` requires at least one concrete blocking reason, such as scope
+  rejection, failed tests, failed regression, or high-risk uncovered changes.
+- `needs_review` is required when evidence is missing, ambiguous, or manually
+  risky.
+- Imported CI conclusion can be cited in `status_detail_json` and
+  `evidence_artifact_ids`, but it is not sufficient by itself for `passed`.
+  Existing local evidence requirements still apply unless a later contract
+  explicitly changes them.
+- QualityGateDecision never triggers merge, push, release, deployment, remote CI
+  status updates, or PR comments.
+
+## 21.1 ReviewHistory
+
+ReviewHistory records local append-only review attribution events across the
+existing review-gated evidence loop. It is evidence metadata, not an
+authorization, login, RBAC, tenant, assignment, notification, or enterprise
+audit model.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| entity_type | varchar(80) | yes | none | GeneratedCaseCandidate, TestCase, AutomationDraft, UnitTestPatch, CICDRun, QualityGateDecision, AutomationRepairTask |
+| entity_id | uuid | yes | none | Reviewed or decision entity id |
+| related_entity_type | varchar(80) | no | null | Optional display/query relation, for example QualityGateDecision -> CICDRun |
+| related_entity_id | uuid | no | null | Optional related entity id |
+| action | varchar(80) | yes | none | ReviewHistoryAction or deterministic workflow action label |
+| from_status | varchar(80) | no | null | Status before successful action |
+| to_status | varchar(80) | no | null | Status after successful action or computed status |
+| reviewer | varchar(120) | yes | Default User | Local display label, not an auth principal |
+| comment | text | no | null | Human review comment or computed decision summary |
+| evidence_artifact_ids | uuid[] | yes | {} | Existing Artifact ids supporting the event |
+| metadata_json | jsonb | yes | {} | Safe workflow-specific metadata such as quality_gate_decision_id |
+| created_at | timestamptz | yes | now() | Event time |
+
+ReviewHistory rules:
+
+- Records are append-only through the public service/API surface. Existing
+  review actions may append records; clients must not overwrite or delete
+  history records as part of Slice 21.
+- `reviewer` is a local display label. The default is `Default User` and it
+  must not be treated as an authenticated user id, role, permission, tenant, or
+  session principal.
+- ReviewHistory must not decide whether an action is allowed. Existing
+  state-machine and service validation remains the authority.
+- Record only successful review or decision events. Failed validation,
+  forbidden transitions, and rejected API payloads must not append history.
+- `evidence_artifact_ids` references persisted Artifact rows. ReviewHistory
+  must not duplicate raw artifact content, secrets, tokens, or remote provider
+  credentials in `comment` or `metadata_json`.
+- Slice 21 covers local events for generated case review, AutomationDraft
+  review/edit/approval where supported, UnitTestPatch approval/rejection, and
+  QualityGateDecision compute/recompute.
+- Generated case approval history should be written for the
+  GeneratedCaseCandidate. The created TestCase may display that history through
+  `source_candidate_id`; it should not duplicate an identical approval record
+  unless a later contract defines a separate TestCase review action.
+- QualityGateDecision compute history should record the created
+  QualityGateDecision as `entity_type=QualityGateDecision` and may set
+  `related_entity_type=CICDRun` so the CI/CD quality page can display the event
+  from the run. `from_status` and `to_status` describe the
+  `CICDRun.quality_gate_status` transition caused by the recompute.
+- ReviewHistory must not introduce users, roles, permissions, tenants,
+  departments, SSO, login/session flows, assignment workflow, notifications,
+  team inboxes, PR comments, remote provider governance, or enterprise audit
+  policy.
+
+## 22. TestResult
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| test_run_id | uuid | yes | none | FK TestRun |
+| test_name | text | yes | none | Case/test node id |
+| test_file | text | no | null | Source test file |
+| status | TestResultStatus | yes | passed | Result status |
+| duration_ms | int | no | null | Duration |
+| failure_message | text | no | null | Failure summary |
+| failure_artifact_ids | uuid[] | yes | {} | Related artifacts |
+| metadata_json | jsonb | yes | {} | Parser-specific metadata |
+
+Newman TestResult metadata rules:
+
+- Newman results are mapped at assertion granularity when available.
+- `test_name` should be deterministic, for example
+  `collection/folder/request::assertion`.
+- `test_file` may be the collection path when known.
+- `metadata_json` should include safe fields such as `collection_name`,
+  `folder_name`, `request_name`, `assertion_name`, `method`, `url_template`,
+  and `iteration`.
+- `metadata_json` must not store secrets, bearer tokens, cookies, or raw
+  environment values.
+
+## 23. FailureAnalysis
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| test_run_id | uuid | no | null | FK TestRun |
+| test_result_id | uuid | no | null | FK TestResult |
+| ai_task_id | uuid | yes | none | FK AITask |
+| classification | FailureClassification | yes | insufficient_evidence | Classification |
+| confidence | numeric(4,3) | yes | 0 | Confidence score from 0.000 to 1.000 |
+| evidence_artifact_ids | uuid[] | yes | {} | Evidence artifacts |
+| summary | text | yes | none | Human-readable summary |
+| root_cause | text | no | null | Evidence-based root cause |
+| suggested_actions_json | jsonb | yes | [] | Suggested next actions |
+| status | varchar(40) | yes | draft | draft, confirmed, rejected |
+
+## 24. AutomationRepairTask
 
 AutomationRepairTask records an evidence-driven attempt to improve an AutomationDraft after a failed execution. It does not overwrite the approved AutomationDraft silently.
 
@@ -278,142 +602,15 @@ AutomationRepairTask records an evidence-driven attempt to improve an Automation
 Rules:
 
 - Repair input must include the failed TestRun runtime manifest and available execution artifacts.
-- Repair output stays review-gated; it cannot replace `AutomationDraft.draft_code` without user action.
-- If evidence is missing, the repair task must fail or produce `insufficient_evidence` guidance rather than inventing fixtures, selectors, or environment assumptions.
+- Repair candidate cannot automatically replace or promote an approved AutomationDraft.
+- Repair approval does not execute automatically; it creates or updates a review-gated AutomationDraft candidate.
 
-## 18. GitChangeSet
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| repository_id | uuid | no | null | FK Repository |
-| source_type | varchar(40) | yes | local_diff | local_diff, uploaded_diff |
-| base_ref | varchar(160) | no | null | Base commit or branch |
-| head_ref | varchar(160) | no | null | Head commit or branch |
-| summary | text | no | null | Change summary |
-| overall_risk | RiskLevel | yes | medium | Overall risk |
-| status | varchar(40) | yes | created | created, analyzed, reported, archived |
-
-## 19. GitChangedFile
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| change_set_id | uuid | yes | none | FK GitChangeSet |
-| path | text | yes | none | File path |
-| old_path | text | no | null | Rename source path |
-| change_type | varchar(40) | yes | modified | added, modified, deleted, renamed |
-| language | varchar(60) | no | null | Language |
-| file_role | varchar(60) | yes | unknown | source, test, docs, config, migration, fixture, build, unknown |
-| risk_level | RiskLevel | yes | medium | File risk |
-| risk_reasons_json | jsonb | yes | [] | Risk reasons |
-| lines_added | int | yes | 0 | Added lines |
-| lines_deleted | int | yes | 0 | Deleted lines |
-
-## 20. UnitTestPatch
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| change_set_id | uuid | yes | none | FK GitChangeSet |
-| ai_task_id | uuid | yes | none | FK AITask |
-| patch_text | text | yes | none | Unified diff |
-| target_framework | varchar(60) | yes | pytest | pytest/jest/vitest |
-| scope_gate_result_json | jsonb | yes | {} | Path gate result |
-| test_intent | text | yes | none | Test intent |
-| coverage_target_json | jsonb | yes | [] | Coverage target |
-| status | PatchStatus | yes | generated | Status |
-| review_comment | text | no | null | Review comment |
-
-## 21. GitRiskAnalysis
+## 25. Report
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| change_set_id | uuid | yes | none | FK GitChangeSet |
-| ai_task_id | uuid | yes | none | FK AITask |
-| summary | text | yes | none | Change risk summary |
-| overall_risk | RiskLevel | yes | medium | Overall risk |
-| impacted_modules_json | jsonb | yes | [] | Impacted module names or paths |
-| high_risk_files_json | jsonb | yes | [] | High-risk file explanations |
-| test_recommendations_json | jsonb | yes | [] | Recommended tests and reasons |
-| status | varchar(40) | yes | analyzed | analyzed, confirmed, archived |
-
-Relationship: GitChangeSet 1:1 GitRiskAnalysis in V1.
-
-## 22. RegressionPlan
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| change_set_id | uuid | yes | none | FK GitChangeSet |
-| ai_task_id | uuid | no | null | FK AITask when generated by RegressionAgent |
-| strategy | varchar(80) | yes | targeted_regression | targeted_regression, full_regression, manual_selection, no_run |
-| recommended_commands_json | jsonb | yes | [] | TestCommand ids, command snapshots, and reasons |
-| recommended_suites_json | jsonb | yes | [] | Future TestSuite recommendations |
-| manual_attention_json | jsonb | yes | [] | Items requiring human decision |
-| status | varchar(40) | yes | draft | draft, approved, executed, replaced, archived |
-
-## 23. TestRun
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| change_set_id | uuid | no | null | FK GitChangeSet |
-| automation_draft_id | uuid | no | null | FK AutomationDraft |
-| test_command_id | uuid | no | null | FK TestCommand |
-| tool_invocation_id | uuid | no | null | FK ToolInvocation |
-| name | varchar(255) | yes | none | Run name |
-| command | text | yes | none | Executed command |
-| working_directory | text | yes | none | Working directory |
-| runtime_artifact_ids | uuid[] | yes | {} | Runtime files used by this run, including AutomationDraft copies |
-| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, docker_runner |
-| run_workspace | text | no | null | Canonical isolated run workspace |
-| repository_readonly | bool | yes | true | Repository access mode snapshot |
-| network_enabled | bool | yes | false | Network access snapshot |
-| dependency_snapshot_artifact_id | uuid | no | null | Python/Node/lockfile/image snapshot |
-| environment_snapshot_artifact_id | uuid | no | null | Redacted env snapshot |
-| status | TestRunStatus | yes | created | Status |
-| exit_code | int | no | null | Exit code |
-| duration_ms | int | no | null | Duration |
-| parsed_result_json | jsonb | yes | {} | Parsed aggregate result |
-
-When `automation_draft_id` is set, `runtime_artifact_ids` must include the AutomationDraft runtime copy artifact used by the run. This lets reports and failure analysis identify the exact generated file that was executed.
-
-## 24. TestResult
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| test_run_id | uuid | yes | none | FK TestRun |
-| test_name | text | yes | none | Case/test node id |
-| test_file | text | no | null | Source test file |
-| status | TestResultStatus | yes | passed | Result status |
-| duration_ms | int | no | null | Duration |
-| failure_message | text | no | null | Failure summary |
-| failure_artifact_ids | uuid[] | yes | {} | Related artifacts |
-| metadata_json | jsonb | yes | {} | Parser-specific metadata |
-
-## 25. FailureAnalysis
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| test_run_id | uuid | no | null | FK TestRun |
-| test_result_id | uuid | no | null | FK TestResult |
-| ai_task_id | uuid | yes | none | FK AITask |
-| classification | FailureClassification | yes | insufficient_evidence | Classification |
-| confidence | numeric(3,2) | yes | 0.00 | 0.00-1.00 confidence score |
-| evidence_artifact_ids | uuid[] | yes | {} | Evidence artifacts |
-| summary | text | yes | none | Human-readable summary |
-| root_cause | text | no | null | Evidence-based root cause |
-| suggested_actions_json | jsonb | yes | [] | Suggested next actions |
-| status | varchar(40) | yes | draft | draft, confirmed, rejected |
-
-## 26. Report
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| report_type | varchar(80) | yes | execution | requirement_review, case_quality, automation_execution, git_quality, ai_effectiveness |
+| report_type | varchar(80) | yes | execution | requirement_review, case_quality, automation_execution, cicd_quality, ai_effectiveness |
 | title | varchar(255) | yes | none | Report title |
 | related_entity_type | varchar(80) | no | null | Related entity type |
 | related_entity_id | uuid | no | null | Related entity id |
@@ -423,7 +620,7 @@ When `automation_draft_id` is set, `runtime_artifact_ids` must include the Autom
 | metrics_json | jsonb | yes | {} | Metrics |
 | artifact_ids | uuid[] | yes | {} | Report artifacts |
 
-## 27. AITask
+## 26. AITask
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -436,16 +633,31 @@ When `automation_draft_id` is set, `runtime_artifact_ids` must include the Autom
 | model_name | varchar(120) | yes | mock-model | Model |
 | status | AITaskStatus | yes | created | Status |
 | input_json | jsonb | yes | {} | Input summary |
-| context_artifact_ids | uuid[] | yes | {} | Explicit context artifacts used by this task; empty means no context |
 | output_json | jsonb | yes | {} | Structured output |
 | error_json | jsonb | no | null | Error information |
 | token_usage_json | jsonb | yes | {} | Token usage |
+| context_artifact_ids | uuid[] | yes | {} | Context artifacts injected into the prompt |
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 28. LLMCallLog
+Deterministic knowledge retrieval rules:
 
-LLMCallLog records each provider call made inside an AITask. AITask is the workflow-level task; LLMCallLog is the per-model-call audit log. V1 may create one LLMCallLog per AITask, but the model supports retries, schema-repair calls, and future model comparison.
+- V2 Slice 19 may store deterministic local retrieval summaries in
+  `input_json` and `output_json`.
+- `input_json` may include `use_knowledge=true`, `knowledge_query_text`,
+  `knowledge_query_terms`, and requested retrieval limits.
+- `output_json` must include `used_knowledge=true` only when retrieved snippets
+  were actually injected into the AI task prompt.
+- `output_json.used_context_artifact_ids` must list the exact ContextArtifact
+  ids used by deterministic retrieval.
+- `output_json.retrieval_evidence_artifact_id` may reference an Artifact with
+  `artifact_type=knowledge_retrieval`.
+- Retrieval evidence must not be inferred from model text alone; it must cite
+  persisted ContextArtifact ids and artifact evidence.
+
+## 27. LLMCallLog
+
+LLMCallLog records each provider call made inside an AITask. AITask is the workflow-level task; LLMCallLog is the per-model-call audit log.
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -471,7 +683,7 @@ LLMCallLog records each provider call made inside an AITask. AITask is the workf
 
 Relationship: AITask 1:N LLMCallLog.
 
-## 29. PromptVersion
+## 28. PromptVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -486,7 +698,7 @@ Relationship: AITask 1:N LLMCallLog.
 
 Unique constraint: name + version.
 
-## 30. SkillVersion
+## 29. SkillVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -502,7 +714,7 @@ Unique constraint: name + version.
 
 Unique constraint: name + version.
 
-## 31. ToolDefinition
+## 30. ToolDefinition
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -521,9 +733,103 @@ Unique constraint: name + version.
 | max_stdout_bytes | int | yes | 1048576 | Captured stdout limit |
 | max_stderr_bytes | int | yes | 1048576 | Captured stderr limit |
 | artifact_policy_json | jsonb | yes | {} | Artifact capture rules |
+| is_mcp_ready | bool | yes | false | Schema can be exposed through future MCP layer |
+| mcp_metadata_json | jsonb | yes | {} | MCP-ready metadata, not runtime config |
 | status | ToolDefinitionStatus | yes | active | Status |
 
 Unique constraint: project_id + name, treating null project_id as built-in scope.
+
+MCP-ready ToolDefinition rules:
+
+- `is_mcp_ready=true` means the tool has stable name, description,
+  input/output schema, risk, approval, timeout, allowlist, and artifact policy
+  metadata suitable for future MCP exposure.
+- V1 execution still goes through ToolInvocation and internal Tool Adapter
+  allowlist rules.
+- `mcp_metadata_json` may store `schema_version`, `capability_name`,
+  `safe_description`, and `exposure_notes`.
+- `mcp_metadata_json` must not store MCP server URLs, tokens, OAuth state, remote
+  transport settings, or plugin marketplace references.
+- `tool_type=mcp_proxy` is schema intent only in V1 and must not trigger an MCP
+  runtime dependency.
+
+Newman ToolDefinition rules:
+
+- Built-in Newman execution uses a ToolDefinition such as
+  `newman_collection_run`.
+- `tool_type` remains `test_runner`.
+- `command_allowlist_json` must constrain commands to backend-approved Newman
+  templates, for example `npx newman run <collection> --reporters json,junit`.
+- `allowed_working_directories_json` must keep execution under the repository
+  path or Chtest-managed runtime workspace.
+- `artifact_policy_json` must name stdout, stderr, `newman_json`, optional
+  `junit`, runtime manifest, dependency snapshot, environment snapshot, and
+  parsed result artifacts.
+- Forbidden shell operators remain rejected. A Newman command cannot use shell
+  chaining, redirection, command substitution, or pipes.
+
+JMeter ToolDefinition rules:
+
+- Built-in JMeter execution uses a ToolDefinition such as
+  `jmeter_non_gui_run`.
+- `tool_type` remains `test_runner`.
+- `command_allowlist_json` must constrain commands to backend-approved JMeter
+  non-GUI templates equivalent to `jmeter -n -t <plan.jmx> -l <result.jtl>`.
+- `allowed_working_directories_json` must keep execution under the repository
+  path or Chtest-managed runtime workspace.
+- `artifact_policy_json` must name stdout, stderr, `jmeter_jtl`, runtime
+  manifest, dependency snapshot, environment snapshot, and parsed result
+  artifacts.
+- Forbidden shell operators remain rejected. A JMeter command cannot use shell
+  chaining, redirection, command substitution, pipes, remote agents, or cloud
+  load testing controls.
+
+## 31. KnowledgeAdapterConfig
+
+KnowledgeAdapterConfig records the V1 empty KnowledgeAdapter surface. It is
+configuration state only; it does not perform retrieval.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| adapter_name | varchar(120) | yes | default | Name inside project |
+| status | KnowledgeAdapterStatus | yes | not_configured | Empty adapter state |
+| provider_type | varchar(80) | yes | none | none, stub, deterministic_local |
+| config_json | jsonb | yes | {} | Non-secret display/config state |
+| safety_policy_json | jsonb | yes | {} | Prompt eligibility and safety notes |
+| last_checked_at | timestamptz | no | null | Last local validation time |
+| notes | text | no | null | Human-readable notes |
+
+Unique constraint: project_id + adapter_name.
+
+V1 KnowledgeAdapter rules:
+
+- KnowledgeAdapterConfig is optional; missing config means `not_configured`.
+- `provider_type` must be `none` or `stub` in V1.
+- `config_json` must not contain API keys, provider credentials, vector database
+  settings, embedding model settings, remote URLs, OAuth state, or MCP transport
+  details.
+- KnowledgeAdapterConfig must not create vector indexes, chunk documents, embed
+  content, rank search results, or call external providers.
+- AI task responses must keep `used_knowledge=false` unless a future version
+  implements a real KnowledgeAdapter runtime.
+
+V2 deterministic KnowledgeAdapter rules:
+
+- Slice 19 may set `provider_type=deterministic_local` with
+  `status=configured_stub` to enable the deterministic local retrieval stub.
+- `config_json` may include non-secret values such as `match_mode`,
+  `max_results`, `max_snippet_chars`, `min_score`, and `case_sensitive=false`.
+- Retrieval may read only same-project ContextArtifact rows that are safe to
+  show and allowed for prompt use.
+- Retrieval must return deterministic scores, matched terms, bounded snippets,
+  and exact ContextArtifact ids.
+- `used_knowledge=true` is allowed only when this local deterministic stub
+  contributes retrieved snippets to an AI task.
+- Slice 19 still must not create vector indexes, chunking pipelines,
+  embeddings, reranking jobs, external provider calls, MCP runtime calls, RBAC,
+  tenant, permission, marketplace, cloud sync, release, or remote CI/CD
+  behavior.
 
 ## 32. ToolInvocation
 
@@ -552,52 +858,49 @@ Unique constraint: project_id + name, treating null project_id as built-in scope
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| owner_entity_type | varchar(80) | yes | none | AITask/TestRun/Report/etc. |
+| owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_document, context_openapi, context_log, context_fixture, context_bug_summary |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
 | sha256 | varchar(128) | yes | none | Content hash |
 | metadata_json | jsonb | yes | {} | Metadata |
 
-## 34. CaseQualityMetric
+V1 ContextArtifact rule:
 
-CaseQualityMetric stores batch-level AI case-generation quality. Ratio fields use `0.00-1.00`; UI may render percentages.
+- ContextArtifact is not a separate table in V1.
+- ContextArtifact reuses the Artifact table.
+- For project-level context documents, set `owner_entity_type=Project` and `owner_entity_id=project_id`.
+- AITask rows that use context must copy the selected ids into `context_artifact_ids`.
+- A prompt input artifact must include `context_manifest.json` with the exact context artifact ids, hashes, titles, MIME types, and redaction flags used for that AI task.
+- Artifact owner fields must never be null for ContextArtifact.
 
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| generation_task_id | uuid | yes | none | FK CaseGenerationTask |
-| requirement_id | uuid | yes | none | FK Requirement |
-| prompt_version_id | uuid | yes | none | FK PromptVersion |
-| skill_version_id | uuid | yes | none | FK SkillVersion |
-| model_provider | varchar(80) | yes | mock | Provider |
-| model_name | varchar(120) | yes | mock-model | Model |
-| generated_count | int | yes | 0 | Candidate count |
-| approved_count | int | yes | 0 | Directly approved count |
-| approved_after_edit_count | int | yes | 0 | Edited then approved count |
-| rejected_count | int | yes | 0 | Rejected count |
-| optimization_count | int | yes | 0 | Optimization requested count |
-| unavailable_count | int | yes | 0 | Marked unavailable count |
-| duplicate_count | int | yes | 0 | Potential duplicate count |
-| field_complete_rate | numeric(3,2) | yes | 0.00 | Required-field completeness, 0.00-1.00 |
-| acceptance_rate | numeric(3,2) | yes | 0.00 | approved / generated_count |
-| edited_acceptance_rate | numeric(3,2) | yes | 0.00 | approved_after_edit / generated_count |
-| rejection_rate | numeric(3,2) | yes | 0.00 | rejected / generated_count |
-| duplicate_rate | numeric(3,2) | yes | 0.00 | duplicate_count / generated_count |
-| review_progress_rate | numeric(3,2) | yes | 0.00 | reviewed candidates / generated_count |
+Deterministic retrieval Artifact rule:
 
-Relationship: CaseGenerationTask 1:1 CaseQualityMetric in V1.
+- Slice 19 retrieval evidence uses `artifact_type=knowledge_retrieval`.
+- `owner_entity_type=AITask` and `owner_entity_id=ai_task_id`.
+- `metadata_json` must include `created_by_component=DeterministicKnowledgeAdapter`,
+  `retrieval_mode=deterministic_local`, `query_terms`, `result_count`,
+  `used_context_artifact_ids`, and redaction status.
 
-## 35. AutomationQualityMetric
+CI import Artifact rule:
+
+- Slice 20 CI metadata import uses `artifact_type=ci_run_metadata`.
+- `owner_entity_type=CICDRun` and `owner_entity_id=cicd_run_id`.
+- `metadata_json` must include `created_by_component=CICDRunMetadataImport`,
+  `source_type=ci_import`, `provider`, `provider_is_inert_label=true`,
+  `import_mode`, `changed_file_count`, `artifact_reference_count`,
+  `remote_fetch_performed=false`, and `quality_gate_auto_decision=false`.
+
+## 34. AutomationQualityMetric
 
 AutomationQualityMetric stores batch-level AutomationDraft generation, execution, and repair quality. Ratio fields use `0.00-1.00`; UI may render percentages.
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| automation_draft_id | uuid | no | null | Optional FK AutomationDraft for draft-level metric |
+| automation_draft_id | uuid | no | null | Optional FK AutomationDraft |
 | prompt_version_id | uuid | yes | none | FK PromptVersion |
 | skill_version_id | uuid | yes | none | FK SkillVersion |
 | model_provider | varchar(80) | yes | mock | Provider |
@@ -611,7 +914,6 @@ AutomationQualityMetric stores batch-level AutomationDraft generation, execution
 | first_run_fail_count | int | yes | 0 | Approved drafts failing first execution |
 | repair_attempt_count | int | yes | 0 | Repair attempts |
 | repair_success_count | int | yes | 0 | Repairs that pass a follow-up TestRun |
-| flaky_retry_count | int | yes | 0 | Runs that pass only after retry without draft change |
 | evidence_complete_count | int | yes | 0 | Failed runs with complete required evidence |
 | schema_valid_rate | numeric(3,2) | yes | 0.00 | schema_valid_count / draft_generated_count |
 | approval_rate | numeric(3,2) | yes | 0.00 | approved_count / draft_generated_count |
@@ -620,65 +922,23 @@ AutomationQualityMetric stores batch-level AutomationDraft generation, execution
 | repair_success_rate | numeric(3,2) | yes | 0.00 | repair_success_count / repair_attempt_count |
 | evidence_complete_rate | numeric(3,2) | yes | 0.00 | evidence_complete_count / first_run_fail_count |
 
-## 36. KnowledgeProviderConfig
-
-KnowledgeProviderConfig is the V1 configuration shell for future RAG integration. The default provider returns no evidence and does not block AI workflows.
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| name | varchar(160) | yes | default-empty-knowledge | Provider name |
-| provider_type | varchar(80) | yes | empty | empty, http, mcp, custom |
-| enabled | bool | yes | false | Disabled by default |
-| config_json | jsonb | yes | {} | Non-secret config |
-| secret_ref_json | jsonb | yes | {} | Secret references only |
-| status | EntityStatus | yes | active | Status |
-
-## 37. KnowledgeEvidence
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | yes | none | FK Project |
-| ai_task_id | uuid | yes | none | FK AITask |
-| provider_config_id | uuid | no | null | FK KnowledgeProviderConfig |
-| title | varchar(255) | yes | none | Evidence title |
-| source_uri | text | no | null | Source URL/path/id |
-| content_excerpt | text | no | null | Safe short excerpt |
-| relevance_score | numeric(3,2) | no | null | 0.00-1.00 when provider supplies it |
-| metadata_json | jsonb | yes | {} | Provider metadata |
-
-## 38. McpServerConfig
-
-McpServerConfig is a placeholder for V2 MCP integration. V1 stores it only as disabled configuration and does not depend on MCP for core workflows.
-
-| Field | Type | Required | Default | Notes |
-|---|---|---:|---|---|
-| project_id | uuid | no | null | Null means global config |
-| name | varchar(160) | yes | none | Server name |
-| server_type | varchar(80) | yes | external | external, local |
-| endpoint | text | no | null | URL, command id, or local adapter name |
-| tool_mapping_json | jsonb | yes | {} | MCP tool to ToolDefinition mapping |
-| secret_ref_json | jsonb | yes | {} | Secret references only |
-| status | MCPServerStatus | yes | disabled | Disabled in V1 by default |
-
-## 39. Relationship Summary
+## 34. Relationship Summary
 
 ```text
 Workspace -> Project
 Project -> Module / Repository / Environment / TestCommand
+Project -> Artifact (ContextArtifact)
+Project -> KnowledgeAdapterConfig
 Project -> Requirement -> RequirementReview -> RiskItem
 Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
-CaseGenerationTask -> CaseQualityMetric
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
-AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric
-TestRun/TestResult -> FailureAnalysis -> Report
-Repository -> GitChangeSet -> GitChangedFile -> GitRiskAnalysis -> UnitTestPatch -> RegressionPlan -> TestRun -> Report
+TestRun/TestResult -> FailureAnalysis -> AutomationRepairTask -> Report
+Repository -> CICDRun -> CICDChangedFile -> UnitTestPatch -> TestRun -> QualityGateDecision -> Report
+Project -> ReviewHistory -> GeneratedCaseCandidate/TestCase/AutomationDraft/UnitTestPatch/CICDRun/QualityGateDecision
 AITask -> LLMCallLog
-AITask -> Artifact
-AITask -> Artifact through context_artifact_ids
+AITask -> Artifact / ContextArtifact references
+AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric
 ToolDefinition -> ToolInvocation -> Artifact
 Report -> Artifact
 PromptVersion + SkillVersion -> AITask
-KnowledgeProviderConfig -> KnowledgeEvidence
-McpServerConfig -> ToolDefinition mapping
 ```

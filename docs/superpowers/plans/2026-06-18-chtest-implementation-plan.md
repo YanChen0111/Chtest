@@ -1,8 +1,8 @@
 # Chtest V1 Implementation Plan
 
-> Historical plan. Do not execute this file as the current source of truth.
-> Current implementation must follow `docs/implementation/02-v1-slice-plan.md`
-> and `docs/implementation/slices/*`, including Slice 2.5 Frontend Foundation.
+> Historical planning artifact from 2026-06-18. The canonical active task source
+> is now `NEXT_AI_TASK.md`, with detailed task status in
+> `docs/implementation/slices/` and `memory/08-session-handoff.md`.
 
 ## Batch 1: Repository And Docker Foundation
 
@@ -13,11 +13,11 @@ Tasks:
 3. Add Docker Compose for PostgreSQL and Redis.
 4. Add backend FastAPI health and readiness endpoints.
 5. Add worker startup command and Redis ping task.
-6. Frontend foundation is now handled by `docs/implementation/slices/slice-02-frontend-foundation.md`.
+6. Add frontend Vite + Vue + Arco shell.
 
 Verification:
 
-- `docker compose up postgres redis` works.
+- `docker compose -f deploy/docker-compose.yml up postgres redis` works.
 - `GET /health` returns OK.
 - `GET /ready` checks PostgreSQL and Redis.
 - Frontend shell opens and calls backend health.
@@ -136,17 +136,17 @@ Verification:
 - Report generated from TestRun includes evidence and metrics.
 - AI quality metrics are visible.
 
-## Batch 9: Git Quality Support Workflow
+## Batch 9: CI/CD Quality Support Workflow
 
 Tasks:
 
-1. Add GitChangeSet and GitChangedFile.
+1. Add CICDRun and CICDChangedFile.
 2. Add local diff import and base/head analysis.
-3. Add GitDiffAgent.
+3. Add CICDChangeAnalysisAgent.
 4. Add UnitTestPatch and scope gate.
 5. Add UnitTestAgent and patch review page.
 6. Add RegressionAgent and regression command selection.
-7. Add Git Quality report.
+7. Add CI/CD Quality report.
 
 Verification:
 
@@ -154,7 +154,7 @@ Verification:
 - UnitTestPatch is generated and scope-validated.
 - Patch cannot modify business source files.
 - Approved patch can be applied and tested.
-- Git quality report explains risk, test generation, regression, and final status.
+- CI/CD quality report explains risk, test generation, regression, and final status.
 
 ## Batch 10: Extension Surfaces
 

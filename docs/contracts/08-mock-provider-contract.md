@@ -22,8 +22,8 @@ The Mock Provider lets Slice development validate AI workflows without a real LL
 | mock-requirement-review | requirement_review | Golden requirement review with six scores, issues, questions, and risks |
 | mock-case-generator | case_generation | Golden case candidates matching `docs/fixtures/01-golden-requirement-to-case.md` |
 | mock-automation-draft | automation_draft | Golden pytest or Playwright AutomationDraft matching `docs/fixtures/02-golden-case-to-playwright.md` |
-| mock-git-analysis | git_diff_analysis | Golden Git risk analysis matching `docs/fixtures/03-golden-git-quality.md` |
-| mock-unit-test-generator | unit_test_generation | Golden UnitTestPatch matching `docs/fixtures/03-golden-git-quality.md` |
+| mock-cicd-analysis | cicd_change_analysis | Golden CI/CD change risk analysis matching `docs/fixtures/03-golden-cicd-quality.md` |
+| mock-unit-test-generator | unit_test_generation | Golden UnitTestPatch matching `docs/fixtures/03-golden-cicd-quality.md` |
 | mock-failure-analysis | failure_analysis | Evidence-based FailureAnalysis with deterministic classification |
 | mock-report-generator | report_generation | Report JSON/Markdown summary based on provided TestRun or workflow data |
 
@@ -31,6 +31,8 @@ The Mock Provider lets Slice development validate AI workflows without a real LL
 
 - Mock outputs must pass the same schema validators as real provider outputs.
 - Mock outputs must create AITask artifacts the same way real provider outputs do.
+- Mock outputs must echo `used_context_artifact_ids` when context is provided.
+- Mock outputs must create `context_manifest.json` when context is provided.
 - Mock Provider must support forced failure mode for tests.
 - Mock Provider must support schema-invalid output mode for parser tests.
 - Mock Provider must never call external network.
@@ -48,5 +50,6 @@ The Mock Provider lets Slice development validate AI workflows without a real LL
 ## 6. Golden Path Mapping
 
 - V1 Minimum Demo uses `mock-requirement-review`, `mock-case-generator`, and `mock-automation-draft`.
-- Git Quality Golden Path uses `mock-git-analysis` and `mock-unit-test-generator`.
+- V1 Minimum Demo requirement review and case generation must reference seed ContextArtifact `coupon-api-notes.md`.
+- CI/CD Quality Golden Path uses `mock-cicd-analysis` and `mock-unit-test-generator`.
 - Failure analysis tests use `mock-failure-analysis` with deterministic artifacts.

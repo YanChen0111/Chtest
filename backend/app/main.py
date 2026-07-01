@@ -1,0 +1,67 @@
+from __future__ import annotations
+
+from typing import Any
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, PlainTextResponse
+
+from backend.app.modules.ai_runtime.router import router as ai_runtime_router
+from backend.app.modules.automation.router import router as automation_router
+from backend.app.modules.cases.router import router as cases_router
+from backend.app.modules.cicd.router import router as cicd_router
+from backend.app.modules.execution.router import router as execution_router
+from backend.app.modules.extension.router import router as extension_router
+from backend.app.modules.projects.router import router as projects_router
+from backend.app.modules.prompt_skill.router import router as prompt_skill_router
+from backend.app.modules.reporting.router import router as reporting_router
+from backend.app.modules.requirements.router import router as requirements_router
+from backend.app.modules.review_history.router import router as review_history_router
+
+
+app = FastAPI(title="Chtest API")
+app.include_router(projects_router, prefix="/api")
+app.include_router(ai_runtime_router, prefix="/api")
+app.include_router(prompt_skill_router, prefix="/api")
+app.include_router(requirements_router, prefix="/api")
+app.include_router(cases_router, prefix="/api")
+app.include_router(automation_router, prefix="/api")
+app.include_router(execution_router, prefix="/api")
+app.include_router(extension_router, prefix="/api")
+app.include_router(reporting_router, prefix="/api")
+app.include_router(cicd_router, prefix="/api")
+app.include_router(review_history_router, prefix="/api")
+
+
+@app.get("/health", response_class=PlainTextResponse)
+@app.get("/api/health", response_class=PlainTextResponse)
+def health() -> str:
+    return "ok"
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(_request: Request, exc: HTTPException) -> JSONResponse:
+    if isinstance(exc.detail, dict) and "error_code" in exc.detail:
+        content: dict[str, Any] = exc.detail
+    else:
+        content = {
+            "error_code": "HTTP_ERROR",
+            "message": str(exc.detail),
+            "details": {},
+        }
+    return JSONResponse(status_code=exc.status_code, content=content)
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(
+    _request: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error_code": "VALIDATION_ERROR",
+            "message": "Request validation failed.",
+            "details": {"errors": exc.errors()},
+        },
+    )

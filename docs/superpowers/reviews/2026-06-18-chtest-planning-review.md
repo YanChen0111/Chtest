@@ -2,7 +2,7 @@
 
 ## Verdict
 
-Chtest V1 is feasible and worth building if implementation stays focused on an AI testing evidence workbench for individual test engineers and automation test engineers.
+Chtest V1 is feasible and worth building if implementation stays focused on an AI Testing Workbench for individual test engineers and automation test engineers.
 
 The product should proceed to implementation. The next milestone is not more strategy writing; it is a runnable Docker + FastAPI + PostgreSQL + Redis + worker + Vue foundation.
 
@@ -30,9 +30,9 @@ Data model, API, state machines, artifacts, Prompt/Skill contracts, and ToolDefi
 
 Requirement/case to automation is a main product path. AutomationDraft must include generation, review, edit, approval, execution, TestRun/TestResult, FailureAnalysis, and Report.
 
-### P1: Keep Git Quality As Support Workflow
+### P1: Keep CI/CD Quality As Support Workflow
 
-Git Quality is valuable, but it should not block the main requirement-to-automation loop. Build it after AI runtime, case review, and pytest execution are stable.
+CI/CD Quality is valuable, but it should not block the main requirement-to-automation loop. Build it after AI runtime, case review, and pytest execution are stable.
 
 ### P1: Keep Tool Execution Safe
 

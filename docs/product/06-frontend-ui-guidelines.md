@@ -6,6 +6,17 @@ This document gives V1 frontend implementation guidance so vibe coding produces 
 
 Chtest is a personal AI testing design and automation workbench. The UI should help one tester quickly review AI output, approve safe actions, inspect evidence, and continue the three product loops.
 
+## 1.1 User-Facing Language
+
+- All visible page titles, navigation labels, buttons, empty states, table headers, and helper copy should be Chinese-first.
+- Keep technical English only when the term is a product contract, code symbol, or industry term that would be more precise in English, such as `Prompt`, `Skill`, `Playwright`, `MCP`, or `TestCommand`.
+- The following user-facing contract names must be rendered in Chinese in the UI:
+  - `ContextArtifact` -> `上下文工件`
+  - `AITask` -> `AI 任务`
+  - `LLMCallLog` -> `大模型调用日志`
+  - `Artifact` -> `工件`
+- Technical identifiers can remain in code, API payloads, and logs, but visible labels must prefer Chinese text.
+
 ## 2. Design Direction
 
 - Workbench-first, not landing-page-first.
@@ -18,16 +29,22 @@ Chtest is a personal AI testing design and automation workbench. The UI should h
 
 Primary navigation should follow V1 work:
 
-1. AI Workbench.
-2. Requirement Review.
-3. Case Generation Review.
-4. Test Case Library.
-5. Automation Draft Center.
-6. Execution Center.
-7. Git Quality Center.
-8. Report Center.
-9. Prompt / Skill Center.
-10. Settings.
+1. AI 工作台.
+2. 需求评审.
+3. 用例生成评审.
+4. 用例库和测试套件.
+5. 自动化草稿中心.
+6. 执行中心.
+7. CI/CD 质量中心.
+8. 报告中心.
+9. RAG 知识库.
+10. Prompt / Skill 中心.
+11. 工具适配器 / MCP 中心.
+12. 设置.
+
+`CI/CD 质量中心` is the user-facing page name for the local diff, UnitTestPatch, regression, and quality report workflow. Current technical contract names are `CICDRun`, `CICDChangedFile`, `CICDChangeAnalysisAgent`, and `UnitTestPatch`.
+
+`RAG 知识库` is a ContextArtifact and KnowledgeAdapter management surface. It must not imply that V1 has built-in vector indexing, embeddings, chunking, or reranking.
 
 Do not add enterprise navigation such as departments, members, roles, permissions, SSO, audit center, or tenant management in V1.
 
@@ -46,7 +63,7 @@ AI-generated content must be visually reviewable before promotion:
 
 - GeneratedCaseCandidate review shows steps, expected results, requirement references, risk references, AI reason, and duplicate warning.
 - AutomationDraft review shows code, suggested file path, execution notes, risk notes, Prompt/Skill version, and approval state.
-- UnitTestPatch review shows unified diff, affected paths, PatchScopeGate result, test intent, and coverage target.
+- CI/CD 质量中心中的 UnitTestPatch review shows unified diff, affected paths, PatchScopeGate result, test intent, and coverage target.
 
 Use explicit state tags for pending review, approved, edited, rejected, needs optimization, approval required, running, passed, failed, error, timeout.
 
@@ -65,10 +82,12 @@ If evidence is missing, the page should show `insufficient_evidence` or `needs_a
 ## 7. Visual Style
 
 - Use Arco Design Vue components as the baseline.
-- Prefer neutral surfaces, compact spacing, and clear status colors.
+- Use the approved A direction: shallow light page background, white content surfaces, compact spacing, and clear status colors.
+- Prefer `#f5f7fa` / `#f7f8fa` page backgrounds, `#ffffff` surfaces, `#e5e6eb` borders, `#165dff` primary actions, `#00b42a` evidence/pass/safe states, `#f53f3f` fail/reject states, and `#ff7d00` pending/warning states.
 - Avoid marketing heroes, oversized illustrations, decorative gradients, and dashboard vanity charts.
 - Use icons for common actions when available: run, approve, reject, edit, report, artifact, refresh.
 - Keep typography practical: page headings modest, table content scannable, code blocks readable.
+- Reference WHartTest for Vue/Arco generation and review patterns, and MeterSphere for dense test asset management patterns. Do not migrate V1 away from Vue 3 + Arco Design Vue.
 
 ## 8. V1 Frontend Non-Goals
 
@@ -78,6 +97,7 @@ If evidence is missing, the page should show `insufficient_evidence` or `needs_a
 - No full low-code UI automation designer.
 - No marketing home page.
 - No large analytics cockpit before the three Golden Paths work.
+- No built-in RAG/vector/rerank UI beyond the RAG 知识库 management surface.
 
 ## 9. Acceptance Check
 

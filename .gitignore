@@ -20,10 +20,11 @@ coverage/
 
 # Runtime data and artifacts
 storage/
-artifacts/
+/artifacts/
 reports/generated/
 logs/
 .tmp/
+.worktrees/
 
 # Environment and secrets
 .env

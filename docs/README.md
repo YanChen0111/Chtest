@@ -6,9 +6,9 @@ V1 first proves the minimum evidence loop in `fixtures/00-v1-demo-path.md`, then
 
 1. Requirement -> AI requirement review -> AI case generation -> human review -> case library.
 2. Requirement/TestCase -> AI AutomationDraft -> approval -> pytest/Playwright execution -> report.
-3. Local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
+3. CI/CD Quality Center local Git diff -> AI UnitTestPatch -> approval -> pytest regression -> quality conclusion.
 
-The first and second loops are the product mainlines. The Git loop is a support workflow.
+The first and second loops are the product mainlines. The CI/CD Quality Center loop is a local-first support workflow.
 
 ## Canonical Source Of Truth
 
@@ -21,14 +21,22 @@ When documents disagree, follow this order:
 5. `../memory/13-ai-readable-project-brief.md`.
 6. `fixtures/*`.
 7. `architecture/*`.
-8. `reference/*`, `reviews/*`, and `superpowers/*` as historical/reference material only.
+8. `reference/*`, `reviews/*`, and `superpowers/*`.
+
+## Fast Start
+
+For implementation sessions, start with `../START_HERE_FOR_AI.md`. It gives the shortest safe reading path, first command, current recommended development path, and forbidden shortcuts.
+
+Then read `../NEXT_AI_TASK.md`. It is the active short handoff for vibecoding:
+current Slice, current Task, expected files, verification command, acceptance,
+commit message, and next Task.
 
 ## Documentation Entry Points
 
 | Directory | Purpose |
 |---|---|
-| `product/` | Product positioning, PRD, page PRD, AI metrics, frontend UI guidance, version boundaries |
-| `architecture/` | Platform architecture, Agent/MCP/Skill/Prompt design, Git Quality design |
+| `product/` | Product positioning, PRD, page PRD, AI metrics, version boundaries |
+| `architecture/` | Platform architecture, Agent/MCP/Skill/Prompt design, CI/CD Quality Center design |
 | `contracts/` | Data model, API, state machine, artifact, Prompt/Skill contracts |
 | `fixtures/` | Golden Path standard inputs and expected outputs |
 | `implementation/` | V1 delivery plan, development process, slice plan, acceptance |
@@ -36,34 +44,52 @@ When documents disagree, follow this order:
 | `reference/` | WHartTest and MeterSphere migration map |
 | `roadmap/` | Phase roadmap and agile slices |
 | `reviews/` | Architecture, feasibility, and risk review |
-| `superpowers/` | Historical design, plan, and review docs; current execution follows `implementation/slices/*` |
+| `superpowers/` | Design, plan, and review docs for structured AI development |
 | `../memory/` | Long-term AI context and session handoff |
 
 ## Recommended Reading Order
 
-1. `../memory/README.md`
-2. `../memory/13-ai-readable-project-brief.md`
-3. `product/01-positioning-and-scope.md`
-4. `product/02-v1-product-prd.md`
-5. `product/07-ai-testing-evidence-workbench-optimization.md`
-6. `reviews/2026-06-22-ai-testing-product-review.md`
-7. `contracts/01-data-model-contract.md`
-8. `contracts/02-api-contract.md`
-9. `contracts/03-state-machines.md`
-10. `contracts/04-artifact-contract.md`
-11. `contracts/05-prompt-skill-contract.md`
-12. `contracts/06-error-code-contract.md`
-13. `contracts/07-seed-data-contract.md`
-14. `contracts/08-mock-provider-contract.md`
-15. `fixtures/00-v1-demo-path.md`
-16. `fixtures/01-golden-requirement-to-case.md`
-17. `fixtures/02-golden-case-to-playwright.md`
-18. `fixtures/03-golden-git-quality.md`
-19. `implementation/01-v1-development-process.md`
-20. `implementation/02-v1-slice-plan.md`
-21. `implementation/03-testing-and-acceptance.md`
-22. `implementation/04-ai-vibecoding-governance.md`
-23. `product/06-frontend-ui-guidelines.md` when implementing frontend views
+### Fast Implementation Path
+
+1. `../START_HERE_FOR_AI.md`
+2. `../NEXT_AI_TASK.md`
+3. the active Slice task file named by `NEXT_AI_TASK.md`
+4. only the task-specific contracts named by `NEXT_AI_TASK.md`
+
+### Full Onboarding Path
+
+Use this longer path when a new AI worker needs broad context or when contracts
+appear to disagree:
+
+1. `../START_HERE_FOR_AI.md`
+2. `../NEXT_AI_TASK.md`
+3. `../memory/README.md`
+4. `../memory/13-ai-readable-project-brief.md`
+5. `product/01-positioning-and-scope.md`
+6. `product/02-v1-product-prd.md`
+7. `product/07-ai-testing-evidence-workbench-optimization.md`
+8. `implementation/00-v0.1-walking-skeleton.md`
+9. `implementation/05-execution-efficiency-plan.md`
+10. `contracts/01-data-model-contract.md`
+11. `contracts/02-api-contract.md`
+12. `contracts/03-state-machines.md`
+13. `contracts/04-artifact-contract.md`
+14. `contracts/05-prompt-skill-contract.md`
+15. `contracts/06-error-code-contract.md`
+16. `contracts/07-seed-data-contract.md`
+17. `contracts/08-mock-provider-contract.md`
+18. `fixtures/00-v1-demo-path.md`
+19. `fixtures/01-golden-requirement-to-case.md`
+20. `fixtures/02-golden-case-to-playwright.md`
+21. `fixtures/03-golden-cicd-quality.md`
+22. `fixtures/04-real-user-scenarios.md`
+23. `fixtures/05-minimal-prompt-skill-seeds.md`
+24. `implementation/01-v1-development-process.md`
+25. `implementation/02-v1-slice-plan.md`
+26. `implementation/03-testing-and-acceptance.md`
+27. `implementation/04-ai-vibecoding-governance.md`
+28. `product/06-frontend-ui-guidelines.md` when implementing frontend views
+29. `product/08-frontend-design-spec.md` when implementing V1 frontend pages
 
 ## V1 Hard Constraints
 
@@ -71,14 +97,13 @@ When documents disagree, follow this order:
 - PostgreSQL + Redis + Docker Compose from the first release.
 - Frozen V1 stack: FastAPI, SQLAlchemy 2, Pydantic v2, Alembic, Vue 3, Arco Design Vue, Redis + RQ.
 - RAG is not built in; only KnowledgeAdapter is provided.
+- RAG 知识库 is a ContextArtifact and KnowledgeAdapter management page, not an internal RAG runtime.
 - MCP is not a V1 dependency; Internal Tool Adapter comes first.
-- Git Quality Center is a support workflow and must not overtake the requirement-to-automation mainlines.
+- CI/CD 质量中心 is a local-first support workflow and must not overtake the requirement-to-automation mainlines.
 - `fixtures/00-v1-demo-path.md` is the release spine; broad features cannot replace this evidence loop.
 - V1 priority tools: TestRunner/pytest and Playwright minimal loop.
 - Runner isolation is a V1 safety boundary by contract: every TestRun records runtime workspace, dependency snapshot, environment snapshot, runtime manifest, network setting, and artifact trace.
 - `docker_runner` is the preferred product acceptance runner when available; `local_subprocess` is a development fallback.
-- Lightweight context artifacts come before full RAG. AI tasks must record used context artifact ids or an explicit empty list.
-- Mock-provider eval bench must track schema, evidence, and unsafe-output metrics before broad real-model tuning.
 - Newman after V1 core loop; JMeter after execution/report parsing is stable; Appium and traffic capture are roadmap capabilities.
 - AI-generated cases require review before entering the case library.
 - AI-generated AutomationDraft requires approval before execution.
@@ -96,6 +121,7 @@ When documents disagree, follow this order:
 - `product/05-non-goals-and-version-boundaries.md`: Non-goals and version boundaries.
 - `product/06-frontend-ui-guidelines.md`: V1 frontend layout, review surface, evidence display, and visual guidance.
 - `product/07-ai-testing-evidence-workbench-optimization.md`: Strategy B optimization plan for evidence-loop-first delivery.
+- `product/08-frontend-design-spec.md`: Approved final frontend design, navigation, page layouts, and open-source UI reference boundary.
 
 ### Contracts
 
@@ -113,7 +139,10 @@ When documents disagree, follow this order:
 - `fixtures/00-v1-demo-path.md`: V1 minimum demo path.
 - `fixtures/01-golden-requirement-to-case.md`: Requirement to cases.
 - `fixtures/02-golden-case-to-playwright.md`: TestCase to pytest/Playwright.
-- `fixtures/03-golden-git-quality.md`: Git diff to quality report.
+- `fixtures/03-golden-cicd-quality.md`: Local CI/CD quality gate and evidence report.
+- `fixtures/04-real-user-scenarios.md`: Real API tester, Web automation tester, and backend unit-test user samples.
+- `fixtures/05-minimal-prompt-skill-seeds.md`: Minimal Prompt/Skill seed fixture index for Slice 5.
+- `fixtures/prompt-skill-seeds/`: Concrete Prompt/Skill seed files for mock provider and PromptVersion/SkillVersion loading.
 
 ### Architecture
 
@@ -121,10 +150,11 @@ When documents disagree, follow this order:
 - `architecture/02-agent-mcp-skill-prompt.md`: Agent/MCP/Skill/Prompt summary.
 - `architecture/03-implementation-technology.md`: Technical implementation guide.
 - `architecture/04-agent-workflow-design.md`: Detailed Agent workflow design.
-- `architecture/05-git-quality-center-design.md`: Git Quality Center design.
+- `architecture/05-cicd-quality-center-design.md`: CI/CD Quality Center design.
 
 ### Implementation And Operation
 
+- `implementation/00-v0.1-walking-skeleton.md`: Earliest runnable evidence loop before the full V1 Minimum Demo.
 - `implementation/01-v1-development-process.md`: V1 development process.
 - `implementation/01-v1-delivery-plan.md`: V1 delivery plan.
 - `implementation/02-v1-slice-plan.md`: V1 slice plan.
@@ -136,15 +166,15 @@ When documents disagree, follow this order:
 - `implementation/slices/slice-05-prompt-skill-registry.md`: Slice 5 Task plan.
 - `implementation/03-testing-and-acceptance.md`: Testing and acceptance.
 - `implementation/04-ai-vibecoding-governance.md`: AI development governance, Task loop, testing, commit, rollback, and handoff rules.
+- `implementation/05-execution-efficiency-plan.md`: Fast AI session routing, `NEXT_AI_TASK.md` rules, and reduced-reading workflow.
 - `deployment/01-docker-environment.md`: Docker and environment control.
 - `roadmap/01-implementation-roadmap.md`: Implementation roadmap.
 - `reference/01-open-source-migration-map.md`: Open-source reference migration map.
 
-### Reviews
-
-- `reviews/2026-06-18-project-review.md`: Implementation-readiness review.
-- `reviews/2026-06-22-ai-testing-product-review.md`: Current AI testing market, product value, architecture, and vibe coding review.
-
 ## Next Step
 
-Start Slice 1 Task 1: initialize platform directories according to `implementation/slices/slice-01-platform-foundation.md`.
+Use `../START_HERE_FOR_AI.md` and `../NEXT_AI_TASK.md` as the session entry.
+Then continue the active task named in `../NEXT_AI_TASK.md`. As of the current
+handoff this is Slice 03 Task 1: add Project Core models and migration. Keep
+`implementation/00-v0.1-walking-skeleton.md` as the first early evidence
+checkpoint while progressing through Slice 1-5.
