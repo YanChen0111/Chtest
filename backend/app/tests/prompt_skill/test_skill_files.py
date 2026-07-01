@@ -17,6 +17,10 @@ EXPECTED_SKILLS = {
     "tool-execution-skill": ["ToolExecutionAgent"],
     "failure-analysis-skill": ["FailureAnalysisAgent"],
     "report-generation-skill": ["ReportAgent"],
+    "knowledge-ingestion-skill": ["KnowledgeIngestionAgent"],
+    "coverage-analysis-skill": ["CoverageAnalysisAgent"],
+    "test-design-skill": ["TestDesignAgent"],
+    "knowledge-feedback-skill": ["KnowledgeFeedbackAgent"],
 }
 
 REQUIRED_SECTIONS = [

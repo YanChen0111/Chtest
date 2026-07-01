@@ -24,6 +24,11 @@ docs/fixtures/prompt-skill-seeds/
     tool_execution/v1.md
     failure_analysis/v1.md
     report_generation/v1.md
+    knowledge_card_extraction/v1.md
+    evidence_case_generation/v1.md
+    evidence_case_review/v1.md
+    automation_readiness/v1.md
+    knowledge_feedback/v1.md
   skills/
     requirement-review-skill/v1.md
     test-case-generation-skill/v1.md
@@ -34,6 +39,10 @@ docs/fixtures/prompt-skill-seeds/
     tool-execution-skill/v1.md
     failure-analysis-skill/v1.md
     report-generation-skill/v1.md
+    knowledge-ingestion-skill/v1.md
+    coverage-analysis-skill/v1.md
+    test-design-skill/v1.md
+    knowledge-feedback-skill/v1.md
 ```
 
 Slice 5 may copy or import these files into the runtime `prompts/` and `skills/`
@@ -55,6 +64,13 @@ create a new version instead.
 | ToolExecutionAgent | `prompts/tool_execution/v1.md` | `skills/tool-execution-skill/v1.md` | Plan allowlisted pytest or Playwright execution |
 | FailureAnalysisAgent | `prompts/failure_analysis/v1.md` | `skills/failure-analysis-skill/v1.md` | Classify failed execution with evidence references |
 | ReportAgent | `prompts/report_generation/v1.md` | `skills/report-generation-skill/v1.md` | Generate evidence-backed reports |
+| KnowledgeIngestionAgent | `prompts/knowledge_card_extraction/v1.md` | `skills/knowledge-ingestion-skill/v1.md` | Extract draft TestKnowledgeCard candidates |
+| CaseGenerationAgent | `prompts/evidence_case_generation/v1.md` | `skills/test-case-generation-skill/v1.md` | Generate evidence-backed case candidates |
+| CaseReviewAgent | `prompts/evidence_case_review/v1.md` | `skills/testcase-review-skill/v1.md` | Review evidence-backed case candidates |
+| AutomationReadinessAgent | `prompts/automation_readiness/v1.md` | `skills/automation-draft-skill/v1.md` | Classify automation readiness without generating code |
+| KnowledgeFeedbackAgent | `prompts/knowledge_feedback/v1.md` | `skills/knowledge-feedback-skill/v1.md` | Convert reviewed evidence into draft knowledge feedback |
+| CoverageAnalysisAgent | no prompt in Slice 31 | `skills/coverage-analysis-skill/v1.md` | Define coverage gap analysis method over supplied evidence |
+| TestDesignAgent | no prompt in Slice 31 | `skills/test-design-skill/v1.md` | Define evidence-backed test design method |
 
 ## 4. Minimum Loader Acceptance
 

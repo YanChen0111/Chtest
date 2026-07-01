@@ -1,5 +1,44 @@
 # Development Log
 
+## 2026-07-01 Slice 31 Knowledge Prompt/Skill Seeds
+
+### Completed
+
+- Added Slice 31 plan:
+  `docs/implementation/slices/slice-31-knowledge-prompt-skill-seeds.md`.
+- Added knowledge-driven prompt seeds:
+  - `knowledge_card_extraction:v1`
+  - `evidence_case_generation:v1`
+  - `evidence_case_review:v1`
+  - `automation_readiness:v1`
+  - `knowledge_feedback:v1`
+- Added knowledge-driven skill seeds:
+  - `knowledge-ingestion-skill:v1`
+  - `coverage-analysis-skill:v1`
+  - `test-design-skill:v1`
+  - `knowledge-feedback-skill:v1`
+- Added fixture:
+  `docs/fixtures/19-knowledge-prompt-skill-seeds.md`.
+- Added smoke:
+  `backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py`.
+
+### Verification
+
+- Red run:
+  `/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q`
+- Result before seed files: `3` failed because seed files did not exist.
+- Green run:
+  `/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q`
+- Result after seed files: `3` passed.
+- Registry run:
+  `/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py backend/app/tests/prompt_skill/test_skill_files.py backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q`
+- Result after registry count updates: `14` passed.
+
+### Next Step
+
+- Run `git diff --check`.
+- Commit `docs(prompt-skill): add knowledge agent seed prompts`.
+
 ## 2026-07-01 Slice 30 Completion Gate
 
 ### Completed

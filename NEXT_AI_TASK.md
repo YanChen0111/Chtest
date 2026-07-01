@@ -6,31 +6,29 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Select next narrow V2 slice.
+Slice 31: Knowledge Prompt/Skill Seeds.
 
 ## Current Task
 
-Select and plan the next narrow V2 task after Slice 30 completion.
+Slice 31 Completion Gate.
 
 ## Product Value Answer
 
-After this task, the next V2 slice is selected and planned with a small,
-verifiable task boundary.
+After this task, Chtest has committed knowledge-driven prompt and skill seeds
+with focused verification evidence.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/contracts/01-data-model-contract.md`
-4. `docs/contracts/02-api-contract.md`
-5. `docs/contracts/03-state-machines.md`
-6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/04-ai-vibecoding-governance.md`
-8. `docs/implementation/10-v2-scope-options.md`
-9. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
-10. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
-11. `memory/08-session-handoff.md`
-12. `memory/07-dev-log.md`
+3. `docs/contracts/05-prompt-skill-contract.md`
+4. `docs/implementation/04-ai-vibecoding-governance.md`
+5. `docs/implementation/10-v2-scope-options.md`
+6. `docs/implementation/11-final-rag-agent-strategy.md`
+7. `docs/implementation/slices/slice-31-knowledge-prompt-skill-seeds.md`
+8. `docs/fixtures/19-knowledge-prompt-skill-seeds.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -44,44 +42,48 @@ verifiable task boundary.
 Create or update only these files for the current task:
 
 ```text
+backend/app/tests/prompt_skill/test_registry_loader.py
+backend/app/tests/prompt_skill/test_skill_files.py
+backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py
+docs/implementation/slices/slice-31-knowledge-prompt-skill-seeds.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/slices/slice-30-test-knowledge-card-contract.md
-docs/implementation/10-v2-scope-options.md
 ```
 
-Planning task. Do not add frontend code, backend feature code, tests,
-migrations, package upgrades, artifact upload/mutation/delete, cloud storage,
-external provider integration, RBAC, tenants, permissions, broad redesign work,
-report generation behavior, runner behavior changes, quality gate computation
-changes, RAG runtime, or MCP runtime.
+Seed registry task. Do not add frontend code, backend runtime feature code,
+migrations, package upgrades, external provider integrations, vector database,
+embeddings, reranking, background indexing, graph runtime, MCP runtime,
+artifact upload/mutation/delete, generated-case auto-approval, runner behavior
+changes, report generation behavior changes, remote CI provider behavior, RBAC,
+tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/<next-slice>.md
-rg -n "Product Value Answer|Non-goals|Task Table" docs/implementation/slices/<next-slice>.md NEXT_AI_TASK.md
+/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py backend/app/tests/prompt_skill/test_skill_files.py backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q
 git diff --check
 ```
 
-Expected result: next slice plan exists, names product value/non-goals/task
-table, `NEXT_AI_TASK.md` points to the first task, and diff check passes.
+Expected result: registry loader and skill-file smokes account for the new
+knowledge-driven prompt/skill seeds, and diff check passes.
 
 ## Acceptance
 
-- Select one narrow V2 slice from current product priorities and recent handoff.
-- Create the slice plan with product value, preconditions, non-goals, task
-  table, expected files, verification commands, and commit messages.
-- Update `NEXT_AI_TASK.md` to the first task of that new slice.
-- Do not implement product code during planning.
+- Registry loader discovery count is updated for the new prompt and skill
+  files.
+- Skill-file contract smoke includes the new skills and their expected agents.
+- Knowledge prompt/skill seed smoke stays green.
+- Slice 31 task table records completion.
+- No RAG runtime, MCP runtime, provider, vector, graph, frontend, API,
+  migration, runner, or report behavior is added.
 
 ## Commit Message
 
 ```text
-docs(v2): plan next narrow v2 slice
+docs(prompt-skill): add knowledge agent seed prompts
 ```
 
 ## Next Task
 
-First task of the newly planned V2 slice.
+Select and plan the next narrow V2 task after Slice 31 completion.

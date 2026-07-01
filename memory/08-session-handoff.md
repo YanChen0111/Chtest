@@ -1,5 +1,72 @@
 # Session Handoff
 
+## 2026-07-01 Slice 31 Knowledge Prompt/Skill Seeds 开始
+
+本轮目标：
+
+- 先开发知识驱动 Prompt/Skill seeds。
+- 使用隔离 worktree：
+  `/Users/yanchen/VscodeProject/Chtest/.worktrees/prompt-skill-seeds`。
+- 分支：`codex/prompt-skill-seeds`。
+
+本轮已完成：
+
+- 新增 Slice 31 计划：
+  `docs/implementation/slices/slice-31-knowledge-prompt-skill-seeds.md`。
+- 新增 fixture：
+  `docs/fixtures/19-knowledge-prompt-skill-seeds.md`。
+- 新增 prompt seeds：
+  - `prompts/knowledge_card_extraction/v1.md`
+  - `prompts/evidence_case_generation/v1.md`
+  - `prompts/evidence_case_review/v1.md`
+  - `prompts/automation_readiness/v1.md`
+  - `prompts/knowledge_feedback/v1.md`
+- 新增 skill seeds：
+  - `skills/knowledge-ingestion-skill/v1.md`
+  - `skills/coverage-analysis-skill/v1.md`
+  - `skills/test-design-skill/v1.md`
+  - `skills/knowledge-feedback-skill/v1.md`
+- 新增 smoke：
+  `backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py`。
+
+本轮参考原则：
+
+- GitHub `Shubhamsaboo/awesome-llm-apps`：只参考 focused agent/RAG app
+  pattern 和 reusable skill-style instruction，不拷贝代码。
+- GitHub `VectifyAI/PageIndex`：只参考 tree/section traceability 思路。
+- GitHub `microsoft/graphrag`：只参考 later graph relationship reasoning，
+  不引入 GraphRAG runtime、indexing 或 prompt tuning 链路。
+
+本轮已验证 RED：
+
+```bash
+/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q
+```
+
+结果：
+
+- `3` failed，原因是知识驱动 prompt/skill 文件尚不存在。
+
+下次继续：
+
+- 新增 smoke 已通过。
+- Registry discovery 已从 11 prompt / 9 skill 更新为 16 prompt / 13 skill。
+- `backend/app/tests/prompt_skill/test_skill_files.py` 已覆盖新增 skill 文件。
+- 已运行：
+
+```bash
+/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py backend/app/tests/prompt_skill/test_skill_files.py backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q
+```
+
+结果：
+
+- `14` passed。
+
+下次推荐：
+
+- 运行 `git diff --check`。
+- 提交 `docs(prompt-skill): add knowledge agent seed prompts`。
+
 ## 2026-07-01 Slice 30 Completion Gate 完成
 
 本轮完成：

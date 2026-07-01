@@ -19,6 +19,11 @@ prompts/
   tool_execution/v1.md
   failure_analysis/v1.md
   report_generation/v1.md
+  knowledge_card_extraction/v1.md
+  evidence_case_generation/v1.md
+  evidence_case_review/v1.md
+  automation_readiness/v1.md
+  knowledge_feedback/v1.md
 ```
 
 ## 3. Skill 目录
@@ -34,7 +39,16 @@ skills/
   tool-execution-skill/v1.md
   failure-analysis-skill/v1.md
   report-generation-skill/v1.md
+  knowledge-ingestion-skill/v1.md
+  coverage-analysis-skill/v1.md
+  test-design-skill/v1.md
+  knowledge-feedback-skill/v1.md
 ```
+
+Slice 31 adds the knowledge-driven seeds above as versioned prompt/skill files.
+They are seed artifacts only. They do not enable RAG runtime, vector databases,
+GraphRAG runtime, MCP runtime, external provider calls, generated-case
+auto-approval, or tool execution by themselves.
 
 ## 4. Prompt 文件格式
 
@@ -153,6 +167,13 @@ Describe required output fields.
 | 工具执行计划 | ToolExecutionAgent | tool_execution:v1 | tool-execution-skill:v1 |
 | 失败归因 | FailureAnalysisAgent | failure_analysis:v1 | failure-analysis-skill:v1 |
 | 报告生成 | ReportAgent | report_generation:v1 | report-generation-skill:v1 |
+| 知识卡片抽取 | KnowledgeIngestionAgent | knowledge_card_extraction:v1 | knowledge-ingestion-skill:v1 |
+| 证据化用例生成 | CaseGenerationAgent | evidence_case_generation:v1 | test-case-generation-skill:v1 |
+| 证据化用例评审 | CaseReviewAgent | evidence_case_review:v1 | testcase-review-skill:v1 |
+| 自动化可行性 | AutomationReadinessAgent | automation_readiness:v1 | automation-draft-skill:v1 |
+| 知识反馈 | KnowledgeFeedbackAgent | knowledge_feedback:v1 | knowledge-feedback-skill:v1 |
+| 覆盖分析方法 | CoverageAnalysisAgent | no runtime prompt in Slice 31 | coverage-analysis-skill:v1 |
+| 测试设计方法 | TestDesignAgent | no runtime prompt in Slice 31 | test-design-skill:v1 |
 
 ## 7. 输出 JSON 约束
 
