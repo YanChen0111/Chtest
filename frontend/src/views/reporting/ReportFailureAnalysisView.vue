@@ -70,7 +70,12 @@
               :pagination="false"
               row-key="key"
               size="small"
-            />
+            >
+              <template #action="{ record }">
+                <a v-if="record.downloadUrl" :href="record.downloadUrl" target="_blank" rel="noreferrer">打开</a>
+                <span v-else>{{ record.availability }}</span>
+              </template>
+            </a-table>
           </template>
           <a-empty v-else description="生成执行报告后展示证据清单" />
         </a-card>
@@ -111,7 +116,11 @@
               :pagination="false"
               row-key="id"
               size="small"
-            />
+            >
+              <template #action="{ record }">
+                <a :href="artifactDownloadUrl(record.id)" target="_blank" rel="noreferrer">打开</a>
+              </template>
+            </a-table>
           </template>
           <a-empty v-else description="生成执行报告后展示结论、指标和报告工件" />
         </a-card>
@@ -123,6 +132,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import { artifactDownloadUrl } from '../../api/execution';
 import { useReportingStore } from '../../stores/reporting';
 
 const store = useReportingStore();
@@ -131,12 +141,14 @@ const evidenceColumns = [
   { title: '证据', dataIndex: 'label' },
   { title: '支撑结论', dataIndex: 'supports_claim' },
   { title: '必需', dataIndex: 'required' },
+  { title: '访问', slotName: 'action' },
 ];
 
 const artifactColumns = [
   { title: '类型', dataIndex: 'artifact_type' },
   { title: '路径', dataIndex: 'file_path' },
   { title: '大小', dataIndex: 'size_bytes' },
+  { title: '访问', slotName: 'action' },
 ];
 
 const confidenceLabel = computed(() => {
@@ -151,12 +163,25 @@ const suggestedActions = computed(() => {
 });
 
 const evidenceRows = computed(() => {
-  return (store.report?.evidence_manifest.evidence ?? []).map((item, index) => ({
+  const evidence = (store.report?.evidence_manifest.evidence ?? []).map((item, index) => ({
     key: `${item.artifact_id ?? item.test_result_id ?? item.metric ?? index}`,
     label: item.artifact_type ?? item.metric ?? item.artifact_id ?? item.test_result_id ?? '结构化证据',
     supports_claim: item.supports_claim,
     required: item.required ? '是' : '否',
+    downloadUrl: item.artifact_id ? artifactDownloadUrl(item.artifact_id) : '',
+    availability: item.artifact_id ? '本地 Artifact' : '结构化证据',
   }));
+  const missing = store.report?.evidence_manifest.missing_evidence ?? [];
+  return evidence.concat(
+    missing.map((item) => ({
+      key: `missing:${item}`,
+      label: item,
+      supports_claim: '缺失证据',
+      required: '是',
+      downloadUrl: '',
+      availability: '缺失不可打开',
+    })),
+  );
 });
 
 const evidenceCount = computed(() => evidenceRows.value.length);

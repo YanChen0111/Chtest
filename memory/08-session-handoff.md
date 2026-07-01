@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-07-01 Slice 25 Task 3 Report Evidence Summary Frontend 完成
+
+本轮完成：
+
+- 完成 Slice 25 Task 3：Add report evidence summary frontend。
+- `ReportFailureAnalysisView.vue`：
+  - evidence manifest rows 有 artifact id 时显示本地 Artifact “打开”链接；
+  - metric / TestResult rows 保持为结构化证据；
+  - missing evidence 显示为 `缺失不可打开`；
+  - report artifacts 表新增本地 Artifact “打开”链接。
+- `ReportFailureAnalysisView.spec.ts` 覆盖：
+  - stderr evidence 可打开；
+  - report artifact 可打开；
+  - `environment_snapshot` missing evidence 不可打开。
+- Slice 25 table 已记录 Task 2 commit `faa3cce`，Task 3 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 25 Task 4：Add execution evidence summary golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/reporting/ReportFailureAnalysisView.spec.ts
+npm --prefix frontend run build
+git diff --check
+```
+
+验证结果：
+
+- Reporting focused frontend test：`1 passed`。
+- Frontend build：passed，保留 Vite large chunk warning。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：`feat(frontend): summarize execution evidence`。
+- 继续 Slice 25 Task 4：Add execution evidence summary golden smoke。
+
 ## 2026-07-01 Slice 25 Task 2 Execution Evidence Summary Contract 完成
 
 本轮完成：

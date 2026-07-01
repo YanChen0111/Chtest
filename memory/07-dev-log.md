@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-01 Slice 25 Report Evidence Summary Frontend
+
+### Completed
+
+- Added local Artifact open links to report evidence summary rows.
+- Added local Artifact open links to report artifact rows.
+- Missing evidence rows now remain visible as `缺失不可打开`.
+- Metric/TestResult evidence remains structured evidence rather than
+  downloadable artifact evidence.
+- Updated `NEXT_AI_TASK.md` to Slice 25 Task 4: Add execution evidence summary
+  golden smoke.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/reporting/ReportFailureAnalysisView.spec.ts`
+- Result: `1 passed`.
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `feat(frontend): summarize execution evidence`.
+- Continue Slice 25 Task 4 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 25 Execution Evidence Summary Contract
 
 ### Completed

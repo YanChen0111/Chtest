@@ -61,7 +61,7 @@ function reportBody() {
           required: true,
         },
       ],
-      missing_evidence: [],
+      missing_evidence: ['environment_snapshot'],
     },
     artifacts: [
       {
@@ -158,8 +158,12 @@ describe('ReportFailureAnalysisView', () => {
     expect(renderedText).toContain('failed');
     expect(renderedText).toContain('stderr');
     expect(renderedText).toContain('pytest failed run includes stderr evidence');
+    expect(renderedText).toContain('environment_snapshot');
+    expect(renderedText).toContain('缺失不可打开');
     expect(renderedText).toContain('report_md');
     expect(renderedText).toContain('evidence_manifest.json');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001601/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001701/download"]').text()).toBe('打开');
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

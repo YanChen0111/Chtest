@@ -10,12 +10,12 @@ Slice 25: Execution Evidence Summary.
 
 ## Current Task
 
-Slice 25 Task 3: Add report evidence summary frontend.
+Slice 25 Task 4: Add execution evidence summary golden smoke.
 
 ## Product Value Answer
 
-After this task, the report page shows evidence summary rows with required
-status, supporting claims, missing evidence, and local artifact download links.
+After this task, a golden smoke proves execution evidence summary remains tied
+to persisted Report/TestRun evidence and local artifact access boundaries.
 
 ## Must Read
 
@@ -57,38 +57,35 @@ backend/app/tests/golden/test_artifact_access_golden.py
 docs/fixtures/12-local-artifact-access-golden.md
 ```
 
-Frontend task. Do not add backend feature code, migrations, package upgrades,
-report generation behavior, artifact upload/mutation/delete, cloud storage,
-external provider integration, RBAC, tenants, permissions, broad redesign work,
-or runner behavior changes.
+Golden smoke task. Do not add frontend code, backend feature code beyond the
+focused test, migrations, package upgrades, report generation behavior, artifact
+upload/mutation/delete, cloud storage, external provider integration, RBAC,
+tenants, permissions, broad redesign work, or runner behavior changes.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run src/views/reporting/ReportFailureAnalysisView.spec.ts
-npm --prefix frontend run build
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py -q
 git diff --check
 ```
 
-Expected result: focused reporting frontend test, frontend build, and diff check
-pass.
+Expected result: execution evidence summary golden smoke and diff check pass.
 
 ## Acceptance
 
-- Evidence summary rows show supporting claim, required status, local artifact
-  type, and open link when a local Artifact id is available.
-- Missing evidence stays visible and is not shown as downloadable.
-- Existing failure analysis, report summary, metrics, and report artifact
-  metadata remain visible.
-- Does not add a report editor, broad redesign, export workflow, upload, delete,
-  sharing, or cloud storage UI.
+- Golden proves report evidence manifest rows cite persisted local Artifact ids.
+- Golden proves locally cited artifacts can be read through the artifact access
+  endpoint and match persisted sha256/size metadata.
+- Golden proves missing evidence remains explicit and is not treated as passed
+  evidence.
+- Golden keeps external imported artifact references inert.
 
 ## Commit Message
 
 ```text
-feat(frontend): summarize execution evidence
+test(golden): add execution evidence summary smoke
 ```
 
 ## Next Task
 
-Slice 25 Task 4: Add execution evidence summary golden smoke.
+Slice 25 Completion Gate.
