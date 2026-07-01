@@ -69,8 +69,8 @@ place.
 |---|---|---|---|---|
 | Add Execution Evidence Summary task plan | done | `test -f docs/implementation/slices/slice-25-execution-evidence-summary.md && rg -n "Execution Evidence Summary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-25-execution-evidence-summary.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md && git diff --check` | pending | planning-only scope |
 | Define execution evidence summary contract | done | `rg -n "execution evidence summary|evidence summary|download|missing evidence" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-25-execution-evidence-summary.md && git diff --check` | `faa3cce` | contract-only |
-| Add report evidence summary frontend | done | `npm --prefix frontend run test -- --run src/views/reporting/ReportFailureAnalysisView.spec.ts && npm --prefix frontend run build && git diff --check` | pending | report page only |
-| Add execution evidence summary golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py -q && git diff --check` | pending | evidence summary proof |
+| Add report evidence summary frontend | done | `npm --prefix frontend run test -- --run src/views/reporting/ReportFailureAnalysisView.spec.ts && npm --prefix frontend run build && git diff --check` | `5e64c18` | report page only |
+| Add execution evidence summary golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py -q && git diff --check` | pending | evidence summary proof |
 | Slice 25 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q && npm --prefix frontend run build && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
 
 ## Task 1: Add Execution Evidence Summary Task Plan

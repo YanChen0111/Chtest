@@ -10,12 +10,12 @@ Slice 25: Execution Evidence Summary.
 
 ## Current Task
 
-Slice 25 Task 4: Add execution evidence summary golden smoke.
+Slice 25 Completion Gate.
 
 ## Product Value Answer
 
-After this task, a golden smoke proves execution evidence summary remains tied
-to persisted Report/TestRun evidence and local artifact access boundaries.
+After this task, Slice 25 is closed with the contract, frontend evidence
+summary, and golden smoke verified together.
 
 ## Must Read
 
@@ -55,37 +55,40 @@ docs/contracts/02-api-contract.md
 docs/contracts/04-artifact-contract.md
 backend/app/tests/golden/test_artifact_access_golden.py
 docs/fixtures/12-local-artifact-access-golden.md
+backend/app/tests/golden/test_execution_evidence_summary_golden.py
+docs/fixtures/13-execution-evidence-summary-golden.md
 ```
 
-Golden smoke task. Do not add frontend code, backend feature code beyond the
-focused test, migrations, package upgrades, report generation behavior, artifact
+Completion gate task. Do not add frontend feature code, backend feature code,
+migrations, package upgrades, report generation behavior, artifact
 upload/mutation/delete, cloud storage, external provider integration, RBAC,
 tenants, permissions, broad redesign work, or runner behavior changes.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: execution evidence summary golden smoke and diff check pass.
+Expected result: Slice 25 golden smoke, artifact access golden, frontend build,
+frontend suite, and diff check pass.
 
 ## Acceptance
 
-- Golden proves report evidence manifest rows cite persisted local Artifact ids.
-- Golden proves locally cited artifacts can be read through the artifact access
-  endpoint and match persisted sha256/size metadata.
-- Golden proves missing evidence remains explicit and is not treated as passed
-  evidence.
-- Golden keeps external imported artifact references inert.
+- Slice 25 task table records completed task commits through Task 4.
+- Golden smoke and artifact access golden pass together.
+- Frontend report evidence summary still builds and passes full frontend tests.
+- Handoff names the next V2 small slice selection task.
 
 ## Commit Message
 
 ```text
-test(golden): add execution evidence summary smoke
+docs(v2): complete execution evidence summary slice
 ```
 
 ## Next Task
 
-Slice 25 Completion Gate.
+Select the next V2 small slice after Slice 25 completion.

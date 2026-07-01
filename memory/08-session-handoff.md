@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-07-01 Slice 25 Task 4 Execution Evidence Summary Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 25 Task 4：Add execution evidence summary golden smoke。
+- 新增 `backend/app/tests/golden/test_execution_evidence_summary_golden.py`。
+- 新增 `docs/fixtures/13-execution-evidence-summary-golden.md`。
+- Golden 覆盖：
+  - summary row 引用 persisted local Artifact；
+  - local Artifact 可通过 `GET /api/artifacts/{artifact_id}/download` 读取；
+  - 返回 bytes 与持久化 `sha256`、`size_bytes` 匹配；
+  - structured metric evidence 不显示为 downloadable；
+  - missing evidence 保持显式；
+  - external imported artifact reference 返回 `ARTIFACT_NOT_LOCAL`。
+- Slice 25 table 已记录 Task 3 commit `5e64c18`，Task 4 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 25 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Execution evidence summary golden：`1 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`test(golden): add execution evidence summary smoke`。
+- 继续 Slice 25 Completion Gate。
+
 ## 2026-07-01 Slice 25 Task 3 Report Evidence Summary Frontend 完成
 
 本轮完成：

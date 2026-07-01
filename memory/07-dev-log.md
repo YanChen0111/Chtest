@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-01 Slice 25 Execution Evidence Summary Golden Smoke
+
+### Completed
+
+- Added `backend/app/tests/golden/test_execution_evidence_summary_golden.py`.
+- Added `docs/fixtures/13-execution-evidence-summary-golden.md`.
+- Golden proves a summary row can cite a persisted local Artifact and open it
+  through the artifact access endpoint.
+- Golden verifies downloaded bytes match persisted `sha256` and `size_bytes`.
+- Golden keeps structured metric evidence non-downloadable, missing evidence
+  explicit, and external imported artifact references inert.
+- Updated `NEXT_AI_TASK.md` to Slice 25 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_evidence_summary_golden.py -q`
+- Result: `1 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add execution evidence summary smoke`.
+- Continue Slice 25 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 25 Report Evidence Summary Frontend
 
 ### Completed
