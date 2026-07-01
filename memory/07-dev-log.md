@@ -1792,6 +1792,29 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Continue from `NEXT_AI_TASK.md`: Slice 03 Task 2, add Project CRUD API.
 
+## 2026-07-01 Slice 23 Completion Gate
+
+### Completed
+
+- Completed Slice 23: Frontend Build Baseline.
+- Recorded Task 2 commit `07b1442` and marked the completion gate done pending
+  commit.
+- Updated `NEXT_AI_TASK.md` to select the next V2 small slice.
+
+### Verification
+
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `npm --prefix frontend run test -- --run`
+- Result: `16 files passed, 21 tests passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `docs(v2): complete frontend build baseline slice`.
+- Select the next V2 small slice.
+
 ## 2026-07-01 Slice 23 Task 2 Frontend Build Baseline
 
 ### Completed

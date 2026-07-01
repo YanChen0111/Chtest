@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 23: Frontend Build Baseline.
+Select the next V2 small slice.
 
 ## Current Task
 
-Slice 23 Completion Gate.
+Select the next V2 small slice after Slice 23 completion.
 
 ## Product Value Answer
 
-After this task, Slice 23 is closed with frontend build, frontend tests, docs,
-and handoff evidence verified together.
+After this task, the next small V2 task is selected with a narrow product value,
+non-goals, expected files, verification command, and commit scope.
 
 ## Must Read
 
@@ -27,8 +27,7 @@ and handoff evidence verified together.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/10-v2-scope-options.md`
-9. `docs/implementation/slices/slice-23-frontend-build-baseline.md`
-10. latest frontend build and frontend test output
+9. recent session handoff and dev log
 
 ## Do Not Read Unless Needed
 
@@ -60,32 +59,33 @@ frontend/src/views/cicd/CicdQualityCenterView.vue
 frontend/src/views/requirements/RequirementReviewView.vue
 ```
 
-Completion gate task. Do not add product features, backend code, migrations,
-package upgrades, redesign work, or broad refactors.
+Planning task. Do not add product code, backend code, frontend code, migrations,
+package upgrades, redesign work, or tests. Do not start a broad V2 platform
+expansion.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run build
-npm --prefix frontend run test -- --run
+rg -n "V2|Next|small slice|Candidate|Frontend Build Baseline|Slice 23" docs/implementation/10-v2-scope-options.md docs/implementation/slices/slice-23-frontend-build-baseline.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: frontend build, frontend tests, and diff check pass.
+Expected result: next V2 planning keywords are present and diff check passes.
 
 ## Acceptance
 
-- Slice 23 task rows are marked done with commit ids.
-- Completion evidence records build, frontend tests, and diff verification.
-- Handoff names the next V2 slice or planning task.
-- No product behavior changes are added.
+- Slice 23 remains closed.
+- Next task is selected as a small, verifiable V2 slice or planning item.
+- Product value, non-goals, expected files, verification command, and commit
+  message are explicit.
+- No product code is changed.
 
 ## Commit Message
 
 ```text
-docs(v2): complete frontend build baseline slice
+docs(v2): select next small slice
 ```
 
 ## Next Task
 
-Select the next V2 small slice.
+Start the selected V2 task.
