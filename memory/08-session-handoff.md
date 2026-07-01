@@ -1,5 +1,27 @@
 # Session Handoff
 
+## 2026-07-01 Slice 27 Task 1 AI Task Evidence Artifact Links Plan 完成
+
+本轮完成：
+
+- 选择 Slice 27：AI Task Evidence Artifact Links。
+- 选择原因：
+  - AI 工作台已经展示 AI task artifact metadata 和 safe display flags；
+  - Slice 24 已建立本地 artifact access；
+  - Slice 25/26 已验证 evidence summary / external reference clarity 模式；
+  - 用户此前反馈 AI 工作台可读性需要继续优化。
+- 新增 Slice 27 计划：
+  `docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充 Slice 26 完成记录和
+  Slice 27 推荐。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 27 Task 2：Define AI task evidence artifact link contract。
+
+下次推荐任务：
+
+- 提交 Task 1：`docs(v2): add ai task artifact link plan`。
+- 继续 Slice 27 Task 2：Define AI task evidence artifact link contract。
+
 ## 2026-07-01 Slice 26 Completion Gate 完成
 
 本轮完成：

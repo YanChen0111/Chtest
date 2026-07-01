@@ -1,5 +1,29 @@
 # Development Log
 
+## 2026-07-01 Slice 27 AI Task Evidence Artifact Links Plan
+
+### Completed
+
+- Selected Slice 27: AI Task Evidence Artifact Links.
+- Added `docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 26 completion
+  and Slice 27 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 27 Task 2: Define AI task evidence
+  artifact link contract.
+
+### Rationale
+
+- AI Workbench already shows AI task artifact metadata and safe display flags.
+- Slice 24 already added read-only local artifact access.
+- Slice 27 stays small by adding safe local artifact links for AI task evidence
+  without showing raw LLM content inline, rerunning AI tasks, mutating
+  artifacts, or adding provider/RAG/MCP runtime behavior.
+
+### Next Step
+
+- Commit `docs(v2): add ai task artifact link plan`.
+- Continue Slice 27 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 26 Completion Gate
 
 ### Completed

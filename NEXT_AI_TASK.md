@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Select next V2 small slice.
+Slice 27: AI Task Evidence Artifact Links.
 
 ## Current Task
 
-Select and plan the next narrow V2 task after Slice 26 completion.
+Slice 27 Task 2: Define AI task evidence artifact link contract.
 
 ## Product Value Answer
 
-After this task, the next V2 slice is selected with a small task boundary,
-clear product value, expected files, non-goals, verification, and commit scope.
+After this task, contracts define which AI task evidence artifacts can receive
+local open links and which artifacts remain metadata-only for safety.
 
 ## Must Read
 
@@ -31,8 +31,9 @@ clear product value, expected files, non-goals, verification, and commit scope.
 10. `docs/implementation/slices/slice-25-execution-evidence-summary.md`
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md`
-13. `memory/08-session-handoff.md`
-14. `memory/07-dev-log.md`
+13. `docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md`
+14. `memory/08-session-handoff.md`
+15. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -55,6 +56,7 @@ docs/implementation/slices/slice-23-frontend-build-baseline.md
 docs/implementation/slices/slice-24-local-artifact-access-links.md
 docs/implementation/slices/slice-25-execution-evidence-summary.md
 docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md
+docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md
 docs/contracts/02-api-contract.md
 docs/contracts/04-artifact-contract.md
 backend/app/tests/golden/test_artifact_access_golden.py
@@ -65,36 +67,37 @@ backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py
 docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md
 ```
 
-Planning task. Do not add frontend or backend feature code, migrations, package
+Contract task. Do not add frontend or backend feature code, migrations, package
 upgrades, artifact upload/mutation/delete, cloud storage, external provider
 integration, RBAC, tenants, permissions, broad redesign work, report generation
-behavior, or runner behavior changes.
+behavior, runner behavior changes, AI task rerun, prompt editing, raw LLM inline
+display, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-rg -n "Slice 26|CI Imported Artifact Reference Clarity|d67b40e|2fe5088|ae599d2|82e888d" docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md memory/08-session-handoff.md memory/07-dev-log.md
+rg -n "AI task evidence artifact|safe_to_show|raw LLM|local artifact" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md
 git diff --check
 ```
 
-Expected result: Slice 26 completion evidence is discoverable and diff check
-passes before selecting the next slice.
+Expected result: AI task evidence artifact link contract language is
+discoverable and diff check passes.
 
 ## Acceptance
 
-- Slice 26 is recorded as complete in slice docs and memory.
-- Next V2 slice is selected from existing V2 scope docs.
-- New task boundary names product value, expected files, verification command,
-  non-goals, and commit message.
-- Scope stays local-first and avoids remote provider, RBAC, tenant, cloud, RAG
-  runtime, MCP runtime, and broad redesign expansion.
+- API contract defines AI task artifact links as read-only local Artifact links
+  derived from existing artifact metadata.
+- Artifact contract states `safe_to_show=false` artifacts remain visible as
+  metadata but do not receive direct UI open links.
+- Contract preserves no raw LLM inline display, AI task rerun, provider
+  integration, artifact mutation, RAG runtime, or MCP runtime changes.
 
 ## Commit Message
 
 ```text
-docs(v2): add next v2 slice plan
+docs(v2): define ai task artifact link contract
 ```
 
 ## Next Task
 
-To be selected from V2 scope options.
+Slice 27 Task 3: Add AI Workbench artifact links.

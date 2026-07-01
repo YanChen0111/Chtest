@@ -832,3 +832,86 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines display behavior, contracts,
   verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: CI imported artifact reference clarity.
+
+Why it was selected:
+
+- Slice 20 imported CI metadata and artifact references as inert evidence.
+  Slice 24 and Slice 25 clarified local artifact access and evidence summary.
+  Slice 26 closed the remaining readability gap by making external references
+  clearly display-only, not locally openable, and not remotely fetched.
+
+Completed slice name:
+
+```text
+Slice 26: CI Imported Artifact Reference Clarity
+```
+
+Delivered output:
+
+- Slice plan, contract boundary, frontend imported reference clarity, golden
+  smoke, and completion gate.
+- Imported artifact references remain inert external metadata. They do not
+  create local download links, remote fetches, TestRun, Report,
+  FailureAnalysis, QualityGateDecision, runner behavior, RAG runtime, MCP
+  runtime, RBAC, tenants, or permissions.
+
+## Recommended Next V2 Slice
+
+Recommended: AI task evidence artifact links.
+
+Why:
+
+- Slice 24 made local TestRun artifacts openable. Slice 25 explained report
+  evidence. Slice 26 clarified external CI artifact references. The remaining
+  core evidence surface is AI Workbench: users can see AI task artifact
+  metadata, but safe local artifacts are not yet directly openable from the
+  task detail.
+- Chtest's positioning requires every AI task to record prompt, skill, model,
+  input/output artifacts, context artifacts, schema validation, and review or
+  execution outcome. Making those safe evidence artifacts openable strengthens
+  the AI review loop.
+- The slice can stay small because AI task detail APIs already return Artifact
+  metadata and Slice 24 already provides the local artifact access endpoint.
+
+Next slice name:
+
+```text
+Slice 27: AI Task Evidence Artifact Links
+```
+
+Smallest useful boundary:
+
+- Define read-only AI task evidence artifact links from existing Artifact
+  metadata.
+- Add AI Workbench "打开" links only for persisted local Artifact ids that are
+  safe to open from the UI.
+- Keep unsafe artifacts such as raw LLM output visible as metadata but not
+  directly openable.
+- Add one focused frontend test and one golden smoke proving the safe local
+  evidence boundary.
+
+Explicit non-goals:
+
+- No inline raw LLM output display, prompt editor, prompt replay, AI task rerun,
+  model/provider integration, streaming logs, schema editor, RAG runtime,
+  vector database, embeddings, reranking, MCP runtime, marketplace, remote CI
+  provider integration, RBAC, tenants, or permissions.
+- No artifact upload, mutation, delete, sharing, signed URL, cloud storage,
+  broad artifact browser, indexing, search, dashboard, report generation,
+  FailureAnalysis, QualityGateDecision, runner behavior, or package upgrades.
+
+Suggested next task:
+
+```text
+Slice 27 Task 1: Add AI Task Evidence Artifact Links task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines safe artifact link behavior,
+  contracts, verification, and non-goals.
