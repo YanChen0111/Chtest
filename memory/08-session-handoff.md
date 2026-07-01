@@ -1,5 +1,53 @@
 # Session Handoff
 
+## 2026-07-01 Slice 30 Test Knowledge Card Contract Plan 完成
+
+本轮完成：
+
+- 选择 Slice 30：Test Knowledge Card Contract。
+- 新增 Slice 30 计划：
+  `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充：
+  - Slice 29 Completion：Execution Run Manifest；
+  - Recommended Next V2 Slice：Slice 30 Test Knowledge Card Contract。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 30 Task 2：Define TestKnowledgeCard and KnowledgeEvidence contracts。
+- Slice 30 目标：
+  - 定义 `TestKnowledgeCard`；
+  - 定义 `KnowledgeEvidence`；
+  - 定义 GeneratedCaseCandidate 的 source knowledge evidence、risk coverage、
+    generation reason、automation readiness、quality score、review findings、
+    coverage gap notes；
+  - 先做合同、fixture、golden proof，再进入任何实现。
+- 明确保留边界：
+  不做 RAG runtime、external KnowledgeAdapter provider、vector database、
+  embedding、reranking、GraphRAG runtime、background indexing、MCP runtime、
+  frontend implementation、generated-case auto-approval、RBAC、tenant、
+  permission 或 remote CI provider 行为。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+rg -n "Test Knowledge Card|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-30-test-knowledge-card-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 1：`docs(v2): add test knowledge card contract plan`。
+- 继续 Slice 30 Task 2：Define TestKnowledgeCard and KnowledgeEvidence
+  contracts。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 这些文件是 Slice 30 规划的重要背景，但不是 Slice 30 Task 1 的必要提交
+  范围；后续提交时需要避免误混无关改动，除非用户明确要求纳入。
+
 ## 2026-07-01 Slice 29 Completion Gate 完成
 
 本轮完成：

@@ -6,16 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Select next narrow V2 slice.
+Slice 30: Test Knowledge Card Contract.
 
 ## Current Task
 
-Select and plan the next narrow V2 task after Slice 29 completion.
+Slice 30 Task 2: Define TestKnowledgeCard and KnowledgeEvidence contracts.
 
 ## Product Value Answer
 
-After this task, the next V2 slice is selected and planned with a small,
-verifiable task boundary.
+After this task, Chtest has a contract for reviewable testing knowledge evidence
+that generated cases can cite before any RAG runtime or provider integration is
+implemented.
 
 ## Must Read
 
@@ -27,60 +28,75 @@ verifiable task boundary.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/10-v2-scope-options.md`
-9. `docs/implementation/slices/slice-29-execution-run-manifest.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+9. `docs/implementation/11-final-rag-agent-strategy.md`
+10. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+11. `memory/08-session-handoff.md`
+12. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
 - Broad architecture, migration, enterprise collaboration, marketplace,
   distributed execution, cloud storage, cloud CI/provider integration, RBAC,
-  tenants, permissions, and frontend redesign docs unless a concrete blocker
-  requires them.
+  tenants, permissions, frontend redesign docs, and provider implementation
+  docs unless a concrete blocker requires them.
 
 ## Expected Files
 
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
+docs/implementation/slices/slice-30-test-knowledge-card-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/slices/slice-29-execution-run-manifest.md
-docs/implementation/10-v2-scope-options.md
 ```
 
-Planning task. Do not add frontend code, backend feature code, tests,
-migrations, package upgrades, artifact upload/mutation/delete, cloud storage,
-external provider integration, RBAC, tenants, permissions, broad redesign work,
-report generation behavior, runner behavior changes, quality gate computation
-changes, RAG runtime, or MCP runtime.
+Contract task. Do not add frontend code, backend runtime feature code,
+migrations, package upgrades, external provider integrations, vector database,
+embeddings, reranking, background indexing, graph runtime, MCP runtime,
+artifact upload/mutation/delete, generated-case auto-approval, runner behavior
+changes, report generation behavior changes, remote CI provider behavior, RBAC,
+tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/<next-slice>.md
-rg -n "Product Value Answer|Non-goals|Task Table" docs/implementation/slices/<next-slice>.md NEXT_AI_TASK.md
+rg -n "TestKnowledgeCard|KnowledgeEvidence|source_knowledge_evidence_ids|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md
 git diff --check
 ```
 
-Expected result: next slice plan exists, names product value/non-goals/task
-table, `NEXT_AI_TASK.md` points to the first task, and diff check passes.
+Expected result: contracts define TestKnowledgeCard, KnowledgeEvidence, generated
+case evidence fields, artifact/state/API boundaries, and explicit runtime
+non-goals; diff check passes.
 
 ## Acceptance
 
-- Select one narrow V2 slice from current product priorities and recent handoff.
-- Create the slice plan with product value, preconditions, non-goals, task
-  table, expected files, verification commands, and commit messages.
-- Update `NEXT_AI_TASK.md` to the first task of that new slice.
-- Do not implement product code during planning.
+- Data contract defines local `TestKnowledgeCard` and normalized
+  `KnowledgeEvidence` fields.
+- API contract defines the contract boundary without enabling external
+  retrieval, indexing, provider calls, or runtime behavior.
+- State-machine contract states knowledge-card status changes do not trigger
+  retrieval jobs, indexing, embeddings, graph extraction, or generated-case
+  promotion.
+- Artifact contract defines knowledge-card and generated-case evidence file
+  rules.
+- GeneratedCaseCandidate contract defines evidence ids, risk coverage,
+  generation reason, automation readiness, quality score, review findings, and
+  coverage gap notes.
+- Review gates and no RAG runtime, MCP runtime, vector, embedding, reranking,
+  external provider, RBAC, tenant, permission, and remote CI provider boundaries
+  remain explicit.
 
 ## Commit Message
 
 ```text
-docs(v2): plan next narrow v2 slice
+docs(v2): define test knowledge card contract
 ```
 
 ## Next Task
 
-First task of the newly planned V2 slice.
+Slice 30 Task 3: Add Test Knowledge Card Golden Fixture.

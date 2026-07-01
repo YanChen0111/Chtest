@@ -1084,3 +1084,83 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines run manifest behavior, contracts,
   verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Execution run manifest.
+
+Why it was selected:
+
+- Slices 24-28 made artifacts openable and evidence summaries readable across
+  execution reports, AI tasks, imported CI evidence, and quality gates.
+- Slice 29 closed the remaining execution-level readability gap by explaining
+  the TestRun itself: command, working directory, runner mode, workspace,
+  repository/network policy, snapshots, and output artifacts.
+- The slice stayed read-only and evidence-only by deriving the manifest from
+  existing TestRun fields and Artifact metadata.
+
+Completed slice name:
+
+```text
+Slice 29: Execution Run Manifest
+```
+
+Delivered output:
+
+- Slice plan, contract boundary, frontend pytest execution manifest panel,
+  golden smoke, and completion gate.
+- Local links are limited to persisted local Artifact ids. Missing runtime,
+  dependency, and environment snapshots remain visible as unavailable evidence.
+- No runner behavior, report generation, FailureAnalysis, QualityGateDecision,
+  remote provider, RAG runtime, MCP runtime, RBAC, tenants, or permissions were
+  added.
+
+## Recommended Next V2 Slice
+
+Recommended: Test knowledge card contract.
+
+Why:
+
+- Slice 19 added deterministic local ContextArtifact retrieval evidence, but
+  generated test cases still need a richer explanation of which testing
+  knowledge supports them, which risks they cover, and why they should pass
+  agent and human review.
+- The final RAG and Agent direction calls for Chtest to become a testing
+  knowledge evidence system, not a generic chat knowledge base.
+- Starting with contracts keeps the next step small and reviewable before any
+  vector database, external provider, graph reasoning, or frontend work.
+
+Next slice name:
+
+```text
+Slice 30: Test Knowledge Card Contract
+```
+
+Smallest useful boundary:
+
+- Define `TestKnowledgeCard` and `KnowledgeEvidence` contracts.
+- Define generated-case evidence fields for source knowledge evidence ids,
+  risk coverage, generation reason, automation readiness, quality score,
+  review findings, and coverage gap notes.
+- Add one fixture and one smoke proof showing requirement text, knowledge
+  cards, generated candidates, review findings, and evidence ids.
+
+Explicit non-goals:
+
+- No RAG runtime, external KnowledgeAdapter calls, vector database, embeddings,
+  reranking, GraphRAG runtime, graph database, background indexing, provider
+  SDK, frontend implementation, generated-case auto-approval, runner behavior,
+  artifact mutation, MCP runtime, marketplace, RBAC, tenants, permissions, or
+  remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 30 Task 1: Add Test Knowledge Card Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until contracts define knowledge-card data, evidence,
+  artifact, state, and review boundaries.

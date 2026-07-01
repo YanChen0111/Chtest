@@ -1,5 +1,38 @@
 # Development Log
 
+## 2026-07-01 Slice 30 Test Knowledge Card Contract Plan
+
+### Completed
+
+- Selected Slice 30: Test Knowledge Card Contract.
+- Added `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 29 completion
+  and Slice 30 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 2: Define TestKnowledgeCard and
+  KnowledgeEvidence contracts.
+
+### Rationale
+
+- Slice 19 proved deterministic local ContextArtifact retrieval evidence, but
+  generated test cases still need structured testing knowledge evidence.
+- The next smallest final RAG/Agent step is contract-first: define
+  `TestKnowledgeCard`, `KnowledgeEvidence`, and generated-case evidence fields
+  before any vector database, embedding, reranking, provider, graph, or frontend
+  implementation.
+- The slice keeps human review gates intact and does not add RAG runtime or MCP
+  runtime behavior.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+- `rg -n "Test Knowledge Card|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-30-test-knowledge-card-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): add test knowledge card contract plan`.
+- Continue Slice 30 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 29 Completion Gate
 
 ### Completed
