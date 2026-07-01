@@ -10,12 +10,13 @@ Slice 31: Generated Case Knowledge Evidence Persistence.
 
 ## Current Task
 
-Slice 31 Task 3: Persist Generated-Case Knowledge Evidence Fields.
+Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden Smoke.
 
 ## Product Value Answer
 
-After this task, generated case candidates persist and return normalized
-knowledge evidence fields through the existing backend data flow.
+After this task, a focused golden smoke proves generated case candidates expose
+persisted knowledge evidence fields without creating review or runtime side
+effects.
 
 ## Must Read
 
@@ -42,12 +43,8 @@ knowledge evidence fields through the existing backend data flow.
 Create or update only these files for the current task:
 
 ```text
-backend/app/modules/cases/models.py
-backend/app/modules/cases/schemas.py
-backend/app/modules/cases/service.py
-backend/app/alembic/versions/<new-migration>.py
-backend/app/tests/db/test_case_generation_models.py
-backend/app/tests/api/test_case_generation.py
+backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py
+docs/fixtures/18-test-knowledge-card-contract-golden.md
 docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
@@ -64,31 +61,30 @@ permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
 git diff --check
 ```
 
-Expected result: database/API focused tests pass, knowledge evidence fields are
-persisted and listed with backward-compatible defaults, and diff check passes.
+Expected result: golden smoke passes, generated-case evidence display keeps
+side effects out of TestCase/TestRun/Report/runtime artifacts, and diff check
+passes.
 
 ## Acceptance
 
-- GeneratedCaseCandidate model persists all Slice 31 evidence fields with safe
-  defaults.
-- Migration adds only generated_case_candidates columns required by this slice.
-- Case generation persistence copies normalized fields from AI output when
-  present and uses safe defaults when absent.
-- Candidate list API returns the fields.
-- Existing case generation behavior remains backward-compatible.
-- No TestCase, TestRun, Report, retrieval job, vector index, graph job,
-  provider call, artifact mutation, or review bypass is introduced.
+- Golden seeds or runs case generation with accepted and rejected knowledge
+  evidence examples.
+- Candidate list response includes evidence ids, knowledge evidence refs,
+  covered risk ids, generation reason, automation readiness, quality score,
+  review findings, and coverage gap notes.
+- Golden proves evidence display creates no TestCase, TestRun, Report,
+  retrieval job, vector index, graph job, provider call, or artifact mutation.
 
 ## Commit Message
 
 ```text
-feat(cases): persist generated case knowledge evidence
+test(golden): add generated case knowledge evidence persistence smoke
 ```
 
 ## Next Task
 
-Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden Smoke.
+Slice 31 Completion Gate.

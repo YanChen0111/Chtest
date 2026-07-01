@@ -1,5 +1,73 @@
 # Session Handoff
 
+## 2026-07-01 Slice 31 Task 3 Generated-Case Evidence Persistence 完成
+
+本轮完成：
+
+- 完成 Slice 31 Task 3：Persist Generated-Case Knowledge Evidence Fields。
+- `GeneratedCaseCandidate` 已新增并持久化：
+  - `source_knowledge_evidence_ids`
+  - `knowledge_evidence_refs_json`
+  - `covered_risk_ids`
+  - `generation_reason`
+  - `automation_readiness`
+  - `quality_score`
+  - `review_findings_json`
+  - `coverage_gap_notes`
+- 新增 Alembic migration：
+  `backend/alembic/versions/20260701_0007_generated_case_knowledge_evidence.py`。
+- Case generation persistence 会从 validated AI output 复制字段；缺失字段使用
+  合同默认值。
+- Candidate list API 返回 Slice 31 evidence display fields。
+- `covered_risk_ids` 按合同以 UUID list 持久化，API 列表输出转为字符串。
+- 输出校验新增：
+  - `automation_readiness` 枚举值；
+  - `quality_score` 0-100；
+  - `covered_risk_ids` UUID；
+  - `knowledge_evidence_refs` / `review_findings` bounded display JSON；
+  - secret / raw provider payload marker 拒绝。
+- DB 层新增 check constraints：
+  - `ck_generated_case_candidates_automation_readiness`
+  - `ck_generated_case_candidates_quality_score_0_100`
+- API/DB 测试覆盖：
+  - migration columns；
+  - migration PostgreSQL type；
+  - migration check constraints；
+  - model 默认值；
+  - mutable JSON/list in-place updates；
+  - AI output 带 evidence fields 时可落库并列表返回；
+  - malformed evidence output schema-invalid 且不写 candidate；
+  - 未创建 TestCase。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 31 Task 4：Add Generated-Case Knowledge Evidence Golden Smoke。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py -q
+git diff --check
+```
+
+验证结果：
+
+- DB/API focused tests：`15 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：
+  `feat(cases): persist generated case knowledge evidence`。
+- 继续 Slice 31 Task 4：Add Generated-Case Knowledge Evidence Golden Smoke。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/10-v2-scope-options.md` 中未暂存 Candidate E 段落
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 提交时只暂存 Slice 31 Task 3 文件，避免误混这些背景改动。
+
 ## 2026-07-01 Slice 31 Task 2 Persistence Contract Boundary 完成
 
 本轮完成：

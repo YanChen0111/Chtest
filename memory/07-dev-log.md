@@ -1,5 +1,34 @@
 # Development Log
 
+## 2026-07-01 Slice 31 Task 3 Generated-Case Evidence Persistence
+
+### Completed
+
+- Completed Slice 31 Task 3: Persist Generated-Case Knowledge Evidence Fields.
+- Added GeneratedCaseCandidate persistence fields for knowledge evidence ids,
+  knowledge evidence refs, covered risk ids, generation reason, automation
+  readiness, quality score, review findings, and coverage gap notes.
+- Added migration
+  `backend/alembic/versions/20260701_0007_generated_case_knowledge_evidence.py`.
+- Updated case generation persistence and candidate list mapping.
+- Added DB/API coverage for migration columns/types/check constraints,
+  defaults, mutable list/json updates, AI-output evidence persistence, UUID
+  covered-risk ids, automation readiness and quality score value ranges,
+  bounded safe display JSON, and no TestCase side effect.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Task 4.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py -q`
+- Result: `15 passed in 1.71s`
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Continue Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden
+  Smoke.
+
 ## 2026-07-01 Slice 31 Persistence Contract Boundary
 
 ### Completed
