@@ -1,5 +1,47 @@
 # Session Handoff
 
+## 2026-07-01 Slice 24 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 24：Local Artifact Access Links。
+- Slice 24 task table 已记录：
+  - Task 1：`e06c94b`
+  - Task 2：`926cb50`
+  - Task 3：`2222cf2`
+  - Task 4：`d0f5516`
+  - Task 5：`0f27919`
+  - Completion Gate：done pending commit。
+- 确认 Slice 24 保持 read-only local artifact access：
+  - 不新增 artifact upload/mutation/delete/sharing/cloud storage/signed URL；
+  - 不 fetch/proxy/download 外部 artifact URL；
+  - 不修改 runner 行为；
+  - 不生成 Report、FailureAnalysis、QualityGateDecision；
+  - 不引入 RAG runtime、MCP runtime、RBAC、tenants、permissions。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select the next V2 small slice after Slice 24 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_artifact_access.py backend/app/tests/golden/test_artifact_access_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Artifact access API + golden：`5 passed`。
+- Frontend build：passed，保留 Vite large chunk warning。
+- Full frontend suite：`16` files passed，`21` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 completion gate：`docs(v2): complete local artifact access slice`。
+- 选择并规划下一条 V2 小切片。
+
 ## 2026-07-01 Slice 24 Task 5 Artifact Access Golden Smoke 完成
 
 本轮完成：

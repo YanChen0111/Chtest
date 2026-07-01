@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 24: Local Artifact Access Links.
+Select the next V2 small slice after Slice 24 completion.
 
 ## Current Task
 
-Slice 24 Completion Gate.
+Choose and plan the next narrow V2 slice.
 
 ## Product Value Answer
 
-After this task, Slice 24 is closed with backend API, frontend links, and golden
-artifact access evidence verified together.
+After this task, the next V2 slice is selected with a small task plan before
+any product code changes.
 
 ## Must Read
 
@@ -27,7 +27,8 @@ artifact access evidence verified together.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-24-local-artifact-access-links.md`
-9. existing artifact access API, golden, and execution frontend tests
+9. `docs/implementation/10-v2-scope-options.md`
+10. recent session handoff and dev log
 
 ## Do Not Read Unless Needed
 
@@ -54,35 +55,38 @@ backend/app/tests/golden/test_artifact_access_golden.py
 docs/fixtures/12-local-artifact-access-golden.md
 ```
 
-Completion gate task. Do not add frontend code, backend feature code, artifact
-upload/mutation/delete, cloud storage, external artifact fetch, RBAC, tenants,
-permissions, package upgrades, broad redesign work, or runner behavior changes.
+Planning task. Do not add frontend code, backend feature code, migrations,
+package upgrades, artifact upload/mutation/delete, cloud storage, external
+provider integration, RBAC, tenants, permissions, broad redesign work, or runner
+behavior changes.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_artifact_access.py backend/app/tests/golden/test_artifact_access_golden.py -q
-npm --prefix frontend run build
-npm --prefix frontend run test -- --run
+test -f docs/implementation/slices/<next-slice-file>.md
+rg -n "<next slice name>|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/<next-slice-file>.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: Slice 24 backend API, golden, frontend build, frontend suite,
-and diff check pass.
+Expected result: next slice plan exists, scope is narrow and local-first, and
+diff check passes.
 
 ## Acceptance
 
-- Slice 24 task table records completed task commits through Task 5.
-- Backend artifact access API and golden smoke pass together.
-- Frontend execution artifact links still build and test successfully.
-- Handoff names the next V2 small slice selection task.
+- Slice 24 completion is recorded as done in handoff and dev log.
+- `docs/implementation/10-v2-scope-options.md` records Slice 24 completion and
+  recommends one next V2 slice.
+- A new slice plan defines product value, non-goals, task table, expected files,
+  verification commands, and commit messages.
+- `NEXT_AI_TASK.md` points to the first implementation task for the selected
+  slice.
 
 ## Commit Message
 
 ```text
-docs(v2): complete local artifact access slice
+docs(v2): add next v2 slice plan
 ```
 
 ## Next Task
 
-Select the next V2 small slice after Slice 24 completion.
+First implementation task from the selected next V2 slice.
