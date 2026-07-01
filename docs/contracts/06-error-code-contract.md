@@ -31,6 +31,12 @@ Common error response:
 | CONTEXT_ARTIFACT_SECRET_DETECTED | 422 | ContextArtifact contains high-risk secret | Secret scan finds token, credential, cookie, or production connection string |
 | REPOSITORY_PATH_NOT_ALLOWED | 422 | Repository path is outside allowlist | Creating/updating Repository |
 | REPORT_INSUFFICIENT_EVIDENCE | 409 | Report cannot make conclusion with available evidence | ReportAgent lacks required artifacts |
+| INVALID_CI_IMPORT_PAYLOAD | 400 | CI import payload is malformed or unsupported | Missing required fields, invalid conclusion, invalid changed file |
+| CI_IMPORT_CONTROL_FIELD_REJECTED | 400 | CI import contains remote-control fields | Webhook, trigger, rerun, cancel, schedule, PR comment, deploy, release, merge, tag, or status-update field |
+| CI_IMPORT_CREDENTIAL_REJECTED | 400 | CI import contains credential-like fields | Token, secret, OAuth, PAT, private key, password, credential id, or organization permission field |
+| CI_IMPORT_UNSUPPORTED_PROVIDER_OPERATION | 422 | CI import attempts provider behavior | Treating provider label as a remote CI operation |
+| CI_IMPORT_EXTERNAL_FETCH_FORBIDDEN | 422 | CI import requests external fetch behavior | Asking Chtest to download artifact URLs, fetch logs, or access external URLs |
+| CI_IMPORT_DUPLICATE_EXTERNAL_RUN | 409 | Imported CI run already exists | Same project/repository/provider/external_run_id was already imported |
 
 ## 3. Rules
 

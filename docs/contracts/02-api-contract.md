@@ -838,6 +838,11 @@ Slice 15 foundation boundary:
 - V1 does not integrate remote CI providers, webhooks, PR comments, merge,
   push, release, deployment, RAG runtime, MCP runtime, RBAC, tenants, or
   permissions in Slice 15.
+- Slice 20 adds import-only CI metadata evidence through
+  `POST /api/cicd/runs/import`. It stores remote CI facts as local evidence but
+  must not call remote CI provider APIs, receive webhooks, trigger pipelines,
+  rerun jobs, post PR comments, deploy, release, store credentials, or update
+  remote statuses.
 
 ### 5.1 Create CI/CD Run
 
@@ -980,6 +985,114 @@ Rules:
 - Analyze may update `CICDRun.overall_risk` from changed file risks.
 - Analyze does not create UnitTestPatch, TestRun, QualityGateDecision,
   FailureAnalysis, or Report records in Slice 15.
+
+### 5.4b Import CI Run Metadata
+
+`POST /api/cicd/runs/import`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "repository_id": "00000000-0000-0000-0000-000000000301",
+  "source_type": "ci_import",
+  "provider": "github_actions",
+  "trigger_type": "imported",
+  "external_run_id": "123456",
+  "pipeline_name": "CI",
+  "job_name": "pytest",
+  "conclusion": "success",
+  "status": "completed",
+  "base_ref": "main",
+  "head_ref": "feature/coupon-boundary",
+  "commit_sha": "abc123",
+  "started_at": "2026-07-01T01:00:00Z",
+  "finished_at": "2026-07-01T01:05:00Z",
+  "external_url": "https://example.invalid/runs/123456",
+  "changed_files": [
+    {
+      "path": "app/coupon.py",
+      "old_path": null,
+      "change_type": "modified",
+      "lines_added": 12,
+      "lines_deleted": 4
+    }
+  ],
+  "artifact_references": [
+    {
+      "name": "pytest report",
+      "kind": "test_report",
+      "external_url": "https://example.invalid/artifacts/1"
+    }
+  ]
+}
+```
+
+Response 202:
+
+```json
+{
+  "cicd_run_id": "00000000-0000-0000-0000-000000001201",
+  "source_type": "ci_import",
+  "provider": "github_actions",
+  "trigger_type": "imported",
+  "import_status": "imported",
+  "quality_gate_status": "pending",
+  "ci_conclusion": "success",
+  "created_artifacts": [
+    {
+      "artifact_type": "ci_run_metadata",
+      "file_name": "ci_run_metadata.json"
+    },
+    {
+      "artifact_type": "changed_files",
+      "file_name": "changed_files.json"
+    }
+  ]
+}
+```
+
+Rules:
+
+- `source_type` must be `ci_import`.
+- `trigger_type` is `imported` for persisted imported CI runs. The server may
+  default it to `imported` when omitted, but it must not store imported runs as
+  webhook, PR, scheduled, or remote-triggered runs.
+- `provider` is an inert label. Allowed labels may include `imported`,
+  `github_actions`, `gitlab_ci`, `jenkins`, `circleci`, `buildkite`, and
+  `other`, but the label must not enable provider behavior.
+- `conclusion` may be `success`, `failure`, `cancelled`, `skipped`,
+  `timed_out`, or `unknown`.
+- Imported CI conclusion, external run id, job name, commit SHA, external URL,
+  timestamps, duration, and provider status are written to
+  `ci_run_metadata.json` Artifact content and metadata. They are not CICDRun
+  columns unless a later contract explicitly promotes them.
+- The endpoint may create CICDRun, CICDChangedFile, `ci_run_metadata`, and
+  `changed_files` evidence.
+- The endpoint must not create QualityGateDecision, TestRun, UnitTestPatch,
+  FailureAnalysis, Report, merge/release records, or remote status updates.
+- Artifact references are inert references only. Chtest stores the reference
+  metadata but must not download, authenticate to, fetch logs from, execute, or
+  mutate `external_url` targets.
+- Duplicate imported external runs may be rejected per project/repository/
+  provider/external_run_id with `CI_IMPORT_DUPLICATE_EXTERNAL_RUN`.
+
+Rejection rules:
+
+- Malformed payloads, missing required fields, unsupported conclusions, or
+  invalid changed files return `INVALID_CI_IMPORT_PAYLOAD`.
+- Webhook payload fields, event action fields, signatures, delivery ids, or
+  callback URLs return `CI_IMPORT_CONTROL_FIELD_REJECTED`.
+- Trigger, rerun, cancel, workflow dispatch, schedule, PR comment, commit status
+  update, branch protection, merge, deploy, release, tag, publish, or environment
+  promotion fields return `CI_IMPORT_CONTROL_FIELD_REJECTED`.
+- Tokens, secrets, OAuth fields, PATs, private keys, passwords, credential ids,
+  or organization permission fields return `CI_IMPORT_CREDENTIAL_REJECTED`.
+- Requests that treat provider labels as remote operations return
+  `CI_IMPORT_UNSUPPORTED_PROVIDER_OPERATION`.
+- Requests to fetch external artifacts, logs, or remote URLs return
+  `CI_IMPORT_EXTERNAL_FETCH_FORBIDDEN`.
 
 ### 5.5+ Slice 16 And Later Endpoints
 

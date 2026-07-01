@@ -10,24 +10,25 @@ Slice 20: CI Run Metadata Import.
 
 ## Current Task
 
-Slice 20 Task 1: Add CI Run Metadata Import task plan.
+Slice 20 Task 3: Add deterministic CI metadata parser.
 
 ## Product Value Answer
 
-After this task, the import-only CI metadata slice has a precise plan, product
-value, task table, verification commands, and non-goals before any product code
-is written.
+After this task, Chtest can parse static CI metadata JSON into a deterministic
+internal model while rejecting control fields, credentials, and remote-provider
+behavior before any import API is exposed.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/implementation/04-ai-vibecoding-governance.md`
-4. `docs/implementation/10-v2-scope-options.md`
-5. `docs/implementation/slices/slice-15-cicd-quality-center.md`
-6. `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
-7. `docs/implementation/slices/slice-20-ci-run-metadata-import.md`
-8. `memory/08-session-handoff.md`
+3. `docs/contracts/01-data-model-contract.md`
+4. `docs/contracts/02-api-contract.md`
+5. `docs/contracts/03-state-machines.md`
+6. `docs/contracts/04-artifact-contract.md`
+7. `docs/implementation/04-ai-vibecoding-governance.md`
+8. `docs/implementation/slices/slice-15-cicd-quality-center.md`
+9. `docs/implementation/slices/slice-20-ci-run-metadata-import.md`
 
 ## Do Not Read Unless Needed
 
@@ -43,40 +44,45 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/10-v2-scope-options.md
 docs/implementation/slices/slice-20-ci-run-metadata-import.md
+backend/app/modules/cicd/service.py
+backend/app/modules/cicd/schemas.py
+backend/app/tests/api/test_ci_run_metadata_import.py
 ```
 
-Planning-only task. Do not add product code, frontend code, tests, migrations,
-remote CI provider calls, webhooks, pipeline triggers, reruns, PR comments,
+Parser-only task. User approved development after the V2 document-design review.
+Do not add the import API endpoint, frontend code, migrations, remote CI
+provider calls, webhooks, pipeline triggers, reruns, PR comments,
 deploy/release controls, credentials, RBAC, tenants, permissions, marketplace,
 RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-20-ci-run-metadata-import.md
-rg -n "CI Run Metadata Import|Product Value Answer|Non-goals|Task Table|import-only|remote CI provider" docs/implementation/slices/slice-20-ci-run-metadata-import.md docs/implementation/10-v2-scope-options.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q
 git diff --check
 ```
 
-Expected result: Slice 20 plan and V2 scope recommendation are documented and
-diff check passes.
+Expected result: deterministic CI metadata parser tests and diff check pass.
 
 ## Acceptance
 
-- Records Slice 19 as completed in V2 planning context.
-- Creates Slice 20 plan with product value, non-goals, slice boundary, task
-  table, expected files, and verification commands.
-- Selects import-only CI metadata evidence as the next V2 slice.
-- Does not add implementation code or frontend code.
+- Parses provider label, pipeline name, job name, conclusion, started/finished
+  timestamps, duration, base/head refs, changed files, and artifact references.
+- Treats provider as an inert label only.
+- Rejects secret-like fields, credentials, webhook payload actions, trigger
+  commands, rerun/cancel/schedule/deploy/release controls, and malformed changed
+  files.
+- Normalizes changed file roles and risks using existing CICDChangedFile
+  classification rules where possible.
+- Does not fetch external artifact URLs or call remote providers.
 
 ## Commit Message
 
 ```text
-docs(v2): add ci run metadata import slice plan
+feat(cicd): add ci metadata import parser
 ```
 
 ## Next Task
 
-Slice 20 Task 2: Define CI import contract boundary.
+Slice 20 Task 4: Add CI run import API.

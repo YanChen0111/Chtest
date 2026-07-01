@@ -75,6 +75,7 @@ artifacts/projects/{project_id}/automation-drafts/{automation_draft_id}/
 artifacts/projects/{project_id}/cicd-quality/{cicd_run_id}/
   diff.patch
   changed_files.json
+  ci_run_metadata.json
   risk_analysis.json
   unit_test.patch
   patch_scope_gate.json
@@ -104,6 +105,27 @@ Slice 15 artifact boundary:
   `changed_file_count`.
 - `unit_test.patch`, `patch_scope_gate.json`, `regression_plan.json`,
   `quality_gate.json`, and CI/CD quality report artifacts are Slice 16+.
+
+Slice 20 CI import artifact rules:
+
+- `ci_run_metadata.json` is stored as an Artifact with
+  `artifact_type=ci_run_metadata`, `owner_entity_type=CICDRun`, and
+  `owner_entity_id=cicd_run_id`.
+- `ci_run_metadata.json` records imported CI run metadata from static JSON or an
+  uploaded JSON payload handled locally.
+- `ci_run_metadata.json` must include `source_type=ci_import`,
+  `provider_is_inert_label=true`, `import_mode`, run conclusion, refs,
+  changed files, and artifact references when supplied.
+- Imported artifact references are inert references. They may include name,
+  kind, external URL, sha256, and size metadata, but Chtest must not fetch,
+  authenticate to, execute, or mutate those external URLs in Slice 20.
+- `ci_run_metadata.json` metadata must include
+  `created_by_component=CICDRunMetadataImport`,
+  `remote_fetch_performed=false`, `quality_gate_auto_decision=false`,
+  `changed_file_count`, and `artifact_reference_count`.
+- Slice 20 may also create `changed_files.json` from imported changed-file
+  metadata. It must continue to match persisted CICDChangedFile rows.
+- Imported CI metadata must not create or update `quality_gate.json` by itself.
 
 Slice 16 artifact rules:
 
@@ -208,6 +230,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | context_yaml | application/yaml | 轻量上下文 YAML |
 | context_openapi | application/yaml or application/json | OpenAPI 片段或文件 |
 | knowledge_retrieval | application/json | 确定性本地知识检索证据 |
+| ci_run_metadata | application/json | Imported CI run metadata evidence |
 
 Playwright artifact rules:
 

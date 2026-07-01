@@ -242,6 +242,37 @@ Newman 规则：
   marking the run `passed` or `failed` when the runner produced parseable
   output.
 
+## 8.1 CICDRun Import 状态规则
+
+Slice 20 `ci_import` is an evidence import state, not a remote CI provider
+execution state.
+
+```text
+created -> imported
+created -> import_failed
+imported -> analyzed
+imported -> archived
+```
+
+规则：
+
+- `POST /api/cicd/runs/import` may create a CICDRun directly in `imported`
+  status after `ci_run_metadata.json` and changed-file evidence are persisted.
+- `import_failed` means the local import payload could not be validated or
+  persisted. It does not mean a remote CI job failed.
+- Imported CI conclusion values (`success`, `failure`, `cancelled`, `skipped`,
+  `timed_out`, `unknown`) are evidence fields, not CICDRun state transitions.
+- Imported CI success must not automatically transition
+  `CICDRun.quality_gate_status` to `passed`.
+- Imported CI failure must not automatically transition
+  `CICDRun.quality_gate_status` to `failed`.
+- `quality_gate_status` remains `pending` until
+  `POST /api/cicd/runs/{id}/quality-gate` or an equivalent explicit gate
+  recompute creates a QualityGateDecision.
+- Import must not trigger remote CI provider API calls, webhooks, reruns,
+  cancellation, scheduling, PR comments, commit status updates, merge, deploy,
+  release, credentials, RBAC, tenants, or permissions behavior.
+
 ## 9. QualityGateDecision 状态机
 
 ```text
@@ -266,6 +297,9 @@ passed/failed/needs_review -> new QualityGateDecision record on recompute, then 
   `needs_review`。
 - QualityGateDecision 不触发 merge、push、release、deployment、remote CI
   status update 或 PR comment。
+- Imported CI conclusion may be cited as evidence, but success alone is never
+  enough for `passed` and failure alone is not automatically `failed`. Missing
+  required local evidence keeps the gate at `needs_review`.
 - 每个结论必须引用 evidence artifacts；证据缺失时只能是
   `needs_review`，不能写成 `passed`。
 

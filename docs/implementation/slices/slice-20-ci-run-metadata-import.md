@@ -75,8 +75,8 @@ CI/CD Quality Center without Chtest controlling any remote CI provider.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add CI Run Metadata Import task plan | planned | `test -f docs/implementation/slices/slice-20-ci-run-metadata-import.md && rg -n "CI Run Metadata Import|Product Value Answer|Non-goals|Task Table|import-only" docs/implementation/slices/slice-20-ci-run-metadata-import.md` | pending | planning-only scope |
-| Define CI import contract boundary | planned | `rg -n "ci_import|CI import|imported CI|ci_run_metadata|remote CI provider" docs/contracts docs/implementation/slices/slice-20-ci-run-metadata-import.md` | pending | contract-only before code |
+| Add CI Run Metadata Import task plan | done | `test -f docs/implementation/slices/slice-20-ci-run-metadata-import.md && rg -n "CI Run Metadata Import|Product Value Answer|Non-goals|Task Table|import-only" docs/implementation/slices/slice-20-ci-run-metadata-import.md` | `b1acde6` | planning-only scope |
+| Define CI import contract boundary | done | `rg -n "ci_import|CI import|imported CI|ci_run_metadata|remote CI provider" docs/contracts docs/implementation/slices/slice-20-ci-run-metadata-import.md` | pending commit | contract-only before code |
 | Add deterministic CI metadata parser | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q` | pending | parse static JSON only |
 | Add CI run import API | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q` | pending | import-only endpoint |
 | Add CI import frontend evidence display | planned | `npm --prefix frontend run test -- --run` | pending | CI/CD 管理 import evidence |
@@ -127,6 +127,7 @@ Expected files:
 - `docs/contracts/02-api-contract.md`
 - `docs/contracts/03-state-machines.md`
 - `docs/contracts/04-artifact-contract.md`
+- `docs/contracts/06-error-code-contract.md`
 - `docs/implementation/slices/slice-20-ci-run-metadata-import.md`
 - `NEXT_AI_TASK.md`
 - `memory/07-dev-log.md`
@@ -135,7 +136,7 @@ Expected files:
 Verification Command:
 
 ```bash
-rg -n "ci_import|CI import|imported CI|ci_run_metadata|remote CI provider|QualityGateDecision" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-20-ci-run-metadata-import.md
+rg -n "ci_import|CI import|imported CI|ci_run_metadata|remote CI provider|QualityGateDecision|CI_IMPORT_" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/06-error-code-contract.md docs/implementation/slices/slice-20-ci-run-metadata-import.md
 git diff --check
 ```
 
@@ -148,6 +149,7 @@ Acceptance:
   pass QualityGateDecision.
 - Artifact contract defines `ci_run_metadata.json` and imported artifact
   reference rules.
+- Error-code contract defines CI import rejection codes.
 - Contract rejects remote CI provider control, webhooks, triggers, reruns, PR
   comments, deploy, release, credentials, RBAC, tenants, and permissions.
 

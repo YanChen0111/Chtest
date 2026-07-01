@@ -1,5 +1,60 @@
 # Development Log
 
+## 2026-06-30 Slice 20 CI Import Contract Boundary
+
+### Completed
+
+- Completed Slice 20 Task 2: Define CI import contract boundary.
+- Updated data contract:
+  - allows `source_type=ci_import`;
+  - keeps provider values as inert source labels;
+  - records imported CI conclusion as evidence only;
+  - keeps QualityGateDecision from auto-passing based on imported status.
+- Updated API contract:
+  - adds `POST /api/cicd/runs/import` contract;
+  - defines request/response shape for static CI metadata import;
+  - rejects control fields, webhook/trigger/rerun/deploy/release behavior,
+    credentials, external fetches, and provider operations.
+- Updated state-machine contract:
+  - defines import status as local evidence import state;
+  - keeps `quality_gate_status=pending` until explicit gate recompute.
+- Updated artifact contract:
+  - adds `ci_run_metadata.json`;
+  - defines inert artifact references and `remote_fetch_performed=false`.
+- Updated error-code contract:
+  - defines CI import payload/control/credential/provider/fetch/duplicate
+    rejection codes.
+- Addressed document review findings:
+  - added `imported` and `import_failed` CICDRun statuses to the data contract;
+  - added `ci_run_metadata` to the data-model Artifact type list;
+  - made provider label lists consistent;
+  - made `trigger_type=imported` explicit in the API contract;
+  - clarified imported CI run details live in `ci_run_metadata.json`, not
+    CICDRun columns.
+- Updated Slice 20 task table with Task 1 commit `b1acde6` and Task 2 pending
+  commit.
+- User approved continuing development on 2026-07-01.
+- Updated `NEXT_AI_TASK.md` to Slice 20 Task 3: deterministic CI metadata
+  parser.
+
+### Verification
+
+```bash
+rg -n "ci_import|CI import|imported CI|ci_run_metadata|remote CI provider|QualityGateDecision|CI_IMPORT_" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/06-error-code-contract.md docs/implementation/slices/slice-20-ci-run-metadata-import.md
+git diff --check
+```
+
+Results:
+
+- Contract boundary keywords found across data, API, state-machine, artifact,
+  error-code, and Slice 20 docs.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit Task 2 with `docs(cicd): define ci metadata import boundary`.
+- Continue Slice 20 Task 3: deterministic CI metadata parser.
+
 ## 2026-06-30 V2 Next Slice Selection
 
 ### Completed

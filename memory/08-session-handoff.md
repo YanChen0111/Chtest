@@ -1,5 +1,61 @@
 # Session Handoff
 
+## 2026-06-30 Slice 20 Task 2 完成
+
+本轮完成：
+
+- 完成 Slice 20 Task 2：Define CI import contract boundary。
+- 数据合同已定义：
+  - `source_type=ci_import`。
+  - provider 只是 inert source label。
+  - imported CI conclusion 只是 evidence，不自动通过 QualityGateDecision。
+- API 合同已定义：
+  - `POST /api/cicd/runs/import`。
+  - static CI metadata import request/response。
+  - 拒绝 webhook、trigger、rerun、cancel、schedule、PR comment、commit
+    status update、deploy、release、credentials、external fetch 和 provider
+    operation。
+- 状态机合同已定义：
+  - import 是本地 evidence import 状态，不是 remote provider execution。
+  - `quality_gate_status` 在显式 quality gate recompute 前保持 `pending`。
+- Artifact 合同已定义：
+  - `ci_run_metadata.json`。
+  - imported artifact references 是 inert references。
+  - `remote_fetch_performed=false`。
+- Error code 合同已定义：
+  - CI import payload/control/credential/provider/fetch/duplicate rejection
+    codes。
+- 已处理文档评审发现：
+  - 数据合同补齐 `imported` / `import_failed` CICDRun statuses。
+  - 数据合同补齐 `ci_run_metadata` Artifact type。
+  - provider label 清单保持一致。
+  - API 合同显式 `trigger_type=imported`。
+  - 明确 imported CI run details 存入 `ci_run_metadata.json`，不是 CICDRun
+    columns。
+- Slice 20 task table 已记录 Task 1 commit `b1acde6`，Task 2 done pending
+  commit。
+- 用户已在 2026-07-01 明确同意继续开发。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 20 Task 3：Add deterministic CI
+  metadata parser。
+
+本轮验证：
+
+```bash
+rg -n "ci_import|CI import|imported CI|ci_run_metadata|remote CI provider|QualityGateDecision|CI_IMPORT_" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/06-error-code-contract.md docs/implementation/slices/slice-20-ci-run-metadata-import.md
+git diff --check
+```
+
+验证结果：
+
+- Contract boundary keywords found across data, API, state-machine, artifact,
+  error-code, and Slice 20 docs。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 2。
+- 开始 Slice 20 Task 3：deterministic CI metadata parser。
+
 ## 2026-06-30 V2 Next Slice Selection 完成
 
 本轮完成：

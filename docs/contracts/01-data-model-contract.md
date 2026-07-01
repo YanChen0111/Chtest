@@ -267,16 +267,16 @@ shell operators.
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
 | repository_id | uuid | no | null | FK Repository |
-| source_type | varchar(40) | yes | local_diff | local_diff, uploaded_diff, manual_check |
-| trigger_type | varchar(40) | yes | manual | manual in V1; webhook, pr, scheduled are V2+ |
-| provider | varchar(40) | yes | local | local in V1; github_actions, gitlab_ci, jenkins are V2+ |
+| source_type | varchar(40) | yes | local_diff | local_diff, uploaded_diff, manual_check, ci_import |
+| trigger_type | varchar(40) | yes | manual | manual in V1; imported in Slice 20; webhook, pr, scheduled are future only |
+| provider | varchar(40) | yes | local | local in V1; imported/github_actions/gitlab_ci/jenkins/circleci/buildkite/other labels are evidence only in Slice 20 |
 | pipeline_name | varchar(160) | no | null | Optional local pipeline/check name |
 | base_ref | varchar(160) | no | null | Base commit or branch |
 | head_ref | varchar(160) | no | null | Head commit or branch |
 | summary | text | no | null | Change summary |
 | overall_risk | RiskLevel | yes | medium | Overall risk |
 | quality_gate_status | varchar(40) | yes | pending | pending, passed, failed, needs_review |
-| status | varchar(40) | yes | created | created, analyzed, patch_ready, tests_running, reported, archived |
+| status | varchar(40) | yes | created | created, imported, import_failed, analyzed, patch_ready, tests_running, reported, archived |
 
 V1 Slice 15 boundary:
 
@@ -288,6 +288,26 @@ V1 Slice 15 boundary:
   QualityGateDecision belongs to Slice 16.
 - Slice 15 must not trigger merge, push, release, deployment, webhook handling,
   PR comments, or remote CI provider synchronization.
+
+V2 Slice 20 import boundary:
+
+- `source_type=ci_import` is allowed only for static CI metadata imported into
+  Chtest as evidence.
+- `trigger_type=imported` may be used to distinguish imported facts from local
+  manual runs. It must not imply webhook, PR, scheduled, or remote-triggered
+  execution.
+- `provider` may store inert labels such as `imported`, `github_actions`,
+  `gitlab_ci`, or `jenkins` only as source metadata. Provider labels must not
+  enable provider APIs, credential lookup, webhook processing, pipeline
+  triggering, reruns, PR comments, deployment, release, or remote status update.
+- Imported CI metadata may include pipeline name, job name, inert run URL,
+  commit SHA, base/head refs, conclusion, started/finished timestamps, duration,
+  changed files, and artifact references. These values live in
+  `ci_run_metadata.json` Artifact content and metadata unless a later contract
+  explicitly promotes individual fields onto CICDRun. They are not remote
+  integration configuration.
+- Imported CI conclusion is evidence only. It must not automatically create a
+  `QualityGateDecision` or change `quality_gate_status` to `passed`.
 
 ## 18. CICDChangedFile
 
@@ -306,11 +326,15 @@ V1 Slice 15 boundary:
 
 CICDChangedFile evidence rules:
 
-- Rows are derived from local unified diff text or manual changed-file input.
+- Rows are derived from local unified diff text, manual changed-file input, or
+  Slice 20 static CI metadata imports.
 - `file_role` is deterministic from path and extension.
 - `risk_reasons_json` must explain why `risk_level` was assigned.
 - Every changed file in `changed_files.json` should have a matching
   CICDChangedFile row.
+- Imported changed files must preserve provider-supplied path/change metadata
+  only as local evidence. They must not cause repository checkout, fetch, merge,
+  pull, push, or remote comparison.
 
 ## 19. UnitTestPatch
 
@@ -401,6 +425,10 @@ QualityGateDecision rules:
   rejection, failed tests, failed regression, or high-risk uncovered changes.
 - `needs_review` is required when evidence is missing, ambiguous, or manually
   risky.
+- Imported CI conclusion can be cited in `status_detail_json` and
+  `evidence_artifact_ids`, but it is not sufficient by itself for `passed`.
+  Existing local evidence requirements still apply unless a later contract
+  explicitly changes them.
 - QualityGateDecision never triggers merge, push, release, deployment, remote CI
   status updates, or PR comments.
 
@@ -711,7 +739,7 @@ V2 deterministic KnowledgeAdapter rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, knowledge_retrieval |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -734,6 +762,15 @@ Deterministic retrieval Artifact rule:
 - `metadata_json` must include `created_by_component=DeterministicKnowledgeAdapter`,
   `retrieval_mode=deterministic_local`, `query_terms`, `result_count`,
   `used_context_artifact_ids`, and redaction status.
+
+CI import Artifact rule:
+
+- Slice 20 CI metadata import uses `artifact_type=ci_run_metadata`.
+- `owner_entity_type=CICDRun` and `owner_entity_id=cicd_run_id`.
+- `metadata_json` must include `created_by_component=CICDRunMetadataImport`,
+  `source_type=ci_import`, `provider`, `provider_is_inert_label=true`,
+  `import_mode`, `changed_file_count`, `artifact_reference_count`,
+  `remote_fetch_performed=false`, and `quality_gate_auto_decision=false`.
 
 ## 34. AutomationQualityMetric
 
