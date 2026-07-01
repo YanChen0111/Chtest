@@ -17,12 +17,18 @@
   `docs/fixtures/19-knowledge-prompt-skill-seeds.md`。
 - 新增 prompt seeds：
   - `prompts/knowledge_card_extraction/v1.md`
+  - `prompts/requirement_understanding/v1.md`
+  - `prompts/risk_analysis/v1.md`
+  - `prompts/coverage_analysis/v1.md`
+  - `prompts/test_design/v1.md`
   - `prompts/evidence_case_generation/v1.md`
   - `prompts/evidence_case_review/v1.md`
+  - `prompts/case_dedup/v1.md`
   - `prompts/automation_readiness/v1.md`
   - `prompts/knowledge_feedback/v1.md`
 - 新增 skill seeds：
   - `skills/knowledge-ingestion-skill/v1.md`
+  - `skills/risk-analysis-skill/v1.md`
   - `skills/coverage-analysis-skill/v1.md`
   - `skills/test-design-skill/v1.md`
   - `skills/knowledge-feedback-skill/v1.md`
@@ -50,7 +56,8 @@
 下次继续：
 
 - 新增 smoke 已通过。
-- Registry discovery 已从 11 prompt / 9 skill 更新为 16 prompt / 13 skill。
+- Registry discovery 已从 11 prompt / 9 skill 更新为完整的
+  21 prompt / 14 skill。
 - `backend/app/tests/prompt_skill/test_skill_files.py` 已覆盖新增 skill 文件。
 - 已运行：
 

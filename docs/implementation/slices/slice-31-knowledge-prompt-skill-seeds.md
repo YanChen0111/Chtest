@@ -24,9 +24,10 @@ prompt and skill seeds that future agents can load, validate, and evaluate.
 ## Product Value Answer
 
 After this slice, Chtest has versioned prompt and skill seed files for
-knowledge-card extraction, evidence-backed case generation/review, automation
-readiness, and knowledge feedback, so future agent work can start from
-traceable contracts instead of ad hoc prompts.
+knowledge-card extraction, requirement understanding, risk analysis, coverage
+analysis, test design, evidence-backed case generation/review, dedup,
+automation readiness, and knowledge feedback, so future agent work can start
+from traceable contracts instead of ad hoc prompts.
 
 ## Reference Notes
 
@@ -57,12 +58,18 @@ traceable contracts instead of ad hoc prompts.
 
 - Add runtime prompt seeds:
   - `knowledge_card_extraction:v1`
+  - `requirement_understanding:v1`
+  - `risk_analysis:v1`
+  - `coverage_analysis:v1`
+  - `test_design:v1`
   - `evidence_case_generation:v1`
   - `evidence_case_review:v1`
+  - `case_dedup:v1`
   - `automation_readiness:v1`
   - `knowledge_feedback:v1`
 - Add runtime skill seeds:
   - `knowledge-ingestion-skill:v1`
+  - `risk-analysis-skill:v1`
   - `coverage-analysis-skill:v1`
   - `test-design-skill:v1`
   - `knowledge-feedback-skill:v1`

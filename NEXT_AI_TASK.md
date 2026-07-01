@@ -14,8 +14,8 @@ Slice 31 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has committed knowledge-driven prompt and skill seeds
-with focused verification evidence.
+After this task, Chtest has committed the final knowledge-agent prompt and skill
+seed set with focused verification evidence.
 
 ## Must Read
 
@@ -65,13 +65,13 @@ tenants, or permissions.
 git diff --check
 ```
 
-Expected result: registry loader and skill-file smokes account for the new
-knowledge-driven prompt/skill seeds, and diff check passes.
+Expected result: registry loader and skill-file smokes account for the complete
+knowledge-agent prompt/skill seed set, and diff check passes.
 
 ## Acceptance
 
-- Registry loader discovery count is updated for the new prompt and skill
-  files.
+- Registry loader discovery count is updated for the complete prompt and skill
+  seed set.
 - Skill-file contract smoke includes the new skills and their expected agents.
 - Knowledge prompt/skill seed smoke stays green.
 - Slice 31 task table records completion.

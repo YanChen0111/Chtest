@@ -10,14 +10,20 @@ SKILL_ROOT = ROOT / "skills"
 
 EXPECTED_PROMPTS = {
     "knowledge_card_extraction": "KnowledgeIngestionAgent",
+    "requirement_understanding": "RequirementUnderstandingAgent",
+    "risk_analysis": "RiskAnalysisAgent",
+    "coverage_analysis": "CoverageAnalysisAgent",
+    "test_design": "TestDesignAgent",
     "evidence_case_generation": "CaseGenerationAgent",
     "evidence_case_review": "CaseReviewAgent",
+    "case_dedup": "DedupAgent",
     "automation_readiness": "AutomationReadinessAgent",
     "knowledge_feedback": "KnowledgeFeedbackAgent",
 }
 
 EXPECTED_SKILLS = {
     "knowledge-ingestion-skill": ["KnowledgeIngestionAgent"],
+    "risk-analysis-skill": ["RiskAnalysisAgent"],
     "coverage-analysis-skill": ["CoverageAnalysisAgent"],
     "test-design-skill": ["TestDesignAgent"],
     "knowledge-feedback-skill": ["KnowledgeFeedbackAgent"],

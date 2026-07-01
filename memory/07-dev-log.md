@@ -8,12 +8,18 @@
   `docs/implementation/slices/slice-31-knowledge-prompt-skill-seeds.md`.
 - Added knowledge-driven prompt seeds:
   - `knowledge_card_extraction:v1`
+  - `requirement_understanding:v1`
+  - `risk_analysis:v1`
+  - `coverage_analysis:v1`
+  - `test_design:v1`
   - `evidence_case_generation:v1`
   - `evidence_case_review:v1`
+  - `case_dedup:v1`
   - `automation_readiness:v1`
   - `knowledge_feedback:v1`
 - Added knowledge-driven skill seeds:
   - `knowledge-ingestion-skill:v1`
+  - `risk-analysis-skill:v1`
   - `coverage-analysis-skill:v1`
   - `test-design-skill:v1`
   - `knowledge-feedback-skill:v1`
@@ -30,12 +36,18 @@
 - Green run:
   `/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q`
 - Result after seed files: `3` passed.
-- Registry run:
+- First registry run:
   `/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_registry_loader.py backend/app/tests/prompt_skill/test_skill_files.py backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q`
 - Result after registry count updates: `14` passed.
+- Final completeness red run:
+  `/Users/yanchen/VscodeProject/Chtest/backend/.venv/bin/python -m pytest backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q`
+- Result after requiring the remaining final prompts/skill: `3` failed because
+  `requirement_understanding`, `risk_analysis`, `coverage_analysis`,
+  `test_design`, `case_dedup`, and `risk-analysis-skill` were missing.
 
 ### Next Step
 
+- Run final prompt/skill verification.
 - Run `git diff --check`.
 - Commit `docs(prompt-skill): add knowledge agent seed prompts`.
 

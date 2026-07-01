@@ -18,6 +18,7 @@ EXPECTED_SKILLS = {
     "failure-analysis-skill": ["FailureAnalysisAgent"],
     "report-generation-skill": ["ReportAgent"],
     "knowledge-ingestion-skill": ["KnowledgeIngestionAgent"],
+    "risk-analysis-skill": ["RiskAnalysisAgent"],
     "coverage-analysis-skill": ["CoverageAnalysisAgent"],
     "test-design-skill": ["TestDesignAgent"],
     "knowledge-feedback-skill": ["KnowledgeFeedbackAgent"],
