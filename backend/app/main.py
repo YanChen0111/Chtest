@@ -16,6 +16,7 @@ from backend.app.modules.projects.router import router as projects_router
 from backend.app.modules.prompt_skill.router import router as prompt_skill_router
 from backend.app.modules.reporting.router import router as reporting_router
 from backend.app.modules.requirements.router import router as requirements_router
+from backend.app.modules.review_history.router import router as review_history_router
 
 
 app = FastAPI(title="Chtest API")
@@ -29,6 +30,7 @@ app.include_router(execution_router, prefix="/api")
 app.include_router(extension_router, prefix="/api")
 app.include_router(reporting_router, prefix="/api")
 app.include_router(cicd_router, prefix="/api")
+app.include_router(review_history_router, prefix="/api")
 
 
 @app.get("/health", response_class=PlainTextResponse)

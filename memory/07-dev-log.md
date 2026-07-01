@@ -1,5 +1,46 @@
 # Development Log
 
+## 2026-07-01 Slice 21 Review History Model And Service
+
+### Completed
+
+- Completed Slice 21 Task 3: Add review history model and service.
+- Added backend ReviewHistory module:
+  - SQLAlchemy model for local append-only events;
+  - schemas for read/list responses;
+  - service helpers for append and focused list queries;
+  - `GET /api/review-history` router;
+  - FastAPI router registration.
+- Added Alembic migration `20260701_0006_review_history.py`.
+- Added focused tests for:
+  - default `Default User` attribution;
+  - append-only persistence through service helper;
+  - same-project evidence Artifact validation;
+  - entity and related-entity filtered API reads;
+  - no generic public `POST /api/review-history`;
+  - migration table creation.
+- Kept Task 3 scoped to persistence/read surface only. Existing review actions
+  are not hooked yet; that remains Slice 21 Task 4.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_projects.py backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/db/test_case_generation_models.py -q
+git diff --check
+```
+
+Results:
+
+- ReviewHistory focused tests: `5 passed`.
+- Related backend regression: `23 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `feat(review): add local review history service`.
+- Continue Slice 21 Task 4: attach history to existing review actions.
+
 ## 2026-07-01 Slice 21 Review History Contract Boundary
 
 ### Completed
@@ -40,8 +81,7 @@ Results:
 
 ### Next Step
 
-- Commit with `docs(review): define local review history contract`.
-- Continue Slice 21 Task 3: add review history model and service.
+- Completed in commit `b77262b`.
 
 ## 2026-07-01 V2 Next Slice Selection After Slice 20
 

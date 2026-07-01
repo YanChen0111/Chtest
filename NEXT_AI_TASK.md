@@ -10,13 +10,13 @@ Slice 21: Local Review Attribution History.
 
 ## Current Task
 
-Slice 21 Task 3: Add review history model and service.
+Slice 21 Task 4: Attach history to existing review actions.
 
 ## Product Value Answer
 
-After this task, Chtest can persist and read local append-only ReviewHistory
-records for existing review-gated workflows without introducing RBAC,
-permissions, tenants, login, or team governance.
+After this task, existing review-gated workflows append local ReviewHistory
+records after successful actions without changing approval rules or introducing
+RBAC, permissions, tenants, login, or team governance.
 
 ## Must Read
 
@@ -49,46 +49,48 @@ backend/app/modules/review_history/schemas.py
 backend/app/modules/review_history/service.py
 backend/app/modules/review_history/router.py
 backend/app/modules/review_history/__init__.py
-backend/app/main.py
-backend/app/models/__init__.py
 backend/app/tests/api/test_review_history.py
+backend/app/modules/cases/service.py
+backend/app/modules/automation/service.py
+backend/app/modules/cicd/service.py
+backend/app/tests/api/test_case_review.py
+backend/app/tests/api/test_automation_draft.py
+backend/app/tests/api/test_unit_test_patch_regression.py
 ```
 
-Backend model/service task. Do not attach history to existing review actions
-yet, add frontend panels, add broad audit/search, or introduce users, roles,
-permissions, tenants, login/session flows, assignment workflow, notifications,
-remote CI provider governance, marketplace, RAG runtime, or MCP runtime.
+Backend action-hook task. Do not add frontend panels, broad audit/search,
+generic public ReviewHistory write endpoints, users, roles, permissions,
+tenants, login/session flows, assignment workflow, notifications, remote CI
+provider governance, marketplace, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_unit_test_patch_regression.py -q
 git diff --check
 ```
 
-Expected result: review history model/service API tests and diff check pass.
+Expected result: review history action-hook tests and diff check pass.
 
 ## Acceptance
 
-- Adds ReviewHistory persistence with entity, related entity, action,
-  from_status, to_status, reviewer, comment, evidence ids, metadata, and
-  timestamp fields.
-- Adds append-only service helpers to create and list focused local review
-  history records.
-- Adds `GET /api/review-history` read surface with project and entity filters.
-- Uses deterministic `Default User` attribution unless a caller supplies a
-  local reviewer label.
-- Does not add generic public create/update/delete endpoints or attach existing
-  review actions yet.
-- Does not add users, roles, permissions, tenants, login/session, assignment,
-  notifications, remote provider governance, RAG runtime, or MCP runtime.
+- Records history for generated case review where current APIs support it.
+- Records history for AutomationDraft edit/approve actions where current APIs
+  support them.
+- Records history for UnitTestPatch approve/reject.
+- Records history for QualityGateDecision compute.
+- Does not change whether an action is allowed or how status transitions are
+  validated.
+- Does not add frontend panels, user management, roles, permissions, tenants,
+  assignment, notifications, remote provider governance, RAG runtime, or MCP
+  runtime.
 
 ## Commit Message
 
 ```text
-feat(review): add local review history service
+feat(review): record review history events
 ```
 
 ## Next Task
 
-Slice 21 Task 4: Attach history to existing review actions.
+Slice 21 Task 5: Add frontend review history panels.

@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-07-01 Slice 21 Task 3 Review History Model And Service 完成
+
+本轮完成：
+
+- 完成 Slice 21 Task 3：Add review history model and service。
+- 新增 backend ReviewHistory 模块：
+  - `backend/app/modules/review_history/models.py`
+  - `backend/app/modules/review_history/schemas.py`
+  - `backend/app/modules/review_history/service.py`
+  - `backend/app/modules/review_history/router.py`
+  - `backend/app/modules/review_history/__init__.py`
+- 在 `backend/app/main.py` 注册 `GET /api/review-history`。
+- 新增 Alembic migration：
+  `backend/alembic/versions/20260701_0006_review_history.py`。
+- 新增测试：
+  `backend/app/tests/api/test_review_history.py`。
+- 当前实现能力：
+  - service 内部 append ReviewHistory；
+  - 默认 reviewer 为 `Default User`；
+  - 支持 entity 与 related entity 过滤读取；
+  - 校验 `evidence_artifact_ids` 必须属于同项目已存在 Artifact；
+  - 没有 public `POST /api/review-history`；
+  - migration smoke 覆盖表字段。
+- 未做且保留给 Task 4：
+  - 还未挂接 GeneratedCaseCandidate / AutomationDraft / UnitTestPatch /
+    QualityGateDecision 的现有动作。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_projects.py backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/db/test_case_generation_models.py -q
+git diff --check
+```
+
+验证结果：
+
+- ReviewHistory focused tests：`5 passed`。
+- Related backend regression：`23 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：`feat(review): add local review history service`。
+- 继续 Slice 21 Task 4：Attach history to existing review actions。
+
 ## 2026-07-01 Slice 21 Task 2 Review History Contract Boundary 完成
 
 本轮完成：
@@ -46,8 +92,7 @@ git diff --check
 
 下次推荐任务：
 
-- 提交 Task 2：`docs(review): define local review history contract`。
-- 继续 Slice 21 Task 3：Add review history model and service。
+- Task 2 已提交：`b77262b docs(review): define local review history contract`。
 
 ## 2026-07-01 V2 Next Slice Selection 完成
 
