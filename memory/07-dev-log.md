@@ -1792,6 +1792,28 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Continue from `NEXT_AI_TASK.md`: Slice 03 Task 2, add Project CRUD API.
 
+## 2026-07-01 Slice 22 Task 6 JMeter Golden Smoke
+
+### Completed
+
+- Added `backend/app/tests/golden/test_jmeter_local_execution_golden.py`.
+- Added `docs/fixtures/11-jmeter-local-execution-golden.md`.
+- Proved configured `TestCommand(command_type=jmeter)` can create a local
+  `TestRun(runner_mode=jmeter_local)` with stdout/stderr, `jmeter_jtl`,
+  `parsed_output`, parsed sampler evidence, and TestResult rows.
+- Kept the golden deterministic by using a fake JMeter executable.
+- Updated `NEXT_AI_TASK.md` to Slice 22 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q`
+- Result: `1 passed`.
+
+### Next Step
+
+- Commit `test(golden): add jmeter local execution smoke`.
+- Continue Slice 22 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 22 Task 5 JMeter Frontend Shell
 
 ### Completed

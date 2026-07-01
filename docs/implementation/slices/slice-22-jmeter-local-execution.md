@@ -88,8 +88,8 @@ execution evidence while preserving local-first safety and auditability.
 | Define JMeter execution contract boundary | done | `rg -n "JMeter|jmeter|jmeter_local|jmeter_jtl|ToolDefinition|command_type" docs/contracts docs/implementation/slices/slice-22-jmeter-local-execution.md` | `10fa27d` | contract-only before code |
 | Add JMeter parser and backend API tests | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | `0d1a666` | deterministic JTL parsing first |
 | Add JMeter runner backend | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | `b836e65` | allowlisted fake executable tests |
-| Add JMeter execution frontend shell | done | `npm --prefix frontend run test -- --run` | pending | compact Chinese UI |
-| Add JMeter local execution golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q` | pending | TestRun evidence proof |
+| Add JMeter execution frontend shell | done | `npm --prefix frontend run test -- --run` | `abcf50d` | compact Chinese UI |
+| Add JMeter local execution golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q` | pending | TestRun evidence proof |
 | Slice 22 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py backend/app/tests/golden/test_jmeter_local_execution_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
 
 ## Task 1: Add JMeter Local Execution Evidence Task Plan
@@ -298,6 +298,8 @@ Acceptance:
   are persisted.
 - Golden proves unsafe shell/provider/platform features are absent.
 - Golden does not require a real local JMeter installation.
+- Golden fixture documents expected command, JTL parsed result, artifacts, state,
+  and non-goals.
 
 Commit message:
 

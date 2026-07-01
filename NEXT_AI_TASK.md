@@ -10,13 +10,12 @@ Slice 22: JMeter Local Execution Evidence.
 
 ## Current Task
 
-Slice 22 Task 6: Add JMeter local execution golden smoke.
+Slice 22 Completion Gate.
 
 ## Product Value Answer
 
-After this task, the JMeter local execution evidence loop is proven by a golden
-smoke: approved command -> TestRun -> stdout/stderr -> `jmeter_jtl` ->
-parsed_result -> optional TestResult rows.
+After this task, Slice 22 is closed with backend, frontend, golden, docs, and
+handoff evidence verified together.
 
 ## Must Read
 
@@ -28,7 +27,7 @@ parsed_result -> optional TestResult rows.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-22-jmeter-local-execution.md`
-9. existing JMeter API tests and golden smoke fixtures
+9. existing JMeter API tests, frontend tests, and golden smoke fixtures
 
 ## Do Not Read Unless Needed
 
@@ -46,37 +45,36 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-22-jmeter-local-execution.md
-backend/app/tests/golden/test_jmeter_local_execution_golden.py
-docs/fixtures/11-jmeter-local-execution-golden.md
 ```
 
-Golden smoke task. Do not add frontend code, JMX editing, performance
-dashboards, distributed runners, arbitrary shell execution, secrets management,
-CI provider controls, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
+Completion gate task. Do not add product code, frontend features, JMX editing,
+performance dashboards, distributed runners, arbitrary shell execution, secrets
+management, CI provider controls, RAG runtime, MCP runtime, RBAC, tenants, or
+permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py backend/app/tests/golden/test_jmeter_local_execution_golden.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: JMeter golden smoke and diff check pass.
+Expected result: JMeter backend/API golden smoke, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- Golden proves approved local JMeter command creates TestRun evidence.
-- Golden proves stdout/stderr, JTL, parsed_result, and optional TestResult rows
-  are persisted.
-- Golden proves unsafe shell/provider/platform features are absent.
-- Golden does not require a real local JMeter installation.
+- All Slice 22 task rows are marked done with commit ids.
+- Completion evidence records backend, golden, frontend, and diff verification.
+- Handoff names the next V2 slice or planning task.
+- Non-goals remain excluded.
 
 ## Commit Message
 
 ```text
-test(golden): add jmeter local execution smoke
+docs(v2): complete jmeter execution slice
 ```
 
 ## Next Task
 
-Slice 22 Completion Gate.
+Select the next V2 small slice.

@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-01 Slice 22 Task 6 JMeter Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 22 Task 6：Add JMeter local execution golden smoke。
+- 新增 `backend/app/tests/golden/test_jmeter_local_execution_golden.py`：
+  - 使用 fake JMeter executable，不依赖真实本地 JMeter；
+  - 通过 `/api/test-runs` 执行 `runner_mode=jmeter_local`；
+  - 验证 approved/configured `TestCommand(command_type=jmeter)` 创建 TestRun；
+  - 验证 stdout/stderr、`jmeter_jtl`、`parsed_output` artifacts；
+  - 验证 parsed_result、Sampler TestResult rows 和持久化记录；
+  - 验证不自动创建 Report、FailureAnalysis、QualityGateDecision。
+- 新增 `docs/fixtures/11-jmeter-local-execution-golden.md` 记录 golden command、
+  JTL parsed result、artifact/state 期望和非目标。
+- Slice 22 table 已记录 Task 5 commit `abcf50d`，Task 6 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 22 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q
+```
+
+验证结果：
+
+- JMeter local execution golden：`1 passed`。
+
+下次推荐任务：
+
+- 提交 Task 6：`test(golden): add jmeter local execution smoke`。
+- 继续 Slice 22 Completion Gate。
+
 ## 2026-07-01 Slice 22 Task 5 JMeter Frontend Shell 完成
 
 本轮完成：
