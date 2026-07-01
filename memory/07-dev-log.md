@@ -1,5 +1,46 @@
 # Development Log
 
+## 2026-07-01 Slice 21 Review History Golden Smoke
+
+### Completed
+
+- Completed Slice 21 Task 6: Add review history golden smoke.
+- Added fixture `docs/fixtures/10-local-review-history-golden.md`.
+- Added golden test
+  `backend/app/tests/golden/test_review_history_golden.py`.
+- Golden exercises existing review-gated evidence actions:
+  - creates a local CICDRun from static diff evidence;
+  - generates and approves a test-only UnitTestPatch;
+  - applies the approved patch so new-test evidence can run;
+  - records new-test and regression evidence;
+  - computes a QualityGateDecision.
+- Golden confirms ReviewHistory records:
+  - UnitTestPatch `approve`, `scope_validated -> approved`, comment, reviewer,
+    timestamp, and related CICDRun;
+  - QualityGateDecision `compute_quality_gate`, `pending -> passed`, reviewer,
+    timestamp, evidence ids, and related CICDRun;
+  - related CICDRun history returns both events.
+- Guardrails confirm no roles, permissions, or tenants table is introduced.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_review_history_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/golden/test_review_history_golden.py -q
+git diff --check
+```
+
+Results:
+
+- ReviewHistory golden smoke: `1 passed`.
+- ReviewHistory API + golden: `6 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `test(golden): add local review history smoke`.
+- Continue Slice 21 Completion Gate.
+
 ## 2026-07-01 Slice 21 Frontend Review History Panels
 
 ### Completed

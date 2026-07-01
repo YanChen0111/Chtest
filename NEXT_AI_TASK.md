@@ -10,13 +10,12 @@ Slice 21: Local Review Attribution History.
 
 ## Current Task
 
-Slice 21 Task 6: Add review history golden smoke.
+Slice 21 Completion Gate.
 
 ## Product Value Answer
 
-After this task, one golden smoke proves local ReviewHistory spans existing
-review-gated evidence actions and remains append-only, local, and free of team
-governance features.
+After this task, Slice 21 is verified end to end and its documentation records
+backend, golden, frontend, and diff evidence before selecting the next V2 task.
 
 ## Must Read
 
@@ -43,12 +42,10 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/fixtures/10-local-review-history-golden.md
 docs/implementation/slices/slice-21-local-review-attribution-history.md
-backend/app/tests/golden/test_review_history_golden.py
 ```
 
-Golden smoke task. Do not add user management, roles, permissions, tenants,
+Completion gate task. Do not add user management, roles, permissions, tenants,
 assignment workflow, notifications, team inbox, comment threads, generic
 ReviewHistory write endpoints, remote provider governance, RAG runtime, or MCP
 runtime.
@@ -57,26 +54,26 @@ runtime.
 
 ```bash
 backend/.venv/bin/python -m pytest backend/app/tests/golden/test_review_history_golden.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: golden smoke and diff check pass.
+Expected result: ReviewHistory backend/golden tests, frontend tests, and diff
+check pass.
 
 ## Acceptance
 
-- Golden creates at least two existing review actions, such as UnitTestPatch
-  approval and QualityGateDecision compute.
-- Golden confirms append-only ReviewHistory records exact entity/action/status
-  transitions and evidence references.
-- Golden confirms no RBAC, tenants, permissions, login/session, assignment,
-  notification, or remote provider dependency is introduced.
+- All Slice 21 task rows are marked done with commit ids.
+- Completion evidence records backend, golden, frontend, and diff verification.
+- Handoff names the next V2 slice or planning task.
+- Non-goals remain excluded.
 
 ## Commit Message
 
 ```text
-test(golden): add local review history smoke
+docs(v2): complete local review history slice
 ```
 
 ## Next Task
 
-Slice 21 Completion Gate.
+Select the next V2 small slice after Slice 21 completion.

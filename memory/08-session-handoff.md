@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-07-01 Slice 21 Task 6 Review History Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 21 Task 6：Add review history golden smoke。
+- 新增 fixture：
+  `docs/fixtures/10-local-review-history-golden.md`。
+- 新增 golden smoke：
+  `backend/app/tests/golden/test_review_history_golden.py`。
+- Golden 走通现有 review-gated evidence 流程：
+  - 创建本地 CICDRun；
+  - 生成 UnitTestPatch；
+  - approve UnitTestPatch；
+  - apply approved patch；
+  - 记录 new-test 和 regression evidence；
+  - compute QualityGateDecision。
+- Golden 断言 ReviewHistory：
+  - UnitTestPatch approve 事件记录 entity、related CICDRun、action、
+    `scope_validated -> approved`、Default User、comment、created_at；
+  - QualityGateDecision compute 事件记录 entity、related CICDRun、action、
+    `pending -> passed`、Default User、evidence ids、created_at；
+  - related CICDRun 查询可关联到两条 history events。
+- Guardrail：未新增 roles、permissions、tenants；未新增通用 public
+  ReviewHistory 写接口。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_review_history_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/golden/test_review_history_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- ReviewHistory golden smoke：`1 passed`。
+- ReviewHistory API + golden：`6 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 6：`test(golden): add local review history smoke`。
+- 继续 Slice 21 Completion Gate。
+
 ## 2026-07-01 Slice 21 Task 5 Frontend Review History Panels 完成
 
 本轮完成：
