@@ -426,3 +426,94 @@ Expected output:
 
 Start Slice 21 Task 1 from
 `docs/implementation/slices/slice-21-local-review-attribution-history.md`.
+
+## Completed Next V2 Slice
+
+Completed: Candidate Direction C, as local review attribution/history.
+
+Why it was selected:
+
+- Slice 18, Slice 19, and Slice 20 added more evidence sources. The next highest
+  product value was making the human review side of that evidence loop more
+  traceable.
+- Local review attribution/history strengthened trust in existing review-gated
+  workflows without requiring team management, RBAC, tenants, permissions, or
+  remote provider governance.
+- JMeter local execution evidence remained a strong follow-up candidate after
+  the review loop became traceable.
+
+Completed slice name:
+
+```text
+Slice 21: Local Review Attribution History
+```
+
+Delivered output:
+
+- Slice plan, contract updates, append-only ReviewHistory persistence, action
+  hooks, frontend history panels, golden smoke, and completion gate.
+- ReviewHistory remains local evidence only. It does not grant permissions,
+  assign work, introduce team inboxes, or change approval authority.
+
+## Recommended Next V2 Slice
+
+Recommended: Candidate Direction B follow-up, narrowed to local JMeter execution
+evidence.
+
+Why:
+
+- Slice 18 proved the controlled runner-expansion pattern with Newman. After
+  Slice 19 knowledge evidence, Slice 20 CI import evidence, and Slice 21 review
+  attribution, the next visible workflow value is another practical local
+  runner.
+- JMeter is already named in the roadmap as a later runner, and performance/API
+  test evidence fits the existing TestCommand, ToolDefinition, TestRun,
+  TestResult, Artifact, and frontend execution-center patterns.
+- The slice can stay small if it is limited to non-GUI local execution and JTL
+  parsing, with deterministic fake-runner tests instead of requiring a local
+  JMeter installation.
+
+Next slice name:
+
+```text
+Slice 22: JMeter Local Execution Evidence
+```
+
+Smallest useful boundary:
+
+- Add `command_type=jmeter`, `runner_mode=jmeter_local`, and a JMeter
+  ToolDefinition allowlist boundary.
+- Execute only approved local non-GUI JMeter runs.
+- Persist stdout/stderr, `jmeter_jtl`, parsed_result, and optional TestResult
+  evidence.
+- Add compact frontend display for status, sampler/assertion counts, durations,
+  failures/errors, and artifact links.
+
+Explicit non-goals:
+
+- No JMX editor, recorder, parameterization UI, performance trend dashboard,
+  capacity analysis, distributed JMeter, remote load agents, or cloud load
+  testing.
+- No arbitrary shell execution, unapproved working directory, shell operators,
+  secrets manager, credentials vault, RBAC, tenants, permissions, or enterprise
+  audit.
+- No remote CI provider control, PR comments, deploy/release controls,
+  automatic Report/FailureAnalysis/QualityGateDecision, RAG runtime, MCP
+  runtime, marketplace, or cloud sync.
+
+Suggested next task:
+
+```text
+Slice 22 Task 1: Add JMeter Local Execution Evidence task plan
+```
+
+Expected output:
+
+- A slice plan under `docs/implementation/slices/`.
+- No product code until contracts define command type, runner mode, artifact
+  evidence, API/state behavior, and non-goals.
+
+## Next Task
+
+Start Slice 22 Task 1 from
+`docs/implementation/slices/slice-22-jmeter-local-execution.md`.

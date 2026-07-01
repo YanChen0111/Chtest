@@ -1,5 +1,52 @@
 # Session Handoff
 
+## 2026-07-01 Slice 22 Task 1 JMeter Local Execution Plan 完成
+
+本轮完成：
+
+- 完成 Slice 21 后下一条 V2 小切片选择。
+- 用户确认选择 A：JMeter Local Execution Evidence。
+- 只读子代理 `Pascal` 评估后建议选择 JMeter，但先做计划和契约边界，
+  不直接进入实现；该建议已吸收。
+- 新增 Slice 22 计划：
+  `docs/implementation/slices/slice-22-jmeter-local-execution.md`。
+- 更新 V2 scope options：
+  `docs/implementation/10-v2-scope-options.md`。
+- 已将 `NEXT_AI_TASK.md` 切换到：
+  Slice 22 Task 2：Define JMeter execution contract boundary。
+
+Slice 22 当前边界：
+
+- 只做本地、allowlisted、non-GUI JMeter 执行证据。
+- 后续 contract 需要定义：
+  - `TestCommand.command_type=jmeter`
+  - `TestRun.runner_mode=jmeter_local`
+  - JMeter ToolDefinition allowlist
+  - `jmeter_jtl` artifact
+  - parsed sampler/assertion evidence
+- 不做 JMX 编辑器、参数化 UI、性能趋势 dashboard、分布式 JMeter、云压测、
+  任意 shell、secrets manager、CI provider 控制、RAG runtime、MCP runtime、
+  RBAC、tenants、permissions。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-22-jmeter-local-execution.md
+rg -n "JMeter|jmeter|jmeter_local|Product Value Answer|Non-goals|Task Table|Task 2" docs/implementation/slices/slice-22-jmeter-local-execution.md docs/implementation/10-v2-scope-options.md
+git diff --check
+```
+
+验证结果：
+
+- Slice 22 plan file exists。
+- JMeter planning keywords found in Slice 22 plan and V2 scope options。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 1：`docs(v2): add jmeter execution slice plan`。
+- 继续 Slice 22 Task 2：Define JMeter execution contract boundary。
+
 ## 2026-07-01 Slice 21 Completion Gate 完成
 
 本轮完成：
