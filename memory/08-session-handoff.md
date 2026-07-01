@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-07-01 Slice 29 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 29：Execution Run Manifest。
+- Slice 29 task table 已记录：
+  - Task 1：`22b1071`
+  - Task 2：`d1995eb`
+  - Task 3：`32f2f25`
+  - Task 4：`b62afaa`
+  - Completion Gate：done pending commit。
+- 验证 pytest 执行页可以展示 TestRun 运行清单：
+  - command；
+  - working directory；
+  - runner mode；
+  - run workspace；
+  - repository/network policy；
+  - runtime/dependency/environment snapshot availability；
+  - local artifact open links。
+- 验证 run manifest 只读展示来自既有 TestRun 字段和 Artifact metadata。
+- 验证没有新增 runner 行为、Report、FailureAnalysis、QualityGateDecision、
+  remote provider、RAG runtime、MCP runtime、RBAC 或 tenant。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select and plan the next narrow V2 task after Slice 29 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Backend golden checks：`2` passed。
+- Frontend build：passed，保留 Vite large chunk warning。
+- Frontend tests：`16` files passed，`21` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Completion Gate：`docs(v2): complete execution run manifest slice`。
+- 继续 `NEXT_AI_TASK.md`，选择并规划下一个窄 V2 slice。
+
 ## 2026-07-01 Slice 29 Task 4 Execution Run Manifest Golden Smoke 完成
 
 本轮完成：

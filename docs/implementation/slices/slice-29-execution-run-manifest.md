@@ -84,8 +84,8 @@ snapshots exist, and which local artifacts can be opened.
 | Add Execution Run Manifest task plan | done | `test -f docs/implementation/slices/slice-29-execution-run-manifest.md && rg -n "Execution Run Manifest|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-29-execution-run-manifest.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md && git diff --check` | `22b1071` | planning-only scope |
 | Define execution run manifest contract | done | `rg -n "execution run manifest|runtime artifact|dependency snapshot|environment snapshot|network policy" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-29-execution-run-manifest.md && git diff --check` | `d1995eb` | contract-only |
 | Add frontend run manifest panel | done | `npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts && npm --prefix frontend run build && git diff --check` | `32f2f25` | execution page only |
-| Add execution run manifest golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q && git diff --check` | pending | evidence-only proof |
-| Slice 29 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q && npm --prefix frontend run build && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
+| Add execution run manifest golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q && git diff --check` | `b62afaa` | evidence-only proof |
+| Slice 29 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q && npm --prefix frontend run build && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
 
 ## Task 1: Add Execution Run Manifest Task Plan
 

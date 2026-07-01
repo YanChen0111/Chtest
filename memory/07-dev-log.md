@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-01 Slice 29 Completion Gate
+
+### Completed
+
+- Completed Slice 29: Execution Run Manifest.
+- Recorded Task 4 commit `b62afaa`.
+- Verified pytest execution page shows a read-only TestRun run manifest.
+- Confirmed manifest inputs remain tied to existing TestRun fields and Artifact
+  metadata.
+- Confirmed no runner behavior, report generation, FailureAnalysis,
+  QualityGateDecision, remote provider, RAG runtime, or MCP runtime behavior was
+  added.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q`
+- Result: `2` passed.
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `npm --prefix frontend run test -- --run`
+- Result: `16` files passed, `21` tests passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `docs(v2): complete execution run manifest slice`.
+- Continue with `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+
 ## 2026-07-01 Slice 29 Execution Run Manifest Golden Smoke
 
 ### Completed
