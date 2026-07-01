@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-01 Slice 31 Persistence Contract Boundary
+
+### Completed
+
+- Clarified Slice 31 persistence rules in the data/API/state/artifact
+  contracts.
+- Data contract now states generated-case knowledge evidence fields are
+  persisted from validated AI output when present, with defaults when absent.
+- API contract now states candidate list returns safe defaults and does not
+  imply TestKnowledgeCard CRUD or runtime retrieval behavior.
+- State-machine contract now states persistence does not add review states or
+  append ReviewHistory by itself.
+- Artifact contract now states row-level evidence refs do not require creating
+  new artifacts when owning AI/case-generation evidence already exists.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Task 3: Persist Generated-Case
+  Knowledge Evidence Fields.
+
+### Verification
+
+- `rg -n "source_knowledge_evidence_ids|knowledge_evidence_refs_json|review_findings_json|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): clarify generated case knowledge evidence persistence`.
+- Continue Slice 31 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 31 Generated Case Knowledge Evidence Persistence Plan
 
 ### Completed

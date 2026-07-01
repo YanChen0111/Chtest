@@ -10,12 +10,12 @@ Slice 31: Generated Case Knowledge Evidence Persistence.
 
 ## Current Task
 
-Slice 31 Task 2: Confirm Persistence Contract Boundary.
+Slice 31 Task 3: Persist Generated-Case Knowledge Evidence Fields.
 
 ## Product Value Answer
 
-After this task, contracts explicitly state how generated-case knowledge
-evidence fields are persisted and returned before backend implementation starts.
+After this task, generated case candidates persist and return normalized
+knowledge evidence fields through the existing backend data flow.
 
 ## Must Read
 
@@ -25,11 +25,10 @@ evidence fields are persisted and returned before backend implementation starts.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/04-ai-vibecoding-governance.md`
-8. `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
-9. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+7. `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
+8. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -43,50 +42,53 @@ evidence fields are persisted and returned before backend implementation starts.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
+backend/app/modules/cases/models.py
+backend/app/modules/cases/schemas.py
+backend/app/modules/cases/service.py
+backend/app/alembic/versions/<new-migration>.py
+backend/app/tests/db/test_case_generation_models.py
+backend/app/tests/api/test_case_generation.py
 docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract clarification task. Do not add frontend code, backend runtime feature
-code, tests, migrations, package upgrades, external provider integrations,
-vector database, embeddings, reranking, background indexing, graph runtime, MCP
-runtime, artifact upload/mutation/delete, generated-case auto-approval, runner
-behavior changes, report generation behavior changes, remote CI provider
-behavior, RBAC, tenants, or permissions.
+Use TDD. Do not add frontend code, package upgrades, external provider
+integrations, vector database, embeddings, reranking, background indexing,
+graph runtime, MCP runtime, TestKnowledgeCard CRUD, artifact upload/mutation/
+delete, generated-case auto-approval, runner behavior changes, report
+generation behavior changes, remote CI provider behavior, RBAC, tenants, or
+permissions.
 
 ## Verification Command
 
 ```bash
-rg -n "source_knowledge_evidence_ids|knowledge_evidence_refs_json|review_findings_json|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py -q
 git diff --check
 ```
 
-Expected result: contracts describe persistence and API display behavior for
-generated-case knowledge evidence fields and preserve runtime non-goals; diff
-check passes.
+Expected result: database/API focused tests pass, knowledge evidence fields are
+persisted and listed with backward-compatible defaults, and diff check passes.
 
 ## Acceptance
 
-- Contracts state the fields are persisted on GeneratedCaseCandidate when
-  present in normalized AI output.
-- Contracts state list API returns the fields with safe defaults.
-- Contracts state absent evidence remains backward-compatible.
-- Contracts preserve no RAG runtime, MCP runtime, vector, embedding, reranking,
-  external provider, graph runtime, auto-approval, runner, report, RBAC, tenant,
-  permission, and remote CI provider boundaries.
+- GeneratedCaseCandidate model persists all Slice 31 evidence fields with safe
+  defaults.
+- Migration adds only generated_case_candidates columns required by this slice.
+- Case generation persistence copies normalized fields from AI output when
+  present and uses safe defaults when absent.
+- Candidate list API returns the fields.
+- Existing case generation behavior remains backward-compatible.
+- No TestCase, TestRun, Report, retrieval job, vector index, graph job,
+  provider call, artifact mutation, or review bypass is introduced.
 
 ## Commit Message
 
 ```text
-docs(v2): clarify generated case knowledge evidence persistence
+feat(cases): persist generated case knowledge evidence
 ```
 
 ## Next Task
 
-Slice 31 Task 3: Persist Generated-Case Knowledge Evidence Fields.
+Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden Smoke.

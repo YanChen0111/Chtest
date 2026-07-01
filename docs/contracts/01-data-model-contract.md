@@ -246,6 +246,20 @@ Slice 30 generated-case evidence rules:
 - Missing evidence must keep the candidate reviewable as `generated` or
   `under_review`; it must not silently become approved.
 
+Slice 31 persistence rules:
+
+- When validated CaseGenerationAgent output contains these fields, the
+  generated_case_candidates row must persist them with the field names in this
+  table.
+- When AI output omits these fields, persistence must use the defaults in this
+  contract and remain backward-compatible with older mock/provider outputs.
+- `knowledge_evidence_refs_json` and `review_findings_json` must stay bounded
+  JSON display data. They must not store raw provider payloads, unbounded
+  document text, secrets, credentials, cookies, or tokens.
+- Persisting these fields is not evidence approval. It must not create
+  TestCase, TestRun, Report, retrieval job, vector index, embedding job, graph
+  job, provider call, or Artifact mutation side effects.
+
 ## 15. TestCase
 
 | Field | Type | Required | Default | Notes |

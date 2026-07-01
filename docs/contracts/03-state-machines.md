@@ -88,6 +88,10 @@ TestKnowledgeCard / KnowledgeEvidence rules:
   vector indexing, embeddings, reranking, graph extraction, external provider
   calls, MCP runtime calls, artifact mutation, runner execution, report
   generation, RBAC, tenant, permission, or remote CI provider behavior.
+- Slice 31 persistence of KnowledgeEvidence display fields happens when a
+  GeneratedCaseCandidate is created from validated AI output. It does not add a
+  new review state, does not count as `open_review`, and does not append
+  ReviewHistory by itself.
 
 ## 4. AutomationDraft 状态机
 

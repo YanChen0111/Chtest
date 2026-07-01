@@ -737,6 +737,24 @@ Slice 30 candidate evidence rules:
   external provider calls, graph jobs, MCP runtime calls, artifact mutation, or
   remote CI provider behavior.
 
+Slice 31 candidate persistence/display rules:
+
+- Case generation persistence must copy normalized knowledge evidence fields
+  from validated AI output when they are present.
+- `GET /api/case-generation/tasks/{id}/candidates` must return the fields with
+  safe defaults when absent:
+  `source_knowledge_evidence_ids=[]`, `knowledge_evidence_refs=[]`,
+  `covered_risk_ids=[]`, `generation_reason=null`,
+  `automation_readiness="unknown"`, `quality_score=null`,
+  `review_findings=[]`, and `coverage_gap_notes=null`.
+- List responses must not imply a TestKnowledgeCard table or knowledge-card
+  CRUD API exists. References may be historical ids, same-project Artifact ids,
+  or normalized evidence ids from the owning case generation output.
+- Returning persisted evidence fields must not create TestCase records, approve
+  candidates, execute automation, generate reports, run retrieval, index
+  vectors, create embeddings, run graph jobs, call external providers, mutate
+  artifacts, invoke MCP runtime, or call remote CI providers.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

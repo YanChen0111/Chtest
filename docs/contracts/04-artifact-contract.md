@@ -523,6 +523,10 @@ Test knowledge card artifact rules:
 - Missing knowledge evidence, weak evidence, hallucination risk, duplicate risk,
   and coverage gaps must remain visible in `review_findings.json` or
   GeneratedCaseCandidate review fields.
+- Slice 31 may persist normalized evidence refs directly on
+  GeneratedCaseCandidate rows and return them through the candidate list API.
+  That persistence does not require creating a new Artifact when the owning AI
+  task output or case generation artifacts already contain the evidence.
 - These artifacts are review evidence only. Opening or listing them must not
   approve candidates, create TestCase records, execute AutomationDrafts, run
   retrieval, build indexes, create embeddings, rerank results, run graph jobs,

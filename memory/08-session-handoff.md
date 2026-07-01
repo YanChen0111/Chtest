@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-07-01 Slice 31 Task 2 Persistence Contract Boundary 完成
+
+本轮完成：
+
+- 完成 Slice 31 Task 2：Confirm Persistence Contract Boundary。
+- `docs/contracts/01-data-model-contract.md` 已补充：
+  - 字段从 validated CaseGenerationAgent output 持久化；
+  - AI output 缺失字段时使用合同默认值；
+  - 不保存 raw provider payload、secret、credential、token。
+- `docs/contracts/02-api-contract.md` 已补充：
+  - candidate list API 返回安全默认值；
+  - 返回证据字段不表示 TestKnowledgeCard CRUD 已存在；
+  - 返回证据字段不触发 retrieval/index/provider/runtime 行为。
+- `docs/contracts/03-state-machines.md` 已补充：
+  - persistence 不新增 review state；
+  - persistence 本身不 append ReviewHistory。
+- `docs/contracts/04-artifact-contract.md` 已补充：
+  - row-level evidence refs 可复用已有 AI task / case-generation evidence；
+  - 不要求额外创建新 Artifact。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 31 Task 3：Persist Generated-Case Knowledge Evidence Fields。
+
+本轮验证：
+
+```bash
+rg -n "source_knowledge_evidence_ids|knowledge_evidence_refs_json|review_findings_json|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 2：
+  `docs(v2): clarify generated case knowledge evidence persistence`。
+- 继续 Slice 31 Task 3：Persist Generated-Case Knowledge Evidence Fields。
+
 ## 2026-07-01 Slice 31 Generated Case Knowledge Evidence Persistence Plan 完成
 
 本轮完成：
