@@ -1792,6 +1792,34 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Continue from `NEXT_AI_TASK.md`: Slice 03 Task 2, add Project CRUD API.
 
+## 2026-07-01 Next V2 Slice Selection
+
+### Completed
+
+- Selected Slice 23: Frontend Build Baseline.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 22 completion
+  and the Slice 23 recommendation.
+- Added `docs/implementation/slices/slice-23-frontend-build-baseline.md`.
+- Updated `NEXT_AI_TASK.md` to Slice 23 Task 2: Fix frontend build TypeScript
+  baseline.
+
+### Rationale
+
+- Slice 22 frontend tests passed, but extra frontend build verification exposed
+  existing TypeScript baseline errors.
+- The next small slice should restore the build gate without changing product
+  behavior or redesigning the frontend.
+
+### Verification
+
+- `npm --prefix frontend run build`
+- Result: failed as expected with the documented TypeScript baseline errors.
+
+### Next Step
+
+- Commit `docs(v2): add frontend build baseline plan`.
+- Continue Slice 23 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 22 JMeter Completion Gate
 
 ### Completed

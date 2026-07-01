@@ -1,5 +1,28 @@
 # Session Handoff
 
+## 2026-07-01 Next V2 Slice Selected
+
+本轮完成：
+
+- 完成 Slice 22 后选择下一条小切片。
+- 选择 Slice 23：Frontend Build Baseline。
+- 选择原因：
+  - Slice 22 前端测试通过，但额外 `npm --prefix frontend run build` 暴露既有
+    TypeScript baseline errors；
+  - build gate 是后续 frontend 切片的工程质量基础；
+  - 可以限定为小范围 TypeScript 编译修复，不改变产品行为。
+- `docs/implementation/10-v2-scope-options.md` 已补充 Slice 22 完成记录和 Slice
+  23 推荐。
+- 新增 Slice 23 计划：
+  `docs/implementation/slices/slice-23-frontend-build-baseline.md`。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 23 Task 2：Fix frontend build TypeScript baseline。
+
+下次推荐任务：
+
+- 提交 Slice 23 Task 1：`docs(v2): add frontend build baseline plan`。
+- 继续 Slice 23 Task 2：Fix frontend build TypeScript baseline。
+
 ## 2026-07-01 Slice 22 Completion Gate 完成
 
 本轮完成：
