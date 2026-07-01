@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-07-01 Slice 30 Task 4 Contract Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 30 Task 4：Add Contract Smoke For Generated-Case Evidence
+  Fields。
+- 新增 golden：
+  `backend/app/tests/golden/test_test_knowledge_card_contract_golden.py`。
+- `GeneratedCaseCandidateListItemRead` 新增 knowledge evidence 展示字段：
+  - `source_knowledge_evidence_ids`；
+  - `knowledge_evidence_refs`；
+  - `covered_risk_ids`；
+  - `generation_reason`；
+  - `automation_readiness`；
+  - `quality_score`；
+  - `review_findings`；
+  - `coverage_gap_notes`。
+- Golden 验证：
+  - accepted evidence condition 可序列化；
+  - missing evidence / hallucination risk condition 仍保持 generated review
+    evidence；
+  - schema 输出不包含 `test_case_id`、`test_run_id`、`report_id`、
+    `retrieval_job_id`、`vector_index_id`、`graph_job_id`。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 30 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`2` passed。
+- Focused case generation + golden：`5` passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`test(golden): add test knowledge card contract smoke`。
+- 继续 Slice 30 Completion Gate。
+
 ## 2026-07-01 Slice 30 Task 3 Golden Fixture 完成
 
 本轮完成：

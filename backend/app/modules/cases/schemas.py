@@ -82,6 +82,14 @@ class GeneratedCaseCandidateListItemRead(BaseModel):
     requirement_refs: list[Any]
     risk_refs: list[Any]
     ai_reason: str
+    source_knowledge_evidence_ids: list[str] = Field(default_factory=list)
+    knowledge_evidence_refs: list[dict[str, Any]] = Field(default_factory=list)
+    covered_risk_ids: list[str] = Field(default_factory=list)
+    generation_reason: str | None = None
+    automation_readiness: str = "unknown"
+    quality_score: int | None = None
+    review_findings: list[dict[str, Any]] = Field(default_factory=list)
+    coverage_gap_notes: str | None = None
     status: str
 
 

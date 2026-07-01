@@ -10,13 +10,12 @@ Slice 30: Test Knowledge Card Contract.
 
 ## Current Task
 
-Slice 30 Task 4: Add Contract Smoke For Generated-Case Evidence Fields.
+Slice 30 Completion Gate.
 
 ## Product Value Answer
 
-After this task, a focused golden smoke proves generated-case evidence fields
-can be serialized and read back without creating runtime retrieval behavior or
-review bypasses.
+After this task, Slice 30 is validated and handed off with contracts, fixture,
+and golden smoke evidence for generated-case knowledge evidence fields.
 
 ## Must Read
 
@@ -26,11 +25,10 @@ review bypasses.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/04-ai-vibecoding-governance.md`
-8. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
-9. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+7. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+8. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -44,23 +42,18 @@ review bypasses.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_test_knowledge_card_contract_golden.py
-backend/app/schemas/*.py
-backend/app/models/*.py
-backend/app/api/*.py
 docs/implementation/slices/slice-30-test-knowledge-card-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Only touch backend schema/model/API files if required by the existing
-implementation shape. Do not add frontend code, migrations unless the current
-model implementation already requires them, package upgrades, external provider
-integrations, vector database, embeddings, reranking, background indexing,
-graph runtime, MCP runtime, artifact upload/mutation/delete, generated-case
-auto-approval, runner behavior changes, report generation behavior changes,
-remote CI provider behavior, RBAC, tenants, or permissions.
+Completion task. Do not add frontend code, backend runtime feature code,
+migrations, package upgrades, external provider integrations, vector database,
+embeddings, reranking, background indexing, graph runtime, MCP runtime,
+artifact upload/mutation/delete, generated-case auto-approval, runner behavior
+changes, report generation behavior changes, remote CI provider behavior, RBAC,
+tenants, or permissions.
 
 ## Verification Command
 
@@ -69,26 +62,22 @@ backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_
 git diff --check
 ```
 
-Expected result: golden smoke passes and proves generated-case evidence fields
-are structured evidence only; diff check passes.
+Expected result: golden smoke passes, diff check passes, and Slice 30 task table
+records completed task commits.
 
 ## Acceptance
 
-- Golden proves generated-case evidence fields can be serialized and read back
-  through the relevant schema or API boundary.
-- Golden proves knowledge evidence references are structured data and do not
-  create TestCase records, runner executions, reports, external provider calls,
-  retrieval jobs, vector indexes, graph jobs, or artifact mutations.
-- If database models are not yet implemented, the task stays schema/fixture
-  level and documents the missing implementation as the next task instead of
-  inventing a runtime.
+- Slice 30 task table records completed task commits.
+- Contract and fixture documents agree on field names and non-goals.
+- Golden smoke passes.
+- `NEXT_AI_TASK.md` points to the next narrow V2 task.
 
 ## Commit Message
 
 ```text
-test(golden): add test knowledge card contract smoke
+docs(v2): complete test knowledge card contract slice
 ```
 
 ## Next Task
 
-Slice 30 Completion Gate.
+Select and plan the next narrow V2 slice after Slice 30 completion.

@@ -1,5 +1,34 @@
 # Development Log
 
+## 2026-07-01 Slice 30 Contract Smoke
+
+### Completed
+
+- Added `backend/app/tests/golden/test_test_knowledge_card_contract_golden.py`.
+- Extended `GeneratedCaseCandidateListItemRead` schema with knowledge evidence
+  fields:
+  `source_knowledge_evidence_ids`, `knowledge_evidence_refs`,
+  `covered_risk_ids`, `generation_reason`, `automation_readiness`,
+  `quality_score`, `review_findings`, and `coverage_gap_notes`.
+- Golden proves accepted and rejected evidence conditions serialize without
+  adding TestCase, TestRun, Report, retrieval job, vector index, or graph job
+  ids.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
+- Result: `2` passed.
+- `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
+- Result: `5` passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card contract smoke`.
+- Continue Slice 30 Completion Gate.
+
 ## 2026-07-01 Slice 30 Test Knowledge Card Golden Fixture
 
 ### Completed
