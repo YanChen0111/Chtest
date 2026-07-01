@@ -70,3 +70,19 @@ MCP servers can later map into the same ToolDefinition fields: name, input schem
 ## RAG Integration Boundary
 
 V1 only implements Knowledge Adapter. When no external knowledge provider is configured, it returns empty evidence. Agents must continue normally and record `used_knowledge=false`.
+
+## Final RAG And Agent Direction
+
+Final-version knowledge-driven case generation is documented in
+`docs/implementation/11-final-rag-agent-strategy.md`.
+
+The target is a testing knowledge evidence system, not a generic chat knowledge
+base. Future work should add structured `TestKnowledgeCard` and
+`KnowledgeEvidence` contracts first, then optional hybrid retrieval only after
+eval evidence proves it improves generated-case quality, and only later
+offline/background relationship graph reasoning after Chtest has enough
+reviewed requirements, cases, failures, and reports.
+
+Open-source projects may accelerate AI coding, but they must be used through
+Chtest-owned adapters and evidence contracts. The canonical source map and
+reuse rules live in `docs/reference/01-open-source-migration-map.md`.
