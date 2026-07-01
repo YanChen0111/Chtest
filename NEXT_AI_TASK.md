@@ -10,13 +10,12 @@ Slice 24: Local Artifact Access Links.
 
 ## Current Task
 
-Slice 24 Task 3: Add backend artifact download API.
+Slice 24 Task 4: Add frontend artifact links.
 
 ## Product Value Answer
 
-After this task, persisted local Artifact rows can be read through a controlled
-read-only backend endpoint, without accepting arbitrary paths or external
-artifact URLs.
+After this task, execution artifact tables expose controlled local artifact
+links while preserving the existing metadata display.
 
 ## Must Read
 
@@ -28,7 +27,7 @@ artifact URLs.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-24-local-artifact-access-links.md`
-9. existing local artifact store and Artifact model/service patterns
+9. existing execution frontend artifact tables
 
 ## Do Not Read Unless Needed
 
@@ -51,37 +50,43 @@ docs/implementation/slices/slice-23-frontend-build-baseline.md
 docs/implementation/slices/slice-24-local-artifact-access-links.md
 docs/contracts/02-api-contract.md
 docs/contracts/04-artifact-contract.md
-backend artifact API/router/service files needed for local read access
-backend/app/tests/api/test_artifact_access.py
+frontend/src/api/execution.ts
+frontend/src/views/execution/PytestExecutionView.vue
+frontend/src/views/execution/PlaywrightExecutionView.vue
+frontend/src/views/execution/NewmanExecutionView.vue
+frontend/src/views/execution/JMeterExecutionView.vue
+frontend/src/views/execution/*.spec.ts
 ```
 
-Backend API task. Do not add frontend links, artifact upload/mutation/delete,
-cloud storage, external artifact fetch, RBAC, tenants, permissions, package
-upgrades, or redesign work.
+Frontend links task. Do not add artifact upload/mutation/delete, cloud storage,
+external artifact fetch, RBAC, tenants, permissions, package upgrades, broad
+redesign work, or backend behavior changes.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_artifact_access.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run src/views/execution/JMeterExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts
 git diff --check
 ```
 
-Expected result: artifact access API tests and diff check pass.
+Expected result: frontend build, focused execution view tests, and diff check pass.
 
 ## Acceptance
 
-- Reads only persisted Artifact rows with local `file_path` values under the
-  artifact root.
-- Returns content with recorded MIME type and safe download filename behavior.
-- Rejects missing artifacts and unsafe paths.
-- Does not mutate artifact rows or files.
+- Execution artifact tables expose local artifact access links.
+- Links preserve existing artifact metadata display.
+- Chinese-facing labels remain readable while keeping product terms such as
+  Artifact, TestRun, JTL, and trace unchanged.
+- Does not add a broad artifact dashboard, upload, delete, sharing, or cloud
+  storage UI.
 
 ## Commit Message
 
 ```text
-feat(artifact): add local artifact access api
+feat(frontend): link local execution artifacts
 ```
 
 ## Next Task
 
-Slice 24 Task 4: Add frontend artifact links.
+Slice 24 Task 5: Add artifact access golden smoke.

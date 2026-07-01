@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-01 Slice 24 Artifact Access Backend API
+
+### Completed
+
+- Added `GET /api/artifacts/{artifact_id}/download`.
+- Added local file read through `LocalArtifactStore`.
+- Added safe content-disposition filename handling.
+- Added contract error paths for missing, unsafe, and non-local artifacts.
+- Added `backend/app/tests/api/test_artifact_access.py`.
+- Updated `NEXT_AI_TASK.md` to Slice 24 Task 4: Add frontend artifact links.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/api/test_artifact_access.py -q`
+- Result: `4 passed`.
+- `backend/.venv/bin/python -m pytest backend/app/tests/api/test_artifact_access.py backend/app/tests/api/test_context_artifacts.py -q`
+- Result: `13 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `feat(artifact): add local artifact access api`.
+- Continue Slice 24 Task 4 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 24 Artifact Access Contract
 
 ### Completed

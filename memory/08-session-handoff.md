@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-07-01 Slice 24 Task 3 Artifact Access Backend API 完成
+
+本轮完成：
+
+- 完成 Slice 24 Task 3：Add backend artifact download API。
+- `backend/app/modules/ai_runtime/router.py` 新增：
+  - `GET /api/artifacts/{artifact_id}/download`；
+  - Artifact id lookup；
+  - local artifact store read；
+  - MIME type response；
+  - safe `Content-Disposition` filename；
+  - `ARTIFACT_NOT_FOUND`、`ARTIFACT_FILE_NOT_FOUND`、
+    `ARTIFACT_PATH_UNSAFE`、`ARTIFACT_NOT_LOCAL` errors。
+- 新增 `backend/app/tests/api/test_artifact_access.py` 覆盖：
+  - 成功读取本地 artifact；
+  - missing Artifact；
+  - unsafe path；
+  - external URL / inert reference。
+- Slice 24 table 已记录 Task 2 commit `926cb50`，Task 3 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 24 Task 4：Add frontend artifact links。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_artifact_access.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_artifact_access.py backend/app/tests/api/test_context_artifacts.py -q
+git diff --check
+```
+
+验证结果：
+
+- Artifact access API：`4 passed`。
+- Artifact access + ContextArtifact API：`13 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：`feat(artifact): add local artifact access api`。
+- 继续 Slice 24 Task 4：Add frontend artifact links。
+
 ## 2026-07-01 Slice 24 Task 2 Artifact Access Contract 完成
 
 本轮完成：

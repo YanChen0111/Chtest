@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import os
 import uuid
+from pathlib import PurePosixPath
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime import service
-from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
+from backend.app.modules.ai_runtime.artifact_store import ArtifactPathError, LocalArtifactStore
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.ai_runtime.schemas import (
     AITaskDetailRead,
@@ -50,6 +52,50 @@ def ai_task_not_found() -> HTTPException:
     )
 
 
+def artifact_not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "error_code": "ARTIFACT_NOT_FOUND",
+            "message": "Artifact not found.",
+            "details": {},
+        },
+    )
+
+
+def artifact_file_not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "error_code": "ARTIFACT_FILE_NOT_FOUND",
+            "message": "Artifact file not found.",
+            "details": {},
+        },
+    )
+
+
+def artifact_path_unsafe() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={
+            "error_code": "ARTIFACT_PATH_UNSAFE",
+            "message": "Artifact path is unsafe.",
+            "details": {},
+        },
+    )
+
+
+def artifact_not_local() -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={
+            "error_code": "ARTIFACT_NOT_LOCAL",
+            "message": "Artifact is an inert external reference, not a local file.",
+            "details": {},
+        },
+    )
+
+
 def context_artifact_not_allowed() -> HTTPException:
     return HTTPException(
         status_code=422,
@@ -80,6 +126,34 @@ def context_artifact_secret_detected() -> HTTPException:
             "message": "Context artifact content contains a high-risk secret.",
             "details": {},
         },
+    )
+
+
+@router.get("/artifacts/{artifact_id}/download")
+def download_artifact(
+    artifact_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    store: LocalArtifactStore = Depends(get_artifact_store),
+) -> Response:
+    artifact = session.get(Artifact, artifact_id)
+    if artifact is None:
+        raise artifact_not_found()
+    if "://" in artifact.file_path or artifact.file_path.startswith("//"):
+        raise artifact_not_local()
+
+    try:
+        content = store.read_bytes(artifact.file_path)
+    except ArtifactPathError as exc:
+        raise artifact_path_unsafe() from exc
+    except FileNotFoundError as exc:
+        raise artifact_file_not_found() from exc
+
+    filename = safe_artifact_filename(artifact.file_path)
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+    return Response(
+        content=content,
+        media_type=artifact.mime_type or "application/octet-stream",
+        headers=headers,
     )
 
 
@@ -156,3 +230,9 @@ def context_artifact_read(artifact: Artifact) -> ContextArtifactRead:
         sha256=f"sha256:{artifact.sha256}",
         metadata=artifact.metadata_json,
     )
+
+
+def safe_artifact_filename(file_path: str) -> str:
+    name = PurePosixPath(file_path).name
+    safe = "".join(character if character.isalnum() or character in {"-", "_", "."} else "_" for character in name)
+    return safe or "artifact"
