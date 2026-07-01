@@ -1,5 +1,45 @@
 # Session Handoff
 
+## 2026-07-01 Slice 30 Task 2 TestKnowledgeCard Contract 完成
+
+本轮完成：
+
+- 完成 Slice 30 Task 2：Define TestKnowledgeCard and KnowledgeEvidence
+  contracts。
+- `docs/contracts/01-data-model-contract.md` 已定义：
+  - `TestKnowledgeCard`；
+  - `KnowledgeEvidence`；
+  - GeneratedCaseCandidate 的 evidence、risk coverage、generation reason、
+    automation readiness、quality score、review findings、coverage gap notes
+    字段。
+- `docs/contracts/02-api-contract.md` 已定义：
+  - RAG 知识库未来可展示 test knowledge cards；
+  - candidate case response 可展示 normalized KnowledgeEvidence refs；
+  - quality_score/review_findings 只作为评审辅助，不自动入库。
+- `docs/contracts/03-state-machines.md` 已定义：
+  - KnowledgeEvidence 不新增 GeneratedCaseCandidate 状态；
+  - TestKnowledgeCard 使用 EntityStatus；
+  - 状态变化不触发 retrieval/indexing/provider/approval/runtime 行为。
+- `docs/contracts/04-artifact-contract.md` 已定义：
+  - `test_knowledge_card`；
+  - `knowledge_evidence`；
+  - `case_review_findings`；
+  - 对应 artifact path 和同项目引用规则。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 30 Task 3：Add Test Knowledge Card Golden Fixture。
+
+本轮验证：
+
+```bash
+rg -n "TestKnowledgeCard|KnowledgeEvidence|source_knowledge_evidence_ids|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define test knowledge card contract`。
+- 继续 Slice 30 Task 3：Add Test Knowledge Card Golden Fixture。
+
 ## 2026-07-01 Slice 30 Test Knowledge Card Contract Plan 完成
 
 本轮完成：

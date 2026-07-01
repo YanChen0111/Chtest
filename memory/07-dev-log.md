@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-01 Slice 30 TestKnowledgeCard Contract
+
+### Completed
+
+- Defined `TestKnowledgeCard` and `KnowledgeEvidence` in the data model
+  contract.
+- Added GeneratedCaseCandidate evidence fields:
+  `source_knowledge_evidence_ids`, `knowledge_evidence_refs_json`,
+  `covered_risk_ids`, `generation_reason`, `automation_readiness`,
+  `quality_score`, `review_findings_json`, and `coverage_gap_notes`.
+- Updated API contract so candidate-case responses can display normalized
+  KnowledgeEvidence references and review findings.
+- Updated state-machine contract so knowledge evidence supports review but does
+  not auto-approve candidates, create TestCase records, trigger retrieval jobs,
+  or start indexing/provider behavior.
+- Updated artifact contract with `test_knowledge_card`, `knowledge_evidence`,
+  and `case_review_findings` artifact rules.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 3: Add Test Knowledge Card Golden
+  Fixture.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard|KnowledgeEvidence|source_knowledge_evidence_ids|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card contract`.
+- Continue Slice 30 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 30 Test Knowledge Card Contract Plan
 
 ### Completed

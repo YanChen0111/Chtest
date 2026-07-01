@@ -23,6 +23,8 @@ Context rules:
   return `used_knowledge=true`; otherwise return `used_knowledge=false`.
 - `used_knowledge=true` must be supported by retrieval evidence, not by model
   text alone.
+- Generated case candidates that cite testing knowledge must expose normalized
+  `KnowledgeEvidence` references, not provider-specific payloads.
 
 Extension surface rules:
 
@@ -47,6 +49,19 @@ Deterministic retrieval rules:
   external provider configuration, reranking controls, MCP runtime controls,
   RBAC, tenants, permissions, marketplace, cloud sync, or remote CI/CD provider
   controls.
+
+Test knowledge card rules:
+
+- Slice 30 may define TestKnowledgeCard and KnowledgeEvidence contract shapes
+  for future APIs and generated-case evidence.
+- TestKnowledgeCard represents structured testing knowledge, not generic chat
+  chunks. It must cite same-project source artifacts or reviewed project data.
+- KnowledgeEvidence is the normalized citation shape used by generated cases,
+  agent review, and fixtures.
+- TestKnowledgeCard and KnowledgeEvidence contract definitions must not enable
+  vector indexing, embeddings, reranking, external provider calls, graph
+  extraction, MCP runtime, RBAC, tenants, permissions, marketplace, cloud sync,
+  or remote CI/CD provider behavior.
 
 Newman execution rules:
 
@@ -400,6 +415,24 @@ Response 200:
       "created_at": "2026-06-30T10:00:00Z"
     }
   ],
+  "test_knowledge_cards": [
+    {
+      "id": "00000000-0000-0000-0000-000000000821",
+      "title": "Expired coupon boundary",
+      "knowledge_type": "boundary_condition",
+      "summary": "Expired coupons must be rejected before order submission.",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "source_section": "coupon validation",
+      "related_requirement_ids": ["00000000-0000-0000-0000-000000000401"],
+      "related_risk_ids": ["00000000-0000-0000-0000-000000000411"],
+      "test_type": "functional",
+      "risk_level": "high",
+      "confidence": 92,
+      "safe_to_show": true,
+      "allowed_for_prompt": true,
+      "status": "active"
+    }
+  ],
   "non_goals": [
     "no_vector_index",
     "no_embedding",
@@ -419,6 +452,9 @@ Hard rules:
   available.
 - `knowledge_adapter.used_knowledge` must be `false` in V1. In V2 Slice 19 it
   may be `true` only when deterministic local retrieval evidence exists.
+- `test_knowledge_cards`, when exposed by a future task, are local structured
+  evidence records. Listing them must not trigger extraction, indexing,
+  retrieval, embeddings, reranking, external provider calls, or graph jobs.
 - The endpoint must not create vector indexes, chunk content, call embedding
   models, semantically rank results, or call external providers.
 
@@ -653,13 +689,53 @@ Response 200:
       "steps": ["Login", "Open checkout", "Select expired coupon", "Submit order"],
       "expected_results": ["Submission is blocked", "Expired coupon message is shown"],
       "requirement_refs": ["Expired coupons cannot be used"],
+      "source_knowledge_evidence_ids": ["ke-expired-coupon-boundary"],
+      "knowledge_evidence_refs": [
+        {
+          "evidence_id": "ke-expired-coupon-boundary",
+          "knowledge_card_id": "00000000-0000-0000-0000-000000000821",
+          "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+          "snippet": "Expired coupons cannot be applied during checkout.",
+          "score": 0.92,
+          "retrieval_reason": "Supports the expired-coupon rejection path"
+        }
+      ],
+      "covered_risk_ids": ["00000000-0000-0000-0000-000000000411"],
       "ai_reason": "Covers coupon expiration boundary",
+      "generation_reason": "Boundary case for expired coupon validation",
+      "automation_readiness": "suitable_for_playwright",
+      "quality_score": 84,
+      "review_findings": [
+        {
+          "type": "evidence_complete",
+          "severity": "info",
+          "message": "Candidate cites the coupon expiration boundary card"
+        }
+      ],
+      "coverage_gap_notes": "Does not cover coupon and points conflict",
       "status": "generated"
     }
   ],
   "total": 1
 }
 ```
+
+Slice 30 candidate evidence rules:
+
+- `source_knowledge_evidence_ids` must reference normalized KnowledgeEvidence
+  ids present in the candidate, the case generation artifact, or a related
+  AITask output artifact.
+- `knowledge_evidence_refs` is display metadata. It must cite same-project
+  TestKnowledgeCard or Artifact evidence and must not contain unbounded raw
+  provider payloads.
+- `quality_score` and `review_findings` are review aids only. They must not
+  create TestCase records, approve candidates, execute automation, or generate
+  reports.
+- Missing or weak KnowledgeEvidence should appear as review findings or
+  coverage gap notes instead of being hidden.
+- Candidate listing must not run retrieval, indexing, embeddings, reranking,
+  external provider calls, graph jobs, MCP runtime calls, artifact mutation, or
+  remote CI provider behavior.
 
 ### 3.6 Review Candidate Case
 

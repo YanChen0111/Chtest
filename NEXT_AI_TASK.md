@@ -10,13 +10,13 @@ Slice 30: Test Knowledge Card Contract.
 
 ## Current Task
 
-Slice 30 Task 2: Define TestKnowledgeCard and KnowledgeEvidence contracts.
+Slice 30 Task 3: Add Test Knowledge Card Golden Fixture.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract for reviewable testing knowledge evidence
-that generated cases can cite before any RAG runtime or provider integration is
-implemented.
+After this task, Chtest has an AI-readable fixture showing how structured
+testing knowledge evidence supports generated cases, review findings, and
+coverage gap notes without enabling a RAG runtime.
 
 ## Must Read
 
@@ -45,17 +45,14 @@ implemented.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
+docs/fixtures/18-test-knowledge-card-contract-golden.md
 docs/implementation/slices/slice-30-test-knowledge-card-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract task. Do not add frontend code, backend runtime feature code,
+Fixture task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, external provider integrations, vector database,
 embeddings, reranking, background indexing, graph runtime, MCP runtime,
 artifact upload/mutation/delete, generated-case auto-approval, runner behavior
@@ -65,38 +62,32 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-rg -n "TestKnowledgeCard|KnowledgeEvidence|source_knowledge_evidence_ids|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+test -f docs/fixtures/18-test-knowledge-card-contract-golden.md
+rg -n "TestKnowledgeCard|KnowledgeEvidence|GeneratedCaseCandidate|review_findings|coverage_gap_notes" docs/fixtures/18-test-knowledge-card-contract-golden.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md
 git diff --check
 ```
 
-Expected result: contracts define TestKnowledgeCard, KnowledgeEvidence, generated
-case evidence fields, artifact/state/API boundaries, and explicit runtime
-non-goals; diff check passes.
+Expected result: fixture defines requirement text, source artifacts,
+TestKnowledgeCard examples, KnowledgeEvidence examples, generated candidates,
+review findings, coverage gap notes, and explicit runtime non-goals; diff check
+passes.
 
 ## Acceptance
 
-- Data contract defines local `TestKnowledgeCard` and normalized
-  `KnowledgeEvidence` fields.
-- API contract defines the contract boundary without enabling external
-  retrieval, indexing, provider calls, or runtime behavior.
-- State-machine contract states knowledge-card status changes do not trigger
-  retrieval jobs, indexing, embeddings, graph extraction, or generated-case
-  promotion.
-- Artifact contract defines knowledge-card and generated-case evidence file
-  rules.
-- GeneratedCaseCandidate contract defines evidence ids, risk coverage,
-  generation reason, automation readiness, quality score, review findings, and
-  coverage gap notes.
-- Review gates and no RAG runtime, MCP runtime, vector, embedding, reranking,
-  external provider, RBAC, tenant, permission, and remote CI provider boundaries
-  remain explicit.
+- Fixture includes a compact requirement, source ContextArtifact references,
+  TestKnowledgeCard examples, KnowledgeEvidence examples, generated case
+  candidates, review findings, coverage gap notes, and evidence ids.
+- Fixture shows accepted, needs-review, and rejected evidence conditions.
+- Fixture explains provider schemas are normalized into Chtest evidence.
+- Fixture does not imply vector database, external provider, graph runtime,
+  auto-approval, frontend behavior, or execution behavior exists.
 
 ## Commit Message
 
 ```text
-docs(v2): define test knowledge card contract
+docs(fixtures): add test knowledge card contract golden
 ```
 
 ## Next Task
 
-Slice 30 Task 3: Add Test Knowledge Card Golden Fixture.
+Slice 30 Task 4: Add Contract Smoke For Generated-Case Evidence Fields.

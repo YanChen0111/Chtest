@@ -46,7 +46,7 @@ V1 is single-user, but owner fields are kept for later extension.
 | ToolDefinitionStatus | active, disabled, archived |
 | KnowledgeAdapterStatus | not_configured, disabled, configured_stub |
 | FailureClassification | product_defect, test_script_issue, environment_issue, test_data_issue, dependency_issue, flaky_test, insufficient_evidence |
-| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation |
+| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, GeneratedCaseCandidate, TestKnowledgeCard, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation |
 | LLMCallStatus | started, succeeded, failed, timeout, schema_invalid |
 | AutomationRepairStatus | created, running, candidate_generated, waiting_review, approved, rejected, failed |
 | ReviewHistoryAction | open_review, approve, approve_after_edit, reject, edit, request_optimization, compute_quality_gate, recompute_quality_gate |
@@ -217,9 +217,34 @@ JMeter TestCommand rules:
 | requirement_refs_json | jsonb | yes | [] | Requirement references |
 | risk_refs_json | jsonb | yes | [] | Risk references |
 | ai_reason | text | yes | none | AI generation reason |
+| source_knowledge_evidence_ids | text[] | yes | {} | KnowledgeEvidence ids cited by this candidate |
+| knowledge_evidence_refs_json | jsonb | yes | [] | Display refs: evidence id, card id, snippet, score |
+| covered_risk_ids | uuid[] | yes | {} | RiskItem ids intentionally covered |
+| generation_reason | text | no | null | Human-readable reason beyond raw model text |
+| automation_readiness | varchar(40) | yes | unknown | unknown, not_suitable, suitable_for_pytest, suitable_for_playwright, suitable_for_newman, suitable_for_jmeter |
+| quality_score | int | no | null | 0-100 agent review score when available |
+| review_findings_json | jsonb | yes | [] | CaseReviewAgent or human review findings |
+| coverage_gap_notes | text | no | null | Known uncovered requirement/risk notes |
 | duplicate_of_case_id | uuid | no | null | Potential duplicate case |
 | status | CandidateStatus | yes | generated | Candidate status |
 | review_comment | text | no | null | Human review comment |
+
+Slice 30 generated-case evidence rules:
+
+- `source_knowledge_evidence_ids` references normalized KnowledgeEvidence items
+  produced from same-project TestKnowledgeCards, ContextArtifacts, reviewed
+  cases, review findings, execution evidence, failure analysis, or reports.
+- `knowledge_evidence_refs_json` is a display cache only. It must not replace
+  persisted TestKnowledgeCard or Artifact evidence.
+- `generation_reason` must explain why the case exists in testing terms, not
+  merely repeat model prose.
+- `quality_score` is review evidence only. It must not auto-approve a
+  candidate or create a TestCase.
+- `review_findings_json` may include missing requirement coverage, weak
+  expected results, duplicate risk, hallucination risk, or automation
+  readiness concerns.
+- Missing evidence must keep the candidate reviewable as `generated` or
+  `under_review`; it must not silently become approved.
 
 ## 15. TestCase
 
@@ -830,6 +855,100 @@ V2 deterministic KnowledgeAdapter rules:
   embeddings, reranking jobs, external provider calls, MCP runtime calls, RBAC,
   tenant, permission, marketplace, cloud sync, release, or remote CI/CD
   behavior.
+
+## 31.1 TestKnowledgeCard
+
+TestKnowledgeCard records structured testing knowledge that can later support
+case generation and review. It is a local evidence contract, not a generic chat
+knowledge chunk and not a provider-owned schema.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| module_id | uuid | no | null | Optional FK Module |
+| title | varchar(255) | yes | none | Human-readable card title |
+| knowledge_type | varchar(80) | yes | requirement_point | requirement_point, business_rule, api_contract, boundary_condition, exception_scenario, risk_point, bug_pattern, existing_test_case_pattern, anti_pattern, test_strategy_note |
+| summary | text | yes | none | Concise testing knowledge |
+| body | text | no | null | Optional normalized detail |
+| source_type | varchar(80) | yes | context_artifact | context_artifact, requirement, reviewed_case, rejected_case, execution, failure_analysis, report, manual |
+| source_artifact_id | uuid | no | null | Primary source Artifact/ContextArtifact id |
+| source_artifact_ids | uuid[] | yes | {} | Additional same-project source Artifact ids |
+| source_document_version | varchar(120) | no | null | Version/hash label when known |
+| source_section | varchar(255) | no | null | Heading, path, endpoint, or section label |
+| source_quote_or_hash | text | no | null | Short safe quote or hash pointer |
+| related_requirement_ids | uuid[] | yes | {} | Requirement ids linked to the card |
+| related_risk_ids | uuid[] | yes | {} | RiskItem ids linked to the card |
+| related_test_case_ids | uuid[] | yes | {} | Reviewed TestCase ids linked to the card |
+| tags | text[] | yes | {} | Search/filter tags |
+| test_type | TestType | no | null | Suggested test type |
+| risk_level | RiskLevel | no | null | Risk severity when applicable |
+| module_key | varchar(160) | no | null | Optional module/API/business key |
+| api_endpoint | varchar(255) | no | null | Optional API endpoint |
+| risk_type | varchar(80) | no | null | business, data, environment, regression, technical |
+| case_type_hint | varchar(80) | no | null | boundary, exception, regression, security, happy_path |
+| applicability | varchar(80) | yes | project | project, module, requirement, api, regression |
+| confidence | int | yes | 0 | 0-100 extraction confidence |
+| safe_to_show | bool | yes | false | Server-computed display safety |
+| redaction_applied | bool | yes | false | Whether content was redacted |
+| allowed_for_prompt | bool | yes | false | Prompt eligibility |
+| redaction_report_artifact_id | uuid | no | null | Artifact with redaction details |
+| evidence_artifact_ids | uuid[] | yes | {} | Same-project Artifact evidence ids |
+| last_verified_at | timestamptz | no | null | Last human/system verification time |
+| status | EntityStatus | yes | active | Status |
+
+TestKnowledgeCard rules:
+
+- Source artifacts must belong to the same project.
+- Large or sensitive source content stays in Artifact files. The card stores a
+  normalized summary and safe references.
+- `safe_to_show` and `allowed_for_prompt` are server-side decisions and must
+  not rely only on client input.
+- Cards may be manually curated or extracted later by a KnowledgeIngestionAgent,
+  but Slice 30 does not implement extraction.
+- Card creation or status updates must not trigger retrieval, indexing,
+  embeddings, reranking, graph extraction, external provider calls, MCP runtime
+  calls, or generated-case promotion.
+
+## 31.2 KnowledgeEvidence
+
+KnowledgeEvidence is the normalized citation object used by agents, generated
+cases, review findings, and fixtures. It may be stored inside AI task output,
+case generation artifacts, generated candidate fields, or future dedicated
+tables, but provider-specific payloads must be normalized before Chtest uses
+them as evidence.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| evidence_id | varchar(120) | yes | none | Stable id inside the owning artifact/task |
+| project_id | uuid | yes | none | FK Project |
+| provider_name | varchar(120) | yes | chtest_local | chtest_local, deterministic_local, future provider label |
+| retrieval_mode | varchar(80) | yes | structured_card | structured_card, deterministic_local, future_hybrid |
+| source_artifact_id | uuid | no | null | Source Artifact/ContextArtifact id |
+| knowledge_card_id | uuid | no | null | TestKnowledgeCard id when available |
+| source_section | varchar(255) | no | null | Source section/path |
+| snippet | text | yes | none | Bounded safe evidence snippet |
+| score | numeric | no | null | Deterministic/provider-normalized score |
+| matched_terms | text[] | yes | {} | Terms supporting retrieval/match |
+| query_terms | text[] | yes | {} | Query terms used when applicable |
+| retrieval_reason | text | no | null | Why this evidence supports the case |
+| safe_to_show | bool | yes | false | Display safety |
+| allowed_for_prompt | bool | yes | false | Prompt eligibility |
+| created_by_component | varchar(120) | yes | TestKnowledgeContract | Producer label |
+
+KnowledgeEvidence rules:
+
+- `snippet` must be bounded, safe to show, and traceable to a same-project
+  source Artifact or TestKnowledgeCard.
+- Free-floating model text is not valid KnowledgeEvidence unless it is attached
+  to persisted input/output Artifact evidence and clearly labeled as model
+  analysis, not source truth.
+- Provider payloads from future Haystack, LlamaIndex, GraphRAG, or other tools
+  must be normalized into this shape before generated cases cite them.
+- KnowledgeEvidence does not grant approval. GeneratedCaseCandidate review
+  still follows the existing state machine and human review gates.
+- Slice 30 must not add vector indexes, embeddings, reranking jobs, graph jobs,
+  external provider calls, MCP runtime calls, RBAC, tenants, permissions,
+  marketplace, cloud sync, release, or remote CI/CD behavior.
 
 ## 32. ToolInvocation
 

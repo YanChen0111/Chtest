@@ -52,7 +52,30 @@ artifacts/projects/{project_id}/case-generation/{generation_task_id}/
   candidates.json
   duplicate_check.json
   metrics.json
+  knowledge_evidence.json
+  review_findings.json
 ```
+
+`knowledge_evidence.json` stores normalized KnowledgeEvidence objects used by
+generated candidates. `review_findings.json` stores agent review findings,
+quality scores, coverage gap notes, and automation readiness notes. These files
+are evidence for review only; they do not approve candidates or create TestCase
+records.
+
+### 3.3.1 Test Knowledge Cards
+
+```text
+artifacts/projects/{project_id}/test-knowledge-cards/{knowledge_card_id}/
+  card.json
+  source_manifest.json
+  knowledge_evidence.json
+  redaction_report.json
+```
+
+`card.json` stores a normalized TestKnowledgeCard snapshot. `source_manifest.json`
+lists same-project source Artifact ids, hashes, sections, and safe quote/hash
+pointers. `knowledge_evidence.json` stores normalized KnowledgeEvidence objects
+derived from the card or used by generated cases.
 
 ### 3.4 Automation Draft
 
@@ -295,6 +318,9 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | context_yaml | application/yaml | 轻量上下文 YAML |
 | context_openapi | application/yaml or application/json | OpenAPI 片段或文件 |
 | knowledge_retrieval | application/json | 确定性本地知识检索证据 |
+| test_knowledge_card | application/json | Structured testing knowledge card snapshot |
+| knowledge_evidence | application/json | Normalized knowledge evidence citations |
+| case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
 
 Playwright artifact rules:
@@ -476,6 +502,34 @@ Knowledge retrieval artifact rules:
 - Secret-like values must be redacted before persistence.
 - Scores must be deterministic for the same input artifacts and query terms.
 
+Test knowledge card artifact rules:
+
+- `card.json` is stored as an Artifact with
+  `artifact_type=test_knowledge_card`, `owner_entity_type=TestKnowledgeCard`,
+  and `owner_entity_id=knowledge_card_id`.
+- `knowledge_evidence.json` is stored as an Artifact with
+  `artifact_type=knowledge_evidence`. It may be owned by `AITask`,
+  `CaseGenerationTask`, `GeneratedCaseCandidate`, or `TestKnowledgeCard`,
+  depending on where the evidence is produced.
+- `review_findings.json` is stored as an Artifact with
+  `artifact_type=case_review_findings`, `owner_entity_type=CaseGenerationTask`
+  or `GeneratedCaseCandidate`, and the corresponding owner id.
+- KnowledgeEvidence entries must cite same-project source Artifact ids,
+  TestKnowledgeCard ids, or reviewed project entities. Free-floating provider
+  text is not valid source evidence.
+- Provider-specific fields from future Haystack, LlamaIndex, GraphRAG, or other
+  tools must be normalized before persistence. Raw provider payloads must not
+  be used directly as GeneratedCaseCandidate evidence.
+- Missing knowledge evidence, weak evidence, hallucination risk, duplicate risk,
+  and coverage gaps must remain visible in `review_findings.json` or
+  GeneratedCaseCandidate review fields.
+- These artifacts are review evidence only. Opening or listing them must not
+  approve candidates, create TestCase records, execute AutomationDrafts, run
+  retrieval, build indexes, create embeddings, rerank results, run graph jobs,
+  call external providers, invoke MCP runtime, mutate artifacts, generate
+  reports, change runner behavior, call remote CI providers, add RBAC, create
+  tenants, or change permissions.
+
 ## 6. Evidence Manifest
 
 报告必须生成 evidence_manifest.json：
@@ -547,6 +601,11 @@ Extension Surface artifact rules:
   `not_configured`, `disabled`, or V1 `configured_stub`.
 - V2 Slice 19 may create `knowledge_retrieval.json` only for deterministic
   local retrieval from eligible ContextArtifacts.
+- Slice 30 may define `test_knowledge_card`, `knowledge_evidence`, and
+  `case_review_findings` artifact rules for structured testing knowledge
+  evidence. Defining these artifact types must not enable a RAG runtime,
+  external provider, vector index, embedding, reranking, graph runtime, or MCP
+  runtime.
 - V1 must not create vector index, embedding, chunk, reranking, MCP transport, or
   external provider response artifacts.
 - Slice 19 still must not create vector index, embedding, chunk, reranking, MCP

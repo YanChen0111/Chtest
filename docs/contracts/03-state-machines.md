@@ -74,6 +74,21 @@ ReviewHistory side effect:
   without duplicating the same approval event.
 - Invalid transitions must not append successful review history.
 
+TestKnowledgeCard / KnowledgeEvidence rules:
+
+- KnowledgeEvidence can support `generated -> under_review` review decisions,
+  but it does not add new GeneratedCaseCandidate states.
+- `source_knowledge_evidence_ids`, `quality_score`, `review_findings_json`, and
+  `coverage_gap_notes` are review evidence only. They must not auto-approve a
+  candidate or create a TestCase.
+- Missing or weak KnowledgeEvidence may lead a reviewer or CaseReviewAgent to
+  choose `needs_optimization` or `rejected`, but that decision still follows the
+  existing review transition.
+- Updating KnowledgeEvidence display fields must not trigger retrieval jobs,
+  vector indexing, embeddings, reranking, graph extraction, external provider
+  calls, MCP runtime calls, artifact mutation, runner execution, report
+  generation, RBAC, tenant, permission, or remote CI provider behavior.
+
 ## 4. AutomationDraft 状态机
 
 ```text
@@ -231,6 +246,36 @@ V2 deterministic retrieval 规则：
 - Retrieval is scoped to an AI task invocation and writes evidence artifacts;
   it does not create a long-running adapter state transition.
 - `disabled` and `not_configured` always force `used_knowledge=false`.
+
+## 7.2 TestKnowledgeCard 状态规则
+
+TestKnowledgeCard uses `EntityStatus` only:
+
+```text
+active -> archived
+active -> deleted
+archived -> active
+archived -> deleted
+```
+
+| 当前状态 | 动作 | 目标状态 | 说明 |
+|---|---|---|---|
+| active | archive | archived | 从默认知识卡列表隐藏 |
+| active | delete | deleted | 软删除，不再用于 prompt 或证据选择 |
+| archived | restore | active | 恢复为可见知识卡 |
+| archived | delete | deleted | 软删除 |
+
+规则：
+
+- `active` only means the card may be shown or selected when its safety fields
+  allow it. It does not mean the card is automatically injected into prompts.
+- `deleted` cards must not be cited by new generated cases, but existing
+  generated candidates and artifacts may keep historical ids as immutable
+  evidence references.
+- Status changes must not trigger retrieval, indexing, embeddings, reranking,
+  graph extraction, external provider calls, MCP runtime calls, generated-case
+  approval, TestCase creation, artifact mutation, runner execution, report
+  generation, RBAC, tenant, permission, or remote CI provider behavior.
 
 ## 8. TestRun 状态机
 
