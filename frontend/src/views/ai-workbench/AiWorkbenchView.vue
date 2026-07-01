@@ -217,7 +217,7 @@ function taskTypeLabel(taskType: string): string {
     cicd_change_analysis: '代码变更分析',
     unit_test_patch: '单测补丁',
   };
-  return labels[taskType] ?? taskType.replaceAll('_', ' ');
+  return labels[taskType] ?? taskType.replace(/_/g, ' ');
 }
 
 function readableAgentName(agentName: string): string {
@@ -237,7 +237,7 @@ function readableAgentName(agentName: string): string {
 function readableModelName(modelName: string): string {
   return modelName
     .replace(/^mock-/, '模拟模型 · ')
-    .replaceAll('-', ' ');
+    .replace(/-/g, ' ');
 }
 
 function statusColor(status: string): string {

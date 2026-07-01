@@ -1792,6 +1792,31 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Continue from `NEXT_AI_TASK.md`: Slice 03 Task 2, add Project CRUD API.
 
+## 2026-07-01 Slice 23 Task 2 Frontend Build Baseline
+
+### Completed
+
+- Restored `npm --prefix frontend run build`.
+- Relaxed `ApiClient.postJson` / `patchJson` body constraints from
+  `Record<string, unknown>` to `object` so typed request interfaces compile.
+- Replaced ES2021 `replaceAll` calls with ES2020-compatible `replace` calls.
+- Added a fallback for optional CI/CD `risk_level`.
+- Updated `NEXT_AI_TASK.md` to Slice 23 Completion Gate.
+
+### Verification
+
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `npm --prefix frontend run test -- --run`
+- Result: `16 files passed, 21 tests passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `fix(frontend): restore build baseline`.
+- Continue Slice 23 Completion Gate.
+
 ## 2026-07-01 Next V2 Slice Selection
 
 ### Completed

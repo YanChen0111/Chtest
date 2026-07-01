@@ -41,7 +41,7 @@ export class ApiClient {
     return response.json() as Promise<T>;
   }
 
-  async postJson<TResponse, TBody extends Record<string, unknown>>(path: string, body: TBody): Promise<TResponse> {
+  async postJson<TResponse, TBody extends object>(path: string, body: TBody): Promise<TResponse> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
@@ -56,7 +56,7 @@ export class ApiClient {
     return response.json() as Promise<TResponse>;
   }
 
-  async patchJson<TResponse, TBody extends Record<string, unknown>>(path: string, body: TBody): Promise<TResponse> {
+  async patchJson<TResponse, TBody extends object>(path: string, body: TBody): Promise<TResponse> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: {

@@ -10,12 +10,12 @@ Slice 23: Frontend Build Baseline.
 
 ## Current Task
 
-Slice 23 Task 2: Fix frontend build TypeScript baseline.
+Slice 23 Completion Gate.
 
 ## Product Value Answer
 
-After this task, the frontend production build passes again, while existing
-frontend behavior and Vitest coverage remain unchanged.
+After this task, Slice 23 is closed with frontend build, frontend tests, docs,
+and handoff evidence verified together.
 
 ## Must Read
 
@@ -28,7 +28,7 @@ frontend behavior and Vitest coverage remain unchanged.
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/10-v2-scope-options.md`
 9. `docs/implementation/slices/slice-23-frontend-build-baseline.md`
-10. latest frontend build output
+10. latest frontend build and frontend test output
 
 ## Do Not Read Unless Needed
 
@@ -60,9 +60,8 @@ frontend/src/views/cicd/CicdQualityCenterView.vue
 frontend/src/views/requirements/RequirementReviewView.vue
 ```
 
-Build-baseline task. Keep edits to narrow TypeScript fixes. Do not add product
-features, backend code, migrations, package upgrades, redesign work, or broad
-refactors.
+Completion gate task. Do not add product features, backend code, migrations,
+package upgrades, redesign work, or broad refactors.
 
 ## Verification Command
 
@@ -76,19 +75,17 @@ Expected result: frontend build, frontend tests, and diff check pass.
 
 ## Acceptance
 
-- `npm --prefix frontend run build` passes.
-- Full frontend Vitest suite still passes.
-- Type fixes are narrow and preserve existing request payloads, visible text,
-  routes, and page behavior.
-- Does not add product features, package upgrades, backend code, migrations, or
-  broad refactors.
+- Slice 23 task rows are marked done with commit ids.
+- Completion evidence records build, frontend tests, and diff verification.
+- Handoff names the next V2 slice or planning task.
+- No product behavior changes are added.
 
 ## Commit Message
 
 ```text
-fix(frontend): restore build baseline
+docs(v2): complete frontend build baseline slice
 ```
 
 ## Next Task
 
-Slice 23 Completion Gate.
+Select the next V2 small slice.

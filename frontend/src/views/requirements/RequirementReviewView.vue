@@ -186,7 +186,7 @@ function issueTypeLabel(type: string): string {
     inconsistency: '不一致',
     testability: '可测性',
   };
-  return labels[type] ?? type.replaceAll('_', ' ');
+  return labels[type] ?? type.replace(/_/g, ' ');
 }
 
 function reviewStatusLabel(status: string): string {

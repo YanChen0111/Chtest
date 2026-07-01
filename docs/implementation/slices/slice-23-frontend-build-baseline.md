@@ -64,8 +64,8 @@ fails during `vue-tsc --noEmit` with three narrow groups:
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add Frontend Build Baseline task plan | done | `test -f docs/implementation/slices/slice-23-frontend-build-baseline.md && rg -n "Frontend Build Baseline|npm --prefix frontend run build|TypeScript|Non-goals|Task Table" docs/implementation/slices/slice-23-frontend-build-baseline.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md` | pending | planning-only scope |
-| Fix frontend build TypeScript baseline | planned | `npm --prefix frontend run build && npm --prefix frontend run test -- --run && git diff --check` | pending | narrow type fixes |
+| Add Frontend Build Baseline task plan | done | `test -f docs/implementation/slices/slice-23-frontend-build-baseline.md && rg -n "Frontend Build Baseline|npm --prefix frontend run build|TypeScript|Non-goals|Task Table" docs/implementation/slices/slice-23-frontend-build-baseline.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md` | `b35fc8f` | planning-only scope |
+| Fix frontend build TypeScript baseline | done | `npm --prefix frontend run build && npm --prefix frontend run test -- --run && git diff --check` | pending | narrow type fixes |
 | Slice 23 completion gate | planned | `npm --prefix frontend run build && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
 
 ## Task 1: Add Frontend Build Baseline Task Plan

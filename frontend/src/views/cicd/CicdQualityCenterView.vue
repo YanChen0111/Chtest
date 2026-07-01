@@ -171,7 +171,7 @@
               </div>
               <div>
                 <span>风险</span>
-                <strong>{{ riskLevelLabel(store.unitTestPatch.scope_gate_result.risk_level) }}</strong>
+                <strong>{{ riskLevelLabel(store.unitTestPatch.scope_gate_result.risk_level ?? 'low') }}</strong>
               </div>
             </div>
             <p class="evidence-line">PatchScopeGate：{{ store.unitTestPatch.scope_gate_result.allowed ? '通过' : '拒绝' }}</p>

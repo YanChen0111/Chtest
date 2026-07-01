@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-01 Slice 23 Task 2 Frontend Build Baseline 修复完成
+
+本轮完成：
+
+- 完成 Slice 23 Task 2：Fix frontend build TypeScript baseline。
+- `frontend/src/api/client.ts` 将 JSON body 泛型约束从
+  `Record<string, unknown>` 收窄问题改为 `object`，保留对象 payload 约束。
+- `AiWorkbenchView.vue` 和 `RequirementReviewView.vue` 将 `replaceAll` 改为
+  ES2020 可用的正则 `replace`。
+- `CicdQualityCenterView.vue` 对可选 `risk_level` 增加 `low` fallback。
+- Slice 23 table 已记录 Task 1 commit `b35fc8f`，Task 2 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 23 Completion Gate。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Frontend build：passed，保留 Vite large chunk warning。
+- Full frontend suite：`16` files passed，`21` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 2：`fix(frontend): restore build baseline`。
+- 继续 Slice 23 Completion Gate。
+
 ## 2026-07-01 Next V2 Slice Selected
 
 本轮完成：
