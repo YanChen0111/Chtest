@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Select next narrow V2 slice.
+Slice 29: Execution Run Manifest.
 
 ## Current Task
 
-Select and plan the next narrow V2 task after Slice 28 completion.
+Slice 29 Task 2: Define execution run manifest contract.
 
 ## Product Value Answer
 
-After this task, the next V2 slice is selected and planned with a small,
-verifiable task boundary.
+After this task, the execution run manifest is defined as read-only presentation
+from existing TestRun fields and Artifact metadata before frontend changes.
 
 ## Must Read
 
@@ -27,7 +27,7 @@ verifiable task boundary.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/10-v2-scope-options.md`
-9. `docs/implementation/slices/slice-28-cicd-quality-gate-evidence-summary.md`
+9. `docs/implementation/slices/slice-29-execution-run-manifest.md`
 10. `memory/08-session-handoff.md`
 11. `memory/07-dev-log.md`
 
@@ -46,11 +46,13 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/10-v2-scope-options.md
-docs/implementation/slices/<next-slice>.md
+docs/implementation/slices/slice-29-execution-run-manifest.md
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/04-artifact-contract.md
 ```
 
-Planning task. Do not add frontend code, backend feature code, tests,
+Contract task. Do not add frontend code, backend feature code, tests,
 migrations, package upgrades, artifact upload/mutation/delete, cloud storage,
 external provider integration, RBAC, tenants, permissions, broad redesign work,
 report generation behavior, runner behavior changes, quality gate computation
@@ -59,28 +61,30 @@ changes, RAG runtime, or MCP runtime.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/<next-slice>.md
-rg -n "Product Value Answer|Non-goals|Task Table" docs/implementation/slices/<next-slice>.md NEXT_AI_TASK.md
+rg -n "execution run manifest|runtime artifact|dependency snapshot|environment snapshot|network policy" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-29-execution-run-manifest.md
 git diff --check
 ```
 
-Expected result: next slice plan exists, names product value/non-goals/task
-table, `NEXT_AI_TASK.md` points to the first task, and diff check passes.
+Expected result: execution run manifest contract language is present and diff
+check passes.
 
 ## Acceptance
 
-- Select one narrow V2 slice from current product priorities and recent handoff.
-- Create the slice plan with product value, preconditions, non-goals, task
-  table, expected files, verification commands, and commit messages.
-- Update `NEXT_AI_TASK.md` to the first task of that new slice.
-- Do not implement product code during planning.
+- Data/API/artifact contracts define execution run manifest as presentation
+  derived from existing TestRun fields and Artifact metadata.
+- Contract states missing runtime/dependency/environment snapshots remain
+  visible but unavailable.
+- Contract states local open links are allowed only for persisted local Artifact
+  ids through the existing artifact access endpoint.
+- Contract preserves the no runner, report, failure analysis, quality gate,
+  remote provider, RAG runtime, or MCP runtime behavior change boundary.
 
 ## Commit Message
 
 ```text
-docs(v2): plan next narrow v2 slice
+docs(v2): define execution run manifest contract
 ```
 
 ## Next Task
 
-First task of the newly planned V2 slice.
+Slice 29 Task 3: Add frontend run manifest panel.

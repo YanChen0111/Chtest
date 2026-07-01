@@ -1,5 +1,31 @@
 # Session Handoff
 
+## 2026-07-01 Slice 29 Task 1 Execution Run Manifest Plan 完成
+
+本轮完成：
+
+- 选择 Slice 29：Execution Run Manifest。
+- 选择原因：
+  - Slice 24-28 已经补齐 artifact open links、report evidence summary、
+    AI task artifact links、CI imported reference clarity、quality gate evidence
+    summary；
+  - 现在 TestRun 本身仍需要更清楚说明“实际跑了什么、在哪里跑、用什么 runner
+    mode、采用什么安全策略、有哪些 snapshot/output artifact”；
+  - `TestRunRead` 已经有 command、working_directory、runner_mode、
+    run_workspace、repository_readonly、network_enabled、snapshot ids、
+    parsed_result 和 artifacts，Slice 29 可以保持 read-only 展示。
+- 新增 Slice 29 计划：
+  `docs/implementation/slices/slice-29-execution-run-manifest.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充 Slice 28 完成记录和
+  Slice 29 推荐。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 29 Task 2：Define execution run manifest contract。
+
+下次推荐任务：
+
+- 提交 Task 1：`docs(v2): add execution run manifest plan`。
+- 继续 Slice 29 Task 2：Define execution run manifest contract。
+
 ## 2026-07-01 Slice 28 Completion Gate 完成
 
 本轮完成：

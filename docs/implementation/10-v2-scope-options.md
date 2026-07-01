@@ -997,3 +997,90 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines summary behavior, contracts,
   verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: CI/CD quality gate evidence summary.
+
+Why it was selected:
+
+- Slice 16 computed QualityGateDecision, but the CI/CD Quality Center needed
+  clearer evidence readability for required evidence and blockers.
+- Slice 28 applied the read-only evidence summary pattern from local artifact
+  access and report evidence summaries to the quality gate panel.
+- The slice improved CI/CD support workflow clarity without changing gate
+  computation, runner behavior, report generation, or remote CI provider
+  behavior.
+
+Completed slice name:
+
+```text
+Slice 28: CI/CD Quality Gate Evidence Summary
+```
+
+Delivered output:
+
+- Slice plan, contract boundary, frontend quality gate evidence summary, golden
+  smoke, and completion gate.
+- Missing UnitTestPatch, new-test, or regression evidence remains visible and
+  returns `needs_review`, not `passed`.
+- Local links are limited to persisted local Artifact ids; no remote provider,
+  report, runner, RAG runtime, MCP runtime, RBAC, tenants, or permissions were
+  added.
+
+## Recommended Next V2 Slice
+
+Recommended: Execution run manifest.
+
+Why:
+
+- Slices 24-28 made artifacts openable and evidence summaries readable across
+  execution reports, AI tasks, imported CI evidence, and quality gates. The
+  remaining execution-level readability gap is the TestRun itself: reviewers
+  need to see what command ran, where it ran, which runner mode and safety
+  policy applied, and which runtime/snapshot/output artifacts prove the run.
+- `TestRunRead` already exposes command, working directory, runner mode,
+  workspace, repository/network policy, snapshot ids, parsed result, and
+  artifacts, so the next slice can stay presentation/contract driven.
+- This strengthens the evidence workbench without adding new runners, runner
+  behavior, remote providers, dashboards, or artifact storage scope.
+
+Next slice name:
+
+```text
+Slice 29: Execution Run Manifest
+```
+
+Smallest useful boundary:
+
+- Define a read-only execution run manifest from existing TestRun fields and
+  Artifact metadata.
+- Show command, working directory, runner mode, run workspace, repository
+  read-only flag, network policy, runtime/dependency/environment snapshots, and
+  output artifact availability.
+- Add local links only for persisted local Artifact ids.
+- Keep missing snapshots visible and not downloadable.
+- Add one focused frontend test and one golden smoke proving the manifest is
+  evidence-only.
+
+Explicit non-goals:
+
+- No runner behavior changes, command execution changes, ToolDefinition changes,
+  allowlist expansion, new runner types, Docker runner enablement, live log
+  streaming, scheduling, retries, or cancellation workflow.
+- No report generation, FailureAnalysis, QualityGateDecision, AutomationRepair,
+  artifact mutation, broad artifact browser, remote provider calls, PR comments,
+  deploy/release controls, credentials, RBAC, tenants, permissions, RAG runtime,
+  MCP runtime, marketplace, package upgrades, or frontend redesign.
+
+Suggested next task:
+
+```text
+Slice 29 Task 1: Add Execution Run Manifest task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines run manifest behavior, contracts,
+  verification, and non-goals.

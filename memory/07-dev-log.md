@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-01 Slice 29 Execution Run Manifest Plan
+
+### Completed
+
+- Selected Slice 29: Execution Run Manifest.
+- Added `docs/implementation/slices/slice-29-execution-run-manifest.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 28 completion
+  and Slice 29 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 29 Task 2: Define execution run manifest
+  contract.
+
+### Rationale
+
+- Slices 24-28 made artifacts openable and evidence summaries readable across
+  reports, AI Workbench, imported CI evidence, and quality gates.
+- The remaining execution-level gap is explaining the TestRun itself: command,
+  working directory, runner mode, workspace, repository/network policy,
+  snapshots, and output artifacts.
+- Slice 29 stays small by defining and displaying a read-only manifest from
+  existing TestRun fields and Artifact metadata without changing runner
+  behavior.
+
+### Next Step
+
+- Commit `docs(v2): add execution run manifest plan`.
+- Continue Slice 29 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 28 Completion Gate
 
 ### Completed
