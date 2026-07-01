@@ -10,12 +10,14 @@ Slice 22: JMeter Local Execution Evidence.
 
 ## Current Task
 
-Slice 22 Task 3: Add JMeter parser and backend API tests.
+Slice 22 Task 4: Add JMeter runner backend.
 
 ## Product Value Answer
 
-After this task, Chtest can parse deterministic JMeter JTL evidence into a
-backend execution summary shape before the live runner path is added.
+After this task, an approved `TestCommand(command_type=jmeter)` can create a
+local `TestRun` with `runner_mode=jmeter_local`, persisted stdout/stderr,
+`jmeter_jtl`, parsed_result, and TestResult evidence without requiring a real
+JMeter installation in tests.
 
 ## Must Read
 
@@ -46,13 +48,13 @@ memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-22-jmeter-local-execution.md
 backend/app/modules/execution/jmeter_runner.py
+backend/app/modules/execution/service.py
 backend/app/tests/api/test_jmeter_execution.py
 ```
 
-Parser/API-test task. Do not add live JMeter execution, frontend code, golden
-tests, JMX editing, performance dashboards, distributed runners, arbitrary shell
-execution, secrets management, CI provider controls, RAG runtime, MCP runtime,
-RBAC, tenants, or permissions.
+Runner task. Do not add frontend code, golden tests, JMX editing, performance
+dashboards, distributed runners, arbitrary shell execution, secrets management,
+CI provider controls, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 
 ## Verification Command
 
@@ -61,22 +63,23 @@ backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.p
 git diff --check
 ```
 
-Expected result: JMeter parser/API tests and diff check pass.
+Expected result: JMeter runner/API tests and diff check pass.
 
 ## Acceptance
 
-- Parses JTL CSV or XML fixture rows deterministically.
-- Produces total, passed, failed, error, duration, and sampler summary fields.
-- Preserves failure/error details needed by frontend display.
-- Does not require a local JMeter binary.
-- Does not execute commands in this task unless needed by existing test shape.
+- Approved `TestCommand(command_type=jmeter)` can create a TestRun using
+  `runner_mode=jmeter_local`.
+- Runner creates stdout/stderr, `jmeter_jtl`, and parsed_result artifacts.
+- Runner rejects shell operators, unsafe paths, and unapproved command shapes.
+- Runner handles timeout/error states through existing TestRun state rules.
+- Tests do not depend on a real JMeter installation.
 
 ## Commit Message
 
 ```text
-feat(execution): parse jmeter evidence
+feat(execution): add jmeter local runner
 ```
 
 ## Next Task
 
-Slice 22 Task 4: Add JMeter runner backend.
+Slice 22 Task 5: Add JMeter execution frontend shell.
