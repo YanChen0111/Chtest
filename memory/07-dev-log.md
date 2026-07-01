@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-01 Slice 24 Artifact Access Golden Smoke
+
+### Completed
+
+- Added `backend/app/tests/golden/test_artifact_access_golden.py`.
+- Added `docs/fixtures/12-local-artifact-access-golden.md`.
+- Golden proves a persisted local `TestRun` stdout artifact can be downloaded
+  through `GET /api/artifacts/{artifact_id}/download`.
+- Golden verifies downloaded bytes match persisted `sha256` and `size_bytes`.
+- Golden verifies external imported artifact references remain inert with
+  `ARTIFACT_NOT_LOCAL`.
+- Updated `NEXT_AI_TASK.md` to Slice 24 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_artifact_access_golden.py -q`
+- Result: `1 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add local artifact access smoke`.
+- Continue Slice 24 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 24 Frontend Artifact Links
 
 ### Completed

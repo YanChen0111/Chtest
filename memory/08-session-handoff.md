@@ -1,5 +1,41 @@
 # Session Handoff
 
+## 2026-07-01 Slice 24 Task 5 Artifact Access Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 24 Task 5：Add artifact access golden smoke。
+- 新增 `backend/app/tests/golden/test_artifact_access_golden.py`。
+- 新增 `docs/fixtures/12-local-artifact-access-golden.md`。
+- Golden 覆盖：
+  - 本地 `TestRun` stdout Artifact 可通过
+    `GET /api/artifacts/{artifact_id}/download` 读取；
+  - 返回 bytes 与持久化 `sha256`、`size_bytes` 匹配；
+  - `Content-Type` 使用 Artifact MIME；
+  - `Content-Disposition` 只暴露安全 basename；
+  - 读取不修改 Artifact / TestRun runtime artifact 引用；
+  - 外部 imported artifact reference 返回 `ARTIFACT_NOT_LOCAL`。
+- Slice 24 table 已记录 Task 4 commit `d0f5516`，Task 5 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 24 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_artifact_access_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Artifact access golden：`1 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 5：`test(golden): add local artifact access smoke`。
+- 继续 Slice 24 Completion Gate。
+
 ## 2026-07-01 Slice 24 Task 4 Frontend Artifact Links 完成
 
 本轮完成：
