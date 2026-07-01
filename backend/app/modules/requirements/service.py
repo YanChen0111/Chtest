@@ -308,6 +308,7 @@ def attach_retrieval_evidence_artifact(
     used_context_artifact_ids: list[uuid.UUID],
 ) -> Artifact:
     retrieved_context_artifact_ids = list(retrieval_payload.get("used_context_artifact_ids", []))
+    retrieval_results = list(retrieval_payload.get("results", []))
     payload = ProviderArtifactPayload(
         artifact_type="knowledge_retrieval",
         file_name="knowledge_retrieval.json",
@@ -325,12 +326,13 @@ def attach_retrieval_evidence_artifact(
             "source_entity_id": str(ai_task.id),
             "safe_to_show": True,
             "redaction_applied": any(
-                bool(result.get("redaction_applied", False)) for result in retrieval_payload.get("results", [])
+                bool(result.get("redaction_applied", False)) for result in retrieval_results
             ),
             "description": "Deterministic local knowledge retrieval evidence",
             "retrieval_mode": "deterministic_local",
             "query_terms": list(retrieval_payload.get("query_terms", [])),
-            "result_count": len(retrieval_payload.get("results", [])),
+            "result_count": len(retrieval_results),
+            "results": retrieval_results,
             "used_context_artifact_ids": retrieved_context_artifact_ids,
         },
     )

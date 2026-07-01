@@ -1,5 +1,54 @@
 # Session Handoff
 
+## 2026-06-30 Slice 19 Task 6 完成
+
+本轮完成：
+
+- 完成 Slice 19 Task 6：Add deterministic retrieval golden smoke。
+- 新增 fixture：
+  `docs/fixtures/08-deterministic-knowledge-retrieval-golden.md`。
+- 新增 golden smoke：
+  `backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py`。
+- Golden 证明完整证据链：
+  - safe `coupon-api-notes.md` ContextArtifact。
+  - deterministic local KnowledgeAdapter stub。
+  - requirement review `use_knowledge=true`。
+  - `used_knowledge=true` 和 exact `used_context_artifact_ids`。
+  - AITask owned `knowledge_retrieval` evidence Artifact。
+  - persisted `knowledge_retrieval.json` 中的 query terms、matched terms、
+    score、snippet、SHA256、prompt eligibility、redaction 状态。
+  - RAG 知识库 `/knowledge-base` 可读取 latest retrieval evidence。
+- Golden 明确排除 vector database、embedding、reranking、external RAG
+  provider、MCP runtime、RBAC、tenants、permissions、marketplace、cloud sync 和
+  remote CI provider integration。
+- Golden 暴露并修复了一个窄后端 surface 缺口：Requirement Review 现在把
+  bounded retrieval result summaries 同步写入 `knowledge_retrieval` Artifact
+  metadata，确保 RAG 知识库 `/knowledge-base` 可以稳定读取 snippets、scores
+  和 matched terms。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 19 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`1 passed`。
+- Related backend deterministic retrieval + requirement review + extension
+  surface + golden tests：`23 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 先提交 Task 6。
+- 然后按 `NEXT_AI_TASK.md` 运行 Slice 19 Completion Gate：
+  backend API + requirement review + extension surface + golden smoke +
+  frontend test + diff check。
+
 ## 2026-06-30 Slice 19 Task 5 完成
 
 本轮完成：

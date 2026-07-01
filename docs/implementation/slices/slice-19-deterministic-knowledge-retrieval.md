@@ -80,8 +80,8 @@ infrastructure, external providers, or opaque RAG behavior.
 | Define deterministic retrieval contract boundary | done | `rg -n "Deterministic|KnowledgeAdapter|ContextArtifact|used_knowledge|retrieval" docs/contracts docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md` | `a0f561f` | contract-only before code |
 | Add local KnowledgeAdapter retrieval service | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q` | `7e6d61c` | deterministic matcher only |
 | Attach retrieval evidence to AI task flows | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py -q` | `24b7105` | requirement review first |
-| Add retrieval evidence frontend display | done | `npm --prefix frontend run test -- --run` | pending commit | RAG 知识库 / AI task evidence |
-| Add deterministic retrieval golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q` | pending | context -> retrieval -> AI task |
+| Add retrieval evidence frontend display | done | `npm --prefix frontend run test -- --run` | `b578fac` | RAG 知识库 / AI task evidence |
+| Add deterministic retrieval golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q` | pending commit | context -> retrieval -> AI task |
 | Slice 19 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q && npm --prefix frontend run test -- --run` | pending | docs and handoff |
 
 ## Task 1: Add Deterministic Knowledge Retrieval Task Plan
@@ -262,6 +262,8 @@ traceability.
 
 Expected files:
 
+- `backend/app/modules/requirements/service.py`
+- `backend/app/tests/api/test_requirement_review.py`
 - `backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py`
 - `docs/fixtures/08-deterministic-knowledge-retrieval-golden.md`
 - `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
@@ -280,6 +282,9 @@ Acceptance:
 - Creates safe ContextArtifacts with coupon/API knowledge.
 - Runs a requirement review or equivalent AI task with deterministic retrieval
   enabled.
+- Retrieval evidence Artifact metadata includes bounded result summaries so
+  RAG 知识库 can derive latest retrieval snippets without rereading task-local
+  files.
 - Confirms retrieved ContextArtifact ids, snippets, scores, and matched terms
   are persisted as evidence.
 - Confirms `used_knowledge=true` and `used_context_artifact_ids` are accurate.
@@ -289,7 +294,7 @@ Acceptance:
 Commit message:
 
 ```text
-test(v2): add deterministic knowledge retrieval golden
+test(golden): add deterministic knowledge retrieval smoke
 ```
 
 ## Slice 19 Completion Gate

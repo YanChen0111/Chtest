@@ -1,5 +1,52 @@
 # Development Log
 
+## 2026-06-30 Slice 19 Deterministic Retrieval Golden Smoke
+
+### Completed
+
+- Added deterministic retrieval golden fixture:
+  `docs/fixtures/08-deterministic-knowledge-retrieval-golden.md`.
+- Added golden smoke:
+  `backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py`.
+- Golden flow proves:
+  - safe `coupon-api-notes.md` ContextArtifact creation;
+  - deterministic local KnowledgeAdapter configuration;
+  - requirement review with `use_knowledge=true`;
+  - exact retrieved ContextArtifact ids in review response and AITask output;
+  - persisted `knowledge_retrieval` evidence Artifact metadata;
+  - persisted `knowledge_retrieval.json` content with query terms, matched
+    terms, score, snippet, SHA256, prompt eligibility, and redaction state;
+  - RAG 知识库 `/knowledge-base` latest retrieval evidence display surface.
+- Golden asserts no vector index, embedding, MCP runtime, tenant, role, or
+  permission dependency is introduced.
+- Fixed the narrow evidence-surface gap exposed by the golden smoke:
+  requirement review now stores bounded retrieval result summaries in
+  `knowledge_retrieval` Artifact metadata, so `/knowledge-base` can derive
+  latest snippets/scores/matched terms from metadata.
+- Updated Slice 19 task table so Task 5 records commit `b578fac` and Task 6 is
+  done pending commit.
+- Updated `NEXT_AI_TASK.md` to Slice 19 Completion Gate.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
+git diff --check
+```
+
+Results:
+
+- Golden smoke: `1 passed`.
+- Related backend deterministic retrieval, requirement review, extension
+  surface, and golden tests: `23 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit Task 6 with `test(golden): add deterministic knowledge retrieval smoke`.
+- Then run Slice 19 Completion Gate verification and close the slice.
+
 ## 2026-06-30 Slice 19 Retrieval Evidence Frontend Display
 
 ### Completed

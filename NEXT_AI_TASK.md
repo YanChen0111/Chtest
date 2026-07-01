@@ -10,12 +10,13 @@ V2 Planning.
 
 ## Current Task
 
-Slice 19 Task 6: Add deterministic retrieval golden smoke.
+Slice 19 Completion Gate.
 
 ## Product Value Answer
 
-After this task, a golden smoke proves ContextArtifact retrieval can improve
-requirement review context while preserving auditable evidence.
+After this gate, deterministic local ContextArtifact retrieval is fully verified
+as an auditable V2 knowledge-quality improvement, with backend, frontend, golden
+smoke, and documentation evidence complete.
 
 ## Must Read
 
@@ -32,7 +33,7 @@ requirement review context while preserving auditable evidence.
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-17-extension-surface.md`
 13. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
-14. golden deterministic retrieval fixture and tests only
+14. `docs/fixtures/08-deterministic-knowledge-retrieval-golden.md`
 
 ## Do Not Read Unless Needed
 
@@ -48,43 +49,39 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
-docs/fixtures/08-deterministic-knowledge-retrieval-golden.md
-backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py
 ```
 
-Golden-smoke task. Prove the existing deterministic retrieval evidence loop with
-fixtures only. Do not add frontend, vector database, embeddings, reranking,
-background indexing, external RAG provider calls, MCP runtime, RBAC, tenants,
-permissions, marketplace, cloud sync, release automation, or remote CI provider
-integration.
+Completion gate. Verify and document the completed deterministic retrieval
+slice. Do not add frontend, vector database, embeddings, reranking, background
+indexing, external RAG provider calls, MCP runtime, RBAC, tenants, permissions,
+marketplace, cloud sync, release automation, or remote CI provider integration.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: deterministic retrieval golden smoke and diff check pass.
+Expected result: backend API, golden smoke, frontend retrieval evidence display,
+and diff check pass.
 
 ## Acceptance
 
-- Creates safe ContextArtifacts with coupon/API knowledge.
-- Runs requirement review with deterministic retrieval enabled.
-- Confirms retrieved ContextArtifact ids, snippets, scores, and matched terms
-  are persisted as evidence.
-- Confirms `used_knowledge=true` and exact `used_context_artifact_ids`.
-- Confirms RAG 知识库 surface can read the resulting latest retrieval evidence.
-- Does not add vector database, embeddings, reranking, background workers,
-  external providers, MCP runtime, RBAC, tenants, or permissions.
+- Slice 19 task table marks Task 1-6 done with commit ids.
+- Completion evidence records backend API, requirement review, extension
+  surface, golden smoke, frontend, and diff verification.
+- Handoff names the next V2 slice or planning task.
+- Non-goals remain excluded.
 
 ## Commit Message
 
 ```text
-test(golden): add deterministic knowledge retrieval smoke
+docs(v2): complete deterministic knowledge retrieval slice
 ```
 
 ## Next Task
 
-Start Slice 19 completion gate only after the deterministic retrieval golden
-smoke is committed.
+Select the next V2 slice or planning task after Slice 19 completion is
+committed.

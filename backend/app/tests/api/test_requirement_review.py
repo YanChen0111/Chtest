@@ -302,6 +302,11 @@ def test_requirement_review_attaches_deterministic_retrieval_evidence(
         assert evidence_artifact.metadata_json["redaction_applied"] is False
         assert evidence_artifact.metadata_json["retrieval_mode"] == "deterministic_local"
         assert evidence_artifact.metadata_json["used_context_artifact_ids"] == [context_id]
+        assert evidence_artifact.metadata_json["result_count"] == 1
+        assert evidence_artifact.metadata_json["results"][0]["context_artifact_id"] == context_id
+        assert evidence_artifact.metadata_json["results"][0]["title"] == "coupon-api-notes.md"
+        assert "coupon" in evidence_artifact.metadata_json["results"][0]["matched_terms"]
+        assert "Coupon API Notes" in evidence_artifact.metadata_json["results"][0]["snippet"]
 
         assert client.artifact_root is not None
         evidence = json.loads((client.artifact_root / evidence_artifact.file_path).read_text())
