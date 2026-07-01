@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-01 Slice 27 Completion Gate
+
+### Completed
+
+- Completed Slice 27: AI Task Evidence Artifact Links.
+- Recorded Task 4 commit `f9bebbe`.
+- Confirmed safe AI task artifacts can use local open links in AI Workbench.
+- Confirmed unsafe raw LLM artifacts remain metadata-only, not inlined, and not
+  directly openable in the UI.
+- Confirmed no AI task rerun, provider call, Report, FailureAnalysis,
+  QualityGateDecision, TestRun, artifact mutation, RAG runtime, or MCP runtime
+  behavior was added.
+- Updated `NEXT_AI_TASK.md` to select the next narrow V2 slice.
+
+### Verification
+
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `npm --prefix frontend run test -- --run`
+- Result: `16` files passed, `21` tests passed.
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q`
+- Result: `2 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `docs(v2): complete ai task artifact link slice`.
+- Select and plan the next V2 small slice.
+
 ## 2026-07-01 Slice 27 AI Task Artifact Link Golden Smoke
 
 ### Completed

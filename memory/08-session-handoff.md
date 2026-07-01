@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-07-01 Slice 27 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 27：AI Task Evidence Artifact Links。
+- Slice 27 task table 已记录：
+  - Task 1：`add4adc`
+  - Task 2：`57cf570`
+  - Task 3：`c14fa57`
+  - Task 4：`f9bebbe`
+  - Completion Gate：done pending commit。
+- 验证 safe AI task artifacts 可以在 AI Workbench 使用本地打开链接。
+- 验证 unsafe raw LLM artifacts 保持 metadata-only，不 inline，不直接打开。
+- 验证没有新增 AI task rerun、provider call、Report、FailureAnalysis、
+  QualityGateDecision、TestRun、artifact mutation、RAG runtime 或 MCP runtime。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select and plan the next narrow V2 task after Slice 27 completion。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Frontend build：passed，保留 Vite large chunk warning。
+- Full frontend suite：`16` files passed，`21` tests passed。
+- Slice 27 + artifact access golden：`2 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 completion gate：`docs(v2): complete ai task artifact link slice`。
+- 选择并规划下一条 V2 小切片。
+
 ## 2026-07-01 Slice 27 Task 4 AI Task Artifact Link Golden Smoke 完成
 
 本轮完成：

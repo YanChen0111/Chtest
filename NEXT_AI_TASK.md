@@ -6,17 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 27: AI Task Evidence Artifact Links.
+Select next V2 small slice.
 
 ## Current Task
 
-Slice 27 Completion Gate.
+Select and plan the next narrow V2 task after Slice 27 completion.
 
 ## Product Value Answer
 
-After this task, Slice 27 is fully verified and handed off with safe AI task
-artifact links available in AI Workbench and unsafe raw LLM artifacts kept
-metadata-only.
+After this task, the next V2 slice is selected with a small task boundary,
+clear product value, expected files, non-goals, verification, and commit scope.
 
 ## Must Read
 
@@ -68,40 +67,38 @@ backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py
 docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md
 ```
 
-Completion gate task. Do not add frontend or backend feature code, migrations,
-package upgrades, artifact upload/mutation/delete, cloud storage, external
-provider integration, RBAC, tenants, permissions, broad redesign work, report
-generation behavior, runner behavior changes, AI task rerun, prompt editing,
-raw LLM inline display, RAG runtime, or MCP runtime.
+Planning task. Do not add frontend or backend feature code, migrations, package
+upgrades, artifact upload/mutation/delete, cloud storage, external provider
+integration, RBAC, tenants, permissions, broad redesign work, report generation
+behavior, runner behavior changes, AI task rerun, prompt editing, raw LLM inline
+display, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run build
-npm --prefix frontend run test -- --run
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+rg -n "Slice 27|AI Task Evidence Artifact Links|f9bebbe|c14fa57|57cf570|add4adc" docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md memory/08-session-handoff.md memory/07-dev-log.md
 git diff --check
 ```
 
-Expected result: Slice 27 frontend checks, artifact golden checks, and diff
-check pass.
+Expected result: Slice 27 completion evidence is discoverable and diff check
+passes before selecting the next slice.
 
 ## Acceptance
 
-- Slice 27 task table records Task 1-4 completion and commit ids.
-- Completion evidence records frontend build/test, golden checks, and diff
-  verification.
-- Safe AI task artifacts can use local open links in AI Workbench.
-- Unsafe raw LLM artifacts remain metadata-only and no AI task rerun, provider
-  call, Report, FailureAnalysis, QualityGateDecision, artifact mutation, RAG
-  runtime, or MCP runtime behavior is added.
+- Slice 27 is recorded as complete in slice docs and memory.
+- Next V2 slice is selected from existing V2 scope docs or current local
+  evidence gaps.
+- New task boundary names product value, expected files, verification command,
+  non-goals, and commit message.
+- Scope stays local-first and avoids remote provider, RBAC, tenant, cloud, RAG
+  runtime, MCP runtime, and broad redesign expansion.
 
 ## Commit Message
 
 ```text
-docs(v2): complete ai task artifact link slice
+docs(v2): add next v2 slice plan
 ```
 
 ## Next Task
 
-Select next V2 small slice after Slice 27 completion.
+To be selected after Slice 27 completion.
