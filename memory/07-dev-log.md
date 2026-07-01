@@ -1,5 +1,37 @@
 # Development Log
 
+## 2026-07-01 Slice 21 Completion Gate
+
+### Completed
+
+- Completed Slice 21: Local Review Attribution History.
+- Recorded all Slice 21 task rows as done through Task 6.
+- Confirmed ReviewHistory remains local append-only attribution evidence:
+  - no public generic ReviewHistory create/update/delete endpoint;
+  - no RBAC, roles, permissions, tenants, assignment, notification, team inbox,
+    remote provider governance, RAG runtime, or MCP runtime expansion.
+- Updated `NEXT_AI_TASK.md` to select the next V2 small slice after Slice 21
+  completion.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/golden/test_review_history_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- ReviewHistory API + golden: `6 passed`.
+- Full frontend suite: `15` files passed, `20` tests passed.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `docs(v2): complete local review history slice`.
+- Select the next V2 small slice.
+
 ## 2026-07-01 Slice 21 Review History Golden Smoke
 
 ### Completed

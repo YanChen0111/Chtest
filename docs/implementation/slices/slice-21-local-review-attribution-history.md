@@ -83,8 +83,8 @@ evidence loop easier to trust and hand off without adding team management.
 | Add review history model and service | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py -q` | `31bb8cc` | append-only local events |
 | Attach history to existing review actions | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_unit_test_patch_regression.py -q` | `53c313a` | no state-machine changes |
 | Add frontend review history panels | done | `npm --prefix frontend run test -- --run` | `847c399` | compact local attribution UI |
-| Add review history golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_review_history_golden.py -q` | pending | cross-entity evidence proof |
-| Slice 21 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/golden/test_review_history_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
+| Add review history golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_review_history_golden.py -q` | `0112b89` | cross-entity evidence proof |
+| Slice 21 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/golden/test_review_history_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
 
 ## Task 1: Add Local Review Attribution History Task Plan
 

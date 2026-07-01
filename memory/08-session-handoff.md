@@ -1,5 +1,45 @@
 # Session Handoff
 
+## 2026-07-01 Slice 21 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 21：Local Review Attribution History。
+- Slice 21 task table 已记录：
+  - Task 1：`f121483`
+  - Task 2：`b77262b`
+  - Task 3：`31bb8cc`
+  - Task 4：`53c313a`
+  - Task 5：`847c399`
+  - Task 6：`0112b89`
+  - Completion gate：done pending commit。
+- 确认 ReviewHistory 仍是本地 append-only attribution evidence：
+  - 不新增通用 public ReviewHistory create/update/delete；
+  - 不新增 RBAC、roles、permissions、tenants；
+  - 不新增 assignment、notifications、team inbox、远程 provider governance；
+  - 不新增 RAG runtime 或 MCP runtime。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select the next V2 small slice after Slice 21 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/golden/test_review_history_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- ReviewHistory API + golden：`6 passed`。
+- Full frontend suite：`15` files passed，`20` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 completion gate：`docs(v2): complete local review history slice`。
+- 选择下一条 V2 小切片。
+
 ## 2026-07-01 Slice 21 Task 6 Review History Golden Smoke 完成
 
 本轮完成：

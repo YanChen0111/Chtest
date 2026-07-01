@@ -53,7 +53,7 @@ runtime.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_review_history_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/golden/test_review_history_golden.py -q
 npm --prefix frontend run test -- --run
 git diff --check
 ```
