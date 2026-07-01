@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-01 Slice 29 Execution Run Manifest Golden Smoke
+
+### Completed
+
+- Added a Slice 29 golden smoke for execution run manifest inputs.
+- Golden proves TestRun read data keeps command, working directory,
+  runner_mode, run workspace, repository/network policy, parsed result, and
+  artifact metadata available for manifest display.
+- Golden proves persisted local runtime manifest artifact remains openable.
+- Golden proves missing dependency/environment snapshots remain unavailable
+  evidence.
+- Added fixture documentation:
+  `docs/fixtures/17-execution-run-manifest-golden.md`.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1` passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add execution run manifest smoke`.
+- Continue Slice 29 Completion Gate.
+
 ## 2026-07-01 Slice 29 Frontend Run Manifest Panel
 
 ### Completed

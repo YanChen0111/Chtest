@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-07-01 Slice 29 Task 4 Execution Run Manifest Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 29 Task 4：Add execution run manifest golden smoke。
+- 新增 golden：
+  `backend/app/tests/golden/test_execution_run_manifest_golden.py`。
+- 新增 fixture：
+  `docs/fixtures/17-execution-run-manifest-golden.md`。
+- Golden 覆盖：
+  - TestRun read data 保留 command、working_directory、runner_mode、
+    run_workspace、repository/network policy、parsed_result 和 artifact
+    metadata；
+  - runtime manifest local Artifact 可通过 artifact access 打开；
+  - dependency/environment snapshot 缺失时保持 unavailable evidence；
+  - manifest display inputs 不创建 Report、FailureAnalysis、
+    QualityGateDecision、新 TestRun，也不修改 Artifact。
+- Slice 29 table 已记录 Task 3 commit `32f2f25`，Task 4 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 29 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`1` passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`test(golden): add execution run manifest smoke`。
+- 继续 Slice 29 Completion Gate。
+
 ## 2026-07-01 Slice 29 Task 3 Frontend Run Manifest Panel 完成
 
 本轮完成：

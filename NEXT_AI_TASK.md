@@ -10,12 +10,12 @@ Slice 29: Execution Run Manifest.
 
 ## Current Task
 
-Slice 29 Task 4: Add execution run manifest golden smoke.
+Slice 29 Completion Gate.
 
 ## Product Value Answer
 
-After this task, a golden smoke proves execution run manifest inputs stay tied
-to existing TestRun and Artifact evidence.
+After this task, Slice 29 is fully verified and handed off with evidence that
+execution run manifests remain readable, local, and evidence-only.
 
 ## Must Read
 
@@ -47,13 +47,10 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-29-execution-run-manifest.md
-backend/app/tests/golden/test_execution_run_manifest_golden.py
-docs/fixtures/17-execution-run-manifest-golden.md
 ```
 
-Golden smoke task. Do not add frontend code, backend feature code beyond the
-focused test, migrations, package upgrades, artifact upload/mutation/delete,
-cloud storage,
+Completion gate task. Do not add frontend code, backend feature code, tests,
+migrations, package upgrades, artifact upload/mutation/delete, cloud storage,
 external provider integration, RBAC, tenants, permissions, broad redesign work,
 report generation behavior, runner behavior changes, quality gate computation
 changes, RAG runtime, or MCP runtime.
@@ -61,31 +58,29 @@ changes, RAG runtime, or MCP runtime.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: execution run manifest golden smoke and diff check pass.
+Expected result: Slice 29 golden checks, frontend build, frontend tests, and
+diff check pass.
 
 ## Acceptance
 
-- Golden proves TestRun read data keeps command, working directory,
-  runner_mode, run workspace, repository/network policy, parsed result, and
-  artifact metadata available for manifest display.
-- Golden proves local artifact ids remain openable through existing artifact
-  access when they are persisted local artifacts.
-- Golden proves missing snapshot ids remain visible as missing/unavailable
-  evidence.
-- Golden proves run manifest display inputs do not create Report,
-  FailureAnalysis, QualityGateDecision, AutomationRepair, new TestRun, artifact
-  mutation, remote provider behavior, RAG runtime, or MCP runtime.
+- All Slice 29 task rows are marked done with commit ids.
+- Completion evidence records frontend build/test, golden checks, and diff
+  verification.
+- Non-goals remain excluded.
+- Handoff names the next V2 slice or planning task.
 
 ## Commit Message
 
 ```text
-test(golden): add execution run manifest smoke
+docs(v2): complete execution run manifest slice
 ```
 
 ## Next Task
 
-Slice 29 Completion Gate.
+Select and plan the next narrow V2 task after Slice 29 completion.
