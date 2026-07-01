@@ -59,6 +59,19 @@ Newman execution rules:
   arbitrary shell execution, remote CI/CD provider control, RAG runtime, MCP
   runtime, RBAC, tenants, or permissions.
 
+Artifact access rules:
+
+- V2 Slice 24 may add read-only local artifact access for persisted Artifact
+  rows.
+- Artifact access must use existing Artifact metadata and local artifact store
+  paths; it must not accept arbitrary filesystem paths from the client.
+- External imported artifact references remain inert labels and must not be
+  fetched, proxied, downloaded, authenticated to, or exposed through the local
+  artifact access endpoint.
+- Artifact access must not add upload, mutation, delete, sharing, cloud storage,
+  signed URL, RBAC, tenants, permissions, RAG runtime, MCP runtime, or
+  marketplace behavior.
+
 ## 2. Project Settings APIs
 
 ### 2.1 Create Project
@@ -1558,7 +1571,40 @@ Contract boundary:
   state, FailureAnalysis records, RAG runtime calls, MCP runtime dependencies,
   RBAC, tenants, or permissions.
 
-### 6.4 Playwright Minimal Execution
+### 6.4 Local Artifact Access
+
+`GET /api/artifacts/{artifact_id}/download`
+
+Purpose: return the content of a persisted local Artifact as read-only evidence.
+
+Response 200:
+
+- Body: raw artifact bytes.
+- `Content-Type`: recorded Artifact `mime_type`, defaulting to
+  `application/octet-stream` if missing.
+- `Content-Disposition`: attachment with a safe filename derived from Artifact
+  `file_path`.
+
+Rules:
+
+- The server must load the Artifact row by id and read only its persisted
+  `file_path` through the local artifact store.
+- The request body must be empty; clients must not provide a path.
+- The resolved path must stay under the configured artifact root.
+- Missing Artifact rows return `ARTIFACT_NOT_FOUND`.
+- Missing files return `ARTIFACT_FILE_NOT_FOUND`.
+- Unsafe paths return `ARTIFACT_PATH_UNSAFE`.
+- External imported artifact references, including CI import `external_url`
+  references, return `ARTIFACT_NOT_LOCAL`.
+- The endpoint is read-only and must not mutate Artifact rows, artifact files,
+  TestRun state, Report, FailureAnalysis, QualityGateDecision, remote providers,
+  or imported CI metadata.
+- The endpoint must not fetch external URLs, call remote CI providers, download
+  remote artifact content, create signed URLs, upload files, delete files,
+  expose arbitrary local filesystem paths, or introduce RBAC/tenant/permission
+  behavior.
+
+### 6.5 Playwright Minimal Execution
 
 Playwright minimal execution reuses `POST /api/test-runs` and
 `GET /api/test-runs/{id}`. It does not introduce a separate

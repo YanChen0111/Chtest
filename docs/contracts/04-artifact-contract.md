@@ -299,6 +299,29 @@ JMeter artifact rules:
   distributed load agents, cloud load testing, RAG runtime, or MCP runtime
   automatically.
 
+Slice 24 local artifact access rules:
+
+- Local artifact access is read-only and applies only to persisted Artifact rows
+  whose `file_path` resolves under the configured artifact root.
+- Clients must request artifacts by Artifact id, not by arbitrary path.
+- The artifact service must use the existing local artifact store path
+  normalization and containment checks before reading bytes.
+- Returned `Content-Type` must come from Artifact `mime_type` when present.
+- Returned download filename must be derived from the basename of Artifact
+  `file_path`; path separators and unsafe filename characters must not be
+  reflected into `Content-Disposition`.
+- Missing Artifact rows, missing files, or unsafe paths must fail with explicit
+  API errors instead of falling back to raw filesystem access.
+- External imported artifact references are inert. They may store metadata such
+  as name, kind, `external_url`, sha256, and size, but local artifact access must
+  not fetch, proxy, download, authenticate to, or expose those external URLs.
+- Artifact access must not mutate Artifact rows, artifact files, TestRun state,
+  Report, FailureAnalysis, QualityGateDecision, CI metadata, or review history.
+- Artifact access must not introduce cloud storage, signed URLs, sharing,
+  upload, delete, retention policy, indexing, search, RBAC, tenants,
+  permissions, RAG runtime, MCP runtime, marketplace, or remote provider
+  behavior.
+
 ## 5. Metadata 契约
 
 Artifact 表 metadata_json 最少包含：

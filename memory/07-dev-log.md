@@ -1,5 +1,20 @@
 # Development Log
 
+## 2026-07-01 Slice 24 Artifact Access Contract
+
+### Completed
+
+- Defined `GET /api/artifacts/{artifact_id}/download` in the API contract.
+- Added local artifact access rules to the artifact contract.
+- Kept external CI imported artifact references inert.
+- Updated `NEXT_AI_TASK.md` to Slice 24 Task 3: Add backend artifact download
+  API.
+
+### Next Step
+
+- Commit `docs(v2): define artifact access contract`.
+- Continue Slice 24 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 24 Local Artifact Access Plan
 
 ### Completed

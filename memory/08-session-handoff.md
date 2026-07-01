@@ -1,5 +1,32 @@
 # Session Handoff
 
+## 2026-07-01 Slice 24 Task 2 Artifact Access Contract 完成
+
+本轮完成：
+
+- 完成 Slice 24 Task 2：Define local artifact access contract。
+- `docs/contracts/02-api-contract.md` 新增：
+  - `GET /api/artifacts/{artifact_id}/download`；
+  - raw bytes response；
+  - MIME type / safe filename behavior；
+  - missing / unsafe / non-local artifact errors；
+  - external imported artifact references remain inert。
+- `docs/contracts/04-artifact-contract.md` 新增 Slice 24 local artifact access
+  rules：
+  - 只能通过 Artifact id 读取；
+  - 只能读取 artifact root 内文件；
+  - 不接受客户端路径；
+  - 不 fetch/proxy/download 外部 URL；
+  - 不修改 Artifact/TestRun/Report/Gate 状态。
+- Slice 24 table 已记录 Task 1 commit `e06c94b`，Task 2 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 24 Task 3：Add backend artifact download API。
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define artifact access contract`。
+- 继续 Slice 24 Task 3：Add backend artifact download API。
+
 ## 2026-07-01 Slice 24 Task 1 Local Artifact Access Plan 完成
 
 本轮完成：

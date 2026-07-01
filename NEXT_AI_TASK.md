@@ -10,12 +10,13 @@ Slice 24: Local Artifact Access Links.
 
 ## Current Task
 
-Slice 24 Task 2: Define local artifact access contract.
+Slice 24 Task 3: Add backend artifact download API.
 
 ## Product Value Answer
 
-After this task, artifact access has a precise read-only local API and artifact
-safety contract before backend/frontend implementation starts.
+After this task, persisted local Artifact rows can be read through a controlled
+read-only backend endpoint, without accepting arbitrary paths or external
+artifact URLs.
 
 ## Must Read
 
@@ -27,7 +28,7 @@ safety contract before backend/frontend implementation starts.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-24-local-artifact-access-links.md`
-9. existing artifact contract and execution artifact tables
+9. existing local artifact store and Artifact model/service patterns
 
 ## Do Not Read Unless Needed
 
@@ -50,36 +51,37 @@ docs/implementation/slices/slice-23-frontend-build-baseline.md
 docs/implementation/slices/slice-24-local-artifact-access-links.md
 docs/contracts/02-api-contract.md
 docs/contracts/04-artifact-contract.md
+backend artifact API/router/service files needed for local read access
+backend/app/tests/api/test_artifact_access.py
 ```
 
-Contract task. Do not add product code, backend code, frontend code, migrations,
-package upgrades, redesign work, or tests. Do not start a broad artifact
-platform expansion.
+Backend API task. Do not add frontend links, artifact upload/mutation/delete,
+cloud storage, external artifact fetch, RBAC, tenants, permissions, package
+upgrades, or redesign work.
 
 ## Verification Command
 
 ```bash
-rg -n "artifact access|download|GET /api/artifacts|Artifact" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-24-local-artifact-access-links.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_artifact_access.py -q
 git diff --check
 ```
 
-Expected result: artifact access contract keywords are present and diff check passes.
+Expected result: artifact access API tests and diff check pass.
 
 ## Acceptance
 
-- API contract defines a read-only artifact content/download endpoint.
-- Artifact contract defines local-root path safety, MIME/filename handling, and
-  content access boundaries.
-- External imported artifact references remain inert and unavailable through the
-  local download endpoint.
-- Non-goals remain explicit.
+- Reads only persisted Artifact rows with local `file_path` values under the
+  artifact root.
+- Returns content with recorded MIME type and safe download filename behavior.
+- Rejects missing artifacts and unsafe paths.
+- Does not mutate artifact rows or files.
 
 ## Commit Message
 
 ```text
-docs(v2): define artifact access contract
+feat(artifact): add local artifact access api
 ```
 
 ## Next Task
 
-Slice 24 Task 3: Add backend artifact download API.
+Slice 24 Task 4: Add frontend artifact links.
