@@ -1,5 +1,46 @@
 # Development Log
 
+## 2026-07-01 Slice 20 CI Import Golden Smoke
+
+### Completed
+
+- Completed Slice 20 Task 6: Add CI import golden smoke.
+- Added golden fixture:
+  `docs/fixtures/09-ci-run-metadata-import-golden.md`.
+- Added golden smoke:
+  `backend/app/tests/golden/test_ci_run_metadata_import_golden.py`.
+- Golden proves static CI metadata import creates:
+  - `CICDRun(source_type=ci_import, trigger_type=imported, status=imported)`;
+  - deterministic `CICDChangedFile` rows;
+  - `ci_run_metadata` evidence artifact;
+  - compatible `changed_files` evidence artifact;
+  - frontend-readable `ci_run_metadata` in `GET /api/cicd/runs/{id}`.
+- Golden confirms imported CI conclusion remains evidence only:
+  - `quality_gate_status=pending`;
+  - no QualityGateDecision, UnitTestPatch, AutomationDraft, TestRun, or Report;
+  - `remote_fetch_performed=false`;
+  - imported artifact references are inert references.
+- Updated Slice 20 task table:
+  - Task 5 commit recorded as `6aedab0`;
+  - Task 6 marked done pending commit.
+- Updated `NEXT_AI_TASK.md` to Slice 20 Completion Gate.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q
+```
+
+Results:
+
+- CI import golden smoke: `1 passed`.
+
+### Next Step
+
+- Run related backend/frontend/diff checks.
+- Commit Task 6 with `test(golden): add ci metadata import smoke`.
+- Continue Slice 20 Completion Gate.
+
 ## 2026-07-01 Slice 20 CI Import Frontend Evidence
 
 ### Completed

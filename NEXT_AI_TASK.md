@@ -10,13 +10,12 @@ Slice 20: CI Run Metadata Import.
 
 ## Current Task
 
-Slice 20 Task 6: Add CI import golden smoke.
+Slice 20 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Slice 20 has a deterministic golden smoke proving static CI
-metadata import produces CICDRun evidence and frontend-readable import
-artifacts without remote provider behavior.
+After this task, Slice 20 is closed with backend API, golden smoke, frontend
+tests, and documentation proving CI metadata import is evidence-only.
 
 ## Must Read
 
@@ -48,10 +47,13 @@ docs/implementation/slices/slice-20-ci-run-metadata-import.md
 backend/app/tests/api/test_ci_run_metadata_import.py
 backend/app/tests/golden/test_ci_run_metadata_import_golden.py
 docs/fixtures/09-ci-run-metadata-import-golden.md
+frontend/src/api/cicd.ts
+frontend/src/views/cicd/CicdQualityCenterView.vue
+frontend/src/views/cicd/CicdQualityCenterView.spec.ts
 ```
 
-Golden smoke task. User approved development after the V2 document-design
-review. Do not add frontend code, migrations, remote CI provider calls,
+Completion gate task. User approved development after the V2 document-design
+review. Do not add new feature scope, migrations, remote CI provider calls,
 webhooks, pipeline triggers, reruns, PR comments, deploy/release controls,
 credentials, RBAC, tenants, permissions, marketplace, RAG runtime, or MCP
 runtime.
@@ -59,29 +61,28 @@ runtime.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: CI import golden smoke and diff check pass.
+Expected result: Slice 20 backend, golden, frontend, and diff checks pass.
 
 ## Acceptance
 
-- Golden fixture documents a static CI metadata payload.
-- Golden smoke imports the payload through `POST /api/cicd/runs/import`.
-- Verifies CICDRun, CICDChangedFile rows, `ci_run_metadata`, and
-  `changed_files` evidence.
-- Verifies imported CI conclusion remains evidence only and does not create
-  QualityGateDecision, UnitTestPatch, TestRun, Report, remote fetch, or provider
-  control behavior.
-- Verifies `GET /api/cicd/runs/{id}` exposes frontend-readable import evidence.
+- Runs Slice 20 API and golden tests.
+- Runs the frontend test suite.
+- Confirms `git diff --check` is clean.
+- Updates Slice 20 task table with Task 6 commit.
+- Marks Slice 20 completion gate done pending commit.
+- Selects the next V2 task or slice without expanding remote CI/provider scope.
 
 ## Commit Message
 
 ```text
-test(golden): add ci metadata import smoke
+docs(v2): complete ci metadata import slice
 ```
 
 ## Next Task
 
-Slice 20 Completion Gate.
+Select the next V2 small slice after Slice 20 completion.

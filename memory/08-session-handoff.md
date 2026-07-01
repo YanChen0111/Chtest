@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-07-01 Slice 20 Task 6 完成
+
+本轮完成：
+
+- 完成 Slice 20 Task 6：Add CI import golden smoke。
+- 新增 fixture：
+  `docs/fixtures/09-ci-run-metadata-import-golden.md`。
+- 新增 golden smoke：
+  `backend/app/tests/golden/test_ci_run_metadata_import_golden.py`。
+- Golden 证明：
+  - static CI metadata JSON 可通过 `POST /api/cicd/runs/import` 导入；
+  - 生成 `CICDRun(source_type=ci_import, trigger_type=imported,
+    status=imported)`；
+  - 生成 imported `CICDChangedFile` rows；
+  - 生成 `ci_run_metadata` 和 `changed_files` evidence artifacts；
+  - `GET /api/cicd/runs/{id}` 暴露前端可读的 `ci_run_metadata` evidence；
+  - imported artifact references 是 inert references；
+  - imported CI conclusion 不会自动创建或通过 QualityGateDecision。
+- Golden 明确确认没有 `QualityGateDecision`、`UnitTestPatch`、
+  `AutomationDraft`、`TestRun` 或 `Report`。
+- Slice 20 task table 已记录 Task 5 commit `6aedab0`，Task 6 done pending
+  commit。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 20 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q
+```
+
+验证结果：
+
+- CI import golden smoke：`1 passed`。
+
+下次推荐任务：
+
+- 提交 Task 6：`test(golden): add ci metadata import smoke`。
+- 继续 Slice 20 Completion Gate。
+
 ## 2026-07-01 Slice 20 Task 5 完成
 
 本轮完成：
