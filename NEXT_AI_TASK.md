@@ -6,17 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 26: CI Imported Artifact Reference Clarity.
+Select next V2 small slice.
 
 ## Current Task
 
-Slice 26 Completion Gate.
+Select and plan the next narrow V2 task after Slice 26 completion.
 
 ## Product Value Answer
 
-After this task, Slice 26 is fully verified and handed off with imported
-external artifact references clearly marked as inert, not locally openable, and
-free of remote-provider side effects.
+After this task, the next V2 slice is selected with a small task boundary,
+clear product value, expected files, non-goals, verification, and commit scope.
 
 ## Must Read
 
@@ -32,7 +31,8 @@ free of remote-provider side effects.
 10. `docs/implementation/slices/slice-25-execution-evidence-summary.md`
 11. `docs/implementation/10-v2-scope-options.md`
 12. `docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md`
-13. recent session handoff and dev log
+13. `memory/08-session-handoff.md`
+14. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -65,39 +65,36 @@ backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py
 docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md
 ```
 
-Completion gate task. Do not add frontend or backend feature code, migrations,
-package upgrades, artifact upload/mutation/delete, cloud storage, external
-provider integration, RBAC, tenants, permissions, broad redesign work, report
-generation behavior, or runner behavior changes.
+Planning task. Do not add frontend or backend feature code, migrations, package
+upgrades, artifact upload/mutation/delete, cloud storage, external provider
+integration, RBAC, tenants, permissions, broad redesign work, report generation
+behavior, or runner behavior changes.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run build
-npm --prefix frontend run test -- --run
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+rg -n "Slice 26|CI Imported Artifact Reference Clarity|d67b40e|2fe5088|ae599d2|82e888d" docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md memory/08-session-handoff.md memory/07-dev-log.md
 git diff --check
 ```
 
-Expected result: Slice 26 frontend checks, artifact golden checks, and diff
-check pass.
+Expected result: Slice 26 completion evidence is discoverable and diff check
+passes before selecting the next slice.
 
 ## Acceptance
 
-- Slice 26 task table records Task 1-4 completion and commit ids.
-- Completion evidence records frontend build/test, golden checks, and diff
-  verification.
-- Imported external artifact references remain inert, not locally openable,
-  and not remotely fetched.
-- No TestRun, Report, FailureAnalysis, QualityGateDecision, or remote-provider
-  side effect is created by import-only metadata.
+- Slice 26 is recorded as complete in slice docs and memory.
+- Next V2 slice is selected from existing V2 scope docs.
+- New task boundary names product value, expected files, verification command,
+  non-goals, and commit message.
+- Scope stays local-first and avoids remote provider, RBAC, tenant, cloud, RAG
+  runtime, MCP runtime, and broad redesign expansion.
 
 ## Commit Message
 
 ```text
-docs(v2): complete ci imported reference clarity slice
+docs(v2): add next v2 slice plan
 ```
 
 ## Next Task
 
-Select next V2 small slice after Slice 26 completion.
+To be selected from V2 scope options.
