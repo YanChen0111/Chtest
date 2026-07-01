@@ -10,12 +10,12 @@ Slice 27: AI Task Evidence Artifact Links.
 
 ## Current Task
 
-Slice 27 Task 2: Define AI task evidence artifact link contract.
+Slice 27 Task 3: Add AI Workbench artifact links.
 
 ## Product Value Answer
 
-After this task, contracts define which AI task evidence artifacts can receive
-local open links and which artifacts remain metadata-only for safety.
+After this task, the AI Workbench shows local open links for safe AI task
+evidence artifacts and keeps unsafe raw LLM artifacts metadata-only.
 
 ## Must Read
 
@@ -67,37 +67,38 @@ backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py
 docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md
 ```
 
-Contract task. Do not add frontend or backend feature code, migrations, package
-upgrades, artifact upload/mutation/delete, cloud storage, external provider
-integration, RBAC, tenants, permissions, broad redesign work, report generation
-behavior, runner behavior changes, AI task rerun, prompt editing, raw LLM inline
-display, RAG runtime, or MCP runtime.
+Frontend task. Do not add backend feature code, migrations, package upgrades,
+artifact upload/mutation/delete, cloud storage, external provider integration,
+RBAC, tenants, permissions, broad redesign work, report generation behavior,
+runner behavior changes, AI task rerun, prompt editing, raw LLM inline display,
+RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-rg -n "AI task evidence artifact|safe_to_show|raw LLM|local artifact" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-27-ai-task-evidence-artifact-links.md
+npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts
+npm --prefix frontend run build
 git diff --check
 ```
 
-Expected result: AI task evidence artifact link contract language is
-discoverable and diff check passes.
+Expected result: AI Workbench focused test, frontend build, and diff check pass.
 
 ## Acceptance
 
-- API contract defines AI task artifact links as read-only local Artifact links
-  derived from existing artifact metadata.
-- Artifact contract states `safe_to_show=false` artifacts remain visible as
-  metadata but do not receive direct UI open links.
-- Contract preserves no raw LLM inline display, AI task rerun, provider
-  integration, artifact mutation, RAG runtime, or MCP runtime changes.
+- Safe local AI task artifacts show an "打开" link.
+- Unsafe artifacts such as raw LLM output remain visible as metadata and show a
+  not-openable status.
+- LLM call logs still cite request/response/parsed artifact ids without
+  inlining artifact contents.
+- Page still excludes rerun, provider control, prompt editing, raw content, and
+  remote runtime controls.
 
 ## Commit Message
 
 ```text
-docs(v2): define ai task artifact link contract
+feat(frontend): link safe ai task artifacts
 ```
 
 ## Next Task
 
-Slice 27 Task 3: Add AI Workbench artifact links.
+Slice 27 Task 4: Add AI task artifact link golden smoke.

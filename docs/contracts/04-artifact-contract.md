@@ -532,3 +532,20 @@ V1 默认不自动删除 artifact。后续可加清理策略：
 - 文件写入失败时，相关任务必须 failed 或 partial_failed，不能假装成功。
 - ContextArtifact 写入必须记录 title、source_ref、safe_to_show、redaction_applied、allowed_for_prompt。
 - AI prompt input artifact 必须生成 `context_manifest.json`，记录本次实际使用的 context artifact id、sha256、title、mime_type、redaction_applied。
+
+Slice 27 AI task evidence artifact link rules:
+
+- AI task evidence artifact links are read-only local Artifact links derived
+  from persisted Artifact rows owned by an AITask.
+- `safe_to_show=true` is required before the AI Workbench may render a direct
+  local open link.
+- `safe_to_show=false` artifacts remain visible as metadata and must be marked
+  not directly openable in the UI.
+- Raw LLM output artifacts must not be inlined in the AI Workbench even when
+  their metadata is visible.
+- Artifact links must use the existing local artifact access rules and must not
+  accept arbitrary file paths from the client.
+- AI task artifact links must not mutate Artifact rows, artifact files, AITask,
+  LLMCallLog, prompt/skill versions, context artifacts, Report,
+  FailureAnalysis, QualityGateDecision, review history, RAG runtime, MCP
+  runtime, RBAC, tenants, or permissions.

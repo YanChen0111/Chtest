@@ -1,5 +1,26 @@
 # Session Handoff
 
+## 2026-07-01 Slice 27 Task 2 AI Task Evidence Artifact Link Contract 完成
+
+本轮完成：
+
+- 完成 Slice 27 Task 2：Define AI task evidence artifact link contract。
+- `docs/contracts/02-api-contract.md` 明确：
+  - AI task evidence artifact links 是现有 Artifact metadata 的只读展示；
+  - 只有 persisted local Artifact 且 `safe_to_show=true` 才能在 AI 工作台展示直接打开链接；
+  - `safe_to_show=false` 和 raw LLM output 保持 metadata-only；
+  - 不 inline raw LLM output content。
+- `docs/contracts/04-artifact-contract.md` 新增 Slice 27 AI task evidence
+  artifact link rules。
+- Slice 27 table 已记录 Task 1 commit `add4adc`，Task 2 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 27 Task 3：Add AI Workbench artifact links。
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define ai task artifact link contract`。
+- 继续 Slice 27 Task 3：Add AI Workbench artifact links。
+
 ## 2026-07-01 Slice 27 Task 1 AI Task Evidence Artifact Links Plan 完成
 
 本轮完成：

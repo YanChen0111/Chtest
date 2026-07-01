@@ -2100,6 +2100,44 @@ Response 200:
 }
 ```
 
+### 9.1 AI Task Evidence Artifact Links
+
+Slice 27 may expose local open links for safe AI task evidence artifacts in the
+AI Workbench. The links are a read-only presentation of existing Artifact rows;
+they do not create a new artifact API.
+
+Frontend rows may derive:
+
+```json
+{
+  "artifact_id": "00000000-0000-0000-0000-000000000902",
+  "artifact_type": "parsed_output",
+  "download_url": "/api/artifacts/00000000-0000-0000-0000-000000000902/download",
+  "downloadable": true,
+  "availability": "local_artifact"
+}
+```
+
+Rules:
+
+- AI task evidence artifact links are derived from `AITaskRead.artifacts[]`,
+  Artifact metadata, and the existing `GET /api/artifacts/{artifact_id}/download`
+  endpoint.
+- A row may expose a local open link only when the Artifact is a persisted local
+  Artifact row and `safe_to_show=true`.
+- Artifacts with `safe_to_show=false`, including raw LLM output, must remain
+  visible as metadata but must not receive direct UI open links.
+- Raw LLM output content must not be inlined into the AI Workbench.
+- LLM call logs may continue to cite request, response, parsed, and schema
+  validation artifact ids without inlining artifact content.
+- This display must not mutate AITask, Artifact, LLMCallLog, prompt/skill
+  versions, context artifacts, Report, FailureAnalysis, QualityGateDecision, or
+  review history.
+- Slice 27 must not add AI task rerun, prompt editing, provider integration,
+  streaming logs, schema editing, artifact upload/mutation/delete, RAG runtime,
+  MCP runtime, RBAC, tenants, permissions, broad artifact browser, cloud
+  storage, signed URLs, sharing, or remote runtime controls.
+
 ## 10. Local Review History APIs
 
 Local Review History APIs expose append-only local review attribution evidence.

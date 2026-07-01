@@ -1,5 +1,24 @@
 # Development Log
 
+## 2026-07-01 Slice 27 AI Task Artifact Link Contract
+
+### Completed
+
+- Defined AI task evidence artifact links as read-only local Artifact links.
+- Required `safe_to_show=true` before AI Workbench may render a direct open
+  link.
+- Clarified `safe_to_show=false` artifacts, including raw LLM output, remain
+  visible as metadata but not directly openable.
+- Preserved the no raw LLM inline display, rerun, provider integration,
+  artifact mutation, RAG runtime, and MCP runtime boundary.
+- Updated `NEXT_AI_TASK.md` to Slice 27 Task 3: Add AI Workbench artifact
+  links.
+
+### Next Step
+
+- Commit `docs(v2): define ai task artifact link contract`.
+- Continue Slice 27 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 27 AI Task Evidence Artifact Links Plan
 
 ### Completed
