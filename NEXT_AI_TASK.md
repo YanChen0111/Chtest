@@ -10,13 +10,12 @@ Slice 31: Generated Case Knowledge Evidence Persistence.
 
 ## Current Task
 
-Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden Smoke.
+Slice 31 Completion Gate.
 
 ## Product Value Answer
 
-After this task, a focused golden smoke proves generated case candidates expose
-persisted knowledge evidence fields without creating review or runtime side
-effects.
+After this task, Slice 31 is verified end to end and the next narrow V2 task is
+selected for AI coding.
 
 ## Must Read
 
@@ -43,8 +42,6 @@ effects.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py
-docs/fixtures/18-test-knowledge-card-contract-golden.md
 docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
@@ -61,30 +58,25 @@ permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
 git diff --check
 ```
 
-Expected result: golden smoke passes, generated-case evidence display keeps
-side effects out of TestCase/TestRun/Report/runtime artifacts, and diff check
-passes.
+Expected result: DB/API/golden Slice 31 tests pass and diff check passes.
 
 ## Acceptance
 
-- Golden seeds or runs case generation with accepted and rejected knowledge
-  evidence examples.
-- Candidate list response includes evidence ids, knowledge evidence refs,
-  covered risk ids, generation reason, automation readiness, quality score,
-  review findings, and coverage gap notes.
-- Golden proves evidence display creates no TestCase, TestRun, Report,
-  retrieval job, vector index, graph job, provider call, or artifact mutation.
+- Slice 31 task table records current commit ids.
+- DB/API/golden tests pass together.
+- `NEXT_AI_TASK.md` points to the next narrow V2 task.
+- Memory handoff records Slice 31 completion and residual risks.
 
 ## Commit Message
 
 ```text
-test(golden): add generated case knowledge evidence persistence smoke
+docs(v2): complete generated case knowledge evidence persistence slice
 ```
 
 ## Next Task
 
-Slice 31 Completion Gate.
+Select and plan the next narrow V2 task after Slice 31 completion.

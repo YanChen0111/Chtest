@@ -1,5 +1,36 @@
 # Development Log
 
+## 2026-07-01 Slice 31 Task 4 Generated-Case Evidence Golden Smoke
+
+### Completed
+
+- Completed Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden
+  Smoke.
+- Added
+  `backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py`.
+- Golden runs the real case-generation API flow with three normalized evidence
+  conditions:
+  - accepted evidence;
+  - needs-review evidence;
+  - rejected/missing evidence.
+- Golden verifies candidate list exposes evidence ids, knowledge evidence
+  refs, covered risk ids, generation reason, automation readiness, quality
+  score, review findings, and coverage gap notes.
+- Golden verifies no TestCase is created and runtime/report side-effect fields
+  are absent.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q`
+- Result: `1 passed in 0.72s`
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Continue Slice 31 Completion Gate.
+
 ## 2026-07-01 Slice 31 Task 3 Generated-Case Evidence Persistence
 
 ### Completed

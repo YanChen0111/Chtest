@@ -1,5 +1,61 @@
 # Session Handoff
 
+## 2026-07-01 Slice 31 Task 4 Generated-Case Evidence Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 31 Task 4：Add Generated-Case Knowledge Evidence Golden Smoke。
+- 新增 golden：
+  `backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py`。
+- Golden 走真实 case-generation API：
+  - monkeypatch mock provider 输出 fixture 语义；
+  - POST `/api/case-generation/tasks`；
+  - GET `/api/case-generation/tasks/{id}/candidates`。
+- Golden 覆盖三类证据条件：
+  - accepted evidence：`ke-expired-coupon-boundary`；
+  - needs-review evidence：`ke-coupon-points-conflict`；
+  - rejected/missing evidence：VIP stacking 无 evidence ids。
+- Golden 断言 candidate list 暴露：
+  - evidence ids；
+  - knowledge evidence refs；
+  - covered risk ids；
+  - generation reason；
+  - automation readiness；
+  - quality score；
+  - review findings；
+  - coverage gap notes。
+- Golden 断言没有创建 TestCase，且 response 不暴露 TestCase/TestRun/Report/
+  retrieval/vector/graph side-effect 字段。
+- `NEXT_AI_TASK.md` 已切换到 Slice 31 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`1 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：
+  `test(golden): add generated case knowledge evidence persistence smoke`。
+- 继续 Slice 31 Completion Gate。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/10-v2-scope-options.md` 中未暂存 Candidate E 段落
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `docs/reference/01-open-source-migration-map.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 提交时只暂存 Slice 31 Task 4 文件，避免误混这些背景改动。
+
 ## 2026-07-01 Slice 31 Task 3 Generated-Case Evidence Persistence 完成
 
 本轮完成：
