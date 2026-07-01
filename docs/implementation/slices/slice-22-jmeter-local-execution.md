@@ -87,8 +87,8 @@ execution evidence while preserving local-first safety and auditability.
 | Add JMeter Local Execution Evidence task plan | done | `test -f docs/implementation/slices/slice-22-jmeter-local-execution.md && rg -n "JMeter|jmeter|jmeter_local|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-22-jmeter-local-execution.md docs/implementation/10-v2-scope-options.md` | `59d3918` | planning-only scope |
 | Define JMeter execution contract boundary | done | `rg -n "JMeter|jmeter|jmeter_local|jmeter_jtl|ToolDefinition|command_type" docs/contracts docs/implementation/slices/slice-22-jmeter-local-execution.md` | `10fa27d` | contract-only before code |
 | Add JMeter parser and backend API tests | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | `0d1a666` | deterministic JTL parsing first |
-| Add JMeter runner backend | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | pending | allowlisted fake executable tests |
-| Add JMeter execution frontend shell | planned | `npm --prefix frontend run test -- --run` | pending | compact Chinese UI |
+| Add JMeter runner backend | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | `b836e65` | allowlisted fake executable tests |
+| Add JMeter execution frontend shell | done | `npm --prefix frontend run test -- --run` | pending | compact Chinese UI |
 | Add JMeter local execution golden smoke | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q` | pending | TestRun evidence proof |
 | Slice 22 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py backend/app/tests/golden/test_jmeter_local_execution_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
 
@@ -237,7 +237,11 @@ Goal: Show compact JMeter execution evidence in the frontend.
 
 Expected files:
 
-- frontend execution API/store/view files needed for JMeter display
+- `frontend/src/views/execution/JMeterExecutionView.vue`
+- `frontend/src/views/execution/JMeterExecutionView.spec.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/index.ts`
+- `frontend/src/stores/execution.ts`
 - focused frontend tests
 
 Verification Command:
@@ -256,6 +260,11 @@ Acceptance:
   TestResult, JMeter, and JTL unchanged.
 - Does not add a JMX editor, performance dashboard, distributed runner controls,
   secrets UI, CI provider controls, RBAC, tenants, or permissions.
+- JMeter execution is exposed as a TestCommand-only frontend entry using
+  `runner_mode=jmeter_local`.
+- JMeter evidence view shows JTL artifacts, parsed output artifacts, Sampler
+  result rows, total/passed/failed/error counts, assertion count, duration, and
+  average latency.
 
 Commit message:
 

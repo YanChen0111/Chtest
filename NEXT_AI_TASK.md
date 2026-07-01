@@ -10,13 +10,13 @@ Slice 22: JMeter Local Execution Evidence.
 
 ## Current Task
 
-Slice 22 Task 5: Add JMeter execution frontend shell.
+Slice 22 Task 6: Add JMeter local execution golden smoke.
 
 ## Product Value Answer
 
-After this task, the frontend execution surface can display local JMeter
-execution evidence: TestRun status, sampler/assertion totals, durations,
-failure/error counts, and artifact links.
+After this task, the JMeter local execution evidence loop is proven by a golden
+smoke: approved command -> TestRun -> stdout/stderr -> `jmeter_jtl` ->
+parsed_result -> optional TestResult rows.
 
 ## Must Read
 
@@ -28,7 +28,7 @@ failure/error counts, and artifact links.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-22-jmeter-local-execution.md`
-9. existing frontend execution views and stores
+9. existing JMeter API tests and golden smoke fixtures
 
 ## Do Not Read Unless Needed
 
@@ -46,45 +46,37 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-22-jmeter-local-execution.md
-frontend/src/api/execution.ts
-frontend/src/stores/execution.ts
-frontend/src/views/execution/*JMeter*.vue
-frontend/src/views/execution/*JMeter*.spec.ts
-frontend/src/router/index.ts
-frontend/src/layouts/WorkbenchLayout.vue
+backend/app/tests/golden/test_jmeter_local_execution_golden.py
+docs/fixtures/11-jmeter-local-execution-golden.md
 ```
 
-Frontend shell task. Do not add backend code, golden tests, JMX editing,
-performance dashboards, distributed runners, arbitrary shell execution, secrets
-management, CI provider controls, RAG runtime, MCP runtime, RBAC, tenants, or
-permissions.
+Golden smoke task. Do not add frontend code, JMX editing, performance
+dashboards, distributed runners, arbitrary shell execution, secrets management,
+CI provider controls, RAG runtime, MCP runtime, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q
 git diff --check
 ```
 
-Expected result: frontend tests and diff check pass.
+Expected result: JMeter golden smoke and diff check pass.
 
 ## Acceptance
 
-- UI exposes JMeter as an execution mode only when using approved local
-  commands.
-- UI shows TestRun status, total/passed/failed/error sampler counts, duration,
-  and artifact links.
-- UI uses Chinese-facing labels while keeping product terms such as TestRun,
-  TestResult, JMeter, and JTL unchanged.
-- Does not add a JMX editor, performance dashboard, distributed runner controls,
-  secrets UI, CI provider controls, RBAC, tenants, or permissions.
+- Golden proves approved local JMeter command creates TestRun evidence.
+- Golden proves stdout/stderr, JTL, parsed_result, and optional TestResult rows
+  are persisted.
+- Golden proves unsafe shell/provider/platform features are absent.
+- Golden does not require a real local JMeter installation.
 
 ## Commit Message
 
 ```text
-feat(frontend): show jmeter execution evidence
+test(golden): add jmeter local execution smoke
 ```
 
 ## Next Task
 
-Slice 22 Task 6: Add JMeter local execution golden smoke.
+Slice 22 Completion Gate.

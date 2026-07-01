@@ -6,6 +6,7 @@ import AutomationDraftReviewView from '../views/automation/AutomationDraftReview
 import CaseGenerationReviewView from '../views/cases/CaseGenerationReviewView.vue';
 import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
 import CicdQualityCenterView from '../views/cicd/CicdQualityCenterView.vue';
+import JMeterExecutionView from '../views/execution/JMeterExecutionView.vue';
 import NewmanExecutionView from '../views/execution/NewmanExecutionView.vue';
 import PlaywrightExecutionView from '../views/execution/PlaywrightExecutionView.vue';
 import PytestExecutionView from '../views/execution/PytestExecutionView.vue';
@@ -84,6 +85,14 @@ export const router = createRouter({
           component: NewmanExecutionView,
           meta: {
             title: 'API 执行',
+          },
+        },
+        {
+          path: 'execution/jmeter',
+          name: 'jmeter-execution-center',
+          component: JMeterExecutionView,
+          meta: {
+            title: 'JMeter 执行',
           },
         },
         {

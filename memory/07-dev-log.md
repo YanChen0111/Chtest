@@ -1792,6 +1792,39 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Continue from `NEXT_AI_TASK.md`: Slice 03 Task 2, add Project CRUD API.
 
+## 2026-07-01 Slice 22 Task 5 JMeter Frontend Shell
+
+### Completed
+
+- Added the JMeter execution frontend shell at `/execution/jmeter`.
+- Added a TestCommand-only JMeter launch form using `runner_mode=jmeter_local`.
+- Added Chinese evidence display for TestRun status, duration, total/passed/failed/error counts, Sampler count, assertion count, average latency, JTL artifacts, parsed output, and Sampler TestResult rows.
+- Added navigation for `JMeter 执行`.
+- Generalized execution refresh error copy so it is not pytest-specific.
+- Updated `NEXT_AI_TASK.md` to Slice 22 Task 6: Add JMeter local execution golden smoke.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/execution/JMeterExecutionView.spec.ts src/layouts/WorkbenchLayout.spec.ts`
+- Result: `3 passed`.
+- `npm --prefix frontend run test -- --run`
+- Result: `16 files passed, 21 tests passed`.
+- `git diff --check`
+- Result: no output.
+
+### Extra Notes
+
+- Frontend dev server started at `http://127.0.0.1:5174/`; JMeter preview path:
+  `http://127.0.0.1:5174/execution/jmeter`.
+- `curl -I http://127.0.0.1:5174/execution/jmeter` returned `200 OK`.
+- Extra `npm --prefix frontend run build` is currently blocked by existing
+  TypeScript baseline errors outside this task's verification scope.
+
+### Next Step
+
+- Commit `feat(frontend): show jmeter execution evidence`.
+- Continue Slice 22 Task 6 from `NEXT_AI_TASK.md`.
+
 ## 2026-06-29 Slice 03 Project Core Completion
 
 ### Completed

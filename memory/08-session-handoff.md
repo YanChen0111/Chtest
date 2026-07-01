@@ -1,5 +1,54 @@
 # Session Handoff
 
+## 2026-07-01 Slice 22 Task 5 JMeter Frontend Shell 完成
+
+本轮完成：
+
+- 完成 Slice 22 Task 5：Add JMeter execution frontend shell。
+- 新增 `frontend/src/views/execution/JMeterExecutionView.vue`：
+  - TestCommand-only JMeter 启动入口；
+  - `runner_mode=jmeter_local`；
+  - 展示 TestRun 状态、退出码、耗时、运行器、网络、命令；
+  - 展示 total/passed/failed/error、Sampler 数、断言数、平均延迟；
+  - 展示 `jmeter_jtl`、`parsed_output`、stdout/stderr 工件；
+  - 展示 Sampler TestResult 行。
+- 新增 `frontend/src/views/execution/JMeterExecutionView.spec.ts` 覆盖启动、
+  刷新、JTL 工件、Sampler 结果和中文指标。
+- 路由新增 `/execution/jmeter`，侧边栏新增 `JMeter 执行`。
+- `frontend/src/stores/execution.ts` 将刷新错误文案从 pytest 专属改为通用执行文案。
+- Slice 22 table 已记录 Task 4 commit `b836e65`，Task 5 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 22 Task 6：Add JMeter local execution golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/execution/JMeterExecutionView.spec.ts src/layouts/WorkbenchLayout.spec.ts
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- JMeter frontend + Workbench navigation tests：`3 passed`。
+- Full frontend suite：`16` files passed，`21` tests passed。
+- `git diff --check` clean。
+
+额外观察：
+
+- 已启动 frontend dev server，Vite 自动使用 `http://127.0.0.1:5174/`；
+  JMeter 页面地址为 `http://127.0.0.1:5174/execution/jmeter`。
+- `curl -I http://127.0.0.1:5174/execution/jmeter` 返回 `200 OK`。
+- 额外执行 `npm --prefix frontend run build` 时，当前 frontend 仍存在既有
+  TypeScript 基线错误，主要在 API `postJson` 泛型约束、`replaceAll` target
+  lib、以及 CI/CD 页面可选值收窄；本轮未扩散修复，因为 Task 5 验证命令是
+  frontend test + diff check。
+
+下次推荐任务：
+
+- 提交 Task 5：`feat(frontend): show jmeter execution evidence`。
+- 继续 Slice 22 Task 6：Add JMeter local execution golden smoke。
+
 ## 2026-07-01 Slice 22 Task 4 JMeter Local Runner Backend 完成
 
 本轮完成：

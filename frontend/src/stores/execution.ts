@@ -36,7 +36,7 @@ export const useExecutionStore = defineStore('execution', {
     },
     async refreshRun() {
       if (!this.run) {
-        this.errorMessage = '请先启动一次 pytest 执行';
+        this.errorMessage = '请先启动一次执行';
         return;
       }
       this.loading = true;
@@ -44,7 +44,7 @@ export const useExecutionStore = defineStore('execution', {
       try {
         this.run = await getTestRun(this.run.id);
       } catch (error) {
-        this.errorMessage = error instanceof Error ? error.message : 'pytest 执行结果刷新失败';
+        this.errorMessage = error instanceof Error ? error.message : '执行结果刷新失败';
       } finally {
         this.loading = false;
       }

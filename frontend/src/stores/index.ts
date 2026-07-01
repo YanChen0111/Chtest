@@ -17,6 +17,7 @@ export const useWorkbenchStore = defineStore('workbench', {
       { label: '执行中心', routeName: 'execution-center', status: '就绪' },
       { label: 'Playwright 执行', routeName: 'playwright-execution-center', status: '就绪' },
       { label: 'API 执行', routeName: 'newman-execution-center', status: '就绪' },
+      { label: 'JMeter 执行', routeName: 'jmeter-execution-center', status: '就绪' },
       { label: 'CI/CD 质量中心', routeName: 'cicd-quality-center', status: '就绪' },
       { label: '报告中心', routeName: 'report-center', status: '就绪' },
       { label: '提示词 / 技能中心', routeName: 'prompt-skill-center', status: '就绪' },
