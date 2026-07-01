@@ -6,32 +6,34 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-V2 Planning.
+Slice 20: CI Run Metadata Import.
 
 ## Current Task
 
-Select the next V2 small slice after Slice 19 completion.
+Slice 20 Task 1: Add CI Run Metadata Import task plan.
 
 ## Product Value Answer
 
-After this task, the next V2 implementation direction is chosen as a small,
-evidence-backed slice without expanding into excluded platform scope.
+After this task, the import-only CI metadata slice has a precise plan, product
+value, task table, verification commands, and non-goals before any product code
+is written.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/implementation/02-v1-slice-plan.md`
-4. `docs/implementation/04-ai-vibecoding-governance.md`
-5. `docs/implementation/10-v2-scope-options.md`
-6. `docs/implementation/slices/slice-18-newman-api-execution.md`
-7. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
+3. `docs/implementation/04-ai-vibecoding-governance.md`
+4. `docs/implementation/10-v2-scope-options.md`
+5. `docs/implementation/slices/slice-15-cicd-quality-center.md`
+6. `docs/implementation/slices/slice-16-unit-test-patch-regression.md`
+7. `docs/implementation/slices/slice-20-ci-run-metadata-import.md`
 8. `memory/08-session-handoff.md`
 
 ## Do Not Read Unless Needed
 
-- RAG runtime, MCP runtime, RBAC, tenants, permissions, release management, and
-  remote CI provider integration docs unless a concrete blocker requires them.
+- Remote CI provider integration docs, webhooks, PR bots, release management,
+  RAG runtime, MCP runtime, RBAC, tenants, permissions, and marketplace docs
+  unless a concrete blocker requires them.
 
 ## Expected Files
 
@@ -42,38 +44,39 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/10-v2-scope-options.md
-new slice plan under docs/implementation/slices/ only if a slice is selected
+docs/implementation/slices/slice-20-ci-run-metadata-import.md
 ```
 
-Planning task. Compare completed V2 slices and select the next smallest product
-slice. Do not add product code, frontend code, vector database, embeddings,
-reranking, background indexing, external RAG provider calls, MCP runtime, RBAC,
-tenants, permissions, marketplace, cloud sync, release automation, or remote CI
-provider integration.
+Planning-only task. Do not add product code, frontend code, tests, migrations,
+remote CI provider calls, webhooks, pipeline triggers, reruns, PR comments,
+deploy/release controls, credentials, RBAC, tenants, permissions, marketplace,
+RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-rg -n "Slice 18|Slice 19|Candidate Direction|Recommended|Next" docs/implementation/10-v2-scope-options.md docs/implementation/slices
+test -f docs/implementation/slices/slice-20-ci-run-metadata-import.md
+rg -n "CI Run Metadata Import|Product Value Answer|Non-goals|Task Table|import-only|remote CI provider" docs/implementation/slices/slice-20-ci-run-metadata-import.md docs/implementation/10-v2-scope-options.md
 git diff --check
 ```
 
-Expected result: next V2 slice recommendation is documented and diff check
-passes.
+Expected result: Slice 20 plan and V2 scope recommendation are documented and
+diff check passes.
 
 ## Acceptance
 
 - Records Slice 19 as completed in V2 planning context.
-- Selects one next small V2 slice with product value, non-goals, and task table.
-- Keeps excluded platform scope out unless explicitly authorized.
-- Updates handoff and `NEXT_AI_TASK.md` to the first task of the selected slice.
+- Creates Slice 20 plan with product value, non-goals, slice boundary, task
+  table, expected files, and verification commands.
+- Selects import-only CI metadata evidence as the next V2 slice.
+- Does not add implementation code or frontend code.
 
 ## Commit Message
 
 ```text
-docs(v2): select next small slice
+docs(v2): add ci run metadata import slice plan
 ```
 
 ## Next Task
 
-Start the selected V2 slice Task 1 only after the planning commit is complete.
+Slice 20 Task 2: Define CI import contract boundary.

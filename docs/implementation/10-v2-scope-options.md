@@ -28,7 +28,7 @@ Current V1 automated gate:
 
 ## V2 Progress
 
-Completed first V2 slice:
+Completed V2 slices:
 
 - `Slice 18: Newman API Execution`
 - Plan and completion evidence:
@@ -42,6 +42,21 @@ Slice 18 moved Candidate Direction B from option to delivered value. It added a
 single allowlisted runner path without adding arbitrary shell, Postman parity,
 remote CI/CD provider control, marketplace, RAG runtime, MCP runtime, RBAC,
 tenants, or permissions.
+
+- `Slice 19: Deterministic Knowledge Retrieval Stub`
+- Plan and completion evidence:
+  `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
+- Final focused verification:
+  - Deterministic retrieval + requirement review + extension surface + golden
+    smoke: `23 passed`.
+  - Frontend shell: `15` test files passed, `19` tests passed.
+  - `git diff --check`: clean.
+
+Slice 19 moved Candidate Direction A from option to delivered value in a narrow
+form. It added deterministic local ContextArtifact retrieval and evidence
+display without adding a vector database, embeddings, reranking, external RAG
+provider runtime, MCP runtime, RBAC, tenants, permissions, marketplace, cloud
+sync, or remote CI/CD provider integration.
 
 ## Candidate Direction A: RAG Knowledge Runtime
 
@@ -200,22 +215,22 @@ Expected output:
 - Broad dashboards, model leaderboard, or benchmark platform.
 - Unapproved AI changes to business source files.
 
-## Recommended Next V2 Slice
+## Completed Next V2 Slice
 
-Recommended: Candidate Direction A, but only as a deterministic local
-KnowledgeAdapter retrieval stub.
+Completed: Candidate Direction A, as a deterministic local KnowledgeAdapter
+retrieval stub.
 
-Why:
+Why it was selected:
 
-- Slice 18 already expanded runner coverage. The next highest product value is
+- Slice 18 expanded runner coverage. The next highest product value was
   improving AI context quality while keeping evidence visible and reviewable.
-- V1 already has ContextArtifact, RAG 知识库, KnowledgeAdapter empty state, and
-  AI task `context_artifact_ids`; a small deterministic retrieval slice can
-  reuse those contracts.
-- The user-facing RAG 知识库 surface now needs evidence-backed behavior, not a
-  full RAG platform.
+- V1 already had ContextArtifact, RAG 知识库, KnowledgeAdapter empty state, and
+  AI task `context_artifact_ids`; the deterministic retrieval slice reused
+  those contracts.
+- The user-facing RAG 知识库 surface needed evidence-backed behavior, not a full
+  RAG platform.
 
-Next slice name:
+Completed slice name:
 
 ```text
 Slice 19: Deterministic Knowledge Retrieval Stub
@@ -244,19 +259,73 @@ Explicit non-goals:
 - No RBAC, tenants, permissions, marketplace, cloud sync, or remote CI/CD
   provider integration.
 
-Suggested next task:
+Completed first task:
 
 ```text
 V2 Task 4: Draft Slice 19 Deterministic Knowledge Retrieval Stub plan
 ```
 
+Delivered output:
+
+- Slice plan, contract updates, backend deterministic retrieval service,
+  requirement review evidence attachment, frontend evidence display, golden
+  smoke, and completion gate.
+
+## Recommended Next V2 Slice
+
+Recommended: Candidate Direction D, but only as an import-only CI evidence
+bridge.
+
+Why:
+
+- Slice 18 expanded local runner evidence and Slice 19 improved AI context
+  evidence. The next practical value is connecting external CI facts into the
+  existing evidence workbench without letting Chtest control remote providers.
+- Slice 15 and Slice 16 already have CICDRun, CICDChangedFile,
+  UnitTestPatch, QualityGateDecision, artifacts, and CI/CD 管理 surfaces that can
+  receive imported evidence.
+- Import-only CI metadata strengthens the CI/CD Quality Center while preserving
+  the product boundary: evidence in, no remote actions out.
+
+Next slice name:
+
+```text
+Slice 20: CI Run Metadata Import
+```
+
+Smallest useful boundary:
+
+- Import static CI run JSON or an uploaded JSON payload handled locally.
+- Map imported CI conclusion, changed files, refs, duration, and artifact
+  references into CICDRun evidence.
+- Store external artifact URLs as inert references only; do not fetch,
+  authenticate, execute, mutate, or comment on remote systems.
+- Treat imported CI status as evidence, not authority. It must not
+  automatically pass QualityGateDecision.
+
+Explicit non-goals:
+
+- No remote CI provider API calls.
+- No webhooks, pipeline triggers, reruns, PR comments, commit status updates,
+  deploy, release, merge, push, tag, or scheduling.
+- No provider credentials, OAuth, secrets, token storage, organization
+  permissions, or broad provider parity.
+- No RBAC, tenants, permissions, marketplace, RAG runtime, MCP runtime, cloud
+  sync, or release automation.
+
+Suggested next task:
+
+```text
+Slice 20 Task 1: Add CI Run Metadata Import task plan
+```
+
 Expected output:
 
 - A slice plan under `docs/implementation/slices/`.
-- No product code until the plan defines contracts, artifacts, API behavior,
-  frontend evidence display, and non-goals.
+- No product code until contracts define the import payload, evidence artifacts,
+  API boundary, state behavior, and non-goals.
 
 ## Next Task
 
-Draft Slice 19 Deterministic Knowledge Retrieval Stub plan or pause for product
-review.
+Start Slice 20 Task 1 from
+`docs/implementation/slices/slice-20-ci-run-metadata-import.md`.

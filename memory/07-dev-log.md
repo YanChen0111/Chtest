@@ -1,5 +1,51 @@
 # Development Log
 
+## 2026-06-30 V2 Next Slice Selection
+
+### Completed
+
+- Completed the planning task to select the next V2 small slice after Slice 19.
+- Ran parallel subagent reviews for:
+  - Candidate Direction B: runner expansion. Recommendation was JMeter local
+    execution evidence, not Appium or traffic capture.
+  - Candidate Direction C: local review attribution/history, explicitly not
+    RBAC or permissions.
+  - Candidate Direction D: import-only CI evidence bridge.
+- Selected Candidate Direction D as the next slice:
+  `Slice 20: CI Run Metadata Import`.
+- Rationale:
+  - It directly extends the existing CI/CD 管理 evidence workflow from Slice 15
+    and Slice 16.
+  - It imports external CI facts into Chtest without controlling remote
+    providers.
+  - It keeps imported status as evidence, not authority for
+    QualityGateDecision.
+- Added `docs/implementation/slices/slice-20-ci-run-metadata-import.md`.
+- Updated `docs/implementation/10-v2-scope-options.md`:
+  - records Slice 19 completion;
+  - marks deterministic retrieval as delivered;
+  - recommends Slice 20 import-only CI metadata evidence.
+- Updated `NEXT_AI_TASK.md` to Slice 20 Task 1.
+
+### Verification
+
+```bash
+test -f docs/implementation/slices/slice-20-ci-run-metadata-import.md
+rg -n "CI Run Metadata Import|Product Value Answer|Non-goals|Task Table|import-only|remote CI provider" docs/implementation/slices/slice-20-ci-run-metadata-import.md docs/implementation/10-v2-scope-options.md
+git diff --check
+```
+
+Results:
+
+- Slice 20 plan file exists.
+- Scope keywords found in Slice 20 plan and V2 scope options.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `docs(v2): add ci run metadata import slice plan`.
+- Continue Slice 20 Task 2: define CI import contract boundary.
+
 ## 2026-06-30 Slice 19 Completion Gate
 
 ### Completed

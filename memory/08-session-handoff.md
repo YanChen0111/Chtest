@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-06-30 V2 Next Slice Selection 完成
+
+本轮完成：
+
+- 按用户要求启动多个子代理并发评估下一条 V2 小切片。
+- 子代理结论：
+  - 方向 B：推荐 JMeter local execution evidence，但不推荐 Appium 或
+    traffic capture 先做。
+  - 方向 C：推荐 local review attribution/history，但必须排除 RBAC、
+    tenants、permissions、SSO、enterprise audit。
+  - 方向 D：推荐 import-only CI evidence bridge。
+- 最终选择方向 D：
+  `Slice 20: CI Run Metadata Import`。
+- 选择理由：
+  - 直接复用 Slice 15/16 的 CICDRun、CICDChangedFile、Artifact、
+    QualityGateDecision 和 CI/CD 管理证据链。
+  - 把外部 CI 的事实结果导入 Chtest，而不是让 Chtest 控制远程 CI。
+  - imported CI status 是 evidence，不是 QualityGateDecision authority。
+- 新增计划：
+  `docs/implementation/slices/slice-20-ci-run-metadata-import.md`。
+- 更新 V2 scope options：
+  - 记录 Slice 19 已完成。
+  - 推荐 Slice 20 import-only CI metadata evidence。
+- 更新 `NEXT_AI_TASK.md` 到 Slice 20 Task 1。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-20-ci-run-metadata-import.md
+rg -n "CI Run Metadata Import|Product Value Answer|Non-goals|Task Table|import-only|remote CI provider" docs/implementation/slices/slice-20-ci-run-metadata-import.md docs/implementation/10-v2-scope-options.md
+git diff --check
+```
+
+验证结果：
+
+- Slice 20 plan file exists。
+- Scope keywords found in Slice 20 plan and V2 scope options。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交本 planning task。
+- 继续 Slice 20 Task 2：Define CI import contract boundary。
+
 ## 2026-06-30 Slice 19 Completion Gate 完成
 
 本轮完成：
