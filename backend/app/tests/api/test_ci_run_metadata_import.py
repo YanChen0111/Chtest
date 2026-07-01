@@ -125,6 +125,10 @@ def test_import_ci_run_metadata_api_persists_evidence_only_records() -> None:
         assert read_body["quality_gate_status"] == "pending"
         assert read_body["status"] == "imported"
         assert [item["path"] for item in read_body["changed_files"]] == ["app/coupon.py", "tests/test_coupon.py"]
+        assert {artifact["artifact_type"] for artifact in read_body["analysis_artifacts"]} == {"ci_run_metadata"}
+        imported_metadata = read_body["analysis_artifacts"][0]["metadata_json"]
+        assert imported_metadata["content_json"]["conclusion"] == "success"
+        assert imported_metadata["content_json"]["artifact_references"][0]["kind"] == "test_report"
 
         with SessionLocal() as session:
             cicd_run = session.get(CICDRun, cicd_run_id)

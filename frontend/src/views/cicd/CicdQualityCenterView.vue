@@ -4,11 +4,11 @@
       <div>
         <p class="eyebrow">本地 CI/CD 质量</p>
         <h2 id="cicd-title">CI/CD 质量中心</h2>
-        <p>从本地 diff 创建 CICDRun，查看变更文件和模拟风险分析证据。</p>
+        <p>从本地 diff 或静态 CI 导入创建 CICDRun，查看变更文件、导入证据和本地质量门禁。</p>
       </div>
       <a-space>
         <a-tag color="green">本地 diff</a-tag>
-        <a-tag color="blue">手动 / 本地</a-tag>
+        <a-tag color="blue">静态导入</a-tag>
       </a-space>
     </div>
 
@@ -80,12 +80,52 @@
           <a-empty v-else description="创建后展示变更文件证据" />
         </a-card>
 
+        <a-card v-if="isImportedRun" class="cicd-panel" :bordered="false">
+          <template #title>导入 CI 证据</template>
+          <div class="import-grid">
+            <div>
+              <span>Provider</span>
+              <strong>{{ providerLabel(store.run?.provider) }}</strong>
+            </div>
+            <div>
+              <span>导入状态</span>
+              <strong>{{ statusLabel(store.run?.status || '') }}</strong>
+            </div>
+            <div>
+              <span>CI 结论</span>
+              <strong>{{ conclusionLabel(importEvidence?.conclusion) }}</strong>
+            </div>
+            <div>
+              <span>QualityGateDecision</span>
+              <strong>{{ statusLabel(store.run?.quality_gate_status || '') }}</strong>
+            </div>
+            <div>
+              <span>Job</span>
+              <strong>{{ importEvidence?.job_name || '-' }}</strong>
+            </div>
+            <div>
+              <span>外部运行</span>
+              <strong>{{ importEvidence?.external_run_id || '-' }}</strong>
+            </div>
+          </div>
+          <p class="evidence-line">导入 CI 结论仅作为证据，QualityGateDecision 仍需本地门禁计算。</p>
+          <div v-if="artifactReferenceRows.length" class="reference-list">
+            <div v-for="reference in artifactReferenceRows" :key="reference.key" class="reference-item">
+              <strong>{{ reference.name }}</strong>
+              <span>{{ reference.kind }}</span>
+              <span>{{ reference.inert_reference ? '仅保存引用' : '引用' }}</span>
+              <small>{{ reference.external_url || '-' }}</small>
+            </div>
+          </div>
+          <a-empty v-else description="没有导入工件引用" />
+        </a-card>
+
         <a-card class="cicd-panel" :bordered="false">
           <template #title>风险分析证据</template>
-          <template v-if="store.run?.analysis_artifacts.length">
+          <template v-if="riskAnalysisArtifacts.length">
             <a-table
               :columns="artifactColumns"
-              :data="store.run.analysis_artifacts"
+              :data="riskAnalysisArtifacts"
               :pagination="false"
               row-key="id"
               size="small"
@@ -208,6 +248,7 @@
 import { computed } from 'vue';
 
 import { useCICDStore } from '../../stores/cicd';
+import type { CICDImportEvidenceContentRead } from '../../api/cicd';
 
 const store = useCICDStore();
 
@@ -251,6 +292,26 @@ const runRows = computed(() =>
   })),
 );
 
+const ciImportArtifact = computed(() => store.run?.analysis_artifacts.find((artifact) => artifact.artifact_type === 'ci_run_metadata'));
+
+const importEvidence = computed(() => {
+  const content = ciImportArtifact.value?.metadata_json.content_json;
+  return isRecord(content) ? (content as CICDImportEvidenceContentRead) : null;
+});
+
+const artifactReferenceRows = computed(() =>
+  (importEvidence.value?.artifact_references ?? []).map((reference, index) => ({
+    ...reference,
+    key: `${reference.name ?? 'reference'}-${reference.kind ?? 'artifact'}-${index}`,
+    name: reference.name || '未命名引用',
+    kind: reference.kind || 'artifact',
+  })),
+);
+
+const riskAnalysisArtifacts = computed(() => store.run?.analysis_artifacts.filter((artifact) => artifact.artifact_type === 'risk_analysis') ?? []);
+
+const isImportedRun = computed(() => store.run?.source_type === 'ci_import' || Boolean(ciImportArtifact.value));
+
 function createRun() {
   void store.createRun();
 }
@@ -281,7 +342,9 @@ function selectRegressionPlan() {
 
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
+    imported: '已导入',
     pending: '待处理',
+    created: '已创建',
     analyzed: '已分析',
     generated: '已生成',
     approved: '已批准',
@@ -291,6 +354,32 @@ function statusLabel(status: string): string {
     needs_review: '需要复核',
   };
   return labels[status] ?? status;
+}
+
+function providerLabel(provider?: string | null): string {
+  const labels: Record<string, string> = {
+    github_actions: 'GitHub Actions',
+    gitlab_ci: 'GitLab CI',
+    jenkins: 'Jenkins',
+    circleci: 'CircleCI',
+    buildkite: 'Buildkite',
+    imported: '导入',
+    other: '其他',
+    local: '本地',
+  };
+  return provider ? (labels[provider] ?? provider) : '-';
+}
+
+function conclusionLabel(conclusion?: string | null): string {
+  const labels: Record<string, string> = {
+    success: '成功',
+    failure: '失败',
+    cancelled: '已取消',
+    skipped: '已跳过',
+    timed_out: '超时',
+    unknown: '未知',
+  };
+  return conclusion ? (labels[conclusion] ?? conclusion) : '-';
 }
 
 function patchStatusLabel(status: string): string {
@@ -360,6 +449,10 @@ function computeGate() {
 
 function generateQualityReport() {
   void store.generateQualityReport();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 </script>
 
@@ -436,7 +529,8 @@ function generateQualityReport() {
 
 .status-strip div,
 .patch-grid div,
-.evidence-grid div {
+.evidence-grid div,
+.import-grid div {
   min-height: 70px;
   padding: 12px;
   border: 1px solid #dbe6f3;
@@ -449,19 +543,23 @@ function generateQualityReport() {
 .patch-grid span,
 .patch-grid strong,
 .evidence-grid span,
-.evidence-grid strong {
+.evidence-grid strong,
+.import-grid span,
+.import-grid strong {
   display: block;
 }
 
 .status-strip span,
 .patch-grid span,
-.evidence-grid span {
+.evidence-grid span,
+.import-grid span {
   color: #64748b;
 }
 
 .status-strip strong,
 .patch-grid strong,
-.evidence-grid strong {
+.evidence-grid strong,
+.import-grid strong {
   margin-top: 8px;
   color: #0f172a;
   font-size: 16px;
@@ -473,7 +571,8 @@ function generateQualityReport() {
 }
 
 .patch-grid,
-.evidence-grid {
+.evidence-grid,
+.import-grid {
   display: grid;
   gap: 10px;
 }
@@ -487,6 +586,11 @@ function generateQualityReport() {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.import-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
 .evidence-line {
   margin: 8px 0;
   color: #344054;
@@ -497,6 +601,29 @@ function generateQualityReport() {
   flex-wrap: wrap;
   gap: 8px;
   margin: 10px 0;
+}
+
+.reference-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.reference-item {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) minmax(100px, 0.7fr) minmax(90px, 0.6fr) minmax(0, 1.7fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.reference-item span,
+.reference-item small {
+  color: #5b6472;
+  word-break: break-all;
 }
 
 .patch-diff {
@@ -515,7 +642,9 @@ function generateQualityReport() {
   .cicd-layout,
   .ref-grid,
   .patch-grid,
-  .evidence-grid {
+  .evidence-grid,
+  .import-grid,
+  .reference-item {
     grid-template-columns: 1fr;
   }
 

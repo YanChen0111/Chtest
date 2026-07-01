@@ -1,5 +1,52 @@
 # Development Log
 
+## 2026-07-01 Slice 20 CI Import Frontend Evidence
+
+### Completed
+
+- Completed Slice 20 Task 5: Add CI import frontend evidence display.
+- Added CI import evidence rendering in `CI/CD 质量中心`:
+  - provider inert label;
+  - import status;
+  - CI conclusion;
+  - QualityGateDecision pending/local gate separation;
+  - job/external run id;
+  - inert imported artifact references.
+- Kept risk analysis evidence table focused on `risk_analysis`.
+- Extended the narrow CICDRun read evidence surface so
+  `analysis_artifacts` includes `ci_run_metadata` as frontend-readable import
+  evidence. This stayed under `/api/cicd/runs/{id}` and did not use the RAG
+  extension surface.
+- Added frontend API types for CI import evidence content and artifact
+  references.
+- Added a view test proving imported CI evidence renders and remote provider
+  control labels are absent.
+- Updated Slice 20 task table:
+  - Task 4 commit recorded as `554e74c`;
+  - Task 5 marked done pending commit.
+- Updated `NEXT_AI_TASK.md` to Slice 20 Task 6: CI import golden smoke.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/api/test_ci_run_metadata_import.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- CI metadata import API tests: `53 passed`.
+- Existing CI/CD quality center + import API tests: `60 passed`.
+- Frontend suite: `15` files passed, `20` tests passed.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit Task 5 with `feat(frontend): show ci import evidence`.
+- Continue Slice 20 Task 6: Add CI import golden smoke.
+
 ## 2026-07-01 Slice 20 CI Import API
 
 ### Completed

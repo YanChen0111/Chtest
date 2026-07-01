@@ -3,6 +3,7 @@ import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
 import { describe, expect, it, vi } from 'vitest';
 
+import { useCICDStore } from '../../stores/cicd';
 import CicdQualityCenterView from './CicdQualityCenterView.vue';
 
 function cicdRunBody(status = 'created') {
@@ -56,6 +57,86 @@ function cicdRunBody(status = 'created') {
   };
 }
 
+function importedCicdRunBody() {
+  return {
+    ...cicdRunBody('imported'),
+    source_type: 'ci_import',
+    trigger_type: 'imported',
+    provider: 'github_actions',
+    pipeline_name: 'CI',
+    base_ref: 'main',
+    head_ref: 'feature/coupon-boundary',
+    quality_gate_status: 'pending',
+    changed_files: [
+      {
+        id: '00000000-0000-0000-0000-000000001111',
+        cicd_run_id: '00000000-0000-0000-0000-000000001101',
+        path: 'app/coupon.py',
+        old_path: null,
+        change_type: 'modified',
+        language: 'python',
+        file_role: 'source',
+        risk_level: 'medium',
+        risk_reasons: ['source file changed'],
+        lines_added: 12,
+        lines_deleted: 4,
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001112',
+        cicd_run_id: '00000000-0000-0000-0000-000000001101',
+        path: 'tests/test_coupon.py',
+        old_path: null,
+        change_type: 'added',
+        language: 'python',
+        file_role: 'test',
+        risk_level: 'low',
+        risk_reasons: ['test file changed'],
+        lines_added: 8,
+        lines_deleted: 0,
+      },
+    ],
+    analysis_artifacts: [
+      {
+        id: '00000000-0000-0000-0000-000000001122',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'CICDRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001101',
+        artifact_type: 'ci_run_metadata',
+        file_path:
+          'artifacts/projects/00000000-0000-0000-0000-000000000101/cicd-quality/00000000-0000-0000-0000-000000001101/ci_run_metadata.json',
+        mime_type: 'application/json',
+        size_bytes: 0,
+        sha256: 'sha256:ci_run_metadata',
+        metadata_json: {
+          provider_is_inert_label: true,
+          remote_fetch_performed: false,
+          quality_gate_auto_decision: false,
+          content_json: {
+            provider: 'github_actions',
+            conclusion: 'success',
+            status: 'completed',
+            external_run_id: '123456',
+            job_name: 'pytest',
+            commit_sha: 'abc123',
+            external_url: 'https://example.invalid/runs/123456',
+            started_at: '2026-07-01T01:00:00Z',
+            finished_at: '2026-07-01T01:05:00Z',
+            duration_ms: 300000,
+            artifact_references: [
+              {
+                name: 'pytest report',
+                kind: 'test_report',
+                external_url: 'https://example.invalid/artifacts/1',
+                inert_reference: true,
+              },
+            ],
+          },
+        },
+      },
+    ],
+  };
+}
+
 const unitTestPatchBody = {
   id: '00000000-0000-0000-0000-000000001201',
   cicd_run_id: '00000000-0000-0000-0000-000000001101',
@@ -76,6 +157,39 @@ const unitTestPatchBody = {
 };
 
 describe('CicdQualityCenterView', () => {
+  it('shows imported CI evidence without remote provider controls', async () => {
+    const pinia = createPinia();
+    const store = useCICDStore(pinia);
+    store.run = importedCicdRunBody();
+    store.runs = [importedCicdRunBody()];
+
+    const wrapper = mount(CicdQualityCenterView, {
+      global: {
+        plugins: [pinia, ArcoVue],
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('导入 CI 证据');
+    expect(wrapper.text()).toContain('GitHub Actions');
+    expect(wrapper.text()).toContain('CI 结论');
+    expect(wrapper.text()).toContain('成功');
+    expect(wrapper.text()).toContain('QualityGateDecision');
+    expect(wrapper.text()).toContain('待处理');
+    expect(wrapper.text()).toContain('pytest report');
+    expect(wrapper.text()).toContain('test_report');
+    expect(wrapper.text()).toContain('仅保存引用');
+    expect(wrapper.text()).toContain('app/coupon.py');
+    expect(wrapper.text()).toContain('tests/test_coupon.py');
+    expect(wrapper.text()).not.toContain('重新运行');
+    expect(wrapper.text()).not.toContain('取消流水线');
+    expect(wrapper.text()).not.toContain('Webhook');
+    expect(wrapper.text()).not.toContain('Token');
+    expect(wrapper.text()).not.toContain('部署');
+    expect(wrapper.text()).not.toContain('发布');
+  });
+
   it('creates and analyzes a local diff run with changed file evidence', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

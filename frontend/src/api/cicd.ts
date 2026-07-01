@@ -109,6 +109,29 @@ export interface CICDChangedFileRead {
   readonly lines_deleted: number;
 }
 
+export interface CICDImportArtifactReferenceRead {
+  readonly name?: string;
+  readonly kind?: string;
+  readonly external_url?: string | null;
+  readonly sha256?: string | null;
+  readonly size_bytes?: number | null;
+  readonly inert_reference?: boolean;
+}
+
+export interface CICDImportEvidenceContentRead {
+  readonly provider?: string;
+  readonly conclusion?: string;
+  readonly status?: string | null;
+  readonly external_run_id?: string;
+  readonly job_name?: string | null;
+  readonly commit_sha?: string | null;
+  readonly external_url?: string | null;
+  readonly started_at?: string | null;
+  readonly finished_at?: string | null;
+  readonly duration_ms?: number | null;
+  readonly artifact_references?: CICDImportArtifactReferenceRead[];
+}
+
 export interface CICDRunRead {
   readonly id: string;
   readonly project_id: string;

@@ -1425,7 +1425,7 @@ def analysis_artifacts_for_run(session: Session, cicd_run: CICDRun) -> list[Arti
             .where(
                 Artifact.owner_entity_type == "CICDRun",
                 Artifact.owner_entity_id == cicd_run.id,
-                Artifact.artifact_type == "risk_analysis",
+                Artifact.artifact_type.in_({"risk_analysis", "ci_run_metadata"}),
             )
             .order_by(Artifact.created_at.asc()),
         ),

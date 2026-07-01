@@ -10,13 +10,13 @@ Slice 20: CI Run Metadata Import.
 
 ## Current Task
 
-Slice 20 Task 5: Add CI import frontend evidence display.
+Slice 20 Task 6: Add CI import golden smoke.
 
 ## Product Value Answer
 
-After this task, CI/CD 管理 can show imported CI run evidence, imported
-changed files, and inert artifact references without exposing remote provider
-controls.
+After this task, Slice 20 has a deterministic golden smoke proving static CI
+metadata import produces CICDRun evidence and frontend-readable import
+artifacts without remote provider behavior.
 
 ## Must Read
 
@@ -46,42 +46,42 @@ memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-20-ci-run-metadata-import.md
 backend/app/tests/api/test_ci_run_metadata_import.py
-frontend/src/api/extension.ts
-frontend/src/stores/extensionStore.ts
-frontend/src/views/CICDQualityCenterView.vue
-frontend/src/**/*.test.*
+backend/app/tests/golden/test_ci_run_metadata_import_golden.py
+docs/fixtures/09-ci-run-metadata-import-golden.md
 ```
 
-Frontend display task. User approved development after the V2 document-design
-review. Do not add remote CI provider calls, webhooks, pipeline triggers,
-reruns, PR comments, deploy/release controls, credentials, RBAC, tenants,
-permissions, marketplace, RAG runtime, or MCP runtime.
+Golden smoke task. User approved development after the V2 document-design
+review. Do not add frontend code, migrations, remote CI provider calls,
+webhooks, pipeline triggers, reruns, PR comments, deploy/release controls,
+credentials, RBAC, tenants, permissions, marketplace, RAG runtime, or MCP
+runtime.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_run_metadata_import_golden.py -q
 git diff --check
 ```
 
-Expected result: CI import frontend evidence display tests and diff check pass.
+Expected result: CI import golden smoke and diff check pass.
 
 ## Acceptance
 
-- Shows imported CI evidence on CI/CD 管理 without remote provider controls.
-- Displays imported provider label, import status, CI conclusion, refs, changed
-  file count, and inert artifact references when available.
-- Keeps QualityGateDecision and local review workflow visually separate from
-  imported CI conclusion.
-- Does not expose trigger, rerun, cancel, schedule, PR comment, deploy, release,
-  credential, webhook, or remote-fetch controls.
+- Golden fixture documents a static CI metadata payload.
+- Golden smoke imports the payload through `POST /api/cicd/runs/import`.
+- Verifies CICDRun, CICDChangedFile rows, `ci_run_metadata`, and
+  `changed_files` evidence.
+- Verifies imported CI conclusion remains evidence only and does not create
+  QualityGateDecision, UnitTestPatch, TestRun, Report, remote fetch, or provider
+  control behavior.
+- Verifies `GET /api/cicd/runs/{id}` exposes frontend-readable import evidence.
 
 ## Commit Message
 
 ```text
-feat(frontend): show ci import evidence
+test(golden): add ci metadata import smoke
 ```
 
 ## Next Task
 
-Slice 20 Task 6: Add CI import golden smoke.
+Slice 20 Completion Gate.

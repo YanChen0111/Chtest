@@ -1,5 +1,54 @@
 # Session Handoff
 
+## 2026-07-01 Slice 20 Task 5 完成
+
+本轮完成：
+
+- 按用户要求继续多子代理并发：
+  - 一个只读检查 CI/CD 前端页面和测试模式；
+  - 一个只读检查后端 read surface 是否能暴露 `ci_run_metadata`。
+- 完成 Slice 20 Task 5：Add CI import frontend evidence display。
+- `CI/CD 质量中心` 新增导入 CI 证据展示：
+  - Provider inert label；
+  - 导入状态；
+  - CI 结论；
+  - QualityGateDecision 仍为本地门禁状态；
+  - Job / external run id；
+  - inert artifact references。
+- 风险分析证据表继续只显示 `risk_analysis`。
+- 进行了一个必要的窄后端 read surface 改动：
+  - `GET /api/cicd/runs/{id}` 的 `analysis_artifacts` 现在包含
+    `risk_analysis` 和 `ci_run_metadata`；
+  - 没有走 RAG/extension surface；
+  - 没有新增远程 provider 控件。
+- 新增前端 API 类型和页面测试，断言不会出现重新运行、取消流水线、
+  Webhook、Token、部署、发布等远程控制文案。
+- Slice 20 task table 已记录 Task 4 commit `554e74c`，Task 5 done pending
+  commit。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 20 Task 6：Add CI import golden
+  smoke。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/api/test_ci_run_metadata_import.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- CI metadata import API tests：`53 passed`。
+- Existing CI/CD quality center + import API tests：`60 passed`。
+- Frontend suite：`15` files passed，`20` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 5：`feat(frontend): show ci import evidence`。
+- 继续 Slice 20 Task 6：Add CI import golden smoke。
+
 ## 2026-07-01 Slice 20 Task 4 完成
 
 本轮完成：
