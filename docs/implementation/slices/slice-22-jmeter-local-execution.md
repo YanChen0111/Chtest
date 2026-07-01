@@ -89,8 +89,8 @@ execution evidence while preserving local-first safety and auditability.
 | Add JMeter parser and backend API tests | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | `0d1a666` | deterministic JTL parsing first |
 | Add JMeter runner backend | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | `b836e65` | allowlisted fake executable tests |
 | Add JMeter execution frontend shell | done | `npm --prefix frontend run test -- --run` | `abcf50d` | compact Chinese UI |
-| Add JMeter local execution golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q` | pending | TestRun evidence proof |
-| Slice 22 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py backend/app/tests/golden/test_jmeter_local_execution_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
+| Add JMeter local execution golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_jmeter_local_execution_golden.py -q` | `a2fc879` | TestRun evidence proof |
+| Slice 22 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py backend/app/tests/golden/test_jmeter_local_execution_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
 
 ## Task 1: Add JMeter Local Execution Evidence Task Plan
 
