@@ -1,5 +1,39 @@
 # Session Handoff
 
+## 2026-07-01 Slice 24 Task 4 Frontend Artifact Links 完成
+
+本轮完成：
+
+- 完成 Slice 24 Task 4：Add frontend artifact links。
+- `frontend/src/api/execution.ts` 新增 `artifactDownloadUrl` helper。
+- pytest / Playwright / Newman / JMeter execution artifact tables 新增
+  `Artifact` 操作列，使用 `GET /api/artifacts/{id}/download` 打开本地证据。
+- 保留原有 artifact metadata 表格显示。
+- Slice 24 table 已记录 Task 3 commit `2222cf2`，Task 4 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 24 Task 5：Add artifact access golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run src/views/execution/JMeterExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Frontend build：passed，保留 Vite large chunk warning。
+- Focused execution view tests：`4 passed`。
+- Full frontend suite：`16` files passed，`21` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`feat(frontend): link local execution artifacts`。
+- 继续 Slice 24 Task 5：Add artifact access golden smoke。
+
 ## 2026-07-01 Slice 24 Task 3 Artifact Access Backend API 完成
 
 本轮完成：

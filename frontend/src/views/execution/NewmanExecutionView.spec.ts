@@ -120,6 +120,7 @@ describe('NewmanExecutionView', () => {
     expect(wrapper.text()).toContain('newman_local');
     expect(wrapper.text()).toContain('newman_json');
     expect(wrapper.text()).toContain('parsed_output');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001601/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('coupon-api/Reject expired coupon::message is explicit');
     expect(wrapper.text()).toContain('expected clear message');
     expect(wrapper.text()).toContain('总断言');

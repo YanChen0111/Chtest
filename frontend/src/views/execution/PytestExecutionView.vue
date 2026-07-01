@@ -78,7 +78,11 @@
                 :pagination="false"
                 row-key="id"
                 size="small"
-              />
+              >
+                <template #action="{ record }">
+                  <a :href="artifactDownloadUrl(record.id)" target="_blank" rel="noreferrer">打开</a>
+                </template>
+              </a-table>
             </section>
 
             <section class="evidence-section">
@@ -103,6 +107,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import { artifactDownloadUrl } from '../../api/execution';
 import { useExecutionStore } from '../../stores/execution';
 
 const store = useExecutionStore();
@@ -111,6 +116,7 @@ const artifactColumns = [
   { title: '类型', dataIndex: 'artifact_type' },
   { title: '路径', dataIndex: 'file_path' },
   { title: '大小', dataIndex: 'size_bytes' },
+  { title: 'Artifact', slotName: 'action' },
 ];
 
 const resultColumns = [

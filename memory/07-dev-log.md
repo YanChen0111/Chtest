@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-01 Slice 24 Frontend Artifact Links
+
+### Completed
+
+- Added `artifactDownloadUrl` helper.
+- Added local Artifact access links to pytest, Playwright, Newman, and JMeter
+  execution artifact tables.
+- Preserved existing artifact metadata table display.
+- Updated `NEXT_AI_TASK.md` to Slice 24 Task 5: Add artifact access golden
+  smoke.
+
+### Verification
+
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `npm --prefix frontend run test -- --run src/views/execution/JMeterExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts`
+- Result: `4 passed`.
+- `npm --prefix frontend run test -- --run`
+- Result: `16 files passed, 21 tests passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `feat(frontend): link local execution artifacts`.
+- Continue Slice 24 Task 5 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 24 Artifact Access Backend API
 
 ### Completed

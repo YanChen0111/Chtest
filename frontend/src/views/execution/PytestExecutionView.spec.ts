@@ -101,6 +101,7 @@ describe('PytestExecutionView', () => {
     expect(wrapper.text()).toContain('local_subprocess');
     expect(wrapper.text()).toContain('关闭');
     expect(wrapper.text()).toContain('stdout');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001401/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('generated::test_generated_ok');
     expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('1');

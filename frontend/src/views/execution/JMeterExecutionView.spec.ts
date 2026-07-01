@@ -119,6 +119,7 @@ describe('JMeterExecutionView', () => {
     expect(wrapper.text()).toContain('jmeter_local');
     expect(wrapper.text()).toContain('jmeter_jtl');
     expect(wrapper.text()).toContain('parsed_output');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001701/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('jmeter/POST /coupons');
     expect(wrapper.text()).toContain('500 Internal Server Error');
     expect(wrapper.text()).toContain('总样本');

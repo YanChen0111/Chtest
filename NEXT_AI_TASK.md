@@ -10,12 +10,13 @@ Slice 24: Local Artifact Access Links.
 
 ## Current Task
 
-Slice 24 Task 4: Add frontend artifact links.
+Slice 24 Task 5: Add artifact access golden smoke.
 
 ## Product Value Answer
 
-After this task, execution artifact tables expose controlled local artifact
-links while preserving the existing metadata display.
+After this task, local artifact access is proven by a golden smoke that reads a
+persisted execution artifact and confirms external imported references remain
+inert.
 
 ## Must Read
 
@@ -27,7 +28,7 @@ links while preserving the existing metadata display.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
 8. `docs/implementation/slices/slice-24-local-artifact-access-links.md`
-9. existing execution frontend artifact tables
+9. existing artifact access API tests and execution golden fixtures
 
 ## Do Not Read Unless Needed
 
@@ -50,43 +51,36 @@ docs/implementation/slices/slice-23-frontend-build-baseline.md
 docs/implementation/slices/slice-24-local-artifact-access-links.md
 docs/contracts/02-api-contract.md
 docs/contracts/04-artifact-contract.md
-frontend/src/api/execution.ts
-frontend/src/views/execution/PytestExecutionView.vue
-frontend/src/views/execution/PlaywrightExecutionView.vue
-frontend/src/views/execution/NewmanExecutionView.vue
-frontend/src/views/execution/JMeterExecutionView.vue
-frontend/src/views/execution/*.spec.ts
+backend/app/tests/golden/test_artifact_access_golden.py
+docs/fixtures/12-local-artifact-access-golden.md
 ```
 
-Frontend links task. Do not add artifact upload/mutation/delete, cloud storage,
-external artifact fetch, RBAC, tenants, permissions, package upgrades, broad
-redesign work, or backend behavior changes.
+Golden smoke task. Do not add frontend code, artifact upload/mutation/delete,
+cloud storage, external artifact fetch, RBAC, tenants, permissions, package
+upgrades, broad redesign work, or runner behavior changes.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run build
-npm --prefix frontend run test -- --run src/views/execution/JMeterExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_artifact_access_golden.py -q
 git diff --check
 ```
 
-Expected result: frontend build, focused execution view tests, and diff check pass.
+Expected result: artifact access golden smoke and diff check pass.
 
 ## Acceptance
 
-- Execution artifact tables expose local artifact access links.
-- Links preserve existing artifact metadata display.
-- Chinese-facing labels remain readable while keeping product terms such as
-  Artifact, TestRun, JTL, and trace unchanged.
-- Does not add a broad artifact dashboard, upload, delete, sharing, or cloud
-  storage UI.
+- Golden proves a TestRun artifact can be read through the local artifact
+  endpoint.
+- Golden proves artifact content matches persisted sha256/size metadata.
+- Golden proves external imported artifact references remain inert.
 
 ## Commit Message
 
 ```text
-feat(frontend): link local execution artifacts
+test(golden): add local artifact access smoke
 ```
 
 ## Next Task
 
-Slice 24 Task 5: Add artifact access golden smoke.
+Slice 24 Completion Gate.

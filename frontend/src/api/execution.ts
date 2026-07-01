@@ -65,3 +65,7 @@ export async function createTestRun(data: TestRunCreateRequest): Promise<TestRun
 export async function getTestRun(testRunId: string): Promise<TestRunRead> {
   return apiClient.getJson<TestRunRead>(`/test-runs/${testRunId}`);
 }
+
+export function artifactDownloadUrl(artifactId: string): string {
+  return `/api/artifacts/${artifactId}/download`;
+}

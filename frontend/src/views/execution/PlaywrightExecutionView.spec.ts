@@ -113,6 +113,7 @@ describe('PlaywrightExecutionView', () => {
     expect(wrapper.text()).toContain('playwright_local');
     expect(wrapper.text()).toContain('playwright_trace');
     expect(wrapper.text()).toContain('screenshot');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001601/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('generated::checkout smoke');
     expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('1');
