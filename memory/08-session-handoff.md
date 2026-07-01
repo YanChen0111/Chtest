@@ -1,5 +1,25 @@
 # Session Handoff
 
+## 2026-07-01 Slice 26 Task 2 Imported Reference Display Contract 完成
+
+本轮完成：
+
+- 完成 Slice 26 Task 2：Define imported artifact reference display contract。
+- `docs/contracts/02-api-contract.md` 明确：
+  - imported artifact reference 是 display-only external metadata；
+  - 不是 local Artifact file；
+  - 不生成 `/api/artifacts/{id}/download` 本地下载链接；
+  - 需要展示 inert status、local-openability status、`remote_fetch_performed=false`。
+- `docs/contracts/04-artifact-contract.md` 新增 Slice 26 clarity rules。
+- Slice 26 table 已记录 Task 2 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 26 Task 3：Add CI imported reference frontend clarity。
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define imported reference clarity contract`。
+- 继续 Slice 26 Task 3：Add CI imported reference frontend clarity。
+
 ## 2026-07-01 Slice 26 Task 1 CI Imported Artifact Reference Clarity Plan 完成
 
 本轮完成：

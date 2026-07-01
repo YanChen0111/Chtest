@@ -119,6 +119,13 @@ Slice 20 CI import artifact rules:
 - Imported artifact references are inert references. They may include name,
   kind, external URL, sha256, and size metadata, but Chtest must not fetch,
   authenticate to, execute, or mutate those external URLs in Slice 20.
+- Imported artifact reference display must preserve that the reference is not a
+  local Artifact file and is not locally openable.
+- Imported artifact reference display must show `inert_reference=true` when
+  present and `remote_fetch_performed=false` from the owning
+  `ci_run_metadata.json` metadata.
+- Imported artifact references must not be given local artifact download links
+  unless a later task creates a separate persisted local Artifact row.
 - `ci_run_metadata.json` metadata must include
   `created_by_component=CICDRunMetadataImport`,
   `remote_fetch_performed=false`, `quality_gate_auto_decision=false`,
@@ -347,6 +354,24 @@ Slice 25 execution evidence summary rules:
   behavior changes, cloud storage, signed URLs, sharing, upload, delete,
   indexing, search, broad artifact browsing, RBAC, tenants, permissions, RAG
   runtime, MCP runtime, marketplace, or remote provider behavior.
+
+Slice 26 CI imported artifact reference clarity rules:
+
+- Imported artifact references are display-only external references.
+- They are not local Artifact files and are not locally openable through local
+  artifact access.
+- The UI must not render `GET /api/artifacts/{artifact_id}/download` links for
+  imported external references.
+- Display should include reference name, kind, external URL, inert status, and
+  `remote_fetch_performed=false` from the owning `ci_run_metadata` artifact.
+- External references must remain inert even when they include sha256 or size
+  metadata from the remote provider.
+- Display clarity must not fetch, proxy, download, authenticate to, execute,
+  mutate, cache, mirror, or validate external URL targets.
+- Display clarity must not create TestRun, Report, FailureAnalysis,
+  QualityGateDecision, UnitTestPatch, local Artifact payloads, remote provider
+  status updates, credentials, RBAC, tenants, permissions, RAG runtime, MCP
+  runtime, marketplace, or cloud sync behavior.
 
 ## 5. Metadata 契约
 

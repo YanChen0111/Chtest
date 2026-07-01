@@ -1,5 +1,22 @@
 # Development Log
 
+## 2026-07-01 Slice 26 Imported Reference Display Contract
+
+### Completed
+
+- Defined imported artifact reference display as read-only external metadata.
+- Clarified imported references are not local Artifact files and are not locally
+  openable.
+- Required display of inert status and `remote_fetch_performed=false`.
+- Preserved the no remote fetch/provider integration boundary.
+- Updated `NEXT_AI_TASK.md` to Slice 26 Task 3: Add CI imported reference
+  frontend clarity.
+
+### Next Step
+
+- Commit `docs(v2): define imported reference clarity contract`.
+- Continue Slice 26 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 26 CI Imported Artifact Reference Clarity Plan
 
 ### Completed

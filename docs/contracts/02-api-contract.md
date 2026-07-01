@@ -1098,6 +1098,14 @@ Rules:
 - Artifact references are inert references only. Chtest stores the reference
   metadata but must not download, authenticate to, fetch logs from, execute, or
   mutate `external_url` targets.
+- Imported artifact reference display is a read-only UI concept. Each reference
+  is an external metadata label, not a local Artifact file, unless a separate
+  persisted local Artifact row explicitly exists.
+- Imported artifact reference rows must show inert status, local-openability
+  status, `remote_fetch_performed=false` from the owning `ci_run_metadata`
+  artifact metadata, and the external URL as reference text only.
+- Imported artifact references are not locally openable and must not receive
+  `GET /api/artifacts/{artifact_id}/download` links.
 - Duplicate imported external runs may be rejected per project/repository/
   provider/external_run_id with `CI_IMPORT_DUPLICATE_EXTERNAL_RUN`.
 
