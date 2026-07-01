@@ -1,5 +1,37 @@
 # Development Log
 
+## 2026-07-01 Slice 30 Completion Gate
+
+### Completed
+
+- Completed Slice 30: Test Knowledge Card Contract.
+- Recorded Task commits:
+  - Task 1: `2cd72e8`
+  - Task 2: `2898126`
+  - Task 3: `5beedf1`
+  - Task 4: `43c35e6`
+- Verified contracts define TestKnowledgeCard, KnowledgeEvidence,
+  GeneratedCaseCandidate evidence fields, artifact rules, and state/API
+  non-goals.
+- Verified fixture covers accepted, needs-review, and rejected evidence
+  conditions.
+- Verified golden smoke covers schema-level serialization of generated-case
+  knowledge evidence without TestCase/TestRun/Report/retrieval/vector/graph
+  side-effect ids.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
+- Result: `2` passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `docs(v2): complete test knowledge card contract slice`.
+- Continue with `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+
 ## 2026-07-01 Slice 30 Contract Smoke
 
 ### Completed

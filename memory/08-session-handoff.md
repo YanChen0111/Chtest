@@ -1,5 +1,57 @@
 # Session Handoff
 
+## 2026-07-01 Slice 30 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 30：Test Knowledge Card Contract。
+- Slice 30 task table 已记录：
+  - Task 1：`2cd72e8`
+  - Task 2：`2898126`
+  - Task 3：`5beedf1`
+  - Task 4：`43c35e6`
+  - Completion Gate：done pending commit。
+- 已定义：
+  - `TestKnowledgeCard` 数据合同；
+  - `KnowledgeEvidence` 规范化证据合同；
+  - GeneratedCaseCandidate knowledge evidence 展示字段；
+  - `test_knowledge_card` / `knowledge_evidence` /
+    `case_review_findings` artifact 规则；
+  - TestKnowledgeCard EntityStatus 状态规则；
+  - RAG/MCP/vector/provider/graph/runtime 非目标边界。
+- 已新增 fixture：
+  `docs/fixtures/18-test-knowledge-card-contract-golden.md`。
+- 已新增 golden：
+  `backend/app/tests/golden/test_test_knowledge_card_contract_golden.py`。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select and plan the next narrow V2 task after Slice 30 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`2` passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Completion Gate：`docs(v2): complete test knowledge card contract slice`。
+- 继续 `NEXT_AI_TASK.md`，选择并规划下一个窄 V2 slice。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/10-v2-scope-options.md` 中未暂存 Candidate E 段落
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 这些是后续规划背景，提交时仍需避免误混，除非用户明确要求纳入。
+
 ## 2026-07-01 Slice 30 Task 4 Contract Smoke 完成
 
 本轮完成：

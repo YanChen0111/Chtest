@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 30: Test Knowledge Card Contract.
+Select next narrow V2 slice.
 
 ## Current Task
 
-Slice 30 Completion Gate.
+Select and plan the next narrow V2 task after Slice 30 completion.
 
 ## Product Value Answer
 
-After this task, Slice 30 is validated and handed off with contracts, fixture,
-and golden smoke evidence for generated-case knowledge evidence fields.
+After this task, the next V2 slice is selected and planned with a small,
+verifiable task boundary.
 
 ## Must Read
 
@@ -25,10 +25,12 @@ and golden smoke evidence for generated-case knowledge evidence fields.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
-8. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
-9. `memory/08-session-handoff.md`
-10. `memory/07-dev-log.md`
+7. `docs/implementation/04-ai-vibecoding-governance.md`
+8. `docs/implementation/10-v2-scope-options.md`
+9. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+10. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
+11. `memory/08-session-handoff.md`
+12. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -42,42 +44,44 @@ and golden smoke evidence for generated-case knowledge evidence fields.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-30-test-knowledge-card-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
+docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+docs/implementation/10-v2-scope-options.md
 ```
 
-Completion task. Do not add frontend code, backend runtime feature code,
-migrations, package upgrades, external provider integrations, vector database,
-embeddings, reranking, background indexing, graph runtime, MCP runtime,
-artifact upload/mutation/delete, generated-case auto-approval, runner behavior
-changes, report generation behavior changes, remote CI provider behavior, RBAC,
-tenants, or permissions.
+Planning task. Do not add frontend code, backend feature code, tests,
+migrations, package upgrades, artifact upload/mutation/delete, cloud storage,
+external provider integration, RBAC, tenants, permissions, broad redesign work,
+report generation behavior, runner behavior changes, quality gate computation
+changes, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q
+test -f docs/implementation/slices/<next-slice>.md
+rg -n "Product Value Answer|Non-goals|Task Table" docs/implementation/slices/<next-slice>.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: golden smoke passes, diff check passes, and Slice 30 task table
-records completed task commits.
+Expected result: next slice plan exists, names product value/non-goals/task
+table, `NEXT_AI_TASK.md` points to the first task, and diff check passes.
 
 ## Acceptance
 
-- Slice 30 task table records completed task commits.
-- Contract and fixture documents agree on field names and non-goals.
-- Golden smoke passes.
-- `NEXT_AI_TASK.md` points to the next narrow V2 task.
+- Select one narrow V2 slice from current product priorities and recent handoff.
+- Create the slice plan with product value, preconditions, non-goals, task
+  table, expected files, verification commands, and commit messages.
+- Update `NEXT_AI_TASK.md` to the first task of that new slice.
+- Do not implement product code during planning.
 
 ## Commit Message
 
 ```text
-docs(v2): complete test knowledge card contract slice
+docs(v2): plan next narrow v2 slice
 ```
 
 ## Next Task
 
-Select and plan the next narrow V2 slice after Slice 30 completion.
+First task of the newly planned V2 slice.
