@@ -1,5 +1,28 @@
 # Development Log
 
+## 2026-07-01 Slice 27 AI Workbench Artifact Links
+
+### Completed
+
+- AI Workbench safe AI task artifacts now show a local "打开" link.
+- `safe_to_show=false` artifacts, including raw LLM output, remain visible as
+  metadata and show `不可直接打开`.
+- LLM call logs continue to cite artifact ids without inlining content.
+- Updated `NEXT_AI_TASK.md` to Slice 27 Task 4: Add AI task artifact link
+  golden smoke.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- Result: `1` file passed, `3` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+
+### Next Step
+
+- Commit `feat(frontend): link safe ai task artifacts`.
+- Continue Slice 27 Task 4 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 27 AI Task Artifact Link Contract
 
 ### Completed

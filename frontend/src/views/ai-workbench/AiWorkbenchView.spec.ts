@@ -159,11 +159,18 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.text()).toContain('application/json');
     expect(wrapper.text()).toContain('sha256:aaaaaaaa');
     expect(wrapper.text()).toContain('不可直接展示');
+    expect(wrapper.text()).toContain('不可直接打开');
+    expect(wrapper.text()).toContain('打开');
     expect(wrapper.text()).toContain('未脱敏');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000902/download"]').exists()).toBe(true);
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000901/download"]').exists()).toBe(false);
     expect(wrapper.text()).toContain('大模型调用日志');
     expect(wrapper.text()).toContain('提示词令牌');
     expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000000901');
     expect(wrapper.text()).toContain('42 ms');
     expect(wrapper.text()).not.toContain('raw content');
+    expect(wrapper.text()).not.toContain('重新运行');
+    expect(wrapper.text()).not.toContain('Prompt 编辑');
+    expect(wrapper.text()).not.toContain('Provider 控制');
   });
 });

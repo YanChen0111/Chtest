@@ -95,6 +95,12 @@
                     {{ record.safe_to_show ? '可展示' : '不可直接展示' }}
                   </a-tag>
                 </template>
+                <template #open="{ record }">
+                  <a-link v-if="record.downloadable" :href="record.downloadUrl" target="_blank" rel="noreferrer">
+                    打开
+                  </a-link>
+                  <span v-else class="muted-text">不可直接打开</span>
+                </template>
               </a-table>
             </div>
 
@@ -149,6 +155,7 @@ const artifactColumns = [
   { title: 'SHA256', dataIndex: 'sha256' },
   { title: '展示安全', slotName: 'safe' },
   { title: '脱敏状态', dataIndex: 'redactionText' },
+  { title: '本地打开', slotName: 'open', width: 120 },
 ];
 
 const llmCallColumns = [
@@ -182,6 +189,8 @@ const artifactRows = computed(
       ...artifact,
       sizeText: `${artifact.size_bytes} B`,
       redactionText: artifact.redaction_applied ? '已脱敏' : '未脱敏',
+      downloadable: artifact.safe_to_show,
+      downloadUrl: `/api/artifacts/${artifact.id}/download`,
     })) ?? [],
 );
 const llmCallRows = computed(
@@ -401,6 +410,10 @@ onMounted(() => {
   margin: 0 0 10px;
   color: #1d2129;
   font-size: 15px;
+}
+
+.muted-text {
+  color: #86909c;
 }
 
 @media (max-width: 960px) {

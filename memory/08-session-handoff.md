@@ -1,5 +1,39 @@
 # Session Handoff
 
+## 2026-07-01 Slice 27 Task 3 AI Workbench Artifact Links 完成
+
+本轮完成：
+
+- 完成 Slice 27 Task 3：Add AI Workbench artifact links。
+- `AiWorkbenchView.vue`：
+  - `safe_to_show=true` 的 AI task artifact 显示本地 `打开` 链接；
+  - `safe_to_show=false` 的 artifact 显示 `不可直接打开`；
+  - raw LLM output 只保留 metadata，不 inline content。
+- `AiWorkbenchView.spec.ts` 覆盖：
+  - parsed_output 安全 artifact 有 `/api/artifacts/{id}/download` 链接；
+  - raw_llm_output 没有下载链接；
+  - 页面不出现 rerun / prompt edit / provider control / raw content。
+- Slice 27 table 已记录 Task 2 commit `57cf570`，Task 3 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 27 Task 4：Add AI task artifact link golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts
+npm --prefix frontend run build
+```
+
+验证结果：
+
+- AI Workbench focused test：`1` file passed，`3` tests passed。
+- Frontend build：passed，保留 Vite large chunk warning。
+
+下次推荐任务：
+
+- 提交 Task 3：`feat(frontend): link safe ai task artifacts`。
+- 继续 Slice 27 Task 4：Add AI task artifact link golden smoke。
+
 ## 2026-07-01 Slice 27 Task 2 AI Task Evidence Artifact Link Contract 完成
 
 本轮完成：
