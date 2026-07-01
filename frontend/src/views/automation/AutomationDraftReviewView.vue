@@ -64,6 +64,15 @@
               <span>评审结果：{{ store.lastReview.status }}</span>
               <strong>AutomationDraft：{{ store.lastReview.automation_draft_id }}</strong>
             </div>
+
+            <section v-if="store.reviewHistory.length" class="review-history-panel" aria-label="本地评审历史">
+              <h3>本地评审历史</h3>
+              <div v-for="item in store.reviewHistory" :key="item.id" class="review-history-item">
+                <strong>{{ actionLabel(item.action) }}</strong>
+                <span>{{ item.reviewer }} · {{ statusTransition(item.from_status, item.to_status) }}</span>
+                <small>{{ formatDateTime(item.created_at) }} · {{ item.comment || '无评审备注' }} · 证据 {{ item.evidence_artifact_ids.length }}</small>
+              </div>
+            </section>
           </template>
 
           <a-empty v-else description="生成后展示自动化草稿" />
@@ -98,6 +107,38 @@ function editDraft() {
 
 function approveDraft() {
   void store.approveCurrentDraft('前端批准草稿');
+}
+
+function actionLabel(action: string): string {
+  const labels: Record<string, string> = {
+    edit: '编辑',
+    approve: '批准',
+    reject: '拒绝',
+  };
+  return labels[action] ?? action;
+}
+
+function statusTransition(fromStatus: string | null, toStatus: string | null): string {
+  return `${statusLabel(fromStatus)} -> ${statusLabel(toStatus)}`;
+}
+
+function statusLabel(status: string | null): string {
+  const labels: Record<string, string> = {
+    draft_generated: '已生成',
+    edited: '已编辑',
+    approved: '已批准',
+    rejected: '已拒绝',
+  };
+  return status ? (labels[status] ?? status) : '未知';
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
 }
 </script>
 
@@ -196,6 +237,31 @@ function approveDraft() {
 .draft-result strong {
   margin-top: 6px;
   color: #166534;
+}
+
+.review-history-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.review-history-panel h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.review-history-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.review-history-item span,
+.review-history-item small {
+  color: #64748b;
 }
 
 @media (max-width: 980px) {

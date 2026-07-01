@@ -288,6 +288,83 @@ describe('CicdQualityCenterView', () => {
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         );
       }
+      if (url.includes('/review-history?')) {
+        if (url.includes('entity_type=UnitTestPatch')) {
+          const hasRejectCall = fetchMock.mock.calls.some((call) =>
+            String(call[0]).endsWith('/cicd/unit-test-patches/00000000-0000-0000-0000-000000001201/reject'),
+          );
+          const hasApproveCall = fetchMock.mock.calls.some((call) =>
+            String(call[0]).endsWith('/cicd/unit-test-patches/00000000-0000-0000-0000-000000001201/approve'),
+          );
+          const items = [];
+          if (hasRejectCall) {
+            items.push({
+              id: '00000000-0000-0000-0000-000000001a12',
+              project_id: '00000000-0000-0000-0000-000000000101',
+              entity_type: 'UnitTestPatch',
+              entity_id: '00000000-0000-0000-0000-000000001201',
+              related_entity_type: 'CICDRun',
+              related_entity_id: '00000000-0000-0000-0000-000000001101',
+              action: 'reject',
+              from_status: 'approved',
+              to_status: 'rejected',
+              reviewer: 'Default User',
+              comment: '前端拒绝 UnitTestPatch',
+              evidence_artifact_ids: [],
+              metadata_json: {},
+              created_at: '2026-07-01T02:50:00Z',
+            });
+          }
+          if (hasApproveCall) {
+            items.push({
+              id: '00000000-0000-0000-0000-000000001a11',
+              project_id: '00000000-0000-0000-0000-000000000101',
+              entity_type: 'UnitTestPatch',
+              entity_id: '00000000-0000-0000-0000-000000001201',
+              related_entity_type: 'CICDRun',
+              related_entity_id: '00000000-0000-0000-0000-000000001101',
+              action: 'approve',
+              from_status: 'scope_validated',
+              to_status: 'approved',
+              reviewer: 'Default User',
+              comment: '前端批准 UnitTestPatch',
+              evidence_artifact_ids: ['00000000-0000-0000-0000-000000001211'],
+              metadata_json: {},
+              created_at: '2026-07-01T02:45:00Z',
+            });
+          }
+          return new Response(JSON.stringify({ items, total: items.length }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        if (url.includes('related_entity_type=CICDRun')) {
+          return new Response(
+            JSON.stringify({
+              total: 1,
+              items: [
+                {
+                  id: '00000000-0000-0000-0000-000000001a21',
+                  project_id: '00000000-0000-0000-0000-000000000101',
+                  entity_type: 'QualityGateDecision',
+                  entity_id: '00000000-0000-0000-0000-000000001401',
+                  related_entity_type: 'CICDRun',
+                  related_entity_id: '00000000-0000-0000-0000-000000001101',
+                  action: 'compute_quality_gate',
+                  from_status: 'pending',
+                  to_status: 'passed',
+                  reviewer: 'Default User',
+                  comment: '本地质量门禁计算',
+                  evidence_artifact_ids: ['00000000-0000-0000-0000-000000001211', '00000000-0000-0000-0000-000000001221'],
+                  metadata_json: {},
+                  created_at: '2026-07-01T02:55:00Z',
+                },
+              ],
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          );
+        }
+      }
       if (url.endsWith('/cicd/runs/00000000-0000-0000-0000-000000001101/generate-report')) {
         return new Response(
           JSON.stringify({
@@ -357,6 +434,11 @@ describe('CicdQualityCenterView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
     expect(wrapper.text()).toContain('已批准');
+    expect(wrapper.text()).toContain('本地评审历史');
+    expect(wrapper.text()).toContain('Default User');
+    expect(wrapper.text()).toContain('范围已验证 -> 已批准');
+    expect(wrapper.text()).toContain('前端批准 UnitTestPatch');
+    expect(wrapper.text()).toContain('证据 1');
 
     await wrapper.find('[data-test="run-new-tests"]').trigger('click');
     await flushPromises();
@@ -378,6 +460,10 @@ describe('CicdQualityCenterView', () => {
     expect(wrapper.text()).toContain('回归计划');
     expect(wrapper.text()).toContain('QualityGateDecision');
     expect(wrapper.text()).toContain('通过');
+    expect(wrapper.text()).toContain('计算门禁');
+    expect(wrapper.text()).toContain('待处理 -> 通过');
+    expect(wrapper.text()).toContain('本地质量门禁计算');
+    expect(wrapper.text()).toContain('证据 2');
     expect(wrapper.text()).toContain('报告');
     expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000001501');
 
@@ -385,5 +471,16 @@ describe('CicdQualityCenterView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
     expect(wrapper.text()).toContain('已拒绝');
+    expect(wrapper.text()).toContain('已批准 -> 已拒绝');
+    expect(wrapper.text()).toContain('前端拒绝 UnitTestPatch');
+    expect(wrapper.text()).toContain('证据 0');
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/review-history?project_id=00000000-0000-0000-0000-000000000101&entity_type=UnitTestPatch&entity_id=00000000-0000-0000-0000-000000001201&limit=20',
+      expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/review-history?project_id=00000000-0000-0000-0000-000000000101&related_entity_type=CICDRun&related_entity_id=00000000-0000-0000-0000-000000001101&limit=20',
+      expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),
+    );
   });
 });

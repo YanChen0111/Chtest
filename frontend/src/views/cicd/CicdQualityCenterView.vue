@@ -187,6 +187,14 @@
               </a-tag>
             </div>
             <pre class="patch-diff">{{ store.unitTestPatch.patch_text }}</pre>
+            <section v-if="store.patchReviewHistory.length" class="review-history-panel" aria-label="UnitTestPatch 本地评审历史">
+              <h3>本地评审历史</h3>
+              <div v-for="item in store.patchReviewHistory" :key="item.id" class="review-history-item">
+                <strong>{{ actionLabel(item.action) }}</strong>
+                <span>{{ item.reviewer }} · {{ statusTransition(item.from_status, item.to_status) }}</span>
+                <small>{{ formatDateTime(item.created_at) }} · {{ item.comment || '无评审备注' }} · 证据 {{ item.evidence_artifact_ids.length }}</small>
+              </div>
+            </section>
           </template>
           <a-empty v-else description="生成后展示 UnitTestPatch diff 和范围门禁" />
         </a-card>
@@ -233,6 +241,14 @@
             </div>
           </div>
           <p v-if="store.qualityGate" class="evidence-line">{{ store.qualityGate.summary }}</p>
+          <section v-if="store.gateReviewHistory.length" class="review-history-panel" aria-label="QualityGateDecision 本地评审历史">
+            <h3>本地评审历史</h3>
+            <div v-for="item in store.gateReviewHistory" :key="item.id" class="review-history-item">
+              <strong>{{ actionLabel(item.action) }}</strong>
+              <span>{{ item.reviewer }} · {{ statusTransition(item.from_status, item.to_status) }}</span>
+              <small>{{ formatDateTime(item.created_at) }} · {{ item.comment || '无评审备注' }} · 证据 {{ item.evidence_artifact_ids.length }}</small>
+            </div>
+          </section>
         </a-card>
 
         <a-card class="cicd-panel" :bordered="false">
@@ -352,6 +368,8 @@ function statusLabel(status: string): string {
     passed: '通过',
     failed: '失败',
     needs_review: '需要复核',
+    scope_validated: '范围已验证',
+    unknown: '未知',
   };
   return labels[status] ?? status;
 }
@@ -390,6 +408,28 @@ function patchStatusLabel(status: string): string {
     rejected: '已拒绝',
   };
   return labels[status] ?? statusLabel(status);
+}
+
+function actionLabel(action: string): string {
+  const labels: Record<string, string> = {
+    approve: '批准',
+    reject: '拒绝',
+    compute_quality_gate: '计算门禁',
+  };
+  return labels[action] ?? action;
+}
+
+function statusTransition(fromStatus: string | null, toStatus: string | null): string {
+  return `${statusLabel(fromStatus ?? 'unknown')} -> ${statusLabel(toStatus ?? 'unknown')}`;
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
 }
 
 function riskLevelLabel(level: string): string {
@@ -636,6 +676,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   color: #dbeafe;
   font-size: 12px;
   line-height: 1.6;
+}
+
+.review-history-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.review-history-panel h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.review-history-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.review-history-item span,
+.review-history-item small {
+  color: #64748b;
 }
 
 @media (max-width: 980px) {

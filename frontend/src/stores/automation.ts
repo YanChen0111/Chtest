@@ -9,6 +9,7 @@ import {
   type AutomationDraftRead,
   type AutomationDraftReviewRead,
 } from '../api/automation';
+import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
 
 const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
 const DEFAULT_TEST_CASE_ID = '00000000-0000-0000-0000-000000000901';
@@ -20,6 +21,7 @@ export const useAutomationStore = defineStore('automation', {
     createdDraft: null as AutomationDraftCreateRead | null,
     draft: null as AutomationDraftRead | null,
     lastReview: null as AutomationDraftReviewRead | null,
+    reviewHistory: [] as ReviewHistoryItem[],
     loading: false,
     errorMessage: '',
   }),
@@ -40,6 +42,7 @@ export const useAutomationStore = defineStore('automation', {
           model_name: 'mock-automation-draft',
         });
         this.draft = await getAutomationDraft(this.createdDraft.automation_draft_id);
+        await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿生成失败';
       } finally {
@@ -62,6 +65,7 @@ export const useAutomationStore = defineStore('automation', {
           review_comment: reviewComment,
         });
         this.draft = { ...this.draft, status: this.lastReview.status, review_comment: reviewComment };
+        await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿编辑失败';
       } finally {
@@ -78,11 +82,25 @@ export const useAutomationStore = defineStore('automation', {
       try {
         this.lastReview = await approveAutomationDraft(this.draft.id, reviewComment);
         this.draft = { ...this.draft, status: this.lastReview.status, review_comment: reviewComment };
+        await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿审批失败';
       } finally {
         this.loading = false;
       }
+    },
+    async loadCurrentDraftReviewHistory() {
+      if (!this.draft) {
+        this.reviewHistory = [];
+        return;
+      }
+      const history = await listReviewHistory({
+        projectId: this.projectId,
+        entityType: 'AutomationDraft',
+        entityId: this.draft.id,
+        limit: 20,
+      });
+      this.reviewHistory = history.items;
     },
   },
 });

@@ -124,6 +124,14 @@
             <span>评审结果：{{ reviewStatusLabel(store.lastReview.status) }}</span>
             <strong>TestCase：{{ store.lastReview.test_case_id ?? '未创建' }}</strong>
           </div>
+          <section v-if="store.reviewHistory.length" class="review-history-panel" aria-label="本地评审历史">
+            <h3>本地评审历史</h3>
+            <div v-for="item in store.reviewHistory" :key="item.id" class="review-history-item">
+              <strong>{{ actionLabel(item.action) }}</strong>
+              <span>{{ item.reviewer }} · {{ statusTransition(item.from_status, item.to_status) }}</span>
+              <small>{{ formatDateTime(item.created_at) }} · {{ item.comment || '无评审备注' }} · 证据 {{ item.evidence_artifact_ids.length }}</small>
+            </div>
+          </section>
           <a-alert
             v-if="store.lastReview"
             class="review-result-alert"
@@ -226,12 +234,37 @@ function candidateStatusLabel(status: string): string {
     approved_after_edit: '编辑后通过',
     rejected: '已拒绝',
     needs_optimization: '需要优化',
+    unknown: '未知',
   };
   return labels[status] ?? status;
 }
 
 function reviewStatusLabel(status: string): string {
   return candidateStatusLabel(status);
+}
+
+function actionLabel(action: string): string {
+  const labels: Record<string, string> = {
+    approve: '通过',
+    approve_after_edit: '编辑后通过',
+    reject: '拒绝',
+    edit: '编辑',
+    compute_quality_gate: '计算门禁',
+  };
+  return labels[action] ?? action;
+}
+
+function statusTransition(fromStatus: string | null, toStatus: string | null): string {
+  return `${reviewStatusLabel(fromStatus ?? 'unknown')} -> ${reviewStatusLabel(toStatus ?? 'unknown')}`;
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
 }
 </script>
 
@@ -408,6 +441,31 @@ function reviewStatusLabel(status: string): string {
 .review-result strong {
   margin-top: 6px;
   color: #166534;
+}
+
+.review-history-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.review-history-panel h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.review-history-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.review-history-item span,
+.review-history-item small {
+  color: #64748b;
 }
 
 @media (max-width: 1180px) {

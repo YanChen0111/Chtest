@@ -13,6 +13,7 @@ import {
   type GeneratedCaseCandidateListItem,
   type TestCaseListItem,
 } from '../api/cases';
+import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
 
 const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
 const DEFAULT_REQUIREMENT_ID = '00000000-0000-0000-0000-000000000401';
@@ -32,6 +33,7 @@ export const useCasesStore = defineStore('cases', {
     totalCandidates: 0,
     selectedCandidateId: '',
     lastReview: null as CaseReviewRead | null,
+    reviewHistory: [] as ReviewHistoryItem[],
     loadingGeneration: false,
     loadingReview: false,
     errorMessage: '',
@@ -71,6 +73,7 @@ export const useCasesStore = defineStore('cases', {
       this.metrics = null;
       this.totalCandidates = 0;
       this.lastReview = null;
+      this.reviewHistory = [];
       this.requirementId = data.requirementId;
       this.requirementReviewId = data.requirementReviewId;
       try {
@@ -126,6 +129,7 @@ export const useCasesStore = defineStore('cases', {
         this.candidates = this.candidates.map((item) =>
           item.id === candidate.id ? { ...item, status: this.lastReview?.status ?? item.status } : item,
         );
+        await this.loadSelectedCandidateReviewHistory();
         if (this.generation) {
           this.metrics = await getCaseMetrics(this.generation.case_generation_task_id);
         }
@@ -134,6 +138,20 @@ export const useCasesStore = defineStore('cases', {
       } finally {
         this.loadingReview = false;
       }
+    },
+    async loadSelectedCandidateReviewHistory() {
+      const candidate = this.selectedCandidate;
+      if (!candidate) {
+        this.reviewHistory = [];
+        return;
+      }
+      const history = await listReviewHistory({
+        projectId: this.projectId,
+        entityType: 'GeneratedCaseCandidate',
+        entityId: candidate.id,
+        limit: 20,
+      });
+      this.reviewHistory = history.items;
     },
   },
 });

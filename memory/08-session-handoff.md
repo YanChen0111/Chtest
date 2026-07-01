@@ -1,5 +1,54 @@
 # Session Handoff
 
+## 2026-07-01 Slice 21 Task 5 Frontend Review History Panels 完成
+
+本轮完成：
+
+- 完成 Slice 21 Task 5：Add frontend review history panels。
+- 新增 frontend ReviewHistory read helper：
+  `frontend/src/api/reviewHistory.ts`。
+- 在现有 review stores 中加入本地评审历史读取：
+  - `frontend/src/stores/cases.ts`
+  - `frontend/src/stores/automation.ts`
+  - `frontend/src/stores/cicd.ts`
+- 在现有 review 页面加入紧凑的“本地评审历史”二级面板：
+  - 用例生成评审：GeneratedCaseCandidate history；
+  - AutomationDraft 评审：AutomationDraft history；
+  - CI/CD 质量中心：UnitTestPatch history；
+  - CI/CD 质量中心：QualityGateDecision history。
+- 面板展示：
+  - action；
+  - reviewer；
+  - status transition；
+  - created_at 时间；
+  - comment；
+  - evidence count。
+- 页面文案使用中文标签，同时保留 TestCase、AutomationDraft、
+  UnitTestPatch、QualityGateDecision 等产品模型术语。
+- 未新增用户、角色、权限、租户、任务分配、通知、团队 inbox 或通用
+  ReviewHistory 写接口。
+- 并发子代理 `Euclid` 只负责测试文件，补充了 review-history fetch mock
+  和断言，主线完成源码与最终验证整合。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/cases/CaseGenerationReviewView.spec.ts src/views/automation/AutomationDraftReviewView.spec.ts src/views/cicd/CicdQualityCenterView.spec.ts
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Focused review surface tests：`3` files passed，`4` tests passed。
+- Full frontend suite：`15` files passed，`20` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 5：`feat(frontend): show local review history`。
+- 继续 Slice 21 Task 6：Add review history golden smoke。
+
 ## 2026-07-01 Slice 21 Task 4 Review History Action Hooks 完成
 
 本轮完成：

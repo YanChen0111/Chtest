@@ -91,6 +91,32 @@ describe('CaseGenerationReviewView', () => {
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         );
       }
+      if (url.includes('/review-history?')) {
+        return new Response(
+          JSON.stringify({
+            total: 1,
+            items: [
+              {
+                id: '00000000-0000-0000-0000-000000000a01',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                entity_type: 'GeneratedCaseCandidate',
+                entity_id: '00000000-0000-0000-0000-000000000801',
+                related_entity_type: 'TestCase',
+                related_entity_id: '00000000-0000-0000-0000-000000000901',
+                action: 'approve_after_edit',
+                from_status: 'generated',
+                to_status: 'approved_after_edit',
+                reviewer: 'Default User',
+                comment: '前端评审动作',
+                evidence_artifact_ids: ['00000000-0000-0000-0000-000000000e01', '00000000-0000-0000-0000-000000000e02'],
+                metadata_json: {},
+                created_at: '2026-07-01T02:15:00Z',
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
       return new Response('not found', { status: 404 });
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -132,9 +158,18 @@ describe('CaseGenerationReviewView', () => {
     expect(wrapper.text()).toContain('编辑率');
     expect(wrapper.text()).toContain('评审进度');
     expect(wrapper.text()).toContain('50%');
+    expect(wrapper.text()).toContain('本地评审历史');
+    expect(wrapper.text()).toContain('Default User');
+    expect(wrapper.text()).toContain('已生成 -> 编辑后通过');
+    expect(wrapper.text()).toContain('前端评审动作');
+    expect(wrapper.text()).toContain('证据 2');
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/case-review/items/00000000-0000-0000-0000-000000000801/approve',
       expect.objectContaining({ method: 'POST' }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/review-history?project_id=00000000-0000-0000-0000-000000000101&entity_type=GeneratedCaseCandidate&entity_id=00000000-0000-0000-0000-000000000801&limit=20',
+      expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),
     );
   });
 });

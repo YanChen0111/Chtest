@@ -10,13 +10,13 @@ Slice 21: Local Review Attribution History.
 
 ## Current Task
 
-Slice 21 Task 5: Add frontend review history panels.
+Slice 21 Task 6: Add review history golden smoke.
 
 ## Product Value Answer
 
-After this task, existing review surfaces show compact local ReviewHistory
-panels so a tester can see action, reviewer, status transition, comment,
-timestamp, and evidence count without adding team governance.
+After this task, one golden smoke proves local ReviewHistory spans existing
+review-gated evidence actions and remains append-only, local, and free of team
+governance features.
 
 ## Must Read
 
@@ -43,15 +43,12 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
+docs/fixtures/10-local-review-history-golden.md
 docs/implementation/slices/slice-21-local-review-attribution-history.md
-frontend/src/api/client.ts
-frontend/src/views/automation/AutomationDraftView.vue
-frontend/src/views/cicd/CicdQualityCenterView.vue
-frontend/src/views/cases/CaseReviewView.vue
-frontend/src/**/*.spec.ts
+backend/app/tests/golden/test_review_history_golden.py
 ```
 
-Frontend panel task. Do not add user management, roles, permissions, tenants,
+Golden smoke task. Do not add user management, roles, permissions, tenants,
 assignment workflow, notifications, team inbox, comment threads, generic
 ReviewHistory write endpoints, remote provider governance, RAG runtime, or MCP
 runtime.
@@ -59,28 +56,27 @@ runtime.
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_review_history_golden.py -q
 git diff --check
 ```
 
-Expected result: frontend tests and diff check pass.
+Expected result: golden smoke and diff check pass.
 
 ## Acceptance
 
-- Adds frontend API typing/helper for `GET /api/review-history`.
-- Shows compact review history entries in existing review surfaces.
-- Uses Chinese-facing labels while keeping product model terms such as
-  TestCase, AutomationDraft, UnitTestPatch, and QualityGateDecision unchanged.
-- Keeps history panels secondary to existing review action controls.
-- Does not add user management, roles, permissions, assignment, notifications,
-  team inbox, or collaboration controls.
+- Golden creates at least two existing review actions, such as UnitTestPatch
+  approval and QualityGateDecision compute.
+- Golden confirms append-only ReviewHistory records exact entity/action/status
+  transitions and evidence references.
+- Golden confirms no RBAC, tenants, permissions, login/session, assignment,
+  notification, or remote provider dependency is introduced.
 
 ## Commit Message
 
 ```text
-feat(frontend): show local review history
+test(golden): add local review history smoke
 ```
 
 ## Next Task
 
-Slice 21 Task 6: Add review history golden smoke.
+Slice 21 Completion Gate.

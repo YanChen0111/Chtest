@@ -1,5 +1,45 @@
 # Development Log
 
+## 2026-07-01 Slice 21 Frontend Review History Panels
+
+### Completed
+
+- Completed Slice 21 Task 5: Add frontend review history panels.
+- Added frontend ReviewHistory API typing/helper for `GET /api/review-history`.
+- Added local review history state and load actions to:
+  - case generation review;
+  - AutomationDraft review;
+  - CI/CD UnitTestPatch and QualityGateDecision flows.
+- Added compact secondary history panels in existing review surfaces:
+  - TestCase candidate review;
+  - AutomationDraft review;
+  - UnitTestPatch review;
+  - QualityGateDecision compute.
+- Panels show action, reviewer, status transition, timestamp, comment, and
+  evidence count with Chinese-facing labels while preserving product terms such
+  as TestCase, AutomationDraft, UnitTestPatch, and QualityGateDecision.
+- Added focused frontend assertions for local history display and
+  review-history API reads.
+
+### Verification
+
+```bash
+npm --prefix frontend run test -- --run src/views/cases/CaseGenerationReviewView.spec.ts src/views/automation/AutomationDraftReviewView.spec.ts src/views/cicd/CicdQualityCenterView.spec.ts
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Focused review surface tests: `3` files passed, `4` tests passed.
+- Full frontend suite: `15` files passed, `20` tests passed.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `feat(frontend): show local review history`.
+- Continue Slice 21 Task 6: add review history golden smoke.
+
 ## 2026-07-01 Slice 21 Review History Action Hooks
 
 ### Completed

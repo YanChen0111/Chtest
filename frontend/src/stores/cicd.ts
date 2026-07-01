@@ -21,6 +21,7 @@ import {
   type QualityGateDecisionRead,
   type UnitTestPatchRead,
 } from '../api/cicd';
+import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
 
 const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
 const DEFAULT_REPOSITORY_ID = '00000000-0000-0000-0000-000000000301';
@@ -48,6 +49,8 @@ export const useCICDStore = defineStore('cicd', {
     regressionRun: null as CICDRegressionRunRead | null,
     qualityGate: null as QualityGateDecisionRead | null,
     qualityReport: null as CICDQualityReportRead | null,
+    patchReviewHistory: [] as ReviewHistoryItem[],
+    gateReviewHistory: [] as ReviewHistoryItem[],
     loading: false,
     errorMessage: '',
   }),
@@ -104,6 +107,7 @@ export const useCICDStore = defineStore('cicd', {
       try {
         this.unitTestPatch = await generateUnitTestPatch(this.run.id);
         this.patchReviewStatus = this.unitTestPatch.status;
+        this.patchReviewHistory = [];
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : 'UnitTestPatch 生成失败';
       } finally {
@@ -117,6 +121,7 @@ export const useCICDStore = defineStore('cicd', {
       try {
         const reviewed = await approveUnitTestPatch(this.unitTestPatch.id, '前端批准 UnitTestPatch');
         this.patchReviewStatus = reviewed.status;
+        await this.loadPatchReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : 'UnitTestPatch 批准失败';
       } finally {
@@ -130,6 +135,7 @@ export const useCICDStore = defineStore('cicd', {
       try {
         const reviewed = await rejectUnitTestPatch(this.unitTestPatch.id, '前端拒绝 UnitTestPatch');
         this.patchReviewStatus = reviewed.status;
+        await this.loadPatchReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : 'UnitTestPatch 拒绝失败';
       } finally {
@@ -182,6 +188,7 @@ export const useCICDStore = defineStore('cicd', {
       this.errorMessage = '';
       try {
         this.qualityGate = await computeQualityGate(this.run.id);
+        await this.loadGateReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '质量门禁计算失败';
       } finally {
@@ -203,6 +210,32 @@ export const useCICDStore = defineStore('cicd', {
     async refreshRuns() {
       const listed = await listCICDRuns();
       this.runs = listed.items;
+    },
+    async loadPatchReviewHistory() {
+      if (!this.unitTestPatch) {
+        this.patchReviewHistory = [];
+        return;
+      }
+      const history = await listReviewHistory({
+        projectId: this.projectId,
+        entityType: 'UnitTestPatch',
+        entityId: this.unitTestPatch.id,
+        limit: 20,
+      });
+      this.patchReviewHistory = history.items;
+    },
+    async loadGateReviewHistory() {
+      if (!this.run) {
+        this.gateReviewHistory = [];
+        return;
+      }
+      const history = await listReviewHistory({
+        projectId: this.projectId,
+        relatedEntityType: 'CICDRun',
+        relatedEntityId: this.run.id,
+        limit: 20,
+      });
+      this.gateReviewHistory = history.items.filter((item) => item.entity_type === 'QualityGateDecision');
     },
   },
 });
