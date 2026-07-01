@@ -1,5 +1,33 @@
 # Development Log
 
+## 2026-07-01 Slice 26 CI Imported Reference Frontend Clarity
+
+### Completed
+
+- CI/CD Quality Center imported reference rows now show:
+  - inert reference status;
+  - `不可本地打开`;
+  - `未远程拉取`;
+  - external URL as reference text.
+- Focused frontend test confirms no local artifact download link is rendered
+  for imported external references.
+- Updated `NEXT_AI_TASK.md` to Slice 26 Task 4: Add imported reference inert
+  golden smoke.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/cicd/CicdQualityCenterView.spec.ts`
+- Result: `2 passed`.
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `feat(frontend): clarify ci imported artifact references`.
+- Continue Slice 26 Task 4 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 26 Imported Reference Display Contract
 
 ### Completed

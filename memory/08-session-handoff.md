@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-07-01 Slice 26 Task 3 CI Imported Reference Frontend Clarity 完成
+
+本轮完成：
+
+- 完成 Slice 26 Task 3：Add CI imported reference frontend clarity。
+- `CicdQualityCenterView.vue` imported reference rows 新增：
+  - `不可本地打开`；
+  - `未远程拉取`；
+  - 保留 external URL 文本；
+  - 不新增本地下载链接。
+- `CicdQualityCenterView.spec.ts` 覆盖：
+  - imported reference 显示 inert/local-openability/remote-fetch 状态；
+  - 不渲染 `/api/artifacts/{id}/download` 本地 artifact 链接；
+  - 仍不出现 rerun/webhook/token/deploy/release 等远程 provider 控制文案。
+- Slice 26 table 已记录 Task 2 commit `ae599d2`，Task 3 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 26 Task 4：Add imported reference inert golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/cicd/CicdQualityCenterView.spec.ts
+npm --prefix frontend run build
+git diff --check
+```
+
+验证结果：
+
+- CI/CD focused frontend test：`2 passed`。
+- Frontend build：passed，保留 Vite large chunk warning。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：`feat(frontend): clarify ci imported artifact references`。
+- 继续 Slice 26 Task 4：Add imported reference inert golden smoke。
+
 ## 2026-07-01 Slice 26 Task 2 Imported Reference Display Contract 完成
 
 本轮完成：

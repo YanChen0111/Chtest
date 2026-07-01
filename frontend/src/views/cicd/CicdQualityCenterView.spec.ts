@@ -180,8 +180,11 @@ describe('CicdQualityCenterView', () => {
     expect(wrapper.text()).toContain('pytest report');
     expect(wrapper.text()).toContain('test_report');
     expect(wrapper.text()).toContain('仅保存引用');
+    expect(wrapper.text()).toContain('不可本地打开');
+    expect(wrapper.text()).toContain('未远程拉取');
     expect(wrapper.text()).toContain('app/coupon.py');
     expect(wrapper.text()).toContain('tests/test_coupon.py');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001122/download"]').exists()).toBe(false);
     expect(wrapper.text()).not.toContain('重新运行');
     expect(wrapper.text()).not.toContain('取消流水线');
     expect(wrapper.text()).not.toContain('Webhook');

@@ -10,12 +10,12 @@ Slice 26: CI Imported Artifact Reference Clarity.
 
 ## Current Task
 
-Slice 26 Task 3: Add CI imported reference frontend clarity.
+Slice 26 Task 4: Add imported reference inert golden smoke.
 
 ## Product Value Answer
 
-After this task, CI/CD Quality Center clearly shows imported external artifact
-references as inert, not locally openable, and not remotely fetched.
+After this task, a golden smoke proves imported external artifact references
+remain inert, not locally openable, and free of remote-provider side effects.
 
 ## Must Read
 
@@ -62,35 +62,36 @@ backend/app/tests/golden/test_execution_evidence_summary_golden.py
 docs/fixtures/13-execution-evidence-summary-golden.md
 ```
 
-Frontend task. Do not add backend feature code, migrations, package upgrades,
-artifact upload/mutation/delete, cloud storage, external provider integration,
-RBAC, tenants, permissions, broad redesign work, report generation behavior, or
-runner behavior changes.
+Golden smoke task. Do not add frontend code, backend feature code beyond the
+focused test, migrations, package upgrades, artifact upload/mutation/delete,
+cloud storage, external provider integration, RBAC, tenants, permissions, broad
+redesign work, report generation behavior, or runner behavior changes.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run src/views/cicd/CicdQualityCenterView.spec.ts
-npm --prefix frontend run build
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py -q
 git diff --check
 ```
 
-Expected result: focused CI/CD frontend test, frontend build, and diff check
-pass.
+Expected result: imported reference inert golden smoke and diff check pass.
 
 ## Acceptance
 
-- Imported artifact reference rows show name, kind, external URL, inert status,
-  and local-openability status.
-- External references do not render local download links.
-- The page still excludes remote provider control wording or actions.
+- Golden proves imported artifact references are stored as metadata with inert
+  status.
+- Golden proves no remote fetch was performed.
+- Golden proves local artifact access rejects the external reference with
+  `ARTIFACT_NOT_LOCAL`.
+- Golden proves no TestRun, Report, FailureAnalysis, QualityGateDecision, or
+  remote-provider side effect is created by import-only metadata.
 
 ## Commit Message
 
 ```text
-feat(frontend): clarify ci imported artifact references
+test(golden): add ci imported reference clarity smoke
 ```
 
 ## Next Task
 
-Slice 26 Task 4: Add imported reference inert golden smoke.
+Slice 26 Completion Gate.

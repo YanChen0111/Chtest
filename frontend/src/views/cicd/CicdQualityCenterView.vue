@@ -114,6 +114,8 @@
               <strong>{{ reference.name }}</strong>
               <span>{{ reference.kind }}</span>
               <span>{{ reference.inert_reference ? '仅保存引用' : '引用' }}</span>
+              <span>{{ reference.localOpenLabel }}</span>
+              <span>{{ reference.remoteFetchLabel }}</span>
               <small>{{ reference.external_url || '-' }}</small>
             </div>
           </div>
@@ -321,6 +323,8 @@ const artifactReferenceRows = computed(() =>
     key: `${reference.name ?? 'reference'}-${reference.kind ?? 'artifact'}-${index}`,
     name: reference.name || '未命名引用',
     kind: reference.kind || 'artifact',
+    localOpenLabel: '不可本地打开',
+    remoteFetchLabel: ciImportArtifact.value?.metadata_json.remote_fetch_performed === true ? '已远程拉取' : '未远程拉取',
   })),
 );
 
