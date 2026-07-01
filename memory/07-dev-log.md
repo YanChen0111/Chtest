@@ -1,5 +1,28 @@
 # Development Log
 
+## 2026-07-01 Slice 24 Local Artifact Access Plan
+
+### Completed
+
+- Selected Slice 24: Local Artifact Access Links.
+- Added `docs/implementation/slices/slice-24-local-artifact-access-links.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 23 completion
+  and Slice 24 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 24 Task 2: Define local artifact access
+  contract.
+
+### Rationale
+
+- Execution pages expose artifact paths, but local evidence artifacts should be
+  directly accessible from the workbench.
+- The slice stays small as read-only local Artifact access with no cloud
+  storage, sharing, RBAC, tenants, permissions, or provider fetches.
+
+### Next Step
+
+- Commit `docs(v2): add local artifact access plan`.
+- Continue Slice 24 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 22 JMeter Local Runner Backend
 
 ### Completed

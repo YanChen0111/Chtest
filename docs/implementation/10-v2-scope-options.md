@@ -592,3 +592,80 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan captures the exact build failures, allowed
   files, verification command, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Engineering quality follow-up, as the frontend build baseline.
+
+Why it was selected:
+
+- Slice 22 surfaced that frontend Vitest passed while the production build gate
+  failed on existing TypeScript baseline issues.
+- Restoring `npm --prefix frontend run build` made future frontend work safer
+  without adding product scope.
+
+Completed slice name:
+
+```text
+Slice 23: Frontend Build Baseline
+```
+
+Delivered output:
+
+- Slice plan, narrow TypeScript fixes, restored frontend build verification,
+  frontend test verification, and completion gate.
+- No product behavior, backend API, package upgrade, redesign, RBAC, tenants,
+  permissions, RAG runtime, MCP runtime, or CI provider control was added.
+
+## Recommended Next V2 Slice
+
+Recommended: Artifact evidence access links, narrowed to local TestRun artifact
+read/download evidence.
+
+Why:
+
+- Recent runner slices now show artifact paths, but the execution surfaces do
+  not yet prove that a reviewer can open the local evidence artifact from the
+  workbench.
+- Artifact access is central to Chtest's evidence-workbench value: stdout,
+  stderr, parsed output, JTL, Newman JSON, traces, and screenshots should be
+  inspectable through a controlled local API.
+- This is a small cross-cutting product value improvement if limited to existing
+  Artifact rows owned by TestRun and existing local artifact storage.
+
+Next slice name:
+
+```text
+Slice 24: Local Artifact Access Links
+```
+
+Smallest useful boundary:
+
+- Add a read-only local artifact content/download endpoint for existing
+  Artifact rows.
+- Add frontend artifact links in execution evidence tables for existing
+  TestRun artifacts.
+- Preserve artifact metadata display and existing table layout.
+- Verify with one backend API test, one frontend execution-view test, and one
+  golden smoke if needed.
+
+Explicit non-goals:
+
+- No cloud storage, signed URLs, sharing, upload UI, artifact mutation, delete,
+  external provider fetch, remote CI artifact download, retention policy,
+  indexing, search, RBAC, tenants, permissions, RAG runtime, MCP runtime, or
+  marketplace work.
+- No broad artifact browser or dashboard.
+- No changes to runner execution behavior.
+
+Suggested next task:
+
+```text
+Slice 24 Task 1: Add Local Artifact Access Links task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines endpoint boundaries, frontend link
+  behavior, artifact ownership checks, verification, and non-goals.

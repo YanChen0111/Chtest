@@ -1,5 +1,28 @@
 # Session Handoff
 
+## 2026-07-01 Slice 24 Task 1 Local Artifact Access Plan 完成
+
+本轮完成：
+
+- 完成 Slice 24 Task 1：Add Local Artifact Access Links task plan。
+- 选择 Slice 24：Local Artifact Access Links。
+- 选择原因：
+  - 多个执行页已经展示 artifact path，但用户还不能从 workbench 直接打开本地证据；
+  - artifact 可访问性是 evidence workbench 的核心价值；
+  - 可以限定为 read-only local Artifact access，不引入云存储、分享、RBAC、
+    tenants、permissions 或外部 provider fetch。
+- 新增 Slice 24 计划：
+  `docs/implementation/slices/slice-24-local-artifact-access-links.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充 Slice 23 完成记录和
+  Slice 24 推荐。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 24 Task 2：Define local artifact access contract。
+
+下次推荐任务：
+
+- 提交 Slice 24 Task 1：`docs(v2): add local artifact access plan`。
+- 继续 Slice 24 Task 2：Define local artifact access contract。
+
 ## 2026-07-01 Slice 23 Completion Gate 完成
 
 本轮完成：

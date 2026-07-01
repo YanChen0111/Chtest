@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Select the next V2 small slice.
+Slice 24: Local Artifact Access Links.
 
 ## Current Task
 
-Select the next V2 small slice after Slice 23 completion.
+Slice 24 Task 2: Define local artifact access contract.
 
 ## Product Value Answer
 
-After this task, the next small V2 task is selected with a narrow product value,
-non-goals, expected files, verification command, and commit scope.
+After this task, artifact access has a precise read-only local API and artifact
+safety contract before backend/frontend implementation starts.
 
 ## Must Read
 
@@ -26,15 +26,15 @@ non-goals, expected files, verification command, and commit scope.
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/04-ai-vibecoding-governance.md`
-8. `docs/implementation/10-v2-scope-options.md`
-9. recent session handoff and dev log
+8. `docs/implementation/slices/slice-24-local-artifact-access-links.md`
+9. existing artifact contract and execution artifact tables
 
 ## Do Not Read Unless Needed
 
 - Broad architecture, migration, enterprise collaboration, marketplace,
-  distributed execution, cloud CI/provider integration, RBAC, tenants,
-  permissions, and frontend redesign docs unless a concrete blocker requires
-  them.
+  distributed execution, cloud storage, cloud CI/provider integration, RBAC,
+  tenants, permissions, and frontend redesign docs unless a concrete blocker
+  requires them.
 
 ## Expected Files
 
@@ -47,45 +47,39 @@ memory/07-dev-log.md
 docs/implementation/slices/slice-22-jmeter-local-execution.md
 docs/implementation/10-v2-scope-options.md
 docs/implementation/slices/slice-23-frontend-build-baseline.md
-frontend/src/api/client.ts
-frontend/src/api/automation.ts
-frontend/src/api/cases.ts
-frontend/src/api/cicd.ts
-frontend/src/api/execution.ts
-frontend/src/api/reporting.ts
-frontend/src/api/requirements.ts
-frontend/src/views/ai-workbench/AiWorkbenchView.vue
-frontend/src/views/cicd/CicdQualityCenterView.vue
-frontend/src/views/requirements/RequirementReviewView.vue
+docs/implementation/slices/slice-24-local-artifact-access-links.md
+docs/contracts/02-api-contract.md
+docs/contracts/04-artifact-contract.md
 ```
 
-Planning task. Do not add product code, backend code, frontend code, migrations,
-package upgrades, redesign work, or tests. Do not start a broad V2 platform
-expansion.
+Contract task. Do not add product code, backend code, frontend code, migrations,
+package upgrades, redesign work, or tests. Do not start a broad artifact
+platform expansion.
 
 ## Verification Command
 
 ```bash
-rg -n "V2|Next|small slice|Candidate|Frontend Build Baseline|Slice 23" docs/implementation/10-v2-scope-options.md docs/implementation/slices/slice-23-frontend-build-baseline.md NEXT_AI_TASK.md
+rg -n "artifact access|download|GET /api/artifacts|Artifact" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-24-local-artifact-access-links.md
 git diff --check
 ```
 
-Expected result: next V2 planning keywords are present and diff check passes.
+Expected result: artifact access contract keywords are present and diff check passes.
 
 ## Acceptance
 
-- Slice 23 remains closed.
-- Next task is selected as a small, verifiable V2 slice or planning item.
-- Product value, non-goals, expected files, verification command, and commit
-  message are explicit.
-- No product code is changed.
+- API contract defines a read-only artifact content/download endpoint.
+- Artifact contract defines local-root path safety, MIME/filename handling, and
+  content access boundaries.
+- External imported artifact references remain inert and unavailable through the
+  local download endpoint.
+- Non-goals remain explicit.
 
 ## Commit Message
 
 ```text
-docs(v2): select next small slice
+docs(v2): define artifact access contract
 ```
 
 ## Next Task
 
-Start the selected V2 task.
+Slice 24 Task 3: Add backend artifact download API.
