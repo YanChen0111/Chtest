@@ -915,3 +915,85 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines safe artifact link behavior,
   contracts, verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: AI task evidence artifact links.
+
+Why it was selected:
+
+- Slice 24 made local TestRun artifacts openable, Slice 25 explained report
+  evidence, and Slice 26 clarified external CI artifact references. Slice 27
+  applied the same safe local evidence access pattern to AI Workbench.
+- The slice strengthened the AI review loop by making safe AI task artifacts
+  openable while keeping unsafe raw LLM output metadata-only.
+
+Completed slice name:
+
+```text
+Slice 27: AI Task Evidence Artifact Links
+```
+
+Delivered output:
+
+- Slice plan, contract boundary, frontend AI Workbench artifact links, golden
+  smoke, and completion gate.
+- Safe AI task artifacts can use local open links. Unsafe raw LLM artifacts
+  remain metadata-only and no rerun, provider call, artifact mutation, RAG
+  runtime, MCP runtime, RBAC, tenants, or permissions were added.
+
+## Recommended Next V2 Slice
+
+Recommended: CI/CD quality gate evidence summary.
+
+Why:
+
+- Slice 16 computes QualityGateDecision, but the CI/CD Quality Center mostly
+  shows a gate status, summary, and ids. Users need to see which required
+  evidence made the gate pass, fail, or need review.
+- Slice 24 made local artifacts openable, and Slice 25 established the evidence
+  summary pattern. Applying that pattern to quality gates improves the existing
+  CI/CD support workflow without changing gate computation.
+- The slice can stay small because QualityGateDecision already stores
+  `blocking_reasons`, `status_detail`, and `evidence_artifact_ids`.
+
+Next slice name:
+
+```text
+Slice 28: CI/CD Quality Gate Evidence Summary
+```
+
+Smallest useful boundary:
+
+- Define a read-only quality gate evidence summary from existing
+  QualityGateDecision fields and Artifact metadata.
+- Show required evidence for UnitTestPatch, new-test, and regression in the
+  CI/CD Quality Center quality gate panel.
+- Keep missing evidence visible and not downloadable.
+- Add local Artifact links only for persisted local Artifact ids.
+- Add one focused frontend test and one golden smoke proving the summary is
+  evidence-only.
+
+Explicit non-goals:
+
+- No QualityGateDecision computation changes, scoring model, risk analytics,
+  dashboards, trends, automatic reports, FailureAnalysis behavior, runner
+  behavior, or report generation behavior changes.
+- No remote CI provider API calls, external artifact fetch, PR comments, commit
+  statuses, reruns, deploy/release controls, credentials, OAuth, webhooks, or
+  scheduling.
+- No artifact upload, mutation, delete, sharing, signed URL, cloud storage,
+  broad artifact browser, indexing, search, RBAC, tenants, permissions, RAG
+  runtime, MCP runtime, marketplace, or package upgrades.
+
+Suggested next task:
+
+```text
+Slice 28 Task 1: Add CI/CD Quality Gate Evidence Summary task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines summary behavior, contracts,
+  verification, and non-goals.

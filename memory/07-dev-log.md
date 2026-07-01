@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-01 Slice 28 CI/CD Quality Gate Evidence Summary Plan
+
+### Completed
+
+- Selected Slice 28: CI/CD Quality Gate Evidence Summary.
+- Added `docs/implementation/slices/slice-28-cicd-quality-gate-evidence-summary.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 27 completion
+  and Slice 28 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 28 Task 2: Define quality gate evidence
+  summary contract.
+
+### Rationale
+
+- QualityGateDecision already stores status, summary, blocking reasons,
+  `status_detail`, and evidence Artifact ids.
+- The CI/CD Quality Center currently exposes the gate result but not enough
+  readable evidence detail for required evidence and missing blockers.
+- Slice 28 stays small by adding read-only summary clarity without changing
+  quality gate computation, report generation, runner behavior, or remote CI
+  provider integration.
+
+### Next Step
+
+- Commit `docs(v2): add quality gate evidence summary plan`.
+- Continue Slice 28 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 27 Completion Gate
 
 ### Completed

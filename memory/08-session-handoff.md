@@ -1,5 +1,26 @@
 # Session Handoff
 
+## 2026-07-01 Slice 28 Task 1 CI/CD Quality Gate Evidence Summary Plan 完成
+
+本轮完成：
+
+- 选择 Slice 28：CI/CD Quality Gate Evidence Summary。
+- 选择原因：
+  - Slice 16 已有 QualityGateDecision；
+  - Slice 24/25 已建立本地 artifact access 和 evidence summary 模式；
+  - CI/CD 质量中心仍需要更清楚展示质量门禁的必需证据、缺失证据和阻塞原因。
+- 新增 Slice 28 计划：
+  `docs/implementation/slices/slice-28-cicd-quality-gate-evidence-summary.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充 Slice 27 完成记录和
+  Slice 28 推荐。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 28 Task 2：Define quality gate evidence summary contract。
+
+下次推荐任务：
+
+- 提交 Task 1：`docs(v2): add quality gate evidence summary plan`。
+- 继续 Slice 28 Task 2：Define quality gate evidence summary contract。
+
 ## 2026-07-01 Slice 27 Completion Gate 完成
 
 本轮完成：
