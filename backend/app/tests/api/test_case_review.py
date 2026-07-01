@@ -19,6 +19,7 @@ from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.cases.models import GeneratedCaseCandidate, TestCase as CaseModel
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.review_history.models import ReviewHistory
 
 
 class ASGIResponse:
@@ -218,6 +219,15 @@ def test_approve_candidate_creates_test_case(api_client: tuple[ASGIClient, sessi
         assert test_case.source_candidate_id == refreshed_candidate.id
         assert test_case.title == refreshed_candidate.title
         assert test_case.review_status == "approved"
+        history = session.scalar(select(ReviewHistory).where(ReviewHistory.entity_id == refreshed_candidate.id))
+        assert history is not None
+        assert history.project_id == refreshed_candidate.project_id
+        assert history.entity_type == "GeneratedCaseCandidate"
+        assert history.action == "approve"
+        assert history.from_status == "generated"
+        assert history.to_status == "approved"
+        assert history.reviewer == "Default User"
+        assert history.comment == "Looks good."
 
 
 def test_approve_after_edit_creates_test_case_from_edited_case(api_client: tuple[ASGIClient, sessionmaker[Session]]) -> None:
@@ -276,6 +286,12 @@ def test_reject_candidate_does_not_create_test_case(api_client: tuple[ASGIClient
         assert refreshed_candidate.status == "rejected"
         assert refreshed_candidate.review_comment == "Too vague."
         assert list(session.scalars(select(CaseModel))) == []
+        history = session.scalar(select(ReviewHistory).where(ReviewHistory.entity_id == refreshed_candidate.id))
+        assert history is not None
+        assert history.action == "reject"
+        assert history.from_status == "generated"
+        assert history.to_status == "rejected"
+        assert history.comment == "Too vague."
 
 
 def test_needs_optimization_marks_candidate_without_creating_test_case(

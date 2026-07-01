@@ -15,6 +15,7 @@ from backend.app.modules.automation.schemas import (
 from backend.app.modules.cases.models import TestCase
 from backend.app.modules.projects.models import Project
 from backend.app.modules.requirements.models import Requirement
+from backend.app.modules.review_history.service import append_review_history
 
 
 class ProjectNotFoundError(Exception):
@@ -109,6 +110,7 @@ def edit_automation_draft(session: Session, draft_id: uuid.UUID, data: Automatio
     draft = get_automation_draft(session, draft_id)
     if draft.status == "approved":
         raise AutomationDraftInvalidActionError
+    from_status = draft.status
     draft.draft_code = data.draft_code
     draft.suggested_file_path = data.suggested_file_path
     draft.execution_notes = data.execution_notes
@@ -116,6 +118,16 @@ def edit_automation_draft(session: Session, draft_id: uuid.UUID, data: Automatio
     draft.review_comment = data.review_comment
     draft.status = "edited"
     session.add(draft)
+    append_review_history(
+        session,
+        project_id=draft.project_id,
+        entity_type="AutomationDraft",
+        entity_id=draft.id,
+        action="edit",
+        from_status=from_status,
+        to_status=draft.status,
+        comment=data.review_comment,
+    )
     session.commit()
     session.refresh(draft)
     return draft
@@ -125,9 +137,20 @@ def approve_automation_draft(session: Session, draft_id: uuid.UUID, data: Automa
     draft = get_automation_draft(session, draft_id)
     if data.action != "approve" or draft.status not in {"draft_generated", "edited"}:
         raise AutomationDraftInvalidActionError
+    from_status = draft.status
     draft.status = "approved"
     draft.review_comment = data.review_comment
     session.add(draft)
+    append_review_history(
+        session,
+        project_id=draft.project_id,
+        entity_type="AutomationDraft",
+        entity_id=draft.id,
+        action="approve",
+        from_status=from_status,
+        to_status=draft.status,
+        comment=data.review_comment,
+    )
     session.commit()
     session.refresh(draft)
     return draft

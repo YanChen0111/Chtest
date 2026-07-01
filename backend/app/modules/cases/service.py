@@ -19,6 +19,7 @@ from backend.app.modules.cases.schemas import (
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.projects.models import Project
 from backend.app.modules.requirements.models import Requirement, RequirementReview, RiskItem
+from backend.app.modules.review_history.service import append_review_history
 from backend.app.workers.enqueue import FakeAIQueue, enqueue_ai_task
 from backend.app.workers.handlers.ai_task_handler import run_ai_task
 
@@ -235,6 +236,7 @@ def review_candidate(session: Session, candidate_id: uuid.UUID, data: CaseReview
     if candidate.status in {"approved", "approved_after_edit", "rejected"}:
         raise CaseCandidateAlreadyFinalError
 
+    from_status = candidate.status
     test_case: TestCase | None = None
     if data.action == "approve":
         candidate.status = "approved"
@@ -258,6 +260,17 @@ def review_candidate(session: Session, candidate_id: uuid.UUID, data: CaseReview
         raise CaseReviewInvalidActionError
 
     session.add(candidate)
+    if data.action in {"approve", "approve_after_edit", "reject"}:
+        append_review_history(
+            session,
+            project_id=candidate.project_id,
+            entity_type="GeneratedCaseCandidate",
+            entity_id=candidate.id,
+            action=data.action,
+            from_status=from_status,
+            to_status=candidate.status,
+            comment=data.review_comment,
+        )
     session.commit()
     session.refresh(candidate)
     if test_case is not None:

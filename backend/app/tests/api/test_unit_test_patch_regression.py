@@ -26,6 +26,7 @@ from backend.app.modules.execution.models import TestRun
 from backend.app.modules.projects.models import Project, Repository, TestCommand, Workspace
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.reporting.models import Report
+from backend.app.modules.review_history.models import ReviewHistory
 
 
 def session_factory() -> sessionmaker[Session]:
@@ -581,6 +582,13 @@ def test_approve_and_reject_unit_test_patch_api_updates_review_status() -> None:
         with SessionLocal() as session:
             approved = session.get(UnitTestPatch, approve_patch_id)
             rejected = session.get(UnitTestPatch, reject_patch_id)
+            history = list(
+                session.scalars(
+                    select(ReviewHistory)
+                    .where(ReviewHistory.entity_type == "UnitTestPatch")
+                    .order_by(ReviewHistory.action.asc()),
+                ),
+            )
 
         assert approved is not None
         assert approved.status == "approved"
@@ -588,6 +596,10 @@ def test_approve_and_reject_unit_test_patch_api_updates_review_status() -> None:
         assert rejected is not None
         assert rejected.status == "rejected"
         assert rejected.review_comment == "Need stronger assertions"
+        assert [(item.entity_id, item.action, item.from_status, item.to_status, item.comment) for item in history] == [
+            (approve_patch_id, "approve", "scope_validated", "approved", "Only tests are modified"),
+            (reject_patch_id, "reject", "awaiting_review", "rejected", "Need stronger assertions"),
+        ]
     finally:
         app.dependency_overrides.clear()
 
@@ -967,12 +979,20 @@ def test_quality_gate_api_returns_needs_review_when_required_evidence_is_missing
         with SessionLocal() as session:
             run = session.get(CICDRun, cicd_run_id)
             decisions = list(session.scalars(select(QualityGateDecision)))
+            history = list(session.scalars(select(ReviewHistory).where(ReviewHistory.entity_type == "QualityGateDecision")))
             assert session.scalar(select(Report)) is None
 
         assert run is not None
         assert run.quality_gate_status == "needs_review"
         assert len(decisions) == 1
         assert decisions[0].status == "needs_review"
+        assert len(history) == 1
+        assert history[0].entity_id == decisions[0].id
+        assert history[0].related_entity_type == "CICDRun"
+        assert history[0].related_entity_id == cicd_run_id
+        assert history[0].action == "compute_quality_gate"
+        assert history[0].from_status == "pending"
+        assert history[0].to_status == "needs_review"
     finally:
         app.dependency_overrides.clear()
 

@@ -19,6 +19,7 @@ from backend.app.modules.automation.schemas import AutomationDraftRead
 from backend.app.modules.cases.models import TestCase as CaseModel
 from backend.app.modules.projects.models import Project, Workspace
 from backend.app.modules.projects.router import get_session
+from backend.app.modules.review_history.models import ReviewHistory
 
 
 class ASGIResponse:
@@ -330,6 +331,20 @@ def test_get_edit_and_approve_automation_draft(api_client: tuple[ASGIClient, ses
         assert draft.review_comment == "Draft is safe to execute later."
         assert draft.runtime_artifact_id is None
         assert draft.promoted_artifact_id is None
+        history = {
+            (item.action, item.from_status, item.to_status, item.comment)
+            for item in session.scalars(
+                select(ReviewHistory).where(
+                    ReviewHistory.entity_type == "AutomationDraft",
+                    ReviewHistory.entity_id == draft_id,
+                ),
+            )
+        }
+
+    assert history == {
+        ("edit", "draft_generated", "edited", "Adjusted naming before approval."),
+        ("approve", "edited", "approved", "Draft is safe to execute later."),
+    }
 
 
 def test_invalid_automation_draft_approve_action_returns_error(

@@ -10,13 +10,13 @@ Slice 21: Local Review Attribution History.
 
 ## Current Task
 
-Slice 21 Task 4: Attach history to existing review actions.
+Slice 21 Task 5: Add frontend review history panels.
 
 ## Product Value Answer
 
-After this task, existing review-gated workflows append local ReviewHistory
-records after successful actions without changing approval rules or introducing
-RBAC, permissions, tenants, login, or team governance.
+After this task, existing review surfaces show compact local ReviewHistory
+panels so a tester can see action, reviewer, status transition, comment,
+timestamp, and evidence count without adding team governance.
 
 ## Must Read
 
@@ -44,53 +44,43 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-21-local-review-attribution-history.md
-backend/app/modules/review_history/models.py
-backend/app/modules/review_history/schemas.py
-backend/app/modules/review_history/service.py
-backend/app/modules/review_history/router.py
-backend/app/modules/review_history/__init__.py
-backend/app/tests/api/test_review_history.py
-backend/app/modules/cases/service.py
-backend/app/modules/automation/service.py
-backend/app/modules/cicd/service.py
-backend/app/tests/api/test_case_review.py
-backend/app/tests/api/test_automation_draft.py
-backend/app/tests/api/test_unit_test_patch_regression.py
+frontend/src/api/client.ts
+frontend/src/views/automation/AutomationDraftView.vue
+frontend/src/views/cicd/CicdQualityCenterView.vue
+frontend/src/views/cases/CaseReviewView.vue
+frontend/src/**/*.spec.ts
 ```
 
-Backend action-hook task. Do not add frontend panels, broad audit/search,
-generic public ReviewHistory write endpoints, users, roles, permissions,
-tenants, login/session flows, assignment workflow, notifications, remote CI
-provider governance, marketplace, RAG runtime, or MCP runtime.
+Frontend panel task. Do not add user management, roles, permissions, tenants,
+assignment workflow, notifications, team inbox, comment threads, generic
+ReviewHistory write endpoints, remote provider governance, RAG runtime, or MCP
+runtime.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_unit_test_patch_regression.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: review history action-hook tests and diff check pass.
+Expected result: frontend tests and diff check pass.
 
 ## Acceptance
 
-- Records history for generated case review where current APIs support it.
-- Records history for AutomationDraft edit/approve actions where current APIs
-  support them.
-- Records history for UnitTestPatch approve/reject.
-- Records history for QualityGateDecision compute.
-- Does not change whether an action is allowed or how status transitions are
-  validated.
-- Does not add frontend panels, user management, roles, permissions, tenants,
-  assignment, notifications, remote provider governance, RAG runtime, or MCP
-  runtime.
+- Adds frontend API typing/helper for `GET /api/review-history`.
+- Shows compact review history entries in existing review surfaces.
+- Uses Chinese-facing labels while keeping product model terms such as
+  TestCase, AutomationDraft, UnitTestPatch, and QualityGateDecision unchanged.
+- Keeps history panels secondary to existing review action controls.
+- Does not add user management, roles, permissions, assignment, notifications,
+  team inbox, or collaboration controls.
 
 ## Commit Message
 
 ```text
-feat(review): record review history events
+feat(frontend): show local review history
 ```
 
 ## Next Task
 
-Slice 21 Task 5: Add frontend review history panels.
+Slice 21 Task 6: Add review history golden smoke.

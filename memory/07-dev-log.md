@@ -1,5 +1,39 @@
 # Development Log
 
+## 2026-07-01 Slice 21 Review History Action Hooks
+
+### Completed
+
+- Completed Slice 21 Task 4: Attach history to existing review actions.
+- Hooked ReviewHistory append side effects into successful existing actions:
+  - GeneratedCaseCandidate approve / approve_after_edit / reject.
+  - AutomationDraft edit / approve.
+  - UnitTestPatch approve / reject.
+  - QualityGateDecision compute / recompute.
+- Preserved existing state-machine validation. Invalid actions still fail before
+  history is appended.
+- QualityGateDecision history records the created decision as the primary
+  entity and the CICDRun as related entity.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_unit_test_patch_regression.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/api/test_ci_run_metadata_import.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
+git diff --check
+```
+
+Results:
+
+- Task 4 focused tests: `37 passed`.
+- Related backend + golden regression: `91 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `feat(review): record review history events`.
+- Continue Slice 21 Task 5: add frontend review history panels.
+
 ## 2026-07-01 Slice 21 Review History Model And Service
 
 ### Completed
@@ -38,8 +72,7 @@ Results:
 
 ### Next Step
 
-- Commit with `feat(review): add local review history service`.
-- Continue Slice 21 Task 4: attach history to existing review actions.
+- Completed in commit `31bb8cc`.
 
 ## 2026-07-01 Slice 21 Review History Contract Boundary
 

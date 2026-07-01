@@ -25,6 +25,7 @@ from backend.app.modules.cicd.schemas import (
 from backend.app.modules.execution.models import TestRun
 from backend.app.modules.projects.models import Project, Repository, TestCommand
 from backend.app.modules.reporting.models import Report
+from backend.app.modules.review_history.service import append_review_history
 
 
 class ProjectNotFoundError(Exception):
@@ -998,9 +999,22 @@ def approve_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID, rev
         raise UnitTestPatchInvalidStatusError
     if not patch.scope_gate_result_json.get("allowed", False):
         raise UnitTestPatchInvalidStatusError
+    from_status = patch.status
     patch.status = "approved"
     patch.review_comment = review_comment
     session.add(patch)
+    append_review_history(
+        session,
+        project_id=patch.cicd_run.project_id,
+        entity_type="UnitTestPatch",
+        entity_id=patch.id,
+        related_entity_type="CICDRun",
+        related_entity_id=patch.cicd_run_id,
+        action="approve",
+        from_status=from_status,
+        to_status=patch.status,
+        comment=review_comment,
+    )
     session.commit()
     session.refresh(patch)
     return patch
@@ -1010,9 +1024,22 @@ def reject_unit_test_patch(session: Session, unit_test_patch_id: uuid.UUID, revi
     patch = get_unit_test_patch(session, unit_test_patch_id)
     if patch.status not in {"generated", "scope_validated", "scope_rejected", "awaiting_review"}:
         raise UnitTestPatchInvalidStatusError
+    from_status = patch.status
     patch.status = "rejected"
     patch.review_comment = review_comment
     session.add(patch)
+    append_review_history(
+        session,
+        project_id=patch.cicd_run.project_id,
+        entity_type="UnitTestPatch",
+        entity_id=patch.id,
+        related_entity_type="CICDRun",
+        related_entity_id=patch.cicd_run_id,
+        action="reject",
+        from_status=from_status,
+        to_status=patch.status,
+        comment=review_comment,
+    )
     session.commit()
     session.refresh(patch)
     return patch
@@ -1131,6 +1158,7 @@ def run_regression(session: Session, cicd_run_id: uuid.UUID, data: CICDRegressio
 
 def compute_quality_gate(session: Session, cicd_run_id: uuid.UUID, data: QualityGateComputeRequest) -> QualityGateDecision:
     cicd_run = get_cicd_run(session, cicd_run_id)
+    from_status = cicd_run.quality_gate_status
     patch = latest_unit_test_patch(session, cicd_run.id)
     new_tests = test_runs_by_type(session, cicd_run.id, "new_tests")
     regression = test_runs_by_type(session, cicd_run.id, "regression")
@@ -1182,6 +1210,21 @@ def compute_quality_gate(session: Session, cicd_run_id: uuid.UUID, data: Quality
     cicd_run.quality_gate_status = status_value
     session.add(decision)
     session.add(cicd_run)
+    session.flush()
+    append_review_history(
+        session,
+        project_id=cicd_run.project_id,
+        entity_type="QualityGateDecision",
+        entity_id=decision.id,
+        related_entity_type="CICDRun",
+        related_entity_id=cicd_run.id,
+        action="compute_quality_gate",
+        from_status=from_status,
+        to_status=status_value,
+        comment=summary,
+        evidence_artifact_ids=decision.evidence_artifact_ids,
+        metadata={"quality_gate_decision_id": str(decision.id)},
+    )
     session.commit()
     session.refresh(decision)
     session.refresh(cicd_run)

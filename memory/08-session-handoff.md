@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-07-01 Slice 21 Task 4 Review History Action Hooks 完成
+
+本轮完成：
+
+- 完成 Slice 21 Task 4：Attach history to existing review actions。
+- 已在成功动作后写入 ReviewHistory：
+  - GeneratedCaseCandidate：approve / approve_after_edit / reject；
+  - AutomationDraft：edit / approve；
+  - UnitTestPatch：approve / reject；
+  - QualityGateDecision：compute / recompute。
+- 保持原有状态机校验：
+  - 非法动作不会写 ReviewHistory；
+  - 不改变审批是否允许；
+  - 不新增 public ReviewHistory 写接口。
+- QualityGateDecision history：
+  - primary entity 为 QualityGateDecision；
+  - related entity 为 CICDRun；
+  - from/to status 记录 CICDRun `quality_gate_status` 变化。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_unit_test_patch_regression.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_unit_test_patch_regression.py backend/app/tests/api/test_ci_run_metadata_import.py backend/app/tests/golden/test_unit_test_patch_regression_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Task 4 focused tests：`37 passed`。
+- Related backend + golden regression：`91 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`feat(review): record review history events`。
+- 继续 Slice 21 Task 5：Add frontend review history panels。
+
 ## 2026-07-01 Slice 21 Task 3 Review History Model And Service 完成
 
 本轮完成：
@@ -43,8 +81,7 @@ git diff --check
 
 下次推荐任务：
 
-- 提交 Task 3：`feat(review): add local review history service`。
-- 继续 Slice 21 Task 4：Attach history to existing review actions。
+- Task 3 已提交：`31bb8cc feat(review): add local review history service`。
 
 ## 2026-07-01 Slice 21 Task 2 Review History Contract Boundary 完成
 
