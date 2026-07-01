@@ -1,5 +1,37 @@
 # Development Log
 
+## 2026-07-01 Slice 31 Generated Case Knowledge Evidence Persistence Plan
+
+### Completed
+
+- Selected Slice 31: Generated Case Knowledge Evidence Persistence.
+- Added `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 30 completion
+  and Slice 31 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Task 2: Confirm Persistence Contract
+  Boundary.
+
+### Rationale
+
+- Slice 30 defined and proved generated-case knowledge evidence fields at
+  contract/schema level.
+- The next smallest product step is persisting those fields in the existing
+  GeneratedCaseCandidate data flow and returning them through the candidate list
+  API.
+- The slice avoids TestKnowledgeCard CRUD, RAG runtime, external providers,
+  vector infrastructure, graph runtime, frontend work, and review bypass.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
+- `rg -n "Generated Case Knowledge Evidence Persistence|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md NEXT_AI_TASK.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): add generated case knowledge evidence persistence plan`.
+- Continue Slice 31 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 30 Completion Gate
 
 ### Completed

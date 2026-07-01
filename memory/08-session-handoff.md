@@ -1,5 +1,51 @@
 # Session Handoff
 
+## 2026-07-01 Slice 31 Generated Case Knowledge Evidence Persistence Plan 完成
+
+本轮完成：
+
+- 选择 Slice 31：Generated Case Knowledge Evidence Persistence。
+- 新增 Slice 31 计划：
+  `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充：
+  - Slice 30 Completion：Test Knowledge Card Contract；
+  - Recommended Next V2 Slice：Slice 31 Generated Case Knowledge Evidence
+    Persistence。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 31 Task 2：Confirm Persistence Contract Boundary。
+
+选择原因：
+
+- Slice 30 已完成合同、fixture、schema-level golden smoke。
+- 真实 CaseGeneration flow 目前还没有把 knowledge evidence fields
+  持久化到 GeneratedCaseCandidate。
+- Slice 31 是最小实现桥接：只持久化和返回候选用例证据字段，不做
+  TestKnowledgeCard CRUD、RAG runtime、外部 provider、vector、graph、MCP、
+  frontend 或 review bypass。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
+rg -n "Generated Case Knowledge Evidence Persistence|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md NEXT_AI_TASK.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 1：
+  `docs(v2): add generated case knowledge evidence persistence plan`。
+- 继续 Slice 31 Task 2：Confirm Persistence Contract Boundary。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/10-v2-scope-options.md` 中未暂存 Candidate E 段落
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 本次提交需要只暂存 Slice 31 计划相关 hunk，避免误混这些背景改动。
+
 ## 2026-07-01 Slice 30 Completion Gate 完成
 
 本轮完成：

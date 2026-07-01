@@ -1164,3 +1164,84 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until contracts define knowledge-card data, evidence,
   artifact, state, and review boundaries.
+
+## Completed Next V2 Slice
+
+Completed: Test knowledge card contract.
+
+Why it was selected:
+
+- Slice 19 added deterministic local ContextArtifact retrieval evidence, but
+  generated test cases still needed richer proof of which testing knowledge
+  supported them and which gaps reviewers needed to resolve.
+- Slice 30 established `TestKnowledgeCard`, `KnowledgeEvidence`, generated-case
+  evidence fields, artifact rules, state rules, fixture examples, and a
+  schema-level golden smoke without adding a RAG runtime.
+- The slice kept the final RAG/Agent direction evidence-first and review-first
+  before any provider, vector, graph, or frontend implementation.
+
+Completed slice name:
+
+```text
+Slice 30: Test Knowledge Card Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact contract boundary, fixture, schema-level
+  golden smoke, and completion gate.
+- GeneratedCaseCandidate can express knowledge evidence fields at schema level.
+- No TestKnowledgeCard table, knowledge-card CRUD, RAG runtime, external
+  provider, vector database, embedding, reranking, graph runtime, MCP runtime,
+  frontend implementation, generated-case auto-approval, runner behavior,
+  reports, RBAC, tenants, or permissions were added.
+
+## Recommended Next V2 Slice
+
+Recommended: Generated case knowledge evidence persistence.
+
+Why:
+
+- Slice 30 proved the evidence contract and response schema, but the real case
+  generation flow does not yet persist those fields on GeneratedCaseCandidate.
+- Persisting the fields is the smallest useful implementation bridge from
+  contract to product behavior: generated candidates can carry evidence ids,
+  knowledge evidence refs, review findings, and coverage gap notes through the
+  existing API.
+- This improves the requirement-to-case review loop without implementing
+  TestKnowledgeCard CRUD, RAG runtime, external providers, frontend work, or
+  review bypasses.
+
+Next slice name:
+
+```text
+Slice 31: Generated Case Knowledge Evidence Persistence
+```
+
+Smallest useful boundary:
+
+- Persist Slice 30 generated-case evidence fields on GeneratedCaseCandidate.
+- Copy normalized fields from AI task output when present.
+- Return fields from the candidate list API with safe defaults when absent.
+- Add focused database/API/golden coverage proving evidence remains review-only.
+
+Explicit non-goals:
+
+- No TestKnowledgeCard table implementation, knowledge-card CRUD API,
+  knowledge ingestion agent, RAG runtime, external KnowledgeAdapter provider,
+  vector database, embeddings, reranking, graph runtime, GraphRAG job, MCP
+  runtime, frontend implementation, generated-case auto-approval, TestCase
+  auto-promotion, runner behavior, reports, artifact mutation, RBAC, tenants,
+  permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 31 Task 1: Add Generated Case Knowledge Evidence Persistence task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines persistence behavior, contracts,
+  verification, and non-goals.
