@@ -10,13 +10,13 @@ Slice 27: AI Task Evidence Artifact Links.
 
 ## Current Task
 
-Slice 27 Task 4: Add AI task artifact link golden smoke.
+Slice 27 Completion Gate.
 
 ## Product Value Answer
 
-After this task, a golden smoke proves safe AI task artifacts can use local
-artifact access while unsafe raw LLM artifacts remain metadata-only for UI link
-purposes.
+After this task, Slice 27 is fully verified and handed off with safe AI task
+artifact links available in AI Workbench and unsafe raw LLM artifacts kept
+metadata-only.
 
 ## Must Read
 
@@ -68,37 +68,40 @@ backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py
 docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md
 ```
 
-Golden smoke task. Do not add frontend code, backend feature code beyond the
-focused test, migrations, package upgrades, artifact upload/mutation/delete,
-cloud storage, external provider integration, RBAC, tenants, permissions, broad
-redesign work, report generation behavior, runner behavior changes, AI task
-rerun, prompt editing, raw LLM inline display, RAG runtime, or MCP runtime.
+Completion gate task. Do not add frontend or backend feature code, migrations,
+package upgrades, artifact upload/mutation/delete, cloud storage, external
+provider integration, RBAC, tenants, permissions, broad redesign work, report
+generation behavior, runner behavior changes, AI task rerun, prompt editing,
+raw LLM inline display, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
 git diff --check
 ```
 
-Expected result: AI task artifact link golden smoke and diff check pass.
+Expected result: Slice 27 frontend checks, artifact golden checks, and diff
+check pass.
 
 ## Acceptance
 
-- Golden proves a safe AI task artifact can be opened through local artifact
-  access.
-- Golden proves an unsafe raw LLM artifact remains metadata-only for UI link
-  purposes.
-- Golden proves artifact link display does not create AI task rerun, provider
+- Slice 27 task table records Task 1-4 completion and commit ids.
+- Completion evidence records frontend build/test, golden checks, and diff
+  verification.
+- Safe AI task artifacts can use local open links in AI Workbench.
+- Unsafe raw LLM artifacts remain metadata-only and no AI task rerun, provider
   call, Report, FailureAnalysis, QualityGateDecision, artifact mutation, RAG
-  runtime, or MCP runtime behavior.
+  runtime, or MCP runtime behavior is added.
 
 ## Commit Message
 
 ```text
-test(golden): add ai task artifact link smoke
+docs(v2): complete ai task artifact link slice
 ```
 
 ## Next Task
 
-Slice 27 Completion Gate.
+Select next V2 small slice after Slice 27 completion.

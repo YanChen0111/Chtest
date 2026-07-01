@@ -1,5 +1,40 @@
 # Session Handoff
 
+## 2026-07-01 Slice 27 Task 4 AI Task Artifact Link Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 27 Task 4：Add AI task artifact link golden smoke。
+- 新增 `backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py`。
+- 新增 `docs/fixtures/15-ai-task-evidence-artifact-links-golden.md`。
+- Golden 覆盖：
+  - safe `parsed_output` AI task artifact 可通过 local artifact access 打开；
+  - unsafe `raw_llm_output` 在 AI task detail 中保持 metadata-only；
+  - AI task detail 不 inline artifact content，不返回合成 `download_url`；
+  - artifact link display 不创建 AI task rerun、provider call、Report、
+    FailureAnalysis、QualityGateDecision、TestRun、artifact mutation、RAG
+    runtime 或 MCP runtime。
+- Slice 27 table 已记录 Task 3 commit `c14fa57`，Task 4 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 27 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- AI task artifact link golden：`1 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`test(golden): add ai task artifact link smoke`。
+- 继续 Slice 27 Completion Gate。
+
 ## 2026-07-01 Slice 27 Task 3 AI Workbench Artifact Links 完成
 
 本轮完成：

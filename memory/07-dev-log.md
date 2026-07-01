@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-01 Slice 27 AI Task Artifact Link Golden Smoke
+
+### Completed
+
+- Added `backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py`.
+- Added `docs/fixtures/15-ai-task-evidence-artifact-links-golden.md`.
+- Golden proves a safe `parsed_output` AI task artifact can be opened through
+  local artifact access.
+- Golden proves unsafe `raw_llm_output` remains metadata-only for UI link
+  purposes and is not inlined by AI task detail.
+- Golden proves artifact link display creates no AI task rerun, provider call,
+  Report, FailureAnalysis, QualityGateDecision, TestRun, artifact mutation, RAG
+  runtime, or MCP runtime behavior.
+- Updated `NEXT_AI_TASK.md` to Slice 27 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_ai_task_evidence_artifact_links_golden.py -q`
+- Result: `1 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add ai task artifact link smoke`.
+- Continue Slice 27 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 27 AI Workbench Artifact Links
 
 ### Completed
