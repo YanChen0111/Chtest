@@ -157,3 +157,48 @@ KnowledgeAdapter.list_sources(project_id) -> source[]
 第一版做：Internal Tool Adapter、本地 Prompt/Skill Registry、Agent 状态机、RAG 知识库 surface、Knowledge/RAG Adapter 空实现、需求到用例、AutomationDraft + pytest/Playwright、CI/CD 质量中心本地支线。
 
 第一版不做：完整 MCP Server、完整外部 MCP marketplace、完整内置 RAG、Skill ZIP/Git 导入、Newman/JMeter 主路径、Appium 设备管理、Fiddler 深度自动化控制。
+
+## 11. 最终版测试知识 RAG 与 Agent 方向
+
+最终版方案见：
+
+- `docs/implementation/11-final-rag-agent-strategy.md`
+
+最终版 Chtest 的知识库不定位为通用聊天知识库，而是测试知识证据系统：
+
+```text
+测试知识 -> 可追溯 evidence -> 用例生成
+  -> Agent 质量评审 -> 人工评审
+  -> 执行证据 -> 反馈回知识库
+```
+
+推荐三层 RAG：
+
+| 层级 | 目的 | 主要参考 |
+|---|---|---|
+| Structured Test Knowledge RAG | 把需求、接口、缺陷、测试规范抽取成 TestKnowledgeCard | PageIndex-style tree/section reasoning |
+| Hybrid Retrieval RAG | 大知识库下用结构化过滤、关键词、向量和 rerank 提升召回 | Haystack / LlamaIndex behind KnowledgeAdapter |
+| Test Relationship Graph RAG | 用需求、模块、接口、风险、缺陷、用例、执行结果做覆盖和影响分析 | Microsoft GraphRAG-style offline graph reasoning |
+
+最终版 Agent 分工应扩展为：
+
+```text
+KnowledgeIngestionAgent
+RequirementUnderstandingAgent
+RiskAnalysisAgent
+CoverageAnalysisAgent
+TestDesignAgent
+CaseGenerationAgent
+CaseReviewAgent
+DedupAgent
+AutomationReadinessAgent
+KnowledgeFeedbackAgent
+```
+
+开源复用原则：
+
+- 优先通过库、API、外部 provider 或独立服务复用开源能力。
+- 不把大型 RAG 平台源码直接拷进 Chtest 核心模块。
+- 所有 provider 结果必须转换成 Chtest 的 KnowledgeEvidence。
+- 每个 provider 引入前必须记录许可证、版本、升级方式、fallback 行为和
+  golden/eval 验证。

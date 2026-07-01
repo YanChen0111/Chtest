@@ -230,6 +230,91 @@ Expected output:
 - Broad dashboards, model leaderboard, or benchmark platform.
 - Unapproved AI changes to business source files.
 
+## Future Candidate Direction E: Test Knowledge RAG And Agent System
+
+Detailed strategy:
+
+- `docs/implementation/11-final-rag-agent-strategy.md`
+
+Problem:
+
+- Slice 19 added deterministic local ContextArtifact retrieval evidence, but
+  final Chtest needs knowledge-driven case generation and review, not a generic
+  chat knowledge base.
+- Test-case quality depends on testing knowledge: requirements, business
+  rules, API constraints, boundary conditions, exception paths, historical
+  defects, test strategy notes, accepted cases, rejected cases, and execution
+  feedback.
+
+Candidate final value:
+
+- Generate test cases that cite exact knowledge evidence, cover explicit risks,
+  expose coverage gaps, and pass agent/human review before entering the case
+  library.
+- Improve AI case-generation quality through a three-layer RAG design:
+  structured test knowledge, hybrid retrieval, and later test relationship
+  graph reasoning.
+
+Recommended architecture:
+
+```text
+ContextArtifact / imported knowledge
+  -> TestKnowledgeCard extraction
+  -> structured + keyword + vector retrieval
+  -> test relationship graph retrieval
+  -> RiskAnalysisAgent
+  -> TestDesignAgent
+  -> CaseGenerationAgent
+  -> CaseReviewAgent / CoverageGapAgent
+  -> human review
+  -> execution and report evidence
+  -> KnowledgeFeedbackAgent
+```
+
+Open-source acceleration:
+
+- Use PageIndex-style tree and section reasoning for traceable professional
+  document retrieval.
+- Use Haystack or LlamaIndex as the first external KnowledgeAdapter provider
+  candidates.
+- Use Microsoft GraphRAG later for offline/background relationship extraction
+  and graph reasoning after Chtest has enough reviewed requirements, cases,
+  failures, and reports.
+- Use Awesome LLM Apps as reference examples only.
+- Prefer library/API/provider integration over copying large open-source
+  application code into Chtest.
+
+Smallest future slice:
+
+```text
+Slice N: Test Knowledge Card Contract
+```
+
+Smallest useful boundary:
+
+- Define `TestKnowledgeCard` and `KnowledgeEvidence` contracts.
+- Define generated-case fields for evidence ids, risk coverage, generation
+  reason, quality score, and review findings.
+- Add one fixture showing requirement text, knowledge cards, generated case
+  candidates, review findings, and evidence ids.
+- Do not add vector database, embeddings, reranking, graph runtime, external
+  provider calls, or frontend implementation in the planning task.
+
+Risks:
+
+- Full RAG/GraphRAG can become expensive to index, hard to tune, and hard to
+  explain if evidence contracts are weak.
+- Provider schemas can leak into Chtest if KnowledgeAdapter normalization is
+  skipped.
+- Case quality will not improve reliably without eval fixtures and human review
+  feedback loops.
+
+Recommended only if:
+
+- The next product priority is materially improving AI-generated test-case
+  quality through knowledge evidence, not adding another runner or display
+  summary.
+
 ## Completed Next V2 Slice
 
 Completed: Candidate Direction A, as a deterministic local KnowledgeAdapter
