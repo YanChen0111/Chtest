@@ -235,6 +235,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | junit | application/xml | JUnit 结果 |
 | coverage | application/xml | 覆盖率结果 |
 | newman_json | application/json | Newman JSON 结果 |
+| jmeter_jtl | text/csv or application/xml | JMeter JTL 结果 |
 | playwright_trace | application/zip | Playwright trace |
 | screenshot | image/png | 截图 |
 | report_md | text/markdown | Markdown 报告 |
@@ -278,6 +279,25 @@ Newman artifact rules:
 - Newman artifacts are evidence only; they must not trigger report generation,
   FailureAnalysis, QualityGateDecision, remote CI/CD provider calls, or Postman
   cloud synchronization automatically.
+
+JMeter artifact rules:
+
+- `jmeter_jtl` must point to the JTL CSV or XML output produced or copied by the
+  controlled JMeter runner.
+- `parsed_output` for a JMeter TestRun must summarize `total`, `passed`,
+  `failed`, `skipped`, `error`, `sampler_count`, `assertion_count`,
+  `duration_ms`, and `average_latency_ms` when available.
+- JMeter artifacts use `owner_entity_type=TestRun` and
+  `owner_entity_id=test_run_id`.
+- Metadata should include `created_by_component=JMeterRunner`,
+  `runner_mode=jmeter_local`, `sampler_count`, `assertion_count`, JTL format,
+  and redaction status.
+- Artifact content and metadata must not store secrets, bearer tokens, cookies,
+  or raw environment values.
+- JMeter artifacts are evidence only; they must not trigger report generation,
+  FailureAnalysis, QualityGateDecision, remote CI/CD provider calls,
+  distributed load agents, cloud load testing, RAG runtime, or MCP runtime
+  automatically.
 
 ## 5. Metadata 契约
 

@@ -1385,10 +1385,11 @@ Rules:
 
 ## 6. Test Run APIs
 
-Test Run APIs execute approved pytest, minimal Playwright, or Newman API work
-and return evidence records. They are local-first and allowlisted: the backend
-assembles or validates commands from an approved AutomationDraft or configured
-TestCommand. Clients must not submit arbitrary shell strings.
+Test Run APIs execute approved pytest, minimal Playwright, Newman API, or
+JMeter non-GUI work and return evidence records. They are local-first and
+allowlisted: the backend assembles or validates commands from an approved
+AutomationDraft or configured TestCommand. Clients must not submit arbitrary
+shell strings.
 
 ### 6.1 Create Test Run
 
@@ -1414,11 +1415,12 @@ Request rules:
   `status=approved` and `target_framework` matching the requested runner:
   `pytest` for `local_subprocess`, `playwright` for `playwright_local`.
 - `test_command_id` must reference a configured TestCommand with
-  `command_type=pytest`, `command_type=playwright`, or
-  `command_type=newman` and passing allowlist validation.
+  `command_type=pytest`, `command_type=playwright`, `command_type=newman`, or
+  `command_type=jmeter` and passing allowlist validation.
 - `runner_mode` is optional and defaults to `local_subprocess` for pytest.
   Playwright minimal execution uses `runner_mode=playwright_local`. Newman API
-  execution uses `runner_mode=newman_local`.
+  execution uses `runner_mode=newman_local`. JMeter local execution uses
+  `runner_mode=jmeter_local`.
 - V1 does not expose Docker runner or browser grid selection through this
   endpoint.
 - `cicd_run_id` is not accepted by this workbench endpoint. CI/CD
@@ -1704,6 +1706,96 @@ Contract boundary:
   environment snapshot artifact metadata.
 - Assertion failures map to TestResult rows. Parser/runtime failures map to
   TestRun `error`.
+- It does not create reports, FailureAnalysis, QualityGateDecision, CI/CD
+  workflow state, RAG runtime calls, MCP runtime dependencies, RBAC, tenants, or
+  permissions.
+
+### 6.4 JMeter Local Execution Evidence
+
+JMeter execution is a local TestRun mode exposed through the same
+`POST /api/test-runs` workbench endpoint. Slice 22 must not add a separate JMX
+editor, performance dashboard API, distributed runner API, cloud load testing
+API, or remote CI/CD provider API.
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "automation_draft_id": null,
+  "test_command_id": "00000000-0000-0000-0000-000000000332",
+  "reason": "run approved JMeter smoke plan",
+  "runner_mode": "jmeter_local"
+}
+```
+
+Request rules:
+
+- Exactly one execution source is required. For JMeter in Slice 22 it must be a
+  configured `test_command_id`.
+- `test_command_id` must reference a configured TestCommand with
+  `command_type=jmeter` and passing allowlist validation.
+- JMeter commands are backend assembled or validated from allowlisted non-GUI
+  command templates equivalent to `jmeter -n -t <plan.jmx> -l <result.jtl>`.
+- JMX and JTL file paths must be under the repository path or a Chtest-managed
+  runtime workspace.
+- Secret values in environment variables must be redacted in
+  `environment_snapshot`.
+- Slice 22 supports local JMeter non-GUI execution only. It does not expose a
+  JMX editor, recorder, parameterization UI, distributed load agents, cloud load
+  testing, SLA dashboards, or performance trend analysis.
+
+Response model: `TestRunRead` with embedded `TestResultRead` items when sampler
+or assertion names can be derived, plus JMeter artifact metadata.
+
+Expected `parsed_result` shape:
+
+```json
+{
+  "total": 5,
+  "passed": 4,
+  "failed": 1,
+  "skipped": 0,
+  "error": 0,
+  "sampler_count": 5,
+  "assertion_count": 5,
+  "duration_ms": 1240,
+  "average_latency_ms": 82
+}
+```
+
+Response artifact examples:
+
+```json
+[
+  {
+    "artifact_type": "stdout",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001331/stdout.log"
+  },
+  {
+    "artifact_type": "stderr",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001331/stderr.log"
+  },
+  {
+    "artifact_type": "jmeter_jtl",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001331/results.jtl"
+  },
+  {
+    "artifact_type": "parsed_output",
+    "file_path": "projects/00000000-0000-0000-0000-000000000101/test-runs/00000000-0000-0000-0000-000000001331/parsed_result.json"
+  }
+]
+```
+
+Contract boundary:
+
+- JMeter local execution records TestRun, optional TestResult rows,
+  stdout/stderr, `jmeter_jtl`, parsed result, runtime manifest, dependency
+  snapshot, and environment snapshot artifact metadata.
+- Sampler/assertion failures map to TestRun `failed`. Process launch failure,
+  timeout, allowlist rejection, missing JMX/JTL, malformed JTL, or parser
+  failure maps to TestRun `error` unless the run was cancelled or timed out by
+  the user/runtime.
 - It does not create reports, FailureAnalysis, QualityGateDecision, CI/CD
   workflow state, RAG runtime calls, MCP runtime dependencies, RBAC, tenants, or
   permissions.

@@ -84,8 +84,8 @@ execution evidence while preserving local-first safety and auditability.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add JMeter Local Execution Evidence task plan | done | `test -f docs/implementation/slices/slice-22-jmeter-local-execution.md && rg -n "JMeter|jmeter|jmeter_local|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-22-jmeter-local-execution.md docs/implementation/10-v2-scope-options.md` | pending | planning-only scope |
-| Define JMeter execution contract boundary | planned | `rg -n "JMeter|jmeter|jmeter_local|jmeter_jtl|ToolDefinition|command_type" docs/contracts docs/implementation/slices/slice-22-jmeter-local-execution.md` | pending | contract-only before code |
+| Add JMeter Local Execution Evidence task plan | done | `test -f docs/implementation/slices/slice-22-jmeter-local-execution.md && rg -n "JMeter|jmeter|jmeter_local|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-22-jmeter-local-execution.md docs/implementation/10-v2-scope-options.md` | `59d3918` | planning-only scope |
+| Define JMeter execution contract boundary | done | `rg -n "JMeter|jmeter|jmeter_local|jmeter_jtl|ToolDefinition|command_type" docs/contracts docs/implementation/slices/slice-22-jmeter-local-execution.md` | pending | contract-only before code |
 | Add JMeter parser and backend API tests | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | pending | deterministic JTL parsing first |
 | Add JMeter runner backend | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q` | pending | allowlisted fake executable tests |
 | Add JMeter execution frontend shell | planned | `npm --prefix frontend run test -- --run` | pending | compact Chinese UI |

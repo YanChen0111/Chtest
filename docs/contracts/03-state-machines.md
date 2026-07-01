@@ -265,6 +265,21 @@ Newman 规则：
   marking the run `passed` or `failed` when the runner produced parseable
   output.
 
+JMeter 规则：
+
+- JMeter follows the same TestRun statuses.
+- JMeter sampler/assertion failures produce `failed`.
+- JMeter process launch failure, timeout, allowlist rejection, missing JMX/JTL,
+  malformed JTL output, or parser failure produces `error` unless the run was
+  cancelled or timed out by the user/runtime.
+- JMeter `parsed_result_json` and `jmeter_jtl` artifacts must be written before
+  marking the run `passed` or `failed` when the runner produced parseable
+  output.
+- JMeter execution must stay under ToolDefinition/TestCommand allowlists and
+  must not add distributed load agents, cloud load testing controls,
+  performance dashboards, RAG runtime calls, MCP runtime dependencies, RBAC,
+  tenants, or permissions behavior.
+
 ## 8.1 CICDRun Import 状态规则
 
 Slice 20 `ci_import` is an evidence import state, not a remote CI provider

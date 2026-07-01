@@ -129,11 +129,20 @@ Constraint: level between 1 and 5.
 | name | varchar(160) | yes | none | Example `pytest unit` |
 | command | text | yes | none | Must match allowlist rules |
 | working_directory | text | yes | none | Must be under repository path |
-| command_type | varchar(40) | yes | pytest | pytest, npm, playwright, newman |
+| command_type | varchar(40) | yes | pytest | pytest, npm, playwright, newman, jmeter |
 | timeout_seconds | int | yes | 600 | Max runtime |
 | parse_junit | bool | yes | true | Parse JUnit output |
 | parse_coverage | bool | yes | false | Parse coverage output |
 | status | EntityStatus | yes | active | Status |
+
+JMeter TestCommand rules:
+
+- `command_type=jmeter` is used only for approved local JMeter non-GUI
+  execution in Slice 22.
+- The command must pass the JMeter ToolDefinition allowlist and must not carry
+  arbitrary shell text from the client.
+- JMX plan paths and JTL output paths must stay under the repository path or a
+  Chtest-managed runtime workspace.
 
 ## 10. Requirement
 
@@ -377,7 +386,7 @@ UnitTestPatch rules:
 | name | varchar(255) | yes | none | Run name |
 | command | text | yes | none | Executed command |
 | working_directory | text | yes | none | Working directory |
-| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, playwright_local, newman_local, docker_runner |
+| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, playwright_local, newman_local, jmeter_local, docker_runner |
 | run_workspace | text | no | null | Isolated execution workspace |
 | repository_readonly | bool | yes | true | Target repository mounted/read as readonly when possible |
 | network_enabled | bool | yes | false | Network access during run |
@@ -401,6 +410,21 @@ Newman TestRun rules:
 - `error` means Newman could not run, timed out, or produced unparseable output.
 - `network_enabled` remains explicit. Local fixture tests should keep it false;
   any future live API collection must display the chosen network policy.
+
+JMeter TestRun rules:
+
+- `runner_mode=jmeter_local` is used for approved local JMeter non-GUI
+  execution.
+- JMeter TestRuns must reference `test_command_id`; Slice 22 does not execute
+  JMeter from AutomationDraft.
+- `parsed_result_json` must include aggregate sampler/assertion counts:
+  `total`, `passed`, `failed`, `skipped`, `error`, `sampler_count`,
+  `assertion_count`, `duration_ms`, and `average_latency_ms` when available.
+- `failed` means JMeter completed and one or more samplers/assertions failed.
+- `error` means JMeter could not run, timed out, or produced unparseable JTL
+  output.
+- Local fixture tests must not require a real JMeter installation; they may use
+  deterministic JTL files or a fake executable.
 
 ## 21. QualityGateDecision
 
@@ -718,6 +742,22 @@ Newman ToolDefinition rules:
   parsed result artifacts.
 - Forbidden shell operators remain rejected. A Newman command cannot use shell
   chaining, redirection, command substitution, or pipes.
+
+JMeter ToolDefinition rules:
+
+- Built-in JMeter execution uses a ToolDefinition such as
+  `jmeter_non_gui_run`.
+- `tool_type` remains `test_runner`.
+- `command_allowlist_json` must constrain commands to backend-approved JMeter
+  non-GUI templates equivalent to `jmeter -n -t <plan.jmx> -l <result.jtl>`.
+- `allowed_working_directories_json` must keep execution under the repository
+  path or Chtest-managed runtime workspace.
+- `artifact_policy_json` must name stdout, stderr, `jmeter_jtl`, runtime
+  manifest, dependency snapshot, environment snapshot, and parsed result
+  artifacts.
+- Forbidden shell operators remain rejected. A JMeter command cannot use shell
+  chaining, redirection, command substitution, pipes, remote agents, or cloud
+  load testing controls.
 
 ## 31. KnowledgeAdapterConfig
 

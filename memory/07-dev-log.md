@@ -1,5 +1,43 @@
 # Development Log
 
+## 2026-07-01 Slice 22 JMeter Execution Contract Boundary
+
+### Completed
+
+- Completed Slice 22 Task 2: Define JMeter execution contract boundary.
+- Updated data contract to include:
+  - `TestCommand.command_type=jmeter` boundary;
+  - `TestRun.runner_mode=jmeter_local`;
+  - JMeter TestRun parsed result expectations;
+  - JMeter ToolDefinition allowlist rules.
+- Updated API contract to keep JMeter under `POST /api/test-runs` with
+  `runner_mode=jmeter_local` and no JMX editing or performance dashboard APIs.
+- Updated state-machine contract to map sampler/assertion failure to `failed`
+  and runtime/parser/allowlist issues to `error`.
+- Updated artifact contract with `jmeter_jtl` and parsed JMeter evidence rules.
+- Updated Slice 22 task table with Task 1 commit `59d3918` and Task 2 done
+  pending commit.
+- Updated `NEXT_AI_TASK.md` to Slice 22 Task 3: Add JMeter parser and backend
+  API tests.
+
+### Verification
+
+```bash
+rg -n "JMeter|jmeter|jmeter_local|jmeter_jtl|ToolDefinition|command_type" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-22-jmeter-local-execution.md
+git diff --check
+```
+
+Results:
+
+- JMeter contract keywords found across data/API/state/artifact contracts and
+  Slice 22 plan.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `docs(v2): define jmeter execution contract`.
+- Continue Slice 22 Task 3: add JMeter parser and backend API tests.
+
 ## 2026-07-01 Slice 22 JMeter Local Execution Plan
 
 ### Completed

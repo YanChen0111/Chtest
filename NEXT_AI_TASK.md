@@ -10,13 +10,12 @@ Slice 22: JMeter Local Execution Evidence.
 
 ## Current Task
 
-Slice 22 Task 2: Define JMeter execution contract boundary.
+Slice 22 Task 3: Add JMeter parser and backend API tests.
 
 ## Product Value Answer
 
-After this task, the contracts define how local JMeter non-GUI execution fits
-the existing TestCommand, ToolDefinition, TestRun, TestResult, and Artifact
-evidence loop before any implementation code is added.
+After this task, Chtest can parse deterministic JMeter JTL evidence into a
+backend execution summary shape before the live runner path is added.
 
 ## Must Read
 
@@ -45,47 +44,39 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-22-jmeter-local-execution.md
+backend/app/modules/execution/jmeter_runner.py
+backend/app/tests/api/test_jmeter_execution.py
 ```
 
-Contract boundary task. Do not add backend implementation, frontend code,
-golden tests, JMX editing, performance dashboards, distributed runners,
-arbitrary shell execution, secrets management, CI provider controls, RAG
-runtime, MCP runtime, RBAC, tenants, or permissions.
+Parser/API-test task. Do not add live JMeter execution, frontend code, golden
+tests, JMX editing, performance dashboards, distributed runners, arbitrary shell
+execution, secrets management, CI provider controls, RAG runtime, MCP runtime,
+RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-rg -n "JMeter|jmeter|jmeter_local|jmeter_jtl|ToolDefinition|command_type" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-22-jmeter-local-execution.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_jmeter_execution.py -q
 git diff --check
 ```
 
-Expected result: JMeter contract keywords are present across contracts and the
-Slice 22 plan; diff check passes.
+Expected result: JMeter parser/API tests and diff check pass.
 
 ## Acceptance
 
-- Data contract allows `TestCommand.command_type=jmeter`.
-- Data contract allows `TestRun.runner_mode=jmeter_local`.
-- Artifact contract defines `jmeter_jtl` and parsed JMeter evidence.
-- API contract keeps JMeter under existing execution surfaces without JMX
-  editing or performance dashboard APIs.
-- State-machine contract keeps JMeter under ToolDefinition allowlists and
-  existing TestRun status rules.
-- Non-goals explicitly exclude arbitrary shell, distributed load testing,
-  performance platform features, RAG/MCP runtime, RBAC, tenants, and
-  permissions.
+- Parses JTL CSV or XML fixture rows deterministically.
+- Produces total, passed, failed, error, duration, and sampler summary fields.
+- Preserves failure/error details needed by frontend display.
+- Does not require a local JMeter binary.
+- Does not execute commands in this task unless needed by existing test shape.
 
 ## Commit Message
 
 ```text
-docs(v2): define jmeter execution contract
+feat(execution): parse jmeter evidence
 ```
 
 ## Next Task
 
-Slice 22 Task 3: Add JMeter parser and backend API tests.
+Slice 22 Task 4: Add JMeter runner backend.

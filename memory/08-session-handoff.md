@@ -1,5 +1,49 @@
 # Session Handoff
 
+## 2026-07-01 Slice 22 Task 2 JMeter Execution Contract Boundary 完成
+
+本轮完成：
+
+- 完成 Slice 22 Task 2：Define JMeter execution contract boundary。
+- 数据合同已定义：
+  - `TestCommand.command_type=jmeter`；
+  - `TestRun.runner_mode=jmeter_local`；
+  - JMeter TestRun parsed result 字段；
+  - JMeter ToolDefinition allowlist 规则。
+- API 合同已定义：
+  - JMeter 仍走 `POST /api/test-runs`；
+  - `runner_mode=jmeter_local`；
+  - 不新增 JMX 编辑、性能 dashboard、分布式 runner、云压测 API。
+- 状态机合同已定义：
+  - sampler/assertion 失败 -> `failed`；
+  - 启动失败、timeout、allowlist 拒绝、JTL 缺失/损坏、parser 失败 -> `error`。
+- Artifact 合同已定义：
+  - `jmeter_jtl`；
+  - JMeter `parsed_output` 聚合字段；
+  - JMeter artifacts 仅为 evidence，不自动触发 report/failure/gate。
+- Slice 22 task table 已记录 Task 1 commit `59d3918`，Task 2 done pending
+  commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 22 Task 3：Add JMeter parser and backend API tests。
+
+本轮验证：
+
+```bash
+rg -n "JMeter|jmeter|jmeter_local|jmeter_jtl|ToolDefinition|command_type" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-22-jmeter-local-execution.md
+git diff --check
+```
+
+验证结果：
+
+- JMeter contract keywords found across data/API/state/artifact contracts and
+  Slice 22 plan。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define jmeter execution contract`。
+- 继续 Slice 22 Task 3：Add JMeter parser and backend API tests。
+
 ## 2026-07-01 Slice 22 Task 1 JMeter Local Execution Plan 完成
 
 本轮完成：
