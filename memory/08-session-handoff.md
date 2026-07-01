@@ -1,5 +1,52 @@
 # Session Handoff
 
+## 2026-07-01 Slice 20 Task 3 完成
+
+本轮完成：
+
+- 启动本地 Web 预览：
+  - Vite 服务运行在 `http://127.0.0.1:5173/`。
+  - 已在内置浏览器打开，页面标题为 `Chtest AI 测试工作台`。
+- 按用户要求启动两个只读子代理并发检查：
+  - 一个检查 `cicd` service/schema/test 可复用点；
+  - 一个检查 Slice 20 合同、负向字段和文档更新边界。
+- 完成 Slice 20 Task 3：Add deterministic CI metadata parser。
+- 新增 parser-only CI import schemas。
+- 新增 deterministic parser service：
+  - 解析静态 CI metadata JSON；
+  - 复用现有 changed-file role/risk 分类；
+  - 输出 `ci_run_metadata.json` 内容和 metadata；
+  - artifact references 仅作为 inert references 保存；
+  - 不调用远程 provider，不下载 URL。
+- 新增 CI import 专用错误类：
+  - `INVALID_CI_IMPORT_PAYLOAD`
+  - `CI_IMPORT_CONTROL_FIELD_REJECTED`
+  - `CI_IMPORT_CREDENTIAL_REJECTED`
+  - `CI_IMPORT_UNSUPPORTED_PROVIDER_OPERATION`
+  - `CI_IMPORT_EXTERNAL_FETCH_FORBIDDEN`
+- 新增测试覆盖正向解析、changed-file 规范化、控制字段、凭据字段、外部抓取字段、provider operation 和 malformed payload。
+- Slice 20 task table 已记录 Task 2 commit `2201b94`，Task 3 done pending
+  commit。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 20 Task 4：Add CI run import API。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/api/test_ci_run_metadata_import.py -q
+```
+
+验证结果：
+
+- CI metadata import parser tests：`46 passed`。
+- Existing CI/CD quality center + parser tests：`53 passed`。
+
+下次推荐任务：
+
+- 先运行 `git diff --check` 并提交 Task 3：
+  `feat(cicd): add ci metadata import parser`。
+- 然后继续 Slice 20 Task 4：Add CI run import API。
+
 ## 2026-06-30 Slice 20 Task 2 完成
 
 本轮完成：

@@ -39,6 +39,43 @@ class CICDRunAnalyzeRead(BaseModel):
     status: str
 
 
+class CICDImportChangedFile(BaseModel):
+    path: str
+    old_path: str | None = None
+    change_type: str
+    lines_added: int = 0
+    lines_deleted: int = 0
+
+
+class CICDImportArtifactReference(BaseModel):
+    name: str
+    kind: str
+    external_url: str | None = None
+    sha256: str | None = None
+    size_bytes: int | None = None
+
+
+class CICDRunMetadataImportRequest(BaseModel):
+    source_type: str = "ci_import"
+    provider: str = "imported"
+    trigger_type: str = "imported"
+    external_run_id: str
+    pipeline_name: str
+    job_name: str | None = None
+    conclusion: str
+    status: str | None = None
+    base_ref: str | None = None
+    head_ref: str | None = None
+    commit_sha: str | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
+    duration_ms: int | None = None
+    duration: int | None = None
+    external_url: str | None = None
+    changed_files: list[CICDImportChangedFile] = Field(default_factory=list)
+    artifact_references: list[CICDImportArtifactReference] = Field(default_factory=list)
+
+
 class CICDChangedFileRead(BaseModel):
     id: uuid.UUID
     cicd_run_id: uuid.UUID

@@ -1,5 +1,54 @@
 # Development Log
 
+## 2026-07-01 Slice 20 CI Metadata Parser
+
+### Completed
+
+- Completed Slice 20 Task 3: Add deterministic CI metadata parser.
+- Added parser-only CI import schemas:
+  - changed file import items;
+  - inert artifact reference items;
+  - CI run metadata import request shape.
+- Added deterministic parser service:
+  - parses static CI metadata JSON into an internal parsed import model;
+  - normalizes changed files through existing `classify_file_role`,
+    `detect_language`, and `classify_risk` rules;
+  - emits `ci_run_metadata.json`-ready content and metadata with
+    `provider_is_inert_label=true`, `remote_fetch_performed=false`, and
+    `quality_gate_auto_decision=false`;
+  - preserves imported artifact references as inert references only.
+- Added CI import error classes with contract error codes for invalid payloads,
+  remote control fields, credentials, unsupported provider operations, and
+  external fetch requests.
+- Added parser tests covering:
+  - provider label, pipeline/job, conclusion, refs, timestamps, duration,
+    changed files, and artifact references;
+  - source/test changed-file role and risk normalization;
+  - remote-control fields, credentials, external fetch requests, provider
+    operations, malformed changed files, and invalid artifact references.
+- Updated Slice 20 task table:
+  - Task 2 commit recorded as `2201b94`;
+  - Task 3 marked done pending commit.
+- Updated `NEXT_AI_TASK.md` to Slice 20 Task 4: Add CI run import API.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/api/test_ci_run_metadata_import.py -q
+```
+
+Results:
+
+- CI metadata import parser tests: `46 passed`.
+- Existing CI/CD quality center + import parser tests: `53 passed`.
+
+### Next Step
+
+- Run final `git diff --check`.
+- Commit Task 3 with `feat(cicd): add ci metadata import parser`.
+- Continue Slice 20 Task 4: Add CI run import API.
+
 ## 2026-06-30 Slice 20 CI Import Contract Boundary
 
 ### Completed

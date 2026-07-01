@@ -10,13 +10,13 @@ Slice 20: CI Run Metadata Import.
 
 ## Current Task
 
-Slice 20 Task 3: Add deterministic CI metadata parser.
+Slice 20 Task 4: Add CI run import API.
 
 ## Product Value Answer
 
-After this task, Chtest can parse static CI metadata JSON into a deterministic
-internal model while rejecting control fields, credentials, and remote-provider
-behavior before any import API is exposed.
+After this task, Chtest can persist static CI metadata imports as CICDRun
+evidence, including imported changed files and inert artifact references,
+without controlling any remote CI provider.
 
 ## Must Read
 
@@ -45,16 +45,16 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-20-ci-run-metadata-import.md
+backend/app/modules/cicd/router.py
 backend/app/modules/cicd/service.py
 backend/app/modules/cicd/schemas.py
 backend/app/tests/api/test_ci_run_metadata_import.py
 ```
 
-Parser-only task. User approved development after the V2 document-design review.
-Do not add the import API endpoint, frontend code, migrations, remote CI
-provider calls, webhooks, pipeline triggers, reruns, PR comments,
-deploy/release controls, credentials, RBAC, tenants, permissions, marketplace,
-RAG runtime, or MCP runtime.
+Import API task. User approved development after the V2 document-design review.
+Do not add frontend code, migrations, remote CI provider calls, webhooks,
+pipeline triggers, reruns, PR comments, deploy/release controls, credentials,
+RBAC, tenants, permissions, marketplace, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
@@ -63,26 +63,27 @@ backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_im
 git diff --check
 ```
 
-Expected result: deterministic CI metadata parser tests and diff check pass.
+Expected result: CI metadata import API tests and diff check pass.
 
 ## Acceptance
 
-- Parses provider label, pipeline name, job name, conclusion, started/finished
-  timestamps, duration, base/head refs, changed files, and artifact references.
-- Treats provider as an inert label only.
-- Rejects secret-like fields, credentials, webhook payload actions, trigger
-  commands, rerun/cancel/schedule/deploy/release controls, and malformed changed
-  files.
-- Normalizes changed file roles and risks using existing CICDChangedFile
-  classification rules where possible.
-- Does not fetch external artifact URLs or call remote providers.
+- Adds an import-only endpoint such as `POST /api/cicd/runs/import`.
+- Creates CICDRun with `source_type=ci_import`, `trigger_type=imported`,
+  inert provider label, refs, pipeline name, `status=imported`, and
+  `quality_gate_status=pending`.
+- Creates CICDChangedFile rows from parsed imported changed files.
+- Writes `ci_run_metadata.json` and compatible `changed_files.json` artifacts.
+- Stores imported artifact references as inert evidence references.
+- Rejects invalid parser payloads through CI import error codes.
+- Does not create QualityGateDecision automatically and does not trigger remote
+  CI behavior.
 
 ## Commit Message
 
 ```text
-feat(cicd): add ci metadata import parser
+feat(cicd): add ci metadata import api
 ```
 
 ## Next Task
 
-Slice 20 Task 4: Add CI run import API.
+Slice 20 Task 5: Add CI import frontend evidence display.

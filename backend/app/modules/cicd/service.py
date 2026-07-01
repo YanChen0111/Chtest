@@ -10,9 +10,12 @@ from sqlalchemy.orm import Session
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, QualityGateDecision, UnitTestPatch
 from backend.app.modules.cicd.schemas import (
+    CICDImportArtifactReference,
+    CICDImportChangedFile,
     CICDRegressionRunRequest,
     CICDRegressionSelectRequest,
     CICDQualityReportRequest,
+    CICDRunMetadataImportRequest,
     CICDRunAnalyzeRequest,
     CICDRunCreateRequest,
     CICDRunNewTestsRequest,
@@ -64,6 +67,33 @@ class QualityGateDecisionMissingError(Exception):
     pass
 
 
+class CIImportError(Exception):
+    error_code = "INVALID_CI_IMPORT_PAYLOAD"
+
+    def __init__(self, message: str = "") -> None:
+        super().__init__(message or self.error_code)
+
+
+class CIImportInvalidPayloadError(CIImportError):
+    error_code = "INVALID_CI_IMPORT_PAYLOAD"
+
+
+class CIImportControlFieldRejectedError(CIImportError):
+    error_code = "CI_IMPORT_CONTROL_FIELD_REJECTED"
+
+
+class CIImportCredentialRejectedError(CIImportError):
+    error_code = "CI_IMPORT_CREDENTIAL_REJECTED"
+
+
+class CIImportUnsupportedProviderOperationError(CIImportError):
+    error_code = "CI_IMPORT_UNSUPPORTED_PROVIDER_OPERATION"
+
+
+class CIImportExternalFetchForbiddenError(CIImportError):
+    error_code = "CI_IMPORT_EXTERNAL_FETCH_FORBIDDEN"
+
+
 @dataclass
 class ParsedChangedFile:
     path: str
@@ -88,6 +118,260 @@ class ParsedChangedFile:
             "lines_added": self.lines_added,
             "lines_deleted": self.lines_deleted,
         }
+
+
+@dataclass
+class ParsedCIArtifactReference:
+    name: str
+    kind: str
+    external_url: str | None = None
+    sha256: str | None = None
+    size_bytes: int | None = None
+
+    def to_manifest_item(self) -> dict:
+        return {
+            "name": self.name,
+            "kind": self.kind,
+            "external_url": self.external_url,
+            "sha256": self.sha256,
+            "size_bytes": self.size_bytes,
+            "inert_reference": True,
+        }
+
+
+@dataclass
+class ParsedCIRunMetadataImport:
+    source_type: str
+    provider: str
+    trigger_type: str
+    external_run_id: str
+    pipeline_name: str
+    job_name: str | None
+    conclusion: str
+    status: str | None
+    base_ref: str | None
+    head_ref: str | None
+    commit_sha: str | None
+    started_at: str | None
+    finished_at: str | None
+    duration_ms: int | None
+    external_url: str | None
+    changed_files: list[ParsedChangedFile] = field(default_factory=list)
+    artifact_references: list[ParsedCIArtifactReference] = field(default_factory=list)
+    import_mode: str = "static_json"
+
+    def to_artifact_metadata(self) -> dict:
+        return {
+            "created_by_component": "CICDRunMetadataImport",
+            "source_type": self.source_type,
+            "provider": self.provider,
+            "provider_is_inert_label": True,
+            "import_mode": self.import_mode,
+            "changed_file_count": len(self.changed_files),
+            "artifact_reference_count": len(self.artifact_references),
+            "remote_fetch_performed": False,
+            "quality_gate_auto_decision": False,
+        }
+
+    def to_artifact_content(self) -> dict:
+        return {
+            "source_type": self.source_type,
+            "provider": self.provider,
+            "provider_is_inert_label": True,
+            "trigger_type": self.trigger_type,
+            "external_run_id": self.external_run_id,
+            "pipeline_name": self.pipeline_name,
+            "job_name": self.job_name,
+            "conclusion": self.conclusion,
+            "status": self.status,
+            "base_ref": self.base_ref,
+            "head_ref": self.head_ref,
+            "commit_sha": self.commit_sha,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
+            "duration_ms": self.duration_ms,
+            "external_url": self.external_url,
+            "import_mode": self.import_mode,
+            "changed_files": [item.to_manifest_item() for item in self.changed_files],
+            "artifact_references": [item.to_manifest_item() for item in self.artifact_references],
+            "remote_fetch_performed": False,
+            "quality_gate_auto_decision": False,
+        }
+
+
+CI_IMPORT_ALLOWED_PROVIDERS = {
+    "imported",
+    "github_actions",
+    "gitlab_ci",
+    "jenkins",
+    "circleci",
+    "buildkite",
+    "other",
+}
+CI_IMPORT_ALLOWED_CONCLUSIONS = {"success", "failure", "cancelled", "skipped", "timed_out", "unknown"}
+CI_IMPORT_ALLOWED_CHANGE_TYPES = {"added", "modified", "deleted", "renamed"}
+CI_IMPORT_CONTROL_FIELDS = {
+    "webhook",
+    "event_action",
+    "signature",
+    "delivery_id",
+    "callback_url",
+    "trigger",
+    "rerun",
+    "cancel",
+    "schedule",
+    "workflow_dispatch",
+    "pr_comment",
+    "commit_status_update",
+    "branch_protection",
+    "merge",
+    "deploy",
+    "release",
+    "tag",
+    "publish",
+    "environment_promotion",
+}
+CI_IMPORT_CREDENTIAL_FIELDS = {
+    "token",
+    "secret",
+    "oauth",
+    "oauth_token",
+    "pat",
+    "private_key",
+    "password",
+    "credential_id",
+    "organization_permissions",
+}
+CI_IMPORT_EXTERNAL_FETCH_FIELDS = {
+    "fetch_artifacts",
+    "download_artifacts",
+    "download_url",
+    "fetch_logs",
+    "fetch_external_urls",
+}
+
+
+def parse_ci_run_metadata_import(payload: dict | CICDRunMetadataImportRequest) -> ParsedCIRunMetadataImport:
+    raw_payload = payload.model_dump(mode="python") if isinstance(payload, CICDRunMetadataImportRequest) else payload
+    if not isinstance(raw_payload, dict):
+        raise CIImportInvalidPayloadError("CI import payload must be an object")
+
+    reject_forbidden_ci_import_fields(raw_payload)
+    request = coerce_ci_import_request(raw_payload)
+    validate_ci_import_request(request)
+    changed_files = [normalize_ci_import_changed_file(item) for item in request.changed_files]
+    artifact_references = [normalize_ci_import_artifact_reference(item) for item in request.artifact_references]
+
+    return ParsedCIRunMetadataImport(
+        source_type=request.source_type,
+        provider=request.provider,
+        trigger_type=request.trigger_type,
+        external_run_id=request.external_run_id,
+        pipeline_name=request.pipeline_name,
+        job_name=request.job_name,
+        conclusion=request.conclusion,
+        status=request.status,
+        base_ref=request.base_ref,
+        head_ref=request.head_ref,
+        commit_sha=request.commit_sha,
+        started_at=request.started_at,
+        finished_at=request.finished_at,
+        duration_ms=request.duration_ms if request.duration_ms is not None else request.duration,
+        external_url=request.external_url,
+        changed_files=changed_files,
+        artifact_references=artifact_references,
+    )
+
+
+def reject_forbidden_ci_import_fields(value: object) -> None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            normalized_key = key.lower()
+            if normalized_key == "provider_operation":
+                raise CIImportUnsupportedProviderOperationError
+            if normalized_key in CI_IMPORT_CONTROL_FIELDS:
+                raise CIImportControlFieldRejectedError
+            if normalized_key in CI_IMPORT_EXTERNAL_FETCH_FIELDS:
+                raise CIImportExternalFetchForbiddenError
+            if normalized_key in CI_IMPORT_CREDENTIAL_FIELDS or any(
+                marker in normalized_key for marker in ("token", "secret", "password", "private_key")
+            ):
+                raise CIImportCredentialRejectedError
+            reject_forbidden_ci_import_fields(item)
+    elif isinstance(value, list):
+        for item in value:
+            reject_forbidden_ci_import_fields(item)
+
+
+def coerce_ci_import_request(payload: dict) -> CICDRunMetadataImportRequest:
+    try:
+        return CICDRunMetadataImportRequest(**payload)
+    except Exception as exc:
+        raise CIImportInvalidPayloadError(str(exc)) from exc
+
+
+def validate_ci_import_request(request: CICDRunMetadataImportRequest) -> None:
+    if request.source_type != "ci_import":
+        raise CIImportInvalidPayloadError("source_type must be ci_import")
+    if request.trigger_type != "imported":
+        raise CIImportInvalidPayloadError("trigger_type must be imported")
+    if request.provider not in CI_IMPORT_ALLOWED_PROVIDERS:
+        raise CIImportInvalidPayloadError("unsupported provider label")
+    if request.conclusion not in CI_IMPORT_ALLOWED_CONCLUSIONS:
+        raise CIImportInvalidPayloadError("unsupported conclusion")
+    if not request.external_run_id.strip() or not request.pipeline_name.strip():
+        raise CIImportInvalidPayloadError("external_run_id and pipeline_name are required")
+    if not request.changed_files:
+        raise CIImportInvalidPayloadError("changed_files must not be empty")
+    if request.duration_ms is not None and request.duration_ms < 0:
+        raise CIImportInvalidPayloadError("duration_ms must not be negative")
+    if request.duration is not None and request.duration < 0:
+        raise CIImportInvalidPayloadError("duration must not be negative")
+
+
+def normalize_ci_import_changed_file(item: CICDImportChangedFile) -> ParsedChangedFile:
+    path = item.path.strip()
+    old_path = item.old_path.strip() if item.old_path else None
+    if not path or path.startswith("/") or ".." in PurePosixPath(path).parts:
+        raise CIImportInvalidPayloadError("changed file path is invalid")
+    if old_path is not None and (old_path.startswith("/") or ".." in PurePosixPath(old_path).parts):
+        raise CIImportInvalidPayloadError("changed file old_path is invalid")
+    if item.change_type not in CI_IMPORT_ALLOWED_CHANGE_TYPES:
+        raise CIImportInvalidPayloadError("changed file change_type is invalid")
+    if item.lines_added < 0 or item.lines_deleted < 0:
+        raise CIImportInvalidPayloadError("changed file line counts must not be negative")
+
+    file_role = classify_file_role(path, old_path)
+    language = detect_language(path)
+    risk_level, risk_reasons = classify_risk(file_role, item.change_type, item.lines_added, item.lines_deleted, path)
+    return ParsedChangedFile(
+        path=path,
+        old_path=old_path,
+        change_type=item.change_type,
+        language=language,
+        file_role=file_role,
+        risk_level=risk_level,
+        risk_reasons=risk_reasons,
+        lines_added=item.lines_added,
+        lines_deleted=item.lines_deleted,
+    )
+
+
+def normalize_ci_import_artifact_reference(item: CICDImportArtifactReference) -> ParsedCIArtifactReference:
+    name = item.name.strip()
+    kind = item.kind.strip()
+    external_url = item.external_url.strip() if item.external_url else None
+    if not name or not kind:
+        raise CIImportInvalidPayloadError("artifact reference name and kind are required")
+    if item.size_bytes is not None and item.size_bytes < 0:
+        raise CIImportInvalidPayloadError("artifact reference size_bytes must not be negative")
+    return ParsedCIArtifactReference(
+        name=name,
+        kind=kind,
+        external_url=external_url,
+        sha256=item.sha256,
+        size_bytes=item.size_bytes,
+    )
 
 
 @dataclass
