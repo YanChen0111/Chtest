@@ -753,3 +753,82 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines evidence summary behavior, contracts,
   verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Execution evidence summary, narrowed to existing TestRun and Report
+evidence.
+
+Why it was selected:
+
+- Slice 24 made artifacts openable. Slice 25 explained what those artifacts
+  prove by aligning report evidence manifest rows, required flags, missing
+  evidence, and local artifact links.
+- The slice strengthened the evidence review loop without changing report
+  generation, runner behavior, FailureAnalysis, QualityGateDecision, or artifact
+  storage.
+
+Completed slice name:
+
+```text
+Slice 25: Execution Evidence Summary
+```
+
+Delivered output:
+
+- Slice plan, contract boundary, frontend report evidence summary rows, golden
+  smoke, and completion gate.
+- Evidence summary remains read-only and local-first. It does not auto-create
+  reports, mutate artifacts, compute quality gates, add dashboard analytics, or
+  fetch external provider data.
+
+## Recommended Next V2 Slice
+
+Recommended: CI imported artifact reference clarity.
+
+Why:
+
+- Slice 20 imported CI metadata and artifact references as inert evidence.
+  Slice 24 and Slice 25 clarified local artifact access and evidence summary.
+  The remaining readability gap is imported external artifact references: users
+  should see that they are useful metadata but not locally downloaded evidence.
+- The CI/CD Quality Center already renders imported references, so the smallest
+  improvement is display clarity plus one inert-reference proof.
+- This avoids remote provider integration while strengthening trust in the
+  evidence boundary.
+
+Next slice name:
+
+```text
+Slice 26: CI Imported Artifact Reference Clarity
+```
+
+Smallest useful boundary:
+
+- Clarify contract language for imported artifact reference display.
+- Show imported reference name, kind, external URL, inert status,
+  `remote_fetch_performed=false`, and not-locally-openable status.
+- Do not render local download links for external references.
+- Add a golden smoke proving imported external references remain inert.
+
+Explicit non-goals:
+
+- No remote CI provider API calls, external artifact download, proxying,
+  authentication, OAuth, credentials, webhooks, reruns, PR comments, commit
+  statuses, deploy/release controls, or scheduling.
+- No artifact upload, mutation, delete, sharing, signed URL, cloud storage,
+  broad artifact browser, QualityGateDecision behavior changes, TestRun,
+  Report, FailureAnalysis, runner, RAG runtime, MCP runtime, marketplace, RBAC,
+  tenants, or permissions work.
+
+Suggested next task:
+
+```text
+Slice 26 Task 1: Add CI Imported Artifact Reference Clarity task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines display behavior, contracts,
+  verification, and non-goals.

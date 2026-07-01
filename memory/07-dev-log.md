@@ -1,5 +1,29 @@
 # Development Log
 
+## 2026-07-01 Slice 26 CI Imported Artifact Reference Clarity Plan
+
+### Completed
+
+- Selected Slice 26: CI Imported Artifact Reference Clarity.
+- Added `docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 25 completion
+  and Slice 26 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 26 Task 2: Define imported artifact
+  reference display contract.
+
+### Rationale
+
+- CI import already stores external artifact references as inert evidence.
+- The CI/CD Quality Center shows these references, but the local/non-local
+  boundary can be clearer for users.
+- The slice stays small by improving display clarity and preserving
+  `remote_fetch_performed=false`, with no remote provider calls or downloads.
+
+### Next Step
+
+- Commit `docs(v2): add ci imported reference clarity plan`.
+- Continue Slice 26 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 25 Completion Gate
 
 ### Completed

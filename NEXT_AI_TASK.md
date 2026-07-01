@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Select the next V2 small slice after Slice 25 completion.
+Slice 26: CI Imported Artifact Reference Clarity.
 
 ## Current Task
 
-Choose and plan the next narrow V2 slice.
+Slice 26 Task 2: Define imported artifact reference display contract.
 
 ## Product Value Answer
 
-After this task, the next V2 slice is selected with a small task plan before
-any product code changes.
+After this task, imported external artifact references have an explicit display
+contract before frontend clarity or golden smoke work begins.
 
 ## Must Read
 
@@ -30,7 +30,8 @@ any product code changes.
 9. `docs/implementation/10-v2-scope-options.md`
 10. `docs/implementation/slices/slice-25-execution-evidence-summary.md`
 11. `docs/implementation/10-v2-scope-options.md`
-12. recent session handoff and dev log
+12. `docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md`
+13. recent session handoff and dev log
 
 ## Do Not Read Unless Needed
 
@@ -52,6 +53,7 @@ docs/implementation/10-v2-scope-options.md
 docs/implementation/slices/slice-23-frontend-build-baseline.md
 docs/implementation/slices/slice-24-local-artifact-access-links.md
 docs/implementation/slices/slice-25-execution-evidence-summary.md
+docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md
 docs/contracts/02-api-contract.md
 docs/contracts/04-artifact-contract.md
 backend/app/tests/golden/test_artifact_access_golden.py
@@ -60,7 +62,7 @@ backend/app/tests/golden/test_execution_evidence_summary_golden.py
 docs/fixtures/13-execution-evidence-summary-golden.md
 ```
 
-Planning task. Do not add frontend code, backend feature code, migrations,
+Contract task. Do not add frontend code, backend feature code, migrations,
 package upgrades, artifact upload/mutation/delete, cloud storage, external
 provider integration, RBAC, tenants, permissions, broad redesign work, report
 generation behavior, or runner behavior changes.
@@ -68,30 +70,28 @@ generation behavior, or runner behavior changes.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/<next-slice-file>.md
-rg -n "<next slice name>|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/<next-slice-file>.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md
+rg -n "imported artifact reference|inert reference|remote_fetch_performed|not locally openable" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md
 git diff --check
 ```
 
-Expected result: next slice plan exists, scope is narrow and local-first, and
-diff check passes.
+Expected result: imported artifact reference display contract text is present
+and diff check passes.
 
 ## Acceptance
 
-- Slice 25 completion is recorded as done in handoff and dev log.
-- `docs/implementation/10-v2-scope-options.md` records Slice 25 completion and
-  recommends one next V2 slice.
-- A new slice plan defines product value, non-goals, task table, expected files,
-  verification commands, and commit messages.
-- `NEXT_AI_TASK.md` points to the first implementation task for the selected
-  slice.
+- API contract states imported artifact references are display-only external
+  references, not local Artifact files.
+- Artifact contract states external references must show inert/not-local status
+  and must not receive local download links.
+- Contract preserves `remote_fetch_performed=false` and external-provider
+  non-goals.
 
 ## Commit Message
 
 ```text
-docs(v2): add next v2 slice plan
+docs(v2): define imported reference clarity contract
 ```
 
 ## Next Task
 
-First implementation task from the selected next V2 slice.
+Slice 26 Task 3: Add CI imported reference frontend clarity.

@@ -1,5 +1,26 @@
 # Session Handoff
 
+## 2026-07-01 Slice 26 Task 1 CI Imported Artifact Reference Clarity Plan 完成
+
+本轮完成：
+
+- 选择 Slice 26：CI Imported Artifact Reference Clarity。
+- 选择原因：
+  - Slice 20 已导入外部 CI artifact references 为 inert metadata；
+  - Slice 24/25 已建立本地 artifact access 和 evidence summary；
+  - CI/CD Quality Center 仍需要更清楚展示外部引用不可本地打开、未远程拉取。
+- 新增 Slice 26 计划：
+  `docs/implementation/slices/slice-26-ci-imported-artifact-reference-clarity.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充 Slice 25 完成记录和
+  Slice 26 推荐。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 26 Task 2：Define imported artifact reference display contract。
+
+下次推荐任务：
+
+- 提交 Task 1：`docs(v2): add ci imported reference clarity plan`。
+- 继续 Slice 26 Task 2：Define imported artifact reference display contract。
+
 ## 2026-07-01 Slice 25 Completion Gate 完成
 
 本轮完成：
