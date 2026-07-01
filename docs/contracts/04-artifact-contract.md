@@ -154,6 +154,27 @@ Slice 16 artifact rules:
 - CI/CD quality reports must cite UnitTestPatch, PatchScopeGate, new-test,
   regression, QualityGateDecision, and related artifacts when available.
 
+Slice 28 quality gate evidence summary rules:
+
+- Quality gate evidence summary is a read-only display derived from existing
+  QualityGateDecision, TestRun, UnitTestPatch, and Artifact evidence.
+- Summary display may link only persisted local Artifact rows through
+  `GET /api/artifacts/{artifact_id}/download`.
+- Required evidence for UnitTestPatch/PatchScopeGate, new-test, and regression
+  must remain visible even when missing.
+- Blocking reasons must remain visible and must not be converted into passing
+  evidence.
+- Missing evidence, TestRun ids, and metric-like status detail are structured
+  evidence references, not downloadable artifact files, unless they explicitly
+  cite a persisted Artifact id.
+- Summary display must not mutate Artifact rows, artifact files,
+  QualityGateDecision, CICDRun, UnitTestPatch, TestRun, Report,
+  FailureAnalysis, CI metadata, or review history.
+- Summary display must not introduce quality gate computation changes, report
+  generation changes, runner behavior changes, cloud storage, signed URLs,
+  sharing, upload, delete, indexing, search, broad artifact browsing, remote CI
+  provider behavior, RBAC, tenants, permissions, RAG runtime, or MCP runtime.
+
 Slice 21 ReviewHistory artifact rules:
 
 - ReviewHistory stores artifact references in `evidence_artifact_ids`; it does

@@ -1,5 +1,27 @@
 # Session Handoff
 
+## 2026-07-01 Slice 28 Task 2 Quality Gate Evidence Summary Contract 完成
+
+本轮完成：
+
+- 完成 Slice 28 Task 2：Define quality gate evidence summary contract。
+- `docs/contracts/02-api-contract.md` 明确：
+  - quality gate evidence summary 是已有 QualityGateDecision 和 Artifact
+    metadata 的只读展示；
+  - required evidence 包含 UnitTestPatch/PatchScopeGate、new-test、regression；
+  - blocking reasons 和 missing evidence 必须可见；
+  - 只有 persisted local Artifact ids 才能展示本地打开链接。
+- `docs/contracts/04-artifact-contract.md` 新增 Slice 28 quality gate
+  evidence summary rules。
+- Slice 28 table 已记录 Task 1 commit `3ca3db0`，Task 2 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 28 Task 3：Add CI/CD quality gate frontend summary。
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define quality gate evidence summary contract`。
+- 继续 Slice 28 Task 3：Add CI/CD quality gate frontend summary。
+
 ## 2026-07-01 Slice 28 Task 1 CI/CD Quality Gate Evidence Summary Plan 完成
 
 本轮完成：

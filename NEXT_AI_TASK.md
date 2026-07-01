@@ -10,13 +10,13 @@ Slice 28: CI/CD Quality Gate Evidence Summary.
 
 ## Current Task
 
-Slice 28 Task 2: Define quality gate evidence summary contract.
+Slice 28 Task 3: Add CI/CD quality gate frontend summary.
 
 ## Product Value Answer
 
-After this task, contracts define how the CI/CD quality gate evidence summary
-is derived from existing QualityGateDecision and Artifact evidence without
-changing gate computation.
+After this task, CI/CD Quality Center shows quality gate required evidence,
+blocking reasons, and local artifact availability without changing gate
+computation.
 
 ## Must Read
 
@@ -70,37 +70,38 @@ backend/app/tests/golden/test_ci_imported_artifact_reference_clarity_golden.py
 docs/fixtures/14-ci-imported-artifact-reference-clarity-golden.md
 ```
 
-Contract task. Do not add frontend or backend feature code, migrations, package
-upgrades, artifact upload/mutation/delete, cloud storage, external provider
-integration, RBAC, tenants, permissions, broad redesign work, report generation
-behavior, runner behavior changes, quality gate computation changes, RAG
-runtime, or MCP runtime.
+Frontend task. Do not add backend feature code, migrations, package upgrades,
+artifact upload/mutation/delete, cloud storage, external provider integration,
+RBAC, tenants, permissions, broad redesign work, report generation behavior,
+runner behavior changes, quality gate computation changes, RAG runtime, or MCP
+runtime.
 
 ## Verification Command
 
 ```bash
-rg -n "quality gate evidence summary|required evidence|blocking reasons|local artifact" docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-28-cicd-quality-gate-evidence-summary.md
+npm --prefix frontend run test -- --run src/views/cicd/CicdQualityCenterView.spec.ts
+npm --prefix frontend run build
 git diff --check
 ```
 
-Expected result: quality gate evidence summary contract language is
-discoverable and diff check passes.
+Expected result: CI/CD focused frontend test, frontend build, and diff check
+pass.
 
 ## Acceptance
 
-- API contract defines quality gate evidence summary as a read-only
-  presentation derived from existing QualityGateDecision fields.
-- Artifact contract states local links are only for persisted local Artifact
-  ids and missing evidence remains visible but not downloadable.
-- Contract preserves no quality gate computation, report generation, runner,
-  remote provider, RBAC, tenant, RAG runtime, or MCP runtime changes.
+- Quality gate panel shows status, summary, required evidence, and blocking
+  reasons in readable Chinese.
+- Missing UnitTestPatch, new-test, or regression evidence is visible as
+  unavailable evidence.
+- Local artifact links are rendered only for persisted local Artifact ids.
+- Page still excludes remote provider control wording or actions.
 
 ## Commit Message
 
 ```text
-docs(v2): define quality gate evidence summary contract
+feat(frontend): summarize quality gate evidence
 ```
 
 ## Next Task
 
-Slice 28 Task 3: Add CI/CD quality gate frontend summary.
+Slice 28 Task 4: Add quality gate evidence summary golden smoke.

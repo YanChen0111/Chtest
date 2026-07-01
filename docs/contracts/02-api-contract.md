@@ -1374,6 +1374,51 @@ Rules:
 - QualityGateDecision does not trigger merge, push, release, deployment, remote
   CI provider status updates, or PR comments.
 
+### 5.12.1 Quality Gate Evidence Summary
+
+Slice 28 may show a read-only quality gate evidence summary in the CI/CD
+Quality Center. The summary is derived from the latest `QualityGateDecision`,
+its `status_detail`, `blocking_reasons`, `evidence_artifact_ids`, and existing
+Artifact metadata. It does not require a new endpoint.
+
+Frontend summary rows may preserve:
+
+```json
+{
+  "evidence_key": "unit_test_patch",
+  "label": "UnitTestPatch",
+  "status": "applied",
+  "required": true,
+  "blocking": false,
+  "artifact_id": "00000000-0000-0000-0000-000000001211",
+  "download_url": "/api/artifacts/00000000-0000-0000-0000-000000001211/download",
+  "availability": "local_artifact"
+}
+```
+
+Rules:
+
+- Quality gate evidence summary rows are presentation-only and derived from
+  existing `QualityGateDecisionRead` fields and Artifact metadata already
+  available to the UI.
+- Required evidence rows must cover UnitTestPatch/PatchScopeGate, new-test
+  evidence, and regression evidence.
+- `blocking_reasons` must remain visible and must not be hidden behind a
+  passed/failed badge.
+- Missing required evidence must remain visible as unavailable evidence and
+  must not be shown as downloadable or passing evidence.
+- Rows may expose local open links only for persisted local Artifact ids through
+  `GET /api/artifacts/{artifact_id}/download`.
+- TestRun ids, metric-like status details, and missing evidence are structured
+  evidence references, not local Artifact files, unless they explicitly cite a
+  persisted Artifact id.
+- This summary must not mutate QualityGateDecision, CICDRun, UnitTestPatch,
+  TestRun, Artifact, Report, FailureAnalysis, CI metadata, or review history.
+- Slice 28 must not change quality gate computation, report generation, runner
+  execution, remote CI provider behavior, external artifact fetch, PR comments,
+  commit statuses, deploy/release controls, credentials, RBAC, tenants,
+  permissions, RAG runtime, or MCP runtime.
+
 ### 5.13 Generate CI/CD Quality Report
 
 `POST /api/cicd/runs/{id}/generate-report`

@@ -1,5 +1,25 @@
 # Development Log
 
+## 2026-07-01 Slice 28 Quality Gate Evidence Summary Contract
+
+### Completed
+
+- Defined quality gate evidence summary as read-only presentation derived from
+  existing QualityGateDecision fields and Artifact metadata.
+- Required UnitTestPatch/PatchScopeGate, new-test, and regression evidence rows
+  to remain visible.
+- Required blocking reasons and missing evidence to remain visible and not be
+  treated as passing or downloadable evidence.
+- Preserved the no quality gate computation, report generation, runner, remote
+  provider, RBAC, tenant, RAG runtime, or MCP runtime boundary.
+- Updated `NEXT_AI_TASK.md` to Slice 28 Task 3: Add CI/CD quality gate frontend
+  summary.
+
+### Next Step
+
+- Commit `docs(v2): define quality gate evidence summary contract`.
+- Continue Slice 28 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 28 CI/CD Quality Gate Evidence Summary Plan
 
 ### Completed
