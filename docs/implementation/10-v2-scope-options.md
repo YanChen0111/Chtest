@@ -232,6 +232,10 @@ Expected output:
 
 ## Future Candidate Direction E: Test Knowledge RAG And Agent System
 
+Status: long-term final-version direction. This section does not authorize a
+RAG runtime, vector database, GraphRAG runtime, MCP runtime, external provider
+call, or generated-case auto-approval in the current slice.
+
 Detailed strategy:
 
 - `docs/implementation/11-final-rag-agent-strategy.md`
@@ -271,6 +275,32 @@ ContextArtifact / imported knowledge
   -> KnowledgeFeedbackAgent
 ```
 
+AI workflow planning:
+
+- Split the future AI flow across focused agents instead of one broad case
+  generation prompt.
+- Define Agent, PromptVersion, SkillVersion, input evidence, output artifact,
+  write permission, human gate, failure behavior, and metrics before
+  implementation.
+- Keep Agent orchestration independent from provider schemas. Provider output
+  must normalize into Chtest `KnowledgeEvidence`.
+- Keep MCP as a ToolDefinition-compatible transport layer. MCP must not bypass
+  approval, Artifact persistence, ToolInvocation status, Prompt/Skill version
+  tracking, or review gates.
+
+Prompt/Skill work that can be planned early:
+
+- knowledge card extraction.
+- requirement understanding.
+- risk analysis.
+- coverage analysis.
+- test design.
+- evidence-backed case generation.
+- evidence-backed case review.
+- case dedup.
+- automation readiness.
+- knowledge feedback.
+
 Open-source acceleration:
 
 - Use PageIndex-style tree and section reasoning for traceable professional
@@ -299,6 +329,16 @@ Smallest useful boundary:
   candidates, review findings, and evidence ids.
 - Do not add vector database, embeddings, reranking, graph runtime, external
   provider calls, or frontend implementation in the planning task.
+
+Recommended follow-up documentation slices:
+
+1. Evidence-backed generated case contract.
+2. Agent workflow contract for requirement-to-reviewed-case.
+3. Prompt/Skill draft contracts for knowledge extraction and evidence-backed
+   review.
+4. MCP-ready ToolDefinition and KnowledgeAdapter safety boundary review.
+5. Provider evaluation plan for Haystack or LlamaIndex after local evidence
+   contracts pass golden fixtures.
 
 Risks:
 

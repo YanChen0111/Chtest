@@ -21,6 +21,23 @@ prompts/
   report_generation/v1.md
 ```
 
+Future knowledge-driven prompts are added only after their data and artifact
+contracts exist:
+
+```text
+prompts/
+  knowledge_card_extraction/v1.md
+  requirement_understanding/v1.md
+  risk_analysis/v1.md
+  coverage_analysis/v1.md
+  test_design/v1.md
+  evidence_case_generation/v1.md
+  evidence_case_review/v1.md
+  case_dedup/v1.md
+  automation_readiness/v1.md
+  knowledge_feedback/v1.md
+```
+
 ## 3. Skill 目录
 
 ```text
@@ -35,6 +52,21 @@ skills/
   failure-analysis-skill/v1.md
   report-generation-skill/v1.md
 ```
+
+Future knowledge-driven skills:
+
+```text
+skills/
+  knowledge-ingestion-skill/v1.md
+  risk-analysis-skill/v1.md
+  coverage-analysis-skill/v1.md
+  test-design-skill/v1.md
+  knowledge-feedback-skill/v1.md
+```
+
+Future skills extend the V1 testing workflow; they do not enable full RAG
+runtime, vector databases, GraphRAG runtime, MCP runtime, external provider
+calls, generated-case auto-approval, or tool execution by themselves.
 
 ## 4. Prompt 文件格式
 
@@ -104,6 +136,46 @@ Rules:
 - Model output or parsed AITask output must expose `used_context_artifact_ids`.
 - Model output must not claim external evidence when `used_knowledge=false`.
 
+## 4.2 Knowledge Evidence Input Contract
+
+Future evidence-backed prompts may receive `KnowledgeEvidence` only after the
+`TestKnowledgeCard` and `KnowledgeEvidence` contracts are defined.
+
+Prompt input must separate raw task input, local context, and knowledge evidence:
+
+```json
+{
+  "task_input": {},
+  "context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+  "knowledge_evidence": [
+    {
+      "evidence_id": "KE-001",
+      "knowledge_card_id": "TKC-001",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "source_card_version": 1,
+      "retrieval_mode": "structured_filter",
+      "snippet": "Expired coupons cannot be used during checkout.",
+      "allowed_for_prompt": true
+    }
+  ],
+  "forbidden_claims": [
+    "Do not claim payment gateway behavior unless evidence cites it."
+  ]
+}
+```
+
+Rules:
+
+- `knowledge_evidence` must contain only prompt-eligible evidence.
+- Prompt output must list `used_knowledge_evidence_ids` when a generated result
+  relies on knowledge evidence.
+- Prompt output must list `unsupported_claims` when useful cases cannot be
+  supported by available evidence.
+- Missing evidence should produce lower confidence or coverage gap notes, not
+  fabricated references.
+- External provider metadata must stay in evidence artifacts and normalized
+  fields; provider schemas must not leak into prompt output contracts.
+
 ## 5. Skill 文件格式
 
 每个 Skill 文件必须包含以下段落：
@@ -153,6 +225,24 @@ Describe required output fields.
 | 工具执行计划 | ToolExecutionAgent | tool_execution:v1 | tool-execution-skill:v1 |
 | 失败归因 | FailureAnalysisAgent | failure_analysis:v1 | failure-analysis-skill:v1 |
 | 报告生成 | ReportAgent | report_generation:v1 | report-generation-skill:v1 |
+
+## 6.1 Final Knowledge-Driven Prompt/Skill Mapping
+
+This mapping is planning guidance. It becomes implementation truth only after
+the related product and contract documents are promoted.
+
+| 流程 | Agent | Prompt | Skill | Human gate |
+|---|---|---|---|---|
+| 知识卡片抽取 | KnowledgeIngestionAgent | knowledge_card_extraction:v1 | knowledge-ingestion-skill:v1 | prompt eligibility |
+| 需求理解 | RequirementUnderstandingAgent | requirement_understanding:v1 | requirement-review-skill:v1 | requirement confirmation |
+| 风险分析 | RiskAnalysisAgent | risk_analysis:v1 | risk-analysis-skill:v1 | review for P0/P1 |
+| 覆盖分析 | CoverageAnalysisAgent | coverage_analysis:v1 | coverage-analysis-skill:v1 | coverage gap confirmation |
+| 测试设计 | TestDesignAgent | test_design:v1 | test-design-skill:v1 | optional |
+| 证据化用例生成 | CaseGenerationAgent | evidence_case_generation:v1 | test-case-generation-skill:v1 | case review |
+| 证据化用例评审 | CaseReviewAgent | evidence_case_review:v1 | testcase-review-skill:v1 | case promotion |
+| 用例去重 | DedupAgent | case_dedup:v1 | testcase-review-skill:v1 | duplicate merge |
+| 自动化可行性 | AutomationReadinessAgent | automation_readiness:v1 | automation-draft-skill:v1 | automation draft approval |
+| 知识反馈 | KnowledgeFeedbackAgent | knowledge_feedback:v1 | knowledge-feedback-skill:v1 | knowledge card review |
 
 ## 7. 输出 JSON 约束
 
@@ -230,6 +320,67 @@ Describe required output fields.
 }
 ```
 
+### 7.6 Evidence-Backed Case Generation Output
+
+```json
+{
+  "cases": [
+    {
+      "title": "过期优惠券不可提交订单",
+      "priority": "P0",
+      "test_type": "functional",
+      "precondition": "存在一张已过期优惠券",
+      "steps": ["登录", "进入结算页", "选择过期优惠券", "提交订单"],
+      "expected_results": ["系统阻止提交", "展示错误提示"],
+      "covered_requirement_ids": ["REQ-001"],
+      "covered_risk_ids": ["RISK-001"],
+      "source_knowledge_evidence_ids": ["KE-001"],
+      "generation_reason": "覆盖优惠券有效期边界和结算阻断风险",
+      "automation_readiness": {
+        "suitable": true,
+        "target_frameworks": ["pytest", "playwright"],
+        "blockers": []
+      },
+      "quality_score": {
+        "overall": 86,
+        "requirement_coverage": 90,
+        "risk_coverage": 85,
+        "evidence_completeness": 90,
+        "executability": 80,
+        "hallucination_risk": 5
+      },
+      "review_findings": [],
+      "coverage_gap_notes": []
+    }
+  ],
+  "unsupported_claims": [],
+  "used_knowledge_evidence_ids": ["KE-001"]
+}
+```
+
+### 7.7 Knowledge Card Extraction Output
+
+```json
+{
+  "knowledge_cards": [
+    {
+      "knowledge_type": "BoundaryCondition",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "source_span": "section:coupon-validity",
+      "source_quote_or_hash": "Expired coupons cannot be used during checkout.",
+      "module_key": "checkout/coupon",
+      "risk_type": "business",
+      "case_type_hint": "negative",
+      "confidence": 0.91,
+      "safe_to_show": true,
+      "allowed_for_prompt": true
+    }
+  ],
+  "rejected_items": [],
+  "unsupported_claims": []
+}
+```
+
 ## 8. 质量门禁
 
 | 输出 | 门禁 |
@@ -241,6 +392,9 @@ Describe required output fields.
 | RegressionPlan | 每个推荐命令必须有 reason |
 | FailureAnalysis | 无证据时必须返回 insufficient_evidence |
 | Report | 每个结论必须引用 artifact 或结构化指标 |
+| TestKnowledgeCard | 必须引用 source artifact、source span 或 hash、review status、prompt eligibility |
+| KnowledgeEvidence | 必须引用 knowledge card 或 source artifact，且标明 retrieval reason |
+| Evidence-backed GeneratedCaseCandidate | 必须引用 evidence ids、覆盖风险、生成原因、review findings、coverage gap notes |
 
 ## 9. 版本与指标
 
@@ -258,3 +412,56 @@ Describe required output fields.
 - quality_gate_result。
 
 指标按 PromptVersion 和 SkillVersion 聚合：采纳率、编辑率、驳回率、schema 通过率、执行通过率、失败率、平均 token、平均耗时。
+
+Future knowledge-driven metrics also aggregate by PromptVersion and
+SkillVersion:
+
+- evidence precision。
+- hallucination rate。
+- duplicate rate。
+- required-case coverage。
+- boundary/exception coverage。
+- historical-defect coverage。
+- human acceptance rate。
+- edit distance after review。
+- automation readiness rate。
+
+## 10. Prompt/Skill Promotion Rules
+
+- New PromptVersion and SkillVersion records start as draft.
+- Draft versions must pass schema examples and golden fixtures before active.
+- Active versions must not be overwritten; changes create a new version/hash.
+- Output-field changes require contract and fixture updates before prompt or
+  skill activation.
+- A new version may replace the active version only when it preserves schema
+  validity and does not regress evidence precision, hallucination rate,
+  duplicate rate, and human acceptance rate on the selected eval set.
+- Rollback must keep old prompt and skill hashes addressable by historical
+  AITask records.
+- Prompt/Skill files must not contain secrets, credentials, private customer
+  data, or unreviewed provider-specific instructions.
+
+## 11. Skill Content Requirements
+
+Every Skill must include:
+
+```text
+Applies To
+Methodology
+Input Contract
+Output Contract
+Quality Gates
+Evidence Requirements
+Forbidden Actions
+Tool Permissions
+Review Escalation
+Failure Output
+```
+
+Knowledge-driven skills must also define:
+
+- what evidence is sufficient for a recommendation;
+- when to lower confidence;
+- when to create coverage gap notes;
+- when to reject an output as hallucinated or unverifiable;
+- which fields require human review before reuse.
