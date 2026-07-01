@@ -10,30 +10,23 @@ V2 Planning.
 
 ## Current Task
 
-Slice 19 Completion Gate.
+Select the next V2 small slice after Slice 19 completion.
 
 ## Product Value Answer
 
-After this gate, deterministic local ContextArtifact retrieval is fully verified
-as an auditable V2 knowledge-quality improvement, with backend, frontend, golden
-smoke, and documentation evidence complete.
+After this task, the next V2 implementation direction is chosen as a small,
+evidence-backed slice without expanding into excluded platform scope.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
-2. `docs/implementation/02-v1-slice-plan.md`
-3. `docs/product/01-positioning-and-scope.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `docs/contracts/04-artifact-contract.md`
-8. `docs/implementation/04-ai-vibecoding-governance.md`
-9. `docs/implementation/00-v0.1-walking-skeleton.md`
-10. `docs/fixtures/00-v1-demo-path.md`
-11. `docs/implementation/10-v2-scope-options.md`
-12. `docs/implementation/slices/slice-17-extension-surface.md`
-13. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
-14. `docs/fixtures/08-deterministic-knowledge-retrieval-golden.md`
+2. `docs/product/01-positioning-and-scope.md`
+3. `docs/implementation/02-v1-slice-plan.md`
+4. `docs/implementation/04-ai-vibecoding-governance.md`
+5. `docs/implementation/10-v2-scope-options.md`
+6. `docs/implementation/slices/slice-18-newman-api-execution.md`
+7. `docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md`
+8. `memory/08-session-handoff.md`
 
 ## Do Not Read Unless Needed
 
@@ -48,40 +41,39 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/slices/slice-19-deterministic-knowledge-retrieval.md
+docs/implementation/10-v2-scope-options.md
+new slice plan under docs/implementation/slices/ only if a slice is selected
 ```
 
-Completion gate. Verify and document the completed deterministic retrieval
-slice. Do not add frontend, vector database, embeddings, reranking, background
-indexing, external RAG provider calls, MCP runtime, RBAC, tenants, permissions,
-marketplace, cloud sync, release automation, or remote CI provider integration.
+Planning task. Compare completed V2 slices and select the next smallest product
+slice. Do not add product code, frontend code, vector database, embeddings,
+reranking, background indexing, external RAG provider calls, MCP runtime, RBAC,
+tenants, permissions, marketplace, cloud sync, release automation, or remote CI
+provider integration.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
-npm --prefix frontend run test -- --run
+rg -n "Slice 18|Slice 19|Candidate Direction|Recommended|Next" docs/implementation/10-v2-scope-options.md docs/implementation/slices
 git diff --check
 ```
 
-Expected result: backend API, golden smoke, frontend retrieval evidence display,
-and diff check pass.
+Expected result: next V2 slice recommendation is documented and diff check
+passes.
 
 ## Acceptance
 
-- Slice 19 task table marks Task 1-6 done with commit ids.
-- Completion evidence records backend API, requirement review, extension
-  surface, golden smoke, frontend, and diff verification.
-- Handoff names the next V2 slice or planning task.
-- Non-goals remain excluded.
+- Records Slice 19 as completed in V2 planning context.
+- Selects one next small V2 slice with product value, non-goals, and task table.
+- Keeps excluded platform scope out unless explicitly authorized.
+- Updates handoff and `NEXT_AI_TASK.md` to the first task of the selected slice.
 
 ## Commit Message
 
 ```text
-docs(v2): complete deterministic knowledge retrieval slice
+docs(v2): select next small slice
 ```
 
 ## Next Task
 
-Select the next V2 slice or planning task after Slice 19 completion is
-committed.
+Start the selected V2 slice Task 1 only after the planning commit is complete.

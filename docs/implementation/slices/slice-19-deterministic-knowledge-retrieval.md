@@ -81,8 +81,8 @@ infrastructure, external providers, or opaque RAG behavior.
 | Add local KnowledgeAdapter retrieval service | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py -q` | `7e6d61c` | deterministic matcher only |
 | Attach retrieval evidence to AI task flows | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py -q` | `24b7105` | requirement review first |
 | Add retrieval evidence frontend display | done | `npm --prefix frontend run test -- --run` | `b578fac` | RAG 知识库 / AI task evidence |
-| Add deterministic retrieval golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q` | pending commit | context -> retrieval -> AI task |
-| Slice 19 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q && npm --prefix frontend run test -- --run` | pending | docs and handoff |
+| Add deterministic retrieval golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q` | `ebd67af` | context -> retrieval -> AI task |
+| Slice 19 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q && npm --prefix frontend run test -- --run && git diff --check` | pending commit | docs and handoff |
 
 ## Task 1: Add Deterministic Knowledge Retrieval Task Plan
 

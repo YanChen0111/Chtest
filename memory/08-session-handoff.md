@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-06-30 Slice 19 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 19：Deterministic Knowledge Retrieval Stub。
+- Slice 19 task table 已记录：
+  - Task 5 commit：`b578fac`。
+  - Task 6 commit：`ebd67af`。
+  - Completion Gate：done，pending commit。
+- 确认本 slice 只交付本地 deterministic ContextArtifact retrieval stub：
+  - 同项目 ContextArtifact 检索。
+  - `safe_to_show=true` 且 `allowed_for_prompt=true` 才能进入 prompt。
+  - evidence artifact 记录 query terms、matched terms、scores、snippets、
+    ContextArtifact ids。
+  - RAG 知识库展示 latest retrieval evidence。
+- 未新增 vector database、embedding、reranking、external RAG provider runtime、
+  MCP runtime、RBAC、tenants、permissions、marketplace、cloud sync 或 remote CI
+  provider integration。
+- 已将 `NEXT_AI_TASK.md` 切换到：
+  Select the next V2 small slice after Slice 19 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_deterministic_knowledge_retrieval.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_extension_surface.py backend/app/tests/golden/test_deterministic_knowledge_retrieval_golden.py -q
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Backend deterministic retrieval + requirement review + extension surface +
+  golden smoke：`23 passed`。
+- Frontend suite：`15` files passed，`19` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 completion gate。
+- 然后按 `NEXT_AI_TASK.md` 做规划任务：选择下一个 V2 小切片。
+
 ## 2026-06-30 Slice 19 Task 6 完成
 
 本轮完成：
