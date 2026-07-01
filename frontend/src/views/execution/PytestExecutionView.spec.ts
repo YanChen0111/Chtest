@@ -48,6 +48,18 @@ function testRunBody() {
     ],
     artifacts: [
       {
+        id: '00000000-0000-0000-0000-000000001201',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001301',
+        artifact_type: 'runtime_manifest',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001301/runtime_manifest.json',
+        mime_type: 'application/json',
+        size_bytes: 96,
+        sha256: 'sha256:runtime_manifest',
+        metadata_json: { created_by_component: 'PytestRunner' },
+      },
+      {
         id: '00000000-0000-0000-0000-000000001401',
         project_id: '00000000-0000-0000-0000-000000000101',
         owner_entity_type: 'TestRun',
@@ -100,6 +112,13 @@ describe('PytestExecutionView', () => {
     expect(wrapper.text()).toContain('/tmp/chtest-test-run');
     expect(wrapper.text()).toContain('local_subprocess');
     expect(wrapper.text()).toContain('关闭');
+    expect(wrapper.text()).toContain('执行运行清单');
+    expect(wrapper.text()).toContain('本地网络关闭');
+    expect(wrapper.text()).toContain('Runtime manifest');
+    expect(wrapper.text()).toContain('Dependency snapshot');
+    expect(wrapper.text()).toContain('Environment snapshot');
+    expect(wrapper.text()).toContain('缺失不可打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001201/download"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('stdout');
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001401/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('generated::test_generated_ok');

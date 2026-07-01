@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-01 Slice 29 Frontend Run Manifest Panel
+
+### Completed
+
+- Pytest execution page now shows a compact `执行运行清单` panel.
+- Panel displays command, working directory, runner mode, run workspace,
+  repository-readonly policy, and network policy.
+- Panel displays runtime/dependency/environment snapshot rows, keeping missing
+  snapshots visible as `缺失不可打开`.
+- Local open links are rendered only for persisted local Artifact ids.
+- Updated `NEXT_AI_TASK.md` to Slice 29 Task 4: Add execution run manifest
+  golden smoke.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts`
+- Result: `1` file passed, `1` test passed.
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `feat(frontend): show execution run manifest`.
+- Continue Slice 29 Task 4 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 29 Execution Run Manifest Contract
 
 ### Completed

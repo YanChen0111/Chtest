@@ -10,12 +10,12 @@ Slice 29: Execution Run Manifest.
 
 ## Current Task
 
-Slice 29 Task 3: Add frontend run manifest panel.
+Slice 29 Task 4: Add execution run manifest golden smoke.
 
 ## Product Value Answer
 
-After this task, the pytest execution page shows a compact run manifest from
-existing TestRun fields and Artifact metadata.
+After this task, a golden smoke proves execution run manifest inputs stay tied
+to existing TestRun and Artifact evidence.
 
 ## Must Read
 
@@ -47,12 +47,13 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-29-execution-run-manifest.md
-frontend/src/views/execution/PytestExecutionView.vue
-frontend/src/views/execution/PytestExecutionView.spec.ts
+backend/app/tests/golden/test_execution_run_manifest_golden.py
+docs/fixtures/17-execution-run-manifest-golden.md
 ```
 
-Frontend task. Do not add backend feature code, migrations, package upgrades,
-artifact upload/mutation/delete, cloud storage,
+Golden smoke task. Do not add frontend code, backend feature code beyond the
+focused test, migrations, package upgrades, artifact upload/mutation/delete,
+cloud storage,
 external provider integration, RBAC, tenants, permissions, broad redesign work,
 report generation behavior, runner behavior changes, quality gate computation
 changes, RAG runtime, or MCP runtime.
@@ -60,32 +61,31 @@ changes, RAG runtime, or MCP runtime.
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts
-npm --prefix frontend run build
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q
 git diff --check
 ```
 
-Expected result: pytest execution focused frontend test, frontend build, and
-diff check pass.
+Expected result: execution run manifest golden smoke and diff check pass.
 
 ## Acceptance
 
-- Pytest execution page shows a compact `执行运行清单` panel.
-- Panel shows command, working directory, runner mode, workspace, repository
-  read-only flag, and network policy in readable Chinese.
-- Panel shows runtime/dependency/environment snapshot rows and output artifact
-  availability.
-- Local links are rendered only for persisted local Artifact ids.
-- Missing snapshots remain visible as unavailable.
-- Page does not add new execution actions, rerun controls, report generation,
-  remote provider controls, or broad redesign.
+- Golden proves TestRun read data keeps command, working directory,
+  runner_mode, run workspace, repository/network policy, parsed result, and
+  artifact metadata available for manifest display.
+- Golden proves local artifact ids remain openable through existing artifact
+  access when they are persisted local artifacts.
+- Golden proves missing snapshot ids remain visible as missing/unavailable
+  evidence.
+- Golden proves run manifest display inputs do not create Report,
+  FailureAnalysis, QualityGateDecision, AutomationRepair, new TestRun, artifact
+  mutation, remote provider behavior, RAG runtime, or MCP runtime.
 
 ## Commit Message
 
 ```text
-feat(frontend): show execution run manifest
+test(golden): add execution run manifest smoke
 ```
 
 ## Next Task
 
-Slice 29 Task 4: Add execution run manifest golden smoke.
+Slice 29 Completion Gate.

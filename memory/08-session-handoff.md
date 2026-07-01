@@ -1,5 +1,48 @@
 # Session Handoff
 
+## 2026-07-01 Slice 29 Task 3 Frontend Run Manifest Panel 完成
+
+本轮完成：
+
+- 完成 Slice 29 Task 3：Add frontend run manifest panel。
+- `PytestExecutionView.vue` 新增 `执行运行清单`：
+  - 命令；
+  - 工作目录；
+  - runner mode；
+  - run workspace；
+  - 只读仓库策略；
+  - 网络策略；
+  - runtime/dependency/environment snapshot 可用性；
+  - stdout/stderr/parsed output/JUnit 等输出工件可用性。
+- `PytestExecutionView.spec.ts` 覆盖：
+  - manifest 标题可见；
+  - 本地网络关闭可见；
+  - runtime manifest 可打开；
+  - dependency/environment snapshot 缺失时显示 `缺失不可打开`；
+  - stdout Artifact 仍可打开。
+- Slice 29 table 已记录 Task 2 commit `d1995eb`，Task 3 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 29 Task 4：Add execution run manifest golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts
+npm --prefix frontend run build
+git diff --check
+```
+
+验证结果：
+
+- Pytest focused frontend test：`1` file passed，`1` test passed。
+- Frontend build：passed，保留 Vite large chunk warning。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：`feat(frontend): show execution run manifest`。
+- 继续 Slice 29 Task 4：Add execution run manifest golden smoke。
+
 ## 2026-07-01 Slice 29 Task 2 Execution Run Manifest Contract 完成
 
 本轮完成：
