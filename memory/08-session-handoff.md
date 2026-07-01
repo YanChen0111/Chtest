@@ -1,5 +1,54 @@
 # Session Handoff
 
+## 2026-07-01 Slice 21 Task 2 Review History Contract Boundary 完成
+
+本轮完成：
+
+- 完成 Slice 21 Task 2：Define review history contract boundary。
+- 数据合同新增 `ReviewHistory`：
+  - 本地 append-only review attribution evidence；
+  - `entity_type/entity_id`、`related_entity_type/related_entity_id`；
+  - `action`、`from_status`、`to_status`；
+  - `reviewer=Default User` 默认本地显示标签；
+  - `comment`、`evidence_artifact_ids`、`metadata_json`、`created_at`。
+- API 合同新增 `GET /api/review-history`：
+  - 只读列表；
+  - 支持 project、entity、related entity 过滤；
+  - 不提供通用 create/update/delete。
+- 状态机合同明确 ReviewHistory 只是成功动作后的 side effect：
+  - GeneratedCaseCandidate approve / approve_after_edit / reject；
+  - AutomationDraft edit / approve / reject；
+  - UnitTestPatch approve / reject；
+  - QualityGateDecision compute / recompute。
+- Artifact 合同明确 Slice 21 不新增 `review_history` artifact type，只引用
+  已存在 Artifact id。
+- 子代理 `Lorentz` 只读审阅后建议：
+  - case approval history 主写 GeneratedCaseCandidate，TestCase 通过
+    `source_candidate_id` 展示；
+  - QualityGateDecision history 用 related CICDRun 表示
+    `quality_gate_status` 变化。
+  已吸收到合同。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 21 Task 3：
+  Add review history model and service。
+
+本轮验证：
+
+```bash
+rg -n "ReviewHistory|review history|review attribution|Default User|RBAC|permissions" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-21-local-review-attribution-history.md
+git diff --check
+```
+
+验证结果：
+
+- ReviewHistory contract keywords found in data/API/state/artifact contracts
+  and Slice 21 plan。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(review): define local review history contract`。
+- 继续 Slice 21 Task 3：Add review history model and service。
+
 ## 2026-07-01 V2 Next Slice Selection 完成
 
 本轮完成：
@@ -43,8 +92,7 @@ git diff --check
 
 下次推荐任务：
 
-- 提交本 planning task：`docs(v2): add local review history slice plan`。
-- 继续 Slice 21 Task 2：define review history contract boundary。
+- Planning task 已提交：`f121483 docs(v2): add local review history slice plan`。
 
 ## 2026-07-01 Slice 20 Completion Gate 完成
 

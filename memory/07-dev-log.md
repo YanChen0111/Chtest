@@ -1,5 +1,48 @@
 # Development Log
 
+## 2026-07-01 Slice 21 Review History Contract Boundary
+
+### Completed
+
+- Completed Slice 21 Task 2: Define review history contract boundary.
+- Added `ReviewHistory` data contract as local append-only evidence.
+- Defined deterministic local `Default User` reviewer attribution as a display
+  label, not an auth principal.
+- Added API contract for `GET /api/review-history` as a read-only local review
+  history surface.
+- Defined state-machine side effects for:
+  - GeneratedCaseCandidate review.
+  - AutomationDraft edit/approval/rejection.
+  - UnitTestPatch approval/rejection.
+  - QualityGateDecision compute/recompute.
+- Defined artifact boundary: ReviewHistory references existing Artifact ids and
+  does not add a dedicated artifact type in Slice 21.
+- Incorporated subagent review guidance:
+  - Generated case approval history is written to GeneratedCaseCandidate and
+    displayed by TestCase through `source_candidate_id`.
+  - QualityGateDecision history records the CICDRun `quality_gate_status`
+    transition via related entity fields.
+- Updated `NEXT_AI_TASK.md` to Slice 21 Task 3: Add review history model and
+  service.
+
+### Verification
+
+```bash
+rg -n "ReviewHistory|review history|review attribution|Default User|RBAC|permissions" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-21-local-review-attribution-history.md
+git diff --check
+```
+
+Results:
+
+- ReviewHistory contract keywords found in data/API/state/artifact contracts
+  and Slice 21 plan.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit with `docs(review): define local review history contract`.
+- Continue Slice 21 Task 3: add review history model and service.
+
 ## 2026-07-01 V2 Next Slice Selection After Slice 20
 
 ### Completed
@@ -42,8 +85,7 @@ Results:
 
 ### Next Step
 
-- Commit with `docs(v2): add local review history slice plan`.
-- Continue Slice 21 Task 2: define review history contract boundary.
+- Completed in commit `f121483`.
 
 ## 2026-07-01 Slice 20 Completion Gate
 

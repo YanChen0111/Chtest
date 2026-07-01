@@ -10,13 +10,13 @@ Slice 21: Local Review Attribution History.
 
 ## Current Task
 
-Slice 21 Task 2: Define review history contract boundary.
+Slice 21 Task 3: Add review history model and service.
 
 ## Product Value Answer
 
-After this task, Chtest contracts define local append-only review history as
-evidence without introducing RBAC, permissions, tenants, login, or team
-governance.
+After this task, Chtest can persist and read local append-only ReviewHistory
+records for existing review-gated workflows without introducing RBAC,
+permissions, tenants, login, or team governance.
 
 ## Must Read
 
@@ -43,44 +43,52 @@ Create or update only these files for the current task:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/10-v2-scope-options.md
 docs/implementation/slices/slice-21-local-review-attribution-history.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
+backend/app/modules/review_history/models.py
+backend/app/modules/review_history/schemas.py
+backend/app/modules/review_history/service.py
+backend/app/modules/review_history/router.py
+backend/app/modules/review_history/__init__.py
+backend/app/main.py
+backend/app/models/__init__.py
+backend/app/tests/api/test_review_history.py
 ```
 
-Contract-only task. Do not add implementation code, frontend code, migrations,
-users, roles, permissions, tenants, login/session flows, assignment workflow,
-notifications, remote CI provider governance, marketplace, RAG runtime, or MCP
-runtime.
+Backend model/service task. Do not attach history to existing review actions
+yet, add frontend panels, add broad audit/search, or introduce users, roles,
+permissions, tenants, login/session flows, assignment workflow, notifications,
+remote CI provider governance, marketplace, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-rg -n "ReviewHistory|review history|review attribution|Default User|RBAC|permissions" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-21-local-review-attribution-history.md
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_review_history.py -q
 git diff --check
 ```
 
-Expected result: review history contract boundary docs and diff check pass.
+Expected result: review history model/service API tests and diff check pass.
 
 ## Acceptance
 
-- Data contract defines append-only review history records.
-- API contract defines a local read surface for review history.
-- State-machine contract states review history records transitions but does not
-  change approval rules.
-- Artifact contract defines evidence references only when needed.
-- Contracts explicitly reject RBAC, permissions, tenants, SSO, enterprise audit,
-  assignment workflow, and remote provider governance.
+- Adds ReviewHistory persistence with entity, related entity, action,
+  from_status, to_status, reviewer, comment, evidence ids, metadata, and
+  timestamp fields.
+- Adds append-only service helpers to create and list focused local review
+  history records.
+- Adds `GET /api/review-history` read surface with project and entity filters.
+- Uses deterministic `Default User` attribution unless a caller supplies a
+  local reviewer label.
+- Does not add generic public create/update/delete endpoints or attach existing
+  review actions yet.
+- Does not add users, roles, permissions, tenants, login/session, assignment,
+  notifications, remote provider governance, RAG runtime, or MCP runtime.
 
 ## Commit Message
 
 ```text
-docs(review): define local review history contract
+feat(review): add local review history service
 ```
 
 ## Next Task
 
-Slice 21 Task 3: Add review history model and service.
+Slice 21 Task 4: Attach history to existing review actions.

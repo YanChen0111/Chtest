@@ -815,6 +815,16 @@ Response 200:
 
 AutomationDraft uses `edit -> edited -> approve -> approved`. It does not use `approve_after_edit`.
 
+Review history side effect:
+
+- Successful candidate review, AutomationDraft edit/approval, UnitTestPatch
+  approval/rejection, and QualityGateDecision compute/recompute actions append
+  local ReviewHistory records where Slice 21 implements the hook.
+- The history side effect must not change whether the original action is
+  allowed. Existing state-machine validation remains authoritative.
+- Failed validation, forbidden transitions, missing entities, and rejected
+  payloads must not append successful ReviewHistory records.
+
 ## 5. CI/CD Quality APIs
 
 CI/CD Quality APIs are the page-level workflow contract for `CI/CD 质量中心`.
@@ -1903,3 +1913,84 @@ Response 200:
   ]
 }
 ```
+
+## 10. Local Review History APIs
+
+Local Review History APIs expose append-only local review attribution evidence.
+They are read surfaces for existing review-gated workflows, not a user
+management, RBAC, tenant, assignment, notification, or enterprise audit system.
+
+### 10.1 List Review History
+
+`GET /api/review-history`
+
+Query filters:
+
+| Name | Required | Notes |
+|---|---:|---|
+| project_id | yes | Limit history to one local project |
+| entity_type | no | GeneratedCaseCandidate, TestCase, AutomationDraft, UnitTestPatch, CICDRun, QualityGateDecision, AutomationRepairTask |
+| entity_id | no | Entity id matching `entity_type` |
+| related_entity_type | no | Optional relation query, for example CICDRun |
+| related_entity_id | no | Related entity id matching `related_entity_type` |
+| limit | no | Default 50, maximum 200 |
+
+Response model: `ReviewHistoryListRead`.
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000001701",
+      "project_id": "00000000-0000-0000-0000-000000000101",
+      "entity_type": "UnitTestPatch",
+      "entity_id": "00000000-0000-0000-0000-000000001201",
+      "related_entity_type": "CICDRun",
+      "related_entity_id": "00000000-0000-0000-0000-000000001101",
+      "action": "approve",
+      "from_status": "awaiting_review",
+      "to_status": "approved",
+      "reviewer": "Default User",
+      "comment": "Only tests/ is modified",
+      "evidence_artifact_ids": ["00000000-0000-0000-0000-000000001211"],
+      "created_at": "2026-07-01T10:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+Rules:
+
+- At least one of `entity_type/entity_id` or
+  `related_entity_type/related_entity_id` should be supplied for focused UI
+  panels. Project-wide history may be used for diagnostics but must remain
+  paginated.
+- `reviewer` is a local display label. `Default User` is the deterministic V1
+  value unless a later local-only contract adds an explicit reviewer label
+  field to a workflow payload.
+- This API does not create, update, delete, redact, sign, export, or lock
+  ReviewHistory records.
+- There is no generic `POST /api/review-history` in Slice 21. Records are
+  appended internally only after existing review or quality-gate actions
+  succeed.
+- Listing history must not grant permissions, change action authority, assign
+  work, send notifications, create comment threads, call remote CI providers,
+  publish PR comments, update commit statuses, merge, deploy, release, or read
+  credentials.
+
+### 10.2 Entity Display Rules
+
+- Generated case approval history is written against GeneratedCaseCandidate.
+  TestCase detail or library views may display that source history through
+  `source_candidate_id` but should not expect duplicate TestCase history rows
+  for the same approval.
+- QualityGateDecision compute history is written against the
+  QualityGateDecision and may be queried from its related CICDRun. The status
+  transition in the history record describes the CICDRun
+  `quality_gate_status` before and after recompute.
+- Evidence artifact ids are references to existing Artifact rows. The API must
+  not inline raw artifact content, secrets, tokens, or external provider
+  credentials in ReviewHistory responses.

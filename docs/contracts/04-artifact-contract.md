@@ -147,6 +147,22 @@ Slice 16 artifact rules:
 - CI/CD quality reports must cite UnitTestPatch, PatchScopeGate, new-test,
   regression, QualityGateDecision, and related artifacts when available.
 
+Slice 21 ReviewHistory artifact rules:
+
+- ReviewHistory stores artifact references in `evidence_artifact_ids`; it does
+  not create a dedicated `review_history` artifact type in Slice 21.
+- Each id in `evidence_artifact_ids` must reference an existing persisted
+  Artifact row in the same project.
+- ReviewHistory must not duplicate raw artifact content, stdout/stderr, LLM
+  output, CI logs, external artifact payloads, tokens, secrets, cookies, or
+  credentials in ReviewHistory fields.
+- If a future task creates a review history snapshot file, it must define a
+  new artifact type and storage path in this contract before implementation.
+- ReviewHistory artifact references are local evidence only. They must not
+  trigger remote CI/CD provider calls, PR comments, commit status updates,
+  merge, deploy, release, RAG runtime, MCP runtime, RBAC, tenants, or
+  permissions behavior.
+
 ### 3.6 Test Run
 
 ```text

@@ -65,6 +65,15 @@ any non-final -> archived
 
 规则：approved/approved_after_edit/rejected 是最终评审状态，不允许再次修改为 generated。
 
+ReviewHistory side effect:
+
+- `approve`, `approve_after_edit`, and `reject` append a ReviewHistory record
+  after the state transition succeeds.
+- The primary history entity is the GeneratedCaseCandidate. The created
+  TestCase may display this source history through `source_candidate_id`
+  without duplicating the same approval event.
+- Invalid transitions must not append successful review history.
+
 ## 4. AutomationDraft 状态机
 
 ```text
@@ -87,6 +96,15 @@ authorized execution failure: execution_pending -> execution_failed -> under_rev
 | executed | promote | promoted | 可转为正式自动化资产或 artifact |
 
 规则：AutomationDraft 未 approved 前不能执行。V1 不允许自动写业务源码。
+
+ReviewHistory side effect:
+
+- `edit`, `approve`, and `reject` append ReviewHistory after successful
+  transitions where the workflow implements the action.
+- ReviewHistory does not make a draft executable. Only the existing
+  `status=approved` rule authorizes execution.
+- Invalid transitions and validation failures must not append successful review
+  history.
 
 ## 5. AutomationRepairTask 状态机
 
@@ -139,6 +157,11 @@ approved -> apply_failed
 - `approved` 之前不能 apply。
 - PatchScopeGate must pass before `approved -> applied`.
 - Apply failure must preserve the original patch and error evidence.
+- `approve` and `reject` append ReviewHistory after successful review
+  transitions. `apply_patch_success` is execution evidence, not a review
+  approval event in Slice 21.
+- ReviewHistory must not weaken PatchScopeGate or allow a `scope_rejected`
+  patch to become approved.
 
 ## 7. ToolInvocation 状态机
 
@@ -302,6 +325,12 @@ passed/failed/needs_review -> new QualityGateDecision record on recompute, then 
   required local evidence keeps the gate at `needs_review`.
 - 每个结论必须引用 evidence artifacts；证据缺失时只能是
   `needs_review`，不能写成 `passed`。
+- A successful compute or recompute appends ReviewHistory with
+  `entity_type=QualityGateDecision`. `from_status` and `to_status` describe the
+  `CICDRun.quality_gate_status` before and after recompute, and
+  `related_entity_type=CICDRun` may be used for CI/CD quality page display.
+- ReviewHistory does not authorize merge, push, release, deployment, remote CI
+  status update, PR comment, RBAC, tenants, or permissions behavior.
 
 ## 10. Report 状态机
 

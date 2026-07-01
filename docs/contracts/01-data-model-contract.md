@@ -49,6 +49,7 @@ V1 is single-user, but owner fields are kept for later extension.
 | ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation |
 | LLMCallStatus | started, succeeded, failed, timeout, schema_invalid |
 | AutomationRepairStatus | created, running, candidate_generated, waiting_review, approved, rejected, failed |
+| ReviewHistoryAction | open_review, approve, approve_after_edit, reject, edit, request_optimization, compute_quality_gate, recompute_quality_gate |
 
 ## 3. Workspace
 
@@ -432,6 +433,61 @@ QualityGateDecision rules:
 - QualityGateDecision never triggers merge, push, release, deployment, remote CI
   status updates, or PR comments.
 
+## 21.1 ReviewHistory
+
+ReviewHistory records local append-only review attribution events across the
+existing review-gated evidence loop. It is evidence metadata, not an
+authorization, login, RBAC, tenant, assignment, notification, or enterprise
+audit model.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| entity_type | varchar(80) | yes | none | GeneratedCaseCandidate, TestCase, AutomationDraft, UnitTestPatch, CICDRun, QualityGateDecision, AutomationRepairTask |
+| entity_id | uuid | yes | none | Reviewed or decision entity id |
+| related_entity_type | varchar(80) | no | null | Optional display/query relation, for example QualityGateDecision -> CICDRun |
+| related_entity_id | uuid | no | null | Optional related entity id |
+| action | varchar(80) | yes | none | ReviewHistoryAction or deterministic workflow action label |
+| from_status | varchar(80) | no | null | Status before successful action |
+| to_status | varchar(80) | no | null | Status after successful action or computed status |
+| reviewer | varchar(120) | yes | Default User | Local display label, not an auth principal |
+| comment | text | no | null | Human review comment or computed decision summary |
+| evidence_artifact_ids | uuid[] | yes | {} | Existing Artifact ids supporting the event |
+| metadata_json | jsonb | yes | {} | Safe workflow-specific metadata such as quality_gate_decision_id |
+| created_at | timestamptz | yes | now() | Event time |
+
+ReviewHistory rules:
+
+- Records are append-only through the public service/API surface. Existing
+  review actions may append records; clients must not overwrite or delete
+  history records as part of Slice 21.
+- `reviewer` is a local display label. The default is `Default User` and it
+  must not be treated as an authenticated user id, role, permission, tenant, or
+  session principal.
+- ReviewHistory must not decide whether an action is allowed. Existing
+  state-machine and service validation remains the authority.
+- Record only successful review or decision events. Failed validation,
+  forbidden transitions, and rejected API payloads must not append history.
+- `evidence_artifact_ids` references persisted Artifact rows. ReviewHistory
+  must not duplicate raw artifact content, secrets, tokens, or remote provider
+  credentials in `comment` or `metadata_json`.
+- Slice 21 covers local events for generated case review, AutomationDraft
+  review/edit/approval where supported, UnitTestPatch approval/rejection, and
+  QualityGateDecision compute/recompute.
+- Generated case approval history should be written for the
+  GeneratedCaseCandidate. The created TestCase may display that history through
+  `source_candidate_id`; it should not duplicate an identical approval record
+  unless a later contract defines a separate TestCase review action.
+- QualityGateDecision compute history should record the created
+  QualityGateDecision as `entity_type=QualityGateDecision` and may set
+  `related_entity_type=CICDRun` so the CI/CD quality page can display the event
+  from the run. `from_status` and `to_status` describe the
+  `CICDRun.quality_gate_status` transition caused by the recompute.
+- ReviewHistory must not introduce users, roles, permissions, tenants,
+  departments, SSO, login/session flows, assignment workflow, notifications,
+  team inboxes, PR comments, remote provider governance, or enterprise audit
+  policy.
+
 ## 22. TestResult
 
 | Field | Type | Required | Default | Notes |
@@ -813,6 +869,7 @@ Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
 TestRun/TestResult -> FailureAnalysis -> AutomationRepairTask -> Report
 Repository -> CICDRun -> CICDChangedFile -> UnitTestPatch -> TestRun -> QualityGateDecision -> Report
+Project -> ReviewHistory -> GeneratedCaseCandidate/TestCase/AutomationDraft/UnitTestPatch/CICDRun/QualityGateDecision
 AITask -> LLMCallLog
 AITask -> Artifact / ContextArtifact references
 AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric
