@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from backend.app.modules.ai_runtime.schemas import ArtifactRead
 
@@ -56,6 +56,10 @@ class CICDImportArtifactReference(BaseModel):
 
 
 class CICDRunMetadataImportRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    project_id: uuid.UUID | None = None
+    repository_id: uuid.UUID | None = None
     source_type: str = "ci_import"
     provider: str = "imported"
     trigger_type: str = "imported"
@@ -74,6 +78,22 @@ class CICDRunMetadataImportRequest(BaseModel):
     external_url: str | None = None
     changed_files: list[CICDImportChangedFile] = Field(default_factory=list)
     artifact_references: list[CICDImportArtifactReference] = Field(default_factory=list)
+
+
+class CICDImportCreatedArtifactRead(BaseModel):
+    artifact_type: str
+    file_name: str
+
+
+class CICDRunMetadataImportRead(BaseModel):
+    cicd_run_id: uuid.UUID
+    source_type: str
+    provider: str
+    trigger_type: str
+    import_status: str
+    quality_gate_status: str
+    ci_conclusion: str
+    created_artifacts: list[CICDImportCreatedArtifactRead] = Field(default_factory=list)
 
 
 class CICDChangedFileRead(BaseModel):

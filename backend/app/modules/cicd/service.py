@@ -94,6 +94,10 @@ class CIImportExternalFetchForbiddenError(CIImportError):
     error_code = "CI_IMPORT_EXTERNAL_FETCH_FORBIDDEN"
 
 
+class CIImportDuplicateExternalRunError(CIImportError):
+    error_code = "CI_IMPORT_DUPLICATE_EXTERNAL_RUN"
+
+
 @dataclass
 class ParsedChangedFile:
     path: str
@@ -701,6 +705,136 @@ def create_cicd_run(session: Session, data: CICDRunCreateRequest) -> CICDRun:
     session.commit()
     session.refresh(cicd_run)
     return cicd_run
+
+
+def import_ci_run_metadata(session: Session, data: CICDRunMetadataImportRequest) -> tuple[CICDRun, ParsedCIRunMetadataImport, list[Artifact]]:
+    if data.project_id is None:
+        raise CIImportInvalidPayloadError("project_id is required")
+    project = session.get(Project, data.project_id)
+    if project is None:
+        raise ProjectNotFoundError
+    if data.repository_id is not None:
+        repository = session.get(Repository, data.repository_id)
+        if repository is None or repository.project_id != project.id:
+            raise RepositoryInvalidError
+
+    parsed = parse_ci_run_metadata_import(data)
+    if ci_import_duplicate_exists(session, data.project_id, data.repository_id, parsed.provider, parsed.external_run_id):
+        raise CIImportDuplicateExternalRunError
+
+    cicd_run = CICDRun(
+        project_id=project.id,
+        repository_id=data.repository_id,
+        source_type="ci_import",
+        trigger_type="imported",
+        provider=parsed.provider,
+        pipeline_name=parsed.pipeline_name,
+        base_ref=parsed.base_ref,
+        head_ref=parsed.head_ref,
+        quality_gate_status="pending",
+        status="imported",
+    )
+    session.add(cicd_run)
+    session.flush()
+
+    for parsed_file in parsed.changed_files:
+        session.add(
+            CICDChangedFile(
+                cicd_run_id=cicd_run.id,
+                path=parsed_file.path,
+                old_path=parsed_file.old_path,
+                change_type=parsed_file.change_type,
+                language=parsed_file.language,
+                file_role=parsed_file.file_role,
+                risk_level=parsed_file.risk_level,
+                risk_reasons_json=parsed_file.risk_reasons,
+                lines_added=parsed_file.lines_added,
+                lines_deleted=parsed_file.lines_deleted,
+            ),
+        )
+
+    artifacts = create_ci_import_artifacts(session, cicd_run, parsed)
+    session.commit()
+    session.refresh(cicd_run)
+    for artifact in artifacts:
+        session.refresh(artifact)
+    return cicd_run, parsed, artifacts
+
+
+def ci_import_duplicate_exists(
+    session: Session,
+    project_id: uuid.UUID,
+    repository_id: uuid.UUID | None,
+    provider: str,
+    external_run_id: str,
+) -> bool:
+    artifacts = session.scalars(
+        select(Artifact).where(
+            Artifact.project_id == project_id,
+            Artifact.owner_entity_type == "CICDRun",
+            Artifact.artifact_type == "ci_run_metadata",
+        ),
+    )
+    repository_key = str(repository_id) if repository_id is not None else None
+    for artifact in artifacts:
+        metadata = artifact.metadata_json
+        if (
+            metadata.get("repository_id") == repository_key
+            and metadata.get("provider") == provider
+            and metadata.get("external_run_id") == external_run_id
+        ):
+            return True
+    return False
+
+
+def create_ci_import_artifacts(
+    session: Session,
+    cicd_run: CICDRun,
+    parsed: ParsedCIRunMetadataImport,
+) -> list[Artifact]:
+    content = parsed.to_artifact_content()
+    metadata = parsed.to_artifact_metadata()
+    metadata.update(
+        {
+            "repository_id": str(cicd_run.repository_id) if cicd_run.repository_id is not None else None,
+            "external_run_id": parsed.external_run_id,
+            "ci_conclusion": parsed.conclusion,
+            "content_json": content,
+        },
+    )
+    changed_files_manifest = {"changed_files": [item.to_manifest_item() for item in parsed.changed_files]}
+    specs = [
+        (
+            "ci_run_metadata",
+            "ci_run_metadata.json",
+            metadata,
+        ),
+        (
+            "changed_files",
+            "changed_files.json",
+            {
+                "changed_file_count": len(parsed.changed_files),
+                "manifest_json": changed_files_manifest,
+            },
+        ),
+    ]
+    artifacts: list[Artifact] = []
+    for artifact_type, filename, artifact_metadata in specs:
+        artifact = Artifact(
+            project_id=cicd_run.project_id,
+            owner_entity_type="CICDRun",
+            owner_entity_id=cicd_run.id,
+            artifact_type=artifact_type,
+            file_path=f"artifacts/projects/{cicd_run.project_id}/cicd-quality/{cicd_run.id}/{filename}",
+            mime_type="application/json",
+            size_bytes=0,
+            sha256=f"sha256:{artifact_type}:{cicd_run.id}",
+            metadata_json=artifact_metadata,
+        )
+        session.add(artifact)
+        artifacts.append(artifact)
+    session.flush()
+    return artifacts
 
 
 def list_cicd_runs(session: Session) -> list[CICDRun]:

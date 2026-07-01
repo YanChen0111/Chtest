@@ -1,7 +1,14 @@
 from __future__ import annotations
 
-import pytest
+import uuid
 
+import pytest
+from sqlalchemy import select
+
+from backend.app.main import app
+from backend.app.modules.ai_runtime.models import Artifact
+from backend.app.modules.automation.models import AutomationDraft
+from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, QualityGateDecision, UnitTestPatch
 from backend.app.modules.cicd.service import (
     CIImportControlFieldRejectedError,
     CIImportCredentialRejectedError,
@@ -10,6 +17,10 @@ from backend.app.modules.cicd.service import (
     CIImportUnsupportedProviderOperationError,
     parse_ci_run_metadata_import,
 )
+from backend.app.modules.execution.models import TestRun
+from backend.app.modules.projects.router import get_session
+from backend.app.modules.reporting.models import Report
+from backend.app.tests.api.test_cicd_quality_center import ASGIClient, seed_project_repository, session_factory
 
 
 def valid_import_payload() -> dict:
@@ -54,6 +65,181 @@ def valid_import_payload() -> dict:
             },
         ],
     }
+
+
+def valid_import_api_payload(project_id: uuid.UUID, repository_id: uuid.UUID) -> dict:
+    payload = valid_import_payload()
+    payload["project_id"] = str(project_id)
+    payload["repository_id"] = str(repository_id)
+    return payload
+
+
+def response_error_code(body: dict) -> str:
+    detail = body.get("detail")
+    if isinstance(detail, dict):
+        return detail["error_code"]
+    return body["error_code"]
+
+
+def test_import_ci_run_metadata_api_persists_evidence_only_records() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, repository = seed_project_repository(session)
+            session.commit()
+            project_id = project.id
+            repository_id = repository.id
+
+        client = ASGIClient(app)
+        response = client.post("/api/cicd/runs/import", valid_import_api_payload(project_id, repository_id))
+
+        assert response.status_code == 202
+        body = response.json()
+        assert body["source_type"] == "ci_import"
+        assert body["provider"] == "github_actions"
+        assert body["trigger_type"] == "imported"
+        assert body["import_status"] == "imported"
+        assert body["quality_gate_status"] == "pending"
+        assert body["ci_conclusion"] == "success"
+        assert body["created_artifacts"] == [
+            {"artifact_type": "ci_run_metadata", "file_name": "ci_run_metadata.json"},
+            {"artifact_type": "changed_files", "file_name": "changed_files.json"},
+        ]
+
+        cicd_run_id = uuid.UUID(body["cicd_run_id"])
+        get_response = client.get(f"/api/cicd/runs/{cicd_run_id}")
+        assert get_response.status_code == 200
+        read_body = get_response.json()
+        assert read_body["source_type"] == "ci_import"
+        assert read_body["trigger_type"] == "imported"
+        assert read_body["provider"] == "github_actions"
+        assert read_body["pipeline_name"] == "CI"
+        assert read_body["base_ref"] == "main"
+        assert read_body["head_ref"] == "feature/coupon-boundary"
+        assert read_body["quality_gate_status"] == "pending"
+        assert read_body["status"] == "imported"
+        assert [item["path"] for item in read_body["changed_files"]] == ["app/coupon.py", "tests/test_coupon.py"]
+
+        with SessionLocal() as session:
+            cicd_run = session.get(CICDRun, cicd_run_id)
+            changed_files = list(
+                session.scalars(
+                    select(CICDChangedFile)
+                    .where(CICDChangedFile.cicd_run_id == cicd_run_id)
+                    .order_by(CICDChangedFile.path.asc()),
+                ),
+            )
+            artifacts = list(
+                session.scalars(
+                    select(Artifact)
+                    .where(Artifact.owner_entity_type == "CICDRun", Artifact.owner_entity_id == cicd_run_id)
+                    .order_by(Artifact.artifact_type.asc()),
+                ),
+            )
+            assert session.scalar(select(QualityGateDecision)) is None
+            assert session.scalar(select(UnitTestPatch)) is None
+            assert session.scalar(select(AutomationDraft)) is None
+            assert session.scalar(select(TestRun)) is None
+            assert session.scalar(select(Report)) is None
+
+        assert cicd_run is not None
+        assert cicd_run.project_id == project_id
+        assert cicd_run.repository_id == repository_id
+        assert cicd_run.source_type == "ci_import"
+        assert cicd_run.trigger_type == "imported"
+        assert cicd_run.provider == "github_actions"
+        assert cicd_run.pipeline_name == "CI"
+        assert cicd_run.base_ref == "main"
+        assert cicd_run.head_ref == "feature/coupon-boundary"
+        assert cicd_run.status == "imported"
+        assert cicd_run.quality_gate_status == "pending"
+        assert [item.file_role for item in changed_files] == ["source", "test"]
+        assert [item.risk_level for item in changed_files] == ["medium", "low"]
+
+        artifact_by_type = {artifact.artifact_type: artifact for artifact in artifacts}
+        assert set(artifact_by_type) == {"changed_files", "ci_run_metadata"}
+        ci_metadata = artifact_by_type["ci_run_metadata"].metadata_json
+        assert ci_metadata["created_by_component"] == "CICDRunMetadataImport"
+        assert ci_metadata["source_type"] == "ci_import"
+        assert ci_metadata["provider"] == "github_actions"
+        assert ci_metadata["provider_is_inert_label"] is True
+        assert ci_metadata["remote_fetch_performed"] is False
+        assert ci_metadata["quality_gate_auto_decision"] is False
+        assert ci_metadata["artifact_reference_count"] == 1
+        assert ci_metadata["content_json"]["conclusion"] == "success"
+        assert ci_metadata["content_json"]["artifact_references"][0]["inert_reference"] is True
+        changed_manifest = artifact_by_type["changed_files"].metadata_json["manifest_json"]
+        assert changed_manifest["changed_files"][0]["path"] == "app/coupon.py"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_import_ci_run_metadata_api_rejects_duplicate_external_run() -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, repository = seed_project_repository(session)
+            session.commit()
+            project_id = project.id
+            repository_id = repository.id
+
+        client = ASGIClient(app)
+        payload = valid_import_api_payload(project_id, repository_id)
+        first_response = client.post("/api/cicd/runs/import", payload)
+        second_response = client.post("/api/cicd/runs/import", payload)
+
+        assert first_response.status_code == 202
+        assert second_response.status_code == 409
+        assert response_error_code(second_response.json()) == "CI_IMPORT_DUPLICATE_EXTERNAL_RUN"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize(
+    ("patch", "error_code"),
+    [
+        ({"token": "secret"}, "CI_IMPORT_CREDENTIAL_REJECTED"),
+        ({"rerun": True}, "CI_IMPORT_CONTROL_FIELD_REJECTED"),
+        ({"fetch_artifacts": True}, "CI_IMPORT_EXTERNAL_FETCH_FORBIDDEN"),
+        ({"provider_operation": "trigger"}, "CI_IMPORT_UNSUPPORTED_PROVIDER_OPERATION"),
+        ({"conclusion": "passed"}, "INVALID_CI_IMPORT_PAYLOAD"),
+    ],
+)
+def test_import_ci_run_metadata_api_maps_import_errors(patch: dict, error_code: str) -> None:
+    SessionLocal = session_factory()
+
+    def override_get_session():
+        with SessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        with SessionLocal() as session:
+            project, repository = seed_project_repository(session)
+            session.commit()
+            project_id = project.id
+            repository_id = repository.id
+
+        payload = valid_import_api_payload(project_id, repository_id)
+        payload.update(patch)
+        response = ASGIClient(app).post("/api/cicd/runs/import", payload)
+
+        assert response.status_code == 400
+        assert response_error_code(response.json()) == error_code
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_parse_ci_run_metadata_import_normalizes_evidence() -> None:

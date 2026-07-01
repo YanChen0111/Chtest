@@ -1,5 +1,49 @@
 # Development Log
 
+## 2026-07-01 Slice 20 CI Import API
+
+### Completed
+
+- Completed Slice 20 Task 4: Add CI run import API.
+- Added `POST /api/cicd/runs/import`.
+- Added import response schemas for created artifacts and import status.
+- Persisted imported CI metadata as evidence-only records:
+  - `CICDRun` with `source_type=ci_import`, `trigger_type=imported`, inert
+    provider label, refs, pipeline name, `status=imported`, and
+    `quality_gate_status=pending`;
+  - `CICDChangedFile` rows created from deterministic parser output;
+  - `ci_run_metadata.json` Artifact metadata/content;
+  - compatible `changed_files.json` Artifact manifest.
+- Added duplicate import rejection by project/repository/provider/external run
+  id using `CI_IMPORT_DUPLICATE_EXTERNAL_RUN`.
+- Mapped CI import parser errors through API error codes without adding remote
+  provider behavior.
+- Confirmed import does not create `QualityGateDecision`, `UnitTestPatch`,
+  `AutomationDraft`, `TestRun`, or `Report`.
+- Updated Slice 20 task table:
+  - Task 3 commit recorded as `21ce127`;
+  - Task 4 marked done pending commit.
+- Updated `NEXT_AI_TASK.md` to Slice 20 Task 5: frontend evidence display.
+
+### Verification
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/api/test_ci_run_metadata_import.py -q
+git diff --check
+```
+
+Results:
+
+- CI metadata import API tests: `53 passed`.
+- Existing CI/CD quality center + import API tests: `60 passed`.
+- `git diff --check` clean.
+
+### Next Step
+
+- Commit Task 4 with `feat(cicd): add ci metadata import api`.
+- Continue Slice 20 Task 5: frontend evidence display.
+
 ## 2026-07-01 Slice 20 CI Metadata Parser
 
 ### Completed

@@ -10,13 +10,13 @@ Slice 20: CI Run Metadata Import.
 
 ## Current Task
 
-Slice 20 Task 4: Add CI run import API.
+Slice 20 Task 5: Add CI import frontend evidence display.
 
 ## Product Value Answer
 
-After this task, Chtest can persist static CI metadata imports as CICDRun
-evidence, including imported changed files and inert artifact references,
-without controlling any remote CI provider.
+After this task, CI/CD 管理 can show imported CI run evidence, imported
+changed files, and inert artifact references without exposing remote provider
+controls.
 
 ## Must Read
 
@@ -45,45 +45,43 @@ NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/implementation/slices/slice-20-ci-run-metadata-import.md
-backend/app/modules/cicd/router.py
-backend/app/modules/cicd/service.py
-backend/app/modules/cicd/schemas.py
 backend/app/tests/api/test_ci_run_metadata_import.py
+frontend/src/api/extension.ts
+frontend/src/stores/extensionStore.ts
+frontend/src/views/CICDQualityCenterView.vue
+frontend/src/**/*.test.*
 ```
 
-Import API task. User approved development after the V2 document-design review.
-Do not add frontend code, migrations, remote CI provider calls, webhooks,
-pipeline triggers, reruns, PR comments, deploy/release controls, credentials,
-RBAC, tenants, permissions, marketplace, RAG runtime, or MCP runtime.
+Frontend display task. User approved development after the V2 document-design
+review. Do not add remote CI provider calls, webhooks, pipeline triggers,
+reruns, PR comments, deploy/release controls, credentials, RBAC, tenants,
+permissions, marketplace, RAG runtime, or MCP runtime.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q
+npm --prefix frontend run test -- --run
 git diff --check
 ```
 
-Expected result: CI metadata import API tests and diff check pass.
+Expected result: CI import frontend evidence display tests and diff check pass.
 
 ## Acceptance
 
-- Adds an import-only endpoint such as `POST /api/cicd/runs/import`.
-- Creates CICDRun with `source_type=ci_import`, `trigger_type=imported`,
-  inert provider label, refs, pipeline name, `status=imported`, and
-  `quality_gate_status=pending`.
-- Creates CICDChangedFile rows from parsed imported changed files.
-- Writes `ci_run_metadata.json` and compatible `changed_files.json` artifacts.
-- Stores imported artifact references as inert evidence references.
-- Rejects invalid parser payloads through CI import error codes.
-- Does not create QualityGateDecision automatically and does not trigger remote
-  CI behavior.
+- Shows imported CI evidence on CI/CD 管理 without remote provider controls.
+- Displays imported provider label, import status, CI conclusion, refs, changed
+  file count, and inert artifact references when available.
+- Keeps QualityGateDecision and local review workflow visually separate from
+  imported CI conclusion.
+- Does not expose trigger, rerun, cancel, schedule, PR comment, deploy, release,
+  credential, webhook, or remote-fetch controls.
 
 ## Commit Message
 
 ```text
-feat(cicd): add ci metadata import api
+feat(frontend): show ci import evidence
 ```
 
 ## Next Task
 
-Slice 20 Task 5: Add CI import frontend evidence display.
+Slice 20 Task 6: Add CI import golden smoke.

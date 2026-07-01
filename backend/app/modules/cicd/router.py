@@ -9,11 +9,14 @@ from backend.app.modules.cicd import service
 from backend.app.modules.cicd.models import CICDChangedFile, CICDRun
 from backend.app.modules.cicd.schemas import (
     CICDChangedFileRead,
+    CICDImportCreatedArtifactRead,
     CICDRunAnalyzeRead,
     CICDRunAnalyzeRequest,
     CICDRunCreateRead,
     CICDRunCreateRequest,
     CICDRunListRead,
+    CICDRunMetadataImportRead,
+    CICDRunMetadataImportRequest,
     CICDQualityReportRead,
     CICDQualityReportRequest,
     CICDRegressionRunRead,
@@ -52,6 +55,13 @@ def bad_request(error_code: str, message: str) -> HTTPException:
     )
 
 
+def conflict(error_code: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={"error_code": error_code, "message": message, "details": {}},
+    )
+
+
 @router.post("/cicd/runs", response_model=CICDRunCreateRead, status_code=status.HTTP_202_ACCEPTED)
 def create_cicd_run(
     data: CICDRunCreateRequest,
@@ -64,6 +74,39 @@ def create_cicd_run(
     except (service.RepositoryInvalidError, service.CICDRunInvalidInputError) as exc:
         raise bad_request("CICD_RUN_INVALID_INPUT", "CI/CD run input is invalid.") from exc
     return CICDRunCreateRead(cicd_run_id=cicd_run.id, status=cicd_run.status)
+
+
+@router.post("/cicd/runs/import", response_model=CICDRunMetadataImportRead, status_code=status.HTTP_202_ACCEPTED)
+def import_ci_run_metadata(
+    data: CICDRunMetadataImportRequest,
+    session: Session = Depends(get_session),
+) -> CICDRunMetadataImportRead:
+    try:
+        cicd_run, parsed, artifacts = service.import_ci_run_metadata(session, data)
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    except service.RepositoryInvalidError as exc:
+        raise bad_request("REPOSITORY_INVALID", "Repository is invalid for this project.") from exc
+    except service.CIImportDuplicateExternalRunError as exc:
+        raise conflict(exc.error_code, "Imported CI run already exists.") from exc
+    except service.CIImportError as exc:
+        raise bad_request(exc.error_code, "CI import payload is invalid.") from exc
+    return CICDRunMetadataImportRead(
+        cicd_run_id=cicd_run.id,
+        source_type=cicd_run.source_type,
+        provider=cicd_run.provider,
+        trigger_type=cicd_run.trigger_type,
+        import_status=cicd_run.status,
+        quality_gate_status=cicd_run.quality_gate_status,
+        ci_conclusion=parsed.conclusion,
+        created_artifacts=[
+            CICDImportCreatedArtifactRead(
+                artifact_type=artifact.artifact_type,
+                file_name=artifact.file_path.rsplit("/", 1)[-1],
+            )
+            for artifact in artifacts
+        ],
+    )
 
 
 @router.get("/cicd/runs", response_model=CICDRunListRead)

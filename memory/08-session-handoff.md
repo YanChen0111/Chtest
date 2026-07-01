@@ -1,5 +1,54 @@
 # Session Handoff
 
+## 2026-07-01 Slice 20 Task 4 完成
+
+本轮完成：
+
+- 按用户要求继续多子代理并发：
+  - 一个只读检查 router/schema/API 测试模式；
+  - 一个只读检查 service/model/artifact 持久化规则。
+- 完成 Slice 20 Task 4：Add CI run import API。
+- 新增 `POST /api/cicd/runs/import`。
+- 新增 import API response schemas。
+- 持久化 imported CI metadata 为 evidence-only 记录：
+  - `CICDRun(status=imported, source_type=ci_import, trigger_type=imported)`；
+  - imported `CICDChangedFile` rows；
+  - `ci_run_metadata.json` Artifact；
+  - compatible `changed_files.json` Artifact。
+- API 错误映射覆盖：
+  - invalid payload；
+  - remote control fields；
+  - credentials；
+  - provider operation；
+  - external fetch；
+  - duplicate external run。
+- duplicate 范围按 project/repository/provider/external_run_id。
+- import 不创建 `QualityGateDecision`、`UnitTestPatch`、`AutomationDraft`、
+  `TestRun` 或 `Report`。
+- Slice 20 task table 已记录 Task 3 commit `21ce127`，Task 4 done pending
+  commit。
+- 已将 `NEXT_AI_TASK.md` 切换到 Slice 20 Task 5：Add CI import frontend
+  evidence display。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_ci_run_metadata_import.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_cicd_quality_center.py backend/app/tests/api/test_ci_run_metadata_import.py -q
+git diff --check
+```
+
+验证结果：
+
+- CI metadata import API tests：`53 passed`。
+- Existing CI/CD quality center + import API tests：`60 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`feat(cicd): add ci metadata import api`。
+- 继续 Slice 20 Task 5：frontend evidence display。
+
 ## 2026-07-01 Slice 20 Task 3 完成
 
 本轮完成：
