@@ -1,5 +1,42 @@
 # Development Log
 
+## 2026-07-02 Branch Integration And Slice 31 Completion Gate
+
+### Completed
+
+- Installed local tooling under `D:\workspaces\Chtest\.tools`: Git for Windows
+  MinGit `2.55.0.windows.1` and uv `0.11.26`.
+- Created a real git working copy at `D:\workspaces\Chtest\.repo-cache\Chtest`
+  because the extracted project directory has no `.git` metadata.
+- Created local branch `codex/integrate-unmerged`.
+- Integrated unmerged remote branches:
+  - `origin/codex/cicd-quality-docs`;
+  - `origin/codex/prompt-skill-seeds`;
+  - `origin/codex/final-rag-agent-strategy`.
+- Resolved RAG/agent planning conflicts by keeping the newer evidence-first
+  testing knowledge constraints while adding final workflow and provider-safety
+  details.
+- Completed Slice 31 Generated Case Knowledge Evidence Persistence gate and
+  moved `NEXT_AI_TASK.md` to Slice 32 Task 1.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts`
+- Result: `1` file passed, `1` test passed.
+- `npm --prefix frontend run build`
+- Result: passed with the existing Vite large chunk warning.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/prompt_skill/test_registry_loader.py backend/app/tests/prompt_skill/test_skill_files.py backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q`
+- Result: `14 passed`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_test_knowledge_card_contract_golden.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q`
+- Result: `19 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `docs(v2): complete generated case knowledge evidence persistence slice`.
+- Continue Slice 32 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 31 Task 4 Generated-Case Evidence Golden Smoke
 
 ### Completed

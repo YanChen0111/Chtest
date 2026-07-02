@@ -1,5 +1,59 @@
 # Session Handoff
 
+## 2026-07-02 Local Branch Integration And Slice 31 Completion
+
+Current working copy:
+
+- Use `D:\workspaces\Chtest\.repo-cache\Chtest`.
+- Branch: `codex/integrate-unmerged`.
+- The extracted directory `D:\workspaces\Chtest\Chtest-docs-preflight-vibecoding-fixes`
+  is a source snapshot without `.git`; do not treat it as the active git
+  working tree unless it is intentionally replaced or recloned.
+
+Completed:
+
+- Installed local Git and uv in `D:\workspaces\Chtest\.tools`.
+- Integrated unmerged remote branches:
+  - `origin/codex/cicd-quality-docs`;
+  - `origin/codex/prompt-skill-seeds`;
+  - `origin/codex/final-rag-agent-strategy`.
+- Local integration branch is ahead of all checked remote branches and has no
+  remote branch left ahead of it.
+- Slice 29 Execution Run Manifest, Slice 30 Test Knowledge Card Contract,
+  Slice 31 Generated Case Knowledge Evidence Persistence, and Slice 31
+  Knowledge Prompt/Skill Seeds are all present in the integrated branch.
+- `NEXT_AI_TASK.md` now points to Slice 32 Task 1: Add agent workflow contract
+  task plan.
+
+Verification:
+
+```bash
+npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts
+npm --prefix frontend run build
+backend\.venv\Scripts\python.exe -m pytest backend/app/tests/prompt_skill/test_registry_loader.py backend/app/tests/prompt_skill/test_skill_files.py backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q
+backend\.venv\Scripts\python.exe -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_test_knowledge_card_contract_golden.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
+git diff --check
+```
+
+Results:
+
+- Frontend focused test: `1` file passed, `1` test passed.
+- Frontend build: passed with existing Vite large chunk warning.
+- Prompt/skill seed tests: `14 passed`.
+- Case-generation and golden tests: `19 passed`.
+- `git diff --check`: clean.
+
+Next recommended task:
+
+- Commit `docs(v2): complete generated case knowledge evidence persistence slice`.
+- Continue Slice 32 Task 1 from `NEXT_AI_TASK.md`.
+
+Risk:
+
+- This integration is local only. Nothing has been pushed or merged on GitHub.
+- Do not push or replace the extracted snapshot directory without explicit user
+  instruction.
+
 ## 2026-07-01 Slice 31 Task 4 Generated-Case Evidence Golden Smoke 完成
 
 本轮完成：

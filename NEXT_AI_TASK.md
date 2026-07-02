@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 31: Generated Case Knowledge Evidence Persistence.
+Slice 32: Agent Workflow Contract.
 
 ## Current Task
 
-Slice 31 Completion Gate.
+Slice 32 Task 1: Add agent workflow contract task plan.
 
 ## Product Value Answer
 
-After this task, Slice 31 is verified end to end and the next narrow V2 task is
-selected for AI coding.
+After this task, Chtest has a narrow plan for the requirement-to-reviewed-case
+agent workflow contract before adding orchestration behavior.
 
 ## Must Read
 
@@ -25,10 +25,14 @@ selected for AI coding.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
-8. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
-9. `memory/08-session-handoff.md`
-10. `memory/07-dev-log.md`
+7. `docs/contracts/05-prompt-skill-contract.md`
+8. `docs/implementation/10-v2-scope-options.md`
+9. `docs/implementation/11-final-rag-agent-strategy.md`
+10. `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+11. `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
+12. `docs/implementation/slices/slice-31-knowledge-prompt-skill-seeds.md`
+13. `memory/08-session-handoff.md`
+14. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -42,41 +46,46 @@ selected for AI coding.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
+docs/implementation/slices/slice-32-agent-workflow-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Use TDD. Do not add frontend code, package upgrades, external provider
-integrations, vector database, embeddings, reranking, background indexing,
-graph runtime, MCP runtime, TestKnowledgeCard CRUD, artifact upload/mutation/
-delete, generated-case auto-approval, runner behavior changes, report
-generation behavior changes, remote CI provider behavior, RBAC, tenants, or
-permissions.
+Planning task only. Do not add frontend code, backend runtime feature code,
+migrations, package upgrades, external provider integrations, vector database,
+embeddings, reranking, background indexing, graph runtime, MCP runtime,
+TestKnowledgeCard CRUD, artifact upload/mutation/delete, generated-case
+auto-approval, runner behavior changes, report generation behavior changes,
+remote CI provider behavior, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
+test -f docs/implementation/slices/slice-32-agent-workflow-contract.md
+rg -n "Agent Workflow Contract|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-32-agent-workflow-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: DB/API/golden Slice 31 tests pass and diff check passes.
+Expected result: Slice 32 plan exists, required planning sections are present,
+and diff check passes.
 
 ## Acceptance
 
-- Slice 31 task table records current commit ids.
-- DB/API/golden tests pass together.
-- `NEXT_AI_TASK.md` points to the next narrow V2 task.
-- Memory handoff records Slice 31 completion and residual risks.
+- Creates the Slice 32 plan.
+- Defines product value, source documents, preconditions, non-goals, task table,
+  expected files, verification commands, and commit messages.
+- Keeps scope limited to agent workflow contract planning.
+- Does not add orchestration runtime, provider calls, frontend work, migrations,
+  RAG runtime, MCP runtime, auto-approval, RBAC, tenants, or permissions.
 
 ## Commit Message
 
 ```text
-docs(v2): complete generated case knowledge evidence persistence slice
+docs(v2): add agent workflow contract plan
 ```
 
 ## Next Task
 
-Select and plan the next narrow V2 task after Slice 31 completion.
+Slice 32 Task 2: Define requirement-to-reviewed-case agent workflow contract.
