@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-02 Slice 33 MCP-Ready Tool/Knowledge Safety Plan
+
+### Completed
+
+- Added Slice 33 plan:
+  `docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 32
+  completion and recommend Slice 33.
+- The plan scopes ToolDefinition, ToolInvocation, KnowledgeAdapterConfig,
+  KnowledgeEvidence, Artifact, approval, risk, timeout, artifact policy,
+  provider state, fallback, and MCP runtime boundaries.
+- Kept the task planning-only: no MCP runtime, MCP transport, provider SDK,
+  credentials, external calls, vector/graph runtime, frontend, migration,
+  runner behavior, report behavior, artifact mutation, auto-approval, RBAC,
+  tenants, or permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 33 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
+- PowerShell equivalent result: `True`.
+- `rg -n "MCP-Ready ToolDefinition|KnowledgeAdapter|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add mcp-ready tool knowledge safety plan`.
+- Continue Slice 33 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-02 Slice 32 Completion Gate
 
 ### Completed

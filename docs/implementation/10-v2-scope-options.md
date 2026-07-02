@@ -1498,3 +1498,95 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines workflow behavior, contracts,
   verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Agent workflow contract for requirement-to-reviewed-case.
+
+Why it was selected:
+
+- Slice 30 defined knowledge evidence, Slice 31 persisted generated-case
+  evidence fields, and the integrated prompt/skill seed work added the
+  versioned agent prompts and skills.
+- Slice 32 tied those pieces together as a contract-only
+  requirement-to-reviewed-case workflow without adding runtime orchestration.
+- The contract made per-agent input evidence, output, write permission, human
+  gate, failure behavior, and trace requirements explicit before any
+  orchestrator can run the flow.
+
+Completed slice name:
+
+```text
+Slice 32: Agent Workflow Contract
+```
+
+Delivered output:
+
+- Slice plan, API/state/prompt-skill contract boundary, fixture, contract-level
+  golden smoke, and completion gate.
+- RequirementUnderstandingAgent, RiskAnalysisAgent, CoverageAnalysisAgent,
+  TestDesignAgent, CaseGenerationAgent, CaseReviewAgent, DedupAgent, and
+  AutomationReadinessAgent all remain review-gated and evidence-only.
+- No agent orchestration runtime, workflow engine, queue graph, scheduler,
+  frontend workflow page, backend feature API, migrations, provider calls,
+  vector database, embeddings, reranking, graph runtime, MCP runtime,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, permissions, or remote CI provider behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: MCP-ready ToolDefinition and KnowledgeAdapter safety contract
+review.
+
+Why:
+
+- Slice 32 defined the agent workflow boundary. The next unsafe gap is future
+  tool and retrieval integration: ToolDefinition, ToolInvocation, MCP-ready
+  metadata, and KnowledgeAdapter providers must share one safety contract
+  before any runtime or provider is added.
+- `docs/implementation/11-final-rag-agent-strategy.md` already states that MCP
+  is a tool access layer, not an orchestrator or RAG product. Turning that into
+  a focused contract reduces the chance that future MCP/provider work bypasses
+  approval, artifacts, prompt/skill tracing, or human review.
+- This remains a small documentation slice because it can define schema, risk,
+  approval, timeout, artifact policy, provider-state, and fallback behavior
+  without changing code.
+
+Next slice name:
+
+```text
+Slice 33: MCP-Ready ToolDefinition And KnowledgeAdapter Safety Contract
+```
+
+Smallest useful boundary:
+
+- Define strict ToolDefinition schema, risk level, approval requirement,
+  timeout, artifact policy, and MCP-readiness metadata.
+- Define ToolInvocation approval, status, failure, and artifact-retention
+  expectations for future local or MCP tools.
+- Define KnowledgeAdapter provider-state and fallback behavior, including
+  disabled/configured/unhealthy states and normalization to `KnowledgeEvidence`.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No MCP runtime, MCP server/client transport, remote MCP calls, marketplace,
+  plugin install, provider SDK, provider credentials, OAuth, API keys, remote
+  URL fetch, vector database, embeddings, reranking, background indexing, graph
+  runtime, GraphRAG job, backend feature API, migrations, frontend page,
+  package upgrade, runner behavior change, report behavior change,
+  ToolInvocation execution behavior change, artifact mutation, generated-case
+  auto-approval, RBAC, tenants, permissions, or remote CI/CD provider behavior.
+
+Suggested next task:
+
+```text
+Slice 33 Task 1: Add MCP-ready ToolDefinition and KnowledgeAdapter safety contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines ToolDefinition, ToolInvocation,
+  KnowledgeAdapter, artifact, provider-state, and review boundaries.
