@@ -195,6 +195,33 @@ AutomationReadinessAgent
 KnowledgeFeedbackAgent
 ```
 
+最终版 AI 全流程应按测试流程提效来组织，而不是按单个模型调用组织：
+
+```text
+导入需求/接口/缺陷/历史用例
+  -> 知识卡片抽取与审核
+  -> 需求理解
+  -> 风险分析
+  -> 覆盖分析
+  -> 测试设计
+  -> 证据化用例生成
+  -> Agent 用例评审与去重
+  -> 人工评审
+  -> 自动化可行性判断
+  -> 自动化草稿
+  -> 批准后执行
+  -> 失败分析和报告
+  -> 知识反馈
+```
+
+推荐提前完善但不触发完整 RAG/MCP runtime 的内容：
+
+- Prompt/Skill 合同：知识卡片抽取、风险分析、覆盖分析、测试设计、证据化用例生成、证据化用例评审、去重、自动化可行性、知识反馈。
+- Agent workflow contract：每个 Agent 的输入证据、输出 artifact、读写权限、同步/异步、人工审核点、失败回退。
+- ToolDefinition/MCP 合同：风险级别、审批、timeout、artifact policy、ToolInvocation 记录。
+- KnowledgeAdapter 合同：provider 输出必须归一化为 KnowledgeEvidence，缺失或失败时不阻断主流程。
+- Eval 规则：PromptVersion / SkillVersion 晋升必须看 schema、evidence precision、hallucination、duplicate、coverage、human acceptance。
+
 开源复用原则：
 
 - 优先通过库、API、外部 provider 或独立服务复用开源能力。
