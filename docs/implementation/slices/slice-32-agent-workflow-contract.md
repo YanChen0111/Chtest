@@ -145,10 +145,10 @@ code, provider calls, RAG runtime, or MCP runtime.
 
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
-| Add agent workflow contract task plan | done | `test -f docs/implementation/slices/slice-32-agent-workflow-contract.md && rg -n "Agent Workflow Contract|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-32-agent-workflow-contract.md NEXT_AI_TASK.md && git diff --check` | pending | planning-only scope |
-| Define requirement-to-reviewed-case agent workflow contract | done | `rg -n "RequirementUnderstandingAgent|CaseReviewAgent|human gate|write permission|failure behavior" docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-32-agent-workflow-contract.md && git diff --check` | pending | contract-only; no runtime behavior |
-| Add agent workflow contract golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_agent_workflow_contract_golden.py -q && git diff --check` | pending | no runtime orchestration |
-| Slice 32 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_agent_workflow_contract_golden.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q && git diff --check` | pending | docs and handoff |
+| Add agent workflow contract task plan | done | `test -f docs/implementation/slices/slice-32-agent-workflow-contract.md && rg -n "Agent Workflow Contract|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-32-agent-workflow-contract.md NEXT_AI_TASK.md && git diff --check` | `42580e2` | planning-only scope |
+| Define requirement-to-reviewed-case agent workflow contract | done | `rg -n "RequirementUnderstandingAgent|CaseReviewAgent|human gate|write permission|failure behavior" docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-32-agent-workflow-contract.md && git diff --check` | `5bbf91f` | contract-only; no runtime behavior |
+| Add agent workflow contract golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_agent_workflow_contract_golden.py -q && git diff --check` | `0591cb0` | no runtime orchestration |
+| Slice 32 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_agent_workflow_contract_golden.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q && git diff --check` | pending | docs and handoff |
 
 ## Task 1: Add Agent Workflow Contract Task Plan
 

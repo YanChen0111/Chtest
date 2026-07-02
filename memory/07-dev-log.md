@@ -1,5 +1,33 @@
 # Development Log
 
+## 2026-07-02 Slice 32 Completion Gate
+
+### Completed
+
+- Closed Slice 32: Agent Workflow Contract.
+- Updated `docs/implementation/slices/slice-32-agent-workflow-contract.md`
+  task table with completed commits:
+  - Task 1: `42580e2`;
+  - Task 2: `5bbf91f`;
+  - Task 3: `0591cb0`.
+- Kept Slice 32 contract-only: no runtime orchestration, provider calls, RAG
+  runtime, MCP runtime, frontend, migration, auto-approval, runner behavior,
+  reports, RBAC, tenants, or permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 33 Task 1: Add MCP-ready ToolDefinition
+  and KnowledgeAdapter safety contract task plan.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_agent_workflow_contract_golden.py backend\app\tests\golden\test_generated_case_knowledge_evidence_persistence_golden.py -q`
+- Result: `4 passed`.
+- `git diff --check`
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): complete agent workflow contract slice`.
+- Continue Slice 33 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-02 Slice 32 Agent Workflow Contract Golden Smoke
 
 ### Completed

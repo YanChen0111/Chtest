@@ -6,16 +6,18 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 32: Agent Workflow Contract.
+Slice 33: MCP-Ready ToolDefinition And KnowledgeAdapter Safety Contract.
 
 ## Current Task
 
-Slice 32 Completion Gate.
+Slice 33 Task 1: Add MCP-ready ToolDefinition and KnowledgeAdapter safety
+contract task plan.
 
 ## Product Value Answer
 
-After this task, Slice 32 is closed with a verified contract-only agent
-workflow boundary and the next narrow V2 task is selected.
+After this task, Chtest has a narrow plan for MCP-ready ToolDefinition and
+KnowledgeAdapter safety boundaries before any MCP runtime or external provider
+implementation exists.
 
 ## Must Read
 
@@ -24,9 +26,11 @@ workflow boundary and the next narrow V2 task is selected.
 3. `docs/contracts/02-api-contract.md`
 4. `docs/contracts/03-state-machines.md`
 5. `docs/contracts/05-prompt-skill-contract.md`
-6. `docs/implementation/slices/slice-32-agent-workflow-contract.md`
-7. `memory/08-session-handoff.md`
-8. `memory/07-dev-log.md`
+6. `docs/contracts/04-artifact-contract.md`
+7. `docs/implementation/11-final-rag-agent-strategy.md`
+8. `docs/implementation/10-v2-scope-options.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -40,41 +44,47 @@ workflow boundary and the next narrow V2 task is selected.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-32-agent-workflow-contract.md
+docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion gate only. Do not add frontend code, backend runtime feature code,
+Planning-only task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, external provider integrations, vector database,
-embeddings, reranking, background indexing, graph runtime, MCP runtime,
-TestKnowledgeCard CRUD, artifact upload/mutation/delete, generated-case
-auto-approval, runner behavior changes, report generation behavior changes,
-remote CI provider behavior, RBAC, tenants, or permissions.
+embeddings, reranking, background indexing, graph runtime, MCP runtime, MCP
+server/client transport, provider SDK, credentials, TestKnowledgeCard CRUD,
+artifact upload/mutation/delete, generated-case auto-approval, runner behavior
+changes, report generation behavior changes, remote CI provider behavior, RBAC,
+tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_agent_workflow_contract_golden.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
+test -f docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md
+rg -n "MCP-Ready ToolDefinition|KnowledgeAdapter|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: focused Slice 32 and prerequisite Slice 31 golden tests plus
-diff check pass.
+Expected result: Slice 33 plan exists, names the safety boundary, and diff
+check passes.
 
 ## Acceptance
 
-- Slice 32 task table records completed task commits.
-- Focused golden verification passes.
-- `NEXT_AI_TASK.md` points to the next narrow V2 task.
+- Slice 33 plan defines ToolDefinition and KnowledgeAdapter safety review
+  scope.
+- Product value, non-goals, task table, expected files, verification commands,
+  and commit messages are explicit.
+- No runtime implementation is added.
 
 ## Commit Message
 
 ```text
-docs(v2): complete agent workflow contract slice
+docs(v2): add mcp-ready tool knowledge safety plan
 ```
 
 ## Next Task
 
-Select and plan the next narrow V2 task after Slice 32 completion.
+Slice 33 Task 2: Define MCP-ready ToolDefinition and KnowledgeAdapter safety
+contracts.
