@@ -70,6 +70,48 @@
               </div>
             </div>
 
+            <section class="run-manifest-panel" aria-label="执行运行清单">
+              <h3>执行运行清单</h3>
+              <div class="manifest-grid">
+                <div class="manifest-item">
+                  <span>命令</span>
+                  <strong>{{ store.run.command }}</strong>
+                </div>
+                <div class="manifest-item">
+                  <span>工作目录</span>
+                  <strong>{{ store.run.working_directory }}</strong>
+                </div>
+                <div class="manifest-item">
+                  <span>运行器</span>
+                  <strong>{{ store.run.runner_mode }}</strong>
+                </div>
+                <div class="manifest-item">
+                  <span>运行工作区</span>
+                  <strong>{{ store.run.run_workspace || '未记录' }}</strong>
+                </div>
+                <div class="manifest-item">
+                  <span>仓库策略</span>
+                  <strong>{{ store.run.repository_readonly ? '只读仓库' : '可写仓库' }}</strong>
+                </div>
+                <div class="manifest-item">
+                  <span>网络策略</span>
+                  <strong>{{ store.run.network_enabled ? '网络已开启' : '本地网络关闭' }}</strong>
+                </div>
+              </div>
+
+              <div class="manifest-evidence-list">
+                <div v-for="item in manifestEvidenceRows" :key="item.key" class="manifest-evidence-item">
+                  <div>
+                    <strong>{{ item.label }}</strong>
+                    <span>{{ item.statusLabel }}</span>
+                  </div>
+                  <small>{{ item.artifactType }}</small>
+                  <a v-if="item.downloadUrl" :href="item.downloadUrl" target="_blank" rel="noreferrer">打开</a>
+                  <span v-else class="muted-text">{{ item.availabilityLabel }}</span>
+                </div>
+              </div>
+            </section>
+
             <section class="evidence-section">
               <h3>工件</h3>
               <a-table
@@ -144,6 +186,39 @@ const metricItems = computed(() => {
   ];
 });
 
+const manifestEvidenceRows = computed(() => {
+  if (!store.run) return [];
+  return [
+    ...runtimeArtifactRows(),
+    manifestEvidenceRow(
+      'dependency_snapshot',
+      'Dependency snapshot',
+      'dependency_snapshot',
+      store.run.dependency_snapshot_artifact_id,
+    ),
+    manifestEvidenceRow(
+      'environment_snapshot',
+      'Environment snapshot',
+      'environment_snapshot',
+      store.run.environment_snapshot_artifact_id,
+    ),
+    ...store.run.artifacts
+      .filter((artifact) => ['stdout', 'stderr', 'parsed_output', 'junit'].includes(artifact.artifact_type))
+      .map((artifact) =>
+        manifestEvidenceRow(artifact.id, artifactTypeLabel(artifact.artifact_type), artifact.artifact_type, artifact.id),
+      ),
+  ];
+});
+
+function runtimeArtifactRows() {
+  if (!store.run || store.run.runtime_artifact_ids.length === 0) {
+    return [manifestEvidenceRow('runtime_manifest_missing', 'Runtime manifest', 'runtime_manifest', null)];
+  }
+  return store.run.runtime_artifact_ids.map((artifactId, index) =>
+    manifestEvidenceRow(`runtime_manifest_${artifactId}`, index === 0 ? 'Runtime manifest' : `Runtime manifest ${index + 1}`, 'runtime_manifest', artifactId),
+  );
+}
+
 function runStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     passed: '通过',
@@ -153,6 +228,28 @@ function runStatusLabel(status: string): string {
     error: '错误',
   };
   return labels[status] ?? status;
+}
+
+function manifestEvidenceRow(key: string, label: string, artifactType: string, artifactId: string | null) {
+  const artifact = artifactId ? store.run?.artifacts.find((item) => item.id === artifactId) : undefined;
+  return {
+    key,
+    label,
+    artifactType,
+    statusLabel: artifact ? '可打开' : '缺失',
+    downloadUrl: artifact ? artifactDownloadUrl(artifact.id) : '',
+    availabilityLabel: artifact ? '本地工件' : '缺失不可打开',
+  };
+}
+
+function artifactTypeLabel(artifactType: string): string {
+  const labels: Record<string, string> = {
+    stdout: '标准输出',
+    stderr: '标准错误',
+    parsed_output: '解析结果',
+    junit: 'JUnit 结果',
+  };
+  return labels[artifactType] ?? artifactType;
 }
 
 function startRun() {
@@ -245,6 +342,66 @@ function refreshRun() {
   font-size: 22px;
 }
 
+.run-manifest-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.run-manifest-panel h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.manifest-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.manifest-item {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.manifest-item span,
+.manifest-evidence-item span,
+.manifest-evidence-item small,
+.muted-text {
+  color: #64748b;
+}
+
+.manifest-item strong {
+  overflow-wrap: anywhere;
+  color: #0f172a;
+}
+
+.manifest-evidence-list {
+  display: grid;
+  gap: 8px;
+}
+
+.manifest-evidence-item {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(90px, 0.7fr) minmax(90px, 0.6fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.manifest-evidence-item div {
+  display: grid;
+  gap: 4px;
+}
+
 .evidence-section {
   margin-top: 18px;
 }
@@ -256,6 +413,11 @@ function refreshRun() {
 
 @media (max-width: 980px) {
   .execution-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .manifest-grid,
+  .manifest-evidence-item {
     grid-template-columns: 1fr;
   }
 

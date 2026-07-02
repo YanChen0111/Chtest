@@ -78,6 +78,11 @@ Final-version knowledge-driven case generation is documented in
 
 The target is a testing knowledge evidence system, not a generic chat knowledge
 base. Future work should add structured `TestKnowledgeCard` and
-`KnowledgeEvidence` contracts first, then optional Haystack/LlamaIndex provider
-integration, and only later GraphRAG-style relationship reasoning after Chtest
-has enough reviewed requirements, cases, failures, and reports.
+`KnowledgeEvidence` contracts first, then optional hybrid retrieval only after
+eval evidence proves it improves generated-case quality, and only later
+offline/background relationship graph reasoning after Chtest has enough
+reviewed requirements, cases, failures, and reports.
+
+Open-source projects may accelerate AI coding, but they must be used through
+Chtest-owned adapters and evidence contracts. The canonical source map and
+reuse rules live in `docs/reference/01-open-source-migration-map.md`.

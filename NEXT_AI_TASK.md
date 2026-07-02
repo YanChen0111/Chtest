@@ -6,16 +6,16 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 29: Execution Run Manifest.
+Slice 31: Generated Case Knowledge Evidence Persistence.
 
 ## Current Task
 
-Slice 29 Task 3: Add frontend run manifest panel.
+Slice 31 Completion Gate.
 
 ## Product Value Answer
 
-After this task, the pytest execution page shows a compact run manifest from
-existing TestRun fields and Artifact metadata.
+After this task, Slice 31 is verified end to end and the next narrow V2 task is
+selected for AI coding.
 
 ## Must Read
 
@@ -25,67 +25,58 @@ existing TestRun fields and Artifact metadata.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/04-ai-vibecoding-governance.md`
-8. `docs/implementation/10-v2-scope-options.md`
-9. `docs/implementation/slices/slice-29-execution-run-manifest.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+7. `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
+8. `docs/fixtures/18-test-knowledge-card-contract-golden.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
 - Broad architecture, migration, enterprise collaboration, marketplace,
   distributed execution, cloud storage, cloud CI/provider integration, RBAC,
-  tenants, permissions, and frontend redesign docs unless a concrete blocker
-  requires them.
+  tenants, permissions, frontend redesign docs, and provider implementation
+  docs unless a concrete blocker requires them.
 
 ## Expected Files
 
 Create or update only these files for the current task:
 
 ```text
+docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/implementation/slices/slice-29-execution-run-manifest.md
-frontend/src/views/execution/PytestExecutionView.vue
-frontend/src/views/execution/PytestExecutionView.spec.ts
 ```
 
-Frontend task. Do not add backend feature code, migrations, package upgrades,
-artifact upload/mutation/delete, cloud storage,
-external provider integration, RBAC, tenants, permissions, broad redesign work,
-report generation behavior, runner behavior changes, quality gate computation
-changes, RAG runtime, or MCP runtime.
+Use TDD. Do not add frontend code, package upgrades, external provider
+integrations, vector database, embeddings, reranking, background indexing,
+graph runtime, MCP runtime, TestKnowledgeCard CRUD, artifact upload/mutation/
+delete, generated-case auto-approval, runner behavior changes, report
+generation behavior changes, remote CI provider behavior, RBAC, tenants, or
+permissions.
 
 ## Verification Command
 
 ```bash
-npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts
-npm --prefix frontend run build
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
 git diff --check
 ```
 
-Expected result: pytest execution focused frontend test, frontend build, and
-diff check pass.
+Expected result: DB/API/golden Slice 31 tests pass and diff check passes.
 
 ## Acceptance
 
-- Pytest execution page shows a compact `执行运行清单` panel.
-- Panel shows command, working directory, runner mode, workspace, repository
-  read-only flag, and network policy in readable Chinese.
-- Panel shows runtime/dependency/environment snapshot rows and output artifact
-  availability.
-- Local links are rendered only for persisted local Artifact ids.
-- Missing snapshots remain visible as unavailable.
-- Page does not add new execution actions, rerun controls, report generation,
-  remote provider controls, or broad redesign.
+- Slice 31 task table records current commit ids.
+- DB/API/golden tests pass together.
+- `NEXT_AI_TASK.md` points to the next narrow V2 task.
+- Memory handoff records Slice 31 completion and residual risks.
 
 ## Commit Message
 
 ```text
-feat(frontend): show execution run manifest
+docs(v2): complete generated case knowledge evidence persistence slice
 ```
 
 ## Next Task
 
-Slice 29 Task 4: Add execution run manifest golden smoke.
+Select and plan the next narrow V2 task after Slice 31 completion.

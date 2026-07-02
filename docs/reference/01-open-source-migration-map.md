@@ -84,7 +84,79 @@ Chtest 参考 WHartTest 和 MeterSphere，但不做源码级整体迁移。采�
 
 不要用复制粘贴替代设计。Chtest 的实现必须符合单用户、轻量、可维护的路线。
 
-## 8. Project Core 后端迁移记录
+## 8. Final-Version Tool And Knowledge Reference Map
+
+This section records the open-source projects future AI coding sessions may use
+to improve implementation speed. The rule is migration by adapter and evidence
+contract, not large source-code copy.
+
+### 8.1 Testing Tool References
+
+| Capability | Primary GitHub reference | What Chtest should migrate | Chtest boundary |
+|---|---|---|---|
+| Python/unit regression execution | `https://github.com/pytest-dev/pytest` | Test discovery behavior, JUnit output expectations, fixture-friendly command patterns | Keep execution behind TestCommand, ToolDefinition, ToolInvocation, and Artifact records |
+| Web automation | `https://github.com/microsoft/playwright` | Trace, screenshot, browser test execution, codegen/MCP ideas for future UI automation | Do not build a full low-code platform until Playwright evidence loop is stable |
+| API collection execution | `https://github.com/postmanlabs/newman` | Postman collection CLI execution, JSON/JUnit report parsing, request/assertion summaries | Do not reimplement Postman management; use Newman as a runner adapter |
+| Performance evidence | `https://github.com/apache/jmeter` | Non-GUI `jmeter -n -t ... -l ...`, JTL CSV/XML parsing, sampler metrics | Do not build full JMeter GUI/platform parity |
+| Traffic capture / Fiddler-like capability | `https://github.com/mitmproxy/mitmproxy` | HAR/flow import, HTTP evidence analysis, optional future proxy-controlled capture | Treat proxy execution as high-risk; start with imported traffic evidence |
+| Test report presentation | `https://github.com/allure-framework/allure2` | Multi-framework report organization, labels, suites, attachments, trend ideas | Chtest Report and Artifact contracts remain source of truth |
+| CI local replay reference | `https://github.com/nektos/act` | GitHub Actions local-run concepts and environment reproduction ideas | Optional future adapter only; Chtest remains test-quality pipeline, not CI clone |
+| Programmable automation reference | `https://github.com/dagger/dagger` | Reproducible local/CI automation graph concepts | Reference only unless a later slice explicitly adds an adapter |
+| CI/CD platform evidence reference | `https://github.com/harness/harness`, Jenkins, GitLab, GitHub Actions runner | Run/job/step/artifact/log/status concepts | Import evidence or model ideas; do not implement general build/deploy/release orchestration |
+
+### 8.2 Knowledge And RAG References
+
+| Capability | Primary GitHub reference | What Chtest should migrate | Chtest boundary |
+|---|---|---|---|
+| Knowledge adapter framework | `https://github.com/deepset-ai/haystack` | Retriever pipeline/provider adapter ideas | Normalize output into KnowledgeEvidence; provider optional |
+| Knowledge adapter framework | `https://github.com/run-llama/llama_index` | Index/retriever abstractions and document connector ideas | Do not expose LlamaIndex schema directly in Chtest APIs |
+| Relationship graph reasoning | `https://github.com/microsoft/graphrag` | Offline graph extraction and relationship reasoning patterns | Use only after deterministic Test Relationship Graph and eval gates exist |
+| External RAG service reference | `https://github.com/infiniflow/ragflow` | External provider/service evaluation ideas | RAGFlow must not replace Chtest knowledge page, review flow, or evidence model |
+| Vector database | `https://github.com/qdrant/qdrant` | Scalable vector storage if pgvector is insufficient | Only after full-text/pgvector eval proves need |
+| Compact vector option | PostgreSQL `pgvector` extension | Lowest-service-count semantic retrieval | Optional L2 provider, not a default requirement |
+| Document parsing | `https://github.com/microsoft/markitdown`, `https://github.com/Unstructured-IO/unstructured` | Convert PDF/Word/HTML/Markdown into safe source artifacts | Parsed output must become ContextArtifact/TestKnowledgeCard evidence |
+
+### 8.3 MCP References
+
+| Capability | Primary GitHub reference | What Chtest should migrate | Chtest boundary |
+|---|---|---|---|
+| MCP server/client SDK | `https://github.com/modelcontextprotocol/python-sdk` | MCP server/client implementation pattern for future Chtest MCP | Must route through ToolDefinition, ToolInvocation, approval, and Artifact evidence |
+| GitHub MCP ideas | GitHub MCP server implementations and docs | PR, commit, Actions, Issue, comment read/import workflows | Start read-only; no merge, push, deploy, or PR comment automation until explicitly promoted |
+
+### 8.4 AI Coding Use Pattern
+
+When a future AI session uses an open-source project, it should write or update
+the slice plan with:
+
+```text
+Reference repository:
+License:
+Version/commit:
+Documentation entry:
+Capability to migrate:
+Reuse mode:
+Chtest-owned input contract:
+Chtest-owned output contract:
+Fallback behavior:
+Focused verification:
+```
+
+Preferred reuse order:
+
+1. Reference design and behavior.
+2. Use a stable library API behind Chtest adapters.
+3. Run an external provider/service behind `KnowledgeAdapter` or `ToolAdapter`.
+4. Vendor only a small isolated helper after license review.
+
+Do not:
+
+- paste large application modules into Chtest;
+- let provider schemas replace Chtest contracts;
+- add a runtime dependency without a fallback path;
+- add vector, graph, MCP, or remote CI behavior without a slice that explicitly
+  promotes it.
+
+## 9. Project Core 后端迁移记录
 
 本次后端迁移参考了 WHartTest 的项目、模块、环境和执行器模型，但只迁移能支撑 Chtest V1 本地优先 CI/CD 质量证据与门禁中心的最小项目上下文。
 

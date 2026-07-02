@@ -46,7 +46,10 @@ Current gap:
 
 ## Final Architecture
 
-Final Chtest should use a three-layer RAG design with an agent quality loop.
+Final Chtest should use a three-tier testing-knowledge capability with an agent
+quality loop. This is intentionally not a generic RAG platform. Each tier must
+earn its place by improving generated-case quality, automation readiness,
+coverage visibility, or evidence traceability.
 
 ```text
 ContextArtifact / imported knowledge
@@ -62,20 +65,59 @@ ContextArtifact / imported knowledge
   -> KnowledgeFeedbackAgent
 ```
 
-The three RAG layers are complementary:
+The three tiers are complementary:
 
 | Layer | Purpose | Quality value | Maintenance cost |
 |---|---|---|---|
-| Structured Test Knowledge RAG | Turn documents into testing knowledge cards | High immediate gain for case quality | Medium |
-| Hybrid Retrieval RAG | Improve recall over larger corpora | Better matching across wording differences | Medium-high |
-| Test Relationship Graph RAG | Reason over requirement, module, API, risk, defect, and case relationships | Highest coverage and impact-analysis value | High |
+| L1 Structured Test Knowledge Evidence | Turn documents and reviewed work into testing knowledge cards | High immediate gain for case quality | Medium |
+| L2 Hybrid Retrieval | Improve recall over larger corpora | Better matching across wording differences | Medium-high |
+| L3 Test Relationship Graph | Reason over requirement, module, API, risk, defect, and case relationships | Highest coverage and impact-analysis value | High |
 
-## Layer 1: Structured Test Knowledge RAG
+Optimization principle:
+
+```text
+Do not build RAG because RAG is fashionable.
+Build testing knowledge only where it improves testing efficiency and quality.
+```
+
+Default final-version path:
+
+```text
+L1 is a core product capability.
+L2 is optional and enabled only when eval data proves L1 recall is insufficient.
+L3 is offline/background and enabled only after Chtest has enough reviewed data.
+```
+
+## Why This Optimized Design Exists
+
+Open-source RAG and graph projects can reduce AI coding difficulty because they
+show proven patterns for document ingestion, retrieval, reranking, graph
+construction, and evaluation. The risk is that Chtest turns into a knowledge
+platform instead of a testing workbench.
+
+The optimized design keeps the benefit while containing the cost:
+
+| Risk From Direct Open-Source Adoption | Chtest Optimization |
+|---|---|
+| Scope expands into a generic knowledge base | Only testing knowledge that affects case quality, automation, coverage, or evidence is allowed |
+| Provider schemas leak into core models | Normalize every provider result into `KnowledgeEvidence` |
+| Vector/graph infrastructure slows development | Ship L1 first; gate L2/L3 by eval evidence and data scale |
+| RAG results are hard to explain | Generated cases must cite evidence ids, snippets, source artifacts, and review findings |
+| AI coding copies too much framework code | Use libraries/providers behind adapters; do not paste large application code |
+| Runtime becomes fragile | Providers are optional and disabled by default; core workflows fall back to local evidence |
+| Evaluation is subjective | Every retrieval or agent change needs golden/eval fixtures before promotion |
+
+For open-source source locations and migration rules, see:
+
+- `docs/reference/01-open-source-migration-map.md`
+
+## Layer 1: Structured Test Knowledge Evidence
 
 This is the first final-product layer to implement.
 
 Instead of storing only document chunks, Chtest should extract testing-specific
-knowledge cards:
+knowledge cards. This layer should be treated as the product core, not as a
+heavy RAG runtime.
 
 ```text
 RequirementPoint
@@ -121,12 +163,25 @@ Why this matters:
 
 Open-source acceleration:
 
-- Use PageIndex-style ideas for tree-structured, traceable document navigation,
-  especially for long requirements, API manuals, product specs, and test plans.
-- Prefer adapting concepts and using its self-host/API surface after license and
-  deployment review; do not directly paste large source files into Chtest.
+- Use structure-aware document retrieval ideas for traceable professional
+  documents, especially long requirements, API manuals, product specs, and test
+  plans.
+- Use document parsing/conversion projects only as adapters for source import;
+  do not let their schemas replace `TestKnowledgeCard`.
 - Keep Chtest's own `TestKnowledgeCard` schema as the product contract even if
-  PageIndex or another provider supplies document tree retrieval.
+  an external parser or retrieval provider supplies document tree retrieval.
+
+Implementation notes:
+
+- Start from existing `ContextArtifact` and `Artifact` rows.
+- Extract cards deterministically in the first implementation, then add an
+  optional `KnowledgeIngestionAgent`.
+- Keep extracted cards reviewable: approved, stale, unsafe, duplicate, or
+  prompt-eligible.
+- Store only bounded safe snippets in card/evidence records; large content stays
+  in Artifact files.
+- Make card extraction idempotent by source artifact id, source section, and
+  source hash.
 
 ## Layer 2: Hybrid Retrieval RAG
 
@@ -164,8 +219,8 @@ Open-source acceleration:
 - Prefer Haystack or LlamaIndex as provider implementations behind
   `KnowledgeAdapter`.
 - Prefer library/API integration over copying framework code.
-- Start with PostgreSQL full-text search and `pgvector` if Chtest wants the
-  lowest extra service count.
+- Start with PostgreSQL full-text search. Add `pgvector` only when eval data
+  proves semantic retrieval improves generated cases.
 - Use Qdrant only if corpus size, latency, or vector operations outgrow
   PostgreSQL.
 - RAGFlow may be evaluated as an external provider service, but it should not
@@ -178,11 +233,22 @@ Chtest owns: evidence model, AI task records, case generation, review, reports.
 Provider owns: retrieval implementation, indexing internals, optional rerank.
 ```
 
-## Layer 3: Test Relationship Graph RAG
+Promotion gates:
+
+- Knowledge card count or document volume makes deterministic retrieval
+  inadequate.
+- Eval fixtures show higher required-case coverage, boundary/exception coverage,
+  or historical-defect coverage.
+- Evidence precision does not drop below the accepted threshold.
+- Provider failure can fall back to L1 without blocking case generation.
+- No provider-specific payload is returned directly to generated cases.
+
+## Layer 3: Test Relationship Graph
 
 This layer is for the final quality ceiling, not the first implementation.
 
-The graph should be built from Chtest's own reviewed and executed data:
+The graph should be built from Chtest's own reviewed and executed data before
+any GraphRAG-style provider is introduced:
 
 ```text
 Requirement -> BusinessRule
@@ -218,6 +284,16 @@ Open-source acceleration:
 - Do not put GraphRAG indexing on the synchronous case-generation request path.
 - Keep graph outputs normalized into Chtest's own `KnowledgeEvidence` and
   `CoverageGap` contracts.
+
+Implementation notes:
+
+- Start with deterministic edges from existing Chtest rows: requirement ids,
+  risk ids, module ids, API endpoints, test case ids, test run ids, and report
+  artifact ids.
+- Use graph outputs as coverage and impact-analysis evidence, not as automatic
+  approval authority.
+- Run graph extraction asynchronously and record graph build artifacts.
+- Case generation must still work if the graph is missing, stale, or disabled.
 
 ## Agent System
 
@@ -296,15 +372,57 @@ Rules:
 
 Reference use:
 
-- Awesome LLM Apps: use as examples for agent/RAG app patterns only.
-- PageIndex: use for tree-structured, traceable document retrieval concepts and
-  optional self-host/API evaluation.
 - Haystack or LlamaIndex: use as the first production-style
   `KnowledgeAdapter` provider candidates.
 - Microsoft GraphRAG: use for later relationship graph extraction and
   reasoning, preferably offline/background.
 - RAGFlow: evaluate only as an external knowledge service, not as Chtest's
   internal product shell.
+- Qdrant or pgvector: use only after PostgreSQL full-text and structured
+  filtering are insufficient.
+- Document parsing projects such as MarkItDown or Unstructured may help import
+  Word, PDF, HTML, or Markdown content, but Chtest still owns the final
+  `TestKnowledgeCard` and `KnowledgeEvidence` contracts.
+
+## Open-Source Reference Intake Workflow
+
+Every open-source reference used for AI coding must pass this intake before a
+slice implementation starts:
+
+1. Record the repository URL, license, version or commit, and documentation
+   location in the slice plan or reference map.
+2. Identify the exact capability to migrate: parser, retriever, reranker,
+   graph extraction, eval metric, or adapter pattern.
+3. Decide the reuse mode: reference only, library dependency, external provider,
+   or small vendored utility after license review.
+4. Define the Chtest-owned input and output contracts before reading provider
+   internals.
+5. Normalize all provider outputs into `KnowledgeEvidence`, `Artifact`,
+   `AITask`, `ReviewHistory`, or `Report` records.
+6. Add one golden/eval fixture proving evidence traceability and fallback
+   behavior.
+7. Keep the provider disabled by default until the focused verification passes.
+
+AI coding prompt template for future slices:
+
+```text
+Goal:
+Use <repo URL> only for <specific capability>.
+
+Allowed reuse:
+<reference only | library adapter | external provider | small vendored helper>.
+
+Chtest-owned contract:
+Input: <schema/API>
+Output: KnowledgeEvidence / TestKnowledgeCard / Artifact / Report
+
+Non-goals:
+No provider schema leak, no generic chat UI, no auto-approval, no hidden index,
+no runtime dependency unless explicitly enabled.
+
+Verification:
+<focused pytest/golden command> plus git diff --check.
+```
 
 ## Maintenance Model
 

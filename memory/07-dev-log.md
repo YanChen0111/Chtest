@@ -1,5 +1,356 @@
 # Development Log
 
+## 2026-07-01 Slice 31 Task 4 Generated-Case Evidence Golden Smoke
+
+### Completed
+
+- Completed Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden
+  Smoke.
+- Added
+  `backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py`.
+- Golden runs the real case-generation API flow with three normalized evidence
+  conditions:
+  - accepted evidence;
+  - needs-review evidence;
+  - rejected/missing evidence.
+- Golden verifies candidate list exposes evidence ids, knowledge evidence
+  refs, covered risk ids, generation reason, automation readiness, quality
+  score, review findings, and coverage gap notes.
+- Golden verifies no TestCase is created and runtime/report side-effect fields
+  are absent.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q`
+- Result: `1 passed in 0.72s`
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Continue Slice 31 Completion Gate.
+
+## 2026-07-01 Slice 31 Task 3 Generated-Case Evidence Persistence
+
+### Completed
+
+- Completed Slice 31 Task 3: Persist Generated-Case Knowledge Evidence Fields.
+- Added GeneratedCaseCandidate persistence fields for knowledge evidence ids,
+  knowledge evidence refs, covered risk ids, generation reason, automation
+  readiness, quality score, review findings, and coverage gap notes.
+- Added migration
+  `backend/alembic/versions/20260701_0007_generated_case_knowledge_evidence.py`.
+- Updated case generation persistence and candidate list mapping.
+- Added DB/API coverage for migration columns/types/check constraints,
+  defaults, mutable list/json updates, AI-output evidence persistence, UUID
+  covered-risk ids, automation readiness and quality score value ranges,
+  bounded safe display JSON, and no TestCase side effect.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Task 4.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py -q`
+- Result: `15 passed in 1.71s`
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Continue Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden
+  Smoke.
+
+## 2026-07-01 Slice 31 Persistence Contract Boundary
+
+### Completed
+
+- Clarified Slice 31 persistence rules in the data/API/state/artifact
+  contracts.
+- Data contract now states generated-case knowledge evidence fields are
+  persisted from validated AI output when present, with defaults when absent.
+- API contract now states candidate list returns safe defaults and does not
+  imply TestKnowledgeCard CRUD or runtime retrieval behavior.
+- State-machine contract now states persistence does not add review states or
+  append ReviewHistory by itself.
+- Artifact contract now states row-level evidence refs do not require creating
+  new artifacts when owning AI/case-generation evidence already exists.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Task 3: Persist Generated-Case
+  Knowledge Evidence Fields.
+
+### Verification
+
+- `rg -n "source_knowledge_evidence_ids|knowledge_evidence_refs_json|review_findings_json|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): clarify generated case knowledge evidence persistence`.
+- Continue Slice 31 Task 3 from `NEXT_AI_TASK.md`.
+
+## 2026-07-01 Slice 31 Generated Case Knowledge Evidence Persistence Plan
+
+### Completed
+
+- Selected Slice 31: Generated Case Knowledge Evidence Persistence.
+- Added `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 30 completion
+  and Slice 31 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Task 2: Confirm Persistence Contract
+  Boundary.
+
+### Rationale
+
+- Slice 30 defined and proved generated-case knowledge evidence fields at
+  contract/schema level.
+- The next smallest product step is persisting those fields in the existing
+  GeneratedCaseCandidate data flow and returning them through the candidate list
+  API.
+- The slice avoids TestKnowledgeCard CRUD, RAG runtime, external providers,
+  vector infrastructure, graph runtime, frontend work, and review bypass.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
+- `rg -n "Generated Case Knowledge Evidence Persistence|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md NEXT_AI_TASK.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): add generated case knowledge evidence persistence plan`.
+- Continue Slice 31 Task 2 from `NEXT_AI_TASK.md`.
+
+## 2026-07-01 Slice 30 Completion Gate
+
+### Completed
+
+- Completed Slice 30: Test Knowledge Card Contract.
+- Recorded Task commits:
+  - Task 1: `2cd72e8`
+  - Task 2: `2898126`
+  - Task 3: `5beedf1`
+  - Task 4: `43c35e6`
+- Verified contracts define TestKnowledgeCard, KnowledgeEvidence,
+  GeneratedCaseCandidate evidence fields, artifact rules, and state/API
+  non-goals.
+- Verified fixture covers accepted, needs-review, and rejected evidence
+  conditions.
+- Verified golden smoke covers schema-level serialization of generated-case
+  knowledge evidence without TestCase/TestRun/Report/retrieval/vector/graph
+  side-effect ids.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
+- Result: `2` passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `docs(v2): complete test knowledge card contract slice`.
+- Continue with `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+
+## 2026-07-01 Slice 30 Contract Smoke
+
+### Completed
+
+- Added `backend/app/tests/golden/test_test_knowledge_card_contract_golden.py`.
+- Extended `GeneratedCaseCandidateListItemRead` schema with knowledge evidence
+  fields:
+  `source_knowledge_evidence_ids`, `knowledge_evidence_refs`,
+  `covered_risk_ids`, `generation_reason`, `automation_readiness`,
+  `quality_score`, `review_findings`, and `coverage_gap_notes`.
+- Golden proves accepted and rejected evidence conditions serialize without
+  adding TestCase, TestRun, Report, retrieval job, vector index, or graph job
+  ids.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
+- Result: `2` passed.
+- `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
+- Result: `5` passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card contract smoke`.
+- Continue Slice 30 Completion Gate.
+
+## 2026-07-01 Slice 30 Test Knowledge Card Golden Fixture
+
+### Completed
+
+- Added `docs/fixtures/18-test-knowledge-card-contract-golden.md`.
+- Fixture defines checkout coupon requirement text, source ContextArtifacts,
+  TestKnowledgeCard examples, KnowledgeEvidence examples, and three
+  GeneratedCaseCandidate evidence conditions.
+- Fixture covers accepted, needs-review, and rejected candidate evidence.
+- Fixture states provider payloads must be normalized into KnowledgeEvidence
+  before generated cases cite them.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 4: Add Contract Smoke For
+  Generated-Case Evidence Fields.
+
+### Verification
+
+- `test -f docs/fixtures/18-test-knowledge-card-contract-golden.md`
+- `rg -n "TestKnowledgeCard|KnowledgeEvidence|GeneratedCaseCandidate|review_findings|coverage_gap_notes" docs/fixtures/18-test-knowledge-card-contract-golden.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(fixtures): add test knowledge card contract golden`.
+- Continue Slice 30 Task 4 from `NEXT_AI_TASK.md`.
+
+## 2026-07-01 Slice 30 TestKnowledgeCard Contract
+
+### Completed
+
+- Defined `TestKnowledgeCard` and `KnowledgeEvidence` in the data model
+  contract.
+- Added GeneratedCaseCandidate evidence fields:
+  `source_knowledge_evidence_ids`, `knowledge_evidence_refs_json`,
+  `covered_risk_ids`, `generation_reason`, `automation_readiness`,
+  `quality_score`, `review_findings_json`, and `coverage_gap_notes`.
+- Updated API contract so candidate-case responses can display normalized
+  KnowledgeEvidence references and review findings.
+- Updated state-machine contract so knowledge evidence supports review but does
+  not auto-approve candidates, create TestCase records, trigger retrieval jobs,
+  or start indexing/provider behavior.
+- Updated artifact contract with `test_knowledge_card`, `knowledge_evidence`,
+  and `case_review_findings` artifact rules.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 3: Add Test Knowledge Card Golden
+  Fixture.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard|KnowledgeEvidence|source_knowledge_evidence_ids|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card contract`.
+- Continue Slice 30 Task 3 from `NEXT_AI_TASK.md`.
+
+## 2026-07-01 Slice 30 Test Knowledge Card Contract Plan
+
+### Completed
+
+- Selected Slice 30: Test Knowledge Card Contract.
+- Added `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 29 completion
+  and Slice 30 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 2: Define TestKnowledgeCard and
+  KnowledgeEvidence contracts.
+
+### Rationale
+
+- Slice 19 proved deterministic local ContextArtifact retrieval evidence, but
+  generated test cases still need structured testing knowledge evidence.
+- The next smallest final RAG/Agent step is contract-first: define
+  `TestKnowledgeCard`, `KnowledgeEvidence`, and generated-case evidence fields
+  before any vector database, embedding, reranking, provider, graph, or frontend
+  implementation.
+- The slice keeps human review gates intact and does not add RAG runtime or MCP
+  runtime behavior.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+- `rg -n "Test Knowledge Card|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-30-test-knowledge-card-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): add test knowledge card contract plan`.
+- Continue Slice 30 Task 2 from `NEXT_AI_TASK.md`.
+
+## 2026-07-01 Slice 29 Completion Gate
+
+### Completed
+
+- Completed Slice 29: Execution Run Manifest.
+- Recorded Task 4 commit `b62afaa`.
+- Verified pytest execution page shows a read-only TestRun run manifest.
+- Confirmed manifest inputs remain tied to existing TestRun fields and Artifact
+  metadata.
+- Confirmed no runner behavior, report generation, FailureAnalysis,
+  QualityGateDecision, remote provider, RAG runtime, or MCP runtime behavior was
+  added.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q`
+- Result: `2` passed.
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `npm --prefix frontend run test -- --run`
+- Result: `16` files passed, `21` tests passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `docs(v2): complete execution run manifest slice`.
+- Continue with `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+
+## 2026-07-01 Slice 29 Execution Run Manifest Golden Smoke
+
+### Completed
+
+- Added a Slice 29 golden smoke for execution run manifest inputs.
+- Golden proves TestRun read data keeps command, working directory,
+  runner_mode, run workspace, repository/network policy, parsed result, and
+  artifact metadata available for manifest display.
+- Golden proves persisted local runtime manifest artifact remains openable.
+- Golden proves missing dependency/environment snapshots remain unavailable
+  evidence.
+- Added fixture documentation:
+  `docs/fixtures/17-execution-run-manifest-golden.md`.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1` passed.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `test(golden): add execution run manifest smoke`.
+- Continue Slice 29 Completion Gate.
+
+## 2026-07-01 Slice 29 Frontend Run Manifest Panel
+
+### Completed
+
+- Pytest execution page now shows a compact `执行运行清单` panel.
+- Panel displays command, working directory, runner mode, run workspace,
+  repository-readonly policy, and network policy.
+- Panel displays runtime/dependency/environment snapshot rows, keeping missing
+  snapshots visible as `缺失不可打开`.
+- Local open links are rendered only for persisted local Artifact ids.
+- Updated `NEXT_AI_TASK.md` to Slice 29 Task 4: Add execution run manifest
+  golden smoke.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts`
+- Result: `1` file passed, `1` test passed.
+- `npm --prefix frontend run build`
+- Result: passed with Vite large chunk warning.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Commit `feat(frontend): show execution run manifest`.
+- Continue Slice 29 Task 4 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-01 Slice 29 Execution Run Manifest Contract
 
 ### Completed

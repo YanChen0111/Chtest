@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from sqlalchemy import ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict, MutableList
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON, TypeDecorator
 
 from backend.app.models.base import Base
-from backend.app.modules.ai_runtime.models import AITask
+from backend.app.modules.ai_runtime.models import AITask, uuid_list_column
 from backend.app.modules.projects.models import Module, Project, TimestampMixin, uuid_pk
 from backend.app.modules.requirements.models import Requirement, RequirementReview
 
@@ -96,6 +96,23 @@ class CaseGenerationTask(TimestampMixin, Base):
 
 class GeneratedCaseCandidate(TimestampMixin, Base):
     __tablename__ = "generated_case_candidates"
+    __table_args__ = (
+        CheckConstraint(
+            "automation_readiness IN ("
+            "'unknown', "
+            "'not_suitable', "
+            "'suitable_for_pytest', "
+            "'suitable_for_playwright', "
+            "'suitable_for_newman', "
+            "'suitable_for_jmeter'"
+            ")",
+            name="ck_generated_case_candidates_automation_readiness",
+        ),
+        CheckConstraint(
+            "quality_score IS NULL OR (quality_score >= 0 AND quality_score <= 100)",
+            name="ck_generated_case_candidates_quality_score_0_100",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     generation_task_id: Mapped[uuid.UUID] = mapped_column(
@@ -124,6 +141,14 @@ class GeneratedCaseCandidate(TimestampMixin, Base):
     requirement_refs_json: Mapped[list[Any]] = json_list_column()
     risk_refs_json: Mapped[list[Any]] = json_list_column()
     ai_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    source_knowledge_evidence_ids: Mapped[list[str]] = string_list_column()
+    knowledge_evidence_refs_json: Mapped[list[Any]] = json_list_column()
+    covered_risk_ids: Mapped[list[uuid.UUID]] = uuid_list_column()
+    generation_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    automation_readiness: Mapped[str] = mapped_column(String(40), nullable=False, default="unknown")
+    quality_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    review_findings_json: Mapped[list[Any]] = json_list_column()
+    coverage_gap_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     duplicate_of_case_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("test_cases.id", ondelete="SET NULL"),

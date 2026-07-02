@@ -1,5 +1,555 @@
 # Session Handoff
 
+## 2026-07-01 Slice 31 Task 4 Generated-Case Evidence Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 31 Task 4：Add Generated-Case Knowledge Evidence Golden Smoke。
+- 新增 golden：
+  `backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py`。
+- Golden 走真实 case-generation API：
+  - monkeypatch mock provider 输出 fixture 语义；
+  - POST `/api/case-generation/tasks`；
+  - GET `/api/case-generation/tasks/{id}/candidates`。
+- Golden 覆盖三类证据条件：
+  - accepted evidence：`ke-expired-coupon-boundary`；
+  - needs-review evidence：`ke-coupon-points-conflict`；
+  - rejected/missing evidence：VIP stacking 无 evidence ids。
+- Golden 断言 candidate list 暴露：
+  - evidence ids；
+  - knowledge evidence refs；
+  - covered risk ids；
+  - generation reason；
+  - automation readiness；
+  - quality score；
+  - review findings；
+  - coverage gap notes。
+- Golden 断言没有创建 TestCase，且 response 不暴露 TestCase/TestRun/Report/
+  retrieval/vector/graph side-effect 字段。
+- `NEXT_AI_TASK.md` 已切换到 Slice 31 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`1 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：
+  `test(golden): add generated case knowledge evidence persistence smoke`。
+- 继续 Slice 31 Completion Gate。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/10-v2-scope-options.md` 中未暂存 Candidate E 段落
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `docs/reference/01-open-source-migration-map.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 提交时只暂存 Slice 31 Task 4 文件，避免误混这些背景改动。
+
+## 2026-07-01 Slice 31 Task 3 Generated-Case Evidence Persistence 完成
+
+本轮完成：
+
+- 完成 Slice 31 Task 3：Persist Generated-Case Knowledge Evidence Fields。
+- `GeneratedCaseCandidate` 已新增并持久化：
+  - `source_knowledge_evidence_ids`
+  - `knowledge_evidence_refs_json`
+  - `covered_risk_ids`
+  - `generation_reason`
+  - `automation_readiness`
+  - `quality_score`
+  - `review_findings_json`
+  - `coverage_gap_notes`
+- 新增 Alembic migration：
+  `backend/alembic/versions/20260701_0007_generated_case_knowledge_evidence.py`。
+- Case generation persistence 会从 validated AI output 复制字段；缺失字段使用
+  合同默认值。
+- Candidate list API 返回 Slice 31 evidence display fields。
+- `covered_risk_ids` 按合同以 UUID list 持久化，API 列表输出转为字符串。
+- 输出校验新增：
+  - `automation_readiness` 枚举值；
+  - `quality_score` 0-100；
+  - `covered_risk_ids` UUID；
+  - `knowledge_evidence_refs` / `review_findings` bounded display JSON；
+  - secret / raw provider payload marker 拒绝。
+- DB 层新增 check constraints：
+  - `ck_generated_case_candidates_automation_readiness`
+  - `ck_generated_case_candidates_quality_score_0_100`
+- API/DB 测试覆盖：
+  - migration columns；
+  - migration PostgreSQL type；
+  - migration check constraints；
+  - model 默认值；
+  - mutable JSON/list in-place updates；
+  - AI output 带 evidence fields 时可落库并列表返回；
+  - malformed evidence output schema-invalid 且不写 candidate；
+  - 未创建 TestCase。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 31 Task 4：Add Generated-Case Knowledge Evidence Golden Smoke。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py -q
+git diff --check
+```
+
+验证结果：
+
+- DB/API focused tests：`15 passed`。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：
+  `feat(cases): persist generated case knowledge evidence`。
+- 继续 Slice 31 Task 4：Add Generated-Case Knowledge Evidence Golden Smoke。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/10-v2-scope-options.md` 中未暂存 Candidate E 段落
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 提交时只暂存 Slice 31 Task 3 文件，避免误混这些背景改动。
+
+## 2026-07-01 Slice 31 Task 2 Persistence Contract Boundary 完成
+
+本轮完成：
+
+- 完成 Slice 31 Task 2：Confirm Persistence Contract Boundary。
+- `docs/contracts/01-data-model-contract.md` 已补充：
+  - 字段从 validated CaseGenerationAgent output 持久化；
+  - AI output 缺失字段时使用合同默认值；
+  - 不保存 raw provider payload、secret、credential、token。
+- `docs/contracts/02-api-contract.md` 已补充：
+  - candidate list API 返回安全默认值；
+  - 返回证据字段不表示 TestKnowledgeCard CRUD 已存在；
+  - 返回证据字段不触发 retrieval/index/provider/runtime 行为。
+- `docs/contracts/03-state-machines.md` 已补充：
+  - persistence 不新增 review state；
+  - persistence 本身不 append ReviewHistory。
+- `docs/contracts/04-artifact-contract.md` 已补充：
+  - row-level evidence refs 可复用已有 AI task / case-generation evidence；
+  - 不要求额外创建新 Artifact。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 31 Task 3：Persist Generated-Case Knowledge Evidence Fields。
+
+本轮验证：
+
+```bash
+rg -n "source_knowledge_evidence_ids|knowledge_evidence_refs_json|review_findings_json|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 2：
+  `docs(v2): clarify generated case knowledge evidence persistence`。
+- 继续 Slice 31 Task 3：Persist Generated-Case Knowledge Evidence Fields。
+
+## 2026-07-01 Slice 31 Generated Case Knowledge Evidence Persistence Plan 完成
+
+本轮完成：
+
+- 选择 Slice 31：Generated Case Knowledge Evidence Persistence。
+- 新增 Slice 31 计划：
+  `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充：
+  - Slice 30 Completion：Test Knowledge Card Contract；
+  - Recommended Next V2 Slice：Slice 31 Generated Case Knowledge Evidence
+    Persistence。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 31 Task 2：Confirm Persistence Contract Boundary。
+
+选择原因：
+
+- Slice 30 已完成合同、fixture、schema-level golden smoke。
+- 真实 CaseGeneration flow 目前还没有把 knowledge evidence fields
+  持久化到 GeneratedCaseCandidate。
+- Slice 31 是最小实现桥接：只持久化和返回候选用例证据字段，不做
+  TestKnowledgeCard CRUD、RAG runtime、外部 provider、vector、graph、MCP、
+  frontend 或 review bypass。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md
+rg -n "Generated Case Knowledge Evidence Persistence|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md NEXT_AI_TASK.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 1：
+  `docs(v2): add generated case knowledge evidence persistence plan`。
+- 继续 Slice 31 Task 2：Confirm Persistence Contract Boundary。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/10-v2-scope-options.md` 中未暂存 Candidate E 段落
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 本次提交需要只暂存 Slice 31 计划相关 hunk，避免误混这些背景改动。
+
+## 2026-07-01 Slice 30 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 30：Test Knowledge Card Contract。
+- Slice 30 task table 已记录：
+  - Task 1：`2cd72e8`
+  - Task 2：`2898126`
+  - Task 3：`5beedf1`
+  - Task 4：`43c35e6`
+  - Completion Gate：done pending commit。
+- 已定义：
+  - `TestKnowledgeCard` 数据合同；
+  - `KnowledgeEvidence` 规范化证据合同；
+  - GeneratedCaseCandidate knowledge evidence 展示字段；
+  - `test_knowledge_card` / `knowledge_evidence` /
+    `case_review_findings` artifact 规则；
+  - TestKnowledgeCard EntityStatus 状态规则；
+  - RAG/MCP/vector/provider/graph/runtime 非目标边界。
+- 已新增 fixture：
+  `docs/fixtures/18-test-knowledge-card-contract-golden.md`。
+- 已新增 golden：
+  `backend/app/tests/golden/test_test_knowledge_card_contract_golden.py`。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select and plan the next narrow V2 task after Slice 30 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`2` passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Completion Gate：`docs(v2): complete test knowledge card contract slice`。
+- 继续 `NEXT_AI_TASK.md`，选择并规划下一个窄 V2 slice。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/10-v2-scope-options.md` 中未暂存 Candidate E 段落
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 这些是后续规划背景，提交时仍需避免误混，除非用户明确要求纳入。
+
+## 2026-07-01 Slice 30 Task 4 Contract Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 30 Task 4：Add Contract Smoke For Generated-Case Evidence
+  Fields。
+- 新增 golden：
+  `backend/app/tests/golden/test_test_knowledge_card_contract_golden.py`。
+- `GeneratedCaseCandidateListItemRead` 新增 knowledge evidence 展示字段：
+  - `source_knowledge_evidence_ids`；
+  - `knowledge_evidence_refs`；
+  - `covered_risk_ids`；
+  - `generation_reason`；
+  - `automation_readiness`；
+  - `quality_score`；
+  - `review_findings`；
+  - `coverage_gap_notes`。
+- Golden 验证：
+  - accepted evidence condition 可序列化；
+  - missing evidence / hallucination risk condition 仍保持 generated review
+    evidence；
+  - schema 输出不包含 `test_case_id`、`test_run_id`、`report_id`、
+    `retrieval_job_id`、`vector_index_id`、`graph_job_id`。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 30 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`2` passed。
+- Focused case generation + golden：`5` passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`test(golden): add test knowledge card contract smoke`。
+- 继续 Slice 30 Completion Gate。
+
+## 2026-07-01 Slice 30 Task 3 Golden Fixture 完成
+
+本轮完成：
+
+- 完成 Slice 30 Task 3：Add Test Knowledge Card Golden Fixture。
+- 新增 fixture：
+  `docs/fixtures/18-test-knowledge-card-contract-golden.md`。
+- Fixture 覆盖：
+  - coupon checkout requirement；
+  - source ContextArtifact references；
+  - TestKnowledgeCard examples；
+  - KnowledgeEvidence examples；
+  - accepted / needs-review / rejected GeneratedCaseCandidate evidence
+    conditions；
+  - review_findings 和 coverage_gap_notes；
+  - provider payload 必须先 normalize 成 Chtest KnowledgeEvidence。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 30 Task 4：Add Contract Smoke For Generated-Case Evidence Fields。
+
+本轮验证：
+
+```bash
+test -f docs/fixtures/18-test-knowledge-card-contract-golden.md
+rg -n "TestKnowledgeCard|KnowledgeEvidence|GeneratedCaseCandidate|review_findings|coverage_gap_notes" docs/fixtures/18-test-knowledge-card-contract-golden.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 3：`docs(fixtures): add test knowledge card contract golden`。
+- 继续 Slice 30 Task 4：Add Contract Smoke For Generated-Case Evidence
+  Fields。
+
+## 2026-07-01 Slice 30 Task 2 TestKnowledgeCard Contract 完成
+
+本轮完成：
+
+- 完成 Slice 30 Task 2：Define TestKnowledgeCard and KnowledgeEvidence
+  contracts。
+- `docs/contracts/01-data-model-contract.md` 已定义：
+  - `TestKnowledgeCard`；
+  - `KnowledgeEvidence`；
+  - GeneratedCaseCandidate 的 evidence、risk coverage、generation reason、
+    automation readiness、quality score、review findings、coverage gap notes
+    字段。
+- `docs/contracts/02-api-contract.md` 已定义：
+  - RAG 知识库未来可展示 test knowledge cards；
+  - candidate case response 可展示 normalized KnowledgeEvidence refs；
+  - quality_score/review_findings 只作为评审辅助，不自动入库。
+- `docs/contracts/03-state-machines.md` 已定义：
+  - KnowledgeEvidence 不新增 GeneratedCaseCandidate 状态；
+  - TestKnowledgeCard 使用 EntityStatus；
+  - 状态变化不触发 retrieval/indexing/provider/approval/runtime 行为。
+- `docs/contracts/04-artifact-contract.md` 已定义：
+  - `test_knowledge_card`；
+  - `knowledge_evidence`；
+  - `case_review_findings`；
+  - 对应 artifact path 和同项目引用规则。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 30 Task 3：Add Test Knowledge Card Golden Fixture。
+
+本轮验证：
+
+```bash
+rg -n "TestKnowledgeCard|KnowledgeEvidence|source_knowledge_evidence_ids|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 2：`docs(v2): define test knowledge card contract`。
+- 继续 Slice 30 Task 3：Add Test Knowledge Card Golden Fixture。
+
+## 2026-07-01 Slice 30 Test Knowledge Card Contract Plan 完成
+
+本轮完成：
+
+- 选择 Slice 30：Test Knowledge Card Contract。
+- 新增 Slice 30 计划：
+  `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`。
+- `docs/implementation/10-v2-scope-options.md` 已补充：
+  - Slice 29 Completion：Execution Run Manifest；
+  - Recommended Next V2 Slice：Slice 30 Test Knowledge Card Contract。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 30 Task 2：Define TestKnowledgeCard and KnowledgeEvidence contracts。
+- Slice 30 目标：
+  - 定义 `TestKnowledgeCard`；
+  - 定义 `KnowledgeEvidence`；
+  - 定义 GeneratedCaseCandidate 的 source knowledge evidence、risk coverage、
+    generation reason、automation readiness、quality score、review findings、
+    coverage gap notes；
+  - 先做合同、fixture、golden proof，再进入任何实现。
+- 明确保留边界：
+  不做 RAG runtime、external KnowledgeAdapter provider、vector database、
+  embedding、reranking、GraphRAG runtime、background indexing、MCP runtime、
+  frontend implementation、generated-case auto-approval、RBAC、tenant、
+  permission 或 remote CI provider 行为。
+
+本轮验证：
+
+```bash
+test -f docs/implementation/slices/slice-30-test-knowledge-card-contract.md
+rg -n "Test Knowledge Card|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-30-test-knowledge-card-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+下次推荐任务：
+
+- 提交 Task 1：`docs(v2): add test knowledge card contract plan`。
+- 继续 Slice 30 Task 2：Define TestKnowledgeCard and KnowledgeEvidence
+  contracts。
+
+注意：
+
+- 当前工作区仍存在未提交的最终 RAG/Agent 方向文档改动：
+  - `docs/architecture/02-agent-mcp-skill-prompt.md`
+  - `docs/implementation/11-final-rag-agent-strategy.md`
+  - `memory/12-agent-mcp-skill-design.md`
+- 这些文件是 Slice 30 规划的重要背景，但不是 Slice 30 Task 1 的必要提交
+  范围；后续提交时需要避免误混无关改动，除非用户明确要求纳入。
+
+## 2026-07-01 Slice 29 Completion Gate 完成
+
+本轮完成：
+
+- 完成 Slice 29：Execution Run Manifest。
+- Slice 29 task table 已记录：
+  - Task 1：`22b1071`
+  - Task 2：`d1995eb`
+  - Task 3：`32f2f25`
+  - Task 4：`b62afaa`
+  - Completion Gate：done pending commit。
+- 验证 pytest 执行页可以展示 TestRun 运行清单：
+  - command；
+  - working directory；
+  - runner mode；
+  - run workspace；
+  - repository/network policy；
+  - runtime/dependency/environment snapshot availability；
+  - local artifact open links。
+- 验证 run manifest 只读展示来自既有 TestRun 字段和 Artifact metadata。
+- 验证没有新增 runner 行为、Report、FailureAnalysis、QualityGateDecision、
+  remote provider、RAG runtime、MCP runtime、RBAC 或 tenant。
+- `NEXT_AI_TASK.md` 已切换到：
+  Select and plan the next narrow V2 task after Slice 29 completion。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+验证结果：
+
+- Backend golden checks：`2` passed。
+- Frontend build：passed，保留 Vite large chunk warning。
+- Frontend tests：`16` files passed，`21` tests passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Completion Gate：`docs(v2): complete execution run manifest slice`。
+- 继续 `NEXT_AI_TASK.md`，选择并规划下一个窄 V2 slice。
+
+## 2026-07-01 Slice 29 Task 4 Execution Run Manifest Golden Smoke 完成
+
+本轮完成：
+
+- 完成 Slice 29 Task 4：Add execution run manifest golden smoke。
+- 新增 golden：
+  `backend/app/tests/golden/test_execution_run_manifest_golden.py`。
+- 新增 fixture：
+  `docs/fixtures/17-execution-run-manifest-golden.md`。
+- Golden 覆盖：
+  - TestRun read data 保留 command、working_directory、runner_mode、
+    run_workspace、repository/network policy、parsed_result 和 artifact
+    metadata；
+  - runtime manifest local Artifact 可通过 artifact access 打开；
+  - dependency/environment snapshot 缺失时保持 unavailable evidence；
+  - manifest display inputs 不创建 Report、FailureAnalysis、
+    QualityGateDecision、新 TestRun，也不修改 Artifact。
+- Slice 29 table 已记录 Task 3 commit `32f2f25`，Task 4 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 29 Completion Gate。
+
+本轮验证：
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q
+git diff --check
+```
+
+验证结果：
+
+- Golden smoke：`1` passed。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 4：`test(golden): add execution run manifest smoke`。
+- 继续 Slice 29 Completion Gate。
+
+## 2026-07-01 Slice 29 Task 3 Frontend Run Manifest Panel 完成
+
+本轮完成：
+
+- 完成 Slice 29 Task 3：Add frontend run manifest panel。
+- `PytestExecutionView.vue` 新增 `执行运行清单`：
+  - 命令；
+  - 工作目录；
+  - runner mode；
+  - run workspace；
+  - 只读仓库策略；
+  - 网络策略；
+  - runtime/dependency/environment snapshot 可用性；
+  - stdout/stderr/parsed output/JUnit 等输出工件可用性。
+- `PytestExecutionView.spec.ts` 覆盖：
+  - manifest 标题可见；
+  - 本地网络关闭可见；
+  - runtime manifest 可打开；
+  - dependency/environment snapshot 缺失时显示 `缺失不可打开`；
+  - stdout Artifact 仍可打开。
+- Slice 29 table 已记录 Task 2 commit `d1995eb`，Task 3 done pending commit。
+- `NEXT_AI_TASK.md` 已切换到：
+  Slice 29 Task 4：Add execution run manifest golden smoke。
+
+本轮验证：
+
+```bash
+npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts
+npm --prefix frontend run build
+git diff --check
+```
+
+验证结果：
+
+- Pytest focused frontend test：`1` file passed，`1` test passed。
+- Frontend build：passed，保留 Vite large chunk warning。
+- `git diff --check` clean。
+
+下次推荐任务：
+
+- 提交 Task 3：`feat(frontend): show execution run manifest`。
+- 继续 Slice 29 Task 4：Add execution run manifest golden smoke。
+
 ## 2026-07-01 Slice 29 Task 2 Execution Run Manifest Contract 完成
 
 本轮完成：

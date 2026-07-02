@@ -251,17 +251,18 @@ Candidate final value:
 - Generate test cases that cite exact knowledge evidence, cover explicit risks,
   expose coverage gaps, and pass agent/human review before entering the case
   library.
-- Improve AI case-generation quality through a three-layer RAG design:
-  structured test knowledge, hybrid retrieval, and later test relationship
-  graph reasoning.
+- Improve AI case-generation quality through a three-tier testing-knowledge
+  capability: structured test knowledge evidence, optional hybrid retrieval,
+  and later test relationship graph reasoning.
 
 Recommended architecture:
 
 ```text
 ContextArtifact / imported knowledge
   -> TestKnowledgeCard extraction
-  -> structured + keyword + vector retrieval
-  -> test relationship graph retrieval
+  -> structured evidence filtering
+  -> optional keyword/full-text/vector retrieval
+  -> optional offline test relationship graph retrieval
   -> RiskAnalysisAgent
   -> TestDesignAgent
   -> CaseGenerationAgent
@@ -273,16 +274,31 @@ ContextArtifact / imported knowledge
 
 Open-source acceleration:
 
-- Use PageIndex-style tree and section reasoning for traceable professional
-  document retrieval.
+- Use structure-aware document retrieval ideas for traceable professional
+  documents.
 - Use Haystack or LlamaIndex as the first external KnowledgeAdapter provider
   candidates.
 - Use Microsoft GraphRAG later for offline/background relationship extraction
   and graph reasoning after Chtest has enough reviewed requirements, cases,
   failures, and reports.
-- Use Awesome LLM Apps as reference examples only.
+- Use RAGFlow only as an external provider/service reference, not as Chtest's
+  internal product shell.
+- Use pgvector first if semantic retrieval is needed; use Qdrant only if scale
+  exceeds PostgreSQL.
 - Prefer library/API/provider integration over copying large open-source
   application code into Chtest.
+- Keep the canonical source list in
+  `docs/reference/01-open-source-migration-map.md`.
+
+Optimization rules:
+
+- L1 `TestKnowledgeCard` + `KnowledgeEvidence` is the core product capability.
+- L2 hybrid retrieval is optional and must be promoted by eval evidence, not by
+  architecture preference.
+- L3 graph reasoning is offline/background and must not block case generation.
+- Every provider result must normalize into Chtest evidence before use.
+- Core workflows must keep working when external retrieval is disabled or
+  unavailable.
 
 Smallest future slice:
 
@@ -308,6 +324,8 @@ Risks:
   skipped.
 - Case quality will not improve reliably without eval fixtures and human review
   feedback loops.
+- Open-source references can expand scope if future AI sessions copy platform
+  features instead of migrating only the testing-quality capability.
 
 Recommended only if:
 
@@ -1168,4 +1186,165 @@ Expected output:
 
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines run manifest behavior, contracts,
+  verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Execution run manifest.
+
+Why it was selected:
+
+- Slices 24-28 made artifacts openable and evidence summaries readable across
+  execution reports, AI tasks, imported CI evidence, and quality gates.
+- Slice 29 closed the remaining execution-level readability gap by explaining
+  the TestRun itself: command, working directory, runner mode, workspace,
+  repository/network policy, snapshots, and output artifacts.
+- The slice stayed read-only and evidence-only by deriving the manifest from
+  existing TestRun fields and Artifact metadata.
+
+Completed slice name:
+
+```text
+Slice 29: Execution Run Manifest
+```
+
+Delivered output:
+
+- Slice plan, contract boundary, frontend pytest execution manifest panel,
+  golden smoke, and completion gate.
+- Local links are limited to persisted local Artifact ids. Missing runtime,
+  dependency, and environment snapshots remain visible as unavailable evidence.
+- No runner behavior, report generation, FailureAnalysis, QualityGateDecision,
+  remote provider, RAG runtime, MCP runtime, RBAC, tenants, or permissions were
+  added.
+
+## Recommended Next V2 Slice
+
+Recommended: Test knowledge card contract.
+
+Why:
+
+- Slice 19 added deterministic local ContextArtifact retrieval evidence, but
+  generated test cases still need a richer explanation of which testing
+  knowledge supports them, which risks they cover, and why they should pass
+  agent and human review.
+- The final RAG and Agent direction calls for Chtest to become a testing
+  knowledge evidence system, not a generic chat knowledge base.
+- Starting with contracts keeps the next step small and reviewable before any
+  vector database, external provider, graph reasoning, or frontend work.
+
+Next slice name:
+
+```text
+Slice 30: Test Knowledge Card Contract
+```
+
+Smallest useful boundary:
+
+- Define `TestKnowledgeCard` and `KnowledgeEvidence` contracts.
+- Define generated-case evidence fields for source knowledge evidence ids,
+  risk coverage, generation reason, automation readiness, quality score,
+  review findings, and coverage gap notes.
+- Add one fixture and one smoke proof showing requirement text, knowledge
+  cards, generated candidates, review findings, and evidence ids.
+
+Explicit non-goals:
+
+- No RAG runtime, external KnowledgeAdapter calls, vector database, embeddings,
+  reranking, GraphRAG runtime, graph database, background indexing, provider
+  SDK, frontend implementation, generated-case auto-approval, runner behavior,
+  artifact mutation, MCP runtime, marketplace, RBAC, tenants, permissions, or
+  remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 30 Task 1: Add Test Knowledge Card Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until contracts define knowledge-card data, evidence,
+  artifact, state, and review boundaries.
+
+## Completed Next V2 Slice
+
+Completed: Test knowledge card contract.
+
+Why it was selected:
+
+- Slice 19 added deterministic local ContextArtifact retrieval evidence, but
+  generated test cases still needed richer proof of which testing knowledge
+  supported them and which gaps reviewers needed to resolve.
+- Slice 30 established `TestKnowledgeCard`, `KnowledgeEvidence`, generated-case
+  evidence fields, artifact rules, state rules, fixture examples, and a
+  schema-level golden smoke without adding a RAG runtime.
+- The slice kept the final RAG/Agent direction evidence-first and review-first
+  before any provider, vector, graph, or frontend implementation.
+
+Completed slice name:
+
+```text
+Slice 30: Test Knowledge Card Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact contract boundary, fixture, schema-level
+  golden smoke, and completion gate.
+- GeneratedCaseCandidate can express knowledge evidence fields at schema level.
+- No TestKnowledgeCard table, knowledge-card CRUD, RAG runtime, external
+  provider, vector database, embedding, reranking, graph runtime, MCP runtime,
+  frontend implementation, generated-case auto-approval, runner behavior,
+  reports, RBAC, tenants, or permissions were added.
+
+## Recommended Next V2 Slice
+
+Recommended: Generated case knowledge evidence persistence.
+
+Why:
+
+- Slice 30 proved the evidence contract and response schema, but the real case
+  generation flow does not yet persist those fields on GeneratedCaseCandidate.
+- Persisting the fields is the smallest useful implementation bridge from
+  contract to product behavior: generated candidates can carry evidence ids,
+  knowledge evidence refs, review findings, and coverage gap notes through the
+  existing API.
+- This improves the requirement-to-case review loop without implementing
+  TestKnowledgeCard CRUD, RAG runtime, external providers, frontend work, or
+  review bypasses.
+
+Next slice name:
+
+```text
+Slice 31: Generated Case Knowledge Evidence Persistence
+```
+
+Smallest useful boundary:
+
+- Persist Slice 30 generated-case evidence fields on GeneratedCaseCandidate.
+- Copy normalized fields from AI task output when present.
+- Return fields from the candidate list API with safe defaults when absent.
+- Add focused database/API/golden coverage proving evidence remains review-only.
+
+Explicit non-goals:
+
+- No TestKnowledgeCard table implementation, knowledge-card CRUD API,
+  knowledge ingestion agent, RAG runtime, external KnowledgeAdapter provider,
+  vector database, embeddings, reranking, graph runtime, GraphRAG job, MCP
+  runtime, frontend implementation, generated-case auto-approval, TestCase
+  auto-promotion, runner behavior, reports, artifact mutation, RBAC, tenants,
+  permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 31 Task 1: Add Generated Case Knowledge Evidence Persistence task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines persistence behavior, contracts,
   verification, and non-goals.

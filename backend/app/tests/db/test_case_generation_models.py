@@ -6,7 +6,8 @@ from pathlib import Path
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import String, create_engine, inspect
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from backend.app.models.base import Base
@@ -21,6 +22,7 @@ AI_RUNTIME_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/202606
 PROMPT_SKILL_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260629_0003_prompt_skill_registry.py"
 REQUIREMENT_REVIEW_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260629_0004_requirement_review.py"
 MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260629_0005_case_generation.py"
+KNOWLEDGE_EVIDENCE_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260701_0007_generated_case_knowledge_evidence.py"
 
 
 def load_migration(module_name: str, path: Path):
@@ -40,6 +42,7 @@ def test_case_generation_migration_creates_contract_tables() -> None:
         load_migration("prompt_skill_migration", PROMPT_SKILL_MIGRATION_PATH),
         load_migration("requirement_review_migration", REQUIREMENT_REVIEW_MIGRATION_PATH),
         load_migration("case_generation_migration", MIGRATION_PATH),
+        load_migration("generated_case_knowledge_evidence_migration", KNOWLEDGE_EVIDENCE_MIGRATION_PATH),
     ]
 
     with engine.begin() as connection:
@@ -60,6 +63,7 @@ def test_case_generation_migration_creates_contract_tables() -> None:
         task_columns = {column["name"] for column in inspector.get_columns("case_generation_tasks")}
         candidate_columns = {column["name"] for column in inspector.get_columns("generated_case_candidates")}
         test_case_columns = {column["name"] for column in inspector.get_columns("test_cases")}
+        candidate_check_constraints = {constraint["name"] for constraint in inspector.get_check_constraints("generated_case_candidates")}
 
     assert {"case_generation_tasks", "generated_case_candidates", "test_cases"}.issubset(tables)
     assert {
@@ -92,6 +96,14 @@ def test_case_generation_migration_creates_contract_tables() -> None:
         "requirement_refs_json",
         "risk_refs_json",
         "ai_reason",
+        "source_knowledge_evidence_ids",
+        "knowledge_evidence_refs_json",
+        "covered_risk_ids",
+        "generation_reason",
+        "automation_readiness",
+        "quality_score",
+        "review_findings_json",
+        "coverage_gap_notes",
         "duplicate_of_case_id",
         "status",
         "review_comment",
@@ -121,6 +133,24 @@ def test_case_generation_migration_creates_contract_tables() -> None:
         "created_by",
         "updated_by",
     }.issubset(test_case_columns)
+    assert {
+        "ck_generated_case_candidates_automation_readiness",
+        "ck_generated_case_candidates_quality_score_0_100",
+    }.issubset(candidate_check_constraints)
+
+
+def test_generated_case_knowledge_evidence_migration_uses_contract_types() -> None:
+    migration = load_migration("generated_case_knowledge_evidence_migration_types", KNOWLEDGE_EVIDENCE_MIGRATION_PATH)
+
+    source_evidence_type = migration.string_list_type().dialect_impl(postgresql.dialect())
+    covered_risk_type = migration.uuid_list_type().dialect_impl(postgresql.dialect())
+    refs_type = migration.json_type().dialect_impl(postgresql.dialect())
+
+    assert isinstance(source_evidence_type, postgresql.ARRAY)
+    assert isinstance(source_evidence_type.item_type, String)
+    assert isinstance(covered_risk_type, postgresql.ARRAY)
+    assert isinstance(covered_risk_type.item_type, postgresql.UUID)
+    assert isinstance(refs_type, postgresql.JSONB)
 
 
 def seed_requirement_review(session: Session) -> tuple[Project, Requirement, RequirementReview, AITask]:
@@ -209,6 +239,14 @@ def test_generated_candidate_and_test_case_persist_defaults_and_relationships() 
         assert candidate.precondition is None
         assert candidate.status == "generated"
         assert candidate.review_comment is None
+        assert candidate.source_knowledge_evidence_ids == []
+        assert candidate.knowledge_evidence_refs_json == []
+        assert candidate.covered_risk_ids == []
+        assert candidate.generation_reason is None
+        assert candidate.automation_readiness == "unknown"
+        assert candidate.quality_score is None
+        assert candidate.review_findings_json == []
+        assert candidate.coverage_gap_notes is None
         assert candidate.generation_task is generation_task
         assert test_case.source_candidate is candidate
         assert test_case.priority == "P2"
@@ -251,6 +289,21 @@ def test_case_generation_json_and_list_fields_track_in_place_updates() -> None:
         candidate.tags.append("pricing")
         candidate.requirement_refs_json.append(str(requirement.id))
         candidate.risk_refs_json.append("risk-1")
+        candidate.source_knowledge_evidence_ids.append("ke-coupon-conflict")
+        candidate.knowledge_evidence_refs_json.append(
+            {
+                "evidence_id": "ke-coupon-conflict",
+                "source_artifact_id": str(requirement.id),
+                "snippet": "Coupon cannot be used with points.",
+            },
+        )
+        covered_risk_id = uuid.uuid4()
+        candidate.covered_risk_ids.append(covered_risk_id)
+        candidate.generation_reason = "Exception case for discount conflict."
+        candidate.automation_readiness = "suitable_for_playwright"
+        candidate.quality_score = 81
+        candidate.review_findings_json.append({"type": "evidence_complete", "severity": "info"})
+        candidate.coverage_gap_notes = "Does not cover expired coupon."
         test_case.steps_json.append("Select coupon")
         test_case.expected_results_json.append("Discount is applied")
         test_case.input_data_json["coupon_state"] = "valid"
@@ -272,6 +325,20 @@ def test_case_generation_json_and_list_fields_track_in_place_updates() -> None:
         assert refreshed_candidate.tags == ["pricing"]
         assert refreshed_candidate.requirement_refs_json == [str(requirement.id)]
         assert refreshed_candidate.risk_refs_json == ["risk-1"]
+        assert refreshed_candidate.source_knowledge_evidence_ids == ["ke-coupon-conflict"]
+        assert refreshed_candidate.knowledge_evidence_refs_json == [
+            {
+                "evidence_id": "ke-coupon-conflict",
+                "source_artifact_id": str(requirement.id),
+                "snippet": "Coupon cannot be used with points.",
+            },
+        ]
+        assert refreshed_candidate.covered_risk_ids == [covered_risk_id]
+        assert refreshed_candidate.generation_reason == "Exception case for discount conflict."
+        assert refreshed_candidate.automation_readiness == "suitable_for_playwright"
+        assert refreshed_candidate.quality_score == 81
+        assert refreshed_candidate.review_findings_json == [{"type": "evidence_complete", "severity": "info"}]
+        assert refreshed_candidate.coverage_gap_notes == "Does not cover expired coupon."
         assert refreshed_test_case.steps_json == ["Select coupon"]
         assert refreshed_test_case.expected_results_json == ["Discount is applied"]
         assert refreshed_test_case.input_data_json == {"coupon_state": "valid"}

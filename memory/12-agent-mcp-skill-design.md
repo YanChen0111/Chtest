@@ -172,13 +172,13 @@ KnowledgeAdapter.list_sources(project_id) -> source[]
   -> 执行证据 -> 反馈回知识库
 ```
 
-推荐三层 RAG：
+推荐三层测试知识能力，而不是一次性建设重型 RAG 平台：
 
 | 层级 | 目的 | 主要参考 |
 |---|---|---|
-| Structured Test Knowledge RAG | 把需求、接口、缺陷、测试规范抽取成 TestKnowledgeCard | PageIndex-style tree/section reasoning |
-| Hybrid Retrieval RAG | 大知识库下用结构化过滤、关键词、向量和 rerank 提升召回 | Haystack / LlamaIndex behind KnowledgeAdapter |
-| Test Relationship Graph RAG | 用需求、模块、接口、风险、缺陷、用例、执行结果做覆盖和影响分析 | Microsoft GraphRAG-style offline graph reasoning |
+| L1 Structured Test Knowledge Evidence | 把需求、接口、缺陷、测试规范抽取成 TestKnowledgeCard 和 KnowledgeEvidence | 结构化文档解析、测试领域 schema |
+| L2 Hybrid Retrieval | 大知识库下用结构化过滤、全文检索、可选向量和 rerank 提升召回 | PostgreSQL full-text、pgvector、Haystack / LlamaIndex behind KnowledgeAdapter |
+| L3 Test Relationship Graph | 用需求、模块、接口、风险、缺陷、用例、执行结果做覆盖和影响分析 | 确定性关系图优先，Microsoft GraphRAG-style offline reasoning 后置 |
 
 最终版 Agent 分工应扩展为：
 
@@ -202,3 +202,9 @@ KnowledgeFeedbackAgent
 - 所有 provider 结果必须转换成 Chtest 的 KnowledgeEvidence。
 - 每个 provider 引入前必须记录许可证、版本、升级方式、fallback 行为和
   golden/eval 验证。
+- 开源参考清单、迁移边界和 AI coding 填写模板见
+  `docs/reference/01-open-source-migration-map.md`。
+- L1 是最终版主线能力；L2/L3 必须由 eval 证明能提升用例接受率、覆盖率、
+  自动化可执行性或证据可查验性后再启用。
+- 任何检索或图能力都不能绕过 GeneratedCaseCandidate、CaseReviewAgent 和
+  人工评审状态机。

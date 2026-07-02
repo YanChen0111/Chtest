@@ -15,6 +15,7 @@ from sqlalchemy.pool import StaticPool
 from backend.app.main import app
 from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
+from backend.app.modules.ai_runtime.providers import mock_provider
 from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase as CaseModel
@@ -223,6 +224,14 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
     assert first_candidate["expected_results"]
     assert first_candidate["requirement_refs"]
     assert first_candidate["ai_reason"]
+    assert first_candidate["source_knowledge_evidence_ids"] == []
+    assert first_candidate["knowledge_evidence_refs"] == []
+    assert first_candidate["covered_risk_ids"] == []
+    assert first_candidate["generation_reason"] is None
+    assert first_candidate["automation_readiness"] == "unknown"
+    assert first_candidate["quality_score"] is None
+    assert first_candidate["review_findings"] == []
+    assert first_candidate["coverage_gap_notes"] is None
     assert first_candidate["status"] == "generated"
 
     with SessionLocal() as session:
@@ -235,7 +244,105 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
         assert ai_task is not None
         assert ai_task.task_type == "case_generation"
         assert ai_task.status == "succeeded"
-        assert session.scalar(select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id))
+        persisted_candidate = session.scalar(
+            select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id),
+        )
+        assert persisted_candidate is not None
+        assert persisted_candidate.source_knowledge_evidence_ids == []
+        assert persisted_candidate.knowledge_evidence_refs_json == []
+        assert persisted_candidate.covered_risk_ids == []
+        assert persisted_candidate.automation_readiness == "unknown"
+        assert persisted_candidate.review_findings_json == []
+        assert list(session.scalars(select(CaseModel))) == []
+
+
+def test_start_case_generation_persists_knowledge_evidence_fields_from_ai_output(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, SessionLocal = api_client
+    requirement, review = create_reviewed_requirement(client, SessionLocal)
+
+    original_success_output = mock_provider.MockLLMProvider._success_output
+
+    def success_output_with_evidence(self, request):
+        output = original_success_output(self, request)
+        if request.model_name == "mock-case-generator":
+            output["cases"][0].update(
+                {
+                    "source_knowledge_evidence_ids": ["ke-expired-coupon-boundary"],
+                    "knowledge_evidence_refs": [
+                        {
+                            "evidence_id": "ke-expired-coupon-boundary",
+                            "knowledge_card_id": "00000000-0000-0000-0000-000000000821",
+                            "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+                            "snippet": "Expired coupons must be rejected before order submission.",
+                            "score": 0.92,
+                        },
+                    ],
+                    "covered_risk_ids": ["00000000-0000-0000-0000-000000000411"],
+                    "generation_reason": "Boundary case for expired coupon validation.",
+                    "automation_readiness": "suitable_for_playwright",
+                    "quality_score": 88,
+                    "review_findings": [{"type": "evidence_complete", "severity": "info"}],
+                    "coverage_gap_notes": "",
+                },
+            )
+        return output
+
+    monkeypatch.setattr(mock_provider.MockLLMProvider, "_success_output", success_output_with_evidence)
+
+    response = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": requirement["project_id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional", "ui"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    generation = response.json()
+    candidates_response = client.get(f"/api/case-generation/tasks/{generation['case_generation_task_id']}/candidates")
+
+    assert candidates_response.status_code == 200
+    candidate = next(
+        item
+        for item in candidates_response.json()["items"]
+        if item["source_knowledge_evidence_ids"] == ["ke-expired-coupon-boundary"]
+    )
+    assert candidate["source_knowledge_evidence_ids"] == ["ke-expired-coupon-boundary"]
+    assert candidate["knowledge_evidence_refs"][0]["knowledge_card_id"] == "00000000-0000-0000-0000-000000000821"
+    assert candidate["covered_risk_ids"] == ["00000000-0000-0000-0000-000000000411"]
+    assert candidate["generation_reason"] == "Boundary case for expired coupon validation."
+    assert candidate["automation_readiness"] == "suitable_for_playwright"
+    assert candidate["quality_score"] == 88
+    assert candidate["review_findings"] == [{"type": "evidence_complete", "severity": "info"}]
+    assert candidate["coverage_gap_notes"] == ""
+    assert candidate["status"] == "generated"
+
+    with SessionLocal() as session:
+        persisted_candidate = session.scalar(
+            select(GeneratedCaseCandidate).where(
+                GeneratedCaseCandidate.generation_task_id == uuid.UUID(generation["case_generation_task_id"]),
+            ),
+        )
+        assert persisted_candidate is not None
+        assert persisted_candidate.source_knowledge_evidence_ids == ["ke-expired-coupon-boundary"]
+        assert persisted_candidate.knowledge_evidence_refs_json[0]["evidence_id"] == "ke-expired-coupon-boundary"
+        assert persisted_candidate.covered_risk_ids == [uuid.UUID("00000000-0000-0000-0000-000000000411")]
+        assert persisted_candidate.generation_reason == "Boundary case for expired coupon validation."
+        assert persisted_candidate.automation_readiness == "suitable_for_playwright"
+        assert persisted_candidate.quality_score == 88
+        assert persisted_candidate.review_findings_json == [{"type": "evidence_complete", "severity": "info"}]
+        assert persisted_candidate.coverage_gap_notes == ""
         assert list(session.scalars(select(CaseModel))) == []
 
 
@@ -274,6 +381,73 @@ def test_schema_invalid_case_generation_does_not_write_task_or_candidates(
         assert llm_log.status == "schema_invalid"
         artifacts = list(session.scalars(select(Artifact).where(Artifact.owner_entity_id == ai_task.id)))
         assert any(artifact.artifact_type == "raw_llm_output" for artifact in artifacts)
+        assert list(session.scalars(select(CaseGenerationTask))) == []
+        assert list(session.scalars(select(GeneratedCaseCandidate))) == []
+        assert list(session.scalars(select(CaseModel))) == []
+
+
+@pytest.mark.parametrize(
+    "evidence_patch",
+    [
+        {"covered_risk_ids": ["not-a-uuid"]},
+        {"automation_readiness": "ship_it"},
+        {"quality_score": 101},
+        {"quality_score": -1},
+        {
+            "knowledge_evidence_refs": [
+                {
+                    "evidence_id": "ke-secret",
+                    "snippet": "Authorization: Bearer sk-test-secret-value",
+                },
+            ],
+        },
+        {"review_findings": [{"type": "raw_provider_payload", "message": "raw_provider_payload"}]},
+    ],
+)
+def test_malformed_generated_case_evidence_output_does_not_write_candidates(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
+    evidence_patch: dict[str, Any],
+) -> None:
+    client, SessionLocal = api_client
+    requirement, review = create_reviewed_requirement(client, SessionLocal)
+
+    original_success_output = mock_provider.MockLLMProvider._success_output
+
+    def malformed_success_output(self, request):
+        output = original_success_output(self, request)
+        if request.model_name == "mock-case-generator":
+            output["cases"][0].update(evidence_patch)
+        return output
+
+    monkeypatch.setattr(mock_provider.MockLLMProvider, "_success_output", malformed_success_output)
+
+    response = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": requirement["project_id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional", "ui"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "CASE_GENERATION_SCHEMA_INVALID"
+
+    with SessionLocal() as session:
+        ai_task = session.scalar(select(AITask).where(AITask.task_type == "case_generation"))
+        assert ai_task is not None
+        assert ai_task.status == "failed"
+        llm_log = session.scalar(select(LLMCallLog).where(LLMCallLog.ai_task_id == ai_task.id))
+        assert llm_log is not None
+        assert llm_log.status == "schema_invalid"
         assert list(session.scalars(select(CaseGenerationTask))) == []
         assert list(session.scalars(select(GeneratedCaseCandidate))) == []
         assert list(session.scalars(select(CaseModel))) == []

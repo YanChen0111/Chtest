@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 
 from sqlalchemy import String, cast, or_, select
@@ -22,6 +23,33 @@ from backend.app.modules.requirements.models import Requirement, RequirementRevi
 from backend.app.modules.review_history.service import append_review_history
 from backend.app.workers.enqueue import FakeAIQueue, enqueue_ai_task
 from backend.app.workers.handlers.ai_task_handler import run_ai_task
+
+
+AUTOMATION_READINESS_VALUES = {
+    "unknown",
+    "not_suitable",
+    "suitable_for_pytest",
+    "suitable_for_playwright",
+    "suitable_for_newman",
+    "suitable_for_jmeter",
+}
+MAX_DISPLAY_JSON_BYTES = 8192
+MAX_DISPLAY_LIST_ITEMS = 20
+MAX_DISPLAY_STRING_CHARS = 1000
+MAX_DISPLAY_JSON_DEPTH = 5
+UNSAFE_DISPLAY_MARKERS = (
+    "raw_provider_payload",
+    "raw_payload",
+    "raw_llm_output",
+    "provider_payload",
+    "authorization:",
+    "bearer ",
+    "cookie:",
+    "password=",
+    "token=",
+    "secret=",
+    "api_key=",
+)
 
 
 class ProjectNotFoundError(Exception):
@@ -166,6 +194,14 @@ def list_candidates(session: Session, generation_task_id: uuid.UUID) -> list[Gen
             requirement_refs=candidate.requirement_refs_json,
             risk_refs=candidate.risk_refs_json,
             ai_reason=candidate.ai_reason,
+            source_knowledge_evidence_ids=candidate.source_knowledge_evidence_ids,
+            knowledge_evidence_refs=candidate.knowledge_evidence_refs_json,
+            covered_risk_ids=[str(risk_id) for risk_id in candidate.covered_risk_ids],
+            generation_reason=candidate.generation_reason,
+            automation_readiness=candidate.automation_readiness,
+            quality_score=candidate.quality_score,
+            review_findings=candidate.review_findings_json,
+            coverage_gap_notes=candidate.coverage_gap_notes,
             status=candidate.status,
         )
         for candidate in candidates
@@ -486,6 +522,87 @@ def validate_case_generation_output(output: dict) -> None:
             raise CaseGenerationSchemaInvalidError
         if "input_data" in case and not isinstance(case["input_data"], dict):
             raise CaseGenerationSchemaInvalidError
+        if "source_knowledge_evidence_ids" in case and not isinstance(case["source_knowledge_evidence_ids"], list):
+            raise CaseGenerationSchemaInvalidError
+        if "knowledge_evidence_refs" in case and not isinstance(case["knowledge_evidence_refs"], list):
+            raise CaseGenerationSchemaInvalidError
+        if "covered_risk_ids" in case and not isinstance(case["covered_risk_ids"], list):
+            raise CaseGenerationSchemaInvalidError
+        if not all_valid_uuids(case.get("covered_risk_ids", [])):
+            raise CaseGenerationSchemaInvalidError
+        if "generation_reason" in case and case["generation_reason"] is not None and not isinstance(case["generation_reason"], str):
+            raise CaseGenerationSchemaInvalidError
+        if "automation_readiness" in case and not isinstance(case["automation_readiness"], str):
+            raise CaseGenerationSchemaInvalidError
+        if case.get("automation_readiness", "unknown") not in AUTOMATION_READINESS_VALUES:
+            raise CaseGenerationSchemaInvalidError
+        if "quality_score" in case and case["quality_score"] is not None and not isinstance(case["quality_score"], int):
+            raise CaseGenerationSchemaInvalidError
+        if case.get("quality_score") is not None and not 0 <= case["quality_score"] <= 100:
+            raise CaseGenerationSchemaInvalidError
+        if "review_findings" in case and not isinstance(case["review_findings"], list):
+            raise CaseGenerationSchemaInvalidError
+        if "coverage_gap_notes" in case and case["coverage_gap_notes"] is not None and not isinstance(case["coverage_gap_notes"], str):
+            raise CaseGenerationSchemaInvalidError
+        if not display_json_is_safe(case.get("knowledge_evidence_refs", [])):
+            raise CaseGenerationSchemaInvalidError
+        if not display_json_is_safe(case.get("review_findings", [])):
+            raise CaseGenerationSchemaInvalidError
+        if case.get("coverage_gap_notes") is not None and not display_text_is_safe(case["coverage_gap_notes"]):
+            raise CaseGenerationSchemaInvalidError
+
+
+def all_valid_uuids(values: list) -> bool:
+    try:
+        for value in values:
+            uuid.UUID(str(value))
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def display_json_is_safe(value: list) -> bool:
+    if len(value) > MAX_DISPLAY_LIST_ITEMS:
+        return False
+    try:
+        serialized = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    except (TypeError, ValueError):
+        return False
+    if len(serialized.encode("utf-8")) > MAX_DISPLAY_JSON_BYTES:
+        return False
+    if ai_runtime_service.has_high_risk_secret(serialized):
+        return False
+    if any(marker in serialized.lower() for marker in UNSAFE_DISPLAY_MARKERS):
+        return False
+    return display_node_is_bounded(value)
+
+
+def display_node_is_bounded(value: object, depth: int = 0) -> bool:
+    if depth > MAX_DISPLAY_JSON_DEPTH:
+        return False
+    if isinstance(value, str):
+        return display_text_is_safe(value)
+    if isinstance(value, int | float | bool) or value is None:
+        return True
+    if isinstance(value, list):
+        return len(value) <= MAX_DISPLAY_LIST_ITEMS and all(display_node_is_bounded(item, depth + 1) for item in value)
+    if isinstance(value, dict):
+        return len(value) <= MAX_DISPLAY_LIST_ITEMS and all(
+            isinstance(key, str)
+            and len(key) <= 120
+            and display_text_is_safe(str(item))
+            and display_node_is_bounded(item, depth + 1)
+            for key, item in value.items()
+        )
+    return False
+
+
+def display_text_is_safe(value: str) -> bool:
+    if len(value) > MAX_DISPLAY_STRING_CHARS:
+        return False
+    if ai_runtime_service.has_high_risk_secret(value):
+        return False
+    return not any(marker in value.lower() for marker in UNSAFE_DISPLAY_MARKERS)
 
 
 def mark_case_generation_schema_invalid(session: Session, ai_task: AITask) -> None:
@@ -541,6 +658,14 @@ def persist_case_generation_task(
                 requirement_refs_json=case["requirement_refs"],
                 risk_refs_json=case.get("risk_refs", []),
                 ai_reason=case["ai_reason"],
+                source_knowledge_evidence_ids=case.get("source_knowledge_evidence_ids", []),
+                knowledge_evidence_refs_json=case.get("knowledge_evidence_refs", []),
+                covered_risk_ids=[uuid.UUID(str(risk_id)) for risk_id in case.get("covered_risk_ids", [])],
+                generation_reason=case.get("generation_reason"),
+                automation_readiness=case.get("automation_readiness", "unknown"),
+                quality_score=case.get("quality_score"),
+                review_findings_json=case.get("review_findings", []),
+                coverage_gap_notes=case.get("coverage_gap_notes"),
             ),
         )
     session.commit()
