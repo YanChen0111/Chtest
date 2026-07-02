@@ -10,12 +10,12 @@ Slice 32: Agent Workflow Contract.
 
 ## Current Task
 
-Slice 32 Task 3: Add agent workflow contract golden smoke.
+Slice 32 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a golden smoke proving the agent workflow contract
-can be checked without running agents, providers, RAG, MCP, tools, or reports.
+After this task, Slice 32 is closed with a verified contract-only agent
+workflow boundary and the next narrow V2 task is selected.
 
 ## Must Read
 
@@ -40,15 +40,13 @@ can be checked without running agents, providers, RAG, MCP, tools, or reports.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_agent_workflow_contract_golden.py
-docs/fixtures/20-agent-workflow-contract-golden.md
 docs/implementation/slices/slice-32-agent-workflow-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden task only. Do not add frontend code, backend runtime feature code,
+Completion gate only. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, external provider integrations, vector database,
 embeddings, reranking, background indexing, graph runtime, MCP runtime,
 TestKnowledgeCard CRUD, artifact upload/mutation/delete, generated-case
@@ -58,27 +56,25 @@ remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_agent_workflow_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_agent_workflow_contract_golden.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q
 git diff --check
 ```
 
-Expected result: agent workflow contract golden smoke and diff check pass.
+Expected result: focused Slice 32 and prerequisite Slice 31 golden tests plus
+diff check pass.
 
 ## Acceptance
 
-- Golden proves the contract names all requirement-to-reviewed-case agents.
-- Golden proves each step has prompt/skill seed, input evidence, output,
-  write permission, human gate, failure behavior, and trace requirement.
-- Golden proves no TestCase, TestRun, Report, provider call, vector index,
-  graph job, MCP runtime, or artifact mutation is created by the contract.
-- Fixture documents the evidence-only workflow boundary.
+- Slice 32 task table records completed task commits.
+- Focused golden verification passes.
+- `NEXT_AI_TASK.md` points to the next narrow V2 task.
 
 ## Commit Message
 
 ```text
-test(golden): add agent workflow contract smoke
+docs(v2): complete agent workflow contract slice
 ```
 
 ## Next Task
 
-Slice 32 Completion Gate.
+Select and plan the next narrow V2 task after Slice 32 completion.

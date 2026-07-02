@@ -1,5 +1,33 @@
 # Development Log
 
+## 2026-07-02 Slice 32 Agent Workflow Contract Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/20-agent-workflow-contract-golden.md`.
+- Added `backend/app/tests/golden/test_agent_workflow_contract_golden.py`.
+- Golden smoke validates all eight requirement-to-reviewed-case agents:
+  RequirementUnderstandingAgent, RiskAnalysisAgent, CoverageAnalysisAgent,
+  TestDesignAgent, CaseGenerationAgent, CaseReviewAgent, DedupAgent, and
+  AutomationReadinessAgent.
+- The fixture and test preserve the contract-only boundary: no TestCase
+  auto-promotion, TestRun, Report, provider call, vector index, graph job, MCP
+  runtime, artifact mutation, runtime orchestration, or remote CI provider
+  behavior.
+- Updated `NEXT_AI_TASK.md` to Slice 32 Completion Gate.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_agent_workflow_contract_golden.py -q`
+- Result: `3 passed`.
+- `git diff --check`
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add agent workflow contract smoke`.
+- Continue Slice 32 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-02 Slice 32 Agent Workflow Contract
 
 ### Completed
