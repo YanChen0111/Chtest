@@ -1388,3 +1388,113 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines persistence behavior, contracts,
   verification, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Generated case knowledge evidence persistence.
+
+Why it was selected:
+
+- Slice 30 proved the evidence contract and response schema, but the real case
+  generation flow did not persist those fields on GeneratedCaseCandidate.
+- Slice 31 bridged that gap by persisting normalized knowledge evidence ids,
+  evidence refs, covered risk ids, generation reason, automation readiness,
+  quality score, review findings, and coverage gap notes in the existing case
+  generation flow.
+- The slice improved the requirement-to-case review loop without implementing
+  TestKnowledgeCard CRUD, RAG runtime, external providers, frontend work, or
+  review bypass.
+
+Completed slice name:
+
+```text
+Slice 31: Generated Case Knowledge Evidence Persistence
+```
+
+Delivered output:
+
+- Slice plan, contract boundary, model/migration/API persistence, golden smoke,
+  and completion gate.
+- GeneratedCaseCandidate now exposes knowledge evidence fields through the
+  candidate list API with safe defaults.
+- No TestCase auto-promotion, TestRun, Report, retrieval job, vector index,
+  graph job, provider call, artifact mutation, RAG runtime, MCP runtime, RBAC,
+  tenants, or permissions were added.
+
+## Completed Supplemental V2 Slice
+
+Completed: Knowledge prompt/skill seed set.
+
+Why it was integrated:
+
+- The final RAG and agent strategy needs versioned PromptVersion and
+  SkillVersion seed files before runtime orchestration can be designed safely.
+- The prompt/skill seed branch added knowledge-card extraction, requirement
+  understanding, risk analysis, coverage analysis, test design,
+  evidence-backed case generation/review, dedup, automation readiness, and
+  knowledge feedback seeds.
+- The slice remained seed-only and did not enable RAG runtime, provider calls,
+  vector search, graph runtime, MCP runtime, frontend, API, migration, runner,
+  or report behavior.
+
+Completed slice name:
+
+```text
+Slice 31: Knowledge Prompt/Skill Seeds
+```
+
+Delivered output:
+
+- Prompt seed files, skill seed files, fixture documentation, contract updates,
+  registry count updates, and prompt/skill seed smoke tests.
+
+## Recommended Next V2 Slice
+
+Recommended: Agent workflow contract for requirement-to-reviewed-case.
+
+Why:
+
+- Slice 30 defined knowledge evidence. Slice 31 persisted evidence fields and
+  added prompt/skill seeds. The next missing contract is the workflow that ties
+  those agent steps together without adding runtime orchestration.
+- Chtest needs explicit per-agent input evidence, write permission, human gate,
+  failure behavior, and trace rules before a future orchestrator can safely
+  run RequirementUnderstandingAgent, RiskAnalysisAgent, CoverageAnalysisAgent,
+  TestDesignAgent, CaseGenerationAgent, CaseReviewAgent, DedupAgent, and
+  AutomationReadinessAgent.
+- Planning this contract first prevents hidden auto-approval, provider schema
+  leakage, and accidental RAG/MCP runtime expansion.
+
+Next slice name:
+
+```text
+Slice 32: Agent Workflow Contract
+```
+
+Smallest useful boundary:
+
+- Define the requirement-to-reviewed-case agent sequence.
+- Define per-agent inputs, outputs, prompt/skill seed, write permission, human
+  gate, failure behavior, and trace requirements.
+- Keep generated candidates review-gated and do not promote TestCase records.
+- Add one contract-level golden smoke after the contract is defined.
+
+Explicit non-goals:
+
+- No agent orchestration runtime, workflow engine, queue graph, scheduler,
+  frontend workflow page, backend feature API, migrations, provider calls,
+  vector database, embeddings, reranking, graph runtime, MCP runtime,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 32 Task 1: Add Agent Workflow Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines workflow behavior, contracts,
+  verification, and non-goals.

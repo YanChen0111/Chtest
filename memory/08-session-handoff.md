@@ -1,5 +1,29 @@
 # Session Handoff
 
+## 2026-07-02 Slice 32 Agent Workflow Contract Plan
+
+Completed:
+
+- Added Slice 32 plan:
+  `docs/implementation/slices/slice-32-agent-workflow-contract.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 31
+  completion and recommend Slice 32.
+- Updated `NEXT_AI_TASK.md` to Slice 32 Task 2: Define
+  requirement-to-reviewed-case agent workflow contract.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-32-agent-workflow-contract.md
+rg -n "Agent Workflow Contract|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-32-agent-workflow-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Next recommended task:
+
+- Commit `docs(v2): add agent workflow contract plan`.
+- Continue Slice 32 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-02 Local Branch Integration And Slice 31 Completion
 
 Current working copy:

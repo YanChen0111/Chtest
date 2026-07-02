@@ -10,12 +10,13 @@ Slice 32: Agent Workflow Contract.
 
 ## Current Task
 
-Slice 32 Task 1: Add agent workflow contract task plan.
+Slice 32 Task 2: Define requirement-to-reviewed-case agent workflow contract.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for the requirement-to-reviewed-case
-agent workflow contract before adding orchestration behavior.
+After this task, Chtest contracts define the requirement-to-reviewed-case agent
+sequence, inputs, outputs, write permissions, human gates, failure behavior,
+and evidence trace rules.
 
 ## Must Read
 
@@ -46,14 +47,16 @@ agent workflow contract before adding orchestration behavior.
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-32-agent-workflow-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning task only. Do not add frontend code, backend runtime feature code,
+Contract task only. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, external provider integrations, vector database,
 embeddings, reranking, background indexing, graph runtime, MCP runtime,
 TestKnowledgeCard CRUD, artifact upload/mutation/delete, generated-case
@@ -63,29 +66,30 @@ remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-32-agent-workflow-contract.md
-rg -n "Agent Workflow Contract|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-32-agent-workflow-contract.md NEXT_AI_TASK.md
+rg -n "RequirementUnderstandingAgent|CaseReviewAgent|human gate|write permission|failure behavior" docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-32-agent-workflow-contract.md
 git diff --check
 ```
 
-Expected result: Slice 32 plan exists, required planning sections are present,
-and diff check passes.
+Expected result: API/state/prompt-skill contracts and the Slice 32 plan describe
+agent workflow gates and diff check passes.
 
 ## Acceptance
 
-- Creates the Slice 32 plan.
-- Defines product value, source documents, preconditions, non-goals, task table,
-  expected files, verification commands, and commit messages.
-- Keeps scope limited to agent workflow contract planning.
-- Does not add orchestration runtime, provider calls, frontend work, migrations,
-  RAG runtime, MCP runtime, auto-approval, RBAC, tenants, or permissions.
+- Contracts define agent sequence from requirement understanding to reviewed
+  generated candidates.
+- Contracts define per-agent read inputs, write outputs, prompt/skill seed,
+  evidence requirements, human gate, and fallback behavior.
+- Contracts state generated candidates remain review-gated and are not promoted
+  automatically.
+- Contracts preserve no runtime orchestration, provider, RAG, MCP, frontend,
+  migration, runner, report, RBAC, tenant, or permission expansion.
 
 ## Commit Message
 
 ```text
-docs(v2): add agent workflow contract plan
+docs(v2): define agent workflow contract
 ```
 
 ## Next Task
 
-Slice 32 Task 2: Define requirement-to-reviewed-case agent workflow contract.
+Slice 32 Task 3: Add agent workflow contract golden smoke.

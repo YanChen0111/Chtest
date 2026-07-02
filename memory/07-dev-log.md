@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-02 Slice 32 Agent Workflow Contract Plan
+
+### Completed
+
+- Added Slice 32 plan:
+  `docs/implementation/slices/slice-32-agent-workflow-contract.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with:
+  - Slice 31 Generated Case Knowledge Evidence Persistence completion;
+  - integrated Knowledge Prompt/Skill Seeds completion;
+  - Slice 32 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 32 Task 2.
+- Kept the slice planning-only: no runtime orchestration, provider calls,
+  frontend, migration, RAG runtime, MCP runtime, auto-approval, RBAC, tenants,
+  or permissions.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-32-agent-workflow-contract.md`
+- `rg -n "Agent Workflow Contract|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-32-agent-workflow-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): add agent workflow contract plan`.
+- Continue Slice 32 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-02 Branch Integration And Slice 31 Completion Gate
 
 ### Completed
