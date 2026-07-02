@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-02 Slice 32 Agent Workflow Contract
+
+### Completed
+
+- Defined requirement-to-reviewed-case workflow contracts in:
+  - `docs/contracts/02-api-contract.md`;
+  - `docs/contracts/03-state-machines.md`;
+  - `docs/contracts/05-prompt-skill-contract.md`;
+  - `docs/implementation/slices/slice-32-agent-workflow-contract.md`.
+- Documented per-agent inputs, outputs, write permission, human gate, failure
+  behavior, prompt/skill seed, trace fields, and progression rules.
+- Kept generated candidates review-gated and explicitly prevented automatic
+  TestCase promotion.
+- Updated `NEXT_AI_TASK.md` to Slice 32 Task 3.
+
+### Verification
+
+- `rg -n "RequirementUnderstandingAgent|CaseReviewAgent|human gate|write permission|failure behavior" docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-32-agent-workflow-contract.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): define agent workflow contract`.
+- Continue Slice 32 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-02 Slice 32 Agent Workflow Contract Plan
 
 ### Completed

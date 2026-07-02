@@ -93,6 +93,95 @@ TestKnowledgeCard / KnowledgeEvidence rules:
   new review state, does not count as `open_review`, and does not append
   ReviewHistory by itself.
 
+### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
+
+The requirement-to-reviewed-case agent workflow is a state contract layered on
+top of existing AITask, GeneratedCaseCandidate, TestCase, and ReviewHistory
+behavior. It must not introduce a new orchestrator runtime, API endpoint,
+runtime graph executor, provider runtime, RAG runtime, MCP runtime, vector
+index, embedding job, reranking job, graph extraction job, RBAC, tenant, or
+permission behavior.
+
+```text
+created
+  -> requirement_understanding_running -> requirement_understanding_ready
+  -> risk_analysis_running -> risk_analysis_ready
+  -> coverage_analysis_running -> coverage_analysis_ready
+  -> test_design_running -> test_design_ready
+  -> case_generation_running -> candidates_generated
+  -> case_review_running -> case_review_ready
+  -> dedup_running -> dedup_ready
+  -> automation_readiness_running -> waiting_human_review
+waiting_human_review -> reviewed_case_created
+waiting_human_review -> rejected
+waiting_human_review -> needs_optimization -> test_design_running
+any *_running -> failed
+failed -> fallback_ready
+fallback_ready -> waiting_human_review
+created/running/ready/waiting_human_review -> cancelled
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| created | start_requirement_understanding | requirement_understanding_running | AITask worker | Reads Requirement and context manifest only |
+| requirement_understanding_running | understanding_valid | requirement_understanding_ready | AITask worker | Writes `requirement_understanding` artifact |
+| requirement_understanding_ready | start_risk_analysis | risk_analysis_running | AITask worker | Reads understanding artifact |
+| risk_analysis_running | risk_valid | risk_analysis_ready | AITask worker | Writes `risk_analysis` artifact |
+| risk_analysis_ready | start_coverage_analysis | coverage_analysis_running | AITask worker | Reads risk and requirement trace refs |
+| coverage_analysis_running | coverage_valid | coverage_analysis_ready | AITask worker | Writes `coverage_analysis` artifact |
+| coverage_analysis_ready | start_test_design | test_design_running | AITask worker | Reads coverage gaps and target test types |
+| test_design_running | design_valid | test_design_ready | AITask worker | Writes `test_design` artifact |
+| test_design_ready | start_case_generation | case_generation_running | AITask worker | Uses existing case generation task |
+| case_generation_running | candidates_validated | candidates_generated | AITask worker | Creates GeneratedCaseCandidate rows with `status=generated` |
+| candidates_generated | start_case_review | case_review_running | AITask worker | Reads persisted candidates and evidence |
+| case_review_running | review_valid | case_review_ready | AITask worker | Writes review findings only |
+| case_review_ready | start_dedup | dedup_running | AITask worker | Reads candidates and approved TestCase summaries |
+| dedup_running | dedup_valid | dedup_ready | AITask worker | Writes dedup findings only |
+| dedup_ready | start_automation_readiness | automation_readiness_running | AITask worker | Reads ToolDefinition/TestCommand metadata only |
+| automation_readiness_running | readiness_valid | waiting_human_review | AITask worker | Writes readiness findings only |
+| waiting_human_review | approve | reviewed_case_created | User/API | Existing candidate review approval creates TestCase |
+| waiting_human_review | approve_after_edit | reviewed_case_created | User/API | Existing candidate review approval creates edited TestCase |
+| waiting_human_review | reject | rejected | User/API | Existing candidate rejection; no TestCase |
+| waiting_human_review | request_optimization | needs_optimization | User/API | Existing optimization path |
+| needs_optimization | regenerate_from_feedback | test_design_running | AITask worker | Reuses design/generation path with reviewer feedback |
+| any *_running | schema_or_agent_error | failed | AITask worker | Persists raw/error artifacts |
+| failed | fallback_available | fallback_ready | AITask worker | Only when a valid partial output can be safely reviewed |
+| fallback_ready | submit_partial_for_review | waiting_human_review | AITask worker | Human gate remains required |
+| created/running/ready/waiting_human_review | cancel | cancelled | User/API | Must not create or approve TestCase |
+
+Agent state rules:
+
+| Agent | Success state | write permission | human gate | failure behavior |
+|---|---|---|---|---|
+| RequirementUnderstandingAgent | `requirement_understanding_ready` | AITask artifacts and parsed requirement-understanding payload only | None inside the step | Schema failure stops the workflow in `failed`; fallback may record ambiguity findings but must not generate cases |
+| RiskAnalysisAgent | `risk_analysis_ready` | AITask artifacts and derived risk evidence only | None inside the step | Failure may fallback to `risk_level=unknown` and continue only with visible risk warning evidence |
+| CoverageAnalysisAgent | `coverage_analysis_ready` | AITask artifacts and coverage/gap evidence only | None inside the step | Failure may fallback to `coverage_status=unknown`; no candidate may be auto-approved |
+| TestDesignAgent | `test_design_ready` | AITask artifacts and transient design payloads only | None inside the step | Invalid design stops generation unless valid scenario subsets are explicitly recorded as partial fallback |
+| CaseGenerationAgent | `candidates_generated` | AITask artifacts and GeneratedCaseCandidate creation with `status=generated` | Required after generation | Invalid candidates are not persisted; zero valid candidates leaves the workflow `failed` or reviewable only as an error artifact |
+| CaseReviewAgent | `case_review_ready` | AITask artifacts and candidate review evidence fields only | Required for any approve/reject/optimization action | Failure leaves candidate status unchanged and records `case_review_unavailable` |
+| DedupAgent | `dedup_ready` | AITask artifacts and duplicate review findings only | Required for any duplicate resolution | Failure records `dedup_status=unknown`; candidates remain unapproved until human review |
+| AutomationReadinessAgent | `waiting_human_review` | AITask artifacts and readiness review findings only | Required before TestCase creation | Failure records `automation_readiness=unknown`; must not create AutomationDraft, ToolInvocation, or TestRun |
+
+Hard rules:
+
+- `waiting_human_review` is the only state from which a generated candidate may
+  become a reviewed TestCase, and only through the existing human review action.
+- Agent states do not replace AITask statuses. They are trace fields and
+  artifact metadata for the existing AITask/case generation surfaces.
+- Agent outputs are evidence. Quality scores, coverage gaps, dedup clusters,
+  risk scores, and automation readiness must not auto promote TestCase,
+  approve candidates, reject candidates, archive candidates, mutate TestCase
+  rows, execute automation, create reports, or update CI/CD state.
+- Failure fallback must be explicit in trace fields: `fallback_applied=true`,
+  a stable `failure_code`, and output artifacts explaining what was omitted.
+- Schema validation failure may write raw/error artifacts but must not write
+  business rows except for already validated candidates created before the
+  failure. Partial candidate persistence must preserve validation evidence.
+- The workflow must not start background indexing, provider calls, external RAG
+  retrieval, MCP calls, vector search, embedding creation, reranking, graph
+  extraction, remote CI provider calls, RBAC, tenants, permissions,
+  marketplace, cloud sync, merge, deploy, or release behavior.
+
 ## 4. AutomationDraft 状态机
 
 ```text

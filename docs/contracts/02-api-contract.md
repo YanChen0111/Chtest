@@ -672,6 +672,94 @@ Response 202:
 }
 ```
 
+### 3.4.1 Requirement To Reviewed Case Agent Workflow Contract
+
+This is a contract-only workflow decomposition for requirement-to-reviewed-case
+generation. It is exposed through existing requirement review, case generation,
+candidate listing, candidate review, and AI task APIs. It must not add a new API
+endpoint, add a new orchestrator runtime, add runtime code, automatically
+promote a generated case into a TestCase, or enable RAG, MCP, external provider,
+vector, embedding, reranking, or graph runtime behavior.
+
+Workflow trace envelope:
+
+```json
+{
+  "workflow_name": "requirement_to_reviewed_case",
+  "workflow_version": "v1",
+  "workflow_run_id": "00000000-0000-0000-0000-000000000701",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "requirement_id": "00000000-0000-0000-0000-000000000401",
+  "case_generation_task_id": "00000000-0000-0000-0000-000000000701",
+  "candidate_id": null,
+  "agent_name": "RequirementUnderstandingAgent",
+  "agent_step": "requirement_understanding",
+  "step_status": "succeeded",
+  "input_artifact_ids": ["00000000-0000-0000-0000-000000000372"],
+  "output_artifact_ids": ["00000000-0000-0000-0000-000000000711"],
+  "context_manifest_artifact_id": "00000000-0000-0000-0000-000000000372",
+  "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+  "used_knowledge": false,
+  "prompt_version": "requirement_understanding:v1",
+  "skill_version": "requirement-review-skill:v1",
+  "model_provider": "mock",
+  "model_name": "mock-requirement-workflow",
+  "schema_version": "requirement_to_case_agent_trace:v1",
+  "schema_validation_status": "valid",
+  "human_gate": "not_required_for_step",
+  "write_permission": "ai_task_artifacts_only",
+  "fallback_applied": false,
+  "failure_code": null
+}
+```
+
+Required trace fields for every workflow step:
+
+- `workflow_name`, `workflow_version`, `workflow_run_id`, `project_id`, and
+  `requirement_id`.
+- `agent_name`, `agent_step`, `step_status`, `prompt_version`,
+  `skill_version`, `model_provider`, `model_name`, and `schema_version`.
+- `input_artifact_ids`, `output_artifact_ids`,
+  `context_manifest_artifact_id`, `used_context_artifact_ids`, and
+  `used_knowledge`.
+- `human_gate`, `write_permission`, `schema_validation_status`,
+  `fallback_applied`, and `failure_code`.
+- `case_generation_task_id` when the step belongs to a case generation task.
+- `candidate_id` when the step evaluates or annotates a specific
+  GeneratedCaseCandidate.
+
+Agent step contracts:
+
+| Agent | Inputs | Outputs/artifacts | write permission | human gate | failure behavior and fallback | Trace fields |
+|---|---|---|---|---|---|---|
+| RequirementUnderstandingAgent | Requirement read model, project/module metadata, prompt/skill versions, context manifest, allowed context artifact ids | `requirement_understanding` parsed artifact with normalized summary, acceptance criteria, constraints, assumptions, ambiguities, and source references; raw LLM output artifact when applicable | May write AITask artifacts and the parsed payload consumed by RequirementReview. Must not edit Requirement content, module, project settings, TestCase, or GeneratedCaseCandidate rows | No approval gate inside the agent. Human clarification happens by normal requirement editing or review outside this step | On schema failure, mark the AITask step failed, persist raw/error artifacts, and do not continue to case generation. On incomplete input, fallback is an artifact with `insufficient_requirement_detail` findings and no automatic promotion | `agent_step=requirement_understanding`, `requirement_id`, `context_manifest_artifact_id`, `ambiguity_count`, `acceptance_criteria_count`, `failure_code` |
+| RiskAnalysisAgent | RequirementUnderstandingAgent output, RequirementReview scores/issues when available, same-project context artifacts, target test types | `risk_analysis` artifact with risk items, severity, likelihood, affected flows, suggested coverage, and traceable source refs | May write AITask artifacts and derived risk fields in RequirementReview or case generation output. Must not create TestCase records or approve candidates | No approval gate. Risk findings are shown to the later reviewer | If risk scoring fails, fallback to `risk_level=unknown` with an error finding; valid understanding output may still proceed, but high-risk unknowns must be visible to review | `agent_step=risk_analysis`, `risk_item_count`, `max_risk_level`, `source_requirement_understanding_artifact_id`, `fallback_applied` |
+| CoverageAnalysisAgent | RequirementUnderstandingAgent output, RiskAnalysisAgent output, existing approved TestCase summaries when available, generated candidate summaries when retrying | `coverage_analysis` artifact with requirement-to-risk-to-case matrix, uncovered criteria, duplicate-sensitive areas, and gap notes | May write AITask artifacts and candidate evidence fields such as `covered_risk_ids` and `coverage_gap_notes` during validated case generation persistence. Must not mutate approved TestCase rows | No approval gate. Coverage gaps are review evidence | If coverage cannot be computed, fallback to `coverage_status=unknown`; candidate generation may continue only with visible gap findings and without auto approval | `agent_step=coverage_analysis`, `covered_requirement_ref_count`, `gap_count`, `matrix_artifact_id`, `failure_code` |
+| TestDesignAgent | Understanding, risk, and coverage artifacts; target test types; project default language/test type; normalized KnowledgeEvidence when present | `test_design` artifact with scenario outlines, positive/negative/boundary partitions, data needs, priority rationale, and traceability refs | May write AITask artifacts and transient case generation design payloads. Must not create GeneratedCaseCandidate or TestCase rows directly | No approval gate | If design output is invalid, fail the step and do not call CaseGenerationAgent. If only some scenario outlines are invalid, fallback may drop invalid outlines and record `partial_design_used=true` | `agent_step=test_design`, `scenario_outline_count`, `target_test_types`, `partial_design_used`, `schema_validation_status` |
+| CaseGenerationAgent | TestDesignAgent output, requirement read model, risk and coverage artifacts, target test types, prompt/skill versions, context manifest | `case_generation_output` artifact plus GeneratedCaseCandidate rows with `status=generated`, traceability fields, review findings, knowledge evidence refs, and raw/parsed output artifacts | May create GeneratedCaseCandidate rows and AITask artifacts through the existing case generation task. Must not create TestCase records, set candidate status to approved, execute automation, or generate reports | Human gate is required after generation; every candidate remains review-gated | Invalid candidates are rejected from persistence with validation findings. If no valid candidate remains, the case generation task fails or returns an empty candidate list with error artifacts. No fallback may create a TestCase | `agent_step=case_generation`, `case_generation_task_id`, `candidate_ids`, `valid_candidate_count`, `invalid_candidate_count`, `failure_code` |
+| CaseReviewAgent | GeneratedCaseCandidate rows, case generation artifacts, risk/coverage/design artifacts, normalized KnowledgeEvidence, reviewer-visible candidate fields | `case_review` artifact with quality score, findings, optimization suggestions, missing evidence, and recommended reviewer action | May write AITask artifacts and candidate review evidence fields such as `quality_score`, `review_findings`, and optimization notes. Must not approve, reject, or promote a candidate | Human gate is required. Only explicit candidate review actions may approve, approve after edit, reject, or request optimization | If review analysis fails, leave candidate status unchanged and surface `case_review_unavailable`. Human review can still proceed from persisted candidate content, but without auto approval | `agent_step=case_review`, `candidate_id`, `quality_score`, `finding_count`, `recommended_action`, `human_gate=required` |
+| DedupAgent | GeneratedCaseCandidate rows, candidate review artifacts, approved TestCase summaries, requirement refs, normalized steps/expected results | `dedup_analysis` artifact with duplicate clusters, similarity reasons, keep/drop recommendations, and affected candidate ids | May write AITask artifacts and candidate review findings. Must not delete, merge, archive, reject, or approve candidates and must not mutate TestCase rows | Human gate is required for any duplicate resolution that changes candidate status | If dedup fails, fallback to `dedup_status=unknown`; candidates remain reviewable and must not be auto-promoted because dedup evidence is missing | `agent_step=dedup`, `candidate_id`, `duplicate_cluster_id`, `duplicate_candidate_ids`, `dedup_status`, `fallback_applied` |
+| AutomationReadinessAgent | Candidate content, TestDesignAgent output, project settings, ToolDefinition metadata, repository/language hints, existing TestCommand metadata when available | `automation_readiness` artifact and candidate field such as `automation_readiness` with blockers, suggested framework, required test data, and manual-only reasons | May write AITask artifacts and candidate readiness/review evidence. Must not create AutomationDraft, ToolInvocation, TestRun, TestCommand, repository changes, or code files | Human gate remains required for candidate approval. Automation draft creation is a later explicit workflow | If readiness analysis fails, fallback to `automation_readiness=unknown` with blocker findings. This must not block manual review or start automation | `agent_step=automation_readiness`, `candidate_id`, `readiness`, `blocker_count`, `suggested_framework`, `failure_code` |
+
+Workflow boundary rules:
+
+- This section defines artifact and state contracts only. It does not create
+  `POST /api/agent-workflows`, `POST /api/agents/run`, or any other new API
+  endpoint.
+- The workflow reuses AITask evidence and existing case generation/review
+  surfaces. It does not add a separate orchestrator runtime, queue, scheduler,
+  graph executor, or provider runtime.
+- GeneratedCaseCandidate may become TestCase only through the existing human
+  review action in `POST /api/case-review/items/{id}/approve`.
+- Agent recommendations, quality scores, dedup clusters, coverage matrices, and
+  automation readiness values are review evidence only; they must not
+  automatically promote, approve, reject, archive, merge, execute, or report.
+- `used_knowledge=true` remains invalid unless existing deterministic local
+  retrieval evidence is present. This workflow must not enable RAG runtime, MCP
+  runtime, external provider calls, vector indexes, embeddings, reranking, graph
+  extraction, RBAC, tenants, permissions, marketplace, cloud sync, or remote
+  CI/CD provider behavior.
+
 ### 3.5 List Candidate Cases
 
 `GET /api/case-generation/tasks/{id}/candidates`

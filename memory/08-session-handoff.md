@@ -1,5 +1,31 @@
 # Session Handoff
 
+## 2026-07-02 Slice 32 Agent Workflow Contract
+
+Completed:
+
+- Defined requirement-to-reviewed-case workflow contracts in API, state-machine,
+  prompt/skill, and slice docs.
+- The contract covers RequirementUnderstandingAgent, RiskAnalysisAgent,
+  CoverageAnalysisAgent, TestDesignAgent, CaseGenerationAgent,
+  CaseReviewAgent, DedupAgent, and AutomationReadinessAgent.
+- Contract records per-agent input evidence, output/write permission,
+  prompt/skill seed, human gate, failure behavior, and trace fields.
+- `NEXT_AI_TASK.md` now points to Slice 32 Task 3: Add agent workflow contract
+  golden smoke.
+
+Verification:
+
+```bash
+rg -n "RequirementUnderstandingAgent|CaseReviewAgent|human gate|write permission|failure behavior" docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-32-agent-workflow-contract.md
+git diff --check
+```
+
+Next recommended task:
+
+- Commit `docs(v2): define agent workflow contract`.
+- Continue Slice 32 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-02 Slice 32 Agent Workflow Contract Plan
 
 Completed:
