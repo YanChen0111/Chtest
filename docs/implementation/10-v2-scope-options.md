@@ -1683,3 +1683,90 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines feedback sources, draft outputs,
   artifact evidence, human review, prompt eligibility, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Knowledge feedback contract.
+
+Why it was selected:
+
+- The prompt/skill seed set already included KnowledgeFeedbackAgent, but Chtest
+  did not have a contract for converting reviewed outcomes into draft
+  knowledge feedback.
+- Slice 34 defined draft-only KnowledgeFeedbackDraft input evidence, output
+  fields, prompt/skill trace rules, artifact evidence, unsupported claims,
+  human review gates, and failure behavior.
+- The slice kept feedback from automatically creating TestKnowledgeCard rows,
+  becoming prompt-eligible, or mutating historical review/failure/report/case
+  evidence.
+
+Completed slice name:
+
+```text
+Slice 34: Knowledge Feedback Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- Knowledge feedback remains draft-only and review-gated.
+- No KnowledgeFeedbackAgent runtime, TestKnowledgeCard CRUD, prompt-eligible
+  auto-marking, automatic knowledge ingestion, provider calls, vector database,
+  embeddings, reranking, graph runtime, MCP runtime, artifact mutation,
+  historical evidence mutation, generated-case auto-approval, runner behavior,
+  report behavior, RBAC, tenants, permissions, or remote CI provider behavior
+  were added.
+
+## Recommended Next V2 Slice
+
+Recommended: Knowledge feedback review gate contract.
+
+Why:
+
+- Slice 34 defines draft feedback, but the next boundary is how a human review
+  gate may accept, reject, or request revision on that draft without creating a
+  broad TestKnowledgeCard CRUD surface.
+- This keeps the knowledge feedback loop auditable: draft feedback can become a
+  reviewed knowledge-card candidate only through explicit human action, with
+  prompt eligibility still separated from model confidence.
+- The slice can stay contract-only by defining review actions, source evidence,
+  ReviewHistory entries, prompt eligibility rules, and a golden smoke before
+  any runtime or UI implementation.
+
+Next slice name:
+
+```text
+Slice 35: Knowledge Feedback Review Gate Contract
+```
+
+Smallest useful boundary:
+
+- Define review actions for KnowledgeFeedbackDraft: approve, reject,
+  request_revision, and mark_prompt_eligible only through human review.
+- Define how approved feedback may later feed a TestKnowledgeCard creation
+  workflow without creating CRUD in this slice.
+- Define ReviewHistory and artifact evidence rules for feedback review.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No runtime review API, frontend page, TestKnowledgeCard CRUD,
+  KnowledgeFeedbackAgent runtime, automatic prompt eligibility, automatic
+  knowledge ingestion, vector database, embeddings, reranking, graph runtime,
+  MCP runtime, provider SDK, external provider calls, artifact mutation,
+  historical evidence mutation, generated-case auto-approval, runner behavior,
+  report behavior, RBAC, tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 35 Task 1: Add Knowledge Feedback Review Gate Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines feedback review actions,
+  ReviewHistory, artifact evidence, prompt eligibility, and non-goals.

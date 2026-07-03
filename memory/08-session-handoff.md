@@ -1,5 +1,31 @@
 # Session Handoff
 
+## 2026-07-03 Slice 34 Completion Gate
+
+Completed:
+
+- Closed Slice 34: Knowledge Feedback Contract.
+- Recorded completed task commits in the Slice 34 task table:
+  - Task 1: `83abc73`;
+  - Task 2: `f351634`;
+  - Task 3: `aa66538`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 34
+  completion and Slice 35 recommendation.
+- `NEXT_AI_TASK.md` now points to Slice 35 Task 1: Add Knowledge Feedback
+  Review Gate Contract task plan.
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_knowledge_feedback_contract_golden.py backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q
+git diff --check
+```
+
+Next recommended task:
+
+- Commit `docs(v2): complete knowledge feedback contract slice`.
+- Continue Slice 35 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 34 Knowledge Feedback Golden Smoke
 
 Completed:
