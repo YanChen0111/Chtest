@@ -222,6 +222,26 @@ Global rules:
 | DedupAgent | `case_dedup:v1` / `testcase-review-skill:v1` | GeneratedCaseCandidate drafts, reviewed case ids when supplied, case titles/steps/expected results, requirement and risk refs, review findings. | Dedup draft with duplicate groups, similarity reasons, keep/merge/split suggestions, and evidence refs; write permission is AITask output plus dedup suggestion artifact only. | Duplicate claims must cite matching fields; keep/merge suggestions must preserve requirement/risk coverage; schema must pass. | Do not delete, merge, hide, or mutate cases; do not infer duplicates from title alone; do not promote candidates. | Human gate requires reviewer confirmation before any merge, removal, or canonical case change. | Return `UNABLE_TO_DEDUP_CASES`; leave all candidates unchanged and mark dedup status inconclusive. |
 | AutomationReadinessAgent | `automation_readiness:v1` / `automation-draft-skill:v1` | Reviewed candidate drafts, review findings, dedup suggestions, target framework notes, execution constraints, known test data/dependency evidence. | Automation readiness draft with readiness status, blockers, data/fixture needs, suggested framework fit, risk notes, and trace refs; write permission is AITask output plus readiness fields on candidate draft only. | Must distinguish automatable, manual-only, blocked, and needs-design states; blockers must cite evidence; no readiness claim without preconditions and expected results; schema must pass. | Do not generate automation code, execute tests, create runner commands, mutate repositories, call providers, or promote candidates. | Human gate requires automation owner review before automation drafting or implementation work is scheduled. | Return `UNABLE_TO_ASSESS_AUTOMATION_READINESS`; readiness remains unknown and no automation task may be created from the failed output. |
 
+## 6.2 Knowledge Feedback Seed Contract
+
+KnowledgeFeedbackAgent is bound to `knowledge_feedback:v1` and
+`knowledge-feedback-skill:v1`. This seed contract is draft-only: it does not
+enable runtime orchestration, TestKnowledgeCard CRUD, prompt-eligible
+auto-marking, automatic knowledge ingestion, provider calls, vector search,
+graph runtime, MCP runtime, tool execution, or historical evidence mutation.
+
+| Agent | PromptVersion / SkillVersion seed | Input evidence | Output contract and write permission | Quality gates | Forbidden actions | Human gate | Failure behavior |
+|---|---|---|---|---|---|---|---|
+| KnowledgeFeedbackAgent | `knowledge_feedback:v1` / `knowledge-feedback-skill:v1` | Accepted/rejected GeneratedCaseCandidate summaries, reviewed TestCase summaries, ReviewHistory comments/actions/evidence ids, FailureAnalysis summaries, Report summaries/evidence manifests, TestRun/TestResult summaries, normalized KnowledgeEvidence, existing TestKnowledgeCard summaries. | Draft KnowledgeFeedbackDraft entries with feedback_type, draft_knowledge_type, source_entity_type/id, source_quote_or_hash, source_span, recommendation, confidence, used_knowledge_evidence_ids, unsupported_claims, review_findings, `prompt_eligible=false`; write permission is AITask output plus feedback draft artifact only. | Every feedback item cites source evidence; accepted and rejected examples are labeled separately; failure/report-derived bug patterns cite execution or report evidence; schema passes; unsupported claims remain visible. | Do not create or approve TestKnowledgeCard rows, mark prompt-eligible, mutate ReviewHistory/FailureAnalysis/Report/TestRun/TestCase/GeneratedCaseCandidate/Artifact rows, call providers, use MCP/tools, or fabricate fallback knowledge. | Human review is required before feedback can become a TestKnowledgeCard or prompt-eligible knowledge. | Return `UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK` with empty feedback and visible unsupported claims when evidence is insufficient. |
+
+Trace requirements:
+
+- Record `prompt_version`, `skill_version`, prompt hash, skill hash, input
+  evidence ids, output artifact ids, schema validation status, unsupported
+  claim count, and failure code.
+- Model confidence is advisory only. It must not imply approval or prompt
+  eligibility.
+
 ## 7. 输出 JSON 约束
 
 ### 7.1 用例生成输出

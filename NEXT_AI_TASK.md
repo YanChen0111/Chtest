@@ -10,13 +10,13 @@ Slice 34: Knowledge Feedback Contract.
 
 ## Current Task
 
-Slice 34 Task 1: Add Knowledge Feedback Contract task plan.
+Slice 34 Task 3: Add Knowledge Feedback Contract golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for KnowledgeFeedbackAgent feedback
-contracts before any feedback runtime, TestKnowledgeCard CRUD, or prompt
-eligibility automation exists.
+After this task, Chtest has a golden smoke proving the KnowledgeFeedbackAgent
+contract remains draft-only, review-gated, and free of feedback runtime side
+effects.
 
 ## Must Read
 
@@ -43,14 +43,15 @@ eligibility automation exists.
 Create or update only these files for the current task:
 
 ```text
+backend/app/tests/golden/test_knowledge_feedback_contract_golden.py
+docs/fixtures/22-knowledge-feedback-contract-golden.md
 docs/implementation/slices/slice-34-knowledge-feedback-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
+Golden task only. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, KnowledgeFeedbackAgent runtime,
 TestKnowledgeCard CRUD, prompt-eligible auto-marking, automatic knowledge
 ingestion, external provider integrations, vector database, embeddings,
@@ -62,29 +63,28 @@ behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-34-knowledge-feedback-contract.md
-rg -n "Knowledge Feedback Contract|KnowledgeFeedbackAgent|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-34-knowledge-feedback-contract.md NEXT_AI_TASK.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_knowledge_feedback_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: Slice 34 plan file exists, required plan terms are present,
-and diff check passes.
+Expected result: Knowledge feedback contract golden smoke and diff check pass.
 
 ## Acceptance
 
-- Slice 34 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names KnowledgeFeedbackAgent, accepted/rejected cases,
-  ReviewHistory, FailureAnalysis, Report, KnowledgeEvidence, draft feedback,
-  human review, prompt eligibility, and feedback fallback boundaries.
-- `NEXT_AI_TASK.md` points to Task 2.
+- Golden names KnowledgeFeedbackAgent, knowledge_feedback prompt,
+  knowledge-feedback-skill, input evidence sources, draft feedback fields,
+  unsupported claims, human review, prompt eligibility, and failure behavior.
+- Golden proves no TestKnowledgeCard auto-creation, prompt-eligible
+  auto-marking, historical evidence mutation, provider call, vector index,
+  graph job, MCP runtime, artifact mutation, review bypass, or auto-promotion
+  is created by the contract.
 
 ## Commit Message
 
 ```text
-docs(v2): add knowledge feedback contract plan
+test(golden): add knowledge feedback contract smoke
 ```
 
 ## Next Task
 
-Slice 34 Task 2: Define KnowledgeFeedbackAgent draft feedback contracts.
+Slice 34 Completion Gate.

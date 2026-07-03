@@ -77,6 +77,20 @@ lists same-project source Artifact ids, hashes, sections, and safe quote/hash
 pointers. `knowledge_evidence.json` stores normalized KnowledgeEvidence objects
 derived from the card or used by generated cases.
 
+### 3.3.2 Knowledge Feedback Drafts
+
+```text
+artifacts/projects/{project_id}/knowledge-feedback/{ai_task_id}/
+  feedback_sources.json
+  knowledge_feedback.json
+  unsupported_claims.json
+  schema_validation.json
+```
+
+`knowledge_feedback.json` stores draft KnowledgeFeedbackAgent output. It is
+review evidence only and must not create TestKnowledgeCard rows, mark feedback
+prompt-eligible, or mutate historical review/failure/report/case evidence.
+
 ### 3.4 Automation Draft
 
 ```text
@@ -533,6 +547,30 @@ Test knowledge card artifact rules:
   call external providers, invoke MCP runtime, mutate artifacts, generate
   reports, change runner behavior, call remote CI providers, add RBAC, create
   tenants, or change permissions.
+
+Knowledge feedback artifact rules:
+
+- `knowledge_feedback.json` is stored as an Artifact with
+  `artifact_type=knowledge_feedback`, `owner_entity_type=AITask`, and
+  `owner_entity_id=ai_task_id`.
+- `feedback_sources.json` must include only same-project source ids and safe
+  summaries from accepted/rejected GeneratedCaseCandidate, TestCase,
+  ReviewHistory, FailureAnalysis, Report, TestRun/TestResult, KnowledgeEvidence,
+  or existing TestKnowledgeCard records.
+- `knowledge_feedback.json` stores draft feedback entries with feedback type,
+  draft knowledge type, source entity, source quote/hash, recommendation,
+  confidence, used KnowledgeEvidence ids, unsupported claims, review findings,
+  `prompt_eligible=false`, and draft status.
+- `unsupported_claims.json` stores claims rejected for insufficient source
+  evidence. Unsupported claims must remain visible and must not be converted
+  into fallback knowledge.
+- Knowledge feedback artifacts must not create or mutate TestKnowledgeCard
+  rows, set `allowed_for_prompt=true`, mutate ReviewHistory, FailureAnalysis,
+  Report, TestRun, TestResult, TestCase, GeneratedCaseCandidate, or Artifact
+  rows, approve generated cases, promote TestCase rows, generate Reports, run
+  retrieval, call external providers, invoke MCP runtime, create vector indexes,
+  create embeddings, rerank, run graph jobs, call remote CI providers, add
+  RBAC, create tenants, or change permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

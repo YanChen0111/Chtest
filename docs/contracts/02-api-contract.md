@@ -930,6 +930,80 @@ Slice 31 candidate persistence/display rules:
   vectors, create embeddings, run graph jobs, call external providers, mutate
   artifacts, invoke MCP runtime, or call remote CI providers.
 
+### 3.5.1 Knowledge Feedback Contract
+
+This section is contract-only. It defines the API payload shape that a future
+KnowledgeFeedbackAgent may return through existing AITask/artifact surfaces. It
+does not add a `POST /api/knowledge-feedback` endpoint or runtime worker.
+
+Knowledge feedback input evidence may include:
+
+- accepted and rejected GeneratedCaseCandidate summaries;
+- reviewed TestCase summaries;
+- ReviewHistory comments, actions, reviewer labels, and evidence artifact ids;
+- FailureAnalysis summaries;
+- Report summaries and evidence manifests;
+- TestRun/TestResult execution evidence summaries;
+- normalized KnowledgeEvidence and existing TestKnowledgeCard summaries.
+
+Draft feedback response shape:
+
+```json
+{
+  "agent_name": "KnowledgeFeedbackAgent",
+  "prompt_version": "knowledge_feedback:v1",
+  "skill_version": "knowledge-feedback-skill:v1",
+  "knowledge_feedback": [
+    {
+      "feedback_id": "kf-expired-coupon-boundary",
+      "feedback_type": "positive_example",
+      "draft_knowledge_type": "existing_test_case_pattern",
+      "source_entity_type": "TestCase",
+      "source_entity_id": "00000000-0000-0000-0000-000000000901",
+      "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
+      "source_span": "steps[1-4]",
+      "recommendation": "Reuse this reviewed boundary pattern for expired coupon validation.",
+      "confidence": 86,
+      "used_knowledge_evidence_ids": ["ke-expired-coupon-boundary"],
+      "unsupported_claims": [],
+      "review_findings": ["Source TestCase is reviewed and cites evidence"],
+      "prompt_eligible": false,
+      "status": "draft"
+    }
+  ],
+  "unsupported_claims": [],
+  "failure_code": null
+}
+```
+
+Knowledge feedback hard rules:
+
+- KnowledgeFeedbackAgent output is draft feedback only. It must not create,
+  approve, archive, or mutate TestKnowledgeCard rows.
+- `prompt_eligible=false` is mandatory until a future human review workflow
+  explicitly approves prompt eligibility.
+- Every draft feedback item must cite a source entity, same-project Artifact,
+  or normalized KnowledgeEvidence. Free-floating model text is not valid source
+  evidence.
+- Accepted and rejected examples must remain separately labeled. Rejected cases
+  must not become positive knowledge without human review.
+- Failure- and report-derived feedback must cite FailureAnalysis, Report,
+  TestRun/TestResult, or artifact evidence.
+- `confidence` and `review_findings` are review aids only. They must not mark
+  feedback approved, prompt-eligible, or safe for automatic reuse.
+- Insufficient source evidence returns
+  `UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK` with visible `unsupported_claims` and
+  no silent fallback knowledge.
+- Knowledge feedback responses must preserve `prompt_version`, `skill_version`,
+  input evidence ids, output artifact ids, schema validation status, and
+  failure code on the owning AITask trace.
+- The contract must not mutate ReviewHistory, FailureAnalysis, Report,
+  TestRun, TestCase, GeneratedCaseCandidate, Artifact, or TestKnowledgeCard
+  rows; create TestCase records; approve generated cases; generate reports;
+  run retrieval; index vectors; create embeddings; rerank; run graph jobs;
+  call external providers; invoke MCP runtime; call remote CI providers; add
+  RBAC; create tenants; or change permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

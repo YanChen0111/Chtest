@@ -1007,6 +1007,55 @@ KnowledgeEvidence rules:
   external provider calls, MCP runtime calls, RBAC, tenants, permissions,
   marketplace, cloud sync, release, or remote CI/CD behavior.
 
+## 31.3 KnowledgeFeedbackDraft
+
+KnowledgeFeedbackDraft is the draft-only output contract for
+KnowledgeFeedbackAgent. It may be represented inside AITask output or a future
+artifact/table, but Slice 34 does not implement a new table.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| feedback_id | varchar(120) | yes | none | Stable id inside the owning artifact/task |
+| project_id | uuid | yes | none | FK Project |
+| feedback_type | varchar(80) | yes | none | positive_example, negative_example, bug_pattern, coverage_gap, test_strategy_note, regression_reminder |
+| draft_knowledge_type | varchar(80) | yes | none | Target TestKnowledgeCard knowledge_type candidate |
+| source_entity_type | varchar(80) | yes | none | GeneratedCaseCandidate, TestCase, ReviewHistory, FailureAnalysis, Report, TestRun, TestResult, KnowledgeEvidence |
+| source_entity_id | uuid | no | null | Source entity id when available |
+| source_artifact_ids | uuid[] | yes | {} | Same-project source Artifact ids |
+| source_quote_or_hash | text | yes | none | Bounded quote or hash pointer |
+| source_span | varchar(255) | no | null | Section, step, log span, report section, or review note pointer |
+| recommendation | text | yes | none | Draft knowledge recommendation |
+| confidence | int | yes | 0 | 0-100 model confidence, not approval |
+| used_knowledge_evidence_ids | text[] | yes | {} | KnowledgeEvidence ids cited by feedback |
+| unsupported_claims_json | jsonb | yes | [] | Claims rejected for insufficient evidence |
+| review_findings_json | jsonb | yes | [] | Reviewer-facing quality notes |
+| prompt_eligible | bool | yes | false | Always false until human review approves |
+| status | varchar(40) | yes | draft | draft, needs_review, rejected, approved_by_human |
+
+KnowledgeFeedbackDraft rules:
+
+- KnowledgeFeedbackAgent may propose draft feedback only. It must not create,
+  approve, archive, or mutate TestKnowledgeCard rows.
+- `prompt_eligible=false` is mandatory for agent-created drafts. Prompt
+  eligibility must be granted only by a later explicit human review workflow.
+- Every draft must cite a reviewed source entity, same-project Artifact, or
+  normalized KnowledgeEvidence. Free-floating model text is not valid source
+  evidence.
+- Accepted and rejected examples must remain distinct through
+  `feedback_type`; rejected examples must not be converted into positive
+  knowledge without human review.
+- Failure- and report-derived bug patterns or coverage gaps must cite
+  FailureAnalysis, Report, TestRun/TestResult, or evidence artifact ids.
+- `confidence` is advisory and must not approve feedback, make it
+  prompt-eligible, promote GeneratedCaseCandidate, or mutate historical
+  ReviewHistory, FailureAnalysis, Report, TestRun, TestCase, or Artifact rows.
+- Failure output uses `UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK` with
+  `unsupported_claims_json` when source evidence is insufficient.
+- Slice 34 must not add KnowledgeFeedbackAgent runtime, TestKnowledgeCard CRUD,
+  automatic knowledge ingestion, vector indexes, embeddings, reranking, graph
+  runtime, external provider calls, MCP runtime calls, RBAC, tenants,
+  permissions, marketplace, cloud sync, release, or remote CI/CD behavior.
+
 ## 32. ToolInvocation
 
 | Field | Type | Required | Default | Notes |

@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-03 Slice 34 Knowledge Feedback Contracts
+
+### Completed
+
+- Added `KnowledgeFeedbackDraft` data contract as draft-only feedback output.
+- Added API contract section for KnowledgeFeedbackAgent draft responses, input
+  evidence sources, prompt/skill trace fields, unsupported claims, and
+  forbidden side effects.
+- Added KnowledgeFeedbackDraft state contract: draft, needs_review,
+  approved_by_human, and rejected remain separate from TestKnowledgeCard state
+  and prompt eligibility.
+- Added artifact rules for `knowledge_feedback.json`, `feedback_sources.json`,
+  `unsupported_claims.json`, and draft feedback trace evidence.
+- Added prompt/skill contract binding for `knowledge_feedback:v1` and
+  `knowledge-feedback-skill:v1`.
+- Updated `NEXT_AI_TASK.md` to Slice 34 Task 3.
+
+### Verification
+
+- `rg -n "KnowledgeFeedbackAgent|knowledge_feedback|draft feedback|prompt-eligible|UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK|ReviewHistory|FailureAnalysis|Report|KnowledgeEvidence" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-34-knowledge-feedback-contract.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): define knowledge feedback contracts`.
+- Continue Slice 34 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 34 Knowledge Feedback Contract Plan
 
 ### Completed

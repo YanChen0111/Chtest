@@ -88,6 +88,46 @@ TestKnowledgeCard / KnowledgeEvidence rules:
   vector indexing, embeddings, reranking, graph extraction, external provider
   calls, MCP runtime calls, artifact mutation, runner execution, report
   generation, RBAC, tenant, permission, or remote CI provider behavior.
+
+## 7.3 KnowledgeFeedbackDraft State Contract
+
+KnowledgeFeedbackAgent output is draft feedback evidence. It is not a
+TestKnowledgeCard state and does not change TestKnowledgeCard prompt
+eligibility by itself.
+
+```text
+draft -> needs_review -> approved_by_human
+draft -> needs_review -> rejected
+draft -> rejected
+needs_review -> draft
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| draft | submit_for_review | needs_review | AITask worker or API | Draft feedback is visible for human review |
+| draft | reject_invalid_source | rejected | AITask worker or reviewer | Source evidence is insufficient or unsafe |
+| needs_review | approve_feedback | approved_by_human | User/API | May later feed a separate TestKnowledgeCard workflow |
+| needs_review | reject_feedback | rejected | User/API | Feedback is retained as rejected evidence |
+| needs_review | request_revision | draft | User/API | Feedback needs more source evidence |
+
+Knowledge feedback state rules:
+
+- KnowledgeFeedbackAgent may create only draft feedback artifacts or payloads.
+  It must not create, approve, archive, delete, or mutate TestKnowledgeCard
+  rows.
+- `approved_by_human` in this draft contract is not the same as
+  `TestKnowledgeCard.active` and must not mark a card `allowed_for_prompt=true`
+  without a later explicit knowledge-card review workflow.
+- Every state transition must preserve source evidence ids, prompt_version,
+  skill_version, schema validation status, and unsupported claims.
+- `UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK` leaves the feedback output empty and
+  records unsupported claims; it must not create fallback knowledge.
+- Knowledge feedback must not mutate ReviewHistory, FailureAnalysis, Report,
+  TestRun, TestResult, TestCase, GeneratedCaseCandidate, Artifact, or
+  TestKnowledgeCard rows; approve generated cases; promote TestCase rows;
+  generate reports; start retrieval; index vectors; create embeddings; rerank;
+  run graph jobs; call external providers; invoke MCP runtime; call remote CI
+  providers; add RBAC; create tenants; or change permissions.
 - Slice 31 persistence of KnowledgeEvidence display fields happens when a
   GeneratedCaseCandidate is created from validated AI output. It does not add a
   new review state, does not count as `open_review`, and does not append
