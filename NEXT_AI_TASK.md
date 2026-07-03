@@ -6,16 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 33: MCP-Ready ToolDefinition And KnowledgeAdapter Safety Contract.
+Slice 34: Knowledge Feedback Contract.
 
 ## Current Task
 
-Slice 33 Completion Gate.
+Slice 34 Task 1: Add Knowledge Feedback Contract task plan.
 
 ## Product Value Answer
 
-After this task, Slice 33 is validated end to end and the next narrow V2 task
-is selected without adding MCP runtime, provider calls, or tool execution.
+After this task, Chtest has a narrow plan for KnowledgeFeedbackAgent feedback
+contracts before any feedback runtime, TestKnowledgeCard CRUD, or prompt
+eligibility automation exists.
 
 ## Must Read
 
@@ -24,8 +25,8 @@ is selected without adding MCP runtime, provider calls, or tool execution.
 3. `docs/contracts/02-api-contract.md`
 4. `docs/contracts/03-state-machines.md`
 5. `docs/contracts/05-prompt-skill-contract.md`
-6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
+6. `prompts/knowledge_feedback/v1.md`
+7. `skills/knowledge-feedback-skill/v1.md`
 8. `docs/implementation/11-final-rag-agent-strategy.md`
 9. `memory/08-session-handoff.md`
 10. `memory/07-dev-log.md`
@@ -42,41 +43,48 @@ is selected without adding MCP runtime, provider calls, or tool execution.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md
+docs/implementation/slices/slice-34-knowledge-feedback-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion gate only. Do not add frontend code, backend runtime feature code,
-migrations, package upgrades, external provider integrations, vector database,
-embeddings, reranking, background indexing, graph runtime, MCP runtime, MCP
-server/client transport, provider SDK, credentials, TestKnowledgeCard CRUD,
-artifact upload/mutation/delete, generated-case auto-approval, runner behavior
-changes, report generation behavior changes, remote CI provider behavior, RBAC,
-tenants, or permissions.
+Planning-only task. Do not add frontend code, backend runtime feature code,
+migrations, package upgrades, KnowledgeFeedbackAgent runtime,
+TestKnowledgeCard CRUD, prompt-eligible auto-marking, automatic knowledge
+ingestion, external provider integrations, vector database, embeddings,
+reranking, graph runtime, MCP runtime, provider SDK, credentials, artifact
+upload/mutation/delete, historical review/failure/report/TestCase mutation,
+generated-case auto-approval, runner behavior changes, report generation
+behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py backend/app/tests/golden/test_agent_workflow_contract_golden.py -q
+test -f docs/implementation/slices/slice-34-knowledge-feedback-contract.md
+rg -n "Knowledge Feedback Contract|KnowledgeFeedbackAgent|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-34-knowledge-feedback-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: Slice 33 focused golden verification and diff check pass.
+Expected result: Slice 34 plan file exists, required plan terms are present,
+and diff check passes.
 
 ## Acceptance
 
-- Slice 33 task table records completed task commits.
-- Focused golden verification passes.
-- `NEXT_AI_TASK.md` points to the next narrow V2 task.
+- Slice 34 plan exists with product value, non-goals, task table, expected
+  files, verification commands, and commit messages.
+- The plan names KnowledgeFeedbackAgent, accepted/rejected cases,
+  ReviewHistory, FailureAnalysis, Report, KnowledgeEvidence, draft feedback,
+  human review, prompt eligibility, and feedback fallback boundaries.
+- `NEXT_AI_TASK.md` points to Task 2.
 
 ## Commit Message
 
 ```text
-docs(v2): complete mcp-ready tool knowledge safety slice
+docs(v2): add knowledge feedback contract plan
 ```
 
 ## Next Task
 
-Select the next narrow V2 task after Slice 33 completion.
+Slice 34 Task 2: Define KnowledgeFeedbackAgent draft feedback contracts.

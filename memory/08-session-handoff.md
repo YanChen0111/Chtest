@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-03 Slice 33 Completion Gate
+
+Completed:
+
+- Closed Slice 33: MCP-Ready ToolDefinition And KnowledgeAdapter Safety
+  Contract.
+- Recorded completed task commits in the Slice 33 task table:
+  - Task 1: `2c18e57`;
+  - Task 2: `9a872cd`;
+  - Task 3: `cdcc23f`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 33
+  completion and Slice 34 recommendation.
+- `NEXT_AI_TASK.md` now points to Slice 34 Task 1: Add Knowledge Feedback
+  Contract task plan.
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py backend/app/tests/golden/test_agent_workflow_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- Focused golden verification: `6 passed`.
+- `git diff --check`: clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): complete mcp-ready tool knowledge safety slice`.
+- Continue Slice 34 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 33 MCP-Ready Tool/Knowledge Safety Golden Smoke
 
 Completed:

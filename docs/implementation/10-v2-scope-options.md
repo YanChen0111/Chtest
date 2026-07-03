@@ -1590,3 +1590,96 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines ToolDefinition, ToolInvocation,
   KnowledgeAdapter, artifact, provider-state, and review boundaries.
+
+## Completed Next V2 Slice
+
+Completed: MCP-ready ToolDefinition and KnowledgeAdapter safety contract
+review.
+
+Why it was selected:
+
+- Slice 32 defined the agent workflow boundary, but future tool and retrieval
+  integration still needed one safety contract before any runtime or provider
+  work.
+- Slice 33 defined strict ToolDefinition schema, risk, approval, timeout,
+  artifact policy, ToolInvocation approval/failure/artifact behavior, and
+  KnowledgeAdapter provider-state fallback behavior.
+- The slice kept MCP and provider work contract-only and evidence-only before
+  any MCP runtime, provider SDK, vector, graph, or external retrieval path.
+
+Completed slice name:
+
+```text
+Slice 33: MCP-Ready ToolDefinition And KnowledgeAdapter Safety Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact safety contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- ToolDefinition readiness and KnowledgeAdapter provider_state are metadata
+  only. ToolInvocation output and KnowledgeEvidence remain evidence only.
+- No MCP runtime, MCP server/client transport, provider SDK, credentials,
+  external provider calls, vector database, embeddings, reranking, graph
+  runtime, artifact mutation, generated-case auto-approval, report behavior,
+  runner behavior, RBAC, tenants, permissions, or remote CI provider behavior
+  were added.
+
+## Recommended Next V2 Slice
+
+Recommended: Knowledge feedback contract.
+
+Why:
+
+- The integrated prompt/skill seed work already includes
+  `KnowledgeFeedbackAgent`, `knowledge_feedback:v1`, and
+  `knowledge-feedback-skill:v1`, but Chtest does not yet have a contract that
+  defines how accepted cases, rejected cases, review comments, failures, and
+  reports become draft knowledge feedback.
+- Knowledge feedback is the next feedback-loop boundary after generated-case
+  evidence, agent workflow, and tool/provider safety. Without a contract,
+  future automation could accidentally make feedback prompt-eligible,
+  mutate historical evidence, or create TestKnowledgeCard rows without human
+  review.
+- The slice can remain small by defining draft-only feedback inputs, outputs,
+  artifact evidence, review gates, failure behavior, and a golden smoke without
+  adding TestKnowledgeCard CRUD or runtime agents.
+
+Next slice name:
+
+```text
+Slice 34: Knowledge Feedback Contract
+```
+
+Smallest useful boundary:
+
+- Define KnowledgeFeedbackAgent input evidence from accepted/rejected cases,
+  ReviewHistory, FailureAnalysis, Report, execution evidence, and normalized
+  KnowledgeEvidence.
+- Define draft feedback output with source entity, source quote/hash,
+  recommendation, confidence, unsupported claims, and review findings.
+- Keep feedback draft-only until human review approves it for TestKnowledgeCard
+  or prompt eligibility.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No KnowledgeFeedbackAgent runtime, TestKnowledgeCard CRUD, prompt-eligible
+  auto-marking, automatic knowledge ingestion, vector database, embeddings,
+  reranking, graph runtime, MCP runtime, provider SDK, external provider calls,
+  artifact mutation, historical review/failure/report/TestCase mutation,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 34 Task 1: Add Knowledge Feedback Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines feedback sources, draft outputs,
+  artifact evidence, human review, prompt eligibility, and non-goals.
