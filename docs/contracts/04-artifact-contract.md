@@ -572,6 +572,36 @@ Knowledge feedback artifact rules:
   create embeddings, rerank, run graph jobs, call remote CI providers, add
   RBAC, create tenants, or change permissions.
 
+Knowledge feedback review gate artifact rules:
+
+- `feedback_review.json` is stored as an Artifact with
+  `artifact_type=feedback_review`. It may be owned by the future
+  KnowledgeFeedbackDraft owner or by the AITask that produced the draft until a
+  dedicated feedback-review entity exists.
+- `feedback_review.json` must include feedback id, review action,
+  reviewer_label, review_comment, evidence_artifact_ids, unsupported claims,
+  prompt eligibility decision, prompt eligibility reason, ReviewHistory id
+  when created, and optional future TestKnowledgeCard handoff payload.
+- `approve_feedback`, `reject_feedback`, `request_revision`, and
+  `mark_prompt_eligible` artifacts are human review evidence. They must not be
+  produced solely by KnowledgeFeedbackAgent output, model confidence, or schema
+  validity.
+- `mark_prompt_eligible` artifacts require prior human approval, safe-to-show
+  evidence, reviewed source citations, and a non-empty prompt eligibility
+  reason. They must not create or mutate TestKnowledgeCard rows in this slice.
+- Rejected feedback review artifacts must remain auditable and must not be
+  cited as positive prompt knowledge.
+- Feedback review artifacts may cite ReviewHistory, but invalid transitions,
+  validation failures, or rejected source evidence must not append successful
+  ReviewHistory.
+- Feedback review artifacts must not add a review runtime API, frontend review
+  page, TestKnowledgeCard CRUD, automatic prompt eligibility, automatic
+  knowledge ingestion, provider calls, MCP runtime, vector/graph runtime,
+  artifact mutation outside declared feedback-review outputs, historical
+  evidence mutation, generated-case auto-approval, runner behavior changes,
+  report generation behavior changes, RBAC, tenants, permissions, or remote CI
+  provider behavior.
+
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 
 - ToolDefinition safety is metadata only. Listing ToolDefinition rows or

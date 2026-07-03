@@ -1031,6 +1031,11 @@ artifact/table, but Slice 34 does not implement a new table.
 | review_findings_json | jsonb | yes | [] | Reviewer-facing quality notes |
 | prompt_eligible | bool | yes | false | Always false until human review approves |
 | status | varchar(40) | yes | draft | draft, needs_review, rejected, approved_by_human |
+| review_action | varchar(80) | no | null | approve_feedback, reject_feedback, request_revision, mark_prompt_eligible |
+| review_history_id | uuid | no | null | ReviewHistory id when a human review event is recorded |
+| review_artifact_id | uuid | no | null | feedback review artifact id when available |
+| prompt_eligibility_reason | text | no | null | Human-entered reason when prompt eligibility is approved or denied |
+| handoff_payload_json | jsonb | yes | {} | Future TestKnowledgeCard handoff payload, not CRUD |
 
 KnowledgeFeedbackDraft rules:
 
@@ -1055,6 +1060,34 @@ KnowledgeFeedbackDraft rules:
   automatic knowledge ingestion, vector indexes, embeddings, reranking, graph
   runtime, external provider calls, MCP runtime calls, RBAC, tenants,
   permissions, marketplace, cloud sync, release, or remote CI/CD behavior.
+
+KnowledgeFeedbackDraft review gate rules:
+
+- `approve_feedback`, `reject_feedback`, `request_revision`, and
+  `mark_prompt_eligible` are human review actions only. Model confidence,
+  review_findings, or schema validity must not apply those actions by itself.
+- `approve_feedback` may move a draft to `approved_by_human` and may prepare a
+  future `handoff_payload_json`, but it must not create TestKnowledgeCard rows
+  in this contract.
+- `reject_feedback` keeps the draft auditable with reviewer rationale and must
+  not convert rejected feedback into positive knowledge.
+- `request_revision` keeps source evidence, unsupported claims, and reviewer
+  notes visible for a later draft; it must not mutate the historical source
+  entities.
+- `mark_prompt_eligible` requires an existing human approval, safe-to-show
+  source evidence, reviewed source citations, and a
+  `prompt_eligibility_reason`. It must not be inferred from `confidence`.
+- A successful human review action appends or references ReviewHistory and may
+  cite a `review_artifact_id`; invalid transitions must not append successful
+  ReviewHistory.
+- Feedback review must not mutate ReviewHistory, FailureAnalysis, Report,
+  TestRun, TestResult, TestCase, GeneratedCaseCandidate, Artifact, or
+  TestKnowledgeCard rows except for a future explicitly scoped review workflow
+  owning the KnowledgeFeedbackDraft itself.
+- Slice 35 must not add a feedback review runtime API, frontend review page,
+  TestKnowledgeCard CRUD, automatic prompt eligibility, provider calls, MCP
+  runtime, vector/graph runtime, artifact mutation, RBAC, tenants,
+  permissions, or remote CI/CD behavior.
 
 ## 32. ToolInvocation
 

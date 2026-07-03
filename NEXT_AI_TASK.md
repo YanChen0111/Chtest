@@ -10,13 +10,13 @@ Slice 35: Knowledge Feedback Review Gate Contract.
 
 ## Current Task
 
-Slice 35 Task 1: Add Knowledge Feedback Review Gate Contract task plan.
+Slice 35 Task 3: Add Knowledge Feedback Review Gate golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for reviewing KnowledgeFeedbackDraft
-outputs before any review runtime, frontend page, or TestKnowledgeCard CRUD
-exists.
+After this task, Chtest has a golden smoke proving KnowledgeFeedbackDraft
+review gates cannot bypass human review, prompt eligibility rules, or
+TestKnowledgeCard boundaries.
 
 ## Must Read
 
@@ -42,14 +42,15 @@ exists.
 Create or update only these files for the current task:
 
 ```text
+backend/app/tests/golden/test_knowledge_feedback_review_gate_contract_golden.py
+docs/fixtures/23-knowledge-feedback-review-gate-golden.md
 docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
+Golden task only. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, feedback review runtime API, frontend review
 page, TestKnowledgeCard CRUD, KnowledgeFeedbackAgent runtime, automatic prompt
 eligibility, automatic knowledge ingestion, external provider integrations,
@@ -62,29 +63,29 @@ permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md
-rg -n "Knowledge Feedback Review Gate|KnowledgeFeedbackDraft|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md NEXT_AI_TASK.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_knowledge_feedback_review_gate_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: Slice 35 plan file exists, required plan terms are present,
-and diff check passes.
+Expected result: knowledge feedback review gate golden smoke and diff check
+pass.
 
 ## Acceptance
 
-- Slice 35 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names KnowledgeFeedbackDraft review actions, human review,
-  ReviewHistory, artifact evidence, TestKnowledgeCard handoff, prompt
-  eligibility, and non-goals.
-- `NEXT_AI_TASK.md` points to Task 2.
+- Golden names KnowledgeFeedbackDraft review actions, ReviewHistory, feedback
+  review artifact, prompt eligibility, TestKnowledgeCard handoff, unsupported
+  claims, human review, and forbidden side effects.
+- Golden proves no runtime review API, TestKnowledgeCard CRUD, prompt-eligible
+  auto-marking, historical evidence mutation, provider call, vector index,
+  graph job, MCP runtime, artifact mutation, review bypass, or auto-promotion
+  is created by the contract.
 
 ## Commit Message
 
 ```text
-docs(v2): add knowledge feedback review gate plan
+test(golden): add knowledge feedback review gate smoke
 ```
 
 ## Next Task
 
-Slice 35 Task 2: Define KnowledgeFeedbackDraft review gate contracts.
+Slice 35 Completion Gate.

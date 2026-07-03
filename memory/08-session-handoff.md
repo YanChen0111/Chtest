@@ -1,5 +1,35 @@
 # Session Handoff
 
+## 2026-07-03 Slice 35 Knowledge Feedback Review Gate Contracts
+
+Completed:
+
+- Updated data, API, state-machine, and artifact contracts for
+  KnowledgeFeedbackDraft review gates.
+- Defined review actions: `approve_feedback`, `reject_feedback`,
+  `request_revision`, and `mark_prompt_eligible`.
+- Defined ReviewHistory linkage, feedback review artifact evidence, prompt
+  eligibility reason, and future TestKnowledgeCard handoff payload boundaries.
+- `NEXT_AI_TASK.md` now points to Slice 35 Task 3: Add Knowledge Feedback
+  Review Gate golden smoke.
+
+Verification:
+
+```bash
+rg -n "KnowledgeFeedbackDraft|approve_feedback|reject_feedback|request_revision|mark_prompt_eligible|ReviewHistory|prompt eligibility|feedback review artifact" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md
+git diff --check
+```
+
+Result:
+
+- Required contract terms were found.
+- `git diff --check`: clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define knowledge feedback review gate contracts`.
+- Continue Slice 35 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 35 Knowledge Feedback Review Gate Plan
 
 Completed:

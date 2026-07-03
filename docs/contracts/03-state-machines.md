@@ -100,6 +100,7 @@ draft -> needs_review -> approved_by_human
 draft -> needs_review -> rejected
 draft -> rejected
 needs_review -> draft
+approved_by_human -> prompt_eligible
 ```
 
 | Current state | Action | Target state | Actor | Notes |
@@ -109,6 +110,7 @@ needs_review -> draft
 | needs_review | approve_feedback | approved_by_human | User/API | May later feed a separate TestKnowledgeCard workflow |
 | needs_review | reject_feedback | rejected | User/API | Feedback is retained as rejected evidence |
 | needs_review | request_revision | draft | User/API | Feedback needs more source evidence |
+| approved_by_human | mark_prompt_eligible | prompt_eligible | User/API | Requires explicit human prompt-eligibility decision |
 
 Knowledge feedback state rules:
 
@@ -118,6 +120,9 @@ Knowledge feedback state rules:
 - `approved_by_human` in this draft contract is not the same as
   `TestKnowledgeCard.active` and must not mark a card `allowed_for_prompt=true`
   without a later explicit knowledge-card review workflow.
+- `prompt_eligible` means a human reviewer explicitly marked the feedback as
+  eligible for future prompt use. It still does not create a TestKnowledgeCard
+  row in this contract.
 - Every state transition must preserve source evidence ids, prompt_version,
   skill_version, schema validation status, and unsupported claims.
 - `UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK` leaves the feedback output empty and
@@ -132,6 +137,32 @@ Knowledge feedback state rules:
   GeneratedCaseCandidate is created from validated AI output. It does not add a
   new review state, does not count as `open_review`, and does not append
   ReviewHistory by itself.
+
+Knowledge feedback review gate rules:
+
+- `approve_feedback`, `reject_feedback`, `request_revision`, and
+  `mark_prompt_eligible` are human review actions. Model confidence, schema
+  validity, quality score, or missing unsupported claims must not execute them
+  automatically.
+- `mark_prompt_eligible` is allowed only after `approved_by_human`, with
+  safe-to-show evidence, reviewed source citations, and a reviewer reason.
+- `request_revision` preserves the previous draft, source evidence, and
+  unsupported claims as audit evidence; it must not mutate historical source
+  entities.
+- `reject_feedback` is terminal for that draft unless a separate new draft is
+  created; rejected feedback must not be reused as positive knowledge.
+- Successful review gate actions append or reference ReviewHistory and may
+  write a feedback review artifact. Invalid transitions and validation failures
+  must not append successful ReviewHistory.
+- Future TestKnowledgeCard handoff is a payload boundary only in this slice;
+  it must not create, approve, archive, delete, or mutate TestKnowledgeCard
+  rows.
+- The review gate must not add a runtime review API, frontend review page,
+  TestKnowledgeCard CRUD, automatic prompt eligibility, provider calls, MCP
+  runtime, vector/graph runtime, artifact mutation, historical evidence
+  mutation, generated-case auto-approval, runner behavior changes, report
+  generation behavior changes, RBAC, tenants, permissions, or remote CI
+  provider behavior.
 
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 

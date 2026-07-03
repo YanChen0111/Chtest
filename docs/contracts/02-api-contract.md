@@ -1004,6 +1004,84 @@ Knowledge feedback hard rules:
   call external providers; invoke MCP runtime; call remote CI providers; add
   RBAC; create tenants; or change permissions.
 
+### 3.5.2 Knowledge Feedback Review Gate Contract
+
+This section is contract-only. It defines the future review payload semantics
+for KnowledgeFeedbackDraft without adding a feedback review endpoint, frontend
+page, TestKnowledgeCard CRUD, or review runtime.
+
+Allowed review actions:
+
+- `approve_feedback`: human accepts the draft feedback as reviewable knowledge
+  input for a later TestKnowledgeCard workflow.
+- `reject_feedback`: human rejects the draft; it remains auditable and cannot
+  be reused as positive knowledge.
+- `request_revision`: human asks for a revised draft while preserving source
+  evidence, unsupported claims, and reviewer notes.
+- `mark_prompt_eligible`: human explicitly marks already approved feedback as
+  eligible for prompt use, subject to safe-to-show evidence and source
+  citations.
+- `create_knowledge_card_candidate`: optional future handoff payload only; it
+  is not TestKnowledgeCard CRUD in this contract.
+
+Review gate payload shape:
+
+```json
+{
+  "feedback_id": "kf-expired-coupon-boundary",
+  "action": "approve_feedback",
+  "reviewer_label": "Default User",
+  "review_comment": "Source case is reviewed and cites stable evidence.",
+  "evidence_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
+  "prompt_eligible": false,
+  "prompt_eligibility_reason": null,
+  "handoff_payload": {
+    "draft_knowledge_type": "existing_test_case_pattern",
+    "source_quote_or_hash": "sha256:reviewed-case-expired-coupon"
+  }
+}
+```
+
+Review gate response shape:
+
+```json
+{
+  "feedback_id": "kf-expired-coupon-boundary",
+  "status": "approved_by_human",
+  "review_action": "approve_feedback",
+  "review_history_id": "00000000-0000-0000-0000-000000000861",
+  "review_artifact_id": "00000000-0000-0000-0000-000000000862",
+  "prompt_eligible": false,
+  "prompt_eligibility_reason": null,
+  "test_knowledge_card_id": null
+}
+```
+
+Review gate hard rules:
+
+- Every accepted, rejected, revised, or prompt-eligibility decision must be a
+  human review action and must append or reference ReviewHistory when a future
+  implementation owns the workflow.
+- `mark_prompt_eligible` requires prior human approval, safe-to-show source
+  evidence, reviewed source citations, and a non-empty
+  `prompt_eligibility_reason`.
+- `prompt_eligible=true` must not be inferred from model confidence,
+  unsupported-claim absence, quality score, schema validity, or the existence
+  of a draft feedback artifact.
+- `create_knowledge_card_candidate` may produce a future handoff payload, but
+  it must not create, approve, archive, delete, or mutate TestKnowledgeCard
+  rows in this contract.
+- Review gate responses must preserve `feedback_id`, action, reviewer label,
+  evidence artifact ids, prompt eligibility decision, ReviewHistory id when
+  present, and review artifact id when present.
+- Rejected feedback and unsupported claims remain auditable and must not be
+  reused as positive knowledge or prompt context.
+- This contract must not mutate historical ReviewHistory, FailureAnalysis,
+  Report, TestRun, TestResult, TestCase, GeneratedCaseCandidate, Artifact, or
+  TestKnowledgeCard rows; call providers; invoke MCP runtime; create vector
+  indexes; create embeddings; rerank; run graph jobs; generate reports; change
+  runner behavior; add RBAC; create tenants; or change permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

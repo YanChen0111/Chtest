@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-03 Slice 35 Knowledge Feedback Review Gate Contracts
+
+### Completed
+
+- Added KnowledgeFeedbackDraft review gate rules to data, API, state-machine,
+  and artifact contracts.
+- Contracts now define `approve_feedback`, `reject_feedback`,
+  `request_revision`, `mark_prompt_eligible`, ReviewHistory linkage,
+  feedback review artifact evidence, prompt eligibility reasons, and future
+  TestKnowledgeCard handoff payloads.
+- Kept the scope contract-only: no review runtime API, frontend page,
+  TestKnowledgeCard CRUD, automatic prompt eligibility, provider calls, MCP
+  runtime, vector/graph runtime, historical evidence mutation, RBAC, tenants,
+  or permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 35 Task 3.
+
+### Verification
+
+- `rg -n "KnowledgeFeedbackDraft|approve_feedback|reject_feedback|request_revision|mark_prompt_eligible|ReviewHistory|prompt eligibility|feedback review artifact" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
+- `git diff --check`
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): define knowledge feedback review gate contracts`.
+- Continue Slice 35 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 35 Knowledge Feedback Review Gate Plan
 
 ### Completed
