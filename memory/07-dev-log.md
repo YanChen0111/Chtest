@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-03 Slice 35 Knowledge Feedback Review Gate Plan
+
+### Completed
+
+- Added Slice 35 plan:
+  `docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`.
+- The plan scopes human review actions for KnowledgeFeedbackDraft:
+  approve_feedback, reject_feedback, request_revision, mark_prompt_eligible,
+  and future TestKnowledgeCard handoff.
+- The plan keeps review-gate work contract-only and excludes runtime review
+  APIs, frontend pages, TestKnowledgeCard CRUD, automatic prompt eligibility,
+  automatic knowledge ingestion, provider calls, MCP runtime, vector/graph
+  runtime, historical evidence mutation, RBAC, tenants, and permissions.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
+- PowerShell equivalent result: `True`.
+- `rg -n "Knowledge Feedback Review Gate|KnowledgeFeedbackDraft|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add knowledge feedback review gate plan`.
+- Continue Slice 35 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 34 Completion Gate
 
 ### Completed
