@@ -1,5 +1,33 @@
 # Session Handoff
 
+## 2026-07-03 Slice 34 Knowledge Feedback Contract Plan
+
+Completed:
+
+- Added Slice 34 plan:
+  `docs/implementation/slices/slice-34-knowledge-feedback-contract.md`.
+- The plan is contract-first and covers KnowledgeFeedbackAgent input evidence,
+  draft feedback output, human review, prompt eligibility, unsupported claims,
+  fallback, artifact evidence, and trace rules.
+- The plan explicitly excludes KnowledgeFeedbackAgent runtime,
+  TestKnowledgeCard CRUD, prompt-eligible auto-marking, automatic knowledge
+  ingestion, historical evidence mutation, provider calls, MCP runtime,
+  vector/graph runtime, generated-case auto-approval, RBAC, tenants, and
+  permissions.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-34-knowledge-feedback-contract.md
+rg -n "Knowledge Feedback Contract|KnowledgeFeedbackAgent|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-34-knowledge-feedback-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Next recommended task:
+
+- Commit `docs(v2): add knowledge feedback contract plan`.
+- Continue Slice 34 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 33 Completion Gate
 
 Completed:

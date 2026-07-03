@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-03 Slice 34 Knowledge Feedback Contract Plan
+
+### Completed
+
+- Added Slice 34 plan:
+  `docs/implementation/slices/slice-34-knowledge-feedback-contract.md`.
+- The plan scopes KnowledgeFeedbackAgent feedback contracts from accepted and
+  rejected cases, ReviewHistory, FailureAnalysis, Report, TestRun/TestResult
+  summaries, KnowledgeEvidence, and existing TestKnowledgeCard summaries.
+- The plan keeps feedback draft-only until human review and forbids automatic
+  TestKnowledgeCard creation, prompt-eligible auto-marking, historical evidence
+  mutation, provider calls, MCP runtime, vector/graph runtime, RBAC, tenants,
+  and permissions.
+- `NEXT_AI_TASK.md` already points to Slice 34 Task 1 from the Slice 33
+  completion gate.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-34-knowledge-feedback-contract.md`
+- `rg -n "Knowledge Feedback Contract|KnowledgeFeedbackAgent|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-34-knowledge-feedback-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): add knowledge feedback contract plan`.
+- Continue Slice 34 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 33 Completion Gate
 
 ### Completed
