@@ -1,5 +1,33 @@
 # Development Log
 
+## 2026-07-03 Slice 34 Knowledge Feedback Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/22-knowledge-feedback-contract-golden.md`.
+- Added `backend/app/tests/golden/test_knowledge_feedback_contract_golden.py`.
+- Golden smoke validates KnowledgeFeedbackAgent, `knowledge_feedback:v1`,
+  `knowledge-feedback-skill:v1`, KnowledgeFeedbackDraft, input evidence
+  sources, draft feedback fields, unsupported claims, human review, prompt
+  eligibility, and failure behavior.
+- Golden proves the contract forbids KnowledgeFeedbackAgent runtime,
+  TestKnowledgeCard CRUD/auto-creation, prompt-eligible auto-marking,
+  historical evidence mutation, provider calls, vector/graph runtime, MCP
+  runtime, artifact mutation, review bypass, auto-promotion, RBAC, tenants, and
+  permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 34 Completion Gate.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_knowledge_feedback_contract_golden.py -q`
+- Result: `3 passed`.
+- `git diff --check`
+
+### Next Step
+
+- Commit `test(golden): add knowledge feedback contract smoke`.
+- Continue Slice 34 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 34 Knowledge Feedback Contracts
 
 ### Completed

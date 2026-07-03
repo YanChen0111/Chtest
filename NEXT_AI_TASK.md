@@ -10,13 +10,13 @@ Slice 34: Knowledge Feedback Contract.
 
 ## Current Task
 
-Slice 34 Task 3: Add Knowledge Feedback Contract golden smoke.
+Slice 34 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a golden smoke proving the KnowledgeFeedbackAgent
-contract remains draft-only, review-gated, and free of feedback runtime side
-effects.
+After this task, Slice 34 is validated end to end and the next narrow V2 task
+is selected without adding feedback runtime, provider calls, or knowledge-card
+automation.
 
 ## Must Read
 
@@ -43,15 +43,13 @@ effects.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_knowledge_feedback_contract_golden.py
-docs/fixtures/22-knowledge-feedback-contract-golden.md
 docs/implementation/slices/slice-34-knowledge-feedback-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden task only. Do not add frontend code, backend runtime feature code,
+Completion gate only. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, KnowledgeFeedbackAgent runtime,
 TestKnowledgeCard CRUD, prompt-eligible auto-marking, automatic knowledge
 ingestion, external provider integrations, vector database, embeddings,
@@ -63,28 +61,24 @@ behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_knowledge_feedback_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_knowledge_feedback_contract_golden.py backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: Knowledge feedback contract golden smoke and diff check pass.
+Expected result: Slice 34 focused golden verification and diff check pass.
 
 ## Acceptance
 
-- Golden names KnowledgeFeedbackAgent, knowledge_feedback prompt,
-  knowledge-feedback-skill, input evidence sources, draft feedback fields,
-  unsupported claims, human review, prompt eligibility, and failure behavior.
-- Golden proves no TestKnowledgeCard auto-creation, prompt-eligible
-  auto-marking, historical evidence mutation, provider call, vector index,
-  graph job, MCP runtime, artifact mutation, review bypass, or auto-promotion
-  is created by the contract.
+- Slice 34 task table records completed task commits.
+- Focused golden verification passes.
+- `NEXT_AI_TASK.md` points to the next narrow V2 task.
 
 ## Commit Message
 
 ```text
-test(golden): add knowledge feedback contract smoke
+docs(v2): complete knowledge feedback contract slice
 ```
 
 ## Next Task
 
-Slice 34 Completion Gate.
+Select the next narrow V2 task after Slice 34 completion.
