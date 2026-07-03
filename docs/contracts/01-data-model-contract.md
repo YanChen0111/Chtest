@@ -783,14 +783,34 @@ MCP-ready ToolDefinition rules:
 - `is_mcp_ready=true` means the tool has stable name, description,
   input/output schema, risk, approval, timeout, allowlist, and artifact policy
   metadata suitable for future MCP exposure.
+- ToolDefinition safety requires `input_schema_json` and `output_schema_json`
+  to be strict JSON schemas with bounded object shapes. Unknown free-form
+  command strings, arbitrary shell fragments, transport handles, credentials,
+  and provider-specific payloads are not valid schema fields.
+- `risk_level`, `approval_required`, `timeout_seconds`, and
+  `artifact_policy_json` are part of the safety contract. Medium/high risk
+  tools must either require approval or be explicitly documented as safe with
+  non-mutating behavior, bounded artifacts, and no external side effects.
+- `artifact_policy_json` must name expected artifact types, size limits,
+  redaction expectations, and whether stdout/stderr/raw output are safe to
+  persist. It must not authorize artifact upload, mutation, deletion, signed
+  URLs, cloud storage, or broad artifact browsing.
+- `mcp_metadata_json.provider_state` may be used as display metadata with
+  values such as `disabled`, `configured`, or `unhealthy`, but it is not a
+  runtime transport state and must not start or stop an MCP server.
 - V1 execution still goes through ToolInvocation and internal Tool Adapter
   allowlist rules.
 - `mcp_metadata_json` may store `schema_version`, `capability_name`,
-  `safe_description`, and `exposure_notes`.
+  `safe_description`, `exposure_notes`, `provider_state`, and
+  `last_health_check_status`.
 - `mcp_metadata_json` must not store MCP server URLs, tokens, OAuth state, remote
   transport settings, or plugin marketplace references.
 - `tool_type=mcp_proxy` is schema intent only in V1 and must not trigger an MCP
   runtime dependency.
+- ToolDefinition safety must not bypass GeneratedCaseCandidate review,
+  AutomationDraft approval, ToolInvocation approval, Artifact persistence,
+  Report evidence requirements, PromptVersion/SkillVersion traceability, or
+  human review gates.
 
 Newman ToolDefinition rules:
 
@@ -869,6 +889,29 @@ V2 deterministic KnowledgeAdapter rules:
   embeddings, reranking jobs, external provider calls, MCP runtime calls, RBAC,
   tenant, permission, marketplace, cloud sync, release, or remote CI/CD
   behavior.
+
+KnowledgeAdapter safety rules:
+
+- `status` remains the persisted lifecycle state. `provider_state` may appear
+  only inside `config_json` or `safety_policy_json` as display/health metadata
+  with values such as `disabled`, `configured`, or `unhealthy`.
+- `provider_state=disabled` and `status=disabled` force `used_knowledge=false`
+  and require local/no-knowledge fallback unless the caller explicitly blocks
+  on knowledge evidence.
+- `provider_state=unhealthy` means future provider health checks failed. Core
+  requirement review, case generation, and human review workflows must degrade
+  to local/no-knowledge behavior and record fallback evidence instead of
+  failing the product workflow by default.
+- Future provider outputs must normalize into Chtest `KnowledgeEvidence` and
+  Artifact metadata before prompts, generated cases, or reviews cite them.
+  Provider-specific schemas must not be persisted as business truth.
+- `config_json` and `safety_policy_json` must not contain credentials, tokens,
+  OAuth state, API keys, provider SDK settings, remote URLs, MCP transport
+  settings, vector database settings, embedding model settings, reranker
+  settings, or graph runtime settings.
+- KnowledgeAdapter safety must not create TestKnowledgeCard rows, mutate
+  Artifact rows, approve GeneratedCaseCandidate rows, promote TestCase rows,
+  execute ToolInvocation rows, generate Reports, or update CI/CD state.
 
 ## 31.1 TestKnowledgeCard
 
@@ -985,6 +1028,26 @@ KnowledgeEvidence rules:
 | stderr_artifact_id | uuid | no | null | Captured stderr artifact |
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
+
+ToolInvocation safety rules:
+
+- A ToolInvocation must snapshot `tool_name`, `risk_level`,
+  `approval_required`, `working_directory`, `command_snapshot`, and expected
+  artifact policy from its ToolDefinition before execution.
+- `approval_status=pending` is required before running any medium/high-risk
+  invocation when `approval_required=true`. `approval_status=rejected` must
+  transition only to `rejected` or a terminal failed state and must not run.
+- `status=running` is valid only after allowlist validation, working-directory
+  validation, approval validation, timeout validation, and artifact policy
+  validation pass.
+- Failed, timed-out, rejected, or cancelled invocations must preserve bounded
+  stdout/stderr/error artifacts when available and must not rewrite prior
+  successful artifacts.
+- ToolInvocation output is execution evidence only. It must not approve cases,
+  promote TestCase rows, conclude Reports, bypass AutomationDraft approval,
+  bypass QualityGateDecision evidence, mutate Artifact rows outside its own
+  declared outputs, call MCP runtime, or call external providers unless a later
+  explicit runtime slice authorizes that behavior.
 
 ## 33. Artifact
 

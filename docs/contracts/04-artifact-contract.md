@@ -534,6 +534,38 @@ Test knowledge card artifact rules:
   reports, change runner behavior, call remote CI providers, add RBAC, create
   tenants, or change permissions.
 
+Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
+
+- ToolDefinition safety is metadata only. Listing ToolDefinition rows or
+  MCP-ready schemas must not create artifacts by itself.
+- Every executed ToolInvocation must preserve bounded artifacts according to
+  its `artifact_policy`: stdout, stderr, structured output, validation errors,
+  runtime manifests, dependency snapshots, environment snapshots, or other
+  explicitly named output artifacts.
+- Failed, timed-out, rejected, cancelled, or validation-blocked invocations
+  should persist bounded error evidence when available. They must not rewrite
+  previous successful artifacts or create Report conclusions by themselves.
+- `artifact_policy` must not authorize artifact upload, mutation, deletion,
+  signed URLs, cloud storage, broad artifact browsing, remote fetch, MCP
+  transport capture, or provider SDK side effects.
+- KnowledgeAdapter safety uses `provider_state` only as display/health metadata
+  in config or safety-policy artifacts. `provider_state=disabled` and
+  `provider_state=unhealthy` must produce local/no-knowledge fallback evidence
+  when a workflow continues without provider results.
+- Future external provider outputs must normalize into Chtest
+  `KnowledgeEvidence` plus persisted Artifact metadata before they are cited by
+  prompts, GeneratedCaseCandidate rows, or review surfaces. Raw provider
+  payloads, provider schemas, transport details, credentials, tokens, OAuth
+  state, API keys, remote URLs, vector DB settings, embedding model settings,
+  reranker settings, graph runtime settings, and MCP transport settings must
+  not be persisted as reviewable business evidence.
+- Safety artifacts must not create TestKnowledgeCard rows, mutate Artifact
+  rows outside their declared outputs, approve or reject GeneratedCaseCandidate
+  rows, promote TestCase rows, create ToolInvocation rows from configuration
+  changes, generate Reports, start MCP runtime, call provider SDKs, create
+  vector indexes, create embeddings, rerank, run graph jobs, or update remote
+  CI provider state.
+
 ## 6. Evidence Manifest
 
 报告必须生成 evidence_manifest.json：
@@ -603,6 +635,10 @@ Extension Surface artifact rules:
   `context_manifest.json` with exact ContextArtifact ids and hashes.
 - AI tasks must keep `used_knowledge=false` while KnowledgeAdapter is
   `not_configured`, `disabled`, or V1 `configured_stub`.
+- `provider_state=disabled` or `provider_state=unhealthy` must keep
+  `used_knowledge=false` unless a later explicit provider slice records valid
+  normalized KnowledgeEvidence. Fallback must be visible in metadata or
+  bounded error artifacts.
 - V2 Slice 19 may create `knowledge_retrieval.json` only for deterministic
   local retrieval from eligible ContextArtifacts.
 - Slice 30 may define `test_knowledge_card`, `knowledge_evidence`, and

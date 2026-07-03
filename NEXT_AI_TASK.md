@@ -10,14 +10,13 @@ Slice 33: MCP-Ready ToolDefinition And KnowledgeAdapter Safety Contract.
 
 ## Current Task
 
-Slice 33 Task 2: Define MCP-ready ToolDefinition and KnowledgeAdapter safety
-contracts.
+Slice 33 Task 3: Add MCP-ready tool/knowledge safety golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest has explicit data, API, state-machine, and artifact
-contracts for MCP-ready ToolDefinition and KnowledgeAdapter safety before any
-MCP runtime or external provider implementation exists.
+After this task, Chtest has a golden smoke proving the MCP-ready ToolDefinition
+and KnowledgeAdapter safety contract can be checked without running tools,
+calling providers, starting MCP, or mutating artifacts.
 
 ## Must Read
 
@@ -44,17 +43,15 @@ MCP runtime or external provider implementation exists.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
+backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py
+docs/fixtures/21-mcp-ready-tool-knowledge-safety-golden.md
 docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract-only task. Do not add frontend code, backend runtime feature code,
+Golden task only. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, external provider integrations, vector database,
 embeddings, reranking, background indexing, graph runtime, MCP runtime, MCP
 server/client transport, provider SDK, credentials, TestKnowledgeCard CRUD,
@@ -65,28 +62,28 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-rg -n "ToolDefinition safety|KnowledgeAdapter safety|approval_required|artifact_policy|provider_state|disabled|unhealthy|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: safety contract terms are present across contracts and diff
-check passes.
+Expected result: MCP-ready tool/knowledge safety golden smoke and diff check
+pass.
 
 ## Acceptance
 
-- Contracts define ToolDefinition strict schema, risk, approval, timeout, and
-  artifact policy fields.
-- Contracts define ToolInvocation approval/status/failure/artifact behavior.
-- Contracts define KnowledgeAdapter provider-state and fallback behavior.
-- Contracts forbid MCP runtime, provider SDK, credentials, external calls,
-  provider schema leakage, review bypass, and auto-promotion.
+- Golden names ToolDefinition, ToolInvocation, KnowledgeAdapterConfig,
+  KnowledgeEvidence, Artifact, approval, risk, timeout, artifact policy,
+  provider state, fallback, and human gate boundaries.
+- Golden proves no MCP runtime, external provider call, credentials, vector
+  index, graph job, report conclusion, review bypass, artifact mutation, or
+  auto-promotion is created by the contract.
 
 ## Commit Message
 
 ```text
-docs(v2): define mcp-ready tool knowledge safety contracts
+test(golden): add mcp-ready tool knowledge safety smoke
 ```
 
 ## Next Task
 
-Slice 33 Task 3: Add MCP-ready tool/knowledge safety golden smoke.
+Slice 33 Completion Gate.

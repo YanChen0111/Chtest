@@ -296,6 +296,37 @@ running -> failed / timeout / cancelled
 
 Newman 规则：
 
+ToolDefinition safety state rules:
+
+- ToolInvocation creation snapshots ToolDefinition `input_schema_json`,
+  `output_schema_json`, `risk_level`, `approval_required`, `timeout_seconds`,
+  `artifact_policy_json`, and MCP-ready metadata before execution.
+- `approval_required=true` with medium/high risk must transition through
+  `waiting_approval`; it cannot use `auto_approve_low_risk`.
+- `waiting_approval -> approved` is the only human gate that allows a
+  pending medium/high-risk invocation to reach `running`.
+- `waiting_approval -> rejected` is terminal for that invocation and must not
+  execute the tool later under the same id.
+- `running` requires allowlist validation, working-directory validation,
+  timeout validation, approval validation, and artifact policy validation.
+
+ToolInvocation artifact/failure rules:
+
+- `failed`, `timeout`, `cancelled`, and `rejected` must preserve bounded
+  stdout, stderr, structured error, and validation artifacts when available.
+- A failed or timed-out invocation must not rewrite previous successful
+  artifacts and must not create report conclusions by itself.
+- ToolInvocation output is execution evidence only. It must not approve
+  GeneratedCaseCandidate rows, promote TestCase rows, bypass AutomationDraft
+  approval, bypass QualityGateDecision evidence, mutate unrelated artifacts,
+  start MCP runtime, call provider SDKs, call external providers, or update
+  remote CI provider state.
+- `mcp_metadata_json.provider_state` values such as `disabled`, `configured`,
+  and `unhealthy` are display readiness only; they do not add ToolInvocation
+  states and do not start MCP server/client transport.
+
+Newman execution rules:
+
 - Newman execution uses a ToolInvocation created from the
   `newman_collection_run` ToolDefinition or equivalent built-in allowlisted
   tool.
@@ -339,6 +370,27 @@ V2 deterministic retrieval 规则：
 - Retrieval is scoped to an AI task invocation and writes evidence artifacts;
   it does not create a long-running adapter state transition.
 - `disabled` and `not_configured` always force `used_knowledge=false`.
+
+KnowledgeAdapter safety state rules:
+
+- `provider_state` may appear only as display/health metadata in config or
+  safety policy. It is not a persisted state-machine node.
+- `provider_state=disabled` behaves like `disabled`: it forces
+  `used_knowledge=false` and local/no-knowledge fallback.
+- `provider_state=unhealthy` records provider health failure and fallback
+  evidence. Core requirement review, case generation, and human review flows
+  may continue with `used_knowledge=false` unless the caller explicitly marks
+  knowledge evidence as required.
+- `configured_stub` and `provider_state=configured` must not create retrieval
+  results by themselves. Retrieval evidence exists only after an AI task writes
+  a bounded `knowledge_retrieval` artifact with exact source ids.
+- Future provider output must normalize into Chtest `KnowledgeEvidence` before
+  any prompt, GeneratedCaseCandidate, or review surface cites it.
+- KnowledgeAdapter state changes must not create TestKnowledgeCard rows, mutate
+  Artifact rows, create ToolInvocation rows, approve/reject/generated-case
+  review actions, promote TestCase rows, generate Reports, start MCP runtime,
+  call provider SDKs, create vector indexes, create embeddings, rerank, run
+  graph jobs, or update remote CI provider state.
 
 ## 7.2 TestKnowledgeCard 状态规则
 

@@ -509,11 +509,27 @@ Hard rules:
 - `provider_type` must be `none` or `stub` in V1.
 - `provider_type=deterministic_local` is allowed only for the V2 Slice 19 local
   retrieval stub.
+- KnowledgeAdapter safety treats `provider_state` as non-secret display or
+  health metadata only. Allowed values include `disabled`, `configured`, and
+  `unhealthy`; API handlers must not treat those values as permission to call
+  an external provider.
+- `status=disabled` or `provider_state=disabled` forces `used_knowledge=false`.
+  `provider_state=unhealthy` requires local/no-knowledge fallback evidence
+  unless the caller explicitly requires knowledge evidence and accepts failure.
+- Any future provider result must normalize into `KnowledgeEvidence` plus
+  persisted Artifact metadata before prompts, generated cases, or review
+  surfaces cite it. Provider-specific payloads must not leak into response
+  fields as business truth.
 - Secret-like fields, remote provider URLs, vector DB settings, embedding model
   settings, OAuth state, and MCP transport settings are rejected.
 - Updating KnowledgeAdapterConfig alone must not set `used_knowledge=true`.
   `used_knowledge=true` requires a later AI task to produce deterministic
   retrieval evidence.
+- Updating KnowledgeAdapterConfig must not create TestKnowledgeCard rows,
+  mutate artifacts, approve or reject GeneratedCaseCandidate rows, promote
+  TestCase rows, create ToolInvocation rows, generate Reports, update CI/CD
+  state, call provider SDKs, call MCP runtime, create vector indexes, create
+  embeddings, rerank, or run graph jobs.
 
 ### 2.15 List MCP-ready ToolDefinitions
 
@@ -549,9 +565,80 @@ Response 200:
 Hard rules:
 
 - The API exposes ToolDefinition schema/readiness only.
+- ToolDefinition safety requires strict `input_schema`, `output_schema`,
+  `risk_level`, `approval_required`, `timeout_seconds`, and `artifact_policy`
+  metadata. Unknown free-form command strings, credentials, remote transport
+  handles, provider-specific payloads, and shell fragments must not be exposed
+  as valid inputs.
+- `artifact_policy` must describe bounded expected artifacts such as stdout,
+  stderr, structured runner output, runtime manifests, dependency snapshots,
+  and environment snapshots. It must not authorize artifact upload, mutation,
+  deletion, signed URLs, cloud storage, or broad artifact browsing.
 - Tool execution still requires ToolInvocation and the internal allowlist rules.
 - `is_mcp_ready=true` must not expose MCP transport controls or execute remote
   MCP calls.
+- `mcp_metadata.provider_state` may display `disabled`, `configured`, or
+  `unhealthy`, but it is not a runtime state and must not start MCP servers,
+  install plugins, call provider SDKs, or perform external network calls.
+- ToolDefinition listing must not create ToolInvocation rows, TestRun rows,
+  Reports, QualityGateDecision results, GeneratedCaseCandidate review actions,
+  TestCase promotions, artifacts, RAG retrieval, MCP runtime calls, remote CI
+  provider calls, RBAC, tenants, or permissions.
+
+### 2.16 MCP-Ready ToolDefinition And KnowledgeAdapter Safety Contract
+
+This section is contract-only. It defines API response semantics for future
+local tools, MCP-ready tools, and KnowledgeAdapter providers before any MCP
+runtime, provider SDK, external retrieval provider, or transport control exists.
+
+ToolDefinition safety response fields:
+
+- `input_schema` and `output_schema`: strict JSON schemas for bounded inputs
+  and normalized outputs.
+- `risk_level`: low, medium, high, or critical risk classification used by
+  ToolInvocation approval.
+- `approval_required`: whether a human gate is required before running.
+- `timeout_seconds`: upper execution bound copied into ToolInvocation.
+- `artifact_policy`: expected artifact types, size limits, redaction rules, and
+  persistence requirements.
+- `mcp_metadata.provider_state`: display-only readiness such as `disabled`,
+  `configured`, or `unhealthy`.
+
+ToolInvocation safety response behavior:
+
+- Invocation creation must snapshot ToolDefinition safety fields before
+  execution.
+- Medium/high-risk invocations with `approval_required=true` must remain in
+  `waiting_approval` until a human approval action records
+  `approval_status=approved`.
+- Rejected, failed, timed-out, or cancelled invocations must preserve bounded
+  error/stdout/stderr artifacts when available and must not rewrite previous
+  successful evidence.
+- ToolInvocation output is execution evidence only; it must not conclude
+  Reports, approve cases, promote TestCase rows, bypass AutomationDraft review,
+  or bypass QualityGateDecision evidence.
+
+KnowledgeAdapter safety response behavior:
+
+- `provider_state=disabled` or `status=disabled` forces `used_knowledge=false`.
+- `provider_state=unhealthy` records provider health/fallback evidence and
+  degrades to local/no-knowledge workflows unless the caller explicitly marks
+  knowledge evidence as mandatory.
+- Provider outputs must be normalized to Chtest `KnowledgeEvidence` and
+  Artifact metadata before downstream prompts or review surfaces cite them.
+- Raw provider payloads, provider schemas, credentials, OAuth state, tokens,
+  remote URLs, vector DB settings, embedding model settings, reranker settings,
+  graph runtime settings, and MCP transport settings must not appear in API
+  responses except as redacted metadata saying they were rejected.
+
+Forbidden side effects:
+
+- The safety contract must not start MCP runtime, MCP server/client transport,
+  plugin installation, provider SDK calls, external provider calls, vector
+  indexes, embeddings, reranking, graph jobs, artifact mutation, Report
+  generation, runner behavior changes, review bypass, generated-case
+  auto-approval, TestCase auto-promotion, remote CI provider behavior, RBAC,
+  tenants, or permissions.
 
 ## 3. Requirement To Case APIs
 

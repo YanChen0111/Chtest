@@ -1,5 +1,36 @@
 # Development Log
 
+## 2026-07-03 Slice 33 MCP-Ready Tool/Knowledge Safety Contracts
+
+### Completed
+
+- Updated data, API, state-machine, and artifact contracts with MCP-ready
+  ToolDefinition and KnowledgeAdapter safety rules.
+- ToolDefinition safety now names strict input/output schema, risk,
+  `approval_required`, timeout, `artifact_policy`, and display-only
+  `provider_state` metadata.
+- ToolInvocation safety now names approval/status/failure/artifact behavior and
+  keeps tool output as execution evidence only.
+- KnowledgeAdapter safety now defines `provider_state=disabled`,
+  `provider_state=configured`, `provider_state=unhealthy`, local/no-knowledge
+  fallback, and KnowledgeEvidence normalization before provider outputs may be
+  cited.
+- Artifact rules now require bounded ToolInvocation artifacts and normalized
+  KnowledgeEvidence while forbidding raw provider payloads, credentials,
+  transport settings, artifact mutation, MCP runtime, provider SDK calls,
+  review bypass, and auto-promotion.
+- Updated `NEXT_AI_TASK.md` to Slice 33 Task 3.
+
+### Verification
+
+- `rg -n "ToolDefinition safety|KnowledgeAdapter safety|approval_required|artifact_policy|provider_state|disabled|unhealthy|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
+- `git diff --check`
+
+### Next Step
+
+- Commit `docs(v2): define mcp-ready tool knowledge safety contracts`.
+- Continue Slice 33 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-02 Slice 33 MCP-Ready Tool/Knowledge Safety Plan
 
 ### Completed
