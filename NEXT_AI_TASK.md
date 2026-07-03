@@ -10,13 +10,12 @@ Slice 33: MCP-Ready ToolDefinition And KnowledgeAdapter Safety Contract.
 
 ## Current Task
 
-Slice 33 Task 3: Add MCP-ready tool/knowledge safety golden smoke.
+Slice 33 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a golden smoke proving the MCP-ready ToolDefinition
-and KnowledgeAdapter safety contract can be checked without running tools,
-calling providers, starting MCP, or mutating artifacts.
+After this task, Slice 33 is validated end to end and the next narrow V2 task
+is selected without adding MCP runtime, provider calls, or tool execution.
 
 ## Must Read
 
@@ -43,15 +42,13 @@ calling providers, starting MCP, or mutating artifacts.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py
-docs/fixtures/21-mcp-ready-tool-knowledge-safety-golden.md
 docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden task only. Do not add frontend code, backend runtime feature code,
+Completion gate only. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, external provider integrations, vector database,
 embeddings, reranking, background indexing, graph runtime, MCP runtime, MCP
 server/client transport, provider SDK, credentials, TestKnowledgeCard CRUD,
@@ -62,28 +59,24 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py backend/app/tests/golden/test_agent_workflow_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: MCP-ready tool/knowledge safety golden smoke and diff check
-pass.
+Expected result: Slice 33 focused golden verification and diff check pass.
 
 ## Acceptance
 
-- Golden names ToolDefinition, ToolInvocation, KnowledgeAdapterConfig,
-  KnowledgeEvidence, Artifact, approval, risk, timeout, artifact policy,
-  provider state, fallback, and human gate boundaries.
-- Golden proves no MCP runtime, external provider call, credentials, vector
-  index, graph job, report conclusion, review bypass, artifact mutation, or
-  auto-promotion is created by the contract.
+- Slice 33 task table records completed task commits.
+- Focused golden verification passes.
+- `NEXT_AI_TASK.md` points to the next narrow V2 task.
 
 ## Commit Message
 
 ```text
-test(golden): add mcp-ready tool knowledge safety smoke
+docs(v2): complete mcp-ready tool knowledge safety slice
 ```
 
 ## Next Task
 
-Slice 33 Completion Gate.
+Select the next narrow V2 task after Slice 33 completion.

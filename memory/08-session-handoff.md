@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-03 Slice 33 MCP-Ready Tool/Knowledge Safety Golden Smoke
+
+Completed:
+
+- Added `docs/fixtures/21-mcp-ready-tool-knowledge-safety-golden.md`.
+- Added `backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py`.
+- Golden smoke checks ToolDefinition, ToolInvocation, KnowledgeAdapterConfig,
+  KnowledgeEvidence, Artifact, approval, risk, timeout, artifact policy,
+  provider state, fallback, and human gate boundaries.
+- Golden smoke checks forbidden side effects: MCP runtime, provider calls,
+  credentials, vector indexes, graph jobs, Report conclusions, review bypass,
+  Artifact mutation, generated-case auto-approval, TestCase auto-promotion,
+  RBAC, tenants, and permissions.
+- `NEXT_AI_TASK.md` now points to Slice 33 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- Golden smoke: `3 passed`.
+- `git diff --check`: clean.
+
+Next recommended task:
+
+- Commit `test(golden): add mcp-ready tool knowledge safety smoke`.
+- Continue Slice 33 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 33 MCP-Ready Tool/Knowledge Safety Contracts
 
 Completed:
