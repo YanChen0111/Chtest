@@ -1746,6 +1746,114 @@ TestKnowledgeCard Prompt Context Consumption hard rules:
   generated-case auto-approval, runner behavior, report behavior, RBAC,
   tenants, or permissions.
 
+### 3.5.10 TestKnowledgeCard Prompt Context Audit Summary Contract
+
+This section is contract-only. It defines future read-only audit summary
+semantics for prompt context consumption evidence and does not add an endpoint,
+router, service, worker, queue, frontend page, report generation behavior,
+migration, prompt assembly implementation, prompt runtime execution, provider
+call, deterministic retrieval behavior change, vector index, embedding job,
+reranking, graph job, MCP runtime, broad CRUD, RBAC, tenants, or permissions.
+
+Allowed prompt-context audit summary action:
+
+- `summarize_prompt_context_consumption`: future scoped summary action that
+  records usage status, cited entries, skipped entries, unsupported claims, and
+  failure reasons from prompt context consumption evidence. It does not render
+  a UI, generate reports, assemble a runtime prompt, run an AITask, call a
+  provider, or generate model citations.
+
+Prompt context audit summary payload shape:
+
+```json
+{
+  prompt_context_audit_summary_action: summarize_prompt_context_consumption,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  prompt_request_id: local-prompt-request-001,
+  ai_task_id: 00000000-0000-0000-0000-000000000701,
+  agent_step: case_generation,
+  intended_output_artifact_type: case_generation_output,
+  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
+  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  used_knowledge: true,
+  output_citation_ids: [knowledge-citation-expired-coupon],
+  skipped_evidence_ids: [ctx-entry-unsafe-note],
+  unsupported_claim_count: 1,
+  prompt_version_id: 00000000-0000-0000-0000-000000000711,
+  skill_version_id: 00000000-0000-0000-0000-000000000712,
+  review_history_ids: [
+    00000000-0000-0000-0000-000000000894
+  ]
+}
+```
+
+Prompt context audit summary response shape for a future scoped implementation:
+
+```json
+{
+  prompt_context_audit_summary_action: summarize_prompt_context_consumption,
+  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
+  usage_status: knowledge_used,
+  used_knowledge: true,
+  prompt_trace: {
+    prompt_version_id: 00000000-0000-0000-0000-000000000711,
+    skill_version_id: 00000000-0000-0000-0000-000000000712
+  },
+  cited_entries: [
+    {
+      citation_id: knowledge-citation-expired-coupon,
+      test_knowledge_card_id: 00000000-0000-0000-0000-000000000901,
+      context_entry_id: ctx-entry-expired-coupon,
+      source_hash: sha256:reviewed-case-expired-coupon,
+      citation_status: valid
+    }
+  ],
+  skipped_entries: [
+    {
+      context_entry_id: ctx-entry-unsafe-note,
+      skip_reason: safe_to_show_false
+    }
+  ],
+  unsupported_claims_summary: [
+    {
+      claim_id: claim-without-source,
+      reason: missing_consumed_citation
+    }
+  ],
+  review_flags: []
+}
+```
+
+TestKnowledgeCard Prompt Context Audit Summary hard rules:
+
+- Audit summary input must reference prompt context consumption artifact,
+  prompt context evidence artifact, context manifest, `used_knowledge` decision,
+  output citations, skipped evidence, unsupported claims, PromptVersion,
+  SkillVersion, source hash, and ReviewHistory.
+- Audit summary output must be read-only. It may summarize usage status, cited
+  entries, skipped entries, unsupported claim summaries, failure reasons, and
+  review flags, but it must not invent citations, rewrite `used_knowledge`, or
+  mutate prompt context consumption evidence.
+- `used_knowledge=true` in an audit summary is valid only when the referenced
+  prompt context consumption evidence already recorded valid output citations.
+  When consumption evidence is missing, failed, skipped, unsafe, stale,
+  mismatched, or citation-incomplete, the summary must use a failure flag,
+  skipped entry, or `knowledge_not_used` status.
+- Unsupported claims must remain visible as unsupported claims or review
+  findings. They must not be converted into cited knowledge by this contract.
+- `summarize_prompt_context_consumption` must not write runtime
+  `prompt_input.json`, render frontend pages, generate reports, assemble
+  prompts, call providers, run AITasks, change retrieval ranking, create vector
+  indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime,
+  approve cases, or mutate historical evidence.
+- This contract must not add frontend page, report generation behavior, prompt
+  assembly implementation, prompt runtime execution, provider calls, broad
+  TestKnowledgeCard CRUD, automatic eligibility, automatic knowledge ingestion,
+  artifact mutation outside declared prompt context audit summary, historical
+  evidence mutation, generated-case auto-approval, runner behavior, RBAC,
+  tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

@@ -527,6 +527,59 @@ TestKnowledgeCard Prompt Context Consumption state rules:
   auto-approval, runner behavior changes, report generation behavior changes,
   RBAC, tenants, permissions, or remote CI provider behavior.
 
+## 7.11 TestKnowledgeCard Prompt Context Audit Summary State Contract
+
+TestKnowledgeCard Prompt Context Audit Summary is a read-only summary state
+boundary for future review/report surfaces that explain prompt context
+consumption evidence. It starts only from prompt context consumption evidence
+and does not implement frontend rendering, report generation behavior, prompt
+assembly, prompt runtime execution, provider calls, retrieval ranking, model
+citation generation, card creation, or broad TestKnowledgeCard CRUD.
+
+```text
+prompt_context_consumed -> prompt_context_audit_summary_pending
+prompt_context_consumption_skipped -> prompt_context_audit_summary_pending
+prompt_context_consumption_failed -> prompt_context_audit_summary_pending
+prompt_context_audit_summary_pending -> prompt_context_audit_summary_ready
+prompt_context_audit_summary_pending -> prompt_context_audit_summary_failed
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| prompt_context_consumed | request_prompt_context_audit_summary | prompt_context_audit_summary_pending | Future workflow/API | Starts read-only summary only |
+| prompt_context_consumption_skipped | request_prompt_context_audit_summary | prompt_context_audit_summary_pending | Future workflow/API | Summarizes skipped evidence |
+| prompt_context_consumption_failed | request_prompt_context_audit_summary | prompt_context_audit_summary_pending | Future workflow/API | Summarizes failure evidence |
+| prompt_context_audit_summary_pending | summarize_prompt_context_consumption | prompt_context_audit_summary_ready | Future workflow/API | Requires consumption evidence |
+| prompt_context_audit_summary_pending | fail_prompt_context_audit_summary | prompt_context_audit_summary_failed | Future workflow/API | Records failure code |
+
+TestKnowledgeCard Prompt Context Audit Summary state rules:
+
+- `summarize_prompt_context_consumption` requires prompt context consumption
+  artifact id, prompt context evidence artifact id, context manifest,
+  `used_knowledge` decision, output citations, skipped evidence, unsupported
+  claims, PromptVersion, SkillVersion, source hash, ReviewHistory, and failure
+  code when applicable.
+- Audit summaries are read-only. They may produce usage status, cited entries,
+  skipped entries, unsupported claim summaries, review flags, and failure
+  reasons, but they must not invent citations, rewrite `used_knowledge`, or
+  mutate consumption evidence.
+- Missing, stale, unsafe, revoked, cross-project, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, or evidence-mismatched input must
+  produce `prompt_context_audit_summary_failed` or a summary with failure flags.
+- Prompt context audit summary may write audit summary artifacts in a later
+  scoped workflow. It must not mutate TestKnowledgeCard rows, source artifacts,
+  prompt context consumption artifacts, prompt context evidence artifacts,
+  retrieval boundary artifacts, prompt eligibility artifacts, ReviewHistory,
+  KnowledgeEvidence, or historical evidence.
+- The prompt context audit summary state contract must not add frontend page,
+  report generation behavior, prompt assembly implementation, prompt runtime
+  execution, provider calls, retrieval ranking changes, vector indexes,
+  embeddings, reranking, graph jobs, MCP runtime, broad TestKnowledgeCard CRUD,
+  automatic eligibility, artifact mutation outside declared audit summary
+  output, historical evidence mutation, generated-case auto-approval, runner
+  behavior changes, RBAC, tenants, permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on

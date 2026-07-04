@@ -215,6 +215,52 @@ Prompt context consumption rules:
   consumption, approve generated cases, auto-mark `used_knowledge=true`, or
   bypass human review gates.
 
+### 4.4 TestKnowledgeCard Prompt Context Audit Summary Contract
+
+This contract defines prompt/skill trace rules for future read-only audit
+summaries of TestKnowledgeCard prompt context consumption. It is contract-only
+and does not assemble prompts, execute AITasks, call providers, run retrieval,
+change ranking, create vector indexes, create embeddings, rerank, run graph
+jobs, invoke MCP runtime, render frontend pages, generate reports, mutate
+TestKnowledgeCard rows, or generate model citations.
+
+Prompt context audit summary input must include:
+
+- `prompt_context_audit_summary_action=summarize_prompt_context_consumption`.
+- PromptVersion id/name/version and SkillVersion id/name/version.
+- Prompt context consumption artifact id.
+- Prompt context evidence artifact id and context manifest artifact id.
+- `used_knowledge` decision.
+- Output citation ids and cited TestKnowledgeCard ids.
+- Cited context entry ids, source hashes, source artifact ids, and source
+  sections.
+- Skipped evidence ids, skip reasons, unsupported claim summaries, and failure
+  code when applicable.
+- ReviewHistory ids and review flags.
+
+Prompt context audit summary rules:
+
+- Audit summaries must preserve PromptVersion and SkillVersion trace from the
+  referenced prompt context consumption evidence.
+- `used_knowledge` must be copied from prompt context consumption evidence and
+  must not be recomputed, rewritten, or auto-marked by an audit summary.
+- Cited entries must reference existing output citations, TestKnowledgeCard ids,
+  context entry ids, source hashes or source quote/hash pointers,
+  ReviewHistory ids, PromptVersion, and SkillVersion.
+- Skipped evidence and unsupported claims must remain visible as skipped or
+  unsupported. They must not be promoted into knowledge-backed facts only
+  because an audit summary is generated.
+- Prompt context audit summary must not include raw large source text, hidden
+  model context, unsafe provider payloads, vector store payloads, embedding
+  vectors, reranker traces, graph runtime payloads, credentials, tokens, OAuth
+  material, provider request payloads, frontend-rendered markup, or
+  report-rendered payloads.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
+  context consumption evidence, mutate artifacts outside declared prompt
+  context audit summary, approve generated cases, rewrite `used_knowledge`,
+  render frontend pages, generate reports, or bypass human review gates.
+
 ## 5. Skill 文件格式
 
 每个 Skill 文件必须包含以下段落：

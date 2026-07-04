@@ -10,14 +10,13 @@ Slice 43: TestKnowledgeCard Prompt Context Audit Summary Contract.
 
 ## Current Task
 
-Slice 43 Task 2: Define TestKnowledgeCard prompt context audit summary contracts.
+Slice 43 Task 3: Add TestKnowledgeCard prompt context audit summary golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest contracts define how future review/report surfaces may
-summarize TestKnowledgeCard prompt context consumption evidence without
-implementing frontend pages, report generation behavior, prompt assembly,
-provider calls, or retrieval runtime behavior.
+After this task, Chtest has a golden fixture and smoke test proving prompt
+context audit summaries cannot invent citations, rewrite `used_knowledge`,
+mutate evidence, or imply frontend/report behavior.
 
 ## Must Read
 
@@ -46,18 +45,15 @@ provider calls, or retrieval runtime behavior.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
-docs/contracts/05-prompt-skill-contract.md
+backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py
+docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md
 docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract-only task. Do not add frontend code, backend runtime feature code,
+Golden-smoke task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, migrations, package upgrades, broad
 TestKnowledgeCard CRUD implementation, backend feature API, frontend page,
 automatic prompt eligibility, prompt assembly implementation, prompt runtime
@@ -71,35 +67,31 @@ changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-rg -n "TestKnowledgeCard Prompt Context Audit Summary|prompt_context_audit_summary|summarize_prompt_context_consumption|used_knowledge|output citations|skipped evidence|unsupported claims|PromptVersion|SkillVersion|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: required contract terms are present and diff check passes.
+Expected result: focused golden smoke passes and diff check passes.
 
 ## Acceptance
 
-- Contracts define audit summary inputs, prompt context consumption artifact
-  references, context manifest links, cited TestKnowledgeCard ids, source
-  hashes, output citations, skipped evidence, unsupported claims,
-  PromptVersion/SkillVersion trace, ReviewHistory ids, usage status, failure
-  behavior, and forbidden side effects.
-- Contracts require audit summaries to be read-only and to preserve
-  `used_knowledge` and citation evidence without inventing or mutating
-  evidence.
-- Contracts keep frontend page, report generation behavior, prompt assembly
-  implementation, prompt runtime execution, provider calls, retrieval ranking
-  changes, vector indexes, embeddings, reranking, graph jobs, MCP runtime,
-  broad CRUD, automatic eligibility, and historical evidence mutation out of
-  scope.
-- `NEXT_AI_TASK.md` points to Task 3.
+- Golden names prompt context consumption artifact id, prompt context evidence
+  artifact id, `used_knowledge`, output citations, skipped evidence,
+  unsupported claims, source hash, context manifest, PromptVersion,
+  SkillVersion, ReviewHistory, failure behavior, and forbidden side effects.
+- Golden proves no frontend page, report generation behavior, prompt assembly
+  implementation, prompt runtime execution, provider call, retrieval ranking
+  change, vector index, embedding, reranking, graph job, MCP runtime, broad
+  CRUD, automatic eligibility, historical evidence mutation, RBAC, tenants, or
+  permissions is created by the contract.
+- `NEXT_AI_TASK.md` points to Slice 43 Completion Gate.
 
 ## Commit Message
 
 ```text
-docs(v2): define test knowledge card prompt context audit summary contracts
+test(golden): add test knowledge card prompt context audit summary smoke
 ```
 
 ## Next Task
 
-Slice 43 Task 3: Add TestKnowledgeCard prompt context audit summary golden smoke.
+Slice 43 Completion Gate.

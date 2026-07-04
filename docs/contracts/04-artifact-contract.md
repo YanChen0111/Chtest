@@ -31,6 +31,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   knowledge_retrieval.json
   test_knowledge_card_prompt_context_evidence.json
   test_knowledge_card_prompt_context_consumption.json
+  test_knowledge_card_prompt_context_audit_summary.json
   raw_output.json
   parsed_output.json
   schema_validation.json
@@ -362,6 +363,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | test_knowledge_card_retrieval_boundary | application/json | Future prompt-context selection evidence |
 | test_knowledge_card_prompt_context_evidence | application/json | Future bounded prompt context evidence |
 | test_knowledge_card_prompt_context_consumption | application/json | Future prompt context consumption citation evidence |
+| test_knowledge_card_prompt_context_audit_summary | application/json | Future prompt context usage audit summary evidence |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -873,6 +875,42 @@ TestKnowledgeCard Prompt Context Consumption artifact rules:
   change retrieval ranking, invoke MCP runtime, create vector indexes, create
   embeddings, rerank, run graph jobs, call remote CI providers, add RBAC,
   create tenants, or change permissions.
+
+TestKnowledgeCard Prompt Context Audit Summary artifact rules:
+
+- `test_knowledge_card_prompt_context_audit_summary.json` may be stored as an
+  Artifact with `artifact_type=test_knowledge_card_prompt_context_audit_summary`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=test_knowledge_card_prompt_context_audit_summary` in a later
+  scoped implementation.
+- The prompt context audit summary artifact must include
+  `summarize_prompt_context_consumption`, prompt request id or AITask id when
+  available, consuming agent step, intended output artifact type, prompt
+  context consumption artifact id, prompt context evidence artifact id,
+  context manifest artifact id, `used_knowledge` decision, usage status, cited
+  TestKnowledgeCard ids, output citation ids, skipped evidence ids, skip
+  reasons, unsupported claim summaries, source hashes, PromptVersion id,
+  SkillVersion id, ReviewHistory ids, review flags, and failure code when
+  applicable.
+- Audit summary artifacts are read-only views of consumption evidence. They
+  must not invent citations, rewrite `used_knowledge`, promote unsupported
+  claims, or turn skipped evidence into cited evidence.
+- Prompt context audit summary artifacts must not contain raw large source
+  text, credentials, tokens, unsafe provider payloads, vector store payloads,
+  embedding vectors, reranker traces, graph runtime payloads, executable prompt
+  assembly payloads, provider request/response payloads, frontend-rendered
+  markup, or report-rendered payloads.
+- Prompt context audit summary artifacts must not mutate Artifact rows outside
+  declared audit summary output, mutate source artifacts, mutate prompt context
+  consumption artifacts, mutate prompt context evidence artifacts, mutate
+  retrieval boundary artifacts, mutate prompt eligibility artifacts, rewrite
+  creation artifacts, mutate historical ReviewHistory, FailureAnalysis, Report,
+  TestRun, TestResult, TestCase, GeneratedCaseCandidate, KnowledgeEvidence, or
+  unrelated TestKnowledgeCard rows, run prompt assembly, execute AITasks, call
+  providers, change retrieval ranking, invoke MCP runtime, create vector
+  indexes, create embeddings, rerank, run graph jobs, render frontend pages,
+  generate reports, call remote CI providers, add RBAC, create tenants, or
+  change permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

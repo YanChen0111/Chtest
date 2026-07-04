@@ -1215,6 +1215,49 @@ TestKnowledgeCard Prompt Context Consumption rules:
   graph runtime payloads, secrets, credentials, tokens, OAuth material, or
   executable prompt assembly payloads.
 
+TestKnowledgeCard Prompt Context Audit Summary rules:
+
+- TestKnowledgeCard Prompt Context Audit Summary starts from existing prompt
+  context consumption evidence. It is a read-only summary contract for future
+  review/report surfaces and is not a frontend page, report generation behavior
+  change, prompt assembly implementation, prompt runtime execution, provider
+  behavior, retrieval ranking, card creation, broad CRUD, vector indexing,
+  embedding, reranking, graph runtime, or MCP runtime.
+- The contract-only summary action is `summarize_prompt_context_consumption`.
+  It may describe `prompt_context_audit_summary` evidence, usage status,
+  cited entries, skipped entries, unsupported claim summaries, and failure
+  reasons, but it must not write a runtime `prompt_input.json`, call
+  providers, run AITasks, mutate TestKnowledgeCard rows, mutate prompt context
+  consumption artifacts, mutate prompt context evidence artifacts, mutate
+  source artifacts, rewrite `used_knowledge`, invent citations, or mutate
+  historical evidence.
+- Audit summary input must preserve prompt request id or AITask id when
+  available, consuming agent step name, intended output artifact type, prompt
+  context consumption artifact id, prompt context evidence artifact id, context
+  manifest artifact id, `used_knowledge` decision, output citation ids, cited
+  TestKnowledgeCard ids, cited context entry ids, cited source hashes or source
+  quote/hash pointers, skipped evidence ids and skip reasons, unsupported
+  claims, PromptVersion id/name/version, SkillVersion id/name/version,
+  ReviewHistory ids, and failure code when applicable.
+- Audit summary outputs may include audit summary id or artifact id, knowledge
+  usage status, cited evidence summaries, skipped evidence summaries,
+  unsupported claim summaries, source hash/context entry references,
+  PromptVersion/SkillVersion trace, context manifest links, ReviewHistory
+  links, review flags, and failure reasons.
+- Audit summaries must preserve `used_knowledge` and citation evidence as
+  recorded by prompt context consumption. They must not promote unsupported
+  claims, turn skipped evidence into cited evidence, or mark knowledge used
+  when prompt context consumption kept `used_knowledge=false`.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, or evidence-mismatched input must
+  produce failure flags or skipped summary rows without mutating historical
+  evidence.
+- Prompt context audit summaries must not copy raw large source text, unsafe
+  provider payloads, vector store payloads, embedding vectors, reranker traces,
+  graph runtime payloads, secrets, credentials, tokens, OAuth material, or
+  executable prompt assembly payloads.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated
@@ -1415,7 +1458,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -1472,6 +1515,27 @@ TestKnowledgeCard prompt context consumption Artifact rule:
   call providers, run an AITask, mutate prompt context evidence, mutate source
   artifacts, mutate TestKnowledgeCard rows, or mark `used_knowledge=true`
   without valid consumed citations.
+
+TestKnowledgeCard prompt context audit summary Artifact rule:
+
+- Slice 43 prompt context audit summary may use
+  `artifact_type=test_knowledge_card_prompt_context_audit_summary` in a later
+  scoped implementation.
+- `owner_entity_type=AITask` or `owner_entity_type=Project` until a later
+  scoped review/report workflow owns a dedicated summary entity.
+- `metadata_json` must include `created_by_component=TestKnowledgeCardPromptContextAuditSummary`,
+  `prompt_context_audit_summary_action=summarize_prompt_context_consumption`,
+  prompt context consumption artifact id, prompt context evidence artifact id,
+  context manifest artifact id, `used_knowledge` decision, cited
+  TestKnowledgeCard ids, output citation ids, skipped evidence ids and skip
+  reasons, unsupported claim count, source hashes, PromptVersion id,
+  SkillVersion id, ReviewHistory ids, usage status, and failure code when
+  applicable.
+- This artifact is read-only audit evidence only. It must not render frontend
+  pages, change report generation behavior, assemble prompt text, call
+  providers, run an AITask, mutate prompt context consumption evidence, mutate
+  prompt context evidence, mutate source artifacts, rewrite `used_knowledge`,
+  invent citations, or mutate TestKnowledgeCard rows.
 
 CI import Artifact rule:
 

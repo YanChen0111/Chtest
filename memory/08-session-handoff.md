@@ -1,5 +1,39 @@
 # Session Handoff
 
+## 2026-07-05 Slice 43 TestKnowledgeCard Prompt Context Audit Summary Contracts
+
+Completed:
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  TestKnowledgeCard Prompt Context Audit Summary.
+- Defined `summarize_prompt_context_consumption`,
+  `prompt_context_audit_summary`, prompt context consumption artifact
+  references, context manifest links, `used_knowledge`, output citations,
+  skipped evidence, unsupported claim summaries, source hashes,
+  PromptVersion/SkillVersion trace, ReviewHistory ids, usage status, and
+  failure behavior.
+- Added `test_knowledge_card_prompt_context_audit_summary` artifact type and
+  `test_knowledge_card_prompt_context_audit_summary.json` artifact path rules.
+- `NEXT_AI_TASK.md` now points to Slice 43 Task 3: Add TestKnowledgeCard
+  prompt context audit summary golden smoke.
+
+Verification:
+
+```bash
+rg -n "TestKnowledgeCard Prompt Context Audit Summary|prompt_context_audit_summary|summarize_prompt_context_consumption|used_knowledge|output citations|skipped evidence|unsupported claims|PromptVersion|SkillVersion|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found and diff check is clean except Windows LF-to-CRLF
+  warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define test knowledge card prompt context audit summary contracts`.
+- Continue Slice 43 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 43 TestKnowledgeCard Prompt Context Audit Summary Plan
 
 Completed:
