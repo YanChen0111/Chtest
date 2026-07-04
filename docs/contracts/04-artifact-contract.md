@@ -87,6 +87,7 @@ artifacts/projects/{project_id}/knowledge-feedback/{ai_task_id}/
   schema_validation.json
   test_knowledge_card_handoff.json
   test_knowledge_card_candidate_review.json
+  reviewed_test_knowledge_card_creation.json
 ```
 
 `knowledge_feedback.json` stores draft KnowledgeFeedbackAgent output. It is
@@ -99,6 +100,9 @@ creates a real card.
 `test_knowledge_card_candidate_review.json` stores candidate review evidence
 for a handoff payload. It is not TestKnowledgeCard CRUD and must not create,
 merge, archive, delete, relabel, or make prompt-eligible card rows.
+`reviewed_test_knowledge_card_creation.json` stores reviewed creation evidence
+for a future scoped TestKnowledgeCard creation workflow. It is not broad CRUD
+and must not grant prompt eligibility.
 
 ### 3.4 Automation Draft
 
@@ -344,6 +348,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | test_knowledge_card | application/json | Structured testing knowledge card snapshot |
 | test_knowledge_card_handoff | application/json | Future TestKnowledgeCard handoff candidate payload |
 | test_knowledge_card_candidate_review | application/json | Human review evidence for a handoff candidate |
+| reviewed_test_knowledge_card_creation | application/json | Reviewed TestKnowledgeCard creation evidence |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -683,6 +688,38 @@ TestKnowledgeCard Candidate Review artifact rules:
   retrieval, call providers, invoke MCP runtime, create vector indexes, create
   embeddings, rerank, run graph jobs, call remote CI providers, add RBAC,
   create tenants, or change permissions.
+
+Reviewed TestKnowledgeCard Creation artifact rules:
+
+- `reviewed_test_knowledge_card_creation.json` is stored as an Artifact with
+  `artifact_type=reviewed_test_knowledge_card_creation`,
+  `owner_entity_type=AITask`, and
+  `manifest_kind=reviewed_test_knowledge_card_creation` until a later scoped
+  implementation owns a dedicated creation entity.
+- The creation artifact must include `creation_action`,
+  `create_reviewed_test_knowledge_card`, approved candidate review action,
+  `candidate_review_artifact_id`, `source_handoff_artifact_id`,
+  `source_feedback_id`, ReviewHistory ids, `candidate_card_json`,
+  `source_manifest`, duplicate/merge precondition result,
+  `allowed_for_prompt=false`, `prompt_eligibility_decision=deferred`,
+  unsupported claims, schema validation status, and failure code when
+  applicable.
+- `source_manifest` must cite only same-project source Artifact ids, source
+  hashes, source spans, safe quote/hash pointers, ReviewHistory ids, and
+  candidate review evidence. It must not duplicate raw logs, large reports,
+  credentials, tokens, provider payloads, or unsafe source content.
+- Creation artifacts must record duplicate/merge preconditions. Unresolved
+  duplicate or merge conflicts must block creation and must not merge, archive,
+  replace, delete, relabel, or create conflicting TestKnowledgeCard rows.
+- Creation artifacts must record `allowed_for_prompt=false`. They must not set
+  `allowed_for_prompt=true` or mark a card prompt-eligible.
+- Creation artifacts must not mutate Artifact rows outside declared creation
+  output, mutate ReviewHistory, FailureAnalysis, Report, TestRun, TestResult,
+  TestCase, GeneratedCaseCandidate, KnowledgeEvidence, or existing
+  TestKnowledgeCard rows, approve generated cases, promote TestCase rows,
+  generate Reports, run retrieval, call providers, invoke MCP runtime, create
+  vector indexes, create embeddings, rerank, run graph jobs, call remote CI
+  providers, add RBAC, create tenants, or change permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

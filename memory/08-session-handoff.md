@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-04 Slice 38 Reviewed TestKnowledgeCard Creation Contracts
+
+Completed:
+
+- Updated data, API, state-machine, and artifact contracts for Reviewed
+  TestKnowledgeCard Creation.
+- Defined creation input, `create_reviewed_test_knowledge_card`, approved
+  candidate review artifact, card field mapping, source manifest,
+  duplicate/merge preconditions, `allowed_for_prompt=false`,
+  `prompt_eligibility_decision=deferred`, failure behavior, and ReviewHistory
+  linkage.
+- Added artifact rules for `reviewed_test_knowledge_card_creation.json` with
+  `artifact_type=reviewed_test_knowledge_card_creation`.
+- `NEXT_AI_TASK.md` now points to Slice 38 Task 3: Add reviewed
+  TestKnowledgeCard creation golden smoke.
+
+Verification:
+
+```bash
+rg -n "Reviewed TestKnowledgeCard Creation|create_reviewed_test_knowledge_card|approved candidate|candidate review artifact|source manifest|allowed_for_prompt=false|duplicate|merge|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found and `git diff --check` is clean except Windows
+  LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define reviewed test knowledge card creation contracts`.
+- Continue Slice 38 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 38 Reviewed TestKnowledgeCard Creation Plan
 
 Completed:

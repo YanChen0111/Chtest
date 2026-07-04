@@ -1266,6 +1266,104 @@ TestKnowledgeCard Candidate Review hard rules:
   change, report generation behavior change, remote CI provider behavior,
   RBAC, tenants, or permissions.
 
+### 3.5.5 Reviewed TestKnowledgeCard Creation Contract
+
+This section is contract-only. It defines future reviewed creation semantics
+for approved candidates and does not add an endpoint, router, service, worker,
+queue, frontend page, migration, broad TestKnowledgeCard CRUD, list/update/
+delete API, or `POST /api/test-knowledge-cards`.
+
+Allowed future creation action:
+
+- `create_reviewed_test_knowledge_card`: future scoped action that may create a
+  TestKnowledgeCard only from an approved candidate review, reviewed source
+  evidence, resolved duplicate/merge preconditions, and `allowed_for_prompt=false`.
+
+Reviewed creation payload shape:
+
+```json
+{
+  "creation_action": "create_reviewed_test_knowledge_card",
+  "approved_candidate_review_action": "approve_candidate_for_creation",
+  "candidate_review_artifact_id": "00000000-0000-0000-0000-000000000882",
+  "source_handoff_artifact_id": "00000000-0000-0000-0000-000000000871",
+  "source_feedback_id": "kf-expired-coupon-boundary",
+  "review_history_ids": [
+    "00000000-0000-0000-0000-000000000861",
+    "00000000-0000-0000-0000-000000000881"
+  ],
+  "candidate_card_json": {
+    "knowledge_type": "existing_test_case_pattern",
+    "title": "Expired coupon checkout rejection",
+    "summary": "Reviewed checkout cases should include expired coupon rejection.",
+    "body": "Use reviewed source evidence before creating reusable knowledge.",
+    "source_type": "reviewed_case",
+    "source_section": "checkout/coupon",
+    "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
+    "related_requirement_ids": ["00000000-0000-0000-0000-000000000121"],
+    "related_risk_ids": ["00000000-0000-0000-0000-000000000221"],
+    "related_test_case_ids": ["00000000-0000-0000-0000-000000000931"],
+    "tags": ["checkout", "coupon", "regression"],
+    "confidence": 84,
+    "safe_to_show": true,
+    "redaction_applied": false,
+    "allowed_for_prompt": false
+  },
+  "source_manifest": {
+    "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
+    "source_hashes": ["sha256:reviewed-case-expired-coupon"],
+    "source_span": "case.steps[3]-case.expected_results[0]"
+  },
+  "duplicate_merge_preconditions": {
+    "duplicate_knowledge_card_ids": [],
+    "merge_hint": null,
+    "resolved": true
+  },
+  "unsupported_claims": [],
+  "prompt_eligibility_decision": "deferred"
+}
+```
+
+Reviewed creation response shape for a future scoped implementation:
+
+```json
+{
+  "creation_action": "create_reviewed_test_knowledge_card",
+  "creation_status": "ready_for_future_creation",
+  "test_knowledge_card_id": null,
+  "creation_artifact_id": "00000000-0000-0000-0000-000000000891",
+  "review_history_id": "00000000-0000-0000-0000-000000000892",
+  "allowed_for_prompt": false,
+  "prompt_eligibility_decision": "deferred"
+}
+```
+
+Reviewed TestKnowledgeCard Creation hard rules:
+
+- Creation input must come from an approved candidate review artifact and must
+  preserve the source handoff artifact, source feedback id, ReviewHistory ids,
+  candidate_card_json, source manifest, duplicate/merge preconditions, and
+  unsupported claims.
+- `create_reviewed_test_knowledge_card` is a future scoped creation action,
+  not broad CRUD. This contract must not add list/update/delete behavior or
+  create rows by itself.
+- Future creation must default `allowed_for_prompt=false`. Prompt eligibility
+  remains deferred until a later explicit prompt-eligibility workflow.
+- Duplicate/merge preconditions must be resolved before creation. Unresolved
+  duplicate or merge conflicts must block creation and must not automatically
+  merge, archive, replace, delete, relabel, or create card rows.
+- Stale, rejected, revision-requested, cross-project, unsafe, unbounded, or
+  unsupported source evidence must reject creation with a failure code and must
+  not create fallback cards.
+- This contract must not add a backend feature API, frontend page, migration,
+  broad TestKnowledgeCard CRUD, automatic card creation from model output,
+  automatic prompt eligibility, automatic knowledge ingestion, provider call,
+  MCP runtime, vector index, embedding, reranking, graph job, artifact mutation
+  outside declared creation artifacts, historical evidence mutation,
+  generated-case auto-approval, TestCase auto-promotion, runner behavior
+  change, report generation behavior change, remote CI provider behavior,
+  RBAC, tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

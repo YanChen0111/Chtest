@@ -1026,6 +1026,40 @@ TestKnowledgeCard Candidate Review rules:
   evidence and unsupported claims. They must not become positive knowledge,
   card body facts, or prompt context.
 
+Reviewed TestKnowledgeCard Creation rules:
+
+- Reviewed TestKnowledgeCard Creation starts from an approved candidate review:
+  `candidate_approved_for_future_creation`, a candidate review artifact,
+  `test_knowledge_card_handoff.json`, `candidate_card_json`, and ReviewHistory
+  evidence. It is a reviewed creation contract only; it must not add broad
+  CRUD, list, update, delete, merge, archive, or relabel behavior.
+- The future scoped action is `create_reviewed_test_knowledge_card`. It must
+  require same-project source artifacts, source quote/hash, source span,
+  candidate review evidence, duplicate/merge precondition results, safe-to-show
+  evidence, and visible unsupported claims.
+- The approved candidate must map into TestKnowledgeCard fields: project_id,
+  optional module_id, title, knowledge_type, summary, body, source_type,
+  source_artifact_id, source_artifact_ids, source_document_version,
+  source_section, source_quote_or_hash, related requirement/risk/test case ids,
+  tags, test_type, risk_level, module_key, api_endpoint, applicability,
+  confidence, `safe_to_show`, `redaction_applied`, redaction report artifact
+  id, `evidence_artifact_ids`, last_verified_at, and status.
+- Reviewed creation defaults to `allowed_for_prompt=false`. Creation approval
+  is not prompt eligibility, and prompt eligibility must remain a later
+  explicitly scoped workflow.
+- Duplicate and merge preconditions must be resolved before creation. Unresolved
+  `duplicate_knowledge_card_ids`, stale `merge_hint`, or pending merge review
+  must block creation instead of merging, archiving, replacing, deleting,
+  relabeling, or creating conflicting TestKnowledgeCard rows.
+- Reviewed creation must produce or reference a source manifest and creation
+  artifact in a future scoped implementation. The source manifest records
+  source artifacts, source hashes, source spans, ReviewHistory ids, candidate
+  review artifact id, and duplicate/merge precondition result.
+- Stale, rejected, revision-requested, cross-project, unsafe, unbounded, or
+  unsupported source evidence must reject creation with a failure code. It must
+  not fabricate fallback cards, source artifacts, ReviewHistory, or
+  KnowledgeEvidence.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated

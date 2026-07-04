@@ -10,13 +10,13 @@ Slice 38: Reviewed TestKnowledgeCard Creation Contract.
 
 ## Current Task
 
-Slice 38 Task 2: Define reviewed TestKnowledgeCard creation contracts.
+Slice 38 Task 3: Add reviewed TestKnowledgeCard creation golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest has explicit data/API/state/artifact contracts for
-reviewed TestKnowledgeCard creation from approved candidates without broad CRUD
-or automatic prompt eligibility.
+After this task, Chtest has a contract-level fixture and golden smoke proving
+reviewed TestKnowledgeCard creation cannot bypass source evidence,
+duplicate/merge, or prompt eligibility gates.
 
 ## Must Read
 
@@ -44,17 +44,15 @@ or automatic prompt eligibility.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md
+docs/fixtures/26-reviewed-test-knowledge-card-creation-golden.md
+backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract-only task. Do not add frontend code, backend runtime feature code,
+Golden-smoke task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic card creation from model output,
 automatic prompt eligibility, automatic knowledge ingestion, external provider
@@ -67,31 +65,32 @@ RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-rg -n "Reviewed TestKnowledgeCard Creation|create_reviewed_test_knowledge_card|approved candidate|candidate review artifact|source manifest|allowed_for_prompt=false|duplicate|merge|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: required reviewed creation contract terms are present across
-data/API/state/artifact contracts and the slice plan, and diff check passes.
+Expected result: reviewed TestKnowledgeCard creation golden smoke passes and
+diff check passes.
 
 ## Acceptance
 
-- Contracts define reviewed creation input, created card field mapping,
-  source evidence, source manifest, creation outputs, duplicate/merge
-  preconditions, prompt eligibility separation, and failure behavior.
-- Contracts keep broad CRUD, update/delete/list APIs, prompt eligibility,
-  automatic card creation, and duplicate merge/archive/delete behind later
-  explicitly scoped workflows.
-- Contracts require `allowed_for_prompt=false` by default and preserve
-  unsupported claims.
-- `NEXT_AI_TASK.md` points to Task 3.
+- Golden names reviewed TestKnowledgeCard creation, approved candidate review,
+  creation action, card field mapping, source evidence, source manifest,
+  duplicate/merge preconditions, `allowed_for_prompt=false`, unsupported
+  claims, ReviewHistory, and creation artifact evidence.
+- Golden proves no broad TestKnowledgeCard CRUD, automatic card creation from
+  model output, automatic prompt eligibility, automatic merge/archive/delete,
+  historical evidence mutation, provider call, vector index, graph job, MCP
+  runtime, artifact mutation, review bypass, auto-promotion, RBAC, tenants, or
+  permissions is created by the contract.
+- `NEXT_AI_TASK.md` points to Slice 38 Completion Gate.
 
 ## Commit Message
 
 ```text
-docs(v2): define reviewed test knowledge card creation contracts
+test(golden): add reviewed test knowledge card creation smoke
 ```
 
 ## Next Task
 
-Slice 38 Task 3: Add reviewed TestKnowledgeCard creation golden smoke.
+Slice 38 Completion Gate.

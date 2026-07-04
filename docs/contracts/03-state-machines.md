@@ -270,6 +270,59 @@ TestKnowledgeCard Candidate Review state rules:
   report generation behavior changes, RBAC, tenants, permissions, or remote CI
   provider behavior.
 
+## 7.6 Reviewed TestKnowledgeCard Creation State Contract
+
+Reviewed TestKnowledgeCard Creation is a future scoped creation boundary from
+an approved candidate review into a TestKnowledgeCard record. It is not broad
+TestKnowledgeCard CRUD and must not grant prompt eligibility by itself.
+
+```text
+candidate_approved_for_future_creation -> creation_preflight_required
+creation_preflight_required -> creation_blocked
+creation_preflight_required -> ready_for_reviewed_creation
+ready_for_reviewed_creation -> reviewed_card_creation_deferred
+ready_for_reviewed_creation -> reviewed_card_created
+reviewed_card_created -> prompt_eligibility_deferred
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| candidate_approved_for_future_creation | require_creation_preflight | creation_preflight_required | System/API | Checks source evidence and duplicate/merge preconditions |
+| creation_preflight_required | block_creation | creation_blocked | System/API | Unsafe, stale, unresolved duplicate, or unsupported evidence |
+| creation_preflight_required | mark_ready_for_reviewed_creation | ready_for_reviewed_creation | Human reviewer/API | Creation remains future scoped |
+| ready_for_reviewed_creation | defer_creation | reviewed_card_creation_deferred | Human reviewer/API | No row is created |
+| ready_for_reviewed_creation | create_reviewed_test_knowledge_card | reviewed_card_created | Future scoped implementation | Creates only after explicit scope exists |
+| reviewed_card_created | defer_prompt_eligibility | prompt_eligibility_deferred | Human reviewer/API | Keeps allowed_for_prompt=false |
+
+Reviewed TestKnowledgeCard Creation state rules:
+
+- Creation requires an approved candidate review, candidate review artifact,
+  handoff artifact, candidate_card_json, same-project source artifacts, source
+  manifest, ReviewHistory ids, duplicate/merge precondition result, and visible
+  unsupported claims.
+- `reviewed_card_created` is a future scoped implementation state only. This
+  contract must not add an endpoint, migration, backend service, frontend page,
+  or broad CRUD behavior by itself.
+- Creation preflight must block stale, rejected, revision-requested,
+  duplicate-conflicted, cross-project, unsafe, unbounded, or unsupported source
+  evidence. Blocked creation must preserve a failure code and must not create
+  fallback cards.
+- Reviewed creation must default to `allowed_for_prompt=false`.
+  `prompt_eligibility_deferred` remains separate from card creation and must
+  not be inferred from safe_to_show, model confidence, or schema validity.
+- Duplicate/merge preconditions must not automatically merge, archive, replace,
+  delete, relabel, or create TestKnowledgeCard rows.
+- Successful future creation may append or reference ReviewHistory and may
+  write a creation artifact. Invalid transitions or failed preflight must not
+  append successful ReviewHistory.
+- The reviewed creation state contract must not add a runtime API, frontend
+  page, broad TestKnowledgeCard CRUD, automatic card creation from model
+  output, automatic prompt eligibility, provider calls, MCP runtime,
+  vector/graph runtime, artifact mutation outside declared creation outputs,
+  historical evidence mutation, generated-case auto-approval, runner behavior
+  changes, report generation behavior changes, RBAC, tenants, permissions, or
+  remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on
