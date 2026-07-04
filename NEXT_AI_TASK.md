@@ -6,17 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 35: Knowledge Feedback Review Gate Contract.
+Slice 36: TestKnowledgeCard Handoff Contract.
 
 ## Current Task
 
-Slice 35 Completion Gate.
+Slice 36 Task 1: Add TestKnowledgeCard Handoff Contract task plan.
 
 ## Product Value Answer
 
-After this task, Slice 35 is validated end to end and the next narrow V2 task
-is selected without adding review runtime APIs, frontend pages, or
-TestKnowledgeCard CRUD.
+After this task, Chtest has a narrow plan for moving approved
+KnowledgeFeedbackDraft handoff payloads toward TestKnowledgeCard candidates
+without implementing CRUD or automatic prompt eligibility.
 
 ## Must Read
 
@@ -25,7 +25,7 @@ TestKnowledgeCard CRUD.
 3. `docs/contracts/02-api-contract.md`
 4. `docs/contracts/03-state-machines.md`
 5. `docs/contracts/05-prompt-skill-contract.md`
-6. `docs/implementation/slices/slice-34-knowledge-feedback-contract.md`
+6. `docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
 7. `docs/implementation/11-final-rag-agent-strategy.md`
 8. `memory/08-session-handoff.md`
 9. `memory/07-dev-log.md`
@@ -42,15 +42,16 @@ TestKnowledgeCard CRUD.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md
+docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion gate only. Do not add frontend code, backend runtime feature code,
-migrations, package upgrades, feedback review runtime API, frontend review
-page, TestKnowledgeCard CRUD, KnowledgeFeedbackAgent runtime, automatic prompt
+Planning-only task. Do not add frontend code, backend runtime feature code,
+migrations, package upgrades, TestKnowledgeCard CRUD implementation, backend
+feature API, frontend page, automatic card creation, automatic prompt
 eligibility, automatic knowledge ingestion, external provider integrations,
 vector database, embeddings, reranking, graph runtime, MCP runtime, provider
 SDK, credentials, artifact upload/mutation/delete, historical evidence
@@ -61,24 +62,29 @@ permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_knowledge_feedback_review_gate_contract_golden.py backend/app/tests/golden/test_knowledge_feedback_contract_golden.py -q
+test -f docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md
+rg -n "TestKnowledgeCard Handoff|KnowledgeFeedbackDraft|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: Slice 35 focused golden verification and diff check pass.
+Expected result: Slice 36 plan file exists, required plan terms are present,
+and diff check passes.
 
 ## Acceptance
 
-- Slice 35 task table records completed task commits.
-- Focused golden verification passes.
-- `NEXT_AI_TASK.md` points to the next narrow V2 task.
+- Slice 36 plan exists with product value, non-goals, task table, expected
+  files, verification commands, and commit messages.
+- The plan names KnowledgeFeedbackDraft handoff payloads, TestKnowledgeCard
+  candidate fields, source evidence, duplicate/merge hints, safe_to_show,
+  allowed_for_prompt, human review, and non-goals.
+- `NEXT_AI_TASK.md` points to Task 2.
 
 ## Commit Message
 
 ```text
-docs(v2): complete knowledge feedback review gate slice
+docs(v2): add test knowledge card handoff plan
 ```
 
 ## Next Task
 
-Select the next narrow V2 task after Slice 35 completion.
+Slice 36 Task 2: Define TestKnowledgeCard handoff contracts.

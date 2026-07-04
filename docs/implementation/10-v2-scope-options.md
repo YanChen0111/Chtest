@@ -1770,3 +1770,90 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines feedback review actions,
   ReviewHistory, artifact evidence, prompt eligibility, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Knowledge feedback review gate contract.
+
+Why it was selected:
+
+- Slice 34 defined KnowledgeFeedbackDraft as draft-only output, but Chtest still
+  needed the human gate that accepts, rejects, requests revision, or marks
+  prompt eligibility without creating broad TestKnowledgeCard CRUD.
+- Slice 35 defined review actions, ReviewHistory linkage, feedback review
+  artifact evidence, prompt eligibility reason, and future TestKnowledgeCard
+  handoff payloads.
+- The slice kept prompt eligibility separate from model confidence and blocked
+  rejected feedback from becoming positive prompt knowledge.
+
+Completed slice name:
+
+```text
+Slice 35: Knowledge Feedback Review Gate Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact contracts, fixture, contract-level golden
+  smoke, and completion gate.
+- KnowledgeFeedbackDraft review remains human-gated and auditable.
+- No feedback review runtime API, frontend review page, TestKnowledgeCard CRUD,
+  automatic prompt eligibility, automatic knowledge ingestion, provider calls,
+  vector database, embeddings, reranking, graph runtime, MCP runtime, artifact
+  mutation, historical evidence mutation, generated-case auto-approval, runner
+  behavior, report behavior, RBAC, tenants, permissions, or remote CI provider
+  behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard handoff contract.
+
+Why:
+
+- Slice 35 intentionally stops at a handoff payload. The next narrow contract
+  is to define how an approved KnowledgeFeedbackDraft can become a reviewed
+  TestKnowledgeCard candidate without introducing a broad CRUD surface or
+  prompt-eligibility automation.
+- This keeps the knowledge loop closed but controlled: human-reviewed feedback
+  can be mapped into card fields, source evidence, safe-to-show checks, and
+  prompt eligibility gates before any implementation writes card rows.
+- The slice can stay contract-only by defining handoff payload shape,
+  duplicate/merge rules, source evidence requirements, card review states, and
+  a golden smoke.
+
+Next slice name:
+
+```text
+Slice 36: TestKnowledgeCard Handoff Contract
+```
+
+Smallest useful boundary:
+
+- Define handoff payload from approved KnowledgeFeedbackDraft to a future
+  TestKnowledgeCard candidate.
+- Define source evidence, source quote/hash, knowledge_type mapping,
+  duplicate/merge hints, safe_to_show checks, and allowed_for_prompt default.
+- Keep card creation and prompt eligibility review-gated and separate.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No TestKnowledgeCard CRUD implementation, backend feature API, frontend page,
+  migration, automatic card creation, automatic prompt eligibility, automatic
+  knowledge ingestion, provider calls, vector database, embeddings, reranking,
+  graph runtime, MCP runtime, artifact mutation, historical evidence mutation,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 36 Task 1: Add TestKnowledgeCard Handoff Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines handoff payload, source evidence,
+  card review boundaries, prompt eligibility, and non-goals.

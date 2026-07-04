@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-04 Slice 35 Completion Gate
+
+### Completed
+
+- Closed Slice 35: Knowledge Feedback Review Gate Contract.
+- Updated `docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
+  task table with completed commits:
+  - Task 1: `b3faec3`;
+  - Task 2: `a523a76`;
+  - Task 3: `65d51d0`.
+- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 35
+  completion and recommend Slice 36: TestKnowledgeCard Handoff Contract.
+- Updated `NEXT_AI_TASK.md` to Slice 36 Task 1.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_knowledge_feedback_review_gate_contract_golden.py backend\app\tests\golden\test_knowledge_feedback_contract_golden.py -q`
+- Result: `6 passed`.
+- `git diff --check`
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): complete knowledge feedback review gate slice`.
+- Continue Slice 36 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 35 Knowledge Feedback Review Gate Golden Smoke
 
 ### Completed
