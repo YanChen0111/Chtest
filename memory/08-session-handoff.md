@@ -1,5 +1,36 @@
 # Session Handoff
 
+## 2026-07-05 Slice 42 TestKnowledgeCard Prompt Context Consumption Golden Smoke
+
+Completed:
+
+- Added prompt context consumption golden fixture:
+  `docs/fixtures/30-test-knowledge-card-prompt-context-consumption-golden.md`.
+- Added prompt context consumption golden smoke:
+  `backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py`.
+- Golden coverage names prompt context evidence artifact id, context manifest,
+  `used_knowledge`, consumed TestKnowledgeCard ids, source hash, output
+  citations, PromptVersion, SkillVersion, ReviewHistory, skipped evidence,
+  failure behavior, and forbidden side effects.
+- `NEXT_AI_TASK.md` now points to Slice 42 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `3 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `test(golden): add test knowledge card prompt context consumption smoke`.
+- Continue Slice 42 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 42 TestKnowledgeCard Prompt Context Consumption Contracts
 
 Completed:
