@@ -6,16 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 40: TestKnowledgeCard Retrieval Boundary Contract.
+Slice 41: TestKnowledgeCard Prompt Context Evidence Contract.
 
 ## Current Task
 
-Slice 40 Completion Gate.
+Slice 41 Task 1: Add TestKnowledgeCard Prompt Context Evidence task plan.
 
 ## Product Value Answer
 
-After this task, Slice 40 is closed with focused golden verification and the
-next narrow V2 slice is recorded for continuation.
+After this task, Chtest has a narrow contract plan for what selected
+TestKnowledgeCard evidence may be placed into future prompt context without
+implementing prompt assembly, provider calls, or retrieval runtime behavior.
 
 ## Must Read
 
@@ -25,10 +26,11 @@ next narrow V2 slice is recorded for continuation.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`
-8. `docs/fixtures/28-test-knowledge-card-retrieval-boundary-golden.md`
-9. `memory/08-session-handoff.md`
-10. `memory/07-dev-log.md`
+7. `docs/implementation/10-v2-scope-options.md`
+8. `docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`
+9. `docs/fixtures/28-test-knowledge-card-retrieval-boundary-golden.md`
+10. `memory/08-session-handoff.md`
+11. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -42,47 +44,54 @@ next narrow V2 slice is recorded for continuation.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md
+docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md
 docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion-gate task. Do not add frontend code, backend runtime feature code,
+Planning-only task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic prompt eligibility, prompt
-runtime retrieval implementation, deterministic retrieval behavior change,
-automatic card creation from model output, automatic knowledge ingestion,
-external provider integrations, vector database, embeddings, reranking, graph
-runtime, MCP runtime, provider SDK, credentials, artifact upload/mutation/delete,
-historical evidence mutation, generated-case auto-approval, runner behavior
-changes, report generation behavior changes, remote CI provider behavior, RBAC,
-tenants, or permissions.
+assembly implementation, prompt runtime execution, provider calls,
+deterministic retrieval behavior change, automatic card creation from model
+output, automatic knowledge ingestion, external provider integrations, vector
+database, embeddings, reranking, graph runtime, MCP runtime, provider SDK,
+credentials, artifact upload/mutation/delete, historical evidence mutation,
+generated-case auto-approval, runner behavior changes, report generation
+behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py -q
+test -f docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md
+rg -n "TestKnowledgeCard Prompt Context Evidence|prompt context evidence|bounded snippet|source hash|retrieval boundary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: focused Slice 40 golden verification passes and diff check
+Expected result: plan file exists, required terms are present, and diff check
 passes.
 
 ## Acceptance
 
-- Slice 40 task table records Task 1-3 commits.
-- Focused golden verification passes.
-- V2 scope options and handoff memory recommend the next narrow slice.
-- `NEXT_AI_TASK.md` points to the next slice task.
+- Slice 41 plan exists with product value, non-goals, task table, expected
+  files, verification commands, and commit messages.
+- The plan defines prompt context evidence inputs, bounded snippet/source hash
+  outputs, source evidence requirements, prompt/skill trace links, omission or
+  exclusion summaries, failure behavior, and non-goals.
+- The plan explicitly excludes prompt assembly implementation, prompt runtime
+  execution, provider calls, vector indexes, embeddings, reranking, graph jobs,
+  MCP runtime, broad CRUD, automatic eligibility, historical evidence mutation,
+  RBAC, tenants, and permissions.
+- `NEXT_AI_TASK.md` points to Slice 41 Task 2.
 
 ## Commit Message
 
 ```text
-docs(v2): complete test knowledge card retrieval boundary slice
+docs(v2): add test knowledge card prompt context evidence plan
 ```
 
 ## Next Task
 
-Slice 41 Task 1: Add TestKnowledgeCard Prompt Context Evidence task plan.
+Slice 41 Task 2: Define TestKnowledgeCard prompt context evidence contracts.

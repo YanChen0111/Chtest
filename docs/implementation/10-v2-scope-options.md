@@ -2228,3 +2228,99 @@ Expected output:
 - No product code until the plan defines selection inputs, eligibility
   filters, exclusion behavior, retrieval evidence outputs, failure behavior,
   and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard retrieval boundary contract.
+
+Why it was selected:
+
+- Slice 39 defined which reviewed cards can become prompt eligible, but Chtest
+  still needed a contract for future prompt-context selection.
+- Slice 40 defined read-only selection filters so `allowed_for_prompt=true` is
+  necessary but not sufficient for prompt-context inclusion.
+- The slice preserved source evidence, source manifest, redaction,
+  ReviewHistory, prompt eligibility artifacts, exclusion reasons, and retrieval
+  evidence outputs without implementing runtime retrieval.
+
+Completed slice name:
+
+```text
+Slice 40: TestKnowledgeCard Retrieval Boundary Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact contracts, fixture, contract-level golden
+  smoke, and completion gate.
+- TestKnowledgeCard retrieval boundary is now a read-only contract with
+  `select_prompt_eligible_cards`, eligibility filters, selection evidence, and
+  `excluded_card_reason`.
+- No prompt runtime retrieval implementation, deterministic retrieval behavior
+  change, vector database, embeddings, reranking, background indexing, graph
+  runtime, GraphRAG job, MCP runtime, provider calls, provider SDK,
+  credentials, backend feature API, frontend page, migration, broad
+  TestKnowledgeCard CRUD, automatic prompt eligibility, automatic card
+  creation, automatic knowledge ingestion, artifact mutation, historical
+  evidence mutation, generated-case auto-approval, runner behavior, report
+  behavior, RBAC, tenants, permissions, or remote CI provider behavior were
+  added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard prompt context evidence contract.
+
+Why:
+
+- Slice 40 decides which prompt-eligible cards can be selected, but a later
+  prompt workflow also needs a bounded evidence contract for what is actually
+  placed into prompt context.
+- The next narrow boundary should define prompt context evidence records:
+  selected card ids, safe snippets or hashes, source evidence ids, selection
+  reasons, exclusion summaries, and prompt/skill trace links.
+- This keeps prompt assembly auditable without adding runtime retrieval,
+  provider calls, prompt execution, vector search, embeddings, reranking, graph
+  traversal, or frontend behavior.
+
+Next slice name:
+
+```text
+Slice 41: TestKnowledgeCard Prompt Context Evidence Contract
+```
+
+Smallest useful boundary:
+
+- Define a prompt context evidence artifact shape for future prompt workflows
+  that includes selected TestKnowledgeCard ids, bounded safe snippets or source
+  hashes, source manifest ids, retrieval boundary artifact ids, ReviewHistory
+  ids, prompt/skill version ids, and omission/exclusion summaries.
+- Define safety rules for snippet bounds, `safe_to_show`, redaction, source
+  traceability, and unsupported claims before any prompt input can cite a card.
+- Define failure behavior when selected card evidence is stale, unsafe,
+  cross-project, unbounded, missing, or revoked after selection.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No prompt runtime execution, prompt assembly implementation, provider call,
+  LLM call, prompt runner, deterministic retrieval behavior change, vector
+  database, embeddings, reranking, background indexing, graph runtime,
+  GraphRAG job, MCP runtime, provider SDK, credentials, backend feature API,
+  frontend page, migration, broad TestKnowledgeCard CRUD, automatic prompt
+  eligibility, automatic card creation, automatic knowledge ingestion,
+  artifact mutation outside declared prompt-context evidence, historical
+  evidence mutation, generated-case auto-approval, runner behavior, report
+  behavior, RBAC, tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 41 Task 1: Add TestKnowledgeCard Prompt Context Evidence task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines prompt context evidence inputs,
+  bounded outputs, safety checks, trace links, failure behavior, and non-goals.

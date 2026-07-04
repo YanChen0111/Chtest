@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-04 Slice 40 Completion Gate
+
+### Completed
+
+- Closed Slice 40: TestKnowledgeCard Retrieval Boundary Contract.
+- Updated Slice 40 task table with completed commits:
+  - Task 1: `2db2bff`;
+  - Task 2: `d334d8c`;
+  - Task 3: `78ff239`.
+- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 40
+  completion and recommend Slice 41: TestKnowledgeCard Prompt Context
+  Evidence Contract.
+- Updated `NEXT_AI_TASK.md` to Slice 41 Task 1.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py -q`
+- `git diff --check`
+- Result: `6 passed`.
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): complete test knowledge card retrieval boundary slice`.
+- Continue Slice 41 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Golden Smoke
 
 ### Completed
