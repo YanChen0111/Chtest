@@ -2631,5 +2631,7 @@ Slice 44 Task 1: Add TestKnowledgeCard Prompt Context Audit Review Decision task
 Expected output:
 
 - A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`.
 - No product code until the plan defines review decision inputs, reviewer
   action outputs, follow-up flags, failure behavior, and non-goals.
