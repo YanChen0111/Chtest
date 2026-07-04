@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/33-test-knowledge-card-prompt-context-audit-review-summary-export-golden.md`.
+- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py`.
+- The golden fixture and test cover audit review decision artifact id, audit
+  summary artifact id, review outcome summary, accepted citation group,
+  questioned citation group, rejected citation group, unresolved follow-up
+  flags, unsupported claim references, ReviewHistory, failure behavior, and
+  forbidden side effects.
+- Updated `NEXT_AI_TASK.md` to Slice 45 Completion Gate.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py -q`
+- `git diff --check`
+- Result: `3 passed`.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card prompt context audit review summary export smoke`.
+- Continue Slice 45 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Contracts
 
 ### Completed
@@ -38,7 +63,7 @@
 
 ### Next Step
 
-- Commit `docs(v2): define test knowledge card prompt context audit review summary export contracts`.
+- Committed `docs(v2): define test knowledge card prompt context audit review summary export contracts` as `c733a70`.
 - Continue Slice 45 Task 3 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Plan

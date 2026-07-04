@@ -10,29 +10,23 @@ Slice 45: TestKnowledgeCard Prompt Context Audit Review Summary Export Contract.
 
 ## Current Task
 
-Slice 45 Task 3: Add TestKnowledgeCard prompt context audit review summary export golden smoke.
+Slice 45 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a focused golden fixture and smoke test proving the
-TestKnowledgeCard prompt context audit review summary export contract preserves
-review decisions, audit summaries, `used_knowledge`, ReviewHistory, and
-forbidden side effects.
+After this task, Slice 45 is closed with task commits recorded, focused golden
+verification passing, and the next narrow V2 task handed off.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `docs/contracts/04-artifact-contract.md`
-8. `docs/contracts/05-prompt-skill-contract.md`
-9. `docs/fixtures/32-test-knowledge-card-prompt-context-audit-review-decision-golden.md`
-10. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py`
-11. `memory/08-session-handoff.md`
-12. `memory/07-dev-log.md`
+4. `docs/implementation/10-v2-scope-options.md`
+5. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py`
+6. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py`
+7. `memory/08-session-handoff.md`
+8. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -46,15 +40,14 @@ forbidden side effects.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py
-docs/fixtures/33-test-knowledge-card-prompt-context-audit-review-summary-export-golden.md
 docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden-only task. Do not add frontend code, backend runtime feature code,
+Completion-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -69,31 +62,24 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py -q
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: golden smoke passes and diff check passes.
+Expected result: focused golden verification passes and diff check passes.
 
 ## Acceptance
 
-- Golden names audit review decision artifact id, audit summary artifact id,
-  review outcome summary, accepted citation group, questioned citation group,
-  rejected citation group, unresolved follow-up flags, unsupported claim
-  references, ReviewHistory, failure behavior, and forbidden side effects.
-- Golden proves no frontend page, report generation behavior, export/download
-  endpoint, prompt assembly implementation, prompt runtime execution, provider
-  call, retrieval ranking change, vector index, embedding, reranking, graph
-  job, MCP runtime, broad CRUD, automatic eligibility, historical evidence
-  mutation, RBAC, tenants, or permissions is created by the contract.
-- `NEXT_AI_TASK.md` points to the Slice 45 Completion Gate.
+- Slice 45 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
 
 ## Commit Message
 
 ```text
-test(golden): add test knowledge card prompt context audit review summary export smoke
+docs(v2): complete test knowledge card prompt context audit review summary export slice
 ```
 
 ## Next Task
 
-Slice 45 Completion Gate.
+Slice 46 Task 1: Add TestKnowledgeCard prompt context review discrepancy tracking task plan.
