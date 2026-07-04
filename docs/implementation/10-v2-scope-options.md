@@ -2420,6 +2420,8 @@ Slice 42 Task 1: Add TestKnowledgeCard Prompt Context Consumption task plan
 Expected output:
 
 - A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md`.
 - No product code until the plan defines prompt context evidence inputs,
   consumption/citation rules, `used_knowledge` semantics, failure behavior,
   and non-goals.

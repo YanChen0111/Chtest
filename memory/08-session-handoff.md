@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-04 Slice 42 TestKnowledgeCard Prompt Context Consumption Plan
+
+Completed:
+
+- Added Slice 42 plan:
+  `docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md`.
+- The plan defines a contract-first boundary for future agents consuming
+  TestKnowledgeCard prompt context evidence before prompt assembly or provider
+  runtime.
+- The plan names prompt context evidence inputs, consumption/citation rules,
+  `used_knowledge`, PromptVersion/SkillVersion trace, source hash/context
+  manifest links, skipped evidence, failure behavior, and non-goals.
+- `NEXT_AI_TASK.md` now points to Slice 42 Task 2: Define TestKnowledgeCard
+  prompt context consumption contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md
+rg -n "TestKnowledgeCard Prompt Context Consumption|prompt context evidence|used_knowledge|PromptVersion|SkillVersion|source hash|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists, required terms found, and diff check is clean except
+  Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add test knowledge card prompt context consumption plan`.
+- Continue Slice 42 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 41 Completion Gate
 
 Completed:
