@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Contracts
+
+Completed:
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  TestKnowledgeCard Prompt Context Audit Review Summary Export.
+- Added the contract action `export_prompt_context_audit_review_summary` and
+  the artifact type
+  `test_knowledge_card_prompt_context_audit_review_summary_export`.
+- Defined audit review decision artifact references, review outcome summary,
+  accepted citation group, questioned citation group, rejected citation group,
+  unresolved follow-up flags, unsupported claim references, ReviewHistory,
+  source hash/context manifest references, PromptVersion, SkillVersion, and
+  failure behavior.
+- The contracts preserve review decision evidence, audit summary evidence,
+  prompt context consumption evidence, prompt context evidence,
+  `used_knowledge`, and citation groups without adding export/download runtime.
+- `NEXT_AI_TASK.md` now points to Slice 45 Task 3: Add TestKnowledgeCard prompt
+  context audit review summary export golden smoke.
+
+Verification:
+
+```bash
+rg -n "TestKnowledgeCard Prompt Context Audit Review Summary Export|prompt_context_audit_review_summary_export|export_prompt_context_audit_review_summary|audit review decision artifact|review outcome summary|accepted citation group|questioned citation group|rejected citation group|unresolved follow-up flags|unsupported claim references|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found and diff check is clean except Windows LF-to-CRLF
+  warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define test knowledge card prompt context audit review summary export contracts`.
+- Continue Slice 45 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Plan
 
 Completed:
@@ -30,7 +67,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): add test knowledge card prompt context audit review summary export plan`.
+- Committed `docs(v2): add test knowledge card prompt context audit review summary export plan` as `a5fe0c8`.
 - Continue Slice 45 Task 2 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 44 Completion Gate

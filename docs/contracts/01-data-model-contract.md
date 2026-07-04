@@ -1309,6 +1309,59 @@ TestKnowledgeCard Prompt Context Audit Review Decision rules:
   executable prompt assembly payloads, frontend-rendered markup, or
   report-rendered payloads.
 
+TestKnowledgeCard Prompt Context Audit Review Summary Export rules:
+
+- TestKnowledgeCard Prompt Context Audit Review Summary Export starts from an
+  existing prompt context audit review decision. It is a contract for future
+  exportable evidence packages and is not a frontend page, report generation
+  behavior change, export/download endpoint, prompt assembly implementation,
+  prompt runtime execution, provider behavior, retrieval ranking, card
+  creation, broad CRUD, vector indexing, embedding, reranking, graph runtime,
+  or MCP runtime.
+- The contract-only summary export action is
+  `export_prompt_context_audit_review_summary`. It may package review outcome
+  summaries, accepted citation groups, questioned citation groups, rejected
+  citation groups, unresolved follow-up flags, unsupported claim references,
+  and source hash/context manifest references, but it must not write a runtime
+  `prompt_input.json`, expose a download endpoint, render a report, call
+  providers, run AITasks, mutate TestKnowledgeCard rows, mutate audit review
+  decision artifacts, mutate audit summary artifacts, mutate prompt context
+  consumption artifacts, mutate prompt context evidence artifacts, mutate
+  source artifacts, rewrite `used_knowledge`, invent citations, or mutate
+  historical evidence.
+- Summary export input must preserve prompt request id or AITask id when
+  available, audit review decision artifact id, audit summary artifact id,
+  prompt context consumption artifact id, prompt context evidence artifact id,
+  context manifest artifact id, `used_knowledge` decision, usage status, review
+  action, review outcome summary, accepted citation ids, questioned citation
+  ids, rejected citation ids, output citation ids, cited TestKnowledgeCard ids,
+  cited context entry ids, cited source hash or source quote/hash pointers,
+  skipped evidence ids and skip reasons, unsupported claims, unresolved
+  follow-up flags, failure reasons, PromptVersion id/name/version,
+  SkillVersion id/name/version, ReviewHistory ids, and review decision
+  ReviewHistory id.
+- Summary export outputs may include summary export id or artifact id, export
+  action, review outcome summary, accepted citation group, questioned citation
+  group, rejected citation group, unresolved follow-up flag group, unsupported
+  claim references, reviewer comment summary, source manifest ids, source
+  hashes, context manifest references, PromptVersion/SkillVersion trace,
+  ReviewHistory links, and failure code when applicable.
+- Summary exports are evidence packages about review decisions. Accepted
+  citation groups must not create prompt eligibility, approve TestKnowledgeCard
+  content, approve generated cases, alter `used_knowledge`, or mark skipped
+  evidence as cited. Questioned/rejected citation groups and unresolved
+  follow-up flags must remain visible.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched, audit
+  summary-mismatched, or review-decision-mismatched input must produce a
+  failure code and must not append a successful summary export.
+- Prompt context audit review summary exports must not copy raw large source
+  text, unsafe provider payloads, vector store payloads, embedding vectors,
+  reranker traces, graph runtime payloads, secrets, credentials, tokens, OAuth
+  material, executable prompt assembly payloads, frontend-rendered markup,
+  report-rendered payloads, or downloadable provider payloads.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated
@@ -1509,7 +1562,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -1608,6 +1661,31 @@ TestKnowledgeCard prompt context audit review decision Artifact rule:
   frontend pages, change report generation behavior, assemble prompt text, call
   providers, run an AITask, mutate audit summary evidence, mutate prompt
   context consumption evidence, mutate prompt context evidence, mutate source
+  artifacts, rewrite `used_knowledge`, invent citations, create prompt
+  eligibility, approve TestKnowledgeCard content, approve generated cases, or
+  mutate TestKnowledgeCard rows.
+
+TestKnowledgeCard prompt context audit review summary export Artifact rule:
+
+- Slice 45 prompt context audit review summary export may use
+  `artifact_type=test_knowledge_card_prompt_context_audit_review_summary_export`
+  in a later scoped implementation.
+- `owner_entity_type=AITask` or `owner_entity_type=Project` until a later
+  scoped export workflow owns a dedicated summary export entity.
+- `metadata_json` must include `created_by_component=TestKnowledgeCardPromptContextAuditReviewSummaryExport`,
+  `prompt_context_audit_review_summary_export_action=export_prompt_context_audit_review_summary`,
+  audit review decision artifact id, audit summary artifact id, prompt context
+  consumption artifact id, prompt context evidence artifact id, context
+  manifest artifact id, `used_knowledge` decision, usage status, review action,
+  review outcome summary, accepted citation group, questioned citation group,
+  rejected citation group, unresolved follow-up flags, unsupported claim
+  references, source hashes, PromptVersion id, SkillVersion id, ReviewHistory
+  links, and failure code when applicable.
+- This artifact is summary export evidence only. It must not render frontend
+  pages, change report generation behavior, expose an export/download endpoint,
+  assemble prompt text, call providers, run an AITask, mutate audit review
+  decision evidence, mutate audit summary evidence, mutate prompt context
+  consumption evidence, mutate prompt context evidence, mutate source
   artifacts, rewrite `used_knowledge`, invent citations, create prompt
   eligibility, approve TestKnowledgeCard content, approve generated cases, or
   mutate TestKnowledgeCard rows.

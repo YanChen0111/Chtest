@@ -326,6 +326,72 @@ Prompt context audit review decision rules:
   eligibility, rewrite `used_knowledge`, render frontend pages, generate
   reports, or bypass human review gates.
 
+### 4.6 TestKnowledgeCard Prompt Context Audit Review Summary Export Contract
+
+This contract defines prompt/skill trace rules for future summary exports of
+TestKnowledgeCard prompt context audit review decisions. It is contract-only
+and does not assemble prompts, execute AITasks, call providers, run retrieval,
+change ranking, create vector indexes, create embeddings, rerank, run graph
+jobs, invoke MCP runtime, render frontend pages, generate reports, expose
+export/download endpoints, mutate TestKnowledgeCard rows, create prompt
+eligibility, or generate model citations.
+
+Prompt context audit review summary export input must include:
+
+- `prompt_context_audit_review_summary_export_action=export_prompt_context_audit_review_summary`.
+- PromptVersion id/name/version and SkillVersion id/name/version.
+- Prompt context audit review decision artifact id.
+- Prompt context audit summary artifact id.
+- Prompt context consumption artifact id.
+- Prompt context evidence artifact id and context manifest artifact id.
+- `used_knowledge` decision and usage status.
+- Review action and review outcome summary.
+- Accepted citation ids, questioned citation ids, rejected citation ids, and
+  output citation ids.
+- Cited TestKnowledgeCard ids, context entry ids, source hashes, source
+  artifact ids, and source sections.
+- Skipped evidence ids, skip reasons, unsupported claim references, unresolved
+  follow-up flags, reviewer comment summary, and failure code when applicable.
+- ReviewHistory ids from prior evidence and the review decision ReviewHistory
+  id when a future scoped workflow persists one.
+
+Prompt context audit review summary export rules:
+
+- Summary exports must preserve PromptVersion and SkillVersion trace from the
+  referenced prompt context audit review decision evidence.
+- `used_knowledge` must be copied from prompt context audit review decision
+  evidence and must not be recomputed, rewritten, or auto-marked by a summary
+  export.
+- Accepted, questioned, and rejected citation groups must reference existing
+  output citations, TestKnowledgeCard ids, context entry ids, source hashes or
+  source quote/hash pointers, ReviewHistory ids, PromptVersion, and
+  SkillVersion.
+- Accepted citation groups must not create prompt eligibility, approve
+  TestKnowledgeCard content, approve generated cases, mutate prompt context
+  audit review decision evidence, or change `used_knowledge`.
+- Questioned citation groups, rejected citation groups, unresolved follow-up
+  flags, skipped evidence, and unsupported claims must remain visible. They
+  must not be promoted into knowledge-backed facts, deleted, filtered, or
+  replaced with generated citations.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched,
+  audit-summary-mismatched, or review-decision-mismatched input must produce a
+  failure code and must not append a successful summary export.
+- Prompt context audit review summary export must not include raw large source
+  text, hidden model context, unsafe provider payloads, vector store payloads,
+  embedding vectors, reranker traces, graph runtime payloads, credentials,
+  tokens, OAuth material, provider request payloads, frontend-rendered markup,
+  report-rendered payloads, export-rendered payloads, or downloadable provider
+  payloads.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
+  context audit review decision evidence, mutate artifacts outside declared
+  prompt context audit review summary export, approve generated cases, create
+  prompt eligibility, rewrite `used_knowledge`, render frontend pages,
+  generate reports, expose export/download endpoints, or bypass human review
+  gates.
+
 ## 5. Skill 文件格式
 
 每个 Skill 文件必须包含以下段落：

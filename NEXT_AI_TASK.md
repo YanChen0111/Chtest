@@ -10,28 +10,27 @@ Slice 45: TestKnowledgeCard Prompt Context Audit Review Summary Export Contract.
 
 ## Current Task
 
-Slice 45 Task 2: Define TestKnowledgeCard prompt context audit review summary export contracts.
+Slice 45 Task 3: Add TestKnowledgeCard prompt context audit review summary export golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest contracts define how a future export summary may
-package accepted, questioned, and rejected TestKnowledgeCard prompt context
-audit review decision evidence without implementing frontend pages, report
-generation behavior, export/download endpoints, prompt assembly, provider
-calls, or retrieval runtime behavior.
+After this task, Chtest has a focused golden fixture and smoke test proving the
+TestKnowledgeCard prompt context audit review summary export contract preserves
+review decisions, audit summaries, `used_knowledge`, ReviewHistory, and
+forbidden side effects.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/contracts/01-data-model-contract.md`
-4. `docs/contracts/02-api-contract.md`
-5. `docs/contracts/03-state-machines.md`
-6. `docs/contracts/04-artifact-contract.md`
-7. `docs/contracts/05-prompt-skill-contract.md`
-8. `docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`
-9. `docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
-10. `docs/fixtures/32-test-knowledge-card-prompt-context-audit-review-decision-golden.md`
+3. `docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`
+4. `docs/contracts/01-data-model-contract.md`
+5. `docs/contracts/02-api-contract.md`
+6. `docs/contracts/03-state-machines.md`
+7. `docs/contracts/04-artifact-contract.md`
+8. `docs/contracts/05-prompt-skill-contract.md`
+9. `docs/fixtures/32-test-knowledge-card-prompt-context-audit-review-decision-golden.md`
+10. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py`
 11. `memory/08-session-handoff.md`
 12. `memory/07-dev-log.md`
 
@@ -47,18 +46,15 @@ calls, or retrieval runtime behavior.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
-docs/contracts/05-prompt-skill-contract.md
+backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py
+docs/fixtures/33-test-knowledge-card-prompt-context-audit-review-summary-export-golden.md
 docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract-only task. Do not add frontend code, backend runtime feature code,
+Golden-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -73,36 +69,31 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-rg -n "TestKnowledgeCard Prompt Context Audit Review Summary Export|prompt_context_audit_review_summary_export|export_prompt_context_audit_review_summary|audit review decision artifact|review outcome summary|accepted citation group|questioned citation group|rejected citation group|unresolved follow-up flags|unsupported claim references|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: required contract terms are present and diff check passes.
+Expected result: golden smoke passes and diff check passes.
 
 ## Acceptance
 
-- Contracts define export summary input, audit review decision artifact
-  references, audit summary artifact references, review outcome summary,
-  accepted/questioned/rejected citation groups, unresolved follow-up flags,
-  unsupported claim references, ReviewHistory, source hashes, context manifest
-  links, PromptVersion/SkillVersion trace, failure behavior, and forbidden side
-  effects.
-- Contracts require export summaries to preserve underlying review decisions,
-  audit summaries, consumption evidence, and knowledge artifacts without
-  inventing or mutating evidence.
-- Contracts keep frontend page, report generation behavior, export/download
+- Golden names audit review decision artifact id, audit summary artifact id,
+  review outcome summary, accepted citation group, questioned citation group,
+  rejected citation group, unresolved follow-up flags, unsupported claim
+  references, ReviewHistory, failure behavior, and forbidden side effects.
+- Golden proves no frontend page, report generation behavior, export/download
   endpoint, prompt assembly implementation, prompt runtime execution, provider
-  calls, retrieval ranking changes, vector indexes, embeddings, reranking,
-  graph jobs, MCP runtime, broad CRUD, automatic eligibility, and historical
-  evidence mutation out of scope.
-- `NEXT_AI_TASK.md` points to Task 3.
+  call, retrieval ranking change, vector index, embedding, reranking, graph
+  job, MCP runtime, broad CRUD, automatic eligibility, historical evidence
+  mutation, RBAC, tenants, or permissions is created by the contract.
+- `NEXT_AI_TASK.md` points to the Slice 45 Completion Gate.
 
 ## Commit Message
 
 ```text
-docs(v2): define test knowledge card prompt context audit review summary export contracts
+test(golden): add test knowledge card prompt context audit review summary export smoke
 ```
 
 ## Next Task
 
-Slice 45 Task 3: Add TestKnowledgeCard prompt context audit review summary export golden smoke.
+Slice 45 Completion Gate.

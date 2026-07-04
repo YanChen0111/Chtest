@@ -1986,6 +1986,136 @@ TestKnowledgeCard Prompt Context Audit Review Decision hard rules:
   historical evidence mutation, generated-case auto-approval, runner behavior,
   RBAC, tenants, or permissions.
 
+### 3.5.12 TestKnowledgeCard Prompt Context Audit Review Summary Export Contract
+
+This section is contract-only. It defines future summary export semantics for
+prompt context audit review decisions and does not add an endpoint, router,
+service, worker, queue, frontend page, report generation behavior,
+export/download endpoint, migration, prompt assembly implementation, prompt
+runtime execution, provider call, deterministic retrieval behavior change,
+vector index, embedding job, reranking, graph job, MCP runtime, broad CRUD,
+RBAC, tenants, or permissions.
+
+Allowed prompt-context audit review summary export action:
+
+- `export_prompt_context_audit_review_summary`: future scoped summary export
+  action that packages review outcome summaries, accepted citation groups,
+  questioned citation groups, rejected citation groups, unresolved follow-up
+  flags, unsupported claim references, source hashes, context manifest links,
+  PromptVersion/SkillVersion trace, and ReviewHistory links from audit review
+  decision evidence. It does not render a UI, generate reports, expose a
+  download endpoint, assemble a runtime prompt, run an AITask, call a provider,
+  create prompt eligibility, or generate model citations.
+
+Prompt context audit review summary export payload shape:
+
+```json
+{
+  prompt_context_audit_review_summary_export_action: export_prompt_context_audit_review_summary,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  prompt_request_id: local-prompt-request-001,
+  ai_task_id: 00000000-0000-0000-0000-000000000701,
+  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
+  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
+  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
+  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  used_knowledge: true,
+  usage_status: knowledge_used,
+  review_action: accepted,
+  review_outcome_summary: accepted_with_one_citation,
+  accepted_citation_ids: [knowledge-citation-expired-coupon],
+  questioned_citation_ids: [],
+  rejected_citation_ids: [],
+  unresolved_follow_up_flags: [],
+  unsupported_claim_ids: [claim-without-source],
+  prompt_version_id: 00000000-0000-0000-0000-000000000711,
+  skill_version_id: 00000000-0000-0000-0000-000000000712,
+  review_history_ids: [
+    00000000-0000-0000-0000-000000000895
+  ]
+}
+```
+
+Prompt context audit review summary export response shape for a future scoped
+implementation:
+
+```json
+{
+  prompt_context_audit_review_summary_export_action: export_prompt_context_audit_review_summary,
+  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
+  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
+  review_outcome_summary: accepted_with_one_citation,
+  accepted_citation_group: [
+    {
+      citation_id: knowledge-citation-expired-coupon,
+      test_knowledge_card_id: 00000000-0000-0000-0000-000000000901,
+      context_entry_id: ctx-entry-expired-coupon,
+      source_hash: sha256:reviewed-case-expired-coupon,
+      citation_status: accepted
+    }
+  ],
+  questioned_citation_group: [],
+  rejected_citation_group: [],
+  unresolved_follow_up_flags: [],
+  unsupported_claim_references: [
+    {
+      claim_id: claim-without-source,
+      status: unsupported
+    }
+  ],
+  review_history_links: [
+    00000000-0000-0000-0000-000000000895
+  ],
+  prompt_trace: {
+    prompt_version_id: 00000000-0000-0000-0000-000000000711,
+    skill_version_id: 00000000-0000-0000-0000-000000000712
+  },
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  failure_code: null
+}
+```
+
+TestKnowledgeCard Prompt Context Audit Review Summary Export hard rules:
+
+- Summary export input must reference prompt context audit review decision
+  artifact, prompt context audit summary artifact, prompt context consumption
+  artifact, prompt context evidence artifact, context manifest,
+  `used_knowledge` decision, usage status, review action, accepted/questioned/
+  rejected citations, unresolved follow-up flags, unsupported claims,
+  PromptVersion, SkillVersion, source hash, and ReviewHistory.
+- Summary export output must be evidence packaging only. It may record review
+  outcome summary, accepted citation group, questioned citation group, rejected
+  citation group, unresolved follow-up flags, unsupported claim references,
+  reviewer comment summary, ReviewHistory links, failure reasons, and source
+  hash/context manifest references, but it must not invent citations, rewrite
+  `used_knowledge`, or mutate audit review decision evidence.
+- Accepted citation groups validate only the reviewed evidence for the scoped
+  summary export. They must not create prompt eligibility, approve
+  TestKnowledgeCard content, approve generated cases, alter prompt context
+  consumption evidence, or mark skipped evidence as cited.
+- Questioned/rejected citation groups, needs_clarification, unresolved
+  follow-up flags, skipped evidence, and unsupported claims must remain visible
+  instead of being deleted, filtered, or rewritten.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched,
+  audit-summary-mismatched, or review-decision-mismatched input must return a
+  failure code and must not append a successful summary export.
+- `export_prompt_context_audit_review_summary` must not write runtime
+  `prompt_input.json`, render frontend pages, generate reports, expose
+  export/download endpoints, assemble prompts, call providers, run AITasks,
+  change retrieval ranking, create vector indexes, create embeddings, rerank,
+  run graph jobs, invoke MCP runtime, approve cases, create prompt eligibility,
+  or mutate historical evidence.
+- This contract must not add frontend page, report generation behavior,
+  export/download endpoint, prompt assembly implementation, prompt runtime
+  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
+  eligibility, automatic knowledge ingestion, artifact mutation outside
+  declared prompt context audit review summary export, historical evidence
+  mutation, generated-case auto-approval, runner behavior, RBAC, tenants, or
+  permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

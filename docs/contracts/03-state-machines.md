@@ -652,6 +652,79 @@ TestKnowledgeCard Prompt Context Audit Review Decision state rules:
   generated-case auto-approval, runner behavior changes, RBAC, tenants,
   permissions, or remote CI provider behavior.
 
+## 7.13 TestKnowledgeCard Prompt Context Audit Review Summary Export State Contract
+
+TestKnowledgeCard Prompt Context Audit Review Summary Export is a contract-only
+state boundary for future workflows that package prompt context audit review
+decision evidence into an exportable summary. It starts only from prompt
+context audit review decision evidence and does not implement frontend
+rendering, report generation behavior, export/download endpoints, prompt
+assembly, prompt runtime execution, provider calls, retrieval ranking, model
+citation generation, prompt eligibility, card creation, or broad
+TestKnowledgeCard CRUD.
+
+```text
+prompt_context_audit_review_accepted -> prompt_context_audit_review_summary_export_pending
+prompt_context_audit_review_needs_clarification -> prompt_context_audit_review_summary_export_pending
+prompt_context_audit_review_rejected_for_missing_evidence -> prompt_context_audit_review_summary_export_pending
+prompt_context_audit_review_rejected_for_unsupported_claim -> prompt_context_audit_review_summary_export_pending
+prompt_context_audit_review_rejected_for_citation_mismatch -> prompt_context_audit_review_summary_export_pending
+prompt_context_audit_review_summary_export_pending -> prompt_context_audit_review_summary_export_ready
+prompt_context_audit_review_summary_export_pending -> prompt_context_audit_review_summary_export_failed
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| prompt_context_audit_review_accepted | request_prompt_context_audit_review_summary_export | prompt_context_audit_review_summary_export_pending | Future workflow/API | Starts summary export only |
+| prompt_context_audit_review_needs_clarification | request_prompt_context_audit_review_summary_export | prompt_context_audit_review_summary_export_pending | Future workflow/API | Keeps unresolved follow-up visible |
+| prompt_context_audit_review_rejected_for_missing_evidence | request_prompt_context_audit_review_summary_export | prompt_context_audit_review_summary_export_pending | Future workflow/API | Packages rejection evidence |
+| prompt_context_audit_review_rejected_for_unsupported_claim | request_prompt_context_audit_review_summary_export | prompt_context_audit_review_summary_export_pending | Future workflow/API | Packages unsupported claims |
+| prompt_context_audit_review_rejected_for_citation_mismatch | request_prompt_context_audit_review_summary_export | prompt_context_audit_review_summary_export_pending | Future workflow/API | Packages citation mismatch |
+| prompt_context_audit_review_summary_export_pending | export_prompt_context_audit_review_summary | prompt_context_audit_review_summary_export_ready | Future workflow/API | Requires review decision evidence |
+| prompt_context_audit_review_summary_export_pending | fail_prompt_context_audit_review_summary_export | prompt_context_audit_review_summary_export_failed | Future workflow/API | Records invalid input or failure code |
+
+TestKnowledgeCard Prompt Context Audit Review Summary Export state rules:
+
+- `export_prompt_context_audit_review_summary` requires prompt context audit
+  review decision artifact id, prompt context audit summary artifact id, prompt
+  context consumption artifact id, prompt context evidence artifact id, context
+  manifest, `used_knowledge` decision, usage status, review action, accepted/
+  questioned/rejected citations, unresolved follow-up flags, unsupported
+  claims, PromptVersion, SkillVersion, source hash, ReviewHistory, and failure
+  code when applicable.
+- Summary export states are evidence packaging only. They may produce review
+  outcome summary, accepted/questioned/rejected citation groups, unresolved
+  follow-up flags, unsupported claim references, reviewer comment summary,
+  ReviewHistory links, and failure reasons, but they must not invent citations,
+  rewrite `used_knowledge`, or mutate audit review decision evidence.
+- Accepted citation groups do not create prompt eligibility, approve
+  TestKnowledgeCard content, approve generated cases, mutate prompt context
+  consumption evidence, or change `used_knowledge`.
+- Questioned citation groups, rejected citation groups,
+  `needs_clarification`, unresolved follow-up flags, skipped evidence, and
+  unsupported claims must preserve source hashes, PromptVersion, SkillVersion,
+  context manifest links, and ReviewHistory.
+- Missing, stale, unsafe, revoked, cross-project, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched,
+  audit-summary-mismatched, or review-decision-mismatched input must produce
+  `prompt_context_audit_review_summary_export_failed` and must not append a
+  successful summary export.
+- Prompt context audit review summary export may write summary export artifacts
+  in a later scoped workflow. It must not mutate TestKnowledgeCard rows, source
+  artifacts, prompt context audit review decision artifacts, prompt context
+  audit summary artifacts, prompt context consumption artifacts, prompt context
+  evidence artifacts, retrieval boundary artifacts, prompt eligibility
+  artifacts, ReviewHistory, KnowledgeEvidence, or historical evidence.
+- The prompt context audit review summary export state contract must not add
+  frontend page, report generation behavior, export/download endpoint, prompt
+  assembly implementation, prompt runtime execution, provider calls, retrieval
+  ranking changes, vector indexes, embeddings, reranking, graph jobs, MCP
+  runtime, broad TestKnowledgeCard CRUD, automatic eligibility, artifact
+  mutation outside declared summary export output, historical evidence
+  mutation, generated-case auto-approval, runner behavior changes, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on
