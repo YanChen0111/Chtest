@@ -10,14 +10,12 @@ Slice 41: TestKnowledgeCard Prompt Context Evidence Contract.
 
 ## Current Task
 
-Slice 41 Task 3: Add TestKnowledgeCard prompt context evidence golden smoke.
+Slice 41 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-level fixture and golden smoke proving
-future prompt context evidence cannot bypass bounded snippets, source hashes,
-safe-to-show, source evidence, retrieval boundary evidence, or prompt/skill
-trace links.
+After this task, Slice 41 is closed with focused golden verification and the
+next narrow V2 slice is recorded for continuation.
 
 ## Must Read
 
@@ -28,7 +26,7 @@ trace links.
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`
-8. `docs/fixtures/28-test-knowledge-card-retrieval-boundary-golden.md`
+8. `docs/fixtures/29-test-knowledge-card-prompt-context-evidence-golden.md`
 9. `memory/08-session-handoff.md`
 10. `memory/07-dev-log.md`
 
@@ -45,14 +43,13 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md
-docs/fixtures/29-test-knowledge-card-prompt-context-evidence-golden.md
-backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden-smoke task. Do not add frontend code, backend runtime feature code,
+Completion-gate task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic prompt eligibility, prompt
 assembly implementation, prompt runtime execution, provider calls,
@@ -66,31 +63,26 @@ behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: TestKnowledgeCard prompt context evidence golden smoke passes
-and diff check passes.
+Expected result: focused Slice 41 golden verification passes and diff check
+passes.
 
 ## Acceptance
 
-- Golden names prompt context evidence inputs, bounded snippet, source hash,
-  source manifest, retrieval boundary artifact, prompt eligibility artifact,
-  PromptVersion, SkillVersion, context manifest, omission reasons, failure
-  behavior, and forbidden side effects.
-- Golden proves no prompt assembly implementation, prompt runtime execution,
-  provider call, retrieval ranking change, vector index, embedding, reranking,
-  graph job, MCP runtime, broad CRUD, automatic eligibility, historical
-  evidence mutation, RBAC, tenants, or permissions is created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 41 Completion Gate.
+- Slice 41 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next slice task.
 
 ## Commit Message
 
 ```text
-test(golden): add test knowledge card prompt context evidence smoke
+docs(v2): complete test knowledge card prompt context evidence slice
 ```
 
 ## Next Task
 
-Slice 41 Completion Gate.
+Slice 42 Task 1: Add TestKnowledgeCard Prompt Context Consumption task plan.
