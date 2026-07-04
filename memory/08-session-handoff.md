@@ -1,5 +1,39 @@
 # Session Handoff
 
+## 2026-07-05 Slice 46 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Plan
+
+Completed:
+
+- Added Slice 46 plan:
+  `docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md`.
+- The plan defines a contract-first boundary for future discrepancy tracking
+  between prompt context consumption, audit summaries, review decisions, and
+  summary exports before frontend, report, export/download, or prompt runtime
+  behavior.
+- The plan names discrepancy inputs, affected citation ids, evidence gap
+  summary, mismatch reason, reviewer note, severity, resolution status,
+  ReviewHistory, failure behavior, and non-goals.
+- `NEXT_AI_TASK.md` now points to Slice 46 Task 2: Define TestKnowledgeCard
+  prompt context review discrepancy tracking contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md
+rg -n "TestKnowledgeCard Prompt Context Review Discrepancy Tracking|review summary export|discrepancy|accepted citation group|questioned citation group|rejected citation group|unsupported claim references|unresolved follow-up flags|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists, required terms found, and diff check is clean except
+  Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add test knowledge card prompt context review discrepancy tracking plan`.
+- Continue Slice 46 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 45 Completion Gate
 
 Completed:
@@ -29,7 +63,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): complete test knowledge card prompt context audit review summary export slice`.
+- Committed `docs(v2): complete test knowledge card prompt context audit review summary export slice` as `fa368bd`.
 - Continue Slice 46 Task 1 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Golden Smoke

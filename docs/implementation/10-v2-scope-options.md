@@ -2862,3 +2862,5 @@ Expected output:
   `docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md`.
 - No product code until the plan defines discrepancy inputs, discrepancy
   outputs, severity/status fields, failure behavior, and non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md`.
