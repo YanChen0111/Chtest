@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Golden Smoke
+
+Completed:
+
+- Added prompt context audit review decision golden fixture:
+  `docs/fixtures/32-test-knowledge-card-prompt-context-audit-review-decision-golden.md`.
+- Added prompt context audit review decision golden smoke:
+  `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py`.
+- Golden coverage names prompt context audit summary artifact id, prompt
+  context consumption artifact id, prompt context evidence artifact id, review
+  action, `accepted`, `needs_clarification`,
+  `rejected_for_missing_evidence`, `rejected_for_unsupported_claim`,
+  `rejected_for_citation_mismatch`, ReviewHistory, follow-up flags, failure
+  behavior, and forbidden side effects.
+- `NEXT_AI_TASK.md` now points to Slice 44 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `3 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `test(golden): add test knowledge card prompt context audit review decision smoke`.
+- Continue Slice 44 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Contracts
 
 Completed:
@@ -29,11 +62,12 @@ git diff --check
 
 Result:
 
-- Pending local verification.
+- Required terms found and diff check is clean except Windows LF-to-CRLF
+  warning.
 
 Next recommended task:
 
-- Commit `docs(v2): define test knowledge card prompt context audit review decision contracts`.
+- Committed `docs(v2): define test knowledge card prompt context audit review decision contracts` as `2eac56d`.
 - Continue Slice 44 Task 3 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Plan

@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/32-test-knowledge-card-prompt-context-audit-review-decision-golden.md`.
+- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py`.
+- The golden fixture and test cover prompt context audit summary artifact id,
+  prompt context consumption artifact id, prompt context evidence artifact id,
+  review action, `accepted`, `needs_clarification`,
+  `rejected_for_missing_evidence`, `rejected_for_unsupported_claim`,
+  `rejected_for_citation_mismatch`, ReviewHistory, follow-up flags, failure
+  behavior, and forbidden side effects.
+- Updated `NEXT_AI_TASK.md` to Slice 44 Completion Gate.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py -q`
+- `git diff --check`
+- Result: `3 passed`.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card prompt context audit review decision smoke`.
+- Continue Slice 44 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Contracts
 
 ### Completed
@@ -32,11 +58,12 @@
 
 - `rg -n "TestKnowledgeCard Prompt Context Audit Review Decision|prompt_context_audit_review_decision|review_prompt_context_audit_summary|accepted|needs_clarification|rejected_for_missing_evidence|rejected_for_unsupported_claim|rejected_for_citation_mismatch|ReviewHistory|follow-up flags|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
 - `git diff --check`
-- Result: pending local verification.
+- Result: required terms found and diff check is clean except Windows
+  LF-to-CRLF warning.
 
 ### Next Step
 
-- Commit `docs(v2): define test knowledge card prompt context audit review decision contracts`.
+- Committed `docs(v2): define test knowledge card prompt context audit review decision contracts` as `2eac56d`.
 - Continue Slice 44 Task 3 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Plan
