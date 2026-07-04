@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Contracts
+
+Completed:
+
+- Updated data, API, state-machine, and artifact contracts for
+  TestKnowledgeCard Prompt Eligibility.
+- Defined prompt eligibility input, actions, `allowed_for_prompt`,
+  safe_to_show/redaction requirements, source evidence, ReviewHistory,
+  prompt eligibility reason, artifact evidence, revocation/failure behavior,
+  and forbidden side effects.
+- Added artifact rules for `test_knowledge_card_prompt_eligibility.json` with
+  `artifact_type=test_knowledge_card_prompt_eligibility`.
+- `NEXT_AI_TASK.md` now points to Slice 39 Task 3: Add TestKnowledgeCard
+  prompt eligibility golden smoke.
+
+Verification:
+
+```bash
+rg -n "TestKnowledgeCard Prompt Eligibility|mark_card_prompt_eligible|deny_card_prompt_eligibility|request_prompt_eligibility_revision|revoke_card_prompt_eligibility|allowed_for_prompt|safe_to_show|prompt eligibility reason|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found and diff check is clean except Windows LF-to-CRLF
+  warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define test knowledge card prompt eligibility contracts`.
+- Continue Slice 39 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Plan
 
 Completed:

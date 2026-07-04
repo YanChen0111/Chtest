@@ -1364,6 +1364,82 @@ Reviewed TestKnowledgeCard Creation hard rules:
   change, report generation behavior change, remote CI provider behavior,
   RBAC, tenants, or permissions.
 
+### 3.5.6 TestKnowledgeCard Prompt Eligibility Contract
+
+This section is contract-only. It defines future human review semantics for
+TestKnowledgeCard prompt eligibility and does not add an endpoint, router,
+service, worker, queue, frontend page, migration, retrieval runtime change,
+vector index, embedding job, reranking, graph job, or provider call.
+
+Allowed prompt eligibility actions:
+
+- `mark_card_prompt_eligible`: human marks a reviewed TestKnowledgeCard
+  eligible for future prompt context.
+- `deny_card_prompt_eligibility`: human denies eligibility and records why.
+- `request_prompt_eligibility_revision`: human requests redaction, source
+  evidence, or citation fixes before eligibility can be decided.
+- `revoke_card_prompt_eligibility`: human revokes an existing prompt
+  eligibility decision and records why the card must leave future prompt
+  context.
+
+Prompt eligibility payload shape:
+
+```json
+{
+  "prompt_eligibility_action": "mark_card_prompt_eligible",
+  "test_knowledge_card_id": "00000000-0000-0000-0000-000000000901",
+  "reviewer_label": "Default User",
+  "review_comment": "Source evidence and redaction were reviewed.",
+  "prompt_eligibility_reason": "Reviewed checkout coupon rule is safe and reusable.",
+  "creation_artifact_id": "00000000-0000-0000-0000-000000000891",
+  "source_manifest_artifact_id": "00000000-0000-0000-0000-000000000892",
+  "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
+  "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
+  "redaction_report_artifact_id": "00000000-0000-0000-0000-000000000893",
+  "safe_to_show": true,
+  "redaction_applied": false,
+  "unsupported_claims": [],
+  "allowed_for_prompt": true
+}
+```
+
+Prompt eligibility response shape for a future scoped implementation:
+
+```json
+{
+  "prompt_eligibility_action": "mark_card_prompt_eligible",
+  "prompt_eligibility_decision": "approved",
+  "review_history_id": "00000000-0000-0000-0000-000000000894",
+  "prompt_eligibility_artifact_id": "00000000-0000-0000-0000-000000000895",
+  "test_knowledge_card_id": "00000000-0000-0000-0000-000000000901",
+  "allowed_for_prompt": true
+}
+```
+
+TestKnowledgeCard Prompt Eligibility hard rules:
+
+- Prompt eligibility requires a reviewed TestKnowledgeCard record,
+  safe-to-show evidence, reviewed redaction status, same-project source
+  artifacts, source manifest, ReviewHistory ids, and a non-empty prompt
+  eligibility reason.
+- `allowed_for_prompt=true` must come only from `mark_card_prompt_eligible`
+  after human review. It must not be inferred from card creation, model
+  confidence, schema validity, source presence, or `safe_to_show=true`.
+- `deny_card_prompt_eligibility`,
+  `request_prompt_eligibility_revision`, and
+  `revoke_card_prompt_eligibility` must keep or set `allowed_for_prompt=false`
+  and preserve reviewer rationale.
+- Revocation removes the card from future prompt eligibility only; it must not
+  delete the TestKnowledgeCard row, mutate source artifacts, or rewrite
+  historical ReviewHistory.
+- This contract must not change prompt runtime retrieval, deterministic
+  retrieval ranking, vector indexes, embeddings, reranking, graph jobs, MCP
+  runtime, provider calls, broad TestKnowledgeCard CRUD, automatic
+  eligibility, automatic knowledge ingestion, artifact mutation outside
+  declared prompt eligibility artifacts, historical evidence mutation,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

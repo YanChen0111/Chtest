@@ -323,6 +323,55 @@ Reviewed TestKnowledgeCard Creation state rules:
   changes, report generation behavior changes, RBAC, tenants, permissions, or
   remote CI provider behavior.
 
+## 7.7 TestKnowledgeCard Prompt Eligibility State Contract
+
+TestKnowledgeCard Prompt Eligibility is a human review state boundary for
+whether an existing reviewed card may enter future prompt context. It is not
+retrieval runtime, card creation, or broad TestKnowledgeCard CRUD.
+
+```text
+reviewed_card_created -> prompt_eligibility_pending
+prompt_eligibility_pending -> prompt_eligible
+prompt_eligibility_pending -> prompt_eligibility_denied
+prompt_eligibility_pending -> prompt_eligibility_revision_requested
+prompt_eligible -> prompt_eligibility_revoked
+prompt_eligibility_revoked -> prompt_eligibility_pending
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| reviewed_card_created | request_prompt_eligibility_review | prompt_eligibility_pending | Human reviewer/API | Starts eligibility review |
+| prompt_eligibility_pending | mark_card_prompt_eligible | prompt_eligible | Human reviewer/API | Requires safe_to_show, redaction, source evidence, and reason |
+| prompt_eligibility_pending | deny_card_prompt_eligibility | prompt_eligibility_denied | Human reviewer/API | Keeps allowed_for_prompt=false |
+| prompt_eligibility_pending | request_prompt_eligibility_revision | prompt_eligibility_revision_requested | Human reviewer/API | Source/redaction fixes required |
+| prompt_eligible | revoke_card_prompt_eligibility | prompt_eligibility_revoked | Human reviewer/API | Removes future prompt eligibility |
+| prompt_eligibility_revoked | request_prompt_eligibility_review | prompt_eligibility_pending | Human reviewer/API | Requires fresh review |
+
+TestKnowledgeCard Prompt Eligibility state rules:
+
+- `mark_card_prompt_eligible` requires `safe_to_show=true`, reviewed redaction
+  status, same-project source artifacts, source manifest, reviewed source
+  citations, prompt eligibility reason, ReviewHistory, and prompt eligibility
+  artifact evidence.
+- `allowed_for_prompt=true` must not be inferred from reviewed creation,
+  safe_to_show alone, model confidence, schema validity, absence of unsupported
+  claims, retrieval score, vector match, or prompt runtime need.
+- Denied, revision-requested, and revoked states keep or set
+  `allowed_for_prompt=false` and must preserve reviewer reason, failure code,
+  source evidence ids, and unsupported claims.
+- Successful prompt eligibility actions append or reference ReviewHistory and
+  may write prompt eligibility artifacts. Invalid transitions, unsafe evidence,
+  missing redaction, or validation failures must not append successful
+  ReviewHistory.
+- Revocation must not delete TestKnowledgeCard rows, mutate source artifacts,
+  rewrite creation artifacts, or rewrite historical ReviewHistory.
+- The prompt eligibility state contract must not add retrieval runtime changes,
+  vector indexes, embeddings, reranking, graph jobs, MCP runtime, provider
+  calls, broad TestKnowledgeCard CRUD, automatic eligibility, artifact mutation
+  outside declared prompt eligibility outputs, historical evidence mutation,
+  generated-case auto-approval, runner behavior changes, report generation
+  behavior changes, RBAC, tenants, permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on

@@ -88,6 +88,7 @@ artifacts/projects/{project_id}/knowledge-feedback/{ai_task_id}/
   test_knowledge_card_handoff.json
   test_knowledge_card_candidate_review.json
   reviewed_test_knowledge_card_creation.json
+  test_knowledge_card_prompt_eligibility.json
 ```
 
 `knowledge_feedback.json` stores draft KnowledgeFeedbackAgent output. It is
@@ -103,6 +104,8 @@ merge, archive, delete, relabel, or make prompt-eligible card rows.
 `reviewed_test_knowledge_card_creation.json` stores reviewed creation evidence
 for a future scoped TestKnowledgeCard creation workflow. It is not broad CRUD
 and must not grant prompt eligibility.
+`test_knowledge_card_prompt_eligibility.json` stores human review evidence for
+card prompt eligibility. It must not change retrieval runtime behavior.
 
 ### 3.4 Automation Draft
 
@@ -349,6 +352,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | test_knowledge_card_handoff | application/json | Future TestKnowledgeCard handoff candidate payload |
 | test_knowledge_card_candidate_review | application/json | Human review evidence for a handoff candidate |
 | reviewed_test_knowledge_card_creation | application/json | Reviewed TestKnowledgeCard creation evidence |
+| test_knowledge_card_prompt_eligibility | application/json | Human prompt eligibility review evidence |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -720,6 +724,37 @@ Reviewed TestKnowledgeCard Creation artifact rules:
   generate Reports, run retrieval, call providers, invoke MCP runtime, create
   vector indexes, create embeddings, rerank, run graph jobs, call remote CI
   providers, add RBAC, create tenants, or change permissions.
+
+TestKnowledgeCard Prompt Eligibility artifact rules:
+
+- `test_knowledge_card_prompt_eligibility.json` is stored as an Artifact with
+  `artifact_type=test_knowledge_card_prompt_eligibility`,
+  `owner_entity_type=TestKnowledgeCard`, and
+  `manifest_kind=test_knowledge_card_prompt_eligibility` until a later scoped
+  implementation owns a dedicated eligibility entity.
+- The prompt eligibility artifact must include `prompt_eligibility_action`,
+  `test_knowledge_card_id`, reviewer_label, reviewer_comment,
+  prompt eligibility reason, creation artifact id, source manifest artifact id,
+  source artifact ids, source quote/hash, redaction report artifact id,
+  `safe_to_show`, `redaction_applied`, unsupported claims, ReviewHistory id,
+  decision, `allowed_for_prompt`, and failure code when applicable.
+- `mark_card_prompt_eligible` artifacts require `safe_to_show=true`, reviewed
+  redaction status, same-project source evidence, reviewed source citations,
+  and a non-empty prompt eligibility reason.
+- `deny_card_prompt_eligibility`,
+  `request_prompt_eligibility_revision`, and
+  `revoke_card_prompt_eligibility` artifacts must keep or set
+  `allowed_for_prompt=false` and preserve reviewer reason and source evidence.
+- Prompt eligibility artifacts must not contain raw large source text,
+  credentials, tokens, unsafe provider payloads, vector store payloads,
+  embedding vectors, reranker traces, or graph runtime payloads.
+- Prompt eligibility artifacts must not mutate Artifact rows outside declared
+  prompt eligibility output, mutate source artifacts, rewrite creation
+  artifacts, mutate historical ReviewHistory, FailureAnalysis, Report,
+  TestRun, TestResult, TestCase, GeneratedCaseCandidate, KnowledgeEvidence, or
+  unrelated TestKnowledgeCard rows, run retrieval, call providers, invoke MCP
+  runtime, create vector indexes, create embeddings, rerank, run graph jobs,
+  call remote CI providers, add RBAC, create tenants, or change permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

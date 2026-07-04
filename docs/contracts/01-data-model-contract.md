@@ -1060,6 +1060,37 @@ Reviewed TestKnowledgeCard Creation rules:
   not fabricate fallback cards, source artifacts, ReviewHistory, or
   KnowledgeEvidence.
 
+TestKnowledgeCard Prompt Eligibility rules:
+
+- TestKnowledgeCard Prompt Eligibility starts from an existing reviewed
+  TestKnowledgeCard record and a human reviewer action. It is not card
+  creation, broad CRUD, retrieval runtime, vector indexing, or prompt assembly.
+- Prompt eligibility actions are `mark_card_prompt_eligible`,
+  `deny_card_prompt_eligibility`, `request_prompt_eligibility_revision`, and
+  `revoke_card_prompt_eligibility`.
+- Eligibility input must preserve TestKnowledgeCard id, creation artifact id,
+  source manifest, same-project source artifact ids, source quote/hash,
+  source span, ReviewHistory ids, redaction report artifact id, `safe_to_show`
+  status, unsupported claims, and prior prompt eligibility decision when
+  present.
+- `mark_card_prompt_eligible` requires `safe_to_show=true`, reviewed redaction
+  status, reviewed source citations, a non-empty prompt eligibility reason,
+  ReviewHistory, and prompt eligibility artifact evidence.
+- `allowed_for_prompt=true` may be set only by a successful human review
+  action. It must not be inferred from card creation, model confidence, schema
+  validity, source presence, duplicate/merge resolution, or `safe_to_show=true`
+  alone.
+- `deny_card_prompt_eligibility` and
+  `request_prompt_eligibility_revision` keep `allowed_for_prompt=false` and
+  preserve reviewer reason, failure code, source evidence, and unsupported
+  claims.
+- `revoke_card_prompt_eligibility` changes prompt eligibility evidence for the
+  card and must record revocation reason, reviewer label, ReviewHistory, and a
+  prompt eligibility artifact. It must not delete or mutate source artifacts.
+- Unsafe, stale, cross-project, missing, unbounded, unsupported, or redaction
+  failed evidence must deny eligibility, request revision, or revoke existing
+  eligibility. Denied or revoked cards must not enter prompt context.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated

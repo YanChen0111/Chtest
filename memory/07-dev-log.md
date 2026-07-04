@@ -1,5 +1,33 @@
 # Development Log
 
+## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Contracts
+
+### Completed
+
+- Added TestKnowledgeCard Prompt Eligibility rules to data, API, state-machine,
+  and artifact contracts.
+- Contracts define prompt eligibility input, actions, `allowed_for_prompt`,
+  safe_to_show/redaction requirements, source evidence, ReviewHistory,
+  prompt eligibility reason, artifact evidence, revocation/failure behavior,
+  and forbidden side effects.
+- Kept the scope contract-only: no prompt runtime retrieval change, vector
+  indexes, embeddings, reranking, graph runtime, MCP runtime, provider calls,
+  broad TestKnowledgeCard CRUD, automatic eligibility, historical evidence
+  mutation, RBAC, tenants, or permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 39 Task 3.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard Prompt Eligibility|mark_card_prompt_eligible|deny_card_prompt_eligibility|request_prompt_eligibility_revision|revoke_card_prompt_eligibility|allowed_for_prompt|safe_to_show|prompt eligibility reason|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md`
+- `git diff --check`
+- Result: required terms found and diff check is clean except Windows
+  LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card prompt eligibility contracts`.
+- Continue Slice 39 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Plan
 
 ### Completed
