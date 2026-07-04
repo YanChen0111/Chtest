@@ -2747,3 +2747,5 @@ Expected output:
   `docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`.
 - No product code until the plan defines export summary inputs, review outcome
   outputs, unresolved follow-up handling, failure behavior, and non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`.

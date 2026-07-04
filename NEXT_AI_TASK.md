@@ -10,26 +10,27 @@ Slice 45: TestKnowledgeCard Prompt Context Audit Review Summary Export Contract.
 
 ## Current Task
 
-Slice 45 Task 1: Add TestKnowledgeCard prompt context audit review summary export task plan.
+Slice 45 Task 2: Define TestKnowledgeCard prompt context audit review summary export contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for a future exportable summary of
-TestKnowledgeCard prompt context audit review decisions, without implementing
-frontend pages, report generation behavior, export endpoints, prompt assembly,
-provider calls, or retrieval runtime behavior.
+After this task, Chtest contracts define how a future export summary may
+package accepted, questioned, and rejected TestKnowledgeCard prompt context
+audit review decision evidence without implementing frontend pages, report
+generation behavior, export/download endpoints, prompt assembly, provider
+calls, or retrieval runtime behavior.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/implementation/10-v2-scope-options.md`
-4. `docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
-5. `docs/contracts/01-data-model-contract.md`
-6. `docs/contracts/02-api-contract.md`
-7. `docs/contracts/03-state-machines.md`
-8. `docs/contracts/04-artifact-contract.md`
-9. `docs/contracts/05-prompt-skill-contract.md`
+3. `docs/contracts/01-data-model-contract.md`
+4. `docs/contracts/02-api-contract.md`
+5. `docs/contracts/03-state-machines.md`
+6. `docs/contracts/04-artifact-contract.md`
+7. `docs/contracts/05-prompt-skill-contract.md`
+8. `docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`
+9. `docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
 10. `docs/fixtures/32-test-knowledge-card-prompt-context-audit-review-decision-golden.md`
 11. `memory/08-session-handoff.md`
 12. `memory/07-dev-log.md`
@@ -46,14 +47,18 @@ provider calls, or retrieval runtime behavior.
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
+docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
+Contract-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -68,34 +73,36 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md
-rg -n "TestKnowledgeCard Prompt Context Audit Review Summary Export|audit review decision|summary export|accepted|needs_clarification|rejected_for_missing_evidence|rejected_for_unsupported_claim|rejected_for_citation_mismatch|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md NEXT_AI_TASK.md
+rg -n "TestKnowledgeCard Prompt Context Audit Review Summary Export|prompt_context_audit_review_summary_export|export_prompt_context_audit_review_summary|audit review decision artifact|review outcome summary|accepted citation group|questioned citation group|rejected citation group|unresolved follow-up flags|unsupported claim references|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md
 git diff --check
 ```
 
-Expected result: plan file exists, required terms are present, and diff check
-passes.
+Expected result: required contract terms are present and diff check passes.
 
 ## Acceptance
 
-- Slice 45 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names export summary inputs, review outcome outputs,
+- Contracts define export summary input, audit review decision artifact
+  references, audit summary artifact references, review outcome summary,
   accepted/questioned/rejected citation groups, unresolved follow-up flags,
-  unsupported claim references, ReviewHistory, failure behavior, and non-goals.
-- The plan excludes frontend page, report generation behavior, export/download
+  unsupported claim references, ReviewHistory, source hashes, context manifest
+  links, PromptVersion/SkillVersion trace, failure behavior, and forbidden side
+  effects.
+- Contracts require export summaries to preserve underlying review decisions,
+  audit summaries, consumption evidence, and knowledge artifacts without
+  inventing or mutating evidence.
+- Contracts keep frontend page, report generation behavior, export/download
   endpoint, prompt assembly implementation, prompt runtime execution, provider
   calls, retrieval ranking changes, vector indexes, embeddings, reranking,
   graph jobs, MCP runtime, broad CRUD, automatic eligibility, and historical
-  evidence mutation.
-- `NEXT_AI_TASK.md` points to Task 2.
+  evidence mutation out of scope.
+- `NEXT_AI_TASK.md` points to Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add test knowledge card prompt context audit review summary export plan
+docs(v2): define test knowledge card prompt context audit review summary export contracts
 ```
 
 ## Next Task
 
-Slice 45 Task 2: Define TestKnowledgeCard prompt context audit review summary export contracts.
+Slice 45 Task 3: Add TestKnowledgeCard prompt context audit review summary export golden smoke.
