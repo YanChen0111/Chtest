@@ -1,5 +1,33 @@
 # Development Log
 
+## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/24-test-knowledge-card-handoff-golden.md`.
+- Added
+  `backend/app/tests/golden/test_test_knowledge_card_handoff_contract_golden.py`.
+- Golden smoke validates approved KnowledgeFeedbackDraft handoff,
+  ReviewHistory, feedback review artifact, TestKnowledgeCard candidate fields,
+  source evidence, safe_to_show, `allowed_for_prompt=false`, duplicate/merge
+  hints, unsupported claims, human review, and forbidden side effects.
+- Golden proves the contract forbids TestKnowledgeCard CRUD/auto-creation,
+  automatic prompt eligibility, historical evidence mutation, provider calls,
+  vector/graph runtime, MCP runtime, artifact mutation, review bypass,
+  auto-promotion, RBAC, tenants, and permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 36 Completion Gate.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_test_knowledge_card_handoff_contract_golden.py -q`
+- `git diff --check`
+- Result: `3 passed`; diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card handoff smoke`.
+- Continue Slice 36 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Contracts
 
 ### Completed
