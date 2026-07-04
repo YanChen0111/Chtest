@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-05 Slice 42 TestKnowledgeCard Prompt Context Consumption Contracts
+
+Completed:
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  TestKnowledgeCard Prompt Context Consumption.
+- Defined `consume_prompt_context_evidence`, `prompt_context_consumption`,
+  prompt context evidence artifact references, context manifest links,
+  consumed TestKnowledgeCard ids, consumed source hashes, output citations,
+  `used_knowledge` semantics, PromptVersion/SkillVersion trace, ReviewHistory
+  ids, skipped evidence, and failure behavior.
+- Added `test_knowledge_card_prompt_context_consumption` artifact type and
+  `test_knowledge_card_prompt_context_consumption.json` artifact path rules.
+- `NEXT_AI_TASK.md` now points to Slice 42 Task 3: Add TestKnowledgeCard
+  prompt context consumption golden smoke.
+
+Verification:
+
+```bash
+rg -n "TestKnowledgeCard Prompt Context Consumption|prompt_context_consumption|consume_prompt_context_evidence|used_knowledge|prompt context evidence artifact|citation|PromptVersion|SkillVersion|source hash|context manifest|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found and diff check is clean except Windows LF-to-CRLF
+  warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define test knowledge card prompt context consumption contracts`.
+- Continue Slice 42 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 42 TestKnowledgeCard Prompt Context Consumption Plan
 
 Completed:

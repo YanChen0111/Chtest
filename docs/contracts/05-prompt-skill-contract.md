@@ -168,6 +168,53 @@ Prompt context evidence rules:
   PromptVersion/SkillVersion rows, mutate artifacts outside declared prompt
   context evidence, approve generated cases, or bypass human review gates.
 
+### 4.3 TestKnowledgeCard Prompt Context Consumption Contract
+
+This contract defines prompt/skill citation rules for future TestKnowledgeCard
+prompt context consumption. It is contract-only and does not assemble prompts,
+execute AITasks, call providers, run retrieval, change ranking, create vector
+indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime, mutate
+TestKnowledgeCard rows, or generate model citations.
+
+Prompt context consumption input must include:
+
+- `prompt_context_consumption_action=consume_prompt_context_evidence`.
+- PromptVersion id/name/version and SkillVersion id/name/version.
+- Prompt context evidence artifact id and context manifest artifact id.
+- Consumed TestKnowledgeCard ids and consumed context entry ids.
+- Consumed source hashes or source quote/hash pointers.
+- Source artifact ids, source sections, source manifest ids, and retrieval
+  boundary artifact id.
+- Prompt eligibility artifact ids and ReviewHistory ids.
+- Consuming agent step, intended output artifact type, skipped evidence ids,
+  skip reasons, unsupported claim markers, and failure code when applicable.
+
+Prompt context consumption rules:
+
+- A prompt or skill may mark `used_knowledge=true` only when a future scoped
+  consumption record includes at least one valid citation to consumed prompt
+  context evidence.
+- Every output citation that claims TestKnowledgeCard support must reference the
+  prompt context evidence artifact id, context entry id, TestKnowledgeCard id,
+  source hash or source quote/hash pointer, source artifact id, source section,
+  ReviewHistory id, PromptVersion, and SkillVersion.
+- `used_knowledge=false` is required when no valid prompt context evidence is
+  consumed, when citations are missing, or when cited evidence is stale, unsafe,
+  revoked, cross-project, unbounded, redaction-failed, context-mismatched,
+  prompt-version-mismatched, skill-version-mismatched, or evidence-mismatched.
+- Unsupported claims must remain visible as unsupported claims or review
+  findings. They must not be promoted into knowledge-backed facts only because
+  prompt context evidence was available.
+- Prompt context consumption must not include raw large source text, hidden
+  model context, unsafe provider payloads, vector store payloads, embedding
+  vectors, reranker traces, graph runtime payloads, credentials, tokens, OAuth
+  material, or provider request payloads.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
+  context evidence, mutate artifacts outside declared prompt context
+  consumption, approve generated cases, auto-mark `used_knowledge=true`, or
+  bypass human review gates.
+
 ## 5. Skill 文件格式
 
 每个 Skill 文件必须包含以下段落：

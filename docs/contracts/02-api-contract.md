@@ -1639,6 +1639,113 @@ TestKnowledgeCard Prompt Context Evidence hard rules:
   generated-case auto-approval, runner behavior, report behavior, RBAC,
   tenants, or permissions.
 
+### 3.5.9 TestKnowledgeCard Prompt Context Consumption Contract
+
+This section is contract-only. It defines future prompt context consumption
+semantics for AI outputs that cite TestKnowledgeCard prompt context evidence
+and does not add an endpoint, router, service, worker, queue, frontend page,
+migration, prompt assembly implementation, prompt runtime execution, provider
+call, deterministic retrieval behavior change, vector index, embedding job,
+reranking, graph job, MCP runtime, broad CRUD, RBAC, tenants, or permissions.
+
+Allowed prompt-context consumption action:
+
+- `consume_prompt_context_evidence`: future scoped citation action that records
+  which prompt context evidence entries a future agent consumed, how output
+  citations point back to source hashes/context entries, and whether
+  `used_knowledge=true` is valid. It does not assemble a runtime prompt, run an
+  AITask, call a provider, or generate model citations.
+
+Prompt context consumption payload shape:
+
+```json
+{
+  prompt_context_consumption_action: consume_prompt_context_evidence,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  prompt_request_id: local-prompt-request-001,
+  ai_task_id: 00000000-0000-0000-0000-000000000701,
+  agent_step: case_generation,
+  intended_output_artifact_type: case_generation_output,
+  prompt_version_id: 00000000-0000-0000-0000-000000000711,
+  skill_version_id: 00000000-0000-0000-0000-000000000712,
+  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  consumed_context_entry_ids: [ctx-entry-expired-coupon],
+  consumed_test_knowledge_card_ids: [
+    00000000-0000-0000-0000-000000000901
+  ],
+  consumed_source_hashes: [sha256:reviewed-case-expired-coupon],
+  review_history_ids: [
+    00000000-0000-0000-0000-000000000894
+  ]
+}
+```
+
+Prompt context consumption response shape for a future scoped implementation:
+
+```json
+{
+  prompt_context_consumption_action: consume_prompt_context_evidence,
+  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
+  used_knowledge: true,
+  prompt_trace: {
+    prompt_version_id: 00000000-0000-0000-0000-000000000711,
+    skill_version_id: 00000000-0000-0000-0000-000000000712
+  },
+  citations: [
+    {
+      citation_id: knowledge-citation-expired-coupon,
+      test_knowledge_card_id: 00000000-0000-0000-0000-000000000901,
+      prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
+      context_entry_id: ctx-entry-expired-coupon,
+      source_hash: sha256:reviewed-case-expired-coupon,
+      source_artifact_id: 00000000-0000-0000-0000-000000000391,
+      source_section: checkout/coupon/reviewed-case,
+      review_history_id: 00000000-0000-0000-0000-000000000894,
+      citation_status: valid
+    }
+  ],
+  skipped_evidence: [
+    {
+      context_entry_id: ctx-entry-unsafe-note,
+      skip_reason: safe_to_show_false
+    }
+  ]
+}
+```
+
+TestKnowledgeCard Prompt Context Consumption hard rules:
+
+- Prompt context consumption input must reference a prompt context evidence
+  artifact, context manifest, consumed context entries, consumed
+  TestKnowledgeCard ids, source hashes, PromptVersion, SkillVersion,
+  ReviewHistory, and intended output artifact type.
+- `used_knowledge=false` remains required when no valid prompt context evidence
+  is consumed. `used_knowledge=true` is valid only when at least one output
+  citation points to consumed prompt context evidence, a consumed source hash or
+  source quote/hash pointer, a same-project source artifact, PromptVersion,
+  SkillVersion, and ReviewHistory trace.
+- Output citations must reference prompt context evidence artifact id,
+  context entry id, TestKnowledgeCard id, source hash or source quote/hash
+  pointer, source artifact id, source section, and citation status. Unsupported
+  claims must remain marked as unsupported instead of being treated as
+  knowledge-backed facts.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, or evidence-mismatched input must
+  produce skipped evidence summaries, `used_knowledge=false`, or a failure code
+  without mutating historical evidence.
+- `consume_prompt_context_evidence` must not write runtime `prompt_input.json`,
+  assemble prompts, call providers, run AITasks, change retrieval ranking,
+  create vector indexes, create embeddings, rerank, run graph jobs, invoke MCP
+  runtime, approve cases, or mutate prompt context evidence artifacts.
+- This contract must not add prompt assembly implementation, prompt runtime
+  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
+  eligibility, automatic knowledge ingestion, artifact mutation outside
+  declared prompt context consumption, historical evidence mutation,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

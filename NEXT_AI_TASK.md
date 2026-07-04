@@ -10,14 +10,14 @@ Slice 42: TestKnowledgeCard Prompt Context Consumption Contract.
 
 ## Current Task
 
-Slice 42 Task 2: Define TestKnowledgeCard prompt context consumption contracts.
+Slice 42 Task 3: Add TestKnowledgeCard prompt context consumption golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest contracts define how future agents may consume
-TestKnowledgeCard prompt context evidence, cite it, and set `used_knowledge`
-without implementing prompt assembly, provider calls, or retrieval runtime
-behavior.
+After this task, Chtest has contract-level golden coverage proving prompt
+context consumption cannot set `used_knowledge=true` or cite TestKnowledgeCard
+content without valid prompt context evidence, source hashes, context manifest
+links, and prompt/skill trace.
 
 ## Must Read
 
@@ -31,8 +31,9 @@ behavior.
 8. `docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md`
 9. `docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`
 10. `docs/fixtures/29-test-knowledge-card-prompt-context-evidence-golden.md`
-11. `memory/08-session-handoff.md`
-12. `memory/07-dev-log.md`
+11. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py`
+12. `memory/08-session-handoff.md`
+13. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -46,18 +47,15 @@ behavior.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
-docs/contracts/05-prompt-skill-contract.md
+backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py
+docs/fixtures/30-test-knowledge-card-prompt-context-consumption-golden.md
 docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract-only task. Do not add frontend code, backend runtime feature code,
+Golden-smoke task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic prompt eligibility, prompt
 assembly implementation, prompt runtime execution, provider calls,
@@ -71,33 +69,31 @@ behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-rg -n "TestKnowledgeCard Prompt Context Consumption|prompt_context_consumption|consume_prompt_context_evidence|used_knowledge|prompt context evidence artifact|citation|PromptVersion|SkillVersion|source hash|context manifest|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: required contract terms are present and diff check passes.
+Expected result: focused Slice 42 golden verification passes and diff check
+passes.
 
 ## Acceptance
 
-- Contracts define prompt context consumption input, prompt context evidence
-  artifact references, context manifest links, consumed TestKnowledgeCard ids,
-  consumed source hashes, PromptVersion/SkillVersion trace, ReviewHistory ids,
-  output citations, `used_knowledge` semantics, skipped evidence summaries,
-  and failure behavior.
-- Contracts require `used_knowledge=true` only when valid prompt context
-  evidence is consumed and output citations point to consumed evidence.
-- Contracts keep prompt assembly implementation, prompt runtime execution,
-  provider calls, retrieval ranking changes, vector indexes, embeddings,
-  reranking, graph jobs, MCP runtime, broad CRUD, automatic eligibility, and
-  historical evidence mutation out of scope.
-- `NEXT_AI_TASK.md` points to Task 3.
+- Golden names prompt context evidence artifact id, context manifest,
+  `used_knowledge`, consumed TestKnowledgeCard ids, source hash, output
+  citations, PromptVersion, SkillVersion, ReviewHistory, skipped evidence,
+  failure behavior, and forbidden side effects.
+- Golden proves no prompt assembly implementation, prompt runtime execution,
+  provider call, retrieval ranking change, vector index, embedding, reranking,
+  graph job, MCP runtime, broad CRUD, automatic eligibility, historical
+  evidence mutation, RBAC, tenants, or permissions is created by the contract.
+- `NEXT_AI_TASK.md` points to Slice 42 Completion Gate.
 
 ## Commit Message
 
 ```text
-docs(v2): define test knowledge card prompt context consumption contracts
+test(golden): add test knowledge card prompt context consumption smoke
 ```
 
 ## Next Task
 
-Slice 42 Task 3: Add TestKnowledgeCard prompt context consumption golden smoke.
+Slice 42 Completion Gate.

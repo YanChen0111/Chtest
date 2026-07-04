@@ -1169,6 +1169,52 @@ TestKnowledgeCard Prompt Context Evidence rules:
   graph runtime payloads, secrets, credentials, tokens, OAuth material, or
   executable prompt assembly payloads.
 
+TestKnowledgeCard Prompt Context Consumption rules:
+
+- TestKnowledgeCard Prompt Context Consumption starts from an existing prompt
+  context evidence artifact and a future agent input that explicitly references
+  it. It is contract-only citation evidence for future AI outputs and is not
+  prompt assembly implementation, prompt runtime execution, provider behavior,
+  retrieval ranking, card creation, broad CRUD, vector indexing, embedding,
+  reranking, graph runtime, or MCP runtime.
+- The contract-only consumption action is `consume_prompt_context_evidence`.
+  It may describe which prompt context entries a future agent consumed and how
+  an output cites them, but it must not write a runtime `prompt_input.json`,
+  call providers, run AITasks, mutate TestKnowledgeCard rows, mutate prompt
+  context evidence artifacts, mutate source artifacts, mutate ReviewHistory,
+  set `used_knowledge=true` automatically, or mutate historical evidence.
+- Prompt context consumption input must preserve prompt request id or AITask id
+  when available, consuming agent step name, intended output artifact type,
+  PromptVersion id/name/version, SkillVersion id/name/version, prompt context
+  evidence artifact id, context manifest artifact id, selected
+  TestKnowledgeCard ids, consumed context entry ids, source manifest ids,
+  source artifact ids, source sections, source hashes, retrieval boundary
+  artifact id, prompt eligibility artifact ids, ReviewHistory ids, omission
+  summaries, and unsupported claims when present.
+- `used_knowledge=false` is required when no valid prompt context evidence is
+  consumed. `used_knowledge=true` is allowed only when at least one consumed
+  citation points back to a valid prompt context evidence entry, source hash or
+  source quote/hash pointer, same-project source artifact, PromptVersion,
+  SkillVersion, and ReviewHistory trace.
+- Output citations may include output artifact id, agent step name, cited
+  TestKnowledgeCard id, cited prompt context evidence artifact id, cited
+  context entry id, cited source hash or source quote/hash pointer, source
+  artifact id, source section, PromptVersion/SkillVersion trace,
+  ReviewHistory id, citation status, and unsupported claim marker when output
+  text cannot be traced to consumed evidence.
+- Prompt context consumption outputs must include a consumption artifact id when
+  a later scoped workflow defines one, `used_knowledge` decision, consumed
+  knowledge citations, skipped evidence summaries and skip reasons, source
+  manifest ids, source hashes, PromptVersion/SkillVersion trace, context
+  manifest references, and failure code for missing, stale, unsafe,
+  cross-project, revoked, unsupported, unbounded, citation-mismatched,
+  context-mismatched, prompt-version-mismatched, skill-version-mismatched,
+  redaction-failed, or evidence-mismatched input.
+- Prompt context consumption must not cite raw large source text, unsafe
+  provider payloads, vector store payloads, embedding vectors, reranker traces,
+  graph runtime payloads, secrets, credentials, tokens, OAuth material, or
+  executable prompt assembly payloads.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated
@@ -1369,7 +1415,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -1407,6 +1453,25 @@ TestKnowledgeCard prompt context evidence Artifact rule:
 - This artifact is evidence only. It must not be treated as permission to run
   an AITask, assemble prompt text for a provider, or mark `used_knowledge=true`
   without a later explicit runtime contract.
+
+TestKnowledgeCard prompt context consumption Artifact rule:
+
+- Slice 42 prompt context consumption may use
+  `artifact_type=test_knowledge_card_prompt_context_consumption` in a later
+  scoped implementation.
+- `owner_entity_type=AITask` or `owner_entity_type=Project` until a later
+  scoped prompt workflow owns a dedicated prompt request entity.
+- `metadata_json` must include `created_by_component=TestKnowledgeCardPromptContextConsumption`,
+  `prompt_context_consumption_action=consume_prompt_context_evidence`, prompt
+  context evidence artifact id, context manifest artifact id, consumed
+  TestKnowledgeCard ids, consumed context entry ids, consumed source hashes,
+  skipped evidence ids and skip reasons, output citation ids, `used_knowledge`
+  decision, PromptVersion id, SkillVersion id, ReviewHistory ids, and failure
+  code when applicable.
+- This artifact is citation evidence only. It must not assemble prompt text,
+  call providers, run an AITask, mutate prompt context evidence, mutate source
+  artifacts, mutate TestKnowledgeCard rows, or mark `used_knowledge=true`
+  without valid consumed citations.
 
 CI import Artifact rule:
 

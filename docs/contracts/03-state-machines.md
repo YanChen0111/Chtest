@@ -473,6 +473,60 @@ TestKnowledgeCard Prompt Context Evidence state rules:
   generated-case auto-approval, runner behavior changes, report generation
   behavior changes, RBAC, tenants, permissions, or remote CI provider behavior.
 
+## 7.10 TestKnowledgeCard Prompt Context Consumption State Contract
+
+TestKnowledgeCard Prompt Context Consumption is a citation state boundary for
+future AI outputs that reference prompt context evidence. It starts only from
+prompt context evidence and does not implement prompt assembly, prompt runtime
+execution, provider calls, retrieval ranking, model citation generation, card
+creation, or broad TestKnowledgeCard CRUD.
+
+```text
+prompt_context_evidence_ready -> prompt_context_consumption_pending
+prompt_context_consumption_pending -> prompt_context_consumed
+prompt_context_consumption_pending -> prompt_context_consumption_skipped
+prompt_context_consumption_pending -> prompt_context_consumption_failed
+prompt_context_evidence_omitted -> prompt_context_consumption_skipped
+prompt_context_evidence_failed -> prompt_context_consumption_failed
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| prompt_context_evidence_ready | request_prompt_context_consumption | prompt_context_consumption_pending | Future workflow/API | Starts citation evaluation only |
+| prompt_context_consumption_pending | consume_prompt_context_evidence | prompt_context_consumed | Future workflow/API | Requires valid consumed citation |
+| prompt_context_consumption_pending | skip_prompt_context_evidence | prompt_context_consumption_skipped | Future workflow/API | Records skip reason |
+| prompt_context_consumption_pending | fail_prompt_context_consumption | prompt_context_consumption_failed | Future workflow/API | Records failure code |
+| prompt_context_evidence_omitted | consume_prompt_context_evidence | prompt_context_consumption_skipped | Future workflow/API | Omitted evidence cannot be cited |
+| prompt_context_evidence_failed | consume_prompt_context_evidence | prompt_context_consumption_failed | Future workflow/API | Failed evidence cannot be cited |
+
+TestKnowledgeCard Prompt Context Consumption state rules:
+
+- `consume_prompt_context_evidence` requires a prompt context evidence artifact,
+  context manifest, consumed context entry ids, consumed TestKnowledgeCard ids,
+  consumed source hashes or source quote/hash pointers, PromptVersion,
+  SkillVersion, ReviewHistory, and intended output artifact type.
+- `used_knowledge=true` is valid only in `prompt_context_consumed` when at
+  least one output citation points to consumed prompt context evidence. Missing
+  or invalid citations must keep `used_knowledge=false` or fail the
+  consumption contract.
+- Skipped evidence records skip reason, unsupported claims, stale evidence,
+  unsafe evidence, revoked evidence, cross-project evidence, unbounded snippet,
+  redaction failure, citation mismatch, context mismatch, prompt-version
+  mismatch, skill-version mismatch, or evidence mismatch when applicable.
+- Prompt context consumption may write prompt context consumption artifacts in
+  a later scoped workflow. It must not mutate TestKnowledgeCard rows, source
+  artifacts, prompt context evidence artifacts, retrieval boundary artifacts,
+  prompt eligibility artifacts, ReviewHistory, KnowledgeEvidence, or historical
+  evidence.
+- The prompt context consumption state contract must not add prompt assembly
+  implementation, prompt runtime execution, provider calls, retrieval ranking
+  changes, vector indexes, embeddings, reranking, graph jobs, MCP runtime,
+  broad TestKnowledgeCard CRUD, automatic eligibility, automatic
+  `used_knowledge=true` marking, artifact mutation outside declared prompt
+  context consumption, historical evidence mutation, generated-case
+  auto-approval, runner behavior changes, report generation behavior changes,
+  RBAC, tenants, permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on
