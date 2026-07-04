@@ -1,5 +1,34 @@
 # Development Log
 
+## 2026-07-04 Slice 35 Knowledge Feedback Review Gate Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/23-knowledge-feedback-review-gate-golden.md`.
+- Added `backend/app/tests/golden/test_knowledge_feedback_review_gate_contract_golden.py`.
+- Golden smoke validates KnowledgeFeedbackDraft review actions,
+  ReviewHistory, feedback review artifact, prompt eligibility,
+  TestKnowledgeCard handoff, unsupported claims, human review, and forbidden
+  side effects.
+- Golden proves the contract forbids feedback review runtime APIs, frontend
+  review pages, TestKnowledgeCard CRUD/auto-creation, prompt-eligible
+  auto-marking, historical evidence mutation, provider calls, vector/graph
+  runtime, MCP runtime, artifact mutation, review bypass, auto-promotion, RBAC,
+  tenants, and permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 35 Completion Gate.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_knowledge_feedback_review_gate_contract_golden.py -q`
+- Result: `3 passed`.
+- `git diff --check`
+- Result: clean.
+
+### Next Step
+
+- Commit `test(golden): add knowledge feedback review gate smoke`.
+- Continue Slice 35 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-03 Slice 35 Knowledge Feedback Review Gate Contracts
 
 ### Completed
