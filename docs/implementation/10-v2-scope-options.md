@@ -1857,3 +1857,95 @@ Expected output:
 - A small slice plan under `docs/implementation/slices/`.
 - No product code until the plan defines handoff payload, source evidence,
   card review boundaries, prompt eligibility, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard handoff contract.
+
+Why it was selected:
+
+- Slice 35 intentionally stopped at a feedback review handoff payload. Chtest
+  needed a precise contract for how approved KnowledgeFeedbackDraft output can
+  become a future TestKnowledgeCard candidate without creating card rows.
+- Slice 36 defined handoff input, mapped candidate fields, source evidence,
+  duplicate/merge hints, safe-to-show checks, `allowed_for_prompt=false`,
+  ReviewHistory/review artifact trace, failure behavior, and forbidden side
+  effects.
+- The slice kept card creation and prompt eligibility behind later human review
+  workflows and blocked model confidence from approving reusable knowledge.
+
+Completed slice name:
+
+```text
+Slice 36: TestKnowledgeCard Handoff Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact contracts, fixture, contract-level golden
+  smoke, and completion gate.
+- Approved KnowledgeFeedbackDraft handoff remains a candidate payload with
+  source evidence, duplicate/merge hints, safe_to_show checks, and
+  `allowed_for_prompt=false`.
+- No TestKnowledgeCard CRUD implementation, backend feature API, frontend page,
+  migration, automatic card creation, automatic card approval, automatic prompt
+  eligibility, automatic knowledge ingestion, provider calls, vector database,
+  embeddings, reranking, graph runtime, MCP runtime, artifact mutation,
+  historical evidence mutation, generated-case auto-approval, runner behavior,
+  report behavior, RBAC, tenants, permissions, or remote CI provider behavior
+  were added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard candidate review contract.
+
+Why:
+
+- Slice 36 creates a clean handoff payload boundary, but a future card still
+  needs a human review decision before Chtest can safely create or merge a
+  TestKnowledgeCard.
+- The next narrow contract should define how reviewers accept, reject, request
+  revision, or route duplicate/merge decisions for handoff candidates without
+  opening a broad CRUD surface.
+- This keeps prompt eligibility separate from card candidate approval:
+  `allowed_for_prompt=false` remains the default until a later explicit card
+  review decision grants eligibility.
+
+Next slice name:
+
+```text
+Slice 37: TestKnowledgeCard Candidate Review Contract
+```
+
+Smallest useful boundary:
+
+- Define review actions for TestKnowledgeCard handoff candidates:
+  approve_candidate_for_creation, reject_candidate, request_candidate_revision,
+  flag_duplicate, request_merge_review, and defer_prompt_eligibility.
+- Define ReviewHistory and artifact evidence rules for candidate review.
+- Define how duplicate/merge hints are reviewed without automatically merging,
+  archiving, replacing, deleting, or creating card rows.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No TestKnowledgeCard CRUD implementation, backend feature API, frontend page,
+  migration, automatic card creation, automatic card approval, automatic prompt
+  eligibility, automatic knowledge ingestion, provider calls, vector database,
+  embeddings, reranking, graph runtime, MCP runtime, artifact mutation,
+  historical evidence mutation, generated-case auto-approval, runner behavior,
+  report behavior, RBAC, tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 37 Task 1: Add TestKnowledgeCard Candidate Review Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines candidate review actions,
+  ReviewHistory, artifact evidence, duplicate/merge handling, prompt
+  eligibility, and non-goals.

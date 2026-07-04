@@ -1,5 +1,36 @@
 # Session Handoff
 
+## 2026-07-04 Slice 36 Completion Gate
+
+Completed:
+
+- Closed Slice 36: TestKnowledgeCard Handoff Contract.
+- Recorded completed task commits in the Slice 36 task table:
+  - Task 1: `6ce8970`;
+  - Task 2: `de2b2be`;
+  - Task 3: `87f2b20`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 36
+  completion and Slice 37 recommendation.
+- `NEXT_AI_TASK.md` now points to Slice 37 Task 1: Add TestKnowledgeCard
+  Candidate Review Contract task plan.
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_handoff_contract_golden.py backend/app/tests/golden/test_knowledge_feedback_review_gate_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- Focused golden verification: `6 passed`.
+- `git diff --check`: clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): complete test knowledge card handoff slice`.
+- Continue Slice 37 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Golden Smoke
 
 Completed:
