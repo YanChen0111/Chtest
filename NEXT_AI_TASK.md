@@ -10,13 +10,12 @@ Slice 39: TestKnowledgeCard Prompt Eligibility Contract.
 
 ## Current Task
 
-Slice 39 Task 3: Add TestKnowledgeCard prompt eligibility golden smoke.
+Slice 39 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-level fixture and golden smoke proving
-TestKnowledgeCard prompt eligibility cannot bypass safe-to-show, redaction,
-source evidence, or human review gates.
+After this task, Slice 39 is closed with focused golden verification and the
+next narrow V2 slice is recorded for continuation.
 
 ## Must Read
 
@@ -45,14 +44,13 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md
-docs/fixtures/27-test-knowledge-card-prompt-eligibility-golden.md
-backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden-smoke task. Do not add frontend code, backend runtime feature code,
+Completion-gate task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic prompt eligibility, prompt
 runtime retrieval change, automatic card creation from model output, automatic
@@ -65,31 +63,26 @@ behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: TestKnowledgeCard prompt eligibility golden smoke passes and
-diff check passes.
+Expected result: focused Slice 39 golden verification passes and diff check
+passes.
 
 ## Acceptance
 
-- Golden names prompt eligibility actions, `allowed_for_prompt`,
-  `safe_to_show`, redaction, source manifest, ReviewHistory, prompt
-  eligibility reason, artifact evidence, revocation/failure behavior, and
-  forbidden side effects.
-- Golden proves no prompt runtime retrieval change, vector index, embedding,
-  reranking, graph job, provider call, MCP runtime, broad CRUD, automatic
-  eligibility, historical evidence mutation, RBAC, tenants, or permissions is
-  created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 39 Completion Gate.
+- Slice 39 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next slice task.
 
 ## Commit Message
 
 ```text
-test(golden): add test knowledge card prompt eligibility smoke
+docs(v2): complete test knowledge card prompt eligibility slice
 ```
 
 ## Next Task
 
-Slice 39 Completion Gate.
+Slice 40 Task 1: Add TestKnowledgeCard Retrieval Boundary task plan.

@@ -1,5 +1,29 @@
 # Development Log
 
+## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/27-test-knowledge-card-prompt-eligibility-golden.md`.
+- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py`.
+- The golden fixture and test cover prompt eligibility actions,
+  `allowed_for_prompt`, `safe_to_show`, redaction, source manifest,
+  ReviewHistory, prompt eligibility reason, artifact evidence,
+  revocation/failure behavior, and forbidden side effects.
+- Updated `NEXT_AI_TASK.md` to Slice 39 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py -q`
+- `git diff --check`
+- Result: `3 passed`.
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card prompt eligibility smoke`.
+- Continue Slice 39 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Contracts
 
 ### Completed
