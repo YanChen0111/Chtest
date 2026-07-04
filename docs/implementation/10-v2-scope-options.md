@@ -2528,3 +2528,108 @@ Expected output:
 - No product code until the plan defines audit summary inputs, cited/skipped
   evidence summary outputs, unsupported claim handling, failure behavior, and
   non-goals.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard prompt context audit summary contract.
+
+Why it was selected:
+
+- Slice 42 defined prompt context consumption evidence, but Chtest still needed
+  a read-only audit summary contract for explaining what knowledge was used,
+  skipped, unsupported, or failed.
+- Slice 43 defined audit summary inputs and outputs from prompt context
+  consumption artifacts, prompt context evidence artifacts, output citations,
+  skipped evidence, unsupported claims, source hashes, context manifest links,
+  PromptVersion/SkillVersion trace, ReviewHistory, usage status, review flags,
+  and failure behavior.
+- The slice kept frontend pages, report generation behavior, prompt assembly,
+  prompt runtime execution, provider calls, retrieval ranking, model output
+  behavior changes, vector DB/embeddings/reranking/graph/MCP out of scope.
+
+Completed slice name:
+
+```text
+Slice 43: TestKnowledgeCard Prompt Context Audit Summary Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- TestKnowledgeCard prompt context audit summary is now a read-only contract
+  with `summarize_prompt_context_consumption`, `prompt_context_audit_summary`,
+  usage status, cited/skipped entries, unsupported claim summaries, source hash
+  and context manifest links, PromptVersion/SkillVersion trace, ReviewHistory,
+  review flags, and failure behavior.
+- No frontend page, report generation behavior, prompt assembly
+  implementation, prompt runtime execution, provider calls, retrieval ranking
+  change, model output behavior implementation, automatic citation generation,
+  vector database, embeddings, reranking, graph runtime, MCP runtime, backend
+  feature API, migration, broad TestKnowledgeCard CRUD, automatic prompt
+  eligibility, automatic card creation, automatic knowledge ingestion, artifact
+  mutation outside declared prompt-context audit summary, historical evidence
+  mutation, generated-case auto-approval, runner behavior, RBAC, tenants,
+  permissions, or remote CI provider behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard prompt context audit review decision contract.
+
+Why:
+
+- Slice 43 defines read-only audit summaries, but Chtest still needs a contract
+  for how a future human review decision may accept, question, or reject the
+  audit summary without changing knowledge evidence or report behavior.
+- The next narrow boundary should define review-decision inputs and outputs
+  from audit summary artifacts, cited/skipped evidence, unsupported claims,
+  source hashes, PromptVersion/SkillVersion trace, and ReviewHistory.
+- This keeps knowledge usage review-gated without adding a frontend page,
+  report generator behavior change, prompt assembly implementation, provider
+  calls, runtime retrieval, model output behavior changes, or database
+  migration.
+
+Next slice name:
+
+```text
+Slice 44: TestKnowledgeCard Prompt Context Audit Review Decision Contract
+```
+
+Smallest useful boundary:
+
+- Define human review decision inputs from audit summary artifact ids, prompt
+  context consumption artifact ids, cited/skipped evidence, unsupported claims,
+  source hashes, context manifest ids, PromptVersion/SkillVersion ids, and
+  ReviewHistory ids.
+- Define review decisions such as accepted, needs_clarification,
+  rejected_for_missing_evidence, rejected_for_unsupported_claim, and
+  rejected_for_citation_mismatch.
+- Define review output evidence, reviewer comments, follow-up flags, and
+  failure behavior without mutating the underlying audit summary or knowledge
+  artifacts.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No frontend page, report generation behavior change, backend feature API,
+  prompt assembly implementation, prompt runtime execution, provider call, LLM
+  call, prompt runner, deterministic retrieval behavior change, vector
+  database, embeddings, reranking, background indexing, graph runtime, MCP
+  runtime, provider SDK, credentials, migration, broad TestKnowledgeCard CRUD,
+  automatic prompt eligibility, automatic card creation, automatic knowledge
+  ingestion, artifact mutation outside declared review decision evidence,
+  historical evidence mutation, generated-case auto-approval, runner behavior,
+  RBAC, tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 44 Task 1: Add TestKnowledgeCard Prompt Context Audit Review Decision task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines review decision inputs, reviewer
+  action outputs, follow-up flags, failure behavior, and non-goals.

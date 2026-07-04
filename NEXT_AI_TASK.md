@@ -6,16 +6,18 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 43: TestKnowledgeCard Prompt Context Audit Summary Contract.
+Slice 44: TestKnowledgeCard Prompt Context Audit Review Decision Contract.
 
 ## Current Task
 
-Slice 43 Completion Gate.
+Slice 44 Task 1: Add TestKnowledgeCard Prompt Context Audit Review Decision task plan.
 
 ## Product Value Answer
 
-After this task, Slice 43 is closed with focused golden verification and the
-next narrow V2 slice is recorded for continuation.
+After this task, Chtest has a narrow contract plan for how a future human
+review decision may accept, question, or reject TestKnowledgeCard prompt
+context audit summaries without implementing frontend pages, report generation
+behavior, prompt assembly, provider calls, or retrieval runtime behavior.
 
 ## Must Read
 
@@ -26,13 +28,11 @@ next narrow V2 slice is recorded for continuation.
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/contracts/05-prompt-skill-contract.md`
-8. `docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`
-9. `docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md`
-10. `docs/fixtures/30-test-knowledge-card-prompt-context-consumption-golden.md`
-11. `docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md`
-12. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py`
-13. `memory/08-session-handoff.md`
-14. `memory/07-dev-log.md`
+8. `docs/implementation/10-v2-scope-options.md`
+9. `docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`
+10. `docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md`
+11. `memory/08-session-handoff.md`
+12. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -46,14 +46,14 @@ next narrow V2 slice is recorded for continuation.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md
+docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md
 docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion-gate task. Do not add frontend code, backend runtime feature code,
+Planning-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, migrations, package upgrades, broad
 TestKnowledgeCard CRUD implementation, backend feature API, frontend page,
 automatic prompt eligibility, prompt assembly implementation, prompt runtime
@@ -67,25 +67,33 @@ changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py -q
+test -f docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md
+rg -n "TestKnowledgeCard Prompt Context Audit Review Decision|audit summary|review decision|accepted|needs_clarification|rejected_for_missing_evidence|rejected_for_unsupported_claim|rejected_for_citation_mismatch|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: focused golden smoke passes and diff check passes.
+Expected result: plan file exists, required terms are present, and diff check
+passes.
 
 ## Acceptance
 
-- Slice 43 task table records Task 1-3 commits.
-- Focused golden verification passes.
-- V2 scope options and handoff memory recommend the next narrow slice.
-- `NEXT_AI_TASK.md` points to the next slice task.
+- Slice 44 plan exists with product value, non-goals, task table, expected
+  files, verification commands, and commit messages.
+- The plan defines review decision inputs, reviewer action outputs,
+  `accepted`, `needs_clarification`, rejected states, ReviewHistory, follow-up
+  flags, failure behavior, and non-goals.
+- The plan excludes frontend page, report generation behavior, prompt assembly
+  implementation, prompt runtime execution, provider calls, retrieval ranking
+  changes, vector indexes, embeddings, reranking, graph jobs, MCP runtime,
+  broad CRUD, automatic eligibility, and historical evidence mutation.
+- `NEXT_AI_TASK.md` points to Task 2.
 
 ## Commit Message
 
 ```text
-docs(v2): complete test knowledge card prompt context audit summary slice
+docs(v2): add test knowledge card prompt context audit review decision plan
 ```
 
 ## Next Task
 
-Slice 44 Task 1: Add next narrow V2 slice task plan.
+Slice 44 Task 2: Define TestKnowledgeCard prompt context audit review decision contracts.
