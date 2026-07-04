@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-07-04 Slice 37 Completion Gate
+
+### Completed
+
+- Closed Slice 37: TestKnowledgeCard Candidate Review Contract.
+- Updated `docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
+  task table with completed commits:
+  - Task 1: `052756a`;
+  - Task 2: `1341d1f`;
+  - Task 3: `05913ea`.
+- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 37
+  completion and recommend Slice 38: Reviewed TestKnowledgeCard Creation
+  Contract.
+- Updated `NEXT_AI_TASK.md` to Slice 38 Task 1.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_test_knowledge_card_candidate_review_contract_golden.py backend\app\tests\golden\test_test_knowledge_card_handoff_contract_golden.py -q`
+- Result: `6 passed`.
+- `git diff --check`
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): complete test knowledge card candidate review slice`.
+- Continue Slice 38 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Golden Smoke
 
 ### Completed

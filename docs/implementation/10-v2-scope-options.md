@@ -1949,3 +1949,94 @@ Expected output:
 - No product code until the plan defines candidate review actions,
   ReviewHistory, artifact evidence, duplicate/merge handling, prompt
   eligibility, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard candidate review contract.
+
+Why it was selected:
+
+- Slice 36 created a clean handoff payload boundary, but the candidate still
+  needed human review before it could safely feed any future card creation
+  workflow.
+- Slice 37 defined candidate review actions, ReviewHistory linkage, candidate
+  review artifact evidence, duplicate/merge routing, prompt eligibility
+  deferral, failure behavior, and forbidden side effects.
+- The slice kept candidate approval separate from TestKnowledgeCard row
+  creation, duplicate merge/archive/delete, and prompt eligibility.
+
+Completed slice name:
+
+```text
+Slice 37: TestKnowledgeCard Candidate Review Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact contracts, fixture, contract-level golden
+  smoke, and completion gate.
+- TestKnowledgeCard handoff candidates can be reviewed, rejected, revised, or
+  routed for duplicate/merge review without creating card rows.
+- No TestKnowledgeCard CRUD implementation, backend feature API, frontend page,
+  migration, automatic card creation, automatic card approval, automatic prompt
+  eligibility, automatic merge/archive/delete/relabel, provider calls, vector
+  database, embeddings, reranking, graph runtime, MCP runtime, artifact
+  mutation, historical evidence mutation, generated-case auto-approval, runner
+  behavior, report behavior, RBAC, tenants, permissions, or remote CI provider
+  behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: Reviewed TestKnowledgeCard creation contract.
+
+Why:
+
+- Slice 37 ends at `approve_candidate_for_creation`, which intentionally does
+  not create a TestKnowledgeCard row.
+- The next narrow contract should define the reviewed creation boundary from an
+  approved candidate into a future TestKnowledgeCard record without opening a
+  broad CRUD surface.
+- This keeps card creation, duplicate decisions, source evidence, and prompt
+  eligibility explicit: a created card can remain `allowed_for_prompt=false`
+  until a later prompt-eligibility workflow grants reuse.
+
+Next slice name:
+
+```text
+Slice 38: Reviewed TestKnowledgeCard Creation Contract
+```
+
+Smallest useful boundary:
+
+- Define creation input from an approved candidate review artifact, handoff
+  artifact, source evidence, ReviewHistory, and candidate_card_json.
+- Define the created TestKnowledgeCard field mapping, source manifest,
+  evidence artifacts, duplicate/merge preconditions, `safe_to_show`, and
+  `allowed_for_prompt=false` default.
+- Define failure behavior for stale, rejected, duplicate-conflicted,
+  cross-project, unsafe, or unsupported source evidence.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No broad TestKnowledgeCard CRUD implementation, list/update/delete API,
+  frontend page, migration, automatic card creation from model output,
+  automatic prompt eligibility, automatic knowledge ingestion, provider calls,
+  vector database, embeddings, reranking, graph runtime, MCP runtime, artifact
+  mutation outside declared creation evidence, historical evidence mutation,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 38 Task 1: Add Reviewed TestKnowledgeCard Creation Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines reviewed creation input, card field
+  mapping, source evidence, duplicate/merge preconditions, prompt eligibility,
+  failure behavior, and non-goals.
