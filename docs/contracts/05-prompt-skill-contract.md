@@ -392,6 +392,80 @@ Prompt context audit review summary export rules:
   generate reports, expose export/download endpoints, or bypass human review
   gates.
 
+### 4.7 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Contract
+
+This contract defines prompt/skill trace rules for future discrepancy tracking
+across TestKnowledgeCard prompt context consumption, audit summaries, review
+decisions, and summary exports. It is contract-only and does not assemble
+prompts, execute AITasks, call providers, run retrieval, change ranking, create
+vector indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime,
+render frontend pages, generate reports, expose export/download endpoints,
+mutate TestKnowledgeCard rows, create prompt eligibility, auto-resolve
+discrepancies, or generate model citations.
+
+Prompt context review discrepancy input must include:
+
+- `prompt_context_review_discrepancy_action=track_prompt_context_review_discrepancy`.
+- PromptVersion id/name/version and SkillVersion id/name/version.
+- Review summary export artifact id.
+- Prompt context audit review decision artifact id.
+- Prompt context audit summary artifact id.
+- Prompt context consumption artifact id.
+- Prompt context evidence artifact id and context manifest artifact id.
+- `used_knowledge` decision and usage status.
+- Review action, review outcome summary, accepted citation group, questioned
+  citation group, and rejected citation group.
+- Affected citation ids, skipped evidence ids, skip reasons, unsupported claim
+  references, unresolved follow-up flags, discrepancy type, evidence gap
+  summary, mismatch reason, reviewer note, severity, resolution status, and
+  failure code when applicable.
+- Source hashes, source artifact ids, source sections, ReviewHistory ids, and
+  review decision ReviewHistory id when available.
+
+Prompt context review discrepancy tracking rules:
+
+- Discrepancy records must preserve PromptVersion and SkillVersion trace from
+  referenced review summary export, audit review decision, audit summary, and
+  consumption evidence.
+- `used_knowledge` must be copied from referenced review evidence and must not
+  be recomputed, rewritten, or auto-marked by discrepancy tracking.
+- Affected citation ids must reference existing output citations,
+  TestKnowledgeCard ids, context entry ids, source hashes or source quote/hash
+  pointers, ReviewHistory ids, PromptVersion, and SkillVersion.
+- Discrepancy types include `citation_mismatch`, `missing_evidence`,
+  `unsupported_claim`, `stale_evidence`, `cross_project_evidence`,
+  `context_manifest_mismatch`, `prompt_version_mismatch`,
+  `skill_version_mismatch`, `used_knowledge_mismatch`, and
+  `unresolved_follow_up`.
+- Resolution status values are audit labels only. They must not create prompt
+  eligibility, approve TestKnowledgeCard content, approve generated cases,
+  mutate review summary export evidence, auto-resolve discrepancies, or change
+  `used_knowledge`.
+- Affected citation ids, questioned/rejected citation groups, unresolved
+  follow-up flags, skipped evidence, unsupported claims, evidence gap summary,
+  and mismatch reason must remain visible. They must not be promoted into
+  knowledge-backed facts, deleted, filtered, or replaced with generated
+  citations.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched,
+  audit-summary-mismatched, review-decision-mismatched, or
+  summary-export-mismatched input must produce a failure code and must not
+  append a successful discrepancy record.
+- Prompt context review discrepancy tracking must not include raw large source
+  text, hidden model context, unsafe provider payloads, vector store payloads,
+  embedding vectors, reranker traces, graph runtime payloads, credentials,
+  tokens, OAuth material, provider request payloads, frontend-rendered markup,
+  report-rendered payloads, export-rendered payloads, downloadable provider
+  payloads, or generated replacement evidence.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, mutate PromptVersion/SkillVersion rows, mutate review
+  summary export evidence, mutate artifacts outside declared prompt context
+  review discrepancy tracking, approve generated cases, create prompt
+  eligibility, rewrite `used_knowledge`, render frontend pages, generate
+  reports, expose export/download endpoints, auto-resolve discrepancies, or
+  bypass human review gates.
+
 ## 5. Skill 文件格式
 
 每个 Skill 文件必须包含以下段落：

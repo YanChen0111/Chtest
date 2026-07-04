@@ -1,5 +1,41 @@
 # Session Handoff
 
+## 2026-07-05 Slice 46 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Contracts
+
+Completed:
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  TestKnowledgeCard Prompt Context Review Discrepancy Tracking.
+- Added the contract action `track_prompt_context_review_discrepancy` and the
+  artifact type `test_knowledge_card_prompt_context_review_discrepancy`.
+- Defined review summary export artifact references, discrepancy type,
+  affected citation ids, evidence gap summary, mismatch reason, reviewer note,
+  severity, resolution status, ReviewHistory, source hash/context manifest
+  references, PromptVersion, SkillVersion, and failure behavior.
+- The contracts preserve review summary export evidence, review decision
+  evidence, audit summary evidence, prompt context consumption evidence,
+  prompt context evidence, `used_knowledge`, and affected citations without
+  adding frontend/report/export runtime.
+- `NEXT_AI_TASK.md` now points to Slice 46 Task 3: Add TestKnowledgeCard prompt
+  context review discrepancy tracking golden smoke.
+
+Verification:
+
+```bash
+rg -n "TestKnowledgeCard Prompt Context Review Discrepancy Tracking|prompt_context_review_discrepancy|track_prompt_context_review_discrepancy|review summary export artifact|discrepancy type|affected citation ids|evidence gap summary|mismatch reason|severity|resolution status|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found and diff check is clean except Windows LF-to-CRLF
+  warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define test knowledge card prompt context review discrepancy tracking contracts`.
+- Continue Slice 46 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 46 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Plan
 
 Completed:
@@ -31,7 +67,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): add test knowledge card prompt context review discrepancy tracking plan`.
+- Committed `docs(v2): add test knowledge card prompt context review discrepancy tracking plan` as `b380592`.
 - Continue Slice 46 Task 2 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 45 Completion Gate

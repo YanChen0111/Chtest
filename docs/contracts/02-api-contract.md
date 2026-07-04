@@ -2116,6 +2116,141 @@ TestKnowledgeCard Prompt Context Audit Review Summary Export hard rules:
   mutation, generated-case auto-approval, runner behavior, RBAC, tenants, or
   permissions.
 
+### 3.5.13 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Contract
+
+This section is contract-only. It defines future discrepancy tracking semantics
+for prompt context review evidence and does not add an endpoint, router,
+service, worker, queue, frontend page, report generation behavior,
+export/download endpoint, migration, prompt assembly implementation, prompt
+runtime execution, provider call, deterministic retrieval behavior change,
+vector index, embedding job, reranking, graph job, MCP runtime, broad CRUD,
+RBAC, tenants, or permissions.
+
+Allowed prompt-context review discrepancy action:
+
+- `track_prompt_context_review_discrepancy`: future scoped discrepancy action
+  that records discrepancy type, affected citation ids, evidence gap summary,
+  mismatch reason, reviewer note, severity, resolution status, unresolved
+  follow-up flags, unsupported claim references, source hashes, context
+  manifest links, PromptVersion/SkillVersion trace, and ReviewHistory links
+  from review summary export, audit review decision, audit summary, and prompt
+  context consumption evidence. It does not render a UI, generate reports,
+  expose a download endpoint, assemble a runtime prompt, run an AITask, call a
+  provider, create prompt eligibility, auto-resolve discrepancies, or generate
+  model citations.
+
+Prompt context review discrepancy payload shape:
+
+```json
+{
+  prompt_context_review_discrepancy_action: track_prompt_context_review_discrepancy,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  prompt_request_id: local-prompt-request-001,
+  ai_task_id: 00000000-0000-0000-0000-000000000701,
+  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
+  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
+  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
+  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
+  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  used_knowledge: true,
+  usage_status: knowledge_used,
+  review_action: accepted,
+  review_outcome_summary: accepted_with_one_citation,
+  discrepancy_type: citation_mismatch,
+  affected_citation_ids: [knowledge-citation-expired-coupon],
+  evidence_gap_summary: cited source hash differs from audit summary,
+  mismatch_reason: source_hash_mismatch,
+  reviewer_note: verify cited source before reuse,
+  severity: medium,
+  resolution_status: open,
+  unresolved_follow_up_flags: [verify-source-hash],
+  unsupported_claim_ids: [claim-without-source],
+  prompt_version_id: 00000000-0000-0000-0000-000000000711,
+  skill_version_id: 00000000-0000-0000-0000-000000000712,
+  review_history_ids: [
+    00000000-0000-0000-0000-000000000895
+  ]
+}
+```
+
+Prompt context review discrepancy response shape for a future scoped
+implementation:
+
+```json
+{
+  prompt_context_review_discrepancy_action: track_prompt_context_review_discrepancy,
+  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
+  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
+  discrepancy_type: citation_mismatch,
+  affected_citation_ids: [knowledge-citation-expired-coupon],
+  evidence_gap_summary: cited source hash differs from audit summary,
+  mismatch_reason: source_hash_mismatch,
+  reviewer_note: verify cited source before reuse,
+  severity: medium,
+  resolution_status: open,
+  unresolved_follow_up_flags: [verify-source-hash],
+  unsupported_claim_references: [
+    {
+      claim_id: claim-without-source,
+      status: unsupported
+    }
+  ],
+  review_history_links: [
+    00000000-0000-0000-0000-000000000895
+  ],
+  prompt_trace: {
+    prompt_version_id: 00000000-0000-0000-0000-000000000711,
+    skill_version_id: 00000000-0000-0000-0000-000000000712
+  },
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  failure_code: null
+}
+```
+
+TestKnowledgeCard Prompt Context Review Discrepancy Tracking hard rules:
+
+- Discrepancy input must reference review summary export artifact, audit
+  review decision artifact, audit summary artifact, prompt context consumption
+  artifact, prompt context evidence artifact, context manifest,
+  `used_knowledge` decision, usage status, affected citation ids, unresolved
+  follow-up flags, unsupported claim references, PromptVersion, SkillVersion,
+  source hash, and ReviewHistory.
+- Discrepancy output must be mismatch evidence only. It may record discrepancy
+  type, affected citation ids, evidence gap summary, mismatch reason, reviewer
+  note, severity, resolution status, unresolved follow-up flags, unsupported
+  claim references, ReviewHistory links, failure reasons, and source
+  hash/context manifest references, but it must not invent citations, rewrite
+  `used_knowledge`, auto-resolve discrepancies, or mutate review summary
+  export evidence.
+- Resolution status values `open`, `needs_clarification`, `acknowledged`,
+  `rejected`, and `resolved_by_later_review` are audit labels only. They must
+  not create prompt eligibility, approve TestKnowledgeCard content, approve
+  generated cases, alter prompt context consumption evidence, or mark skipped
+  evidence as cited.
+- Affected citation ids, questioned/rejected citation groups, unresolved
+  follow-up flags, skipped evidence, and unsupported claims must remain visible
+  instead of being deleted, filtered, or rewritten.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched,
+  audit-summary-mismatched, review-decision-mismatched, or
+  summary-export-mismatched input must return a failure code and must not
+  append a successful discrepancy record.
+- `track_prompt_context_review_discrepancy` must not write runtime
+  `prompt_input.json`, render frontend pages, generate reports, expose
+  export/download endpoints, assemble prompts, call providers, run AITasks,
+  change retrieval ranking, create vector indexes, create embeddings, rerank,
+  run graph jobs, invoke MCP runtime, approve cases, create prompt eligibility,
+  auto-resolve discrepancies, or mutate historical evidence.
+- This contract must not add frontend page, report generation behavior,
+  export/download endpoint, prompt assembly implementation, prompt runtime
+  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
+  eligibility, automatic knowledge ingestion, artifact mutation outside
+  declared prompt context review discrepancy tracking, historical evidence
+  mutation, generated-case auto-approval, runner behavior, RBAC, tenants, or
+  permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`
