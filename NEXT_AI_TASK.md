@@ -10,13 +10,12 @@ Slice 43: TestKnowledgeCard Prompt Context Audit Summary Contract.
 
 ## Current Task
 
-Slice 43 Task 3: Add TestKnowledgeCard prompt context audit summary golden smoke.
+Slice 43 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a golden fixture and smoke test proving prompt
-context audit summaries cannot invent citations, rewrite `used_knowledge`,
-mutate evidence, or imply frontend/report behavior.
+After this task, Slice 43 is closed with focused golden verification and the
+next narrow V2 slice is recorded for continuation.
 
 ## Must Read
 
@@ -30,8 +29,10 @@ mutate evidence, or imply frontend/report behavior.
 8. `docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`
 9. `docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md`
 10. `docs/fixtures/30-test-knowledge-card-prompt-context-consumption-golden.md`
-11. `memory/08-session-handoff.md`
-12. `memory/07-dev-log.md`
+11. `docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md`
+12. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py`
+13. `memory/08-session-handoff.md`
+14. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -45,15 +46,14 @@ mutate evidence, or imply frontend/report behavior.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py
-docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md
 docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden-smoke task. Do not add frontend code, backend runtime feature code,
+Completion-gate task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, migrations, package upgrades, broad
 TestKnowledgeCard CRUD implementation, backend feature API, frontend page,
 automatic prompt eligibility, prompt assembly implementation, prompt runtime
@@ -67,7 +67,7 @@ changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py -q
 git diff --check
 ```
 
@@ -75,23 +75,17 @@ Expected result: focused golden smoke passes and diff check passes.
 
 ## Acceptance
 
-- Golden names prompt context consumption artifact id, prompt context evidence
-  artifact id, `used_knowledge`, output citations, skipped evidence,
-  unsupported claims, source hash, context manifest, PromptVersion,
-  SkillVersion, ReviewHistory, failure behavior, and forbidden side effects.
-- Golden proves no frontend page, report generation behavior, prompt assembly
-  implementation, prompt runtime execution, provider call, retrieval ranking
-  change, vector index, embedding, reranking, graph job, MCP runtime, broad
-  CRUD, automatic eligibility, historical evidence mutation, RBAC, tenants, or
-  permissions is created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 43 Completion Gate.
+- Slice 43 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next slice task.
 
 ## Commit Message
 
 ```text
-test(golden): add test knowledge card prompt context audit summary smoke
+docs(v2): complete test knowledge card prompt context audit summary slice
 ```
 
 ## Next Task
 
-Slice 43 Completion Gate.
+Slice 44 Task 1: Add next narrow V2 slice task plan.

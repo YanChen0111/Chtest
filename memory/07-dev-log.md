@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-05 Slice 43 TestKnowledgeCard Prompt Context Audit Summary Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md`.
+- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py`.
+- The golden fixture and test cover prompt context consumption artifact id,
+  prompt context evidence artifact id, `used_knowledge`, output citations,
+  skipped evidence, unsupported claims, source hash, context manifest,
+  PromptVersion, SkillVersion, ReviewHistory, failure behavior, and forbidden
+  side effects.
+- Updated `NEXT_AI_TASK.md` to Slice 43 Completion Gate.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py -q`
+- `git diff --check`
+- Result: `3 passed`.
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card prompt context audit summary smoke`.
+- Continue Slice 43 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 43 TestKnowledgeCard Prompt Context Audit Summary Contracts
 
 ### Completed
