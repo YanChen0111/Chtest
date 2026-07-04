@@ -372,6 +372,56 @@ TestKnowledgeCard Prompt Eligibility state rules:
   generated-case auto-approval, runner behavior changes, report generation
   behavior changes, RBAC, tenants, permissions, or remote CI provider behavior.
 
+## 7.8 TestKnowledgeCard Retrieval Boundary State Contract
+
+TestKnowledgeCard Retrieval Boundary is a read-only selection state boundary
+for future prompt-context consideration. It starts only from current
+`prompt_eligible` evidence and does not implement retrieval runtime, prompt
+assembly, card creation, or broad TestKnowledgeCard CRUD.
+
+```text
+prompt_eligible -> retrieval_boundary_candidate
+retrieval_boundary_candidate -> retrieval_selected
+retrieval_boundary_candidate -> retrieval_excluded
+prompt_eligibility_denied -> retrieval_excluded
+prompt_eligibility_revision_requested -> retrieval_excluded
+prompt_eligibility_revoked -> retrieval_excluded
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| prompt_eligible | request_retrieval_boundary_selection | retrieval_boundary_candidate | Future workflow/API | Starts read-only selection evaluation |
+| retrieval_boundary_candidate | select_prompt_eligible_cards | retrieval_selected | Future workflow/API | Requires allowed_for_prompt, safe_to_show, source evidence, and ReviewHistory |
+| retrieval_boundary_candidate | exclude_prompt_context_card | retrieval_excluded | Future workflow/API | Records excluded_card_reason |
+| prompt_eligibility_denied | select_prompt_eligible_cards | retrieval_excluded | Future workflow/API | Must not select denied cards |
+| prompt_eligibility_revision_requested | select_prompt_eligible_cards | retrieval_excluded | Future workflow/API | Must not select revision-requested cards |
+| prompt_eligibility_revoked | select_prompt_eligible_cards | retrieval_excluded | Future workflow/API | Must not select revoked cards |
+
+TestKnowledgeCard Retrieval Boundary state rules:
+
+- `select_prompt_eligible_cards` requires `allowed_for_prompt=true`,
+  `prompt_eligible`, `safe_to_show=true`, reviewed redaction status,
+  same-project source artifacts, source manifest, reviewed source citations,
+  ReviewHistory, and prompt eligibility artifact evidence.
+- `allowed_for_prompt=true` is necessary but not sufficient. It must not bypass
+  stale evidence, cross-project evidence, unsafe evidence, unsupported claims,
+  missing source evidence, unbounded evidence, redaction failure, source
+  manifest mismatch, missing ReviewHistory, or missing prompt eligibility
+  artifact evidence.
+- Retrieval-excluded states record `excluded_card_reason`, failure code,
+  source evidence ids, and unsupported claims when applicable.
+- Retrieval boundary selection may write retrieval evidence artifacts in a
+  later scoped workflow. It must not mutate TestKnowledgeCard rows, source
+  artifacts, prompt eligibility artifacts, ReviewHistory, KnowledgeEvidence, or
+  historical evidence.
+- The retrieval boundary state contract must not add prompt runtime retrieval,
+  deterministic retrieval ranking changes, vector indexes, embeddings,
+  reranking, graph jobs, MCP runtime, provider calls, broad TestKnowledgeCard
+  CRUD, automatic eligibility, artifact mutation outside declared retrieval
+  evidence, historical evidence mutation, generated-case auto-approval, runner
+  behavior changes, report generation behavior changes, RBAC, tenants,
+  permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on

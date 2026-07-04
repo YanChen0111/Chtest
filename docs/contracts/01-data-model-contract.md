@@ -1091,6 +1091,45 @@ TestKnowledgeCard Prompt Eligibility rules:
   failed evidence must deny eligibility, request revision, or revoke existing
   eligibility. Denied or revoked cards must not enter prompt context.
 
+TestKnowledgeCard Retrieval Boundary rules:
+
+- TestKnowledgeCard Retrieval Boundary starts from a future prompt-context
+  selection request and existing reviewed TestKnowledgeCard records. It is
+  read-only and is not prompt runtime retrieval, prompt assembly, card
+  creation, broad CRUD, vector indexing, embedding, reranking, graph runtime,
+  MCP runtime, or provider behavior.
+- The contract-only selection action is `select_prompt_eligible_cards`.
+  It may evaluate card evidence for future prompt context, but it must not
+  mutate TestKnowledgeCard rows, source Artifacts, prompt eligibility
+  artifacts, ReviewHistory, KnowledgeEvidence, or historical evidence.
+- Selection input must preserve project id, future prompt/request id when
+  available, candidate TestKnowledgeCard ids, prompt eligibility artifact ids,
+  creation artifact ids, source manifest, same-project source artifact ids,
+  source quote/hash, source span, ReviewHistory ids, redaction report artifact
+  id, `safe_to_show` status, `prompt_eligible` state, `allowed_for_prompt`
+  status, unsupported claims, and failure code when present.
+- A card is selectable only when `allowed_for_prompt=true`, the current prompt
+  eligibility state is `prompt_eligible`, `safe_to_show=true`, reviewed
+  redaction status, same-project source evidence, source manifest, reviewed
+  source citations, ReviewHistory, and prompt eligibility artifact evidence
+  are all present. `allowed_for_prompt=true` is necessary but not sufficient
+  for prompt-context selection.
+- `allowed_for_prompt=false`, `prompt_eligibility_denied`,
+  `prompt_eligibility_revision_requested`, `prompt_eligibility_revoked`,
+  stale evidence, cross-project evidence, unsafe evidence, missing source
+  evidence, unbounded source evidence, unsupported claims, redaction failure,
+  source manifest mismatch, missing ReviewHistory, or missing prompt
+  eligibility artifact evidence must exclude the card.
+- Excluded cards must record an `excluded_card_reason` or failure code in
+  future retrieval evidence. Exclusion must not revoke prompt eligibility,
+  delete cards, mutate artifacts, rewrite source evidence, or rewrite
+  ReviewHistory.
+- Retrieval boundary outputs are evidence only: selected TestKnowledgeCard ids,
+  excluded TestKnowledgeCard ids, `excluded_card_reason`, source evidence ids,
+  source manifest artifact id, source quote/hash, ReviewHistory ids,
+  safe_to_show/redaction status, selection reason, and bounded snippet or
+  source hash. They must not include raw large source text or provider payloads.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated

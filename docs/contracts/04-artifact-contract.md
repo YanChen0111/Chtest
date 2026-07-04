@@ -89,6 +89,7 @@ artifacts/projects/{project_id}/knowledge-feedback/{ai_task_id}/
   test_knowledge_card_candidate_review.json
   reviewed_test_knowledge_card_creation.json
   test_knowledge_card_prompt_eligibility.json
+  test_knowledge_card_retrieval_boundary.json
 ```
 
 `knowledge_feedback.json` stores draft KnowledgeFeedbackAgent output. It is
@@ -106,6 +107,9 @@ for a future scoped TestKnowledgeCard creation workflow. It is not broad CRUD
 and must not grant prompt eligibility.
 `test_knowledge_card_prompt_eligibility.json` stores human review evidence for
 card prompt eligibility. It must not change retrieval runtime behavior.
+`test_knowledge_card_retrieval_boundary.json` stores future read-only
+prompt-context selection evidence for prompt-eligible cards. It must not run
+retrieval, rank cards, assemble prompts, or mutate cards.
 
 ### 3.4 Automation Draft
 
@@ -353,6 +357,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | test_knowledge_card_candidate_review | application/json | Human review evidence for a handoff candidate |
 | reviewed_test_knowledge_card_creation | application/json | Reviewed TestKnowledgeCard creation evidence |
 | test_knowledge_card_prompt_eligibility | application/json | Human prompt eligibility review evidence |
+| test_knowledge_card_retrieval_boundary | application/json | Future prompt-context selection evidence |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -755,6 +760,44 @@ TestKnowledgeCard Prompt Eligibility artifact rules:
   unrelated TestKnowledgeCard rows, run retrieval, call providers, invoke MCP
   runtime, create vector indexes, create embeddings, rerank, run graph jobs,
   call remote CI providers, add RBAC, create tenants, or change permissions.
+
+TestKnowledgeCard Retrieval Boundary artifact rules:
+
+- `test_knowledge_card_retrieval_boundary.json` is stored as an Artifact with
+  `artifact_type=test_knowledge_card_retrieval_boundary`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=test_knowledge_card_retrieval_boundary` until a later scoped
+  prompt-context workflow owns a dedicated selection entity.
+- The retrieval boundary artifact must include `select_prompt_eligible_cards`,
+  project id, prompt request id when available, selected TestKnowledgeCard ids,
+  excluded TestKnowledgeCard ids, `excluded_card_reason`, prompt eligibility
+  artifact ids, creation artifact ids, source manifest artifact id, source
+  artifact ids, source quote/hash, ReviewHistory ids, `safe_to_show`,
+  redaction status, `prompt_eligible`, `allowed_for_prompt`, unsupported
+  claims, selection reason, and failure code when applicable.
+- Selected card evidence requires `allowed_for_prompt=true`, `prompt_eligible`,
+  `safe_to_show=true`, reviewed redaction status, same-project source
+  evidence, source manifest, reviewed source citations, ReviewHistory, and
+  prompt eligibility artifact evidence.
+- Excluded card evidence must preserve `excluded_card_reason` for
+  `allowed_for_prompt=false`, `prompt_eligibility_denied`,
+  `prompt_eligibility_revision_requested`, `prompt_eligibility_revoked`, stale,
+  cross-project, unsafe, missing, unbounded, unsupported, redaction failed,
+  source manifest mismatch, missing ReviewHistory, or missing prompt
+  eligibility artifact evidence.
+- Retrieval boundary artifacts must not contain raw large source text,
+  credentials, tokens, unsafe provider payloads, vector store payloads,
+  embedding vectors, reranker traces, graph runtime payloads, or prompt
+  assembly payloads.
+- Retrieval boundary artifacts must not mutate Artifact rows outside declared
+  retrieval evidence output, mutate source artifacts, mutate prompt eligibility
+  artifacts, rewrite creation artifacts, mutate historical ReviewHistory,
+  FailureAnalysis, Report, TestRun, TestResult, TestCase,
+  GeneratedCaseCandidate, KnowledgeEvidence, or unrelated TestKnowledgeCard
+  rows, run retrieval, change deterministic retrieval ranking, call providers,
+  invoke MCP runtime, create vector indexes, create embeddings, rerank, run
+  graph jobs, call remote CI providers, add RBAC, create tenants, or change
+  permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

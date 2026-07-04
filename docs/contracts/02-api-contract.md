@@ -1440,6 +1440,97 @@ TestKnowledgeCard Prompt Eligibility hard rules:
   generated-case auto-approval, runner behavior, report behavior, RBAC,
   tenants, or permissions.
 
+### 3.5.7 TestKnowledgeCard Retrieval Boundary Contract
+
+This section is contract-only. It defines future read-only selection semantics
+for TestKnowledgeCard prompt-context eligibility and does not add an endpoint,
+router, service, worker, queue, frontend page, migration, prompt runtime
+retrieval implementation, deterministic retrieval behavior change, vector
+index, embedding job, reranking, graph job, MCP runtime, or provider call.
+
+Allowed retrieval-boundary action:
+
+- `select_prompt_eligible_cards`: future scoped selection action that evaluates
+  prompt-eligible TestKnowledgeCard evidence for prompt-context consideration.
+  It records retrieval evidence and exclusion reasons only; it does not run
+  retrieval runtime or assemble prompts.
+
+Retrieval boundary payload shape:
+
+```json
+{
+  "retrieval_boundary_action": "select_prompt_eligible_cards",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "prompt_request_id": "local-prompt-request-001",
+  "candidate_test_knowledge_card_ids": [
+    "00000000-0000-0000-0000-000000000901"
+  ],
+  "required_state": "prompt_eligible",
+  "required_allowed_for_prompt": true,
+  "required_safe_to_show": true,
+  "source_manifest_artifact_id": "00000000-0000-0000-0000-000000000892",
+  "prompt_eligibility_artifact_ids": [
+    "00000000-0000-0000-0000-000000000895"
+  ],
+  "creation_artifact_ids": [
+    "00000000-0000-0000-0000-000000000891"
+  ],
+  "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
+  "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
+  "review_history_ids": [
+    "00000000-0000-0000-0000-000000000894"
+  ],
+  "unsupported_claims": []
+}
+```
+
+Retrieval boundary response shape for a future scoped implementation:
+
+```json
+{
+  "retrieval_boundary_action": "select_prompt_eligible_cards",
+  "selected_test_knowledge_card_ids": [
+    "00000000-0000-0000-0000-000000000901"
+  ],
+  "excluded_cards": [
+    {
+      "test_knowledge_card_id": "00000000-0000-0000-0000-000000000902",
+      "excluded_card_reason": "prompt_eligibility_revoked"
+    }
+  ],
+  "retrieval_evidence_artifact_id": "00000000-0000-0000-0000-000000000896",
+  "selection_reason": "Card is prompt_eligible with reviewed safe source evidence.",
+  "allowed_for_prompt": true,
+  "prompt_eligible": true,
+  "safe_to_show": true
+}
+```
+
+TestKnowledgeCard Retrieval Boundary hard rules:
+
+- `allowed_for_prompt=true` is necessary but not sufficient for selection.
+  The card must also be in a current `prompt_eligible` state, `safe_to_show`
+  must be true, source manifest and same-project source artifacts must remain
+  valid, redaction must be reviewed, and ReviewHistory plus prompt eligibility
+  artifact evidence must be present.
+- `allowed_for_prompt=false`, `prompt_eligibility_denied`,
+  `prompt_eligibility_revision_requested`, `prompt_eligibility_revoked`,
+  stale evidence, cross-project evidence, unsafe evidence, missing source
+  evidence, unbounded evidence, unsupported claims, redaction failure, source
+  manifest mismatch, missing ReviewHistory, or missing prompt eligibility
+  artifact evidence must exclude the card and record `excluded_card_reason`.
+- `select_prompt_eligible_cards` must not create, approve, archive, delete,
+  relabel, merge, or mutate TestKnowledgeCard rows. It must not mutate source
+  artifacts, prompt eligibility artifacts, ReviewHistory, KnowledgeEvidence, or
+  historical evidence.
+- This contract must not add prompt runtime retrieval, deterministic retrieval
+  ranking changes, vector indexes, embeddings, reranking, graph jobs, MCP
+  runtime, provider calls, broad TestKnowledgeCard CRUD, automatic
+  eligibility, automatic knowledge ingestion, artifact mutation outside
+  declared retrieval evidence, historical evidence mutation, generated-case
+  auto-approval, runner behavior, report behavior, RBAC, tenants, or
+  permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

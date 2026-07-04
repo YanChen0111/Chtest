@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Contracts
+
+### Completed
+
+- Added TestKnowledgeCard Retrieval Boundary rules to data, API,
+  state-machine, and artifact contracts.
+- Contracts define read-only selection input, `select_prompt_eligible_cards`,
+  prompt eligibility filters, `allowed_for_prompt`, `prompt_eligible`,
+  safe_to_show/redaction requirements, source evidence, source manifest,
+  ReviewHistory, retrieval evidence outputs, `excluded_card_reason`, failure
+  behavior, and forbidden side effects.
+- Kept the scope contract-only: no prompt runtime retrieval implementation,
+  deterministic retrieval behavior change, vector indexes, embeddings,
+  reranking, graph runtime, MCP runtime, provider calls, broad
+  TestKnowledgeCard CRUD, automatic eligibility, historical evidence mutation,
+  RBAC, tenants, or permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 40 Task 3.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard Retrieval Boundary|select_prompt_eligible_cards|excluded_card_reason|allowed_for_prompt|prompt_eligible|safe_to_show|source manifest|retrieval evidence|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`
+- `git diff --check`
+- Result: required terms found and diff check is clean except Windows
+  LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card retrieval boundary contracts`.
+- Continue Slice 40 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Plan
 
 ### Completed
