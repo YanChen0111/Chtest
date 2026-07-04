@@ -2326,3 +2326,100 @@ Expected output:
   `docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`.
 - No product code until the plan defines prompt context evidence inputs,
   bounded outputs, safety checks, trace links, failure behavior, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard prompt context evidence contract.
+
+Why it was selected:
+
+- Slice 40 defined read-only prompt-context selection, but Chtest still needed
+  a bounded evidence contract for what selected card evidence can enter future
+  prompt context.
+- Slice 41 defined prompt context evidence inputs, bounded snippets/source
+  hashes, source manifest, retrieval boundary artifacts, PromptVersion/
+  SkillVersion trace, context manifest links, omission reasons, and failure
+  behavior.
+- The slice kept prompt assembly, prompt runtime execution, provider calls,
+  retrieval ranking, vector DB/embeddings/reranking/graph/MCP out of scope.
+
+Completed slice name:
+
+```text
+Slice 41: TestKnowledgeCard Prompt Context Evidence Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- TestKnowledgeCard prompt context evidence is now a bounded contract with
+  `build_prompt_context_evidence`, safe bounded snippet/source hash entries,
+  prompt/skill trace, context manifest links, and omission reason.
+- No prompt assembly implementation, prompt runtime execution, provider calls,
+  retrieval ranking change, vector database, embeddings, reranking, graph
+  runtime, MCP runtime, backend feature API, frontend page, migration, broad
+  TestKnowledgeCard CRUD, automatic prompt eligibility, automatic card
+  creation, automatic knowledge ingestion, artifact mutation outside declared
+  prompt-context evidence, historical evidence mutation, generated-case
+  auto-approval, runner behavior, report behavior, RBAC, tenants, permissions,
+  or remote CI provider behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard prompt context consumption contract.
+
+Why:
+
+- Slice 41 defines prompt context evidence, but future AI workflows still need
+  a contract for consuming that evidence in agent inputs without treating it as
+  provider/runtime permission.
+- The next narrow boundary should define how future agents reference prompt
+  context evidence ids, `used_knowledge` flags, prompt/skill trace, and output
+  citations while preserving review gates.
+- This keeps evidence consumption auditable without adding prompt assembly
+  implementation, provider calls, runtime retrieval, model output behavior
+  changes, or frontend behavior.
+
+Next slice name:
+
+```text
+Slice 42: TestKnowledgeCard Prompt Context Consumption Contract
+```
+
+Smallest useful boundary:
+
+- Define future agent input references to prompt context evidence artifact ids,
+  context manifest ids, selected TestKnowledgeCard ids, source hashes,
+  PromptVersion/SkillVersion ids, and ReviewHistory ids.
+- Define allowed output citations and `used_knowledge` semantics when prompt
+  context evidence is present.
+- Define failure behavior when prompt context evidence is missing, stale,
+  unsafe, revoked, or mismatched.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No prompt assembly implementation, prompt runtime execution, provider call,
+  LLM call, prompt runner, deterministic retrieval behavior change, vector
+  database, embeddings, reranking, background indexing, graph runtime, MCP
+  runtime, provider SDK, credentials, backend feature API, frontend page,
+  migration, broad TestKnowledgeCard CRUD, automatic prompt eligibility,
+  automatic card creation, automatic knowledge ingestion, artifact mutation
+  outside declared consumption evidence, historical evidence mutation,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 42 Task 1: Add TestKnowledgeCard Prompt Context Consumption task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines prompt context evidence inputs,
+  consumption/citation rules, `used_knowledge` semantics, failure behavior,
+  and non-goals.
