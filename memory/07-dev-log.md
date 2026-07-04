@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-04 Slice 38 Reviewed TestKnowledgeCard Creation Plan
+
+### Completed
+
+- Added Slice 38 plan:
+  `docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`.
+- The plan scopes reviewed creation from approved TestKnowledgeCard candidates:
+  creation input, card field mapping, source evidence, source manifest,
+  duplicate/merge preconditions, `allowed_for_prompt=false`, failure behavior,
+  ReviewHistory, and creation artifact evidence.
+- The plan keeps creation contract-only and excludes broad TestKnowledgeCard
+  CRUD, backend feature APIs, frontend pages, migrations, automatic card
+  creation from model output, automatic prompt eligibility, automatic
+  duplicate merge, historical evidence mutation, provider calls, MCP runtime,
+  vector/graph runtime, RBAC, tenants, and permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 38 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`
+- `rg -n "Reviewed TestKnowledgeCard Creation|approved candidate|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists, required terms found, and diff check is clean
+  except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add reviewed test knowledge card creation plan`.
+- Continue Slice 38 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 37 Completion Gate
 
 ### Completed
