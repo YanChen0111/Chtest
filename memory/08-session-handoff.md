@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Plan
+
+Completed:
+
+- Added Slice 40 plan:
+  `docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`.
+- The plan defines a contract-first boundary for read-only TestKnowledgeCard
+  prompt-context selection before retrieval runtime changes.
+- The plan names selection inputs, prompt eligibility filters, `safe_to_show`,
+  source evidence, source manifest, ReviewHistory, retrieval evidence outputs,
+  exclusion reasons, failure behavior, and non-goals.
+- `NEXT_AI_TASK.md` now points to Slice 40 Task 2: Define TestKnowledgeCard
+  retrieval boundary contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md
+rg -n "TestKnowledgeCard Retrieval Boundary|allowed_for_prompt|prompt_eligible|retrieval evidence|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists, required terms found, and diff check is clean except
+  Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add test knowledge card retrieval boundary plan`.
+- Continue Slice 40 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 39 Completion Gate
 
 Completed:

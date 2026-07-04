@@ -10,13 +10,13 @@ Slice 40: TestKnowledgeCard Retrieval Boundary Contract.
 
 ## Current Task
 
-Slice 40 Task 1: Add TestKnowledgeCard Retrieval Boundary task plan.
+Slice 40 Task 2: Define TestKnowledgeCard retrieval boundary contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow contract plan for how prompt-eligible
-TestKnowledgeCards may be considered by a future retrieval or prompt-context
-workflow without implementing retrieval runtime behavior.
+After this task, Chtest has data/API/state/artifact contracts describing how
+future prompt-context selection may consider prompt-eligible
+TestKnowledgeCards without implementing retrieval runtime behavior.
 
 ## Must Read
 
@@ -26,8 +26,8 @@ workflow without implementing retrieval runtime behavior.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/10-v2-scope-options.md`
-8. `docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md`
+7. `docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md`
+8. `docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`
 9. `docs/fixtures/27-test-knowledge-card-prompt-eligibility-golden.md`
 10. `memory/08-session-handoff.md`
 11. `memory/07-dev-log.md`
@@ -44,14 +44,17 @@ workflow without implementing retrieval runtime behavior.
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
+Contract-only task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic prompt eligibility, prompt
 runtime retrieval implementation, deterministic retrieval behavior change,
@@ -65,33 +68,32 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md
-rg -n "TestKnowledgeCard Retrieval Boundary|allowed_for_prompt|prompt_eligible|retrieval evidence|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md NEXT_AI_TASK.md
+rg -n "TestKnowledgeCard Retrieval Boundary|select_prompt_eligible_cards|excluded_card_reason|allowed_for_prompt|prompt_eligible|safe_to_show|source manifest|retrieval evidence|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md
 git diff --check
 ```
 
-Expected result: plan file exists, required terms are present, and diff check
+Expected result: retrieval boundary contract terms are present and diff check
 passes.
 
 ## Acceptance
 
-- Slice 40 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan defines read-only selection inputs, prompt eligibility filters,
-  safe_to_show/source evidence requirements, exclusion behavior, retrieval
-  evidence outputs, failure behavior, and non-goals.
-- The plan explicitly excludes prompt runtime retrieval implementation, vector
-  indexes, embeddings, reranking, graph jobs, provider calls, MCP runtime,
-  broad CRUD, automatic eligibility, historical evidence mutation, RBAC,
-  tenants, and permissions.
-- `NEXT_AI_TASK.md` points to Slice 40 Task 2.
+- Contracts define selection inputs, prompt eligibility filters,
+  safe_to_show/source evidence requirements, retrieval evidence outputs,
+  exclusion reasons, failure behavior, and forbidden side effects.
+- Contracts make `allowed_for_prompt=true` necessary but not sufficient for
+  future prompt-context selection.
+- Contracts explicitly exclude prompt runtime retrieval implementation,
+  deterministic ranking changes, vector indexes, embeddings, reranking, graph
+  jobs, provider calls, MCP runtime, broad CRUD, automatic eligibility,
+  historical evidence mutation, RBAC, tenants, and permissions.
+- `NEXT_AI_TASK.md` points to Slice 40 Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add test knowledge card retrieval boundary plan
+docs(v2): define test knowledge card retrieval boundary contracts
 ```
 
 ## Next Task
 
-Slice 40 Task 2: Define TestKnowledgeCard retrieval boundary contracts.
+Slice 40 Task 3: Add TestKnowledgeCard retrieval boundary golden smoke.

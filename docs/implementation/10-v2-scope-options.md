@@ -2223,6 +2223,8 @@ Slice 40 Task 1: Add TestKnowledgeCard Retrieval Boundary task plan
 Expected output:
 
 - A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`.
 - No product code until the plan defines selection inputs, eligibility
   filters, exclusion behavior, retrieval evidence outputs, failure behavior,
   and non-goals.
