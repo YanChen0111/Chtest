@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Contracts
+
+### Completed
+
+- Added TestKnowledgeCard handoff candidate rules to data, API,
+  state-machine, and artifact contracts.
+- Contracts define approved KnowledgeFeedbackDraft handoff input,
+  `handoff_payload_json`, candidate card fields, same-project source evidence,
+  duplicate/merge hints, `safe_to_show`, `allowed_for_prompt=false`,
+  ReviewHistory/review artifact trace, handoff failure behavior, and
+  unsupported claims.
+- Kept the scope contract-only: no endpoint, backend feature API, frontend
+  page, migration, TestKnowledgeCard CRUD, automatic card creation, automatic
+  prompt eligibility, automatic knowledge ingestion, provider calls, MCP
+  runtime, vector/graph runtime, artifact mutation outside declared handoff
+  output, historical evidence mutation, RBAC, tenants, or permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 36 Task 3.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard handoff|KnowledgeFeedbackDraft|handoff_payload|allowed_for_prompt=false|duplicate|merge|safe_to_show|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`
+- `git diff --check`
+- Result: required terms found and diff check is clean except Windows
+  LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card handoff contracts`.
+- Continue Slice 36 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Plan
 
 ### Completed

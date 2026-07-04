@@ -966,6 +966,34 @@ TestKnowledgeCard rules:
   embeddings, reranking, graph extraction, external provider calls, MCP runtime
   calls, or generated-case promotion.
 
+TestKnowledgeCard handoff candidate rules:
+
+- A TestKnowledgeCard handoff starts from an `approved_by_human`
+  KnowledgeFeedbackDraft and its `handoff_payload_json`. The handoff payload is
+  a candidate contract only; it is not CRUD and must not create, approve,
+  archive, delete, or mutate TestKnowledgeCard rows.
+- The handoff payload must carry `source_feedback_id`, `review_history_id`,
+  `review_artifact_id`, `source_entity_type`, `source_entity_id`,
+  `source_artifact_ids`, `source_quote_or_hash`, `source_span`,
+  `draft_knowledge_type`, and mapped `knowledge_type` before any future card
+  workflow can use it.
+- Candidate card fields may include title, summary, body, source_type,
+  source_section, related_requirement_ids, related_risk_ids,
+  related_test_case_ids, tags, confidence, `safe_to_show`,
+  `redaction_applied`, `evidence_artifact_ids`, and `allowed_for_prompt=false`.
+- `allowed_for_prompt=false` is mandatory for handoff candidates. A later
+  human review must approve the TestKnowledgeCard itself before
+  `allowed_for_prompt=true` is possible.
+- `duplicate_knowledge_card_ids`, `merge_hint`, and `review_required=true`
+  preserve duplicate/merge uncertainty. They must not silently replace,
+  archive, or merge existing TestKnowledgeCard rows.
+- Unsupported claims remain attached to the handoff and must not become card
+  body facts, prompt context, or positive knowledge unless a human reviewer
+  supplies source evidence in a later scoped workflow.
+- Unsafe, missing, cross-project, or untraceable source evidence must reject
+  the handoff or request revision. It must not fabricate a source Artifact,
+  source hash, ReviewHistory, KnowledgeEvidence, or card id.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated
@@ -1088,6 +1116,31 @@ KnowledgeFeedbackDraft review gate rules:
   TestKnowledgeCard CRUD, automatic prompt eligibility, provider calls, MCP
   runtime, vector/graph runtime, artifact mutation, RBAC, tenants,
   permissions, or remote CI/CD behavior.
+
+KnowledgeFeedbackDraft TestKnowledgeCard handoff payload rules:
+
+- `handoff_payload_json` may contain a TestKnowledgeCard handoff candidate only
+  after `approve_feedback` moves the draft to `approved_by_human`.
+- The payload must include `source_feedback_id`, `review_history_id`,
+  `review_artifact_id`, `source_entity_type`, `source_entity_id`,
+  `source_artifact_ids`, `source_quote_or_hash`, `source_span`,
+  `draft_knowledge_type`, `knowledge_type`, candidate title/summary/body,
+  `safe_to_show`, `redaction_applied`, `allowed_for_prompt=false`,
+  `duplicate_knowledge_card_ids`, `merge_hint`, `review_required=true`, and
+  visible unsupported claims when they exist.
+- `source_artifact_ids` must reference same-project Artifact rows.
+  `source_quote_or_hash` must be a bounded safe quote or stable hash pointer;
+  free-floating model text is not valid source evidence.
+- `confidence` and schema validity are advisory. They must not create a card,
+  approve a card, mark a card safe to show, set `allowed_for_prompt=true`, or
+  merge duplicates.
+- A prompt-eligible KnowledgeFeedbackDraft still does not make a
+  TestKnowledgeCard prompt-eligible. The card candidate must keep
+  `allowed_for_prompt=false` until a future explicit card review workflow
+  grants prompt eligibility.
+- Invalid handoff payloads must remain auditable with a failure code and must
+  not append successful ReviewHistory, mutate historical source entities, or
+  create fallback knowledge.
 
 ## 32. ToolInvocation
 

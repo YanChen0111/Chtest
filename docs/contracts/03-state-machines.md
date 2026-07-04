@@ -164,6 +164,56 @@ Knowledge feedback review gate rules:
   generation behavior changes, RBAC, tenants, permissions, or remote CI
   provider behavior.
 
+## 7.4 TestKnowledgeCard Handoff Candidate State Contract
+
+The TestKnowledgeCard handoff candidate state is a payload boundary layered on
+top of `approved_by_human` KnowledgeFeedbackDraft review. It is not a
+TestKnowledgeCard lifecycle and must not create TestKnowledgeCard rows.
+
+```text
+approved_by_human -> handoff_payload_prepared -> card_review_required
+approved_by_human -> handoff_rejected
+card_review_required -> duplicate_review_required
+card_review_required -> merge_requested
+card_review_required -> ready_for_future_card_creation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| approved_by_human | create_knowledge_card_candidate | handoff_payload_prepared | Human reviewer/API | Prepares payload only |
+| approved_by_human | reject_handoff_source | handoff_rejected | Human reviewer/API | Source evidence is unsafe, missing, cross-project, or unbounded |
+| handoff_payload_prepared | require_card_review | card_review_required | System/API | Future card creation needs explicit review |
+| card_review_required | flag_duplicate | duplicate_review_required | Human reviewer/API | Duplicate candidates need review |
+| card_review_required | request_merge_review | merge_requested | Human reviewer/API | Merge hint needs explicit review |
+| card_review_required | mark_ready_for_future_card_creation | ready_for_future_card_creation | Human reviewer/API | Still not CRUD in this contract |
+
+TestKnowledgeCard handoff state rules:
+
+- `create_knowledge_card_candidate` requires an approved KnowledgeFeedbackDraft,
+  same-project source artifacts, ReviewHistory, a feedback review artifact,
+  source quote/hash, visible unsupported claims, and safe-to-show evidence.
+- `handoff_payload_prepared`, `card_review_required`,
+  `duplicate_review_required`, `merge_requested`, and
+  `ready_for_future_card_creation` are payload states only. They must not be
+  persisted as TestKnowledgeCard status values in this slice.
+- Every candidate keeps `allowed_for_prompt=false`. Prompt eligibility requires
+  a later human card review after a TestKnowledgeCard row exists.
+- Duplicate/merge states preserve reviewer work. They must not automatically
+  merge, archive, delete, replace, or relabel existing TestKnowledgeCard rows.
+- `handoff_rejected` remains auditable and must preserve rejection reason,
+  source evidence ids, unsupported claims, ReviewHistory id when present, and
+  failure code. It must not append successful ReviewHistory for invalid
+  transitions.
+- Model confidence, schema validity, quality score, and absence of unsupported
+  claims must not move a candidate to any handoff state without a human
+  reviewer action.
+- The handoff state contract must not add a runtime review API, frontend page,
+  TestKnowledgeCard CRUD, automatic card creation, automatic prompt
+  eligibility, provider calls, MCP runtime, vector/graph runtime, artifact
+  mutation outside declared handoff outputs, historical evidence mutation,
+  generated-case auto-approval, runner behavior changes, report generation
+  behavior changes, RBAC, tenants, permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on

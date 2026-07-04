@@ -1022,7 +1022,8 @@ Allowed review actions:
   eligible for prompt use, subject to safe-to-show evidence and source
   citations.
 - `create_knowledge_card_candidate`: optional future handoff payload only; it
-  is not TestKnowledgeCard CRUD in this contract.
+  is not TestKnowledgeCard CRUD in this contract and follows the
+  TestKnowledgeCard handoff contract below.
 
 Review gate payload shape:
 
@@ -1036,8 +1037,15 @@ Review gate payload shape:
   "prompt_eligible": false,
   "prompt_eligibility_reason": null,
   "handoff_payload": {
+    "source_feedback_id": "kf-expired-coupon-boundary",
     "draft_knowledge_type": "existing_test_case_pattern",
-    "source_quote_or_hash": "sha256:reviewed-case-expired-coupon"
+    "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
+    "test_knowledge_card_candidate": {
+      "knowledge_type": "existing_test_case_pattern",
+      "summary": "Expired coupon tests should cover checkout rejection.",
+      "safe_to_show": true,
+      "allowed_for_prompt": false
+    }
   }
 }
 ```
@@ -1081,6 +1089,91 @@ Review gate hard rules:
   TestKnowledgeCard rows; call providers; invoke MCP runtime; create vector
   indexes; create embeddings; rerank; run graph jobs; generate reports; change
   runner behavior; add RBAC; create tenants; or change permissions.
+
+### 3.5.3 TestKnowledgeCard Handoff Contract
+
+This section is contract-only. It defines the future handoff payload semantics
+for an approved KnowledgeFeedbackDraft and does not add an endpoint, router,
+service, worker, queue, frontend page, migration, or `POST /api/test-knowledge-cards`.
+
+Allowed handoff action:
+
+- `create_knowledge_card_candidate`: human-reviewed action that prepares a
+  `handoff_payload` for a future TestKnowledgeCard workflow. It must return
+  `test_knowledge_card_id: null` in this contract.
+
+Handoff payload shape:
+
+```json
+{
+  "feedback_id": "kf-expired-coupon-boundary",
+  "action": "create_knowledge_card_candidate",
+  "status": "approved_by_human",
+  "review_history_id": "00000000-0000-0000-0000-000000000861",
+  "review_artifact_id": "00000000-0000-0000-0000-000000000862",
+  "handoff_payload": {
+    "source_feedback_id": "kf-expired-coupon-boundary",
+    "source_entity_type": "TestCase",
+    "source_entity_id": "00000000-0000-0000-0000-000000000931",
+    "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
+    "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
+    "source_span": "case.steps[3]-case.expected_results[0]",
+    "candidate_fields": {
+      "knowledge_type": "existing_test_case_pattern",
+      "title": "Expired coupon checkout rejection",
+      "summary": "Reviewed checkout cases should include expired coupon rejection.",
+      "body": "Use a reviewed case source before turning this into reusable knowledge.",
+      "source_type": "reviewed_case",
+      "source_section": "checkout/coupon",
+      "related_requirement_ids": ["00000000-0000-0000-0000-000000000121"],
+      "related_risk_ids": ["00000000-0000-0000-0000-000000000221"],
+      "related_test_case_ids": ["00000000-0000-0000-0000-000000000931"],
+      "tags": ["checkout", "coupon", "regression"],
+      "confidence": 84,
+      "safe_to_show": true,
+      "redaction_applied": false,
+      "allowed_for_prompt": false,
+      "evidence_artifact_ids": ["00000000-0000-0000-0000-000000000862"]
+    },
+    "duplicate_candidates": [
+      {
+        "knowledge_card_id": "00000000-0000-0000-0000-000000000781",
+        "match_reason": "Same coupon boundary condition"
+      }
+    ],
+    "merge_recommendation": "review_required",
+    "unsupported_claims": []
+  },
+  "test_knowledge_card_id": null
+}
+```
+
+TestKnowledgeCard handoff hard rules:
+
+- Handoff input must come from an approved KnowledgeFeedbackDraft and must
+  preserve ReviewHistory id, feedback review artifact id, same-project source
+  artifact ids, source entity reference, source quote/hash, and unsupported
+  claims.
+- `candidate_fields` are a proposed TestKnowledgeCard shape only. They must
+  not create, approve, archive, delete, or mutate TestKnowledgeCard rows.
+- `allowed_for_prompt=false` is mandatory in candidate fields. Human card
+  review must happen later before any TestKnowledgeCard can become prompt
+  eligible.
+- `safe_to_show=true` requires safe-to-show evidence and reviewed source
+  citations. It must not be inferred from model confidence, schema validity,
+  or absence of unsupported claims.
+- Duplicate candidates and merge recommendations are review aids only. They
+  must not automatically merge, archive, replace, or relabel existing cards.
+- Unsafe, missing, cross-project, or unbounded source evidence must reject the
+  handoff or request revision; no fallback knowledge or fabricated citation is
+  allowed.
+- This contract must not add a backend feature API, frontend review page,
+  TestKnowledgeCard CRUD, automatic card creation, automatic prompt
+  eligibility, automatic knowledge ingestion, provider call, MCP runtime,
+  vector index, embedding, reranking, graph job, artifact mutation outside the
+  declared handoff artifact, historical evidence mutation, generated-case
+  auto-approval, TestCase auto-promotion, report generation behavior, runner
+  behavior change, remote CI provider behavior, RBAC, tenants, or permissions.
 
 ### 3.6 Review Candidate Case
 

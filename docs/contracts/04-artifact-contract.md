@@ -85,11 +85,16 @@ artifacts/projects/{project_id}/knowledge-feedback/{ai_task_id}/
   knowledge_feedback.json
   unsupported_claims.json
   schema_validation.json
+  test_knowledge_card_handoff.json
 ```
 
 `knowledge_feedback.json` stores draft KnowledgeFeedbackAgent output. It is
 review evidence only and must not create TestKnowledgeCard rows, mark feedback
 prompt-eligible, or mutate historical review/failure/report/case evidence.
+`test_knowledge_card_handoff.json` stores only a future TestKnowledgeCard
+candidate payload from approved feedback; it is not written under a
+`test-knowledge-cards/{knowledge_card_id}` path unless a later scoped workflow
+creates a real card.
 
 ### 3.4 Automation Draft
 
@@ -333,6 +338,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | context_openapi | application/yaml or application/json | OpenAPI 片段或文件 |
 | knowledge_retrieval | application/json | 确定性本地知识检索证据 |
 | test_knowledge_card | application/json | Structured testing knowledge card snapshot |
+| test_knowledge_card_handoff | application/json | Future TestKnowledgeCard handoff candidate payload |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -601,6 +607,40 @@ Knowledge feedback review gate artifact rules:
   evidence mutation, generated-case auto-approval, runner behavior changes,
   report generation behavior changes, RBAC, tenants, permissions, or remote CI
   provider behavior.
+
+TestKnowledgeCard handoff artifact rules:
+
+- `test_knowledge_card_handoff.json` is stored as an Artifact with
+  `artifact_type=test_knowledge_card_handoff`, `owner_entity_type=AITask`, and
+  `manifest_kind=test_knowledge_card_handoff` until a later scoped workflow
+  owns a dedicated card-candidate entity.
+- The artifact must include `source_feedback_id`, `review_history_id`,
+  `review_artifact_id`, reviewer action, `source_entity_type`,
+  `source_entity_id`, `source_artifact_ids`, `source_quote_or_hash`,
+  `source_span`, `source_hashes`, schema validation status, failure code when
+  applicable, and unsupported claims.
+- `candidate_card_json` must include mapped `knowledge_type`, title, summary,
+  body when present, source_type, source section/span, related ids, tags,
+  confidence, `safe_to_show`, `redaction_applied`,
+  `allowed_for_prompt=false`, `review_required=true`, and
+  `evidence_artifact_ids`.
+- `source_manifest` must cite only same-project source Artifact ids and
+  bounded quote/hash pointers. It must not duplicate raw logs, large reports,
+  credentials, tokens, provider payloads, or unsafe source content.
+- `duplicate_knowledge_card_ids` and `merge_hint` are review evidence only.
+  They must not merge, archive, replace, delete, relabel, or create
+  TestKnowledgeCard rows.
+- Handoff artifacts must not be stored in
+  `artifacts/projects/{project_id}/test-knowledge-cards/{knowledge_card_id}/`
+  unless a later workflow has created a real reviewed card id.
+- Handoff artifacts must not create or mutate TestKnowledgeCard rows, set
+  `allowed_for_prompt=true`, mutate Artifact rows outside declared handoff
+  output, mutate ReviewHistory, FailureAnalysis, Report, TestRun, TestResult,
+  TestCase, GeneratedCaseCandidate, or KnowledgeEvidence rows, approve
+  generated cases, promote TestCase rows, generate Reports, run retrieval, call
+  providers, invoke MCP runtime, create vector indexes, create embeddings,
+  rerank, run graph jobs, call remote CI providers, add RBAC, create tenants,
+  or change permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

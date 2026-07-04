@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Contracts
+
+Completed:
+
+- Updated data, API, state-machine, and artifact contracts for
+  TestKnowledgeCard handoff candidates.
+- Defined handoff input from approved KnowledgeFeedbackDraft,
+  `handoff_payload_json`, mapped TestKnowledgeCard candidate fields,
+  same-project source evidence, source quote/hash, duplicate/merge hints,
+  `safe_to_show`, `allowed_for_prompt=false`, ReviewHistory/review artifact
+  trace, failure behavior, and unsupported claims.
+- Added artifact rules for `test_knowledge_card_handoff.json` with
+  `artifact_type=test_knowledge_card_handoff`.
+- `NEXT_AI_TASK.md` now points to Slice 36 Task 3: Add TestKnowledgeCard
+  handoff golden smoke.
+
+Verification:
+
+```bash
+rg -n "TestKnowledgeCard handoff|KnowledgeFeedbackDraft|handoff_payload|allowed_for_prompt=false|duplicate|merge|safe_to_show|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found and `git diff --check` is clean except Windows
+  LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define test knowledge card handoff contracts`.
+- Continue Slice 36 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Plan
 
 Completed:
