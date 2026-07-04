@@ -6,16 +6,17 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 38: Reviewed TestKnowledgeCard Creation Contract.
+Slice 39: TestKnowledgeCard Prompt Eligibility Contract.
 
 ## Current Task
 
-Slice 38 Completion Gate.
+Slice 39 Task 1: Add TestKnowledgeCard Prompt Eligibility Contract task plan.
 
 ## Product Value Answer
 
-After this task, Slice 38 is closed with focused golden verification and the
-next narrow V2 task is selected.
+After this task, Chtest has a narrow plan for human-reviewed
+TestKnowledgeCard prompt eligibility before retrieval or prompt runtime changes
+exist.
 
 ## Must Read
 
@@ -25,9 +26,9 @@ next narrow V2 task is selected.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
-8. `docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`
-9. `docs/fixtures/26-reviewed-test-knowledge-card-creation-golden.md`
+7. `docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`
+8. `docs/fixtures/26-reviewed-test-knowledge-card-creation-golden.md`
+9. `docs/implementation/10-v2-scope-options.md`
 10. `memory/08-session-handoff.md`
 11. `memory/07-dev-log.md`
 
@@ -43,46 +44,49 @@ next narrow V2 task is selected.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md
+docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md
 docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion-only task. Do not add frontend code, backend runtime feature code,
+Planning-only task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
-backend feature API, frontend page, automatic card creation from model output,
-automatic prompt eligibility, automatic knowledge ingestion, external provider
-integrations, vector database, embeddings, reranking, graph runtime, MCP
-runtime, provider SDK, credentials, artifact upload/mutation/delete,
-historical evidence mutation, generated-case auto-approval, runner behavior
-changes, report generation behavior changes, remote CI provider behavior,
-RBAC, tenants, or permissions.
+backend feature API, frontend page, automatic prompt eligibility, prompt
+runtime retrieval change, automatic card creation from model output, automatic
+knowledge ingestion, external provider integrations, vector database,
+embeddings, reranking, graph runtime, MCP runtime, provider SDK, credentials,
+artifact upload/mutation/delete, historical evidence mutation,
+generated-case auto-approval, runner behavior changes, report generation
+behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_candidate_review_contract_golden.py -q
+test -f docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md
+rg -n "TestKnowledgeCard Prompt Eligibility|allowed_for_prompt|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: Slice 38 and Slice 37 focused golden verification passes and
-diff check passes.
+Expected result: Slice 39 plan file exists, required plan terms are present,
+and diff check passes.
 
 ## Acceptance
 
-- Slice 38 task table records Task 1-3 commits.
-- Focused golden verification passes.
-- V2 scope options and handoff memory recommend the next narrow slice.
-- `NEXT_AI_TASK.md` points to the next task.
+- Slice 39 plan exists with product value, non-goals, task table, expected
+  files, verification commands, and commit messages.
+- The plan names TestKnowledgeCard prompt eligibility actions, safe_to_show,
+  redaction, source evidence, ReviewHistory, prompt eligibility reason,
+  artifact evidence, revocation/failure behavior, human review, and non-goals.
+- `NEXT_AI_TASK.md` points to Task 2.
 
 ## Commit Message
 
 ```text
-docs(v2): complete reviewed test knowledge card creation slice
+docs(v2): add test knowledge card prompt eligibility plan
 ```
 
 ## Next Task
 
-Select the next narrow V2 slice from `docs/implementation/10-v2-scope-options.md`.
+Slice 39 Task 2: Define TestKnowledgeCard prompt eligibility contracts.

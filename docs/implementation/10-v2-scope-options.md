@@ -2040,3 +2040,93 @@ Expected output:
 - No product code until the plan defines reviewed creation input, card field
   mapping, source evidence, duplicate/merge preconditions, prompt eligibility,
   failure behavior, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: Reviewed TestKnowledgeCard creation contract.
+
+Why it was selected:
+
+- Slice 37 ended at `approve_candidate_for_creation`, which intentionally did
+  not create a TestKnowledgeCard row.
+- Slice 38 defined the reviewed creation boundary from an approved candidate
+  into a future TestKnowledgeCard record, including source manifest,
+  duplicate/merge preconditions, failure behavior, ReviewHistory linkage, and
+  `allowed_for_prompt=false`.
+- The slice kept broad CRUD, prompt eligibility, automatic creation from model
+  output, and duplicate merge/archive/delete out of scope.
+
+Completed slice name:
+
+```text
+Slice 38: Reviewed TestKnowledgeCard Creation Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact contracts, fixture, contract-level golden
+  smoke, and completion gate.
+- Reviewed creation is now a future scoped contract with explicit input,
+  card-field mapping, source manifest, and creation evidence.
+- No broad TestKnowledgeCard CRUD implementation, backend feature API, frontend
+  page, migration, automatic card creation from model output, automatic prompt
+  eligibility, automatic knowledge ingestion, provider calls, vector database,
+  embeddings, reranking, graph runtime, MCP runtime, artifact mutation outside
+  declared creation evidence, historical evidence mutation, generated-case
+  auto-approval, runner behavior, report behavior, RBAC, tenants, permissions,
+  or remote CI provider behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard prompt eligibility contract.
+
+Why:
+
+- Slice 38 intentionally defaults created cards to `allowed_for_prompt=false`.
+  Chtest still needs an explicit human-reviewed contract before any card can be
+  used as prompt context.
+- Prompt eligibility should require safe_to_show evidence, redaction status,
+  reviewed source citations, ReviewHistory, and a prompt eligibility reason.
+- This keeps card creation separate from retrieval/runtime behavior and blocks
+  model confidence or schema validity from making knowledge reusable.
+
+Next slice name:
+
+```text
+Slice 39: TestKnowledgeCard Prompt Eligibility Contract
+```
+
+Smallest useful boundary:
+
+- Define prompt eligibility review actions for TestKnowledgeCard records:
+  mark_card_prompt_eligible, deny_card_prompt_eligibility,
+  request_prompt_eligibility_revision, and revoke_card_prompt_eligibility.
+- Define safe_to_show, redaction, source evidence, ReviewHistory, prompt
+  eligibility reason, and artifact evidence requirements.
+- Define revocation/failure behavior without retrieval, indexing, or prompt
+  runtime changes.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No broad TestKnowledgeCard CRUD implementation, frontend page, migration,
+  automatic prompt eligibility, prompt runtime retrieval change, vector
+  database, embeddings, reranking, graph runtime, MCP runtime, provider calls,
+  artifact mutation outside declared prompt-eligibility evidence, historical
+  evidence mutation, automatic card creation, automatic knowledge ingestion,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 39 Task 1: Add TestKnowledgeCard Prompt Eligibility Contract task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines prompt eligibility review actions,
+  safe_to_show/redaction/source evidence requirements, ReviewHistory, artifact
+  evidence, revocation/failure behavior, and non-goals.
