@@ -1,5 +1,36 @@
 # Session Handoff
 
+## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Golden Smoke
+
+Completed:
+
+- Added retrieval boundary golden fixture:
+  `docs/fixtures/28-test-knowledge-card-retrieval-boundary-golden.md`.
+- Added retrieval boundary golden smoke:
+  `backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py`.
+- Golden coverage names selection inputs, `select_prompt_eligible_cards`,
+  `allowed_for_prompt`, `prompt_eligible`, `safe_to_show`, source manifest,
+  ReviewHistory, prompt eligibility artifact evidence, retrieval evidence
+  outputs, exclusion reasons, failure behavior, and forbidden side effects.
+- `NEXT_AI_TASK.md` now points to Slice 40 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `3 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `test(golden): add test knowledge card retrieval boundary smoke`.
+- Continue Slice 40 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Contracts
 
 Completed:
