@@ -407,7 +407,7 @@ Prompt context review discrepancy input must include:
 
 - `prompt_context_review_discrepancy_action=track_prompt_context_review_discrepancy`.
 - PromptVersion id/name/version and SkillVersion id/name/version.
-- Review summary export artifact id.
+- Prompt context audit review summary export artifact id.
 - Prompt context audit review decision artifact id.
 - Prompt context audit summary artifact id.
 - Prompt context consumption artifact id.

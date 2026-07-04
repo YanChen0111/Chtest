@@ -1385,9 +1385,10 @@ TestKnowledgeCard Prompt Context Review Discrepancy Tracking rules:
   `used_knowledge`, invent citations, auto-resolve discrepancies, or mutate
   historical evidence.
 - Discrepancy input must preserve prompt request id or AITask id when
-  available, review summary export artifact id, audit review decision artifact
-  id, audit summary artifact id, prompt context consumption artifact id, prompt
-  context evidence artifact id, context manifest artifact id, `used_knowledge`
+  available, prompt context audit review summary export artifact id, audit
+  review decision artifact id, audit summary artifact id, prompt context
+  consumption artifact id, prompt context evidence artifact id, context
+  manifest artifact id, `used_knowledge`
   decision, usage status, review action, review outcome summary, accepted
   citation group, questioned citation group, rejected citation group, affected
   citation ids, skipped evidence ids and skip reasons, unsupported claim
@@ -1760,9 +1761,10 @@ TestKnowledgeCard prompt context review discrepancy Artifact rule:
   scoped discrepancy workflow owns a dedicated discrepancy entity.
 - `metadata_json` must include `created_by_component=TestKnowledgeCardPromptContextReviewDiscrepancyTracking`,
   `prompt_context_review_discrepancy_action=track_prompt_context_review_discrepancy`,
-  review summary export artifact id, audit review decision artifact id, audit
-  summary artifact id, prompt context consumption artifact id, prompt context
-  evidence artifact id, context manifest artifact id, `used_knowledge`
+  prompt context audit review summary export artifact id, audit review decision
+  artifact id, audit summary artifact id, prompt context consumption artifact
+  id, prompt context evidence artifact id, context manifest artifact id,
+  `used_knowledge`
   decision, usage status, discrepancy type, affected citation ids, evidence
   gap summary, mismatch reason, reviewer note, severity, resolution status,
   unresolved follow-up flags, unsupported claim references, source hashes,

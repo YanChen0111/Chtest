@@ -1016,11 +1016,11 @@ TestKnowledgeCard Prompt Context Review Discrepancy artifact rules:
   later scoped implementation.
 - The prompt context review discrepancy artifact must include
   `track_prompt_context_review_discrepancy`, prompt request id or AITask id
-  when available, review summary export artifact id, prompt context audit
-  review decision artifact id, prompt context audit summary artifact id,
-  prompt context consumption artifact id, prompt context evidence artifact id,
-  context manifest artifact id, `used_knowledge` decision, usage status,
-  discrepancy type, affected citation ids, evidence gap summary, mismatch
+  when available, prompt context audit review summary export artifact id,
+  prompt context audit review decision artifact id, prompt context audit
+  summary artifact id, prompt context consumption artifact id, prompt context
+  evidence artifact id, context manifest artifact id, `used_knowledge`
+  decision, usage status, discrepancy type, affected citation ids, evidence gap summary, mismatch
   reason, reviewer note, severity, resolution status, unresolved follow-up
   flags, unsupported claim references, source hashes, PromptVersion id,
   SkillVersion id, ReviewHistory links, and failure code when applicable.

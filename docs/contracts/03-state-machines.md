@@ -758,14 +758,14 @@ prompt_context_review_discrepancy_recorded -> prompt_context_review_discrepancy_
 
 TestKnowledgeCard Prompt Context Review Discrepancy Tracking state rules:
 
-- `track_prompt_context_review_discrepancy` requires review summary export
-  artifact id, audit review decision artifact id, audit summary artifact id,
-  prompt context consumption artifact id, prompt context evidence artifact id,
-  context manifest, `used_knowledge` decision, usage status, affected citation
-  ids, discrepancy type, evidence gap summary, mismatch reason, severity,
-  resolution status, unresolved follow-up flags, unsupported claim references,
-  PromptVersion, SkillVersion, source hash, ReviewHistory, and failure code
-  when applicable.
+- `track_prompt_context_review_discrepancy` requires prompt context audit
+  review summary export artifact id, audit review decision artifact id, audit
+  summary artifact id, prompt context consumption artifact id, prompt context
+  evidence artifact id, context manifest, `used_knowledge` decision, usage
+  status, affected citation ids, discrepancy type, evidence gap summary,
+  mismatch reason, severity, resolution status, unresolved follow-up flags,
+  unsupported claim references, PromptVersion, SkillVersion, source hash,
+  ReviewHistory, and failure code when applicable.
 - Discrepancy states are mismatch evidence only. They may produce discrepancy
   type, affected citation ids, evidence gap summary, mismatch reason, reviewer
   note, severity, resolution status, unresolved follow-up flags, unsupported
