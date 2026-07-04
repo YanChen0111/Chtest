@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Plan
+
+Completed:
+
+- Added Slice 37 plan:
+  `docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`.
+- The plan defines a contract-first boundary for human review of
+  TestKnowledgeCard handoff candidates before card CRUD or prompt eligibility.
+- The plan names candidate review actions, ReviewHistory, candidate review
+  artifact evidence, duplicate/merge handling, prompt eligibility separation,
+  unsupported claims, human review, and non-goals.
+- `NEXT_AI_TASK.md` now points to Slice 37 Task 2: Define TestKnowledgeCard
+  candidate review contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md
+rg -n "TestKnowledgeCard Candidate Review|TestKnowledgeCard handoff|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists, required terms found, and `git diff --check` is clean
+  except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add test knowledge card candidate review plan`.
+- Continue Slice 37 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 36 Completion Gate
 
 Completed:

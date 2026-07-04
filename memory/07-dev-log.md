@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Plan
+
+### Completed
+
+- Added Slice 37 plan:
+  `docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`.
+- The plan scopes candidate review actions for TestKnowledgeCard handoff
+  candidates: approve_candidate_for_creation, reject_candidate,
+  request_candidate_revision, flag_duplicate, request_merge_review, and
+  defer_prompt_eligibility.
+- The plan keeps candidate review contract-only and excludes TestKnowledgeCard
+  CRUD, backend feature APIs, frontend pages, migrations, automatic card
+  creation, automatic prompt eligibility, automatic duplicate merge,
+  historical evidence mutation, provider calls, MCP runtime, vector/graph
+  runtime, RBAC, tenants, and permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 37 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
+- `rg -n "TestKnowledgeCard Candidate Review|TestKnowledgeCard handoff|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists, required terms found, and diff check is clean
+  except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add test knowledge card candidate review plan`.
+- Continue Slice 37 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 36 Completion Gate
 
 ### Completed

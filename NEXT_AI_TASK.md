@@ -10,13 +10,13 @@ Slice 37: TestKnowledgeCard Candidate Review Contract.
 
 ## Current Task
 
-Slice 37 Task 1: Add TestKnowledgeCard Candidate Review Contract task plan.
+Slice 37 Task 2: Define TestKnowledgeCard candidate review contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for reviewing TestKnowledgeCard
-handoff candidates before any card CRUD, automatic card creation, or prompt
-eligibility automation exists.
+After this task, Chtest has explicit data/API/state/artifact contracts for
+human review of TestKnowledgeCard handoff candidates before card CRUD,
+automatic card creation, or prompt eligibility automation exists.
 
 ## Must Read
 
@@ -27,8 +27,8 @@ eligibility automation exists.
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`
-8. `docs/fixtures/24-test-knowledge-card-handoff-golden.md`
-9. `docs/implementation/10-v2-scope-options.md`
+8. `docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
+9. `docs/fixtures/24-test-knowledge-card-handoff-golden.md`
 10. `memory/08-session-handoff.md`
 11. `memory/07-dev-log.md`
 
@@ -44,14 +44,17 @@ eligibility automation exists.
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
+Contract-only task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, TestKnowledgeCard CRUD implementation, backend
 feature API, frontend page, automatic card creation, automatic card approval,
 automatic prompt eligibility, automatic knowledge ingestion, external provider
@@ -64,29 +67,29 @@ RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md
-rg -n "TestKnowledgeCard Candidate Review|TestKnowledgeCard handoff|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md NEXT_AI_TASK.md
+rg -n "TestKnowledgeCard Candidate Review|approve_candidate_for_creation|reject_candidate|request_candidate_revision|flag_duplicate|request_merge_review|defer_prompt_eligibility|ReviewHistory|candidate review artifact" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md
 git diff --check
 ```
 
-Expected result: Slice 37 plan file exists, required plan terms are present,
-and diff check passes.
+Expected result: required candidate review contract terms are present across
+data/API/state/artifact contracts and the slice plan, and diff check passes.
 
 ## Acceptance
 
-- Slice 37 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names TestKnowledgeCard handoff candidates, review actions,
-  ReviewHistory, artifact evidence, duplicate/merge handling, prompt
-  eligibility, human review, and non-goals.
-- `NEXT_AI_TASK.md` points to Task 2.
+- Contracts define candidate review input, actions, output evidence,
+  duplicate/merge routing, prompt eligibility separation, and failure behavior.
+- Contracts keep TestKnowledgeCard creation, merge/archive/delete, and prompt
+  eligibility behind explicit later human-reviewed workflows.
+- Contracts require `allowed_for_prompt=false` for candidates and preserve
+  unsupported claims.
+- `NEXT_AI_TASK.md` points to Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add test knowledge card candidate review plan
+docs(v2): define test knowledge card candidate review contracts
 ```
 
 ## Next Task
 
-Slice 37 Task 2: Define TestKnowledgeCard candidate review contracts.
+Slice 37 Task 3: Add TestKnowledgeCard candidate review golden smoke.
