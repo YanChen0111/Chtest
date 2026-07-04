@@ -86,6 +86,7 @@ artifacts/projects/{project_id}/knowledge-feedback/{ai_task_id}/
   unsupported_claims.json
   schema_validation.json
   test_knowledge_card_handoff.json
+  test_knowledge_card_candidate_review.json
 ```
 
 `knowledge_feedback.json` stores draft KnowledgeFeedbackAgent output. It is
@@ -95,6 +96,9 @@ prompt-eligible, or mutate historical review/failure/report/case evidence.
 candidate payload from approved feedback; it is not written under a
 `test-knowledge-cards/{knowledge_card_id}` path unless a later scoped workflow
 creates a real card.
+`test_knowledge_card_candidate_review.json` stores candidate review evidence
+for a handoff payload. It is not TestKnowledgeCard CRUD and must not create,
+merge, archive, delete, relabel, or make prompt-eligible card rows.
 
 ### 3.4 Automation Draft
 
@@ -339,6 +343,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | knowledge_retrieval | application/json | 确定性本地知识检索证据 |
 | test_knowledge_card | application/json | Structured testing knowledge card snapshot |
 | test_knowledge_card_handoff | application/json | Future TestKnowledgeCard handoff candidate payload |
+| test_knowledge_card_candidate_review | application/json | Human review evidence for a handoff candidate |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -641,6 +646,43 @@ TestKnowledgeCard handoff artifact rules:
   providers, invoke MCP runtime, create vector indexes, create embeddings,
   rerank, run graph jobs, call remote CI providers, add RBAC, create tenants,
   or change permissions.
+
+TestKnowledgeCard Candidate Review artifact rules:
+
+- `test_knowledge_card_candidate_review.json` is stored as an Artifact with
+  `artifact_type=test_knowledge_card_candidate_review`,
+  `owner_entity_type=AITask`, and
+  `manifest_kind=test_knowledge_card_candidate_review` until a later scoped
+  workflow owns a dedicated card-candidate review entity.
+- The candidate review artifact must include `source_handoff_artifact_id`,
+  `source_feedback_id`, candidate review action, candidate review decision,
+  reviewer_label, reviewer_comment, `review_history_id` when present,
+  `candidate_review_artifact_id`, `candidate_card_json`,
+  `source_artifact_ids`, `source_quote_or_hash`, `source_span`,
+  `evidence_artifact_ids`, unsupported claims, schema validation status, and
+  failure code when applicable.
+- Candidate review artifacts must record `approve_candidate_for_creation`,
+  `reject_candidate`, `request_candidate_revision`, `flag_duplicate`,
+  `request_merge_review`, and `defer_prompt_eligibility` as human review
+  evidence only.
+- `duplicate_knowledge_card_ids`, `merge_hint`,
+  `duplicate_review_required`, and `merge_review_required` are review-routing
+  evidence only. They must not merge, archive, replace, delete, relabel, or
+  create TestKnowledgeCard rows.
+- Candidate review artifacts must record `allowed_for_prompt=false` and
+  `prompt_eligibility_decision=deferred` unless a later explicitly scoped card
+  workflow grants prompt eligibility after a card row exists.
+- Candidate review artifacts must not be stored in
+  `artifacts/projects/{project_id}/test-knowledge-cards/{knowledge_card_id}/`
+  unless a later workflow has created a real reviewed card id.
+- Candidate review artifacts must not create or mutate TestKnowledgeCard rows,
+  set `allowed_for_prompt=true`, mutate Artifact rows outside declared
+  candidate review output, mutate ReviewHistory, FailureAnalysis, Report,
+  TestRun, TestResult, TestCase, GeneratedCaseCandidate, or KnowledgeEvidence
+  rows, approve generated cases, promote TestCase rows, generate Reports, run
+  retrieval, call providers, invoke MCP runtime, create vector indexes, create
+  embeddings, rerank, run graph jobs, call remote CI providers, add RBAC,
+  create tenants, or change permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

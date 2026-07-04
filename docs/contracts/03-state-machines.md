@@ -214,6 +214,62 @@ TestKnowledgeCard handoff state rules:
   generated-case auto-approval, runner behavior changes, report generation
   behavior changes, RBAC, tenants, permissions, or remote CI provider behavior.
 
+## 7.5 TestKnowledgeCard Candidate Review State Contract
+
+The TestKnowledgeCard Candidate Review state contract is a human review layer
+for handoff candidates. It is not a TestKnowledgeCard lifecycle and must not
+create, merge, archive, delete, relabel, or make prompt-eligible
+TestKnowledgeCard rows.
+
+```text
+card_review_required -> candidate_approved_for_future_creation
+card_review_required -> candidate_rejected
+card_review_required -> candidate_revision_requested
+card_review_required -> duplicate_review_required
+duplicate_review_required -> merge_review_requested
+candidate_approved_for_future_creation -> prompt_eligibility_deferred
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| card_review_required | approve_candidate_for_creation | candidate_approved_for_future_creation | Human reviewer/API | Future card creation only |
+| card_review_required | reject_candidate | candidate_rejected | Human reviewer/API | Candidate remains auditable |
+| card_review_required | request_candidate_revision | candidate_revision_requested | Human reviewer/API | Better evidence or mapping required |
+| card_review_required | flag_duplicate | duplicate_review_required | Human reviewer/API | Duplicate routing only |
+| duplicate_review_required | request_merge_review | merge_review_requested | Human reviewer/API | Merge review only |
+| candidate_approved_for_future_creation | defer_prompt_eligibility | prompt_eligibility_deferred | Human reviewer/API | Keeps allowed_for_prompt=false |
+
+TestKnowledgeCard Candidate Review state rules:
+
+- Candidate review requires a TestKnowledgeCard handoff candidate, candidate
+  card JSON, same-project source artifacts, ReviewHistory or prior review
+  artifact references, source quote/hash, duplicate/merge hints, and visible
+  unsupported claims.
+- Candidate review actions are human reviewer actions. Model confidence,
+  schema validity, safe_to_show, duplicate similarity, or absence of
+  unsupported claims must not execute them automatically.
+- `candidate_approved_for_future_creation` is not `TestKnowledgeCard.active`.
+  It must not create a row, produce a TestKnowledgeCard id, or mark a card
+  prompt-eligible.
+- `prompt_eligibility_deferred` is the default after candidate review.
+  Candidates keep `allowed_for_prompt=false` until a later explicitly scoped
+  card workflow grants eligibility.
+- `duplicate_review_required` and `merge_review_requested` must not
+  automatically merge, archive, replace, delete, relabel, or create
+  TestKnowledgeCard rows.
+- Successful candidate review actions append or reference ReviewHistory and may
+  write a candidate review artifact. Invalid transitions, unsafe evidence, or
+  validation failures must not append successful ReviewHistory.
+- Rejected and revision-requested candidates remain auditable and must preserve
+  source evidence ids, unsupported claims, reviewer reason, and failure code.
+- The candidate review state contract must not add a runtime review API,
+  frontend page, TestKnowledgeCard CRUD, automatic card creation, automatic
+  prompt eligibility, provider calls, MCP runtime, vector/graph runtime,
+  artifact mutation outside declared candidate review outputs, historical
+  evidence mutation, generated-case auto-approval, runner behavior changes,
+  report generation behavior changes, RBAC, tenants, permissions, or remote CI
+  provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on

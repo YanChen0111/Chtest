@@ -994,6 +994,38 @@ TestKnowledgeCard handoff candidate rules:
   the handoff or request revision. It must not fabricate a source Artifact,
   source hash, ReviewHistory, KnowledgeEvidence, or card id.
 
+TestKnowledgeCard Candidate Review rules:
+
+- TestKnowledgeCard Candidate Review starts from a TestKnowledgeCard handoff
+  candidate, `test_knowledge_card_handoff.json`, and a human reviewer action.
+  It is a candidate review contract only; it must not create, approve, archive,
+  delete, merge, relabel, or mutate TestKnowledgeCard rows.
+- Candidate review actions are `approve_candidate_for_creation`,
+  `reject_candidate`, `request_candidate_revision`, `flag_duplicate`,
+  `request_merge_review`, and `defer_prompt_eligibility`.
+- Candidate review input must preserve `source_feedback_id`,
+  `source_handoff_artifact_id`, `candidate_card_json`, `source_artifact_ids`,
+  `source_quote_or_hash`, `source_span`, `duplicate_knowledge_card_ids`,
+  `merge_hint`, unsupported claims, and any prior `review_history_id` or
+  `review_artifact_id`.
+- Candidate review output may include `candidate_review_action`,
+  `candidate_review_decision`, reviewer label/comment, `review_history_id`,
+  `candidate_review_artifact_id`, `evidence_artifact_ids`,
+  `duplicate_review_required`, `merge_review_required`,
+  `prompt_eligibility_decision=deferred`, failure code, and
+  `allowed_for_prompt=false`.
+- `approve_candidate_for_creation` means the candidate may be routed to a
+  future explicitly scoped card-creation workflow. It is not TestKnowledgeCard
+  CRUD and must not produce a `test_knowledge_card_id` in this contract.
+- `flag_duplicate` and `request_merge_review` are review-routing decisions.
+  They must not merge, archive, replace, delete, relabel, or create
+  TestKnowledgeCard rows.
+- `defer_prompt_eligibility` is the default prompt eligibility decision for
+  reviewed candidates. Candidate review must not set `allowed_for_prompt=true`.
+- Rejected or revision-requested candidates remain auditable with source
+  evidence and unsupported claims. They must not become positive knowledge,
+  card body facts, or prompt context.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated
@@ -1141,6 +1173,9 @@ KnowledgeFeedbackDraft TestKnowledgeCard handoff payload rules:
 - Invalid handoff payloads must remain auditable with a failure code and must
   not append successful ReviewHistory, mutate historical source entities, or
   create fallback knowledge.
+- A later TestKnowledgeCard Candidate Review may evaluate the handoff payload,
+  but candidate review still must not mutate the KnowledgeFeedbackDraft source,
+  create TestKnowledgeCard rows, or grant prompt eligibility.
 
 ## 32. ToolInvocation
 

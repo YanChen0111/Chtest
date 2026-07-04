@@ -1175,6 +1175,97 @@ TestKnowledgeCard handoff hard rules:
   auto-approval, TestCase auto-promotion, report generation behavior, runner
   behavior change, remote CI provider behavior, RBAC, tenants, or permissions.
 
+### 3.5.4 TestKnowledgeCard Candidate Review Contract
+
+This section is contract-only. It defines future candidate review payload
+semantics for TestKnowledgeCard handoff candidates and does not add an endpoint,
+router, service, worker, queue, frontend page, migration,
+`POST /api/test-knowledge-cards`, or `POST /api/test-knowledge-card-candidates`.
+
+Allowed candidate review actions:
+
+- `approve_candidate_for_creation`: human accepts candidate quality and source
+  evidence for a future card-creation workflow. It is not card creation here.
+- `reject_candidate`: human rejects the candidate and keeps rationale
+  auditable.
+- `request_candidate_revision`: human requests better source evidence,
+  safer content, or a corrected mapping.
+- `flag_duplicate`: human routes the candidate to duplicate review.
+- `request_merge_review`: human requests explicit merge review for existing
+  duplicate card candidates.
+- `defer_prompt_eligibility`: human or system records that prompt eligibility
+  remains deferred and `allowed_for_prompt=false`.
+
+Candidate review payload shape:
+
+```json
+{
+  "candidate_review_action": "approve_candidate_for_creation",
+  "candidate_review_decision": "approved_for_future_creation",
+  "reviewer_label": "Default User",
+  "review_comment": "Source evidence is reviewed; prompt eligibility stays deferred.",
+  "source_handoff_artifact_id": "00000000-0000-0000-0000-000000000871",
+  "source_feedback_id": "kf-expired-coupon-boundary",
+  "candidate_card_json": {
+    "knowledge_type": "existing_test_case_pattern",
+    "title": "Expired coupon checkout rejection",
+    "summary": "Reviewed checkout cases should include expired coupon rejection.",
+    "safe_to_show": true,
+    "allowed_for_prompt": false
+  },
+  "evidence_artifact_ids": ["00000000-0000-0000-0000-000000000862"],
+  "duplicate_knowledge_card_ids": ["00000000-0000-0000-0000-000000000781"],
+  "merge_hint": "possible_duplicate",
+  "duplicate_review_required": true,
+  "merge_review_required": false,
+  "prompt_eligibility_decision": "deferred",
+  "unsupported_claims": [],
+  "failure_code": null
+}
+```
+
+Candidate review response shape:
+
+```json
+{
+  "candidate_review_action": "approve_candidate_for_creation",
+  "candidate_review_decision": "approved_for_future_creation",
+  "review_history_id": "00000000-0000-0000-0000-000000000881",
+  "candidate_review_artifact_id": "00000000-0000-0000-0000-000000000882",
+  "test_knowledge_card_id": null,
+  "allowed_for_prompt": false,
+  "prompt_eligibility_decision": "deferred"
+}
+```
+
+TestKnowledgeCard Candidate Review hard rules:
+
+- Candidate review input must come from a TestKnowledgeCard handoff candidate
+  and must preserve source feedback id, handoff artifact id, candidate card
+  JSON, source Artifact ids, source quote/hash, duplicate/merge hints, and
+  unsupported claims.
+- Candidate review actions must be human reviewer actions. Model confidence,
+  schema validity, safe_to_show, or absence of unsupported claims must not
+  approve a candidate.
+- Candidate review may append or reference ReviewHistory and may produce a
+  candidate review artifact, but invalid transitions must not append successful
+  ReviewHistory.
+- `approve_candidate_for_creation` must return `test_knowledge_card_id: null`
+  in this contract. A later scoped workflow must own actual card creation.
+- `defer_prompt_eligibility` is the default; reviewed candidates must keep
+  `allowed_for_prompt=false`.
+- Duplicate and merge actions are review routing only. They must not
+  automatically merge, archive, replace, delete, relabel, or create
+  TestKnowledgeCard rows.
+- This contract must not add a backend feature API, frontend review page,
+  TestKnowledgeCard CRUD, automatic card creation, automatic card approval,
+  automatic prompt eligibility, automatic knowledge ingestion, provider call,
+  MCP runtime, vector index, embedding, reranking, graph job, artifact mutation
+  outside declared candidate review artifacts, historical evidence mutation,
+  generated-case auto-approval, TestCase auto-promotion, runner behavior
+  change, report generation behavior change, remote CI provider behavior,
+  RBAC, tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

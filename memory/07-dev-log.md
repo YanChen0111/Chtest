@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Contracts
+
+### Completed
+
+- Added TestKnowledgeCard Candidate Review rules to data, API, state-machine,
+  and artifact contracts.
+- Contracts define candidate review input, actions, output evidence,
+  ReviewHistory linkage, candidate review artifact evidence,
+  duplicate/merge routing, `allowed_for_prompt=false`,
+  `prompt_eligibility_decision=deferred`, failure behavior, and unsupported
+  claims.
+- Kept the scope contract-only: no endpoint, backend feature API, frontend
+  page, migration, TestKnowledgeCard CRUD, automatic card creation, automatic
+  prompt eligibility, automatic merge/archive/delete, provider calls, MCP
+  runtime, vector/graph runtime, artifact mutation outside declared candidate
+  review output, historical evidence mutation, RBAC, tenants, or permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 37 Task 3.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard Candidate Review|approve_candidate_for_creation|reject_candidate|request_candidate_revision|flag_duplicate|request_merge_review|defer_prompt_eligibility|ReviewHistory|candidate review artifact" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
+- `git diff --check`
+- Result: required terms found and diff check is clean except Windows
+  LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card candidate review contracts`.
+- Continue Slice 37 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Plan
 
 ### Completed
