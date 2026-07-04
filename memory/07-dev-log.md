@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-07-05 Slice 42 Completion Gate
+
+### Completed
+
+- Closed Slice 42: TestKnowledgeCard Prompt Context Consumption Contract.
+- Recorded completed task commits in the Slice 42 task table:
+  - Task 1: `990e757`;
+  - Task 2: `e3aa956`;
+  - Task 3: `9da8cc8`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 42
+  completion and Slice 43 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 43 Task 1: Add TestKnowledgeCard Prompt
+  Context Audit Summary task plan.
+
+### Verification
+
+- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py -q`
+- `git diff --check`
+- Result: `6 passed`.
+- Result: clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): complete test knowledge card prompt context consumption slice`.
+- Continue Slice 43 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 42 TestKnowledgeCard Prompt Context Consumption Golden Smoke
 
 ### Completed
