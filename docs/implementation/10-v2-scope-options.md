@@ -2130,3 +2130,99 @@ Expected output:
 - No product code until the plan defines prompt eligibility review actions,
   safe_to_show/redaction/source evidence requirements, ReviewHistory, artifact
   evidence, revocation/failure behavior, and non-goals.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard prompt eligibility contract.
+
+Why it was selected:
+
+- Slice 38 intentionally defaulted created cards to `allowed_for_prompt=false`;
+  Slice 39 defined the explicit human review gate before any reviewed card can
+  enter prompt context.
+- Slice 39 required safe_to_show evidence, redaction status, reviewed source
+  citations, ReviewHistory, prompt eligibility reason, and prompt eligibility
+  artifact evidence before `allowed_for_prompt=true`.
+- The slice kept prompt eligibility separate from card creation, retrieval
+  runtime, model confidence, schema validity, and source presence.
+
+Completed slice name:
+
+```text
+Slice 39: TestKnowledgeCard Prompt Eligibility Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact contracts, fixture, contract-level golden
+  smoke, and completion gate.
+- TestKnowledgeCard prompt eligibility is now a human-reviewed contract with
+  mark, deny, revision-request, and revoke actions.
+- No broad TestKnowledgeCard CRUD implementation, backend feature API,
+  frontend page, migration, automatic prompt eligibility, prompt runtime
+  retrieval change, vector database, embeddings, reranking, graph runtime, MCP
+  runtime, provider calls, artifact mutation outside declared
+  prompt-eligibility evidence, historical evidence mutation, automatic card
+  creation, automatic knowledge ingestion, generated-case auto-approval,
+  runner behavior, report behavior, RBAC, tenants, permissions, or remote CI
+  provider behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard retrieval boundary contract.
+
+Why:
+
+- Slice 39 says which reviewed cards may be allowed for prompt use, but Chtest
+  still needs a contract for how prompt-eligible cards may be considered by a
+  later retrieval or prompt-context workflow.
+- The next narrow boundary should define read-only eligibility filters,
+  source evidence checks, exclusion rules, and retrieval evidence outputs
+  without implementing retrieval runtime behavior.
+- This keeps `allowed_for_prompt=true` necessary but not sufficient for future
+  prompt inclusion: stale, unsafe, cross-project, revoked, or unsupported
+  evidence must remain excluded.
+
+Next slice name:
+
+```text
+Slice 40: TestKnowledgeCard Retrieval Boundary Contract
+```
+
+Smallest useful boundary:
+
+- Define a read-only selection contract for future TestKnowledgeCard prompt
+  context using `allowed_for_prompt=true`, `safe_to_show=true`, non-revoked
+  prompt eligibility evidence, same-project source artifacts, and current
+  source manifest checks.
+- Define exclusion behavior for denied, revoked, revision-requested, stale,
+  cross-project, unsafe, unsupported, missing, or unbounded evidence.
+- Define retrieval evidence shape for a later workflow without adding runtime
+  retrieval, deterministic ranking changes, vector indexes, embeddings,
+  reranking, graph jobs, provider calls, or MCP runtime.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No prompt runtime retrieval implementation, deterministic retrieval behavior
+  change, vector database, embeddings, reranking, background indexing, graph
+  runtime, GraphRAG job, MCP runtime, provider calls, provider SDK,
+  credentials, backend feature API, frontend page, migration, broad
+  TestKnowledgeCard CRUD, automatic prompt eligibility, automatic card
+  creation, automatic knowledge ingestion, artifact mutation, historical
+  evidence mutation, generated-case auto-approval, runner behavior, report
+  behavior, RBAC, tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 40 Task 1: Add TestKnowledgeCard Retrieval Boundary task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- No product code until the plan defines selection inputs, eligibility
+  filters, exclusion behavior, retrieval evidence outputs, failure behavior,
+  and non-goals.
