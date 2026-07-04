@@ -10,13 +10,12 @@ Slice 38: Reviewed TestKnowledgeCard Creation Contract.
 
 ## Current Task
 
-Slice 38 Task 3: Add reviewed TestKnowledgeCard creation golden smoke.
+Slice 38 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-level fixture and golden smoke proving
-reviewed TestKnowledgeCard creation cannot bypass source evidence,
-duplicate/merge, or prompt eligibility gates.
+After this task, Slice 38 is closed with focused golden verification and the
+next narrow V2 task is selected.
 
 ## Must Read
 
@@ -28,7 +27,7 @@ duplicate/merge, or prompt eligibility gates.
 6. `docs/contracts/04-artifact-contract.md`
 7. `docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
 8. `docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`
-9. `docs/fixtures/25-test-knowledge-card-candidate-review-golden.md`
+9. `docs/fixtures/26-reviewed-test-knowledge-card-creation-golden.md`
 10. `memory/08-session-handoff.md`
 11. `memory/07-dev-log.md`
 
@@ -45,14 +44,13 @@ Create or update only these files for the current task:
 
 ```text
 docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md
-docs/fixtures/26-reviewed-test-knowledge-card-creation-golden.md
-backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden-smoke task. Do not add frontend code, backend runtime feature code,
+Completion-only task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic card creation from model output,
 automatic prompt eligibility, automatic knowledge ingestion, external provider
@@ -65,32 +63,26 @@ RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py -q
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_candidate_review_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: reviewed TestKnowledgeCard creation golden smoke passes and
+Expected result: Slice 38 and Slice 37 focused golden verification passes and
 diff check passes.
 
 ## Acceptance
 
-- Golden names reviewed TestKnowledgeCard creation, approved candidate review,
-  creation action, card field mapping, source evidence, source manifest,
-  duplicate/merge preconditions, `allowed_for_prompt=false`, unsupported
-  claims, ReviewHistory, and creation artifact evidence.
-- Golden proves no broad TestKnowledgeCard CRUD, automatic card creation from
-  model output, automatic prompt eligibility, automatic merge/archive/delete,
-  historical evidence mutation, provider call, vector index, graph job, MCP
-  runtime, artifact mutation, review bypass, auto-promotion, RBAC, tenants, or
-  permissions is created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 38 Completion Gate.
+- Slice 38 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next task.
 
 ## Commit Message
 
 ```text
-test(golden): add reviewed test knowledge card creation smoke
+docs(v2): complete reviewed test knowledge card creation slice
 ```
 
 ## Next Task
 
-Slice 38 Completion Gate.
+Select the next narrow V2 slice from `docs/implementation/10-v2-scope-options.md`.

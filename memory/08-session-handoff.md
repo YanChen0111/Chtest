@@ -1,5 +1,35 @@
 # Session Handoff
 
+## 2026-07-04 Slice 38 Reviewed TestKnowledgeCard Creation Golden Smoke
+
+Completed:
+
+- Added `docs/fixtures/26-reviewed-test-knowledge-card-creation-golden.md`.
+- Added
+  `backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py`.
+- Golden smoke validates Reviewed TestKnowledgeCard Creation, approved
+  candidate review, creation action, card field mapping, source evidence,
+  source manifest, duplicate/merge preconditions, `allowed_for_prompt=false`,
+  unsupported claims, ReviewHistory, and creation artifact evidence.
+- `NEXT_AI_TASK.md` now points to Slice 38 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- Golden smoke: `3 passed`.
+- `git diff --check`: clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `test(golden): add reviewed test knowledge card creation smoke`.
+- Continue Slice 38 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 38 Reviewed TestKnowledgeCard Creation Contracts
 
 Completed:
