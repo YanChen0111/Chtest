@@ -1,5 +1,37 @@
 # Development Log
 
+## 2026-07-04 Slice 41 TestKnowledgeCard Prompt Context Evidence Plan
+
+### Completed
+
+- Added Slice 41 plan:
+  `docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`.
+- The plan scopes TestKnowledgeCard Prompt Context Evidence contracts:
+  prompt context evidence inputs, bounded snippet/source hash outputs, source
+  evidence, source manifest, retrieval boundary artifact, PromptVersion/
+  SkillVersion trace, context manifest links, omission summaries, failure
+  behavior, and non-goals.
+- The plan keeps prompt context evidence contract-only and excludes prompt
+  assembly implementation, prompt runtime execution, provider calls,
+  deterministic retrieval behavior changes, vector indexes, embeddings,
+  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
+  automatic eligibility, historical evidence mutation, RBAC, tenants, and
+  permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 41 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`
+- `rg -n "TestKnowledgeCard Prompt Context Evidence|prompt context evidence|bounded snippet|source hash|retrieval boundary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists, required terms found, and diff check is clean
+  except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add test knowledge card prompt context evidence plan`.
+- Continue Slice 41 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 40 Completion Gate
 
 ### Completed

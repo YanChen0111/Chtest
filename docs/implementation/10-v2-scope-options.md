@@ -2322,5 +2322,7 @@ Slice 41 Task 1: Add TestKnowledgeCard Prompt Context Evidence task plan
 Expected output:
 
 - A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`.
 - No product code until the plan defines prompt context evidence inputs,
   bounded outputs, safety checks, trace links, failure behavior, and non-goals.
