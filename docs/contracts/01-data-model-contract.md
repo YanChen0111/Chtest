@@ -1258,6 +1258,57 @@ TestKnowledgeCard Prompt Context Audit Summary rules:
   graph runtime payloads, secrets, credentials, tokens, OAuth material, or
   executable prompt assembly payloads.
 
+TestKnowledgeCard Prompt Context Audit Review Decision rules:
+
+- TestKnowledgeCard Prompt Context Audit Review Decision starts from an
+  existing prompt context audit summary. It is a human review decision contract
+  for future review workflows and is not a frontend page, report generation
+  behavior change, prompt assembly implementation, prompt runtime execution,
+  provider behavior, retrieval ranking, card creation, broad CRUD, vector
+  indexing, embedding, reranking, graph runtime, or MCP runtime.
+- The contract-only review decision action is
+  `review_prompt_context_audit_summary`. It may record whether a reviewer
+  accepted, questioned, or rejected the audit summary evidence, but it must not
+  write a runtime `prompt_input.json`, call providers, run AITasks, mutate
+  TestKnowledgeCard rows, mutate audit summary artifacts, mutate prompt context
+  consumption artifacts, mutate prompt context evidence artifacts, mutate
+  source artifacts, rewrite `used_knowledge`, invent citations, or mutate
+  historical evidence.
+- Review decision input must preserve prompt request id or AITask id when
+  available, audit summary artifact id, prompt context consumption artifact
+  id, prompt context evidence artifact id, context manifest artifact id,
+  `used_knowledge` decision, usage status, output citation ids, cited
+  TestKnowledgeCard ids, cited context entry ids, cited source hash or source
+  quote/hash pointers, skipped evidence ids and skip reasons, unsupported
+  claims, review flags, failure reasons, PromptVersion id/name/version,
+  SkillVersion id/name/version, and prior ReviewHistory ids when present.
+- Review decision outputs may include review decision id or artifact id,
+  reviewer label or local reviewer id, review action, reviewer comment,
+  accepted citation ids, questioned citation ids, rejected citation ids,
+  follow-up flags, requested clarification fields, ReviewHistory id for the
+  decision evidence, source hashes, context manifest references,
+  PromptVersion/SkillVersion trace, and failure code when applicable.
+- Allowed review actions are `accepted`, `needs_clarification`,
+  `rejected_for_missing_evidence`, `rejected_for_unsupported_claim`,
+  `rejected_for_citation_mismatch`, `rejected_for_stale_evidence`, and
+  `rejected_for_cross_project_evidence`.
+- Review decisions are evidence about an audit summary. `accepted` must not
+  create prompt eligibility, approve TestKnowledgeCard content, approve
+  generated cases, alter `used_knowledge`, or mark skipped evidence as cited.
+  `needs_clarification` and rejected decisions must preserve cited evidence,
+  skipped evidence, unsupported claims, source hashes, context manifest links,
+  PromptVersion/SkillVersion trace, and ReviewHistory links.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched, or audit
+  summary-mismatched input must produce a failure code and must not append a
+  successful ReviewHistory decision.
+- Prompt context audit review decisions must not copy raw large source text,
+  unsafe provider payloads, vector store payloads, embedding vectors, reranker
+  traces, graph runtime payloads, secrets, credentials, tokens, OAuth material,
+  executable prompt assembly payloads, frontend-rendered markup, or
+  report-rendered payloads.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated
@@ -1458,7 +1509,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -1536,6 +1587,30 @@ TestKnowledgeCard prompt context audit summary Artifact rule:
   providers, run an AITask, mutate prompt context consumption evidence, mutate
   prompt context evidence, mutate source artifacts, rewrite `used_knowledge`,
   invent citations, or mutate TestKnowledgeCard rows.
+
+TestKnowledgeCard prompt context audit review decision Artifact rule:
+
+- Slice 44 prompt context audit review decision may use
+  `artifact_type=test_knowledge_card_prompt_context_audit_review_decision` in
+  a later scoped implementation.
+- `owner_entity_type=AITask` or `owner_entity_type=Project` until a later
+  scoped review workflow owns a dedicated review decision entity.
+- `metadata_json` must include `created_by_component=TestKnowledgeCardPromptContextAuditReviewDecision`,
+  `prompt_context_audit_review_decision_action=review_prompt_context_audit_summary`,
+  audit summary artifact id, prompt context consumption artifact id, prompt
+  context evidence artifact id, context manifest artifact id, `used_knowledge`
+  decision, usage status, review action, reviewer label when available,
+  accepted citation ids, questioned citation ids, rejected citation ids,
+  follow-up flags, requested clarification fields, source hashes,
+  PromptVersion id, SkillVersion id, ReviewHistory id, and failure code when
+  applicable.
+- This artifact is human review decision evidence only. It must not render
+  frontend pages, change report generation behavior, assemble prompt text, call
+  providers, run an AITask, mutate audit summary evidence, mutate prompt
+  context consumption evidence, mutate prompt context evidence, mutate source
+  artifacts, rewrite `used_knowledge`, invent citations, create prompt
+  eligibility, approve TestKnowledgeCard content, approve generated cases, or
+  mutate TestKnowledgeCard rows.
 
 CI import Artifact rule:
 

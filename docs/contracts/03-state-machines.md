@@ -580,6 +580,78 @@ TestKnowledgeCard Prompt Context Audit Summary state rules:
   output, historical evidence mutation, generated-case auto-approval, runner
   behavior changes, RBAC, tenants, permissions, or remote CI provider behavior.
 
+## 7.12 TestKnowledgeCard Prompt Context Audit Review Decision State Contract
+
+TestKnowledgeCard Prompt Context Audit Review Decision is a human review
+decision state boundary for future workflows that accept, question, or reject
+prompt context audit summaries. It starts only from prompt context audit summary
+evidence and does not implement frontend rendering, report generation behavior,
+prompt assembly, prompt runtime execution, provider calls, retrieval ranking,
+model citation generation, prompt eligibility, card creation, or broad
+TestKnowledgeCard CRUD.
+
+```text
+prompt_context_audit_summary_ready -> prompt_context_audit_review_pending
+prompt_context_audit_review_pending -> prompt_context_audit_review_accepted
+prompt_context_audit_review_pending -> prompt_context_audit_review_needs_clarification
+prompt_context_audit_review_pending -> prompt_context_audit_review_rejected_for_missing_evidence
+prompt_context_audit_review_pending -> prompt_context_audit_review_rejected_for_unsupported_claim
+prompt_context_audit_review_pending -> prompt_context_audit_review_rejected_for_citation_mismatch
+prompt_context_audit_review_pending -> prompt_context_audit_review_failed
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| prompt_context_audit_summary_ready | request_prompt_context_audit_review | prompt_context_audit_review_pending | Future workflow/API | Starts human review decision only |
+| prompt_context_audit_review_pending | review_prompt_context_audit_summary | prompt_context_audit_review_accepted | Future human reviewer | Uses `review_action=accepted` |
+| prompt_context_audit_review_pending | review_prompt_context_audit_summary | prompt_context_audit_review_needs_clarification | Future human reviewer | Uses `review_action=needs_clarification` |
+| prompt_context_audit_review_pending | review_prompt_context_audit_summary | prompt_context_audit_review_rejected_for_missing_evidence | Future human reviewer | Uses `review_action=rejected_for_missing_evidence` |
+| prompt_context_audit_review_pending | review_prompt_context_audit_summary | prompt_context_audit_review_rejected_for_unsupported_claim | Future human reviewer | Uses `review_action=rejected_for_unsupported_claim` |
+| prompt_context_audit_review_pending | review_prompt_context_audit_summary | prompt_context_audit_review_rejected_for_citation_mismatch | Future human reviewer | Uses `review_action=rejected_for_citation_mismatch` |
+| prompt_context_audit_review_pending | fail_prompt_context_audit_review_decision | prompt_context_audit_review_failed | Future workflow/API | Records invalid input or failure code |
+
+TestKnowledgeCard Prompt Context Audit Review Decision state rules:
+
+- `review_prompt_context_audit_summary` requires prompt context audit summary
+  artifact id, prompt context consumption artifact id, prompt context evidence
+  artifact id, context manifest, `used_knowledge` decision, usage status,
+  output citations, skipped evidence, unsupported claims, PromptVersion,
+  SkillVersion, source hash, ReviewHistory, review action, and failure code
+  when applicable.
+- Review decision states are human review evidence. They may produce review
+  action, reviewer comment, accepted/questioned/rejected citation ids,
+  follow-up flags, requested clarification, ReviewHistory link, and failure
+  reasons, but they must not invent citations, rewrite `used_knowledge`, or
+  mutate audit summary evidence.
+- `accepted` does not create prompt eligibility, approve TestKnowledgeCard
+  content, approve generated cases, mutate prompt context consumption evidence,
+  or change `used_knowledge`.
+- `needs_clarification`,
+  `rejected_for_missing_evidence`, `rejected_for_unsupported_claim`,
+  `rejected_for_citation_mismatch`, `rejected_for_stale_evidence`, and
+  `rejected_for_cross_project_evidence` must preserve cited evidence, skipped
+  evidence, unsupported claims, source hashes, PromptVersion, SkillVersion,
+  context manifest links, and ReviewHistory.
+- Missing, stale, unsafe, revoked, cross-project, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched, or audit
+  summary-mismatched input must produce `prompt_context_audit_review_failed`
+  and must not append a successful ReviewHistory decision.
+- Prompt context audit review decision may write review decision artifacts in a
+  later scoped workflow. It must not mutate TestKnowledgeCard rows, source
+  artifacts, prompt context audit summary artifacts, prompt context consumption
+  artifacts, prompt context evidence artifacts, retrieval boundary artifacts,
+  prompt eligibility artifacts, ReviewHistory, KnowledgeEvidence, or historical
+  evidence.
+- The prompt context audit review decision state contract must not add
+  frontend page, report generation behavior, prompt assembly implementation,
+  prompt runtime execution, provider calls, retrieval ranking changes, vector
+  indexes, embeddings, reranking, graph jobs, MCP runtime, broad
+  TestKnowledgeCard CRUD, automatic eligibility, artifact mutation outside
+  declared review decision output, historical evidence mutation,
+  generated-case auto-approval, runner behavior changes, RBAC, tenants,
+  permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on

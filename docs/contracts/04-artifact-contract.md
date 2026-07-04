@@ -32,6 +32,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   test_knowledge_card_prompt_context_evidence.json
   test_knowledge_card_prompt_context_consumption.json
   test_knowledge_card_prompt_context_audit_summary.json
+  test_knowledge_card_prompt_context_audit_review_decision.json
   raw_output.json
   parsed_output.json
   schema_validation.json
@@ -364,6 +365,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | test_knowledge_card_prompt_context_evidence | application/json | Future bounded prompt context evidence |
 | test_knowledge_card_prompt_context_consumption | application/json | Future prompt context consumption citation evidence |
 | test_knowledge_card_prompt_context_audit_summary | application/json | Future prompt context usage audit summary evidence |
+| test_knowledge_card_prompt_context_audit_review_decision | application/json | Future prompt context audit review decision evidence |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -902,6 +904,51 @@ TestKnowledgeCard Prompt Context Audit Summary artifact rules:
   markup, or report-rendered payloads.
 - Prompt context audit summary artifacts must not mutate Artifact rows outside
   declared audit summary output, mutate source artifacts, mutate prompt context
+  consumption artifacts, mutate prompt context evidence artifacts, mutate
+  retrieval boundary artifacts, mutate prompt eligibility artifacts, rewrite
+  creation artifacts, mutate historical ReviewHistory, FailureAnalysis, Report,
+  TestRun, TestResult, TestCase, GeneratedCaseCandidate, KnowledgeEvidence, or
+  unrelated TestKnowledgeCard rows, run prompt assembly, execute AITasks, call
+  providers, change retrieval ranking, invoke MCP runtime, create vector
+  indexes, create embeddings, rerank, run graph jobs, render frontend pages,
+  generate reports, call remote CI providers, add RBAC, create tenants, or
+  change permissions.
+
+TestKnowledgeCard Prompt Context Audit Review Decision artifact rules:
+
+- `test_knowledge_card_prompt_context_audit_review_decision.json` may be stored
+  as an Artifact with
+  `artifact_type=test_knowledge_card_prompt_context_audit_review_decision`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=test_knowledge_card_prompt_context_audit_review_decision` in
+  a later scoped implementation.
+- The prompt context audit review decision artifact must include
+  `review_prompt_context_audit_summary`, prompt request id or AITask id when
+  available, prompt context audit summary artifact id, prompt context
+  consumption artifact id, prompt context evidence artifact id, context
+  manifest artifact id, `used_knowledge` decision, usage status, review
+  action, reviewer label when available, reviewer comment, accepted citation
+  ids, questioned citation ids, rejected citation ids, follow-up flags,
+  requested clarification fields, unsupported claim references, source hashes,
+  PromptVersion id, SkillVersion id, ReviewHistory id, and failure code when
+  applicable.
+- Allowed review actions are `accepted`, `needs_clarification`,
+  `rejected_for_missing_evidence`, `rejected_for_unsupported_claim`,
+  `rejected_for_citation_mismatch`, `rejected_for_stale_evidence`, and
+  `rejected_for_cross_project_evidence`.
+- Audit review decision artifacts are human review evidence about audit summary
+  artifacts. They must not invent citations, rewrite `used_knowledge`, promote
+  unsupported claims, create prompt eligibility, approve TestKnowledgeCard
+  content, approve generated cases, or turn skipped evidence into cited
+  evidence.
+- Prompt context audit review decision artifacts must not contain raw large
+  source text, credentials, tokens, unsafe provider payloads, vector store
+  payloads, embedding vectors, reranker traces, graph runtime payloads,
+  executable prompt assembly payloads, provider request/response payloads,
+  frontend-rendered markup, or report-rendered payloads.
+- Prompt context audit review decision artifacts must not mutate Artifact rows
+  outside declared audit review decision output, mutate source artifacts,
+  mutate prompt context audit summary artifacts, mutate prompt context
   consumption artifacts, mutate prompt context evidence artifacts, mutate
   retrieval boundary artifacts, mutate prompt eligibility artifacts, rewrite
   creation artifacts, mutate historical ReviewHistory, FailureAnalysis, Report,

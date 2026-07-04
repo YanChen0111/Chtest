@@ -1854,6 +1854,138 @@ TestKnowledgeCard Prompt Context Audit Summary hard rules:
   evidence mutation, generated-case auto-approval, runner behavior, RBAC,
   tenants, or permissions.
 
+### 3.5.11 TestKnowledgeCard Prompt Context Audit Review Decision Contract
+
+This section is contract-only. It defines future human review decision
+semantics for prompt context audit summaries and does not add an endpoint,
+router, service, worker, queue, frontend page, report generation behavior,
+migration, prompt assembly implementation, prompt runtime execution, provider
+call, deterministic retrieval behavior change, vector index, embedding job,
+reranking, graph job, MCP runtime, broad CRUD, RBAC, tenants, or permissions.
+
+Allowed prompt-context audit review decision action:
+
+- `review_prompt_context_audit_summary`: future scoped human review action that
+  records whether the audit summary evidence is accepted, needs clarification,
+  or is rejected for missing evidence, unsupported claim, citation mismatch,
+  stale evidence, or cross-project evidence. It does not render a UI, generate
+  reports, assemble a runtime prompt, run an AITask, call a provider, create
+  prompt eligibility, or generate model citations.
+
+Allowed review actions:
+
+- `accepted`
+- `needs_clarification`
+- `rejected_for_missing_evidence`
+- `rejected_for_unsupported_claim`
+- `rejected_for_citation_mismatch`
+- `rejected_for_stale_evidence`
+- `rejected_for_cross_project_evidence`
+
+Prompt context audit review decision payload shape:
+
+```json
+{
+  prompt_context_audit_review_decision_action: review_prompt_context_audit_summary,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  prompt_request_id: local-prompt-request-001,
+  ai_task_id: 00000000-0000-0000-0000-000000000701,
+  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
+  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
+  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  used_knowledge: true,
+  usage_status: knowledge_used,
+  output_citation_ids: [knowledge-citation-expired-coupon],
+  skipped_evidence_ids: [ctx-entry-unsafe-note],
+  unsupported_claim_ids: [claim-without-source],
+  review_flags: [],
+  review_action: accepted,
+  reviewer_label: local-reviewer-001,
+  reviewer_comment: cited evidence matches consumed prompt context,
+  accepted_citation_ids: [knowledge-citation-expired-coupon],
+  questioned_citation_ids: [],
+  rejected_citation_ids: [],
+  follow_up_flags: [],
+  prompt_version_id: 00000000-0000-0000-0000-000000000711,
+  skill_version_id: 00000000-0000-0000-0000-000000000712,
+  review_history_ids: [
+    00000000-0000-0000-0000-000000000894
+  ]
+}
+```
+
+Prompt context audit review decision response shape for a future scoped
+implementation:
+
+```json
+{
+  prompt_context_audit_review_decision_action: review_prompt_context_audit_summary,
+  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
+  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
+  review_action: accepted,
+  reviewer_label: local-reviewer-001,
+  review_history_id: 00000000-0000-0000-0000-000000000895,
+  accepted_citations: [
+    {
+      citation_id: knowledge-citation-expired-coupon,
+      test_knowledge_card_id: 00000000-0000-0000-0000-000000000901,
+      context_entry_id: ctx-entry-expired-coupon,
+      source_hash: sha256:reviewed-case-expired-coupon,
+      citation_status: accepted
+    }
+  ],
+  questioned_citations: [],
+  rejected_citations: [],
+  follow_up_flags: [],
+  requested_clarification: null,
+  prompt_trace: {
+    prompt_version_id: 00000000-0000-0000-0000-000000000711,
+    skill_version_id: 00000000-0000-0000-0000-000000000712
+  },
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  failure_code: null
+}
+```
+
+TestKnowledgeCard Prompt Context Audit Review Decision hard rules:
+
+- Review decision input must reference prompt context audit summary artifact,
+  prompt context consumption artifact, prompt context evidence artifact,
+  context manifest, `used_knowledge` decision, usage status, output citations,
+  skipped evidence, unsupported claims, PromptVersion, SkillVersion, source
+  hash, and ReviewHistory.
+- Review decision output must be human review decision evidence only. It may
+  record review action, reviewer comment, accepted/questioned/rejected
+  citations, follow-up flags, requested clarification, ReviewHistory link,
+  failure reasons, and source hash/context manifest references, but it must
+  not invent citations, rewrite `used_knowledge`, or mutate audit summary
+  evidence.
+- `accepted` validates only the audit summary evidence for the scoped review.
+  It must not create prompt eligibility, approve TestKnowledgeCard content,
+  approve generated cases, alter prompt context consumption evidence, or mark
+  skipped evidence as cited.
+- `needs_clarification` and rejected actions must preserve cited evidence,
+  skipped evidence, unsupported claims, source hashes, PromptVersion,
+  SkillVersion, context manifest links, and ReviewHistory instead of deleting
+  or rewriting them.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched, or audit
+  summary-mismatched input must return a failure code and must not append a
+  successful ReviewHistory decision.
+- `review_prompt_context_audit_summary` must not write runtime
+  `prompt_input.json`, render frontend pages, generate reports, assemble
+  prompts, call providers, run AITasks, change retrieval ranking, create vector
+  indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime,
+  approve cases, create prompt eligibility, or mutate historical evidence.
+- This contract must not add frontend page, report generation behavior, prompt
+  assembly implementation, prompt runtime execution, provider calls, broad
+  TestKnowledgeCard CRUD, automatic eligibility, automatic knowledge ingestion,
+  artifact mutation outside declared prompt context audit review decision,
+  historical evidence mutation, generated-case auto-approval, runner behavior,
+  RBAC, tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

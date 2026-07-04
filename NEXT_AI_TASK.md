@@ -10,27 +10,26 @@ Slice 44: TestKnowledgeCard Prompt Context Audit Review Decision Contract.
 
 ## Current Task
 
-Slice 44 Task 2: Define TestKnowledgeCard prompt context audit review decision contracts.
+Slice 44 Task 3: Add TestKnowledgeCard prompt context audit review decision golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest contracts define how a future human review decision may
-accept, question, or reject TestKnowledgeCard prompt context audit summaries
-without implementing frontend pages, report generation behavior, prompt
-assembly, provider calls, or retrieval runtime behavior.
+After this task, Chtest has a focused golden fixture and smoke test proving the
+TestKnowledgeCard prompt context audit review decision contract preserves audit
+summary evidence, `used_knowledge`, ReviewHistory, and forbidden side effects.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/contracts/01-data-model-contract.md`
-4. `docs/contracts/02-api-contract.md`
-5. `docs/contracts/03-state-machines.md`
-6. `docs/contracts/04-artifact-contract.md`
-7. `docs/contracts/05-prompt-skill-contract.md`
-8. `docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
-9. `docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`
-10. `docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md`
+3. `docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
+4. `docs/contracts/01-data-model-contract.md`
+5. `docs/contracts/02-api-contract.md`
+6. `docs/contracts/03-state-machines.md`
+7. `docs/contracts/04-artifact-contract.md`
+8. `docs/contracts/05-prompt-skill-contract.md`
+9. `docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md`
+10. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py`
 11. `memory/08-session-handoff.md`
 12. `memory/07-dev-log.md`
 
@@ -46,18 +45,15 @@ assembly, provider calls, or retrieval runtime behavior.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
-docs/contracts/05-prompt-skill-contract.md
+backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py
+docs/fixtures/32-test-knowledge-card-prompt-context-audit-review-decision-golden.md
 docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract-only task. Do not add frontend code, backend runtime feature code,
+Golden-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, migrations, package upgrades, broad
 TestKnowledgeCard CRUD implementation, backend feature API, frontend page,
 automatic prompt eligibility, prompt assembly implementation, prompt runtime
@@ -71,35 +67,32 @@ changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-rg -n "TestKnowledgeCard Prompt Context Audit Review Decision|prompt_context_audit_review_decision|review_prompt_context_audit_summary|accepted|needs_clarification|rejected_for_missing_evidence|rejected_for_unsupported_claim|rejected_for_citation_mismatch|ReviewHistory|follow-up flags|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: required contract terms are present and diff check passes.
+Expected result: golden smoke passes and diff check passes.
 
 ## Acceptance
 
-- Contracts define review decision input, audit summary artifact references,
-  prompt context consumption artifact references, reviewer actions,
-  accepted/questioned/rejected citation ids, follow-up flags, ReviewHistory,
-  source hashes, context manifest links, PromptVersion/SkillVersion trace,
-  failure behavior, and forbidden side effects.
-- Contracts require review decisions to preserve the underlying audit summary,
-  consumption evidence, and knowledge artifacts without inventing or mutating
-  evidence.
-- Contracts keep frontend page, report generation behavior, prompt assembly
-  implementation, prompt runtime execution, provider calls, retrieval ranking
-  changes, vector indexes, embeddings, reranking, graph jobs, MCP runtime,
-  broad CRUD, automatic eligibility, and historical evidence mutation out of
-  scope.
-- `NEXT_AI_TASK.md` points to Task 3.
+- Golden names audit summary artifact id, prompt context consumption artifact
+  id, review action, accepted, needs_clarification,
+  rejected_for_missing_evidence, rejected_for_unsupported_claim,
+  rejected_for_citation_mismatch, ReviewHistory, follow-up flags, failure
+  behavior, and forbidden side effects.
+- Golden proves no frontend page, report generation behavior, prompt assembly
+  implementation, prompt runtime execution, provider call, retrieval ranking
+  change, vector index, embedding, reranking, graph job, MCP runtime, broad
+  CRUD, automatic eligibility, historical evidence mutation, RBAC, tenants, or
+  permissions is created by the contract.
+- `NEXT_AI_TASK.md` points to the Slice 44 Completion Gate.
 
 ## Commit Message
 
 ```text
-docs(v2): define test knowledge card prompt context audit review decision contracts
+test(golden): add test knowledge card prompt context audit review decision smoke
 ```
 
 ## Next Task
 
-Slice 44 Task 3: Add TestKnowledgeCard prompt context audit review decision golden smoke.
+Slice 44 Completion Gate.

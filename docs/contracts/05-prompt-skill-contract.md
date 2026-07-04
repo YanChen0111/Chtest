@@ -261,6 +261,71 @@ Prompt context audit summary rules:
   context audit summary, approve generated cases, rewrite `used_knowledge`,
   render frontend pages, generate reports, or bypass human review gates.
 
+### 4.5 TestKnowledgeCard Prompt Context Audit Review Decision Contract
+
+This contract defines prompt/skill trace rules for future human review
+decisions of TestKnowledgeCard prompt context audit summaries. It is
+contract-only and does not assemble prompts, execute AITasks, call providers,
+run retrieval, change ranking, create vector indexes, create embeddings,
+rerank, run graph jobs, invoke MCP runtime, render frontend pages, generate
+reports, mutate TestKnowledgeCard rows, create prompt eligibility, or generate
+model citations.
+
+Prompt context audit review decision input must include:
+
+- `prompt_context_audit_review_decision_action=review_prompt_context_audit_summary`.
+- PromptVersion id/name/version and SkillVersion id/name/version.
+- Prompt context audit summary artifact id.
+- Prompt context consumption artifact id.
+- Prompt context evidence artifact id and context manifest artifact id.
+- `used_knowledge` decision and usage status.
+- Output citation ids and cited TestKnowledgeCard ids.
+- Cited context entry ids, source hashes, source artifact ids, and source
+  sections.
+- Skipped evidence ids, skip reasons, unsupported claim summaries, review
+  flags, and failure code when applicable.
+- Review action, reviewer comment, accepted citation ids, questioned citation
+  ids, rejected citation ids, follow-up flags, and requested clarification.
+- ReviewHistory ids from prior evidence and the review decision ReviewHistory
+  id when a future scoped workflow persists one.
+
+Prompt context audit review decision rules:
+
+- Audit review decisions must preserve PromptVersion and SkillVersion trace
+  from the referenced prompt context audit summary evidence.
+- `used_knowledge` must be copied from prompt context audit summary evidence
+  and must not be recomputed, rewritten, or auto-marked by a review decision.
+- Allowed review actions are `accepted`, `needs_clarification`,
+  `rejected_for_missing_evidence`, `rejected_for_unsupported_claim`,
+  `rejected_for_citation_mismatch`, `rejected_for_stale_evidence`, and
+  `rejected_for_cross_project_evidence`.
+- Accepted, questioned, and rejected citation ids must reference existing
+  output citations, TestKnowledgeCard ids, context entry ids, source hashes or
+  source quote/hash pointers, ReviewHistory ids, PromptVersion, and
+  SkillVersion.
+- `accepted` must not create prompt eligibility, approve TestKnowledgeCard
+  content, approve generated cases, mutate prompt context audit summary
+  evidence, or change `used_knowledge`.
+- `needs_clarification` and rejected decisions must keep skipped evidence and
+  unsupported claims visible. They must not be promoted into knowledge-backed
+  facts, deleted, or replaced with generated citations.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, evidence-mismatched, or audit
+  summary-mismatched input must produce a failure code and must not append a
+  successful ReviewHistory decision.
+- Prompt context audit review decision must not include raw large source text,
+  hidden model context, unsafe provider payloads, vector store payloads,
+  embedding vectors, reranker traces, graph runtime payloads, credentials,
+  tokens, OAuth material, provider request payloads, frontend-rendered markup,
+  or report-rendered payloads.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
+  context audit summary evidence, mutate artifacts outside declared prompt
+  context audit review decision, approve generated cases, create prompt
+  eligibility, rewrite `used_knowledge`, render frontend pages, generate
+  reports, or bypass human review gates.
+
 ## 5. Skill 文件格式
 
 每个 Skill 文件必须包含以下段落：

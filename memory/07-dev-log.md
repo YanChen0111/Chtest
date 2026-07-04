@@ -1,5 +1,44 @@
 # Development Log
 
+## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Contracts
+
+### Completed
+
+- Updated TestKnowledgeCard Prompt Context Audit Review Decision contracts in:
+  - `docs/contracts/01-data-model-contract.md`;
+  - `docs/contracts/02-api-contract.md`;
+  - `docs/contracts/03-state-machines.md`;
+  - `docs/contracts/04-artifact-contract.md`;
+  - `docs/contracts/05-prompt-skill-contract.md`.
+- Contracts define `review_prompt_context_audit_summary`,
+  `prompt_context_audit_review_decision`, `accepted`,
+  `needs_clarification`, `rejected_for_missing_evidence`,
+  `rejected_for_unsupported_claim`, `rejected_for_citation_mismatch`,
+  `rejected_for_stale_evidence`, and
+  `rejected_for_cross_project_evidence`.
+- The decision boundary preserves audit summary artifacts, prompt context
+  consumption artifacts, prompt context evidence artifacts, `used_knowledge`,
+  source hash/context manifest references, PromptVersion, SkillVersion,
+  ReviewHistory, accepted/questioned/rejected citation ids, follow-up flags,
+  and failure codes.
+- The contracts keep frontend pages, report generation behavior, prompt
+  assembly, prompt runtime execution, provider calls, retrieval ranking changes,
+  vector indexes, embeddings, reranking, graph runtime, MCP runtime, broad
+  TestKnowledgeCard CRUD, automatic eligibility, historical evidence mutation,
+  RBAC, tenants, and permissions out of scope.
+- Updated `NEXT_AI_TASK.md` to Slice 44 Task 3.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard Prompt Context Audit Review Decision|prompt_context_audit_review_decision|review_prompt_context_audit_summary|accepted|needs_clarification|rejected_for_missing_evidence|rejected_for_unsupported_claim|rejected_for_citation_mismatch|ReviewHistory|follow-up flags|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
+- `git diff --check`
+- Result: pending local verification.
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card prompt context audit review decision contracts`.
+- Continue Slice 44 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Plan
 
 ### Completed
@@ -28,7 +67,7 @@
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card prompt context audit review decision plan`.
+- Committed `docs(v2): add test knowledge card prompt context audit review decision plan` as `3f1920f`.
 - Continue Slice 44 Task 2 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 43 Completion Gate
