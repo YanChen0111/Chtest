@@ -2523,6 +2523,8 @@ Slice 43 Task 1: Add TestKnowledgeCard Prompt Context Audit Summary task plan
 Expected output:
 
 - A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`.
 - No product code until the plan defines audit summary inputs, cited/skipped
   evidence summary outputs, unsupported claim handling, failure behavior, and
   non-goals.

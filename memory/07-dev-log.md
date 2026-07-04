@@ -1,5 +1,36 @@
 # Development Log
 
+## 2026-07-05 Slice 43 TestKnowledgeCard Prompt Context Audit Summary Plan
+
+### Completed
+
+- Added Slice 43 plan:
+  `docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`.
+- The plan scopes TestKnowledgeCard Prompt Context Audit Summary contracts:
+  audit summary inputs, cited/skipped evidence summaries, unsupported claim
+  handling, `used_knowledge`, PromptVersion/SkillVersion trace, source
+  hash/context manifest links, ReviewHistory, failure behavior, and non-goals.
+- The plan keeps audit summary contract-only and excludes frontend pages,
+  report generation behavior, prompt assembly implementation, prompt runtime
+  execution, provider calls, deterministic retrieval behavior changes, vector
+  indexes, embeddings, reranking, graph runtime, MCP runtime, broad
+  TestKnowledgeCard CRUD, automatic eligibility, historical evidence mutation,
+  RBAC, tenants, and permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 43 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`
+- `rg -n "TestKnowledgeCard Prompt Context Audit Summary|prompt context consumption|used_knowledge|output citations|skipped evidence|PromptVersion|SkillVersion|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists, required terms found, and diff check is clean
+  except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add test knowledge card prompt context audit summary plan`.
+- Continue Slice 43 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 42 Completion Gate
 
 ### Completed
