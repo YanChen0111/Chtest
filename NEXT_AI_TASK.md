@@ -10,13 +10,14 @@ Slice 36: TestKnowledgeCard Handoff Contract.
 
 ## Current Task
 
-Slice 36 Task 1: Add TestKnowledgeCard Handoff Contract task plan.
+Slice 36 Task 2: Define TestKnowledgeCard handoff contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for moving approved
-KnowledgeFeedbackDraft handoff payloads toward TestKnowledgeCard candidates
-without implementing CRUD or automatic prompt eligibility.
+After this task, Chtest has explicit data/API/state/artifact contracts for
+moving approved KnowledgeFeedbackDraft handoff payloads toward future
+TestKnowledgeCard candidates without implementing CRUD or automatic prompt
+eligibility.
 
 ## Must Read
 
@@ -24,9 +25,9 @@ without implementing CRUD or automatic prompt eligibility.
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/contracts/02-api-contract.md`
 4. `docs/contracts/03-state-machines.md`
-5. `docs/contracts/05-prompt-skill-contract.md`
-6. `docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
-7. `docs/implementation/11-final-rag-agent-strategy.md`
+5. `docs/contracts/04-artifact-contract.md`
+6. `docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`
+7. `docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
 8. `memory/08-session-handoff.md`
 9. `memory/07-dev-log.md`
 
@@ -42,49 +43,53 @@ without implementing CRUD or automatic prompt eligibility.
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
+Contract-only task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, TestKnowledgeCard CRUD implementation, backend
-feature API, frontend page, automatic card creation, automatic prompt
-eligibility, automatic knowledge ingestion, external provider integrations,
-vector database, embeddings, reranking, graph runtime, MCP runtime, provider
-SDK, credentials, artifact upload/mutation/delete, historical evidence
-mutation, generated-case auto-approval, runner behavior changes, report
-generation behavior changes, remote CI provider behavior, RBAC, tenants, or
-permissions.
+feature API, frontend page, automatic card creation, automatic card approval,
+automatic prompt eligibility, automatic knowledge ingestion, external provider
+integrations, vector database, embeddings, reranking, graph runtime, MCP
+runtime, provider SDK, credentials, artifact upload/mutation/delete,
+historical evidence mutation, generated-case auto-approval, runner behavior
+changes, report generation behavior changes, remote CI provider behavior,
+RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md
-rg -n "TestKnowledgeCard Handoff|KnowledgeFeedbackDraft|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md NEXT_AI_TASK.md
+rg -n "TestKnowledgeCard handoff|KnowledgeFeedbackDraft|handoff_payload|allowed_for_prompt=false|duplicate|merge|safe_to_show|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md
 git diff --check
 ```
 
-Expected result: Slice 36 plan file exists, required plan terms are present,
-and diff check passes.
+Expected result: required handoff contract terms are present across data/API/
+state/artifact contracts and the slice plan, and diff check passes.
 
 ## Acceptance
 
-- Slice 36 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names KnowledgeFeedbackDraft handoff payloads, TestKnowledgeCard
-  candidate fields, source evidence, duplicate/merge hints, safe_to_show,
-  allowed_for_prompt, human review, and non-goals.
-- `NEXT_AI_TASK.md` points to Task 2.
+- Contracts define approved KnowledgeFeedbackDraft handoff input,
+  TestKnowledgeCard candidate payload fields, source evidence requirements,
+  duplicate/merge hints, artifact trace, and failure behavior.
+- Contracts keep TestKnowledgeCard creation, approval, and prompt eligibility
+  behind explicit later human-reviewed workflows.
+- Contracts require `allowed_for_prompt=false` by default and preserve
+  unsupported claims.
+- `NEXT_AI_TASK.md` points to Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add test knowledge card handoff plan
+docs(v2): define test knowledge card handoff contracts
 ```
 
 ## Next Task
 
-Slice 36 Task 2: Define TestKnowledgeCard handoff contracts.
+Slice 36 Task 3: Add TestKnowledgeCard handoff golden smoke.

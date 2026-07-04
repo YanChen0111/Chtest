@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Plan
+
+### Completed
+
+- Added Slice 36 plan:
+  `docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`.
+- The plan scopes approved KnowledgeFeedbackDraft handoff payloads into future
+  TestKnowledgeCard candidate fields with source evidence, duplicate/merge
+  hints, `safe_to_show`, `allowed_for_prompt=false`, human review, artifact
+  trace, failure behavior, and unsupported claims.
+- Kept the scope planning-only: no TestKnowledgeCard CRUD, backend feature API,
+  frontend page, migration, automatic card creation, automatic prompt
+  eligibility, automatic knowledge ingestion, provider calls, MCP runtime,
+  vector/graph runtime, artifact mutation, historical evidence mutation, RBAC,
+  tenants, or permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 36 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`
+- `rg -n "TestKnowledgeCard Handoff|KnowledgeFeedbackDraft|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists, required terms found, and diff check is clean
+  except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add test knowledge card handoff plan`.
+- Continue Slice 36 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 35 Completion Gate
 
 ### Completed

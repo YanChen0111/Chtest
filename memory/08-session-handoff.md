@@ -1,5 +1,39 @@
 # Session Handoff
 
+## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Plan
+
+Completed:
+
+- Added Slice 36 plan:
+  `docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`.
+- The plan defines the contract-first boundary for moving approved
+  KnowledgeFeedbackDraft handoff payloads toward future TestKnowledgeCard
+  candidates.
+- The plan names source evidence, source quote/hash, source span,
+  duplicate/merge hints, `safe_to_show`, `allowed_for_prompt=false`, human
+  review, ReviewHistory, feedback review artifacts, failure behavior, and
+  unsupported claims.
+- `NEXT_AI_TASK.md` now points to Slice 36 Task 2: Define TestKnowledgeCard
+  handoff contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md
+rg -n "TestKnowledgeCard Handoff|KnowledgeFeedbackDraft|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists, required terms found, and `git diff --check` is clean
+  except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add test knowledge card handoff plan`.
+- Continue Slice 36 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 35 Completion Gate
 
 Completed:
