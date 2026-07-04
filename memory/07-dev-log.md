@@ -1,5 +1,34 @@
 # Development Log
 
+## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Plan
+
+### Completed
+
+- Added Slice 39 plan:
+  `docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md`.
+- The plan scopes human-reviewed TestKnowledgeCard prompt eligibility:
+  mark/deny/request-revision/revoke actions, safe_to_show, redaction, source
+  evidence, ReviewHistory, prompt eligibility reason, artifact evidence,
+  revocation/failure behavior, and non-goals.
+- The plan keeps prompt eligibility contract-only and excludes prompt runtime
+  retrieval changes, vector indexes, embeddings, reranking, graph runtime, MCP
+  runtime, provider calls, broad TestKnowledgeCard CRUD, automatic eligibility,
+  historical evidence mutation, RBAC, tenants, and permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 39 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md`
+- `rg -n "TestKnowledgeCard Prompt Eligibility|allowed_for_prompt|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists, required terms found, and diff check is clean
+  except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add test knowledge card prompt eligibility plan`.
+- Continue Slice 39 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 38 Completion Gate
 
 ### Completed
