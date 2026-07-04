@@ -1,5 +1,35 @@
 # Session Handoff
 
+## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Golden Smoke
+
+Completed:
+
+- Added `docs/fixtures/25-test-knowledge-card-candidate-review-golden.md`.
+- Added
+  `backend/app/tests/golden/test_test_knowledge_card_candidate_review_contract_golden.py`.
+- Golden smoke validates TestKnowledgeCard Candidate Review actions,
+  ReviewHistory, candidate review artifact, handoff source evidence,
+  duplicate/merge routing, prompt eligibility separation, unsupported claims,
+  human review, and forbidden side effects.
+- `NEXT_AI_TASK.md` now points to Slice 37 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_candidate_review_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- Golden smoke: `3 passed`.
+- `git diff --check`: clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `test(golden): add test knowledge card candidate review smoke`.
+- Continue Slice 37 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Contracts
 
 Completed:

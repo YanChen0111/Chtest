@@ -1,5 +1,34 @@
 # Development Log
 
+## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/25-test-knowledge-card-candidate-review-golden.md`.
+- Added
+  `backend/app/tests/golden/test_test_knowledge_card_candidate_review_contract_golden.py`.
+- Golden smoke validates TestKnowledgeCard Candidate Review actions,
+  ReviewHistory, candidate review artifact, handoff source evidence,
+  duplicate/merge routing, prompt eligibility separation, unsupported claims,
+  human review, and forbidden side effects.
+- Golden proves the contract forbids TestKnowledgeCard CRUD/auto-creation,
+  automatic card approval, automatic prompt eligibility, automatic
+  merge/archive/delete/relabel, historical evidence mutation, provider calls,
+  vector/graph runtime, MCP runtime, artifact mutation, review bypass,
+  auto-promotion, RBAC, tenants, and permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 37 Completion Gate.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_test_knowledge_card_candidate_review_contract_golden.py -q`
+- `git diff --check`
+- Result: `3 passed`; diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card candidate review smoke`.
+- Continue Slice 37 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Contracts
 
 ### Completed
