@@ -10,14 +10,14 @@ Slice 41: TestKnowledgeCard Prompt Context Evidence Contract.
 
 ## Current Task
 
-Slice 41 Task 2: Define TestKnowledgeCard prompt context evidence contracts.
+Slice 41 Task 3: Add TestKnowledgeCard prompt context evidence golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest has data/API/state/artifact/prompt-skill contracts
-describing what selected TestKnowledgeCard evidence may be placed into future
-prompt context without implementing prompt assembly, provider calls, or
-retrieval runtime behavior.
+After this task, Chtest has a contract-level fixture and golden smoke proving
+future prompt context evidence cannot bypass bounded snippets, source hashes,
+safe-to-show, source evidence, retrieval boundary evidence, or prompt/skill
+trace links.
 
 ## Must Read
 
@@ -27,11 +27,10 @@ retrieval runtime behavior.
 4. `docs/contracts/02-api-contract.md`
 5. `docs/contracts/03-state-machines.md`
 6. `docs/contracts/04-artifact-contract.md`
-7. `docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`
-8. `docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`
-9. `docs/fixtures/28-test-knowledge-card-retrieval-boundary-golden.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+7. `docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`
+8. `docs/fixtures/28-test-knowledge-card-retrieval-boundary-golden.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -45,18 +44,15 @@ retrieval runtime behavior.
 Create or update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
-docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md
+docs/fixtures/29-test-knowledge-card-prompt-context-evidence-golden.md
+backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract-only task. Do not add frontend code, backend runtime feature code,
+Golden-smoke task. Do not add frontend code, backend runtime feature code,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic prompt eligibility, prompt
 assembly implementation, prompt runtime execution, provider calls,
@@ -70,33 +66,31 @@ behavior changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-rg -n "TestKnowledgeCard Prompt Context Evidence|prompt_context_evidence|bounded snippet|source hash|retrieval boundary artifact|PromptVersion|SkillVersion|omission reason|context manifest|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md
+backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: prompt context evidence contract terms are present and diff
-check passes.
+Expected result: TestKnowledgeCard prompt context evidence golden smoke passes
+and diff check passes.
 
 ## Acceptance
 
-- Contracts define prompt context evidence input, safe bounded context entries,
-  source hashes, source evidence references, PromptVersion/SkillVersion trace,
-  context manifest links, omitted-card summaries, and failure behavior.
-- Contracts keep prompt assembly implementation, prompt runtime execution,
-  provider calls, retrieval ranking changes, vector indexes, embeddings,
-  reranking, graph jobs, MCP runtime, broad CRUD, automatic eligibility, and
-  historical evidence mutation out of scope.
-- Contracts require `safe_to_show=true`, reviewed redaction, source evidence,
-  retrieval boundary evidence, and prompt eligibility artifact evidence before
-  card text can enter prompt context.
-- `NEXT_AI_TASK.md` points to Slice 41 Task 3.
+- Golden names prompt context evidence inputs, bounded snippet, source hash,
+  source manifest, retrieval boundary artifact, prompt eligibility artifact,
+  PromptVersion, SkillVersion, context manifest, omission reasons, failure
+  behavior, and forbidden side effects.
+- Golden proves no prompt assembly implementation, prompt runtime execution,
+  provider call, retrieval ranking change, vector index, embedding, reranking,
+  graph job, MCP runtime, broad CRUD, automatic eligibility, historical
+  evidence mutation, RBAC, tenants, or permissions is created by the contract.
+- `NEXT_AI_TASK.md` points to Slice 41 Completion Gate.
 
 ## Commit Message
 
 ```text
-docs(v2): define test knowledge card prompt context evidence contracts
+test(golden): add test knowledge card prompt context evidence smoke
 ```
 
 ## Next Task
 
-Slice 41 Task 3: Add TestKnowledgeCard prompt context evidence golden smoke.
+Slice 41 Completion Gate.

@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-04 Slice 41 TestKnowledgeCard Prompt Context Evidence Contracts
+
+Completed:
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  TestKnowledgeCard Prompt Context Evidence.
+- Defined `build_prompt_context_evidence`, prompt context evidence input,
+  bounded snippet/source hash entries, source evidence references,
+  PromptVersion/SkillVersion trace, context manifest links, omission reason,
+  failure behavior, and artifact evidence.
+- Added `test_knowledge_card_prompt_context_evidence` artifact type and
+  `test_knowledge_card_prompt_context_evidence.json` artifact path rules.
+- `NEXT_AI_TASK.md` now points to Slice 41 Task 3: Add TestKnowledgeCard
+  prompt context evidence golden smoke.
+
+Verification:
+
+```bash
+rg -n "TestKnowledgeCard Prompt Context Evidence|prompt_context_evidence|bounded snippet|source hash|retrieval boundary artifact|PromptVersion|SkillVersion|omission reason|context manifest|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found and diff check is clean except Windows LF-to-CRLF
+  warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define test knowledge card prompt context evidence contracts`.
+- Continue Slice 41 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-04 Slice 41 TestKnowledgeCard Prompt Context Evidence Plan
 
 Completed:

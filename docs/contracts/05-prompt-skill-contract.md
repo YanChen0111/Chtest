@@ -124,6 +124,50 @@ Rules:
 - Model output or parsed AITask output must expose `used_context_artifact_ids`.
 - Model output must not claim external evidence when `used_knowledge=false`.
 
+### 4.2 TestKnowledgeCard Prompt Context Evidence Contract
+
+This contract defines prompt/skill trace rules for future TestKnowledgeCard
+prompt context evidence. It is contract-only and does not assemble prompts,
+execute AITasks, call providers, run retrieval, change ranking, create vector
+indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime, or
+mutate TestKnowledgeCard rows.
+
+Prompt context evidence input must include:
+
+- `prompt_context_evidence_action=build_prompt_context_evidence`.
+- PromptVersion id and SkillVersion id.
+- PromptVersion name/version and SkillVersion name/version when available.
+- Retrieval boundary artifact id.
+- Selected TestKnowledgeCard ids and omitted TestKnowledgeCard ids.
+- Prompt eligibility artifact ids and ReviewHistory ids.
+- Source manifest ids, source artifact ids, source hash values, and source
+  trace labels.
+- Context manifest artifact id when available.
+- Omission reason values and failure code when applicable.
+
+Prompt context evidence rules:
+
+- Every prompt context evidence artifact must preserve PromptVersion and
+  SkillVersion trace before any selected card evidence is eligible for future
+  prompt context.
+- `context_manifest` entries for TestKnowledgeCard-derived context must point
+  to prompt context evidence artifacts, source hashes, source artifact ids,
+  bounded snippet metadata, redaction status, and `safe_to_show=true` evidence.
+- Bounded snippet text may be present only when safe-to-show and reviewed
+  redaction are proven. Otherwise the context entry must use source hash or
+  source quote/hash pointer and record omission reason.
+- A prompt or skill must not cite TestKnowledgeCard content unless the
+  TestKnowledgeCard id appears in prompt context evidence and the referenced
+  retrieval boundary artifact selected it.
+- Prompt context evidence must not include raw large source text, hidden model
+  context, unsafe provider payloads, vector store payloads, embedding vectors,
+  reranker traces, graph runtime payloads, credentials, tokens, OAuth material,
+  or provider request payloads.
+- This contract must not set `used_knowledge=true`, write runtime
+  `prompt_input.json`, execute a prompt, call a provider, mutate
+  PromptVersion/SkillVersion rows, mutate artifacts outside declared prompt
+  context evidence, approve generated cases, or bypass human review gates.
+
 ## 5. Skill 文件格式
 
 每个 Skill 文件必须包含以下段落：

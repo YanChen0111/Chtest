@@ -422,6 +422,57 @@ TestKnowledgeCard Retrieval Boundary state rules:
   behavior changes, report generation behavior changes, RBAC, tenants,
   permissions, or remote CI provider behavior.
 
+## 7.9 TestKnowledgeCard Prompt Context Evidence State Contract
+
+TestKnowledgeCard Prompt Context Evidence is an evidence-building boundary for
+future prompt context. It starts only from retrieval boundary selection
+evidence and does not implement prompt assembly, prompt runtime execution,
+provider calls, retrieval ranking, card creation, or broad TestKnowledgeCard
+CRUD.
+
+```text
+retrieval_selected -> prompt_context_evidence_pending
+prompt_context_evidence_pending -> prompt_context_evidence_ready
+prompt_context_evidence_pending -> prompt_context_evidence_omitted
+prompt_context_evidence_pending -> prompt_context_evidence_failed
+retrieval_excluded -> prompt_context_evidence_omitted
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| retrieval_selected | request_prompt_context_evidence | prompt_context_evidence_pending | Future workflow/API | Starts evidence shaping only |
+| prompt_context_evidence_pending | build_prompt_context_evidence | prompt_context_evidence_ready | Future workflow/API | Requires bounded snippet or source hash |
+| prompt_context_evidence_pending | omit_prompt_context_card | prompt_context_evidence_omitted | Future workflow/API | Records omission reason |
+| prompt_context_evidence_pending | fail_prompt_context_evidence | prompt_context_evidence_failed | Future workflow/API | Records failure code |
+| retrieval_excluded | build_prompt_context_evidence | prompt_context_evidence_omitted | Future workflow/API | Excluded cards cannot enter context |
+
+TestKnowledgeCard Prompt Context Evidence state rules:
+
+- `build_prompt_context_evidence` requires retrieval boundary artifact
+  evidence, selected TestKnowledgeCard ids, PromptVersion, SkillVersion,
+  source manifest, same-project source artifacts, prompt eligibility artifact
+  evidence, ReviewHistory, `safe_to_show=true`, and reviewed redaction.
+- Prompt context entries must use a bounded snippet or source hash. Raw large
+  source text, unsafe provider payloads, vector store payloads, embedding
+  vectors, reranker traces, graph runtime payloads, and executable prompt
+  assembly payloads are not valid prompt context evidence.
+- `safe_to_show=false`, missing redaction, missing source evidence, missing
+  retrieval boundary artifact, missing prompt eligibility artifact, stale,
+  revoked, cross-project, unsupported, unbounded, or evidence-mismatched input
+  must produce `prompt_context_evidence_omitted` or
+  `prompt_context_evidence_failed` with omission reason or failure code.
+- Prompt context evidence may write prompt context evidence artifacts in a
+  later scoped workflow. It must not mutate TestKnowledgeCard rows, source
+  artifacts, retrieval boundary artifacts, prompt eligibility artifacts,
+  ReviewHistory, KnowledgeEvidence, or historical evidence.
+- The prompt context evidence state contract must not add prompt assembly
+  implementation, prompt runtime execution, provider calls, retrieval ranking
+  changes, vector indexes, embeddings, reranking, graph jobs, MCP runtime,
+  broad TestKnowledgeCard CRUD, automatic eligibility, artifact mutation
+  outside declared prompt context evidence, historical evidence mutation,
+  generated-case auto-approval, runner behavior changes, report generation
+  behavior changes, RBAC, tenants, permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on

@@ -29,6 +29,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   input.json
   context_manifest.json
   knowledge_retrieval.json
+  test_knowledge_card_prompt_context_evidence.json
   raw_output.json
   parsed_output.json
   schema_validation.json
@@ -358,6 +359,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | reviewed_test_knowledge_card_creation | application/json | Reviewed TestKnowledgeCard creation evidence |
 | test_knowledge_card_prompt_eligibility | application/json | Human prompt eligibility review evidence |
 | test_knowledge_card_retrieval_boundary | application/json | Future prompt-context selection evidence |
+| test_knowledge_card_prompt_context_evidence | application/json | Future bounded prompt context evidence |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -798,6 +800,41 @@ TestKnowledgeCard Retrieval Boundary artifact rules:
   invoke MCP runtime, create vector indexes, create embeddings, rerank, run
   graph jobs, call remote CI providers, add RBAC, create tenants, or change
   permissions.
+
+TestKnowledgeCard Prompt Context Evidence artifact rules:
+
+- `test_knowledge_card_prompt_context_evidence.json` is stored as an Artifact
+  with `artifact_type=test_knowledge_card_prompt_context_evidence`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=test_knowledge_card_prompt_context_evidence` until a later
+  scoped prompt workflow owns a dedicated prompt request entity.
+- The prompt context evidence artifact must include
+  `build_prompt_context_evidence`, prompt request id or AITask id when
+  available, PromptVersion id, SkillVersion id, retrieval boundary artifact
+  id, selected TestKnowledgeCard ids, omitted TestKnowledgeCard ids, omission
+  reason, context manifest artifact id when available, source manifest ids,
+  source artifact ids, source hash or source quote/hash pointer, prompt
+  eligibility artifact ids, ReviewHistory ids, `safe_to_show`, redaction
+  status, bounded snippet entries, source trace label, and failure code when
+  applicable.
+- Text entries require `safe_to_show=true`, reviewed redaction status,
+  same-project source evidence, retrieval boundary evidence, prompt
+  eligibility artifact evidence, and bounded snippet length. When those cannot
+  be proven, the artifact must use source hash or source quote/hash pointer and
+  record an omission reason.
+- Prompt context evidence artifacts must not contain raw large source text,
+  credentials, tokens, unsafe provider payloads, vector store payloads,
+  embedding vectors, reranker traces, graph runtime payloads, executable prompt
+  assembly payloads, or provider request/response payloads.
+- Prompt context evidence artifacts must not mutate Artifact rows outside
+  declared prompt context evidence output, mutate source artifacts, mutate
+  retrieval boundary artifacts, mutate prompt eligibility artifacts, rewrite
+  creation artifacts, mutate historical ReviewHistory, FailureAnalysis,
+  Report, TestRun, TestResult, TestCase, GeneratedCaseCandidate,
+  KnowledgeEvidence, or unrelated TestKnowledgeCard rows, run prompt assembly,
+  execute AITasks, call providers, change retrieval ranking, invoke MCP
+  runtime, create vector indexes, create embeddings, rerank, run graph jobs,
+  call remote CI providers, add RBAC, create tenants, or change permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

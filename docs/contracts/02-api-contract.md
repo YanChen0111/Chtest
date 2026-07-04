@@ -1531,6 +1531,114 @@ TestKnowledgeCard Retrieval Boundary hard rules:
   auto-approval, runner behavior, report behavior, RBAC, tenants, or
   permissions.
 
+### 3.5.8 TestKnowledgeCard Prompt Context Evidence Contract
+
+This section is contract-only. It defines future prompt context evidence
+semantics for selected TestKnowledgeCards and does not add an endpoint, router,
+service, worker, queue, frontend page, migration, prompt assembly
+implementation, prompt runtime execution, provider call, deterministic
+retrieval behavior change, vector index, embedding job, reranking, graph job,
+MCP runtime, broad CRUD, RBAC, tenants, or permissions.
+
+Allowed prompt-context evidence action:
+
+- `build_prompt_context_evidence`: future scoped evidence action that converts
+  retrieval boundary selections into bounded prompt context evidence. It
+  records safe entries, source hashes, context manifest links, PromptVersion /
+  SkillVersion trace, and omission reason values only; it does not assemble a
+  runtime prompt or call a provider.
+
+Prompt context evidence payload shape:
+
+```json
+{
+  "prompt_context_evidence_action": "build_prompt_context_evidence",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "prompt_request_id": "local-prompt-request-001",
+  "ai_task_id": "00000000-0000-0000-0000-000000000701",
+  "prompt_version_id": "00000000-0000-0000-0000-000000000711",
+  "skill_version_id": "00000000-0000-0000-0000-000000000712",
+  "retrieval_boundary_artifact_id": "00000000-0000-0000-0000-000000000896",
+  "selected_test_knowledge_card_ids": [
+    "00000000-0000-0000-0000-000000000901"
+  ],
+  "prompt_eligibility_artifact_ids": [
+    "00000000-0000-0000-0000-000000000895"
+  ],
+  "source_manifest_artifact_ids": [
+    "00000000-0000-0000-0000-000000000892"
+  ],
+  "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
+  "review_history_ids": [
+    "00000000-0000-0000-0000-000000000894"
+  ],
+  "context_manifest_artifact_id": null,
+  "max_snippet_chars": 600,
+  "safe_to_show": true,
+  "redaction_status": "reviewed"
+}
+```
+
+Prompt context evidence response shape for a future scoped implementation:
+
+```json
+{
+  "prompt_context_evidence_action": "build_prompt_context_evidence",
+  "prompt_context_evidence_artifact_id": "00000000-0000-0000-0000-000000000897",
+  "context_manifest_artifact_id": "00000000-0000-0000-0000-000000000372",
+  "prompt_trace": {
+    "prompt_version_id": "00000000-0000-0000-0000-000000000711",
+    "skill_version_id": "00000000-0000-0000-0000-000000000712"
+  },
+  "context_entries": [
+    {
+      "test_knowledge_card_id": "00000000-0000-0000-0000-000000000901",
+      "knowledge_type": "business_rule",
+      "title": "Expired coupon cannot submit order",
+      "bounded_snippet": "Expired coupons are rejected during checkout.",
+      "source_hash": "sha256:reviewed-case-expired-coupon",
+      "retrieval_boundary_artifact_id": "00000000-0000-0000-0000-000000000896",
+      "prompt_eligibility_artifact_id": "00000000-0000-0000-0000-000000000895",
+      "review_history_id": "00000000-0000-0000-0000-000000000894",
+      "source_trace_label": "reviewed-card:expired-coupon",
+      "selection_reason": "Prompt-eligible reviewed source evidence."
+    }
+  ],
+  "omitted_cards": [
+    {
+      "test_knowledge_card_id": "00000000-0000-0000-0000-000000000902",
+      "omission_reason": "snippet_bounds_unproven"
+    }
+  ]
+}
+```
+
+TestKnowledgeCard Prompt Context Evidence hard rules:
+
+- Prompt context evidence input must come from a retrieval boundary artifact
+  and selected TestKnowledgeCard ids. It must preserve PromptVersion,
+  SkillVersion, prompt request or AITask id when available, source manifests,
+  source artifacts, prompt eligibility artifacts, ReviewHistory, and context
+  manifest links.
+- Text can enter a prompt context entry only when `safe_to_show=true`,
+  redaction is reviewed, source evidence is same-project, retrieval boundary
+  evidence is present, and prompt eligibility artifact evidence is present. A
+  source hash or source quote/hash pointer must be used instead of text when a
+  bounded snippet cannot be proven safe.
+- Omitted selected cards must be represented by omitted-card summaries with an
+  `omission_reason`; omission must not revoke prompt eligibility, mutate card
+  rows, mutate retrieval boundary artifacts, or rewrite ReviewHistory.
+- `build_prompt_context_evidence` must not write a runtime `prompt_input.json`,
+  call providers, run AITasks, change retrieval ranking, create vector indexes,
+  create embeddings, rerank, run graph jobs, invoke MCP runtime, approve cases,
+  or mutate historical evidence.
+- This contract must not add prompt assembly implementation, prompt runtime
+  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
+  eligibility, automatic knowledge ingestion, artifact mutation outside
+  declared prompt context evidence, historical evidence mutation,
+  generated-case auto-approval, runner behavior, report behavior, RBAC,
+  tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

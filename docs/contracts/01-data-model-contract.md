@@ -1130,6 +1130,45 @@ TestKnowledgeCard Retrieval Boundary rules:
   safe_to_show/redaction status, selection reason, and bounded snippet or
   source hash. They must not include raw large source text or provider payloads.
 
+TestKnowledgeCard Prompt Context Evidence rules:
+
+- TestKnowledgeCard Prompt Context Evidence starts from a retrieval boundary
+  artifact and selected TestKnowledgeCard ids. It is contract-only evidence for
+  future prompt input and is not prompt assembly implementation, prompt runtime
+  execution, provider behavior, retrieval ranking, card creation, broad CRUD,
+  vector indexing, embedding, reranking, graph runtime, or MCP runtime.
+- The contract-only evidence action is `build_prompt_context_evidence`. It may
+  describe safe context entries for a future prompt, but it must not write a
+  runtime `prompt_input.json`, call providers, run AITasks, mutate
+  TestKnowledgeCard rows, mutate retrieval boundary artifacts, mutate prompt
+  eligibility artifacts, mutate ReviewHistory, or mutate historical evidence.
+- Prompt context evidence input must preserve prompt request id or AITask id
+  when available, PromptVersion id, SkillVersion id, retrieval boundary
+  artifact id, selected TestKnowledgeCard ids, source evidence ids, source
+  manifest artifact ids, prompt eligibility artifact ids, ReviewHistory ids,
+  `safe_to_show=true`, reviewed redaction status, unsupported claims, and
+  prior exclusion summaries.
+- A prompt context entry may include TestKnowledgeCard id, knowledge_type,
+  title, summary, a safe bounded snippet, source hash or source quote/hash
+  pointer, source artifact ids, source section, retrieval boundary artifact id,
+  prompt eligibility artifact id, ReviewHistory id, selection reason, source
+  trace label, and omission reason when a selected card cannot be included.
+- Card text can enter prompt context only when `safe_to_show=true`, reviewed
+  redaction, same-project source evidence, retrieval boundary evidence, and
+  prompt eligibility artifact evidence are present. A source hash or source
+  quote/hash pointer must replace text when snippet bounds, redaction, or
+  display safety cannot be proven.
+- Prompt context evidence outputs must include prompt context evidence artifact
+  id, selected context entries, omitted card summaries, omission reason, source
+  manifest ids, source hashes, PromptVersion/SkillVersion trace, context
+  manifest links, and failure code for stale, unsafe, cross-project, revoked,
+  unsupported, missing, unbounded, redaction-failed, or evidence-mismatched
+  input.
+- Prompt context evidence must not contain raw large source text, unsafe
+  provider payloads, vector store payloads, embedding vectors, reranker traces,
+  graph runtime payloads, secrets, credentials, tokens, OAuth material, or
+  executable prompt assembly payloads.
+
 ## 31.2 KnowledgeEvidence
 
 KnowledgeEvidence is the normalized citation object used by agents, generated
@@ -1330,7 +1369,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -1353,6 +1392,21 @@ Deterministic retrieval Artifact rule:
 - `metadata_json` must include `created_by_component=DeterministicKnowledgeAdapter`,
   `retrieval_mode=deterministic_local`, `query_terms`, `result_count`,
   `used_context_artifact_ids`, and redaction status.
+
+TestKnowledgeCard prompt context evidence Artifact rule:
+
+- Slice 41 prompt context evidence uses
+  `artifact_type=test_knowledge_card_prompt_context_evidence`.
+- `owner_entity_type=AITask` or `owner_entity_type=Project` until a later
+  scoped prompt workflow owns a dedicated prompt request entity.
+- `metadata_json` must include `created_by_component=TestKnowledgeCardPromptContextEvidence`,
+  `prompt_context_evidence_action=build_prompt_context_evidence`,
+  PromptVersion id, SkillVersion id, retrieval boundary artifact id, selected
+  TestKnowledgeCard ids, omitted card ids, context manifest artifact id when
+  available, source hashes, and omission reason values when applicable.
+- This artifact is evidence only. It must not be treated as permission to run
+  an AITask, assemble prompt text for a provider, or mark `used_knowledge=true`
+  without a later explicit runtime contract.
 
 CI import Artifact rule:
 
