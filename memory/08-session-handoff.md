@@ -1,5 +1,36 @@
 # Session Handoff
 
+## 2026-07-05 Slice 55 Completion Gate
+
+Completed:
+
+- Closed Slice 55: Generated Case Human Review Decision Contract.
+- Recorded completed task commits in the Slice 55 task table:
+  - Task 1: `bd26296`;
+  - Task 2: `cb533a6`;
+  - Task 3: `781041a`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 55
+  completion and Slice 56 recommendation.
+- `NEXT_AI_TASK.md` now points to Slice 56 Task 1: Add Generated Case Human
+  Review Decision Summary Export task plan.
+
+Verification:
+
+```powershell
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `4 passed in 1.20s`.
+- Diff check reported no whitespace errors; existing LF-to-CRLF warnings only.
+
+Next recommended task:
+
+- Commit `docs(v2): complete generated case human review decision slice`.
+- Continue Slice 56 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 55 Generated Case Human Review Decision Golden Smoke
 
 Completed:
