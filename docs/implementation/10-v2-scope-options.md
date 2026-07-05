@@ -3102,3 +3102,123 @@ Expected output:
   non-goals.
 - Slice plan added:
   `docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard prompt context discrepancy resolution summary
+export contract.
+
+Why it was selected:
+
+- Slice 47 defined human discrepancy resolution reviews, but Chtest still
+  needed a contract for packaging accepted, rejected, acknowledged,
+  clarification-needed, and later-review-resolved discrepancy resolution
+  evidence into a future summary handoff without changing frontend pages,
+  report generation behavior, export endpoints, or prompt runtime behavior.
+- Slice 48 defined resolution summary export inputs and outputs from resolution
+  review artifacts, discrepancy artifact ids, accepted/rejected/acknowledged
+  discrepancy ids, affected citation ids, resulting resolution status,
+  reviewer notes, follow-up flags, source hashes, context manifest links,
+  PromptVersion/SkillVersion trace, and ReviewHistory.
+- The slice kept discrepancy resolution handoff auditable before any UI
+  renderer, report generator, download endpoint, provider, or prompt runtime
+  consumes the summary.
+
+Completed slice name:
+
+```text
+Slice 48: TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- TestKnowledgeCard prompt context discrepancy resolution summary export is now
+  a contract with `export_prompt_context_discrepancy_resolution_summary`,
+  `prompt_context_discrepancy_resolution_summary_export`, resolution outcome
+  summary, accepted discrepancy group, rejected discrepancy group,
+  acknowledged discrepancy group, clarification requested field group,
+  unresolved follow-up flag group, reviewer comment summary, resulting
+  resolution status group, ReviewHistory links, source hashes, context
+  manifest references, PromptVersion/SkillVersion trace, failure code, and
+  visible reason.
+- No frontend page, report generation behavior, export/download endpoint,
+  prompt assembly implementation, prompt runtime execution, provider calls,
+  retrieval ranking change, model output behavior implementation, automatic
+  citation generation, vector database, embeddings, reranking, graph runtime,
+  MCP runtime, backend feature API, migration, broad TestKnowledgeCard CRUD,
+  automatic prompt eligibility, automatic card creation, automatic knowledge
+  ingestion, artifact mutation outside declared prompt-context discrepancy
+  resolution summary export, historical evidence mutation, generated-case
+  auto-approval, runner behavior, RBAC, tenants, permissions, or remote CI
+  provider behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard prompt context discrepancy resolution audit
+handoff contract.
+
+Why:
+
+- Slice 48 packages resolution reviews into summary export evidence, but Chtest
+  still needs a contract for a final audit handoff bundle that links the
+  resolution summary export back to discrepancy, review, audit, consumption,
+  prompt evidence, source hashes, context manifest, PromptVersion/SkillVersion,
+  and ReviewHistory without becoming a download endpoint or report renderer.
+- The next narrow boundary should define audit handoff inputs and outputs from
+  resolution summary export artifacts, resolution review artifacts,
+  discrepancy artifacts, resolution outcome groups, affected citation ids,
+  unresolved follow-up flags, source hashes, context manifest links,
+  PromptVersion/SkillVersion trace, and ReviewHistory.
+- This keeps the discrepancy resolution chain auditable as a handoff contract
+  before any UI, report generator, provider, prompt runtime, or external
+  archive consumes it.
+
+Next slice name:
+
+```text
+Slice 49: TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contract
+```
+
+Smallest useful boundary:
+
+- Define audit handoff inputs from prompt context discrepancy resolution
+  summary export artifact ids, resolution review artifact ids, discrepancy
+  artifact ids, review summary export artifact ids, resolution outcome summary,
+  accepted/rejected/acknowledged discrepancy groups, clarification requested
+  fields, affected citation ids, follow-up flags, source hashes, context
+  manifest ids, PromptVersion/SkillVersion ids, and ReviewHistory ids.
+- Define audit handoff outputs such as audit handoff artifact id, handoff
+  summary, evidence chain status, included artifact ids, excluded artifact
+  reasons, unresolved follow-up flags, ReviewHistory links, failure code, and
+  visible reason.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No frontend page, report generation behavior change, actual report renderer,
+  export/download endpoint, backend feature API, prompt assembly
+  implementation, prompt runtime execution, provider call, LLM call, prompt
+  runner, deterministic retrieval behavior change, vector database, embeddings,
+  reranking, background indexing, graph runtime, MCP runtime, provider SDK,
+  credentials, migration, broad TestKnowledgeCard CRUD, automatic prompt
+  eligibility, automatic card creation, automatic knowledge ingestion, artifact
+  mutation outside declared discrepancy resolution audit handoff evidence,
+  historical evidence mutation, generated-case auto-approval, runner behavior,
+  RBAC, tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 49 Task 1: Add TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`.
+- No product code until the plan defines audit handoff inputs, evidence chain
+  status, included/excluded artifact handling, failure behavior, and non-goals.
