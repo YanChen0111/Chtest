@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Plan
+
+Completed:
+
+- Added Slice 56 plan:
+  `docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md`.
+- The plan scopes Generated Case Human Review Decision Summary Export as
+  contract-only audit evidence over Slice 55 decision artifacts. It does not
+  approve/reject GeneratedCaseCandidate rows, request optimization, promote
+  TestCase rows, create AutomationDraft rows, render reports, expose
+  export/download endpoints, or add runtime/provider/retrieval behavior.
+- The plan names decision artifact linkage, evidence package artifact
+  linkage, decision labels, exported decision groups, included/excluded
+  decision artifact ids, source traceability summary, ReviewHistory links,
+  failure behavior, and forbidden side effects.
+- `NEXT_AI_TASK.md` now points to Slice 56 Task 2: Define Generated Case Human
+  Review Decision Summary Export contracts.
+
+Verification:
+
+```powershell
+if (-not (Test-Path docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md)) { exit 1 }
+rg -n "Generated Case Human Review Decision Summary Export|generated_case_human_review_decision_summary_export|build_generated_case_human_review_decision_summary_export|generated_case_human_review_decision_artifact_id|accepted_for_future_promotion|accepted_with_required_edits|needs_optimization|rejected_for_insufficient_evidence|blocked|duplicate|needs_more_evidence|failed_validation|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+git diff --check
+```
+
+Result:
+
+- Focused PowerShell plan-term check passed with `plan terms ok`.
+- `git diff --check` passed with no whitespace errors; Git reported expected
+  Windows LF-to-CRLF working-copy warnings.
+
+Next recommended task:
+
+- Commit `docs(v2): add generated case human review decision summary export plan`.
+- Continue Slice 56 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 55 Completion Gate
 
 Completed:

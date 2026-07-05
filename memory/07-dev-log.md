@@ -1,5 +1,37 @@
 # Development Log
 
+## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Plan
+
+### Completed
+
+- Added Slice 56 plan:
+  `docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md`.
+- The plan scopes Generated Case Human Review Decision Summary Export as
+  contract-only audit evidence over Slice 55 decision artifacts, not actual
+  GeneratedCaseCandidate approval/rejection, request optimization, TestCase
+  promotion, report rendering, export/download endpoints, or runtime behavior.
+- The plan names
+  `build_generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_artifact_id`,
+  `generated_case_human_review_evidence_package_artifact_id`, exported
+  decision groups, included/excluded decision artifact ids, source
+  traceability summary, ReviewHistory links, failure code, and visible reason.
+- Updated `NEXT_AI_TASK.md` to Slice 56 Task 2.
+
+### Verification
+
+- Focused PowerShell plan-term check over the Slice 56 plan,
+  `NEXT_AI_TASK.md`, scope options, and handoff.
+- Result: `plan terms ok`.
+- `git diff --check`
+- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
+  working-copy warnings.
+
+### Next Step
+
+- Commit Task 1, then continue Slice 56 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 55 Completion Gate
 
 ### Completed
