@@ -3716,3 +3716,5 @@ Expected output:
 - No product code until the plan defines audit handoff inputs, evidence-chain
   outputs, included/excluded artifact handling, failure behavior, and
   non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md`.

@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-07-05 Slice 53 KnowledgeAdapter Provider Evaluation Review Audit Handoff Plan
+
+Completed:
+
+- Added Slice 53 plan:
+  `docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md`.
+- The plan scopes KnowledgeAdapter Provider Evaluation Review Audit Handoff
+  as a contract-only evidence-chain bundle from provider evaluation review
+  summary export artifact ids, provider evaluation review decision artifact
+  ids, provider evaluation plan artifact ids, provider metadata, review
+  decision groups, license/reference evidence, KnowledgeEvidence
+  normalization, provider_state, fallback behavior, disabled-by-default
+  summary, source hashes, and ReviewHistory links.
+- The plan names
+  `build_knowledge_adapter_provider_evaluation_review_audit_handoff`,
+  `knowledge_adapter_provider_evaluation_review_audit_handoff`, evidence chain
+  status, included artifact ids, excluded artifact reasons, provider review
+  decision group summary, unresolved blocker summary, unresolved safety
+  question summary, failure code, and visible reason.
+- The plan keeps audit handoff separate from provider enablement,
+  Haystack/LlamaIndex/GraphRAG integration, provider SDKs, credentials, remote
+  fetch, runtime retrieval, provider-backed prompt context evidence, vector
+  infrastructure, frontend pages, report generation behavior,
+  export/download endpoints, RBAC, tenants, permissions, and package upgrades.
+- `NEXT_AI_TASK.md` now points to Slice 53 Task 2: Define KnowledgeAdapter
+  provider evaluation review audit handoff contracts.
+
+Verification:
+
+```powershell
+if (-not (Test-Path docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md)) { exit 1 }
+rg -n "KnowledgeAdapter Provider Evaluation Review Audit Handoff|provider evaluation review audit handoff|knowledge_adapter_provider_evaluation_review_audit_handoff|provider evaluation review summary export artifact|provider evaluation review decision artifact|provider evaluation plan artifact|evidence chain status|included artifact ids|excluded artifact reasons|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+git diff --check
+```
+
+Result:
+
+- Required terms found.
+- Diff check is clean except Windows LF-to-CRLF warnings.
+
+Next recommended task:
+
+- Commit `docs(v2): add knowledge adapter provider evaluation review audit handoff plan`.
+- Continue Slice 53 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 52 Completion Gate
 
 Completed:
