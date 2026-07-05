@@ -1,5 +1,36 @@
 # Session Handoff
 
+## 2026-07-05 Slice 50 Completion Gate
+
+Completed:
+
+- Closed Slice 50: KnowledgeAdapter Provider Evaluation Plan Contract.
+- Recorded completed task commits in the Slice 50 task table:
+  - Task 1: `65a5658`;
+  - Task 2: `c2fcfba` plus alignment `77ab0eb`;
+  - Task 3: `c234028`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 50
+  completion and Slice 51 recommendation.
+- `NEXT_AI_TASK.md` now points to Slice 51 Task 1: Add KnowledgeAdapter
+  Provider Evaluation Review Decision task plan.
+
+Verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `6 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): complete knowledge adapter provider evaluation plan slice`.
+- Continue Slice 51 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan Golden Smoke
 
 Completed:
@@ -29,7 +60,7 @@ Result:
 
 Next recommended task:
 
-- Commit `test(golden): add knowledge adapter provider evaluation plan smoke`.
+- Committed `test(golden): add knowledge adapter provider evaluation plan smoke` as `c234028`.
 - Continue Slice 50 Completion Gate from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan Contracts

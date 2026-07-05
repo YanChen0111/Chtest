@@ -6,16 +6,19 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 50: KnowledgeAdapter Provider Evaluation Plan Contract.
+Slice 51: KnowledgeAdapter Provider Evaluation Review Decision Contract.
 
 ## Current Task
 
-Slice 50 Completion Gate.
+Slice 51 Task 1: Add KnowledgeAdapter Provider Evaluation Review Decision task plan.
 
 ## Product Value Answer
 
-After this task, Chtest has closed the KnowledgeAdapter Provider Evaluation
-Plan slice with passing golden coverage and a clear next narrow V2 task.
+After this task, Chtest has a narrow plan for making auditable local review
+decisions on provider evaluation plan evidence before any provider integration,
+SDK, external call, vector database, embedding, reranking, runtime retrieval,
+provider-backed prompt context behavior, frontend page, RBAC, tenants, or
+permissions exist.
 
 ## Must Read
 
@@ -24,64 +27,78 @@ Plan slice with passing golden coverage and a clear next narrow V2 task.
 3. `docs/implementation/10-v2-scope-options.md`
 4. `docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`
 5. `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py`
-6. `backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py`
-7. `memory/08-session-handoff.md`
-8. `memory/07-dev-log.md`
+6. `docs/fixtures/38-knowledge-adapter-provider-evaluation-plan-golden.md`
+7. `docs/contracts/01-data-model-contract.md`
+8. `docs/contracts/02-api-contract.md`
+9. `docs/contracts/03-state-machines.md`
+10. `docs/contracts/04-artifact-contract.md`
+11. `docs/contracts/05-prompt-skill-contract.md`
+12. `memory/08-session-handoff.md`
+13. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
 - Broad architecture, migration, enterprise collaboration, marketplace,
   distributed execution, cloud storage, cloud CI/provider integration, RBAC,
-  tenants, permissions, frontend redesign docs, and provider implementation
-  docs unless a concrete blocker requires them.
+  tenants, permissions, frontend redesign docs, provider implementation docs,
+  and runtime retrieval docs unless a concrete blocker requires them.
 
 ## Expected Files
 
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
+docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md
 docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion-only task. Do not add frontend code, backend runtime feature code,
+Planning-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
-package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
+package upgrades, broad KnowledgeAdapter CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
 implementation, prompt runtime execution, provider calls, deterministic
-retrieval behavior change, automatic card creation from model output,
-automatic knowledge ingestion, external provider integrations, vector database,
-embeddings, reranking, graph runtime, MCP runtime, provider SDK, credentials,
-provider enablement, runtime retrieval, provider-backed prompt context
-evidence, artifact upload/mutation/delete, historical evidence mutation,
-generated-case auto-approval, runner behavior changes, remote CI provider
-behavior, RBAC, tenants, or permissions.
+retrieval behavior change, automatic knowledge ingestion, external provider
+integrations, vector database, embeddings, reranking, graph runtime, MCP
+runtime, provider SDK, credentials, provider enablement, runtime retrieval,
+provider-backed prompt context evidence, artifact upload/mutation/delete,
+historical evidence mutation, generated-case auto-approval, runner behavior
+changes, remote CI provider behavior, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q
+test -f docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md
+rg -n "KnowledgeAdapter Provider Evaluation Review Decision|provider evaluation review|review_knowledge_adapter_provider_evaluation|review decision|accepted with constraints|blocked|needs revision|unsupported|provider suitability status|disabled by default|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: focused golden verification passes and diff check passes.
+Expected result: plan file exists, required terms are present, and diff check
+passes.
 
 ## Acceptance
 
-- Slice 50 task table records Task 1-3 commits.
-- Focused golden verification passes.
-- V2 scope options and handoff memory recommend the next narrow slice.
-- `NEXT_AI_TASK.md` points to the next task.
+- Slice 51 plan exists with product value, non-goals, task table, expected
+  files, verification commands, and commit messages.
+- The plan names provider evaluation review inputs and outputs, human review
+  decision semantics, review decisions, provider suitability status,
+  KnowledgeEvidence normalization, provider_state, fallback behavior,
+  license/reference intake, disabled by default, ReviewHistory, failure
+  behavior, and forbidden side effects.
+- The plan excludes provider enablement, provider integration, provider SDKs,
+  external calls, vector database, embeddings, reranking, background indexing,
+  runtime retrieval, UI, RBAC, tenants, permissions, and package upgrades.
+- `NEXT_AI_TASK.md` points to Slice 51 Task 2.
 
 ## Commit Message
 
 ```text
-docs(v2): complete knowledge adapter provider evaluation plan slice
+docs(v2): add knowledge adapter provider evaluation review decision plan
 ```
 
 ## Next Task
 
-Select the next narrow V2 slice.
+Slice 51 Task 2: Define KnowledgeAdapter provider evaluation review decision
+contracts.
