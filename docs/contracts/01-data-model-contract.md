@@ -347,6 +347,51 @@ Slice 55 generated case human review decision rules:
   optimization-required, or promotion-required input must produce failure code
   and visible reason and must not append a successful human review decision.
 
+Slice 56 generated case human review decision summary export rules:
+
+- Generated Case Human Review Decision Summary Export is a contract-only audit
+  evidence bundle over one or more same-project
+  `generated_case_human_review_decision` artifacts. It groups reviewer
+  decisions without approving or rejecting candidates, requesting
+  optimization, promoting TestCase rows, creating AutomationDraft rows,
+  rendering reports, exposing export/download endpoints, or changing
+  candidate status.
+- The contract-only summary export action is
+  `build_generated_case_human_review_decision_summary_export`. Future payloads
+  may store
+  `generated_case_human_review_decision_summary_export_action=build_generated_case_human_review_decision_summary_export`.
+- Inputs must preserve `generated_case_human_review_decision_artifact_id`,
+  `generated_case_human_review_evidence_package_artifact_id`,
+  GeneratedCaseCandidate id, candidate status, candidate summary, decision
+  label, decision status, reviewer label/comment, accepted constraints,
+  requested edit fields, optimization request summary, rejection reasons,
+  blocker reasons, duplicate resolution notes, ReviewHistory ids or
+  ReviewHistory links, source hashes, and source manifest ids.
+- Outputs may include generated case human review decision summary export id
+  or artifact id, `generated_case_human_review_decision_summary_export`,
+  exported decision groups, accepted-for-future-promotion summary,
+  accepted-with-required-edits summary, needs-optimization summary,
+  rejected-for-insufficient-evidence summary, blocked summary, duplicate
+  summary, needs-more-evidence summary, failed-validation summary, included
+  decision artifact ids, excluded decision artifact ids, excluded decision
+  artifact reasons, source traceability summary, ReviewHistory summary,
+  failure code, and visible reason.
+- Exported decision groups may include `accepted_for_future_promotion`,
+  `accepted_with_required_edits`, `needs_optimization`,
+  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation`. These groups are audit
+  evidence only and must not mutate GeneratedCaseCandidate status.
+- Missing, stale, unsafe, cross-project, unbounded, decision-artifact-missing,
+  decision-artifact-invalid, decision-artifact-mismatched,
+  evidence-package-missing, evidence-package-mismatched, candidate-missing,
+  candidate-mismatched, candidate-status-invalid, review-decision-missing,
+  review-decision-invalid, decision-label-unsupported, reviewer-missing,
+  source-hash-mismatched, review-history-missing, artifact-mismatched,
+  summary-export-invalid, credential-required, runtime-required,
+  provider-required, approval-required, optimization-required, or
+  promotion-required input must produce failure code and visible reason and
+  must not append a successful summary export.
+
 ## 15. TestCase
 
 | Field | Type | Required | Default | Notes |
@@ -2047,7 +2092,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, generated_case_human_review_evidence_package, generated_case_human_review_decision, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, knowledge_adapter_provider_evaluation_review_audit_handoff, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, generated_case_human_review_evidence_package, generated_case_human_review_decision, generated_case_human_review_decision_summary_export, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, knowledge_adapter_provider_evaluation_review_audit_handoff, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -2139,6 +2184,41 @@ Generated Case Human Review Decision Artifact rule:
   indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime,
   generate reports, render frontend pages, expose export/download endpoints,
   add RBAC, create tenants, change permissions, or install packages.
+
+Generated Case Human Review Decision Summary Export Artifact rule:
+
+- Slice 56 generated case human review decision summary exports may use
+  `artifact_type=generated_case_human_review_decision_summary_export` in a
+  later scoped implementation.
+- `owner_entity_type=GeneratedCaseCandidate` with
+  `owner_entity_id=candidate_id` may be used for a single-candidate export.
+  `owner_entity_type=AITask` or `owner_entity_type=Project` may be used for a
+  multi-decision export, but metadata must preserve every
+  `generated_case_human_review_decision_artifact_id` and linked
+  `generated_case_human_review_evidence_package_artifact_id`.
+- `metadata_json` must include
+  `created_by_component=GeneratedCaseHumanReviewDecisionSummaryExport`,
+  `generated_case_human_review_decision_summary_export_action=build_generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_artifact_id` values,
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate ids/statuses, candidate summaries, decision labels,
+  decision statuses, reviewer labels/comments, accepted constraints, requested
+  edit fields, optimization request summaries, rejection reasons, blocker
+  reasons, duplicate resolution notes, exported decision groups,
+  included decision artifact ids, excluded decision artifact ids, excluded
+  decision artifact reasons, source traceability summary, source manifest ids,
+  source hashes, ReviewHistory links, ReviewHistory summary, failure code, and
+  visible reason when applicable.
+- This artifact is summary export audit evidence only. It must not approve or
+  reject GeneratedCaseCandidate rows, request optimization, promote TestCase
+  rows, create AutomationDraft rows, mutate GeneratedCaseCandidate content,
+  mutate generated case human review decision artifacts, mutate evidence
+  packages, mutate ReviewHistory, mutate KnowledgeEvidence, mutate prompt
+  context evidence, mutate source evidence, upload artifacts, render reports,
+  expose export/download endpoints, run prompts, execute AITasks, run
+  retrieval, call providers, call provider SDKs, create vector indexes, create
+  embeddings, rerank, run graph jobs, invoke MCP runtime, render frontend
+  pages, add RBAC, create tenants, change permissions, or install packages.
 
 KnowledgeAdapter provider evaluation plan Artifact rule:
 

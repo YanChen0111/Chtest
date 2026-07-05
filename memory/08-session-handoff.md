@@ -1,5 +1,50 @@
 # Session Handoff
 
+## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Contracts
+
+Completed:
+
+- Added Generated Case Human Review Decision Summary Export contract
+  boundaries to:
+  - `docs/contracts/01-data-model-contract.md`;
+  - `docs/contracts/02-api-contract.md`;
+  - `docs/contracts/03-state-machines.md`;
+  - `docs/contracts/04-artifact-contract.md`;
+  - `docs/contracts/05-prompt-skill-contract.md`.
+- The contract defines
+  `build_generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_artifact_id`, and
+  `generated_case_human_review_evidence_package_artifact_id` as
+  contract-only summary export audit evidence.
+- It records exported decision groups, included/excluded decision artifact
+  ids, excluded decision artifact reasons, source traceability summary,
+  ReviewHistory summary, failure code, and visible reason.
+- It explicitly does not approve/reject GeneratedCaseCandidate rows, request
+  optimization, promote TestCase rows, create AutomationDraft rows, render
+  reports, expose export/download endpoints, add runtime APIs, add UI, call
+  providers, run retrieval/vector/embedding/rerank/graph/MCP behavior, or
+  change RBAC/tenants/permissions/packages.
+- `NEXT_AI_TASK.md` now points to Slice 56 Task 3: Add Generated Case Human
+  Review Decision Summary Export golden smoke.
+
+Verification:
+
+```powershell
+rg -n "Generated Case Human Review Decision Summary Export|generated_case_human_review_decision_summary_export|build_generated_case_human_review_decision_summary_export|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|exported decision groups|included decision artifact ids|excluded decision artifact reasons|source traceability summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md
+git diff --check
+```
+
+Result:
+
+- Required contract terms found.
+- Diff check reported no whitespace errors; existing LF-to-CRLF warnings only.
+
+Next recommended task:
+
+- Commit `docs(v2): define generated case human review decision summary export contracts`.
+- Continue Slice 56 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Plan
 
 Completed:

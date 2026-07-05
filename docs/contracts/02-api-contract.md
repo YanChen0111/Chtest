@@ -1704,7 +1704,151 @@ Generated Case Human Review Decision hard rules:
   mutation, historical evidence mutation, runner behavior changes, remote CI
   provider behavior, RBAC, tenants, permissions, or package upgrades.
 
-### 3.5.3 Knowledge Feedback Contract
+### 3.5.3 Generated Case Human Review Decision Summary Export Contract
+
+This section is contract-only. It defines future Generated Case Human Review
+Decision Summary Export semantics for grouping one or more Slice 55 decision
+artifacts. It does not add a
+`POST /api/generated-case-review-decision-summary-exports` endpoint, backend
+feature API, router, service, worker, queue, scheduler, frontend page, report
+generation behavior, report renderer, export/download endpoint, migration, or
+package upgrade.
+
+Allowed generated case human review decision summary export action:
+
+- `build_generated_case_human_review_decision_summary_export`: future scoped
+  action that packages
+  `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate id/status/summary, decision label/status, reviewer
+  label/comment, accepted constraints, requested edit fields, optimization
+  request summary, rejection/blocker reasons, duplicate resolution notes,
+  ReviewHistory links, source hashes, and source manifest ids into an audit
+  summary without approving or rejecting candidates.
+
+Generated Case Human Review Decision Summary Export payload shape:
+
+```json
+{
+  generated_case_human_review_decision_summary_export_action: build_generated_case_human_review_decision_summary_export,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  generated_case_human_review_decision_artifact_ids: [
+    00000000-0000-0000-0000-000000000940,
+    00000000-0000-0000-0000-000000000941
+  ],
+  generated_case_human_review_evidence_package_artifact_ids: [
+    00000000-0000-0000-0000-000000000930,
+    00000000-0000-0000-0000-000000000931
+  ],
+  decisions: [
+    {
+      generated_case_human_review_decision_artifact_id: 00000000-0000-0000-0000-000000000940,
+      generated_case_human_review_evidence_package_artifact_id: 00000000-0000-0000-0000-000000000930,
+      generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
+      candidate_status: generated,
+      candidate_summary: expired coupon checkout boundary candidate,
+      decision_label: accepted_with_required_edits,
+      decision_status: recorded,
+      reviewer_label: qa_lead,
+      reviewer_comment: Accept after adding coupon and points conflict coverage,
+      accepted_constraints: [same evidence package, no runtime execution],
+      requested_edit_fields: [steps_json, expected_results_json],
+      optimization_request_summary: null,
+      rejection_reasons: [],
+      blocker_reasons: [],
+      duplicate_resolution_notes: none,
+      review_history_links: [00000000-0000-0000-0000-000000000895],
+      source_manifest_ids: [generated-case-review-source-manifest-001],
+      source_hashes: [sha256:generated-case-review-evidence]
+    }
+  ]
+}
+```
+
+Generated Case Human Review Decision Summary Export response shape for a
+future scoped implementation:
+
+```json
+{
+  generated_case_human_review_decision_summary_export_action: build_generated_case_human_review_decision_summary_export,
+  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
+  generated_case_human_review_decision_summary_export: generated_case_human_review_decision_summary_export,
+  summary_status: exported_for_human_review_audit,
+  exported_decision_groups: {
+    accepted_for_future_promotion: [00000000-0000-0000-0000-000000000942],
+    accepted_with_required_edits: [00000000-0000-0000-0000-000000000940],
+    needs_optimization: [],
+    rejected_for_insufficient_evidence: [],
+    blocked: [],
+    duplicate: [],
+    needs_more_evidence: [],
+    failed_validation: []
+  },
+  accepted_for_future_promotion_summary: no immediate promotion is performed,
+  accepted_with_required_edits_summary: one candidate needs explicit edits,
+  needs_optimization_summary: none,
+  rejected_for_insufficient_evidence_summary: none,
+  blocked_summary: none,
+  duplicate_summary: none,
+  needs_more_evidence_summary: none,
+  failed_validation_summary: none,
+  included_decision_artifact_ids: [00000000-0000-0000-0000-000000000940],
+  excluded_decision_artifact_ids: [],
+  excluded_decision_artifact_reasons: [],
+  source_traceability_summary: source hashes and ReviewHistory links preserved,
+  review_history_links: [00000000-0000-0000-0000-000000000895],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+Generated Case Human Review Decision Summary Export hard rules:
+
+- Input must reference same-project
+  `generated_case_human_review_decision_artifact_id` values and their linked
+  `generated_case_human_review_evidence_package_artifact_id` values.
+- Output is summary export audit evidence only. It may record exported
+  decision groups, accepted-for-future-promotion summary,
+  accepted-with-required-edits summary, needs-optimization summary,
+  rejected-for-insufficient-evidence summary, blocked summary, duplicate
+  summary, needs-more-evidence summary, failed-validation summary, included
+  decision artifact ids, excluded decision artifact ids, excluded decision
+  artifact reasons, source traceability summary, ReviewHistory summary,
+  failure code, and visible reason.
+- Exported decision groups `accepted_for_future_promotion`,
+  `accepted_with_required_edits`, `needs_optimization`,
+  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation` must not approve candidates,
+  reject candidates, request optimization, promote TestCase rows, create
+  AutomationDraft rows, execute automation, create reports, expose
+  export/download endpoints, or set `used_knowledge=true`.
+- Missing, stale, unsafe, cross-project, unbounded,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, review-decision-missing,
+  review-decision-invalid, decision-label-unsupported, reviewer-missing,
+  source-hash-mismatched, review-history-missing, artifact-mismatched,
+  summary-export-invalid, credential-required, runtime-required,
+  provider-required, approval-required, optimization-required, or
+  promotion-required input must return failure code and visible reason and
+  must not append a successful summary export.
+- `build_generated_case_human_review_decision_summary_export` must not create
+  backend runtime APIs, endpoints, routers, services, workers, queues,
+  schedulers, migrations, frontend pages, reports, report renderers,
+  export/download endpoints, provider integrations, provider SDK calls,
+  external calls, credentials, remote URL fetches, vector indexes, embeddings,
+  reranking, graph jobs, MCP runtime calls, prompt execution, AITask
+  orchestration, TestCase promotion, GeneratedCaseCandidate approve/reject
+  mutation, request optimization mutation, automation draft creation,
+  ToolInvocation rows, TestRun/TestResult rows, artifact upload, Artifact rows
+  outside declared summary export evidence, generated case human review
+  decision artifact mutation, evidence package mutation, prompt context
+  evidence mutation, KnowledgeEvidence mutation, ReviewHistory mutation,
+  historical evidence mutation, runner behavior changes, remote CI provider
+  behavior, RBAC, tenants, permissions, or package upgrades.
+
+### 3.5.4 Knowledge Feedback Contract
 
 This section is contract-only. It defines the API payload shape that a future
 KnowledgeFeedbackAgent may return through existing AITask/artifact surfaces. It

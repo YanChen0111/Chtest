@@ -367,6 +367,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | knowledge_retrieval | application/json | 确定性本地知识检索证据 |
 | generated_case_human_review_evidence_package | application/json | Future generated case human review evidence package |
 | generated_case_human_review_decision | application/json | Future generated case human review decision evidence |
+| generated_case_human_review_decision_summary_export | application/json | Future generated case human review decision summary export evidence |
 | knowledge_adapter_provider_evaluation_plan | application/json | Future KnowledgeAdapter provider evaluation planning evidence |
 | knowledge_adapter_provider_evaluation_review_decision | application/json | Future KnowledgeAdapter provider evaluation review decision evidence |
 | knowledge_adapter_provider_evaluation_review_summary_export | application/json | Future KnowledgeAdapter provider evaluation review summary export evidence |
@@ -696,6 +697,58 @@ Generated case human review decision artifact rules:
   runtime, render frontend pages, generate reports, expose export/download
   endpoints, call remote CI providers, add RBAC, create tenants, change
   permissions, or install packages.
+
+Generated case human review decision summary export artifact rules:
+
+- `generated_case_human_review_decision_summary_export.json` may be stored as
+  an Artifact with
+  `artifact_type=generated_case_human_review_decision_summary_export`,
+  `owner_entity_type=GeneratedCaseCandidate`, and
+  `owner_entity_id=candidate_id` for a single-candidate export, or with
+  `owner_entity_type=AITask` or `owner_entity_type=Project` for a
+  multi-decision export, and
+  `manifest_kind=generated_case_human_review_decision_summary_export` in a
+  later scoped implementation.
+- The artifact must include
+  `created_by_component=GeneratedCaseHumanReviewDecisionSummaryExport`,
+  `generated_case_human_review_decision_summary_export_action=build_generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_artifact_id` values,
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate ids/statuses, candidate summaries, decision labels,
+  decision statuses, reviewer labels/comments, accepted constraints, requested
+  edit fields, optimization request summaries, rejection reasons, blocker
+  reasons, duplicate resolution notes, exported decision groups,
+  accepted-for-future-promotion summary, accepted-with-required-edits summary,
+  needs-optimization summary, rejected-for-insufficient-evidence summary,
+  blocked summary, duplicate summary, needs-more-evidence summary,
+  failed-validation summary, included decision artifact ids, excluded decision
+  artifact ids, excluded decision artifact reasons, source traceability
+  summary, source manifest ids, source hashes, ReviewHistory links,
+  ReviewHistory summary, failure code, and visible reason when applicable.
+- Exported decision groups may include `accepted_for_future_promotion`,
+  `accepted_with_required_edits`, `needs_optimization`,
+  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation`.
+- Generated case human review decision summary export artifacts must be
+  bounded JSON. They must not contain raw LLM/provider payloads, unbounded
+  source text, credentials, API keys, tokens, OAuth state, remote fetch
+  payloads, vector store payloads, embedding vectors, reranker traces, graph
+  runtime payloads, executable prompt assembly payloads, runtime
+  `prompt_input.json`, frontend-rendered markup, report-rendered payloads,
+  export-rendered payloads, downloadable provider payloads, or generated
+  replacement evidence.
+- Generated case human review decision summary export artifacts must not
+  approve or reject GeneratedCaseCandidate rows, request optimization, promote
+  TestCase rows, create AutomationDraft rows, mutate GeneratedCaseCandidate
+  content, mutate generated case human review decision artifacts, mutate
+  evidence packages, mutate ReviewHistory, mutate KnowledgeEvidence, mutate
+  prompt context evidence, mutate Artifact rows outside declared summary
+  export evidence, upload artifacts, render reports, expose export/download
+  endpoints, run prompt assembly, execute AITasks, call providers, call
+  provider SDKs, fetch remote URLs, change retrieval ranking, create vector
+  indexes, create embeddings, rerank, run background indexing, run graph jobs,
+  invoke MCP runtime, render frontend pages, call remote CI providers, add
+  RBAC, create tenants, change permissions, or install packages.
 
 Knowledge feedback artifact rules:
 

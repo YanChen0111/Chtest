@@ -1300,6 +1300,95 @@ Generated case human review decision rules:
   migrations, add package upgrades, add RBAC, create tenants, or change
   permissions.
 
+## 6.1.3 Generated Case Human Review Decision Summary Export Trace Contract
+
+This contract defines prompt/skill trace rules for future Generated Case
+Human Review Decision Summary Export evidence. It is contract-only and does
+not assemble prompts, execute AITasks, call providers, run retrieval, create
+provider-backed prompt context evidence, approve or reject candidates, request
+optimization, promote TestCases, create automation drafts, render reports,
+expose export/download endpoints, or render frontend pages.
+
+Generated case human review decision summary export input must include:
+
+- `generated_case_human_review_decision_summary_export_action=build_generated_case_human_review_decision_summary_export`.
+- One or more `generated_case_human_review_decision_artifact_id` values.
+- Linked `generated_case_human_review_evidence_package_artifact_id` values.
+- GeneratedCaseCandidate ids/statuses and candidate summaries.
+- Decision labels, decision statuses, reviewer labels/comments, accepted
+  constraints, requested edit fields, optimization request summaries,
+  rejection reasons, blocker reasons, duplicate resolution notes,
+  ReviewHistory links, source hashes, and source manifest ids.
+- PromptVersion id/name/version and SkillVersion id/name/version when the
+  summary export evidence is produced by a prompt or skill.
+
+Generated case human review decision summary export output may include:
+
+- Generated case human review decision summary export id or artifact id.
+- `generated_case_human_review_decision_summary_export` artifact or manifest
+  naming.
+- `generated_case_human_review_decision_summary_export.json`.
+- Summary status, exported decision groups, included decision artifact ids,
+  excluded decision artifact ids, excluded decision artifact reasons, source
+  traceability summary, ReviewHistory summary, failure code, and visible
+  reason.
+- Exported decision groups for `accepted_for_future_promotion`,
+  `accepted_with_required_edits`, `needs_optimization`,
+  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation`.
+- Accepted-for-future-promotion summary, accepted-with-required-edits summary,
+  needs-optimization summary, rejected-for-insufficient-evidence summary,
+  blocked summary, duplicate summary, needs-more-evidence summary, and
+  failed-validation summary.
+
+Generated case human review decision summary export rules:
+
+- Summary export records are audit evidence only. They must not be treated as
+  approval, rejection, request optimization, TestCase promotion, automation
+  draft creation, prompt eligibility, report generation behavior,
+  export/download endpoint behavior, or proof that knowledge was used.
+- Exported decision groups `accepted_for_future_promotion`,
+  `accepted_with_required_edits`, `needs_optimization`,
+  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation` are summary labels only.
+- Needs-optimization summaries must preserve optimization request summary but
+  must not trigger request optimization. Rejected-for-insufficient-evidence,
+  blocked, duplicate, needs-more-evidence, and failed-validation summaries
+  must preserve visible reasons and must not hide, merge, archive, reject, or
+  delete candidates.
+- `used_knowledge` must not be auto-marked true by generated case human
+  review decision summary export.
+- Provider-specific payloads must not leak into GeneratedCaseCandidate,
+  TestCase, TestKnowledgeCard, KnowledgeEvidence, prompt context evidence,
+  reports, review surfaces, evidence package surfaces, decision surfaces, or
+  summary export surfaces.
+- Missing, stale, unsafe, cross-project, unbounded,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, review-decision-missing,
+  review-decision-invalid, decision-label-unsupported, reviewer-missing,
+  source-hash-mismatched, review-history-missing, artifact-mismatched,
+  summary-export-invalid, credential-required, runtime-required,
+  provider-required, approval-required, optimization-required, or
+  promotion-required input must produce a failure code and visible reason and
+  must not append a successful summary export.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, integrate an SDK, store credentials, fetch remote URLs,
+  create a vector index, create embeddings, rerank, run background indexing,
+  run a graph job, invoke MCP runtime, create provider-backed prompt context
+  evidence, generate reports, render reports, expose export/download
+  endpoints, mutate GeneratedCaseCandidate rows, approve or reject
+  GeneratedCaseCandidate rows, request optimization, promote TestCase rows,
+  create AutomationDraft rows, create ToolInvocation rows, execute AITasks,
+  mutate prompt context evidence, mutate KnowledgeEvidence, mutate
+  TestKnowledgeCard rows, mutate ReviewHistory, mutate generated case human
+  review decision artifacts, mutate evidence packages, mutate historical
+  evidence, mutate Artifact rows outside declared summary export evidence,
+  render frontend pages, expose backend feature APIs, add endpoints, routers,
+  services, workers, queues, schedulers, run migrations, add package upgrades,
+  add RBAC, create tenants, or change permissions.
+
 ## 6.2 Knowledge Feedback Seed Contract
 
 KnowledgeFeedbackAgent is bound to `knowledge_feedback:v1` and

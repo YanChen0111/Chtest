@@ -234,6 +234,81 @@ Generated Case Human Review Decision state rules:
   mutation, historical evidence mutation, runner behavior changes, remote CI
   provider behavior, RBAC, tenants, permissions, or package upgrades.
 
+### 3.3 Generated Case Human Review Decision Summary Export State Contract
+
+This state contract is planning-only. It defines future summary export
+evidence labels for Generated Case Human Review Decision artifacts before any
+backend runtime API, frontend page, report renderer, export/download endpoint,
+provider integration, provider SDK, external call, vector database, embedding,
+reranking, graph runtime, MCP runtime, runtime retrieval, prompt execution,
+AITask orchestration, TestCase promotion, GeneratedCaseCandidate
+approve/reject mutation, request optimization mutation, automation draft
+creation, RBAC, tenants, or permissions exist.
+
+```text
+generated_case_human_review_decision_recorded -> generated_case_human_review_decision_summary_export_pending
+generated_case_human_review_decision_summary_export_pending -> generated_case_human_review_decision_summary_exported_for_human_review_audit
+generated_case_human_review_decision_summary_export_pending -> generated_case_human_review_decision_summary_export_incomplete
+generated_case_human_review_decision_summary_export_pending -> generated_case_human_review_decision_summary_export_failed_validation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| generated_case_human_review_decision_recorded | build_generated_case_human_review_decision_summary_export | generated_case_human_review_decision_summary_export_pending | Future workflow/API | Summarizes recorded decision evidence |
+| generated_case_human_review_decision_summary_export_pending | exported_for_human_review_audit | generated_case_human_review_decision_summary_exported_for_human_review_audit | Future workflow/API | Records exported decision groups |
+| generated_case_human_review_decision_summary_export_pending | incomplete | generated_case_human_review_decision_summary_export_incomplete | Future workflow/API | Records excluded decision artifact reasons |
+| generated_case_human_review_decision_summary_export_pending | failed_validation | generated_case_human_review_decision_summary_export_failed_validation | Future workflow/API | Records failure code and visible reason |
+
+Generated Case Human Review Decision Summary Export state rules:
+
+- `build_generated_case_human_review_decision_summary_export` requires one or
+  more `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate ids/statuses, candidate summaries, decision labels,
+  decision statuses, reviewer labels/comments, accepted constraints, requested
+  edit fields, optimization request summaries, rejection reasons, blocker
+  reasons, duplicate resolution notes, ReviewHistory links, source hashes, and
+  source manifest ids.
+- Summary export states are audit evidence labels only. They may produce a
+  `generated_case_human_review_decision_summary_export` artifact id, summary
+  status, exported decision groups, accepted-for-future-promotion summary,
+  accepted-with-required-edits summary, needs-optimization summary,
+  rejected-for-insufficient-evidence summary, blocked summary, duplicate
+  summary, needs-more-evidence summary, failed-validation summary, included
+  decision artifact ids, excluded decision artifact ids, excluded decision
+  artifact reasons, source traceability summary, ReviewHistory summary,
+  failure code, and visible reason.
+- Summary export states must not transition a GeneratedCaseCandidate to
+  approved, approved_after_edit, rejected, needs_optimization, or
+  optimization_pending_review. Existing human review transitions remain the
+  only approval/rejection/request-optimization path.
+- Missing, stale, unsafe, cross-project, unbounded,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, review-decision-missing,
+  review-decision-invalid, decision-label-unsupported, reviewer-missing,
+  source-hash-mismatched, review-history-missing, artifact-mismatched,
+  summary-export-invalid, credential-required, runtime-required,
+  provider-required, approval-required, optimization-required, or
+  promotion-required input must produce
+  `generated_case_human_review_decision_summary_export_failed_validation` with
+  a failure code and visible reason and must not append a successful summary
+  export.
+- Summary export states must not create backend runtime APIs, endpoints,
+  routers, services, workers, queues, schedulers, migrations, frontend pages,
+  reports, report renderers, export/download endpoints, provider
+  integrations, provider SDK calls, external calls, credentials, remote URL
+  fetches, vector indexes, embeddings, reranking, graph jobs, MCP runtime
+  calls, prompt execution, AITask orchestration, TestCase promotion,
+  GeneratedCaseCandidate approve/reject mutation, request optimization
+  mutation, automation draft creation, ToolInvocation rows, TestRun/TestResult
+  rows, artifact upload, prompt context evidence mutation, KnowledgeEvidence
+  mutation, ReviewHistory mutation, generated case human review decision
+  artifact mutation, evidence package mutation, historical evidence mutation,
+  runner behavior changes, remote CI provider behavior, RBAC, tenants,
+  permissions, or package upgrades.
+
 ## 7.3 KnowledgeFeedbackDraft State Contract
 
 KnowledgeFeedbackAgent output is draft feedback evidence. It is not a

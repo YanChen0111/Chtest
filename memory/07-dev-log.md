@@ -1,5 +1,38 @@
 # Development Log
 
+## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Contracts
+
+### Completed
+
+- Added Generated Case Human Review Decision Summary Export contract
+  boundaries to data, API, state-machine, artifact, and prompt/skill
+  contracts.
+- Defined
+  `build_generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_artifact_id`, and
+  `generated_case_human_review_evidence_package_artifact_id` as
+  contract-only summary export audit evidence.
+- Defined exported decision groups, included/excluded decision artifact ids,
+  excluded decision artifact reasons, source traceability summary,
+  ReviewHistory summary, failure code, visible reason, and forbidden side
+  effects.
+- Updated the Slice 56 task table with Task 1 commit `79d68ab` and Task 2
+  status.
+- Updated `NEXT_AI_TASK.md` to Slice 56 Task 3.
+
+### Verification
+
+- `rg -n "Generated Case Human Review Decision Summary Export|generated_case_human_review_decision_summary_export|build_generated_case_human_review_decision_summary_export|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|exported decision groups|included decision artifact ids|excluded decision artifact reasons|source traceability summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md`
+- Result: required contract terms found.
+- `git diff --check`
+- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
+  working-copy warnings.
+
+### Next Step
+
+- Commit Task 2, then continue Slice 56 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Plan
 
 ### Completed

@@ -10,30 +10,26 @@ Slice 56: Generated Case Human Review Decision Summary Export Contract.
 
 ## Current Task
 
-Slice 56 Task 2: Define Generated Case Human Review Decision Summary Export contracts.
+Slice 56 Task 3: Add Generated Case Human Review Decision Summary Export golden smoke.
 
 ## Product Value Answer
 
-After this task, Chtest has data, API, state-machine, artifact, and
-prompt/skill contracts for recording Generated Case Human Review Decision
-Summary Export evidence from Slice 55 decision artifacts without performing
-actual GeneratedCaseCandidate approval/rejection, request optimization,
-TestCase promotion, automation draft creation, runtime API work, UI work,
-report/export endpoints, or provider/retrieval behavior.
+After this task, Chtest has a focused golden fixture and smoke test proving
+Generated Case Human Review Decision Summary Export stays contract-only audit
+evidence and cannot approve or reject candidates, request optimization,
+promote TestCases, create AutomationDrafts, render reports, expose
+export/download endpoints, or create runtime/provider/retrieval behavior.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/10-v2-scope-options.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `docs/contracts/04-artifact-contract.md`
-8. `docs/contracts/05-prompt-skill-contract.md`
-9. `docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+4. `docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md`
+5. `docs/fixtures/44-generated-case-human-review-decision-summary-export-golden.md`
+6. `backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py`
+7. `memory/08-session-handoff.md`
+8. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -48,22 +44,19 @@ report/export endpoints, or provider/retrieval behavior.
 Update only these files for the current task:
 
 ```text
-docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-docs/contracts/04-artifact-contract.md
-docs/contracts/05-prompt-skill-contract.md
+backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py
+docs/fixtures/44-generated-case-human-review-decision-summary-export-golden.md
 docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Contract docs only. Do not add frontend code, backend runtime feature code,
-backend feature API, endpoint, router, service, worker, queue, scheduler,
-migration, package upgrade, provider integration, provider SDK, external call,
-vector database, embeddings, reranking, graph runtime, MCP runtime, runtime
-retrieval, prompt execution, AITask orchestration, automatic
+Golden fixture and test only. Do not add frontend code, backend runtime
+feature code, backend feature API, endpoint, router, service, worker, queue,
+scheduler, migration, package upgrade, provider integration, provider SDK,
+external call, vector database, embeddings, reranking, graph runtime, MCP
+runtime, runtime retrieval, prompt execution, AITask orchestration, automatic
 `used_knowledge=true`, TestCase promotion, GeneratedCaseCandidate
 approve/reject mutation, request optimization mutation, automation draft
 creation, runner behavior changes, artifact upload, report generation
@@ -73,33 +66,35 @@ permissions.
 ## Verification Command
 
 ```bash
-rg -n "Generated Case Human Review Decision Summary Export|generated_case_human_review_decision_summary_export|build_generated_case_human_review_decision_summary_export|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|exported decision groups|included decision artifact ids|excluded decision artifact reasons|source traceability summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: required contract terms are present and diff check passes.
+Expected result: focused golden smoke passes and diff check passes.
 
 ## Acceptance
 
-- Contracts define generated case human review decision summary export inputs,
-  outputs, decision artifact linkage, evidence package artifact linkage,
-  exported decision groups, included/excluded decision artifact ids, source
+- Golden names Generated Case Human Review Decision Summary Export,
+  `generated_case_human_review_decision_summary_export`,
+  `build_generated_case_human_review_decision_summary_export`, decision
+  artifact id, evidence package artifact id, decision labels, exported
+  decision groups, included/excluded decision artifact ids, source
   traceability summary, ReviewHistory, failure behavior, and forbidden side
   effects.
-- Contracts keep backend runtime APIs, frontend, report rendering,
-  export/download endpoints, provider integrations, SDKs, external calls,
-  vector database, embeddings, reranking, prompt execution, candidate
-  approval/rejection, request optimization, TestCase promotion, automation
-  draft creation, RBAC, tenants, permissions, and package upgrades out of
-  scope.
-- `NEXT_AI_TASK.md` points to Slice 56 Task 3.
+- Golden proves no backend runtime API, frontend, report renderer,
+  export/download endpoint, provider SDK, external call, vector database,
+  embedding, reranking, prompt execution, candidate approval/rejection,
+  request optimization mutation, TestCase promotion, automation draft
+  creation, RBAC, tenants, permissions, package upgrade, or source evidence
+  mutation is created by the contract.
+- `NEXT_AI_TASK.md` points to Slice 56 Completion Gate.
 
 ## Commit Message
 
 ```text
-docs(v2): define generated case human review decision summary export contracts
+test(golden): add generated case human review decision summary export smoke
 ```
 
 ## Next Task
 
-Slice 56 Task 3: Add Generated Case Human Review Decision Summary Export golden smoke.
+Slice 56 Completion Gate.
