@@ -1566,6 +1566,81 @@ KnowledgeAdapter Provider Evaluation Review Summary Export state rules:
   RBAC, create tenants, change permissions, or update remote CI provider
   behavior.
 
+## 7.1.4 KnowledgeAdapter Provider Evaluation Review Audit Handoff State Contract
+
+This state contract is planning-only. It defines future audit handoff labels
+for provider evaluation review summary export evidence before any provider
+enablement, provider SDK, external call, vector database, embedding,
+reranking, background indexing, runtime retrieval, provider-backed prompt
+context behavior, frontend page, report generation behavior, export/download
+endpoint, migration, package upgrade, RBAC, tenants, or permissions exists.
+
+```text
+provider_evaluation_review_summary_exported_for_planning -> provider_evaluation_review_audit_handoff_pending
+provider_evaluation_review_summary_export_failed_validation -> provider_evaluation_review_audit_handoff_failed_validation
+provider_evaluation_review_audit_handoff_pending -> provider_evaluation_review_audit_handoff_complete
+provider_evaluation_review_audit_handoff_pending -> provider_evaluation_review_audit_handoff_incomplete
+provider_evaluation_review_audit_handoff_pending -> provider_evaluation_review_audit_handoff_blocked
+provider_evaluation_review_audit_handoff_pending -> provider_evaluation_review_audit_handoff_failed_validation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| provider_evaluation_review_summary_exported_for_planning | build_knowledge_adapter_provider_evaluation_review_audit_handoff | provider_evaluation_review_audit_handoff_pending | Future workflow/API | Starts audit handoff evidence packaging |
+| provider_evaluation_review_summary_export_failed_validation | build_knowledge_adapter_provider_evaluation_review_audit_handoff | provider_evaluation_review_audit_handoff_failed_validation | Future workflow/API | Fails because summary export is already invalid |
+| provider_evaluation_review_audit_handoff_pending | complete | provider_evaluation_review_audit_handoff_complete | Future workflow/API | Records complete evidence chain status |
+| provider_evaluation_review_audit_handoff_pending | incomplete | provider_evaluation_review_audit_handoff_incomplete | Future workflow/API | Records missing or excluded artifact reasons |
+| provider_evaluation_review_audit_handoff_pending | blocked | provider_evaluation_review_audit_handoff_blocked | Future workflow/API | Records unresolved blocker or safety question summary |
+| provider_evaluation_review_audit_handoff_pending | failed_validation | provider_evaluation_review_audit_handoff_failed_validation | Future workflow/API | Records failure code and visible reason |
+
+KnowledgeAdapter Provider Evaluation Review Audit Handoff state rules:
+
+- `build_knowledge_adapter_provider_evaluation_review_audit_handoff` requires
+  `knowledge_adapter_provider_evaluation_review_summary_export_artifact_id`,
+  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  metadata, review decision/status labels, accepted constraints, blocked
+  reasons, unsupported reasons, requested revision fields, unresolved safety
+  questions, unresolved follow-up flags, license/reference summaries,
+  KnowledgeEvidence normalization summary, provider_state summary, disabled by
+  default summary, fallback summary, metrics summary, source manifest ids,
+  source hashes, and ReviewHistory links when available.
+- Audit handoff states are evidence-chain labels only. They may produce audit
+  handoff artifact id, handoff summary, evidence chain status, included
+  artifact ids, excluded artifact reasons, provider review decision group
+  summary, unresolved blocker summary, unresolved safety question summary,
+  disabled by default summary, source traceability summary, ReviewHistory
+  links, failure code, and visible reason.
+- Evidence chain status values are `complete`, `incomplete`, `blocked`, and
+  `failed_validation`. They must not mutate `KnowledgeAdapterConfig.status`,
+  create runtime connectivity, enable providers, create retrieval evidence,
+  generate reports, expose export/download endpoints, or set
+  `used_knowledge=true`.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, summary-export-missing,
+  summary-export-invalid, review-decision-missing, review-decision-invalid,
+  evaluation-plan-missing, evaluation-plan-mismatched,
+  review-decision-mismatched, cross-project, unbounded, credential-required,
+  runtime-required, or provider-enable-required input must produce
+  `provider_evaluation_review_audit_handoff_failed_validation` with a visible
+  reason and must not append a successful audit handoff.
+- Provider evaluation review audit handoff states must not install packages,
+  call providers, call provider SDKs, store credentials, fetch remote URLs,
+  create vector indexes, create embeddings, rerank, run background indexing,
+  run graph jobs, start MCP runtime, run runtime retrieval, create
+  provider-backed prompt context evidence, assemble prompts, run AITasks,
+  render frontend pages, generate reports, expose export/download endpoints,
+  upload artifacts, mutate the provider evaluation review summary export
+  artifact, mutate the reviewed provider evaluation review decision artifact,
+  mutate the reviewed provider evaluation plan artifact, mutate provider
+  metadata, mutate KnowledgeAdapterConfig runtime state, mutate
+  KnowledgeEvidence, mutate historical evidence, mutate Artifact rows outside
+  declared audit handoff evidence, mutate TestKnowledgeCard rows, approve or
+  reject GeneratedCaseCandidate rows, promote TestCase rows, create
+  ToolInvocation rows, enable providers, add RBAC, create tenants, change
+  permissions, or update remote CI provider behavior.
+
 ## 7.2 TestKnowledgeCard 状态规则
 
 TestKnowledgeCard uses `EntityStatus` only:

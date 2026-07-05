@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-07-05 Slice 53 KnowledgeAdapter Provider Evaluation Review Audit Handoff Contracts
+
+Completed:
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  KnowledgeAdapter Provider Evaluation Review Audit Handoff.
+- Added contract-only
+  `build_knowledge_adapter_provider_evaluation_review_audit_handoff`
+  semantics with provider evaluation review summary export artifact linkage,
+  provider evaluation review decision artifact linkage, provider evaluation
+  plan artifact linkage, evidence chain status, included artifact ids,
+  excluded artifact reasons, provider review decision group summary,
+  unresolved blocker summary, unresolved safety question summary, unresolved
+  follow-up flags, ReviewHistory links, failure code, and visible reason.
+- Added future artifact type and filename:
+  `knowledge_adapter_provider_evaluation_review_audit_handoff` and
+  `knowledge_adapter_provider_evaluation_review_audit_handoff.json`.
+- `NEXT_AI_TASK.md` now points to Slice 53 Task 3: Add KnowledgeAdapter
+  provider evaluation review audit handoff golden smoke.
+
+Verification:
+
+```bash
+rg -n "KnowledgeAdapter Provider Evaluation Review Audit Handoff|knowledge_adapter_provider_evaluation_review_audit_handoff|build_knowledge_adapter_provider_evaluation_review_audit_handoff|provider evaluation review summary export artifact|provider evaluation review decision artifact|provider evaluation plan artifact|evidence chain status|included artifact ids|excluded artifact reasons|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found.
+- Diff check is clean except Windows LF-to-CRLF warnings.
+
+Next recommended task:
+
+- Commit `docs(v2): define knowledge adapter provider evaluation review audit handoff contracts`.
+- Continue Slice 53 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 53 KnowledgeAdapter Provider Evaluation Review Audit Handoff Plan
 
 Completed:

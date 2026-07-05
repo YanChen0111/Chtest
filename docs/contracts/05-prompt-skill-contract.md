@@ -397,6 +397,90 @@ KnowledgeAdapter provider evaluation review summary export rules:
   migrations, add package upgrades, add RBAC, create tenants, or change
   permissions.
 
+### 4.1.4 KnowledgeAdapter Provider Evaluation Review Audit Handoff Contract
+
+This contract defines prompt/skill trace rules for future KnowledgeAdapter
+provider evaluation review audit handoff evidence. It is contract-only and
+does not assemble prompts, execute AITasks, call providers, run retrieval,
+create provider-backed prompt context evidence, generate reports, expose
+export/download endpoints, or enable providers.
+
+KnowledgeAdapter provider evaluation review audit handoff input must include:
+
+- `knowledge_adapter_provider_evaluation_review_audit_handoff_action=build_knowledge_adapter_provider_evaluation_review_audit_handoff`.
+- `knowledge_adapter_provider_evaluation_review_summary_export_artifact_id`.
+- `knowledge_adapter_provider_evaluation_review_decision_artifact_id`.
+- `knowledge_adapter_provider_evaluation_plan_artifact_id`.
+- PromptVersion id/name/version and SkillVersion id/name/version when the
+  audit handoff is produced by a prompt or skill.
+- Candidate provider name, provider family, adapter type, provider version,
+  and adapter version.
+- Review summary status, review decision, review status, exported decision
+  groups, accepted constraints, requested revision fields, blocked reasons,
+  unsupported reasons, unresolved safety questions, unresolved follow-up
+  flags, and decision rationale.
+- Provider suitability summary, license/reference summary, KnowledgeEvidence
+  normalization summary, provider_state summary, disabled by default summary,
+  fallback summary, metrics summary, source manifest ids, source hashes,
+  ReviewHistory links, failure code, and visible reason when applicable.
+
+KnowledgeAdapter provider evaluation review audit handoff output may include:
+
+- Provider evaluation review audit handoff id or artifact id.
+- `knowledge_adapter_provider_evaluation_review_audit_handoff` artifact or
+  manifest naming.
+- `knowledge_adapter_provider_evaluation_review_audit_handoff.json`.
+- Evidence chain status values: `complete`, `incomplete`, `blocked`, and
+  `failed_validation`.
+- Handoff summary, included artifact ids, excluded artifact reasons, provider
+  review decision group summary, unresolved blocker summary, unresolved safety
+  question summary, disabled by default summary, source traceability summary,
+  ReviewHistory links, failure code, and visible reason.
+
+KnowledgeAdapter provider evaluation review audit handoff rules:
+
+- Audit handoff records are evidence-chain packages only. They must not be
+  treated as provider configuration enablement, runtime provider connectivity,
+  retrieval permission, prompt eligibility, report generation behavior,
+  export/download endpoint behavior, or proof that provider evidence was used.
+- `provider_state` is display/health metadata and must not start runtime
+  retrieval.
+- Disabled by default remains required until a later scoped integration
+  explicitly enables a provider.
+- Accepted for planning and accepted with constraints remain future-planning
+  labels only, not runtime integration approvals.
+- Incomplete or blocked audit handoffs must preserve excluded artifact
+  reasons, unresolved blocker summary, unresolved safety questions,
+  unresolved follow-up flags, source hashes, and ReviewHistory links.
+- `used_knowledge` must not be auto-marked true by provider evaluation review
+  audit handoff.
+- Provider-specific payloads must not leak into TestKnowledgeCard,
+  KnowledgeEvidence, GeneratedCaseCandidate, prompt context evidence, reports,
+  review surfaces, summary export surfaces, or audit handoff surfaces.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, summary-export-missing,
+  summary-export-invalid, review-decision-missing, review-decision-invalid,
+  evaluation-plan-missing, evaluation-plan-mismatched,
+  review-decision-mismatched, cross-project, unbounded, credential-required,
+  runtime-required, or provider-enable-required input must produce a failure
+  code and visible reason and must not append a successful audit handoff.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, integrate an SDK, store credentials, fetch remote URLs,
+  create a vector index, create embeddings, rerank, run background indexing,
+  run a graph job, invoke MCP runtime, create provider-backed prompt context
+  evidence, generate reports, expose export/download endpoints, mutate the
+  provider evaluation review summary export artifact, mutate the reviewed
+  provider evaluation review decision artifact, mutate the reviewed provider
+  evaluation plan artifact, mutate provider metadata, mutate Artifact rows
+  outside declared audit handoff evidence, mutate KnowledgeAdapterConfig
+  outside declared audit handoff evidence, mutate KnowledgeEvidence, mutate
+  historical evidence, mutate TestKnowledgeCard rows, approve or reject
+  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
+  rows, render frontend pages, expose backend feature APIs, add endpoints,
+  routers, services, workers, queues, schedulers, run migrations, add package
+  upgrades, add RBAC, create tenants, or change permissions.
+
 ### 4.2 TestKnowledgeCard Prompt Context Evidence Contract
 
 This contract defines prompt/skill trace rules for future TestKnowledgeCard

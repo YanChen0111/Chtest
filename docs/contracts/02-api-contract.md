@@ -1017,6 +1017,128 @@ KnowledgeAdapter Provider Evaluation Review Summary Export hard rules:
   ToolInvocation rows, enable a provider, add RBAC, create tenants, change
   permissions, or update remote CI provider behavior.
 
+Allowed provider evaluation review audit handoff action:
+
+- `build_knowledge_adapter_provider_evaluation_review_audit_handoff`: future
+  scoped handoff action that packages provider evaluation review summary
+  export evidence into an audit evidence-chain bundle for future planning
+  while preserving summary export artifact linkage, review decision artifact
+  linkage, provider evaluation plan artifact linkage, included artifact ids,
+  excluded artifact reasons, evidence chain status, unresolved blocker
+  summary, unresolved safety question summary, unresolved follow-up flags,
+  source hashes, ReviewHistory links, failure code, and visible reason.
+
+KnowledgeAdapter provider evaluation review audit handoff payload shape:
+
+```json
+{
+  knowledge_adapter_provider_evaluation_review_audit_handoff_action: build_knowledge_adapter_provider_evaluation_review_audit_handoff,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  knowledge_adapter_provider_evaluation_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000923,
+  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
+  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
+  candidate_provider_name: haystack,
+  provider_family: Haystack,
+  adapter_type: external_retrieval_provider_candidate,
+  provider_version: 2.x,
+  adapter_version: evaluation-plan-v1,
+  review_summary_status: exported_for_planning,
+  review_decision: needs_revision,
+  review_status: needs_revision,
+  exported_decision_groups: [needs_revision],
+  accepted_constraints: [],
+  requested_revision_fields: [license_review_result],
+  blocked_reasons: [],
+  unsupported_reasons: [],
+  unresolved_safety_questions: [license compatibility must be reviewed],
+  unresolved_follow_up_flags: [license_review_required],
+  provider_suitability_summary: needs_revision,
+  license_reference_summary: license review required; reference snapshot preserved,
+  knowledge_evidence_normalization_summary: source trace fields required before future use,
+  provider_state_summary: disabled,
+  disabled_by_default_summary: true,
+  fallback_summary: local_no_knowledge_fallback remains required,
+  metrics_summary: evidence normalization and source traceability remain incomplete,
+  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
+  source_hashes: [sha256:provider-docs-snapshot],
+  review_history_links: [00000000-0000-0000-0000-000000000895]
+}
+```
+
+KnowledgeAdapter provider evaluation review audit handoff response shape for a
+future scoped implementation:
+
+```json
+{
+  knowledge_adapter_provider_evaluation_review_audit_handoff_action: build_knowledge_adapter_provider_evaluation_review_audit_handoff,
+  knowledge_adapter_provider_evaluation_review_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000924,
+  knowledge_adapter_provider_evaluation_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000923,
+  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
+  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
+  handoff_summary: provider evaluation review requires license revision before integration planning,
+  evidence_chain_status: incomplete,
+  included_artifact_ids: [
+    00000000-0000-0000-0000-000000000921,
+    00000000-0000-0000-0000-000000000922,
+    00000000-0000-0000-0000-000000000923
+  ],
+  excluded_artifact_reasons: [],
+  provider_review_decision_group_summary: needs_revision,
+  unresolved_blocker_summary: none,
+  unresolved_safety_question_summary: license compatibility must be reviewed,
+  disabled_by_default_summary: true,
+  source_traceability_summary: source hashes and source manifest ids preserved,
+  review_history_links: [00000000-0000-0000-0000-000000000895],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+KnowledgeAdapter Provider Evaluation Review Audit Handoff hard rules:
+
+- Audit handoff input must reference a same-project provider evaluation review
+  summary export artifact,
+  `knowledge_adapter_provider_evaluation_review_summary_export_artifact_id`, a
+  same-project provider evaluation review decision artifact,
+  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`, and a
+  same-project provider evaluation plan artifact,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`.
+- Audit handoff output must be evidence-chain packaging only. It may record
+  audit handoff artifact id, handoff summary, evidence chain status, included
+  artifact ids, excluded artifact reasons, provider review decision group
+  summary, unresolved blocker summary, unresolved safety question summary,
+  unresolved follow-up flags, disabled by default summary, source
+  traceability summary, ReviewHistory links, failure code, and visible reason.
+- Evidence chain status values may include `complete`, `incomplete`,
+  `blocked`, and `failed_validation`. They must not mutate
+  `KnowledgeAdapterConfig.status`, create runtime connectivity, enable
+  providers, create retrieval evidence, generate reports, expose
+  export/download endpoints, or set `used_knowledge=true`.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, summary-export-missing,
+  summary-export-invalid, review-decision-missing, review-decision-invalid,
+  evaluation-plan-missing, evaluation-plan-mismatched,
+  review-decision-mismatched, cross-project, unbounded, credential-required,
+  runtime-required, or provider-enable-required input must return a failure
+  code and visible reason and must not append a successful audit handoff.
+- `build_knowledge_adapter_provider_evaluation_review_audit_handoff` must not
+  install packages, call providers, call provider SDKs, store credentials,
+  fetch remote URLs, create vector indexes, create embeddings, rerank, run
+  background indexing, run graph jobs, start MCP runtime, run runtime
+  retrieval, create provider-backed prompt context evidence, assemble prompts,
+  run AITasks, render frontend pages, generate reports, expose
+  export/download endpoints, upload artifacts, mutate Artifact rows outside
+  declared audit handoff evidence, mutate the provider evaluation review
+  summary export artifact, mutate the reviewed provider evaluation review
+  decision artifact, mutate the reviewed provider evaluation plan artifact,
+  mutate provider metadata, mutate KnowledgeEvidence, mutate
+  KnowledgeAdapterConfig outside declared audit handoff evidence, mutate
+  historical evidence, mutate TestKnowledgeCard rows, approve or reject
+  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
+  rows, enable a provider, add RBAC, create tenants, change permissions, or
+  update remote CI provider behavior.
+
 ## 3. Requirement To Case APIs
 
 ### 3.1 Create Requirement

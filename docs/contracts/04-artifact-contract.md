@@ -32,6 +32,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   knowledge_adapter_provider_evaluation_plan.json
   knowledge_adapter_provider_evaluation_review_decision.json
   knowledge_adapter_provider_evaluation_review_summary_export.json
+  knowledge_adapter_provider_evaluation_review_audit_handoff.json
   test_knowledge_card_prompt_context_evidence.json
   test_knowledge_card_prompt_context_consumption.json
   test_knowledge_card_prompt_context_audit_summary.json
@@ -367,6 +368,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | knowledge_adapter_provider_evaluation_plan | application/json | Future KnowledgeAdapter provider evaluation planning evidence |
 | knowledge_adapter_provider_evaluation_review_decision | application/json | Future KnowledgeAdapter provider evaluation review decision evidence |
 | knowledge_adapter_provider_evaluation_review_summary_export | application/json | Future KnowledgeAdapter provider evaluation review summary export evidence |
+| knowledge_adapter_provider_evaluation_review_audit_handoff | application/json | Future KnowledgeAdapter provider evaluation review audit handoff evidence |
 | test_knowledge_card | application/json | Structured testing knowledge card snapshot |
 | test_knowledge_card_handoff | application/json | Future TestKnowledgeCard handoff candidate payload |
 | test_knowledge_card_candidate_review | application/json | Human review evidence for a handoff candidate |
@@ -1385,6 +1387,61 @@ KnowledgeAdapter Provider Evaluation Review Summary Export artifact rules:
   call provider SDKs, fetch remote URLs, change retrieval ranking, create
   vector indexes, create embeddings, rerank, run background indexing, run graph
   jobs, invoke MCP runtime, render frontend pages, generate reports, expose
+  export/download endpoints, upload artifacts, call remote CI providers, add
+  RBAC, create tenants, change permissions, or install packages.
+
+KnowledgeAdapter Provider Evaluation Review Audit Handoff artifact rules:
+
+- `knowledge_adapter_provider_evaluation_review_audit_handoff.json` may be
+  stored as an Artifact with
+  `artifact_type=knowledge_adapter_provider_evaluation_review_audit_handoff`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=knowledge_adapter_provider_evaluation_review_audit_handoff`
+  in a later scoped implementation.
+- The provider evaluation review audit handoff artifact must include
+  `build_knowledge_adapter_provider_evaluation_review_audit_handoff`,
+  provider evaluation review summary export artifact id,
+  `knowledge_adapter_provider_evaluation_review_summary_export_artifact_id`,
+  provider evaluation review decision artifact id,
+  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`,
+  provider evaluation plan artifact id,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  name, provider family, adapter type, provider version, adapter version,
+  review summary status, review decision, review status, exported decision
+  groups, accepted constraints, requested revision fields, blocked reasons,
+  unsupported reasons, unresolved safety questions, unresolved follow-up
+  flags, provider suitability summary, license/reference summary,
+  KnowledgeEvidence normalization summary, provider_state summary, disabled by
+  default summary, fallback summary, metrics summary, handoff summary,
+  evidence chain status, included artifact ids, excluded artifact reasons,
+  provider review decision group summary, unresolved blocker summary,
+  unresolved safety question summary, source traceability summary, source
+  manifest ids, source hashes, ReviewHistory links, failure code, and visible
+  reason when applicable.
+- Evidence chain status values may include `complete`, `incomplete`,
+  `blocked`, and `failed_validation`. They are audit handoff labels only and
+  must not enable a provider, call a provider, run runtime retrieval, create
+  embeddings, generate reports, expose export/download endpoints, or set
+  `used_knowledge=true`.
+- KnowledgeAdapter provider evaluation review audit handoff artifacts must not
+  contain raw provider payloads, credentials, API keys, tokens, OAuth state,
+  remote fetch payloads, vector store payloads, embedding vectors, reranker
+  traces, graph runtime payloads, executable prompt assembly payloads, runtime
+  `prompt_input.json`, frontend-rendered markup, report-rendered payloads,
+  export-rendered payloads, downloadable provider payloads, or generated
+  replacement evidence.
+- KnowledgeAdapter provider evaluation review audit handoff artifacts must not
+  mutate Artifact rows outside declared audit handoff output, mutate the
+  provider evaluation review summary export artifact, mutate the reviewed
+  provider evaluation review decision artifact, mutate the reviewed provider
+  evaluation plan artifact, mutate provider metadata, mutate
+  KnowledgeAdapterConfig runtime state, mutate KnowledgeEvidence rows, mutate
+  historical evidence, mutate TestKnowledgeCard rows, approve or reject
+  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
+  rows, run prompt assembly, execute AITasks, call providers, call provider
+  SDKs, fetch remote URLs, change retrieval ranking, create vector indexes,
+  create embeddings, rerank, run background indexing, run graph jobs, invoke
+  MCP runtime, render frontend pages, generate reports, expose
   export/download endpoints, upload artifacts, call remote CI providers, add
   RBAC, create tenants, change permissions, or install packages.
 
