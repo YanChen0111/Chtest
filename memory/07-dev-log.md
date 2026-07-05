@@ -1,5 +1,39 @@
 # Development Log
 
+## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Plan
+
+### Completed
+
+- Added Slice 51 plan:
+  `docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`.
+- The plan scopes KnowledgeAdapter Provider Evaluation Review Decision
+  contracts for human review decisions on provider evaluation plan evidence:
+  provider evaluation plan artifact review inputs, review decisions, review
+  status labels, provider suitability status, KnowledgeEvidence
+  normalization, provider_state recommendation, fallback behavior,
+  license/reference intake, metrics, disabled by default policy,
+  ReviewHistory, failure behavior, and non-goals.
+- The plan keeps provider evaluation review decision contract-only and
+  excludes provider enablement, Haystack/LlamaIndex/GraphRAG integration,
+  provider SDKs, credentials, external calls, vector database, embeddings,
+  reranking, background indexing, runtime retrieval, provider-backed prompt
+  context evidence, frontend pages, RBAC, tenants, permissions, and package
+  upgrades.
+- Updated `NEXT_AI_TASK.md` to Slice 51 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`
+- `rg -n "KnowledgeAdapter Provider Evaluation Review Decision|provider evaluation review|review_knowledge_adapter_provider_evaluation|review decision|accepted with constraints|blocked|needs revision|unsupported|provider suitability status|disabled by default|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists and required terms are present.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add knowledge adapter provider evaluation review decision plan`.
+- Continue Slice 51 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 50 Completion Gate
 
 ### Completed

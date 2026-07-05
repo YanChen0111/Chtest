@@ -1,5 +1,36 @@
 # Session Handoff
 
+## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Plan
+
+Completed:
+
+- Added Slice 51 plan:
+  `docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`.
+- The plan defines a contract-first boundary for human review decisions on
+  provider evaluation plan evidence before provider enablement, provider
+  integrations, SDKs, external calls, vector infrastructure, runtime
+  retrieval, frontend pages, RBAC, tenants, permissions, or package upgrades.
+- `NEXT_AI_TASK.md` now points to Slice 51 Task 2: Define KnowledgeAdapter
+  provider evaluation review decision contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md
+rg -n "KnowledgeAdapter Provider Evaluation Review Decision|provider evaluation review|review_knowledge_adapter_provider_evaluation|review decision|accepted with constraints|blocked|needs revision|unsupported|provider suitability status|disabled by default|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists and required terms are present.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add knowledge adapter provider evaluation review decision plan`.
+- Continue Slice 51 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 50 Completion Gate
 
 Completed:
