@@ -10,14 +10,16 @@ Slice 54: Generated Case Human Review Evidence Package Contract.
 
 ## Current Task
 
-Slice 54 Task 1: Add Generated Case Human Review Evidence Package task plan.
+Slice 54 Task 2: Define Generated Case Human Review Evidence Package
+contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for packaging GeneratedCaseCandidate
-review evidence into a human-review evidence package without approving or
-rejecting candidates, promoting TestCases, creating automation drafts, adding
-runtime APIs, or changing provider/retrieval behavior.
+After this task, Chtest has data, API, state-machine, artifact, and
+prompt/skill contracts for packaging GeneratedCaseCandidate review evidence
+into a human-review evidence package without approving or rejecting
+candidates, promoting TestCases, creating automation drafts, adding runtime
+APIs, or changing provider/retrieval behavior.
 
 ## Must Read
 
@@ -27,9 +29,11 @@ runtime APIs, or changing provider/retrieval behavior.
 4. `docs/contracts/01-data-model-contract.md`
 5. `docs/contracts/02-api-contract.md`
 6. `docs/contracts/03-state-machines.md`
-7. `docs/contracts/05-prompt-skill-contract.md`
-8. `memory/08-session-handoff.md`
-9. `memory/07-dev-log.md`
+7. `docs/contracts/04-artifact-contract.md`
+8. `docs/contracts/05-prompt-skill-contract.md`
+9. `docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md`
+10. `memory/08-session-handoff.md`
+11. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -44,19 +48,23 @@ runtime APIs, or changing provider/retrieval behavior.
 Update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
+docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Task plan only. Do not update contracts yet. Do not add frontend code, backend
-runtime feature code, backend feature API, endpoint, router, service, worker,
-queue, scheduler, migration, package upgrade, provider integration, provider
-SDK, external call, vector database, embeddings, reranking, graph runtime, MCP
-runtime, runtime retrieval, prompt execution, AITask orchestration,
-automatic `used_knowledge=true`, TestCase promotion, GeneratedCaseCandidate
+Contract docs only. Do not add frontend code, backend runtime feature code,
+backend feature API, endpoint, router, service, worker, queue, scheduler,
+migration, package upgrade, provider integration, provider SDK, external call,
+vector database, embeddings, reranking, graph runtime, MCP runtime, runtime
+retrieval, prompt execution, AITask orchestration, automatic
+`used_knowledge=true`, TestCase promotion, GeneratedCaseCandidate
 approve/reject mutation, automation draft creation, runner behavior changes,
 artifact upload/mutation outside declared package evidence, RBAC, tenants, or
 permissions.
@@ -64,36 +72,32 @@ permissions.
 ## Verification Command
 
 ```bash
-if (-not (Test-Path docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md)) { exit 1 }
-rg -n "Generated Case Human Review Evidence Package|generated_case_human_review_evidence_package|GeneratedCaseCandidate|source_knowledge_evidence_ids|knowledge_evidence_refs_json|quality_score|review_findings_json|coverage_gap_notes|automation_readiness|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+rg -n "Generated Case Human Review Evidence Package|generated_case_human_review_evidence_package|build_generated_case_human_review_evidence_package|GeneratedCaseCandidate|source_knowledge_evidence_ids|knowledge_evidence_refs_json|quality_score|review_findings_json|coverage_gap_notes|automation_readiness|dedup findings|human review checklist|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md
 git diff --check
 ```
 
-Expected result: Slice 54 plan exists, required terms are present, and diff
-check passes.
+Expected result: required contract terms are present and diff check passes.
 
 ## Acceptance
 
-- Slice 54 task plan exists with product value, non-goals, task table,
-  expected files, verification commands, and commit message.
-- The plan names GeneratedCaseCandidate ids, `source_knowledge_evidence_ids`,
-  `knowledge_evidence_refs_json`, `quality_score`, `review_findings_json`,
-  `coverage_gap_notes`, `automation_readiness`, dedup findings, prompt context
-  evidence/consumption/audit/discrepancy handoff artifact ids, ReviewHistory,
-  failure behavior, and forbidden side effects.
-- The plan excludes runtime APIs, frontend, provider integration, provider
-  SDKs, external calls, vector database, embeddings, reranking, prompt
-  execution, TestCase promotion, GeneratedCaseCandidate approve/reject
-  mutation, automation draft creation, artifact upload, RBAC, tenants, and
-  permissions.
-- `NEXT_AI_TASK.md` points to Slice 54 Task 2.
+- Contracts define generated case human review evidence package inputs,
+  outputs, candidate summary, knowledge evidence linkage, prompt-context
+  lineage, review findings, quality score, coverage gap notes, automation
+  readiness, dedup findings, evidence chain completeness, missing/conflicting
+  evidence summaries, review blocker summary, human review checklist,
+  ReviewHistory, failure behavior, and forbidden side effects.
+- Contracts keep backend runtime APIs, frontend, provider integrations, SDKs,
+  external calls, vector database, embeddings, reranking, prompt execution,
+  candidate approval/rejection, TestCase promotion, automation draft creation,
+  RBAC, tenants, permissions, and package upgrades out of scope.
+- `NEXT_AI_TASK.md` points to Slice 54 Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add generated case human review evidence package plan
+docs(v2): define generated case human review evidence package contracts
 ```
 
 ## Next Task
 
-Slice 54 Task 2: Define Generated Case Human Review Evidence Package contracts.
+Slice 54 Task 3: Add Generated Case Human Review Evidence Package golden smoke.

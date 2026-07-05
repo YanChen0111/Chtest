@@ -3837,3 +3837,5 @@ Expected output:
 - No contract edits or product code until the plan defines evidence package
   inputs, outputs, failure behavior, artifact boundaries, golden smoke plan,
   and non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md`.

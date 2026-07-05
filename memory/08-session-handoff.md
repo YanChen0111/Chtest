@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-07-05 Slice 54 Generated Case Human Review Evidence Package Plan
+
+Completed:
+
+- Added Slice 54 plan:
+  `docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md`.
+- The plan scopes Generated Case Human Review Evidence Package as a
+  contract-only human-review evidence bundle from GeneratedCaseCandidate ids,
+  `source_knowledge_evidence_ids`, `knowledge_evidence_refs_json`,
+  `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, prompt-context artifact lineage,
+  and ReviewHistory.
+- The plan keeps evidence packages separate from backend runtime APIs,
+  frontend pages, candidate approval/rejection, TestCase promotion, automation
+  drafts, provider integrations, SDKs, external calls, vector infrastructure,
+  prompt execution, AITask orchestration, artifact upload, RBAC, tenants,
+  permissions, and package upgrades.
+- `NEXT_AI_TASK.md` now points to Slice 54 Task 2: Define Generated Case
+  Human Review Evidence Package contracts.
+
+Verification:
+
+```powershell
+if (-not (Test-Path docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md)) { exit 1 }
+rg -n "Generated Case Human Review Evidence Package|generated_case_human_review_evidence_package|GeneratedCaseCandidate|source_knowledge_evidence_ids|knowledge_evidence_refs_json|quality_score|review_findings_json|coverage_gap_notes|automation_readiness|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+git diff --check
+```
+
+Result:
+
+- Required terms found.
+- Diff check is clean except Windows LF-to-CRLF warnings.
+
+Next recommended task:
+
+- Commit `docs(v2): add generated case human review evidence package plan`.
+- Continue Slice 54 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 53 Completion Gate
 
 Completed:
