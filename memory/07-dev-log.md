@@ -1,5 +1,34 @@
 # Development Log
 
+## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Golden Smoke
+
+### Completed
+
+- Added KnowledgeAdapter Provider Evaluation Review Decision golden fixture:
+  `docs/fixtures/39-knowledge-adapter-provider-evaluation-review-decision-golden.md`.
+- Added focused golden smoke:
+  `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py`.
+- Golden coverage names review action, provider evaluation plan artifact id,
+  same-project plan artifact, field-level API payload keys, artifact
+  owner/component metadata, review decision/status values, provider
+  suitability status, KnowledgeEvidence normalization, provider_state
+  recommendation, disabled by default decision, fallback behavior, license
+  review, reference intake, metrics, ReviewHistory, PromptVersion/SkillVersion
+  trace, failure behavior, and forbidden runtime/provider side effects.
+- Updated `NEXT_AI_TASK.md` to Slice 51 Completion Gate.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py -q`
+- `git diff --check`
+- Result: `4 passed`.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add knowledge adapter provider evaluation review decision smoke`.
+- Continue Slice 51 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Contracts
 
 ### Completed
@@ -27,7 +56,7 @@
 
 ### Next Step
 
-- Commit `docs(v2): define knowledge adapter provider evaluation review decision contracts`.
+- Committed `docs(v2): define knowledge adapter provider evaluation review decision contracts` as `5659644`.
 - Continue Slice 51 Task 3 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Plan
