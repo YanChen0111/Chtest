@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Contracts
+
+### Completed
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  KnowledgeAdapter Provider Evaluation Review Decision.
+- Added contract-only `review_knowledge_adapter_provider_evaluation`
+  semantics with provider evaluation plan artifact linkage, review decision
+  and review status labels, provider suitability status, KnowledgeEvidence
+  normalization notes, provider_state recommendation, disabled by default
+  decision, fallback behavior, license review, reference intake, metrics,
+  blocker/unsupported reasons, requested revision fields, ReviewHistory links,
+  failure code, and visible reason.
+- Added future artifact type and filename:
+  `knowledge_adapter_provider_evaluation_review_decision` and
+  `knowledge_adapter_provider_evaluation_review_decision.json`.
+- Updated `NEXT_AI_TASK.md` to Slice 51 Task 3.
+
+### Verification
+
+- `rg -n "KnowledgeAdapter Provider Evaluation Review Decision|knowledge_adapter_provider_evaluation_review_decision|review_knowledge_adapter_provider_evaluation|provider evaluation plan artifact id|license review|reference intake|KnowledgeEvidence normalization|provider_state|fallback behavior|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`
+- `git diff --check`
+- Result: required terms found.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): define knowledge adapter provider evaluation review decision contracts`.
+- Continue Slice 51 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Plan
 
 ### Completed
@@ -31,7 +61,7 @@
 
 ### Next Step
 
-- Commit `docs(v2): add knowledge adapter provider evaluation review decision plan`.
+- Committed `docs(v2): add knowledge adapter provider evaluation review decision plan` as `48ecad5`.
 - Continue Slice 51 Task 2 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 50 Completion Gate

@@ -1417,6 +1417,76 @@ KnowledgeAdapter Provider Evaluation Plan state rules:
   ToolInvocation rows, enable providers, add RBAC, create tenants, change
   permissions, or update remote CI provider behavior.
 
+## 7.1.2 KnowledgeAdapter Provider Evaluation Review Decision State Contract
+
+KnowledgeAdapter Provider Evaluation Review Decision is a contract-only state
+boundary for reviewing provider evaluation plan evidence before any provider
+enablement, Haystack integration, LlamaIndex integration, GraphRAG integration,
+provider SDK, external call, vector database, embedding, reranking, background
+indexing, runtime retrieval, provider-backed prompt context behavior, frontend
+page, migration, package upgrade, RBAC, tenants, or permissions exists.
+
+```text
+provider_candidate_disabled_by_default -> provider_evaluation_review_pending
+provider_evaluation_review_pending -> provider_evaluation_review_accepted_for_planning
+provider_evaluation_review_pending -> provider_evaluation_review_accepted_with_constraints
+provider_evaluation_review_pending -> provider_evaluation_review_blocked
+provider_evaluation_review_pending -> provider_evaluation_review_needs_revision
+provider_evaluation_review_pending -> provider_evaluation_review_unsupported
+provider_evaluation_review_pending -> provider_evaluation_review_failed_validation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| provider_candidate_disabled_by_default | review_knowledge_adapter_provider_evaluation | provider_evaluation_review_pending | Future workflow/API | Starts local review of provider evaluation evidence |
+| provider_evaluation_review_pending | accepted_for_planning | provider_evaluation_review_accepted_for_planning | Future workflow/API | Accepts for future planning only |
+| provider_evaluation_review_pending | accepted_with_constraints | provider_evaluation_review_accepted_with_constraints | Future workflow/API | Accepts with recorded constraints only |
+| provider_evaluation_review_pending | blocked | provider_evaluation_review_blocked | Future workflow/API | Records blocked reasons |
+| provider_evaluation_review_pending | needs_revision | provider_evaluation_review_needs_revision | Future workflow/API | Requests revision fields |
+| provider_evaluation_review_pending | unsupported | provider_evaluation_review_unsupported | Future workflow/API | Records unsupported reasons |
+| provider_evaluation_review_pending | failed_validation | provider_evaluation_review_failed_validation | Future workflow/API | Records failure code and visible reason |
+
+KnowledgeAdapter Provider Evaluation Review Decision state rules:
+
+- `review_knowledge_adapter_provider_evaluation` requires
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  metadata, provider suitability status, license review result, reference
+  intake, KnowledgeEvidence normalization notes, provider_state
+  recommendation, disabled by default decision, fallback behavior, metrics,
+  source hashes, and ReviewHistory ids when available.
+- Review decision states are audit evidence only. They may produce provider
+  evaluation review decision artifact id, review decision, review status,
+  reviewer label, reviewer note, accepted constraints, requested revision
+  fields, blocked reasons, unsupported reasons, unresolved safety questions,
+  ReviewHistory links, failure code, and visible reason.
+- Review status values are `not_reviewed`, `accepted_for_planning`,
+  `accepted_with_constraints`, `blocked`, `needs_revision`, `unsupported`, and
+  `failed_validation`. They must not mutate `KnowledgeAdapterConfig.status`,
+  create runtime connectivity, enable providers, create retrieval evidence, or
+  set `used_knowledge=true`.
+- Accepted review decisions are accepted for future planning only. The
+  provider remains disabled by default until a later scoped slice explicitly
+  defines implementation and enablement rules.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, review-decision-invalid,
+  evaluation-plan-mismatched, cross-project, unbounded, credential-required,
+  or runtime-required input must produce
+  `provider_evaluation_review_failed_validation` with a visible reason and
+  must not append a successful review decision.
+- Provider evaluation review decision states must not install packages, call
+  providers, call provider SDKs, store credentials, fetch remote URLs, create
+  vector indexes, create embeddings, rerank, run background indexing, run
+  graph jobs, start MCP runtime, run runtime retrieval, create provider-backed
+  prompt context evidence, assemble prompts, run AITasks, render frontend
+  pages, generate reports, expose export/download endpoints, mutate the
+  reviewed provider evaluation plan artifact, mutate KnowledgeAdapterConfig
+  runtime state, mutate KnowledgeEvidence, mutate Artifact rows outside
+  declared review decision evidence, mutate TestKnowledgeCard rows, approve or
+  reject GeneratedCaseCandidate rows, promote TestCase rows, create
+  ToolInvocation rows, enable providers, add RBAC, create tenants, change
+  permissions, or update remote CI provider behavior.
+
 ## 7.2 TestKnowledgeCard 状态规则
 
 TestKnowledgeCard uses `EntityStatus` only:

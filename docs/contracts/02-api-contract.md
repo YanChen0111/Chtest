@@ -771,6 +771,125 @@ KnowledgeAdapter Provider Evaluation Plan hard rules:
   RBAC, create tenants, change permissions, or update remote CI provider
   behavior.
 
+### 2.18 KnowledgeAdapter Provider Evaluation Review Decision Contract
+
+This section is contract-only. It defines future local review decision
+semantics for KnowledgeAdapter provider evaluation plan artifacts before any
+provider enablement, Haystack integration, LlamaIndex integration, GraphRAG
+integration, provider SDK, credential, external call, vector database,
+embedding, reranking, background indexing, runtime retrieval,
+provider-backed prompt context behavior, frontend page, migration, package
+upgrade, RBAC, tenants, or permissions exists.
+
+Allowed provider evaluation review action:
+
+- `review_knowledge_adapter_provider_evaluation`: future scoped review action
+  that records a local review decision for a provider evaluation plan artifact
+  while preserving license review, reference intake, KnowledgeEvidence
+  normalization, provider_state, disabled by default, fallback behavior,
+  metrics, ReviewHistory links, failure code, and visible reason.
+
+KnowledgeAdapter provider evaluation review decision payload shape:
+
+```json
+{
+  knowledge_adapter_provider_evaluation_review_decision_action: review_knowledge_adapter_provider_evaluation,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
+  candidate_provider_name: haystack,
+  provider_family: Haystack,
+  adapter_type: external_retrieval_provider_candidate,
+  provider_version: 2.x,
+  adapter_version: evaluation-plan-v1,
+  provider_suitability_status: needs_revision,
+  provider_state_recommendation: disabled,
+  disabled_by_default_decision: true,
+  license_review_result: needs_license_review,
+  reference_intake_summary: documentation snapshot captured for review,
+  knowledge_evidence_normalization_notes: source trace fields required before future use,
+  fallback_behavior_summary: local_no_knowledge_fallback remains required,
+  metrics_plan: [
+    evidence_normalization_completeness,
+    source_traceability_coverage,
+    fallback_coverage
+  ],
+  blocker_reasons: [license_review_required],
+  unresolved_safety_questions: [license compatibility must be reviewed],
+  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
+  source_hashes: [sha256:provider-docs-snapshot],
+  review_history_ids: [00000000-0000-0000-0000-000000000895],
+  review_decision: needs_revision,
+  reviewer_label: local_reviewer,
+  reviewer_note: license review is required before future planning acceptance
+}
+```
+
+KnowledgeAdapter provider evaluation review decision response shape for a
+future scoped implementation:
+
+```json
+{
+  knowledge_adapter_provider_evaluation_review_decision_action: review_knowledge_adapter_provider_evaluation,
+  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
+  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
+  review_decision: needs_revision,
+  review_status: needs_revision,
+  accepted_constraints: [],
+  requested_revision_fields: [license_review_result],
+  blocked_reasons: [],
+  unsupported_reasons: [],
+  unresolved_safety_questions: [license compatibility must be reviewed],
+  provider_state_recommendation: disabled,
+  disabled_by_default_decision: true,
+  review_history_links: [00000000-0000-0000-0000-000000000895],
+  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
+  source_hashes: [sha256:provider-docs-snapshot],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+KnowledgeAdapter Provider Evaluation Review Decision hard rules:
+
+- Review input must reference a same-project provider evaluation plan artifact,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  metadata, provider suitability status, license review result, reference
+  intake, KnowledgeEvidence normalization notes, provider_state recommendation,
+  disabled by default decision, fallback behavior, metrics, source hashes, and
+  ReviewHistory when human review exists.
+- Review output must be planning/audit evidence only. It may record review
+  decision, review status, reviewer label, reviewer note, accepted
+  constraints, requested revision fields, blocked reasons, unsupported reasons,
+  unresolved safety questions, ReviewHistory links, source hashes, failure
+  code, and visible reason.
+- Review decision values are `accepted_for_planning`,
+  `accepted_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`. Review status values may include `not_reviewed`,
+  `accepted_for_planning`, `accepted_with_constraints`, `blocked`,
+  `needs_revision`, `unsupported`, and `failed_validation`.
+- Accepted decisions are accepted for future planning only. They do not create
+  provider enablement, runtime connectivity, retrieval evidence, prompt
+  eligibility, or `used_knowledge=true`.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, review-decision-invalid,
+  evaluation-plan-mismatched, cross-project, unbounded, credential-required,
+  or runtime-required input must return a failure code and visible reason and
+  must not append a successful review decision.
+- `review_knowledge_adapter_provider_evaluation` must not install packages,
+  call providers, call provider SDKs, store credentials, fetch remote URLs,
+  create vector indexes, create embeddings, rerank, run background indexing,
+  run graph jobs, start MCP runtime, run runtime retrieval, create
+  provider-backed prompt context evidence, assemble prompts, run AITasks,
+  render frontend pages, generate reports, expose export/download endpoints,
+  mutate Artifact rows outside declared review decision evidence, mutate the
+  reviewed provider evaluation plan artifact, mutate KnowledgeEvidence, mutate
+  KnowledgeAdapterConfig outside declared review decision evidence, mutate
+  TestKnowledgeCard rows, approve or reject GeneratedCaseCandidate rows,
+  promote TestCase rows, create ToolInvocation rows, enable a provider, add
+  RBAC, create tenants, change permissions, or update remote CI provider
+  behavior.
+
 ## 3. Requirement To Case APIs
 
 ### 3.1 Create Requirement

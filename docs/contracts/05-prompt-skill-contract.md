@@ -213,6 +213,96 @@ KnowledgeAdapter provider evaluation plan rules:
   routers, services, workers, queues, schedulers, run migrations, add package
   upgrades, add RBAC, create tenants, or change permissions.
 
+### 4.1.2 KnowledgeAdapter Provider Evaluation Review Decision Contract
+
+This contract defines prompt/skill trace rules for future KnowledgeAdapter
+provider evaluation review decisions. It is contract-only audit evidence and
+does not enable providers, assemble prompts, write runtime `prompt_input.json`,
+execute AITasks, call providers, integrate provider SDKs, run retrieval, change
+ranking, create vector indexes, create embeddings, rerank, run background
+indexing, run graph jobs, invoke MCP runtime, mutate the reviewed provider
+evaluation plan artifact, mutate KnowledgeAdapterConfig runtime state, mutate
+KnowledgeEvidence rows, render frontend pages, add RBAC, create tenants,
+change permissions, or install packages.
+
+KnowledgeAdapter provider evaluation review decision input must include:
+
+- `knowledge_adapter_provider_evaluation_review_decision_action=review_knowledge_adapter_provider_evaluation`.
+- `knowledge_adapter_provider_evaluation_plan_artifact_id`.
+- PromptVersion id/name/version and SkillVersion id/name/version when the
+  review decision is produced by a prompt or skill.
+- Candidate provider name, provider family, adapter type, provider version,
+  and adapter version.
+- Provider suitability status from the provider evaluation plan.
+- License name, license URL, license compatibility notes, and license review
+  result.
+- Reference intake summary, reference intake URLs, and documentation snapshot
+  artifact ids.
+- Expected KnowledgeEvidence normalization fields and KnowledgeEvidence
+  normalization notes.
+- Expected provider_state values and provider_state recommendation.
+- Disabled by default policy and disabled by default decision.
+- Fallback behavior summary and fallback labels.
+- Metrics plan, metric set, evidence normalization completeness, source
+  traceability coverage, redaction safety status, and fallback coverage.
+- Blocker reasons, unresolved safety questions, source manifest ids, source
+  hashes, and ReviewHistory ids when available.
+- Failure code and visible reason when applicable.
+
+KnowledgeAdapter provider evaluation review decision output may include:
+
+- Provider evaluation review decision id or artifact id.
+- `knowledge_adapter_provider_evaluation_review_decision` artifact or manifest
+  naming.
+- Review decision values: `accepted_for_planning`,
+  `accepted_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`.
+- Review status values: `not_reviewed`, `accepted_for_planning`,
+  `accepted_with_constraints`, `blocked`, `needs_revision`, `unsupported`, and
+  `failed_validation`.
+- Reviewer label, local reviewer id, reviewer note, accepted constraints,
+  requested revision fields, blocked reasons, unsupported reasons, unresolved
+  safety questions, and decision rationale.
+- Source manifest ids, source hashes, ReviewHistory links, failure code, and
+  visible reason.
+
+KnowledgeAdapter provider evaluation review decision rules:
+
+- Review decisions are audit evidence only. They must not be treated as
+  provider configuration enablement, runtime provider connectivity, retrieval
+  permission, prompt eligibility, or proof that provider evidence was used.
+- `provider_state` is display/health metadata and must not start runtime
+  retrieval.
+- Disabled by default remains required until a later scoped integration
+  explicitly enables a provider.
+- Accepted for planning and accepted with constraints are future-planning
+  labels only, not runtime integration approvals.
+- Needs revision, blocked, and unsupported decisions must preserve reviewer
+  rationale, requested revision fields, blocker reasons, unsupported reasons,
+  unresolved safety questions, source hashes, and ReviewHistory links.
+- `used_knowledge` must not be auto-marked true by provider evaluation review.
+- Provider-specific payloads must not leak into TestKnowledgeCard,
+  KnowledgeEvidence, GeneratedCaseCandidate, prompt context evidence, reports,
+  or review surfaces.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, review-decision-invalid,
+  evaluation-plan-mismatched, cross-project, unbounded, credential-required,
+  or runtime-required input must produce a failure code and visible reason and
+  must not append a successful review decision.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, integrate an SDK, store credentials, fetch remote URLs,
+  create a vector index, create embeddings, rerank, run background indexing,
+  run a graph job, invoke MCP runtime, create provider-backed prompt context
+  evidence, mutate the reviewed provider evaluation plan artifact, mutate
+  Artifact rows outside declared review decision evidence, mutate
+  KnowledgeAdapterConfig outside declared review decision evidence, mutate
+  KnowledgeEvidence, mutate TestKnowledgeCard rows, approve or reject
+  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
+  rows, render frontend pages, expose backend feature APIs, add endpoints,
+  routers, services, workers, queues, schedulers, run migrations, add package
+  upgrades, add RBAC, create tenants, or change permissions.
+
 ### 4.2 TestKnowledgeCard Prompt Context Evidence Contract
 
 This contract defines prompt/skill trace rules for future TestKnowledgeCard

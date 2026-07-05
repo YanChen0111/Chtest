@@ -973,6 +973,69 @@ KnowledgeAdapter Provider Evaluation Plan rules:
   run graph jobs, start MCP runtime, add RBAC, create tenants, change
   permissions, or install packages.
 
+KnowledgeAdapter Provider Evaluation Review Decision rules:
+
+- KnowledgeAdapter Provider Evaluation Review Decision starts from an existing
+  `knowledge_adapter_provider_evaluation_plan` artifact. It records local
+  human review decisions on provider evaluation evidence before any provider
+  enablement, provider integration, provider SDK, credential, external call,
+  vector database, embedding, reranking, background indexing, runtime
+  retrieval, provider-backed prompt context behavior, frontend page, or
+  package upgrade exists.
+- The contract-only review action is
+  `review_knowledge_adapter_provider_evaluation`. It reviews a provider
+  evaluation plan artifact and may record review decisions such as
+  `accepted_for_planning`, `accepted_with_constraints`, `blocked`,
+  `needs_revision`, or `unsupported`, but those decisions must not enable
+  providers, change KnowledgeAdapterConfig runtime behavior, call providers, or
+  mark `used_knowledge=true`.
+- Provider evaluation review input must preserve provider evaluation plan
+  artifact id, `knowledge_adapter_provider_evaluation_plan_artifact_id`,
+  candidate provider name, provider family, adapter type, provider version,
+  adapter version, provider suitability status, provider_state
+  recommendation, disabled by default decision, license review result,
+  reference intake summary, reference intake URLs, documentation snapshot
+  artifact ids, KnowledgeEvidence normalization notes and fields, citation
+  traceability requirements, fallback behavior summary, fallback labels,
+  metrics plan, blocker reasons, unresolved safety questions, source manifest
+  ids, source hashes, ReviewHistory ids or links, failure code, and visible
+  reason from the reviewed evaluation plan.
+- Provider evaluation review outputs may include provider evaluation review
+  decision id or artifact id,
+  `knowledge_adapter_provider_evaluation_review_decision`, review decision,
+  review status, reviewer label, local reviewer id when available, reviewer
+  note, accepted constraints, requested revision fields, blocked reasons,
+  unsupported reasons, unresolved safety questions, decision rationale, source
+  manifest ids, source hashes, ReviewHistory links, failure code, and visible
+  reason.
+- Review decision values are `accepted_for_planning`,
+  `accepted_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`. Review status values may include `not_reviewed`,
+  `accepted_for_planning`, `accepted_with_constraints`, `blocked`,
+  `needs_revision`, `unsupported`, and `failed_validation`. They are audit
+  labels only and must not create provider enablement, runtime connectivity,
+  retrieval evidence, prompt eligibility, or `used_knowledge=true`.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, review-decision-invalid,
+  evaluation-plan-mismatched, cross-project, unbounded, credential-required,
+  or runtime-required input must produce a failure code and visible reason and
+  must not append a successful review decision.
+- KnowledgeAdapter provider evaluation review decisions must not copy raw
+  provider payloads, credentials, secrets, API keys, OAuth material, remote
+  fetch payloads, vector store payloads, embedding vectors, reranker traces,
+  graph runtime payloads, executable prompt assembly payloads,
+  frontend-rendered markup, report-rendered payloads, or generated replacement
+  evidence.
+- KnowledgeAdapter provider evaluation review must not create TestKnowledgeCard
+  rows, mutate KnowledgeEvidence rows, mutate the reviewed provider evaluation
+  plan artifact, mutate Artifact rows outside declared review decision
+  evidence, approve GeneratedCaseCandidate rows, promote TestCase rows,
+  execute ToolInvocation rows, generate Reports, update CI/CD state, call
+  provider SDKs, create vector indexes, create embeddings, rerank, run graph
+  jobs, start MCP runtime, add RBAC, create tenants, change permissions, or
+  install packages.
+
 ## 31.1 TestKnowledgeCard
 
 TestKnowledgeCard records structured testing knowledge that can later support
@@ -1897,7 +1960,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, knowledge_adapter_provider_evaluation_plan, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -1943,6 +2006,35 @@ KnowledgeAdapter provider evaluation plan Artifact rule:
   create vector indexes, create embeddings, rerank, run graph jobs, invoke MCP
   runtime, write runtime `prompt_input.json`, mark `used_knowledge=true`,
   mutate KnowledgeEvidence rows, mutate TestKnowledgeCard rows, create prompt
+  eligibility, approve generated cases, add RBAC, create tenants, change
+  permissions, or install packages.
+
+KnowledgeAdapter provider evaluation review decision Artifact rule:
+
+- Slice 51 provider evaluation review decisions may use
+  `artifact_type=knowledge_adapter_provider_evaluation_review_decision` in a
+  later scoped implementation.
+- `owner_entity_type=AITask` or `owner_entity_type=Project` until a later
+  scoped provider evaluation workflow owns a dedicated review decision entity.
+- `metadata_json` must include
+  `created_by_component=KnowledgeAdapterProviderEvaluationReviewDecision`,
+  `knowledge_adapter_provider_evaluation_review_decision_action=review_knowledge_adapter_provider_evaluation`,
+  provider evaluation plan artifact id,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  name, provider family, adapter type, provider version, adapter version,
+  provider suitability status, provider_state recommendation, disabled by
+  default decision, license review result, reference intake summary,
+  KnowledgeEvidence normalization notes, fallback behavior summary, review
+  decision, review status, reviewer label, reviewer note, accepted
+  constraints, requested revision fields, blocked reasons, unsupported
+  reasons, unresolved safety questions, source manifest ids, source hashes,
+  ReviewHistory links, failure code, and visible reason when applicable.
+- This artifact is provider evaluation review evidence only. It must not enable
+  a provider, change runtime retrieval, call provider SDKs, fetch remote URLs,
+  create vector indexes, create embeddings, rerank, run graph jobs, invoke MCP
+  runtime, write runtime `prompt_input.json`, mark `used_knowledge=true`,
+  mutate the reviewed provider evaluation plan artifact, mutate
+  KnowledgeEvidence rows, mutate TestKnowledgeCard rows, create prompt
   eligibility, approve generated cases, add RBAC, create tenants, change
   permissions, or install packages.
 
