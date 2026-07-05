@@ -10,11 +10,11 @@ Slice 50: KnowledgeAdapter Provider Evaluation Plan Contract.
 
 ## Current Task
 
-Slice 50 Task 1: Add KnowledgeAdapter Provider Evaluation Plan task plan.
+Slice 50 Task 2: Define KnowledgeAdapter provider evaluation plan contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for evaluating future
+After this task, Chtest has contract definitions for evaluating future
 KnowledgeAdapter providers before any Haystack/LlamaIndex integration,
 provider SDK, external call, vector database, embedding, reranking, runtime
 retrieval, or provider-backed prompt context behavior exists.
@@ -29,9 +29,10 @@ retrieval, or provider-backed prompt context behavior exists.
 6. `docs/contracts/03-state-machines.md`
 7. `docs/contracts/04-artifact-contract.md`
 8. `docs/contracts/05-prompt-skill-contract.md`
-9. `docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+9. `docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`
+10. `docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
+11. `memory/08-session-handoff.md`
+12. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -45,14 +46,18 @@ retrieval, or provider-backed prompt context behavior exists.
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
+docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
+Contract-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -68,33 +73,30 @@ behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
-rg -n "KnowledgeAdapter Provider Evaluation Plan|Haystack|LlamaIndex|provider evaluation|KnowledgeEvidence|provider_state|fallback behavior|license|reference intake|disabled by default|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md NEXT_AI_TASK.md
+rg -n "KnowledgeAdapter Provider Evaluation Plan|knowledge_adapter_provider_evaluation_plan|evaluate_knowledge_adapter_provider_plan|Haystack|LlamaIndex|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|disabled by default|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
 git diff --check
 ```
 
-Expected result: plan file exists, required terms are present, and diff check
-passes.
+Expected result: required terms are present and diff check passes.
 
 ## Acceptance
 
-- Slice 50 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names provider evaluation inputs and outputs, KnowledgeEvidence
-  normalization, provider_state, fallback behavior, license/version/reference
-  intake, disabled-by-default policy, metrics, ReviewHistory, failure behavior,
-  and non-goals.
-- The plan excludes Haystack/LlamaIndex integration, provider SDK, external
+- Contracts define provider evaluation inputs, outputs, status labels,
+  KnowledgeEvidence normalization, provider_state, disabled by default policy,
+  fallback behavior, license/version/reference intake, metrics, ReviewHistory,
+  failure behavior, and forbidden side effects.
+- Contracts keep Haystack/LlamaIndex provider integration, SDKs, external
   calls, vector database, embeddings, reranking, background indexing, runtime
-  retrieval, UI, RBAC, tenants, permissions, and package upgrades.
-- `NEXT_AI_TASK.md` points to Task 2.
+  retrieval, UI, RBAC, tenants, permissions, and package upgrades out of
+  scope.
+- `NEXT_AI_TASK.md` points to Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add knowledge adapter provider evaluation plan
+docs(v2): define knowledge adapter provider evaluation plan contracts
 ```
 
 ## Next Task
 
-Slice 50 Task 2: Define KnowledgeAdapter provider evaluation plan contracts.
+Slice 50 Task 3: Add KnowledgeAdapter provider evaluation plan golden smoke.

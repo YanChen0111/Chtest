@@ -1,5 +1,36 @@
 # Development Log
 
+## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan
+
+### Completed
+
+- Added Slice 50 plan:
+  `docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`.
+- The plan scopes KnowledgeAdapter Provider Evaluation Plan contracts:
+  provider evaluation inputs and outputs, KnowledgeEvidence normalization,
+  provider_state, fallback behavior, license/version/reference intake,
+  disabled by default policy, metrics, evaluation-only actions, provider
+  suitability status labels, ReviewHistory, failure behavior, and non-goals.
+- The plan keeps provider evaluation contract-only and excludes Haystack or
+  LlamaIndex integration, provider SDKs, credentials, external calls, vector
+  database, embeddings, reranking, background indexing, runtime retrieval,
+  provider-backed prompt context evidence, frontend pages, RBAC, tenants,
+  permissions, and package upgrades.
+- Updated `NEXT_AI_TASK.md` to Slice 50 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`
+- `rg -n "KnowledgeAdapter Provider Evaluation Plan|Haystack|LlamaIndex|provider evaluation|KnowledgeEvidence|provider_state|fallback behavior|license|reference intake|disabled by default|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists and required terms are present.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add knowledge adapter provider evaluation plan`.
+- Continue Slice 50 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 49 Completion Gate
 
 ### Completed
@@ -24,7 +55,7 @@
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card prompt context discrepancy resolution audit handoff slice`.
+- Committed `docs(v2): complete test knowledge card prompt context discrepancy resolution audit handoff slice` as `f8ebe50`.
 - Continue Slice 50 Task 1 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Golden Smoke

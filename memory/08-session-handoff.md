@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan
+
+Completed:
+
+- Added Slice 50 plan:
+  `docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`.
+- The plan defines a contract-first boundary for evaluating future
+  KnowledgeAdapter providers before Haystack/LlamaIndex integration, provider
+  SDKs, external calls, vector database, embeddings, reranking, runtime
+  retrieval, provider-backed prompt context behavior, frontend pages, RBAC,
+  tenants, permissions, or package upgrades.
+- `NEXT_AI_TASK.md` now points to Slice 50 Task 2: Define KnowledgeAdapter
+  provider evaluation plan contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
+rg -n "KnowledgeAdapter Provider Evaluation Plan|Haystack|LlamaIndex|provider evaluation|KnowledgeEvidence|provider_state|fallback behavior|license|reference intake|disabled by default|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists and required terms are present.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add knowledge adapter provider evaluation plan`.
+- Continue Slice 50 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 49 Completion Gate
 
 Completed:
@@ -29,7 +61,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): complete test knowledge card prompt context discrepancy resolution audit handoff slice`.
+- Committed `docs(v2): complete test knowledge card prompt context discrepancy resolution audit handoff slice` as `f8ebe50`.
 - Continue Slice 50 Task 1 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Golden Smoke

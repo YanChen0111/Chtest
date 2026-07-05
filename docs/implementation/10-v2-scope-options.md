@@ -3344,3 +3344,5 @@ Expected output:
   evaluation outputs, KnowledgeEvidence normalization, provider_state,
   fallback behavior, license/reference intake, disabled-by-default policy, and
   non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`.
