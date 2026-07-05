@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-05 Slice 51 Completion Gate
+
+Completed:
+
+- Closed Slice 51: KnowledgeAdapter Provider Evaluation Review Decision
+  Contract.
+- Recorded completed task commits in the Slice 51 task table:
+  - Task 1: `48ecad5`;
+  - Task 2: `5659644`;
+  - Task 3: `3df4f9d`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 51
+  completion and Slice 52 recommendation.
+- `NEXT_AI_TASK.md` now points to Slice 52 Task 1: Add KnowledgeAdapter
+  Provider Evaluation Review Summary Export task plan.
+
+Verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `7 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): complete knowledge adapter provider evaluation review decision slice`.
+- Continue Slice 52 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Golden Smoke
 
 Completed:

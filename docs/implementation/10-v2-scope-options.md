@@ -3465,3 +3465,122 @@ Expected output:
   non-goals.
 - Slice plan added:
   `docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`.
+
+## Completed Next V2 Slice
+
+Completed: KnowledgeAdapter provider evaluation review decision contract.
+
+Why it was selected:
+
+- Slice 50 defined inert provider evaluation plan evidence, and Chtest needed
+  an auditable local review decision before any future provider integration
+  planning could rely on that evidence.
+- Slice 51 defined review inputs and outputs from the provider evaluation plan
+  artifact, provider suitability status, license review result, reference
+  intake summary, KnowledgeEvidence normalization notes, provider_state
+  recommendation, fallback behavior, metrics, source hashes, source manifest
+  ids, and ReviewHistory links.
+- The slice kept provider review decisions local and auditable as evidence
+  before any provider SDK, credential, external call, vector database,
+  embedding, reranking, runtime retrieval, UI, RBAC, tenant, or permission
+  behavior exists.
+
+Completed slice name:
+
+```text
+Slice 51: KnowledgeAdapter Provider Evaluation Review Decision Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- KnowledgeAdapter Provider Evaluation Review Decision is now a contract with
+  `review_knowledge_adapter_provider_evaluation`,
+  `knowledge_adapter_provider_evaluation_review_decision`, same-project
+  provider evaluation plan artifact linkage, review decision/status labels,
+  accepted-for-planning, accepted-with-constraints, blocked, needs-revision,
+  unsupported, provider suitability status, KnowledgeEvidence normalization,
+  provider_state recommendation, disabled by default decision, fallback
+  behavior, license review result, reference intake summary, metrics plan,
+  source hashes, ReviewHistory links, failure code, and visible reason.
+- No provider enablement, Haystack or LlamaIndex provider integration,
+  GraphRAG provider integration, provider SDK, external call, remote URL
+  fetch, credential handling, OAuth, vector database, embeddings, reranking,
+  background indexing, graph runtime, MCP runtime, runtime retrieval, prompt
+  runtime execution, provider-backed prompt context evidence, frontend page,
+  report generation behavior, migration, broad KnowledgeAdapter CRUD,
+  automatic provider enablement, automatic knowledge ingestion, RBAC, tenants,
+  permissions, runner behavior changes, remote CI behavior, or package
+  upgrades were added.
+
+## Recommended Next V2 Slice
+
+Recommended: KnowledgeAdapter provider evaluation review summary export
+contract.
+
+Why:
+
+- Slice 51 defines local review decisions, but Chtest still needs a narrow
+  contract for exporting a review summary artifact that future integration
+  planning can read without mutating provider state.
+- The next boundary should summarize accepted_for_planning,
+  accepted_with_constraints, blocked, needs_revision, unsupported, license
+  review, reference intake, KnowledgeEvidence normalization, provider_state,
+  fallback behavior, metrics, source hashes, and ReviewHistory while
+  preserving failure visibility.
+- This keeps provider review decisions portable as audit evidence without
+  enabling providers, installing SDKs, fetching remote URLs, creating vector
+  infrastructure, running retrieval, or changing prompt context behavior.
+
+Next slice name:
+
+```text
+Slice 52: KnowledgeAdapter Provider Evaluation Review Summary Export Contract
+```
+
+Smallest useful boundary:
+
+- Define summary export inputs from KnowledgeAdapter provider evaluation review
+  decision artifact ids, provider evaluation plan artifact ids, review
+  decision/status labels, reviewer notes, accepted constraints, blocked
+  reasons, unsupported reasons, requested revision fields, unresolved safety
+  questions, source hashes, source manifest ids, and ReviewHistory links.
+- Define summary export outputs such as
+  `knowledge_adapter_provider_evaluation_review_summary_export`, export
+  artifact id, review summary status, exported decision groups, provider
+  suitability summary, license/reference summary, KnowledgeEvidence
+  normalization summary, fallback summary, failure code, and visible reason.
+- Add one contract-level fixture and golden smoke after the summary export
+  contract is defined.
+
+Explicit non-goals:
+
+- No provider enablement, Haystack provider integration, LlamaIndex provider
+  integration, GraphRAG provider integration, provider SDK, API key handling,
+  credentials, OAuth, remote URL fetch, external call, network retrieval,
+  runtime retrieval, provider-backed prompt context evidence, prompt assembly
+  implementation, prompt runtime execution, automatic `used_knowledge=true`,
+  vector database, vector index, embeddings, reranking, background indexing,
+  graph runtime, MCP runtime, frontend page, report generation behavior,
+  export/download endpoint, backend feature API, migration, package upgrade,
+  broad KnowledgeAdapter CRUD, automatic knowledge ingestion,
+  TestKnowledgeCard CRUD, automatic prompt eligibility, artifact upload,
+  Artifact mutation outside declared summary export evidence, historical
+  evidence mutation, generated-case auto-approval, runner behavior, remote CI
+  provider behavior, RBAC, tenants, or permissions.
+
+Suggested next task:
+
+```text
+Slice 52 Task 1: Add KnowledgeAdapter Provider Evaluation Review Summary Export task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`.
+- No product code until the plan defines provider evaluation review summary
+  export inputs, outputs, failure behavior, artifact boundaries, and
+  non-goals.
