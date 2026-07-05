@@ -5649,3 +5649,21 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Continue Slice 05 Task 2 from `NEXT_AI_TASK.md`: add built-in prompt files.
+## 2026-07-05 Slice 53 KnowledgeAdapter Provider Evaluation Review Audit Handoff Golden Smoke
+
+### Completed
+
+- Completed Slice 53 Task 3: added the contract-level golden smoke and fixture for KnowledgeAdapter provider evaluation review audit handoff.
+- Locked the audit handoff surface around summary export artifact linkage, review decision artifact linkage, provider evaluation plan artifact linkage, evidence chain status, included artifact ids, excluded artifact reasons, provider review decision group summary, unresolved blocker/safety/follow-up fields, KnowledgeEvidence normalization, provider_state, fallback behavior, disabled-by-default policy, ReviewHistory, failure code, and visible reason.
+- Kept the task contract-only: no provider enablement, SDK calls, external calls, vector database, embeddings, reranking, background indexing, runtime retrieval, frontend page, export/download endpoint, RBAC, tenants, permissions, package upgrade, or provider-state mutation.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_audit_handoff_contract_golden.py -q`
+- Result: `4 passed in 0.78s`.
+- `git diff --check`
+- Result: no errors; existing LF-to-CRLF warnings only.
+
+### Next Step
+
+- Commit Task 3, then execute Slice 53 completion gate.

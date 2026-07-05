@@ -10,16 +10,12 @@ Slice 53: KnowledgeAdapter Provider Evaluation Review Audit Handoff Contract.
 
 ## Current Task
 
-Slice 53 Task 3: Add KnowledgeAdapter provider evaluation review audit handoff
-golden smoke.
+Slice 53 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-level fixture and golden smoke proving
-KnowledgeAdapter provider evaluation review audit handoff remains evidence
-packaging only. Future planning can trace summary export, review decision,
-provider evaluation plan, source hashes, and ReviewHistory without enabling
-providers, mutating provider state, or creating runtime retrieval behavior.
+After this task, Chtest has a completed Slice 53 handoff with task commits,
+focused golden verification, V2 scope notes, and the next narrow task ready.
 
 ## Must Read
 
@@ -31,8 +27,9 @@ providers, mutating provider state, or creating runtime retrieval behavior.
 6. `docs/fixtures/41-knowledge-adapter-provider-evaluation-review-audit-handoff-golden.md`
 7. `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py`
 8. `docs/fixtures/40-knowledge-adapter-provider-evaluation-review-summary-export-golden.md`
-9. `memory/08-session-handoff.md`
-10. `memory/07-dev-log.md`
+9. `docs/implementation/10-v2-scope-options.md`
+10. `memory/08-session-handoff.md`
+11. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -47,15 +44,14 @@ providers, mutating provider state, or creating runtime retrieval behavior.
 Update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_audit_handoff_contract_golden.py
-docs/fixtures/41-knowledge-adapter-provider-evaluation-review-audit-handoff-golden.md
 docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden smoke only. Do not add frontend code, backend runtime feature code,
+Completion gate only. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad KnowledgeAdapter CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -72,34 +68,26 @@ CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_audit_handoff_contract_golden.py -q
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_audit_handoff_contract_golden.py backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: focused golden smoke passes and diff check passes.
+Expected result: focused Slice 53 and predecessor golden checks pass and diff
+check passes.
 
 ## Acceptance
 
-- Golden names KnowledgeAdapter Provider Evaluation Review Audit Handoff,
-  provider evaluation review audit handoff, provider evaluation review summary
-  export artifact, provider evaluation review decision artifact, provider
-  evaluation plan artifact, evidence chain status, included artifact ids,
-  excluded artifact reasons, provider review decision group summary,
-  unresolved blocker summary, unresolved safety question summary,
-  KnowledgeEvidence, provider_state, fallback behavior, disabled by default
-  policy, ReviewHistory, failure behavior, and forbidden side effects.
-- Golden proves no provider SDK, external call, vector database, embedding,
-  reranking, background indexing, runtime retrieval, provider-backed prompt
-  context evidence, UI, export/download endpoint, RBAC, tenants, permissions,
-  package upgrade, or provider-state mutation is created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 53 Completion Gate.
+- Slice 53 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next task.
 
 ## Commit Message
 
 ```text
-test(golden): add knowledge adapter provider evaluation review audit handoff smoke
+docs(v2): complete knowledge adapter provider evaluation review audit handoff slice
 ```
 
 ## Next Task
 
-Slice 53 Completion Gate.
+Next narrow V2 slice to be selected in this completion gate.
