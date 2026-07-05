@@ -2979,3 +2979,5 @@ Expected output:
   `docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`.
 - No product code until the plan defines resolution review inputs, resolution
   actions, discrepancy status handling, failure behavior, and non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`.

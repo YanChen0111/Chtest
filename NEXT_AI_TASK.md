@@ -10,29 +10,30 @@ Slice 47: TestKnowledgeCard Prompt Context Discrepancy Resolution Review Contrac
 
 ## Current Task
 
-Slice 47 Task 1: Add TestKnowledgeCard prompt context discrepancy resolution review task plan.
+Slice 47 Task 2: Define TestKnowledgeCard prompt context discrepancy resolution review contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for reviewing and resolving prompt
-context discrepancy records without mutating review summaries, review
-decisions, audit summaries, prompt context evidence, knowledge evidence,
-frontend pages, report generation, export endpoints, or prompt runtime
-behavior.
+After this task, Chtest has data/API/state/artifact/prompt-skill contracts for
+future prompt context discrepancy resolution review without mutating review
+summaries, review decisions, audit summaries, prompt context evidence,
+knowledge evidence, frontend pages, report generation, export endpoints, or
+prompt runtime behavior.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md`
-4. `docs/implementation/10-v2-scope-options.md`
+3. `docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`
+4. `docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md`
 5. `docs/contracts/01-data-model-contract.md`
 6. `docs/contracts/02-api-contract.md`
 7. `docs/contracts/03-state-machines.md`
 8. `docs/contracts/04-artifact-contract.md`
 9. `docs/contracts/05-prompt-skill-contract.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+10. `docs/implementation/10-v2-scope-options.md`
+11. `memory/08-session-handoff.md`
+12. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -46,15 +47,19 @@ behavior.
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
+docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
-contract edits, report generation behavior changes, export/download endpoints,
+Contract-only task. Do not add frontend code, backend runtime feature code,
+report generation behavior changes, export/download endpoints,
 migrations, package upgrades, broad TestKnowledgeCard CRUD implementation,
 backend feature API, frontend page, automatic prompt eligibility, prompt
 assembly implementation, prompt runtime execution, provider calls,
@@ -68,34 +73,37 @@ behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md
-rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Review|review discrepancy|resolution review|resolution action|discrepancy type|affected citation ids|evidence gap summary|mismatch reason|severity|resolution status|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md NEXT_AI_TASK.md
+rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Review|prompt_context_discrepancy_resolution_review|review_prompt_context_discrepancy_resolution|resolution action|accepted discrepancy ids|rejected discrepancy ids|acknowledged discrepancy ids|affected citation ids|evidence gap summary|mismatch reason|resolution status|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md
 git diff --check
 ```
 
-Expected result: plan file exists, required terms are present, and diff check
-passes.
+Expected result: required contract terms are present and diff check passes.
 
 ## Acceptance
 
-- Slice 47 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names discrepancy resolution review inputs, resolution actions,
-  affected citation ids, evidence gap summary, mismatch reason, reviewer note,
-  severity, resolution status, ReviewHistory, failure behavior, and non-goals.
-- The plan excludes frontend page, report generation behavior, export/download
+- Contracts define resolution review inputs, discrepancy artifact references,
+  review summary export artifact references, affected citation ids, resolution
+  action, accepted/rejected/acknowledged discrepancy ids, evidence gap summary,
+  mismatch reason, reviewer note, resulting resolution status, ReviewHistory,
+  source hashes, context manifest links, PromptVersion/SkillVersion trace,
+  failure behavior, and forbidden side effects.
+- Contracts require resolution review to preserve underlying discrepancy
+  records, review summary exports, review decisions, audit summaries,
+  consumption evidence, and knowledge artifacts without inventing, mutating, or
+  automatically resolving evidence.
+- Contracts keep frontend page, report generation behavior, export/download
   endpoint, prompt assembly implementation, prompt runtime execution, provider
   calls, retrieval ranking changes, vector indexes, embeddings, reranking,
   graph jobs, MCP runtime, broad CRUD, automatic eligibility, and historical
-  evidence mutation.
-- `NEXT_AI_TASK.md` points to Task 2.
+  evidence mutation out of scope.
+- `NEXT_AI_TASK.md` points to Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add test knowledge card prompt context discrepancy resolution review plan
+docs(v2): define test knowledge card prompt context discrepancy resolution review contracts
 ```
 
 ## Next Task
 
-Slice 47 Task 2: Define TestKnowledgeCard prompt context discrepancy resolution review contracts.
+Slice 47 Task 3: Add TestKnowledgeCard prompt context discrepancy resolution review golden smoke.

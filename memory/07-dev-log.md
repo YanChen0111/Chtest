@@ -1,5 +1,38 @@
 # Development Log
 
+## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Plan
+
+### Completed
+
+- Added Slice 47 plan:
+  `docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`.
+- The plan scopes TestKnowledgeCard Prompt Context Discrepancy Resolution
+  Review contracts: resolution review inputs, resolution action,
+  accepted/rejected/acknowledged discrepancy ids, affected citation ids,
+  evidence gap summary, mismatch reason, reviewer note, severity, resolution
+  status, ReviewHistory, failure behavior, and non-goals.
+- The plan keeps discrepancy resolution review contract-only and excludes
+  frontend pages, report generation behavior, export/download endpoints, prompt
+  assembly implementation, prompt runtime execution, provider calls,
+  deterministic retrieval behavior changes, vector indexes, embeddings,
+  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
+  automatic eligibility, historical evidence mutation, RBAC, tenants, and
+  permissions.
+- Updated `NEXT_AI_TASK.md` to Slice 47 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`
+- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Review|review discrepancy|resolution review|resolution action|discrepancy type|affected citation ids|evidence gap summary|mismatch reason|severity|resolution status|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md NEXT_AI_TASK.md`
+- `git diff --check`
+- Result: plan file exists and required terms found.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add test knowledge card prompt context discrepancy resolution review plan`.
+- Continue Slice 47 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 46 Completion Gate
 
 ### Completed
@@ -24,7 +57,7 @@
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card prompt context review discrepancy tracking slice`.
+- Committed `docs(v2): complete test knowledge card prompt context review discrepancy tracking slice` as `ad8b216`.
 - Continue Slice 47 Task 1 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 46 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Golden Smoke

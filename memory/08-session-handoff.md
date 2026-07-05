@@ -1,5 +1,39 @@
 # Session Handoff
 
+## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Plan
+
+Completed:
+
+- Added Slice 47 plan:
+  `docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`.
+- The plan defines a contract-first boundary for future human review of prompt
+  context discrepancy records before frontend, report, export/download, or
+  prompt runtime behavior.
+- The plan names resolution review inputs, resolution action, accepted/
+  rejected/acknowledged discrepancy ids, affected citation ids, evidence gap
+  summary, mismatch reason, reviewer note, severity, resolution status,
+  ReviewHistory, failure behavior, and non-goals.
+- `NEXT_AI_TASK.md` now points to Slice 47 Task 2: Define TestKnowledgeCard
+  prompt context discrepancy resolution review contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md
+rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Review|review discrepancy|resolution review|resolution action|discrepancy type|affected citation ids|evidence gap summary|mismatch reason|severity|resolution status|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists and required terms found.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add test knowledge card prompt context discrepancy resolution review plan`.
+- Continue Slice 47 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 46 Completion Gate
 
 Completed:
@@ -29,7 +63,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): complete test knowledge card prompt context review discrepancy tracking slice`.
+- Committed `docs(v2): complete test knowledge card prompt context review discrepancy tracking slice` as `ad8b216`.
 - Continue Slice 47 Task 1 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 46 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Golden Smoke
