@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan Golden Smoke
+
+Completed:
+
+- Added KnowledgeAdapter Provider Evaluation Plan golden fixture:
+  `docs/fixtures/38-knowledge-adapter-provider-evaluation-plan-golden.md`.
+- Added focused golden smoke:
+  `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py`.
+- Golden coverage names provider evaluation actions/states, Haystack,
+  LlamaIndex, GraphRAG, KnowledgeEvidence normalization, provider_state,
+  fallback behavior, license review, reference intake, disabled by default,
+  metrics, ReviewHistory, failure behavior, and provider/runtime forbidden
+  side effects.
+- `NEXT_AI_TASK.md` now points to Slice 50 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `3 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `test(golden): add knowledge adapter provider evaluation plan smoke`.
+- Continue Slice 50 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan Contracts
 
 Completed:

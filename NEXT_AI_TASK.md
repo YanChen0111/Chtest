@@ -10,15 +10,12 @@ Slice 50: KnowledgeAdapter Provider Evaluation Plan Contract.
 
 ## Current Task
 
-Slice 50 Task 3: Add KnowledgeAdapter provider evaluation plan golden smoke.
+Slice 50 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a focused golden smoke proving KnowledgeAdapter
-provider evaluation remains planning evidence before any Haystack/LlamaIndex
-integration, provider SDK, external call, vector database, embedding,
-reranking, runtime retrieval, or provider-backed prompt context behavior
-exists.
+After this task, Chtest has closed the KnowledgeAdapter Provider Evaluation
+Plan slice with passing golden coverage and a clear next narrow V2 task.
 
 ## Must Read
 
@@ -26,15 +23,10 @@ exists.
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/10-v2-scope-options.md`
 4. `docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`
-5. `backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py`
-6. `docs/fixtures/21-mcp-ready-tool-knowledge-safety-golden.md`
-7. `docs/contracts/01-data-model-contract.md`
-8. `docs/contracts/02-api-contract.md`
-9. `docs/contracts/03-state-machines.md`
-10. `docs/contracts/04-artifact-contract.md`
-11. `docs/contracts/05-prompt-skill-contract.md`
-12. `memory/08-session-handoff.md`
-13. `memory/07-dev-log.md`
+5. `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py`
+6. `backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py`
+7. `memory/08-session-handoff.md`
+8. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -48,15 +40,14 @@ exists.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py
-docs/fixtures/38-knowledge-adapter-provider-evaluation-plan-golden.md
 docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden-only task. Do not add frontend code, backend runtime feature code,
+Completion-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -72,30 +63,25 @@ behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py -q
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: focused golden smoke passes and diff check passes.
+Expected result: focused golden verification passes and diff check passes.
 
 ## Acceptance
 
-- Golden names KnowledgeAdapter Provider Evaluation Plan, Haystack,
-  LlamaIndex, provider evaluation, KnowledgeEvidence, provider_state, fallback
-  behavior, license review, reference intake, disabled by default policy,
-  metrics, ReviewHistory, failure behavior, and forbidden side effects.
-- Golden proves no provider SDK, external call, vector database, embedding,
-  reranking, background indexing, runtime retrieval, provider-backed prompt
-  context evidence, UI, RBAC, tenants, permissions, or package upgrade is
-  created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 50 Completion Gate.
+- Slice 50 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next task.
 
 ## Commit Message
 
 ```text
-test(golden): add knowledge adapter provider evaluation plan smoke
+docs(v2): complete knowledge adapter provider evaluation plan slice
 ```
 
 ## Next Task
 
-Slice 50 Completion Gate.
+Select the next narrow V2 slice.
