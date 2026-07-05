@@ -260,6 +260,52 @@ Slice 31 persistence rules:
   TestCase, TestRun, Report, retrieval job, vector index, embedding job, graph
   job, provider call, or Artifact mutation side effects.
 
+Slice 54 generated case human review evidence package rules:
+
+- Generated Case Human Review Evidence Package is a contract-only evidence
+  bundle for human review. It starts from same-project GeneratedCaseCandidate
+  rows and review evidence; it does not approve or reject candidates, promote
+  TestCase rows, create AutomationDraft rows, or change candidate status.
+- The contract-only package action is
+  `build_generated_case_human_review_evidence_package`. Future payloads may
+  store
+  `generated_case_human_review_evidence_package_action=build_generated_case_human_review_evidence_package`.
+- Inputs must preserve GeneratedCaseCandidate ids, candidate status, candidate
+  summary, title, priority, test type, precondition, steps, expected results,
+  input data, tags, requirement refs, risk refs, AI reason, generation reason,
+  covered risk ids, duplicate-of case id, `source_knowledge_evidence_ids`,
+  `knowledge_evidence_refs_json`, `quality_score`, `review_findings_json`,
+  `coverage_gap_notes`, `automation_readiness`, dedup findings, duplicate
+  candidate ids, automation readiness blockers, reviewer comments, prompt
+  context evidence artifact ids, prompt context consumption artifact ids,
+  prompt context audit summary artifact ids, prompt context audit review
+  decision artifact ids, prompt context audit review summary export artifact
+  ids, prompt context discrepancy resolution audit handoff artifact ids,
+  source hashes, source manifest ids, and ReviewHistory ids or ReviewHistory
+  links when available.
+- Outputs may include generated case human review evidence package id or
+  artifact id, `generated_case_human_review_evidence_package`, candidate
+  summary, evidence chain completeness, missing evidence summary, conflicting
+  evidence summary, review blocker summary, dedup/readiness summary, human
+  review checklist, included artifact ids, excluded artifact reasons,
+  ReviewHistory links, failure code, and visible reason.
+- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, missing evidence summary,
+  conflicting evidence summary, review blocker summary, and human review
+  checklist are review aids only. They must not create TestCase rows, approve
+  candidates, reject candidates, request optimization, create automation
+  drafts, execute automation, generate reports, run retrieval, create vector
+  indexes, create embeddings, rerank, call providers, or mutate source
+  evidence.
+- Missing, stale, unsafe, cross-project, unbounded, evidence-missing,
+  candidate-missing, candidate-mismatched, candidate-status-invalid,
+  knowledge-evidence-missing, prompt-context-evidence-missing,
+  review-findings-missing, dedup-inconclusive, readiness-unknown,
+  review-history-missing, artifact-mismatched, source-hash-mismatched,
+  credential-required, runtime-required, provider-required, approval-required,
+  or promotion-required input must produce failure code and visible reason and
+  must not append a successful evidence package.
+
 ## 15. TestCase
 
 | Field | Type | Required | Default | Notes |
@@ -1960,7 +2006,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, knowledge_adapter_provider_evaluation_review_audit_handoff, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, generated_case_human_review_evidence_package, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, knowledge_adapter_provider_evaluation_review_audit_handoff, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -1983,6 +2029,40 @@ Deterministic retrieval Artifact rule:
 - `metadata_json` must include `created_by_component=DeterministicKnowledgeAdapter`,
   `retrieval_mode=deterministic_local`, `query_terms`, `result_count`,
   `used_context_artifact_ids`, and redaction status.
+
+Generated Case Human Review Evidence Package Artifact rule:
+
+- Slice 54 generated case human review evidence packages may use
+  `artifact_type=generated_case_human_review_evidence_package` in a later
+  scoped implementation.
+- `owner_entity_type=GeneratedCaseCandidate` with
+  `owner_entity_id=candidate_id` is preferred. `owner_entity_type=AITask` or
+  `owner_entity_type=Project` may be used by a later scoped package workflow,
+  but metadata must preserve the GeneratedCaseCandidate id.
+- `metadata_json` must include
+  `created_by_component=GeneratedCaseHumanReviewEvidencePackage`,
+  `generated_case_human_review_evidence_package_action=build_generated_case_human_review_evidence_package`,
+  GeneratedCaseCandidate id, candidate status, candidate summary,
+  `source_knowledge_evidence_ids`, `knowledge_evidence_refs_json`,
+  `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, prompt context evidence artifact
+  ids, prompt context consumption artifact ids, prompt context audit summary
+  artifact ids, prompt context audit review decision artifact ids, prompt
+  context audit review summary export artifact ids, prompt context discrepancy
+  resolution audit handoff artifact ids, evidence chain completeness, missing
+  evidence summary, conflicting evidence summary, review blocker summary,
+  dedup/readiness summary, human review checklist, included artifact ids,
+  excluded artifact reasons, source manifest ids, source hashes,
+  ReviewHistory links, failure code, and visible reason when applicable.
+- This artifact is human review evidence only. It must not approve or reject
+  GeneratedCaseCandidate rows, request optimization, promote TestCase rows,
+  create AutomationDraft rows, mutate GeneratedCaseCandidate content, mutate
+  ReviewHistory, mutate KnowledgeEvidence, mutate prompt context evidence,
+  upload artifacts, run prompts, execute AITasks, run retrieval, call
+  providers, call provider SDKs, create vector indexes, create embeddings,
+  rerank, run graph jobs, invoke MCP runtime, generate reports, render
+  frontend pages, expose export/download endpoints, add RBAC, create tenants,
+  change permissions, or install packages.
 
 KnowledgeAdapter provider evaluation plan Artifact rule:
 

@@ -1429,6 +1429,138 @@ Slice 31 candidate persistence/display rules:
   vectors, create embeddings, run graph jobs, call external providers, mutate
   artifacts, invoke MCP runtime, or call remote CI providers.
 
+### 3.5.1 Generated Case Human Review Evidence Package Contract
+
+This section is contract-only. It defines future Generated Case Human Review
+Evidence Package semantics for packaging GeneratedCaseCandidate review
+evidence. It does not add a `POST /api/generated-case-review-packages`
+endpoint, backend feature API, router, service, worker, queue, scheduler,
+frontend page, report generation behavior, export/download endpoint,
+migration, or package upgrade.
+
+Allowed generated case human review evidence package action:
+
+- `build_generated_case_human_review_evidence_package`: future scoped package
+  action that packages GeneratedCaseCandidate content, knowledge evidence,
+  prompt-context lineage, CaseReviewAgent findings, dedup findings,
+  automation readiness, and ReviewHistory into a human review evidence bundle
+  without approving or rejecting candidates.
+
+Generated Case Human Review Evidence Package payload shape:
+
+```json
+{
+  generated_case_human_review_evidence_package_action: build_generated_case_human_review_evidence_package,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
+  candidate_status: generated,
+  candidate_title: Expired coupon cannot be used during checkout,
+  candidate_priority: P0,
+  candidate_test_type: functional,
+  candidate_precondition: user has an expired coupon,
+  candidate_steps: [Login, Open checkout, Select expired coupon, Submit order],
+  candidate_expected_results: [Submission is blocked, Expired coupon message is shown],
+  candidate_input_data: { coupon_code: EXPIRED10 },
+  candidate_tags: [checkout, coupon],
+  requirement_refs: [Expired coupons cannot be used],
+  risk_refs: [coupon-expiration-boundary],
+  ai_reason: Covers coupon expiration boundary,
+  generation_reason: Boundary case for expired coupon validation,
+  covered_risk_ids: [00000000-0000-0000-0000-000000000411],
+  duplicate_of_case_id: null,
+  source_knowledge_evidence_ids: [ke-expired-coupon-boundary],
+  knowledge_evidence_refs_json: [
+    {
+      evidence_id: ke-expired-coupon-boundary,
+      knowledge_card_id: 00000000-0000-0000-0000-000000000821,
+      source_artifact_id: 00000000-0000-0000-0000-000000000371,
+      snippet: Expired coupons cannot be applied during checkout.,
+      score: 0.92
+    }
+  ],
+  quality_score: 84,
+  review_findings_json: [{ type: evidence_complete, severity: info }],
+  coverage_gap_notes: Does not cover coupon and points conflict,
+  automation_readiness: suitable_for_playwright,
+  dedup_findings: [{ duplicate_cluster_id: checkout-coupon-boundary }],
+  duplicate_candidate_ids: [],
+  automation_readiness_blockers: [],
+  prompt_context_evidence_artifact_ids: [00000000-0000-0000-0000-000000000901],
+  prompt_context_consumption_artifact_ids: [00000000-0000-0000-0000-000000000902],
+  prompt_context_audit_summary_artifact_ids: [00000000-0000-0000-0000-000000000903],
+  prompt_context_audit_review_decision_artifact_ids: [00000000-0000-0000-0000-000000000904],
+  prompt_context_audit_review_summary_export_artifact_ids: [00000000-0000-0000-0000-000000000905],
+  prompt_context_discrepancy_resolution_audit_handoff_artifact_ids: [00000000-0000-0000-0000-000000000906],
+  source_manifest_ids: [generated-case-review-source-manifest-001],
+  source_hashes: [sha256:generated-case-review-evidence],
+  review_history_links: [00000000-0000-0000-0000-000000000895]
+}
+```
+
+Generated Case Human Review Evidence Package response shape for a future
+scoped implementation:
+
+```json
+{
+  generated_case_human_review_evidence_package_action: build_generated_case_human_review_evidence_package,
+  generated_case_human_review_evidence_package_artifact_id: 00000000-0000-0000-0000-000000000930,
+  generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
+  generated_case_human_review_evidence_package: generated_case_human_review_evidence_package,
+  candidate_summary: expired coupon checkout boundary candidate with local evidence,
+  evidence_chain_completeness: incomplete,
+  missing_evidence_summary: coupon and points conflict not covered,
+  conflicting_evidence_summary: none,
+  review_blocker_summary: coverage gap remains visible,
+  dedup_readiness_summary: no duplicate selected; suitable for Playwright after review,
+  human_review_checklist: [check evidence refs, resolve coverage gap, confirm automation readiness],
+  included_artifact_ids: [
+    00000000-0000-0000-0000-000000000901,
+    00000000-0000-0000-0000-000000000902,
+    00000000-0000-0000-0000-000000000903
+  ],
+  excluded_artifact_reasons: [],
+  review_history_links: [00000000-0000-0000-0000-000000000895],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+Generated Case Human Review Evidence Package hard rules:
+
+- Input must reference a same-project GeneratedCaseCandidate and may include
+  same-project prompt-context artifact lineage, source manifest ids, source
+  hashes, and ReviewHistory links.
+- Output is human-review evidence only. It may record candidate summary,
+  evidence chain completeness, missing evidence summary, conflicting evidence
+  summary, review blocker summary, dedup/readiness summary, human review
+  checklist, included artifact ids, excluded artifact reasons, ReviewHistory
+  links, failure code, and visible reason.
+- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, evidence chain completeness, and
+  human review checklist must not approve candidates, reject candidates,
+  request optimization, promote TestCase rows, create AutomationDraft rows,
+  execute automation, create reports, or set `used_knowledge=true`.
+- Missing, stale, unsafe, cross-project, unbounded, evidence-missing,
+  candidate-missing, candidate-mismatched, candidate-status-invalid,
+  knowledge-evidence-missing, prompt-context-evidence-missing,
+  review-findings-missing, dedup-inconclusive, readiness-unknown,
+  review-history-missing, artifact-mismatched, source-hash-mismatched,
+  credential-required, runtime-required, provider-required, approval-required,
+  or promotion-required input must return failure code and visible reason and
+  must not append a successful evidence package.
+- `build_generated_case_human_review_evidence_package` must not create
+  backend runtime APIs, endpoints, routers, services, workers, queues,
+  schedulers, migrations, frontend pages, reports, export/download endpoints,
+  provider integrations, provider SDK calls, external calls, credentials,
+  remote URL fetches, vector indexes, embeddings, reranking, graph jobs, MCP
+  runtime calls, prompt execution, AITask orchestration, TestCase promotion,
+  GeneratedCaseCandidate approve/reject mutation, automation draft creation,
+  ToolInvocation rows, TestRun/TestResult rows, artifact upload, Artifact rows
+  outside declared evidence package output, prompt context evidence mutation,
+  KnowledgeEvidence mutation, ReviewHistory mutation, historical evidence
+  mutation, runner behavior changes, remote CI provider behavior, RBAC,
+  tenants, permissions, or package upgrades.
+
 ### 3.5.1 Knowledge Feedback Contract
 
 This section is contract-only. It defines the API payload shape that a future

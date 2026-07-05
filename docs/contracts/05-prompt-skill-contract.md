@@ -1134,6 +1134,87 @@ Global rules:
 | DedupAgent | `case_dedup:v1` / `testcase-review-skill:v1` | GeneratedCaseCandidate drafts, reviewed case ids when supplied, case titles/steps/expected results, requirement and risk refs, review findings. | Dedup draft with duplicate groups, similarity reasons, keep/merge/split suggestions, and evidence refs; write permission is AITask output plus dedup suggestion artifact only. | Duplicate claims must cite matching fields; keep/merge suggestions must preserve requirement/risk coverage; schema must pass. | Do not delete, merge, hide, or mutate cases; do not infer duplicates from title alone; do not promote candidates. | Human gate requires reviewer confirmation before any merge, removal, or canonical case change. | Return `UNABLE_TO_DEDUP_CASES`; leave all candidates unchanged and mark dedup status inconclusive. |
 | AutomationReadinessAgent | `automation_readiness:v1` / `automation-draft-skill:v1` | Reviewed candidate drafts, review findings, dedup suggestions, target framework notes, execution constraints, known test data/dependency evidence. | Automation readiness draft with readiness status, blockers, data/fixture needs, suggested framework fit, risk notes, and trace refs; write permission is AITask output plus readiness fields on candidate draft only. | Must distinguish automatable, manual-only, blocked, and needs-design states; blockers must cite evidence; no readiness claim without preconditions and expected results; schema must pass. | Do not generate automation code, execute tests, create runner commands, mutate repositories, call providers, or promote candidates. | Human gate requires automation owner review before automation drafting or implementation work is scheduled. | Return `UNABLE_TO_ASSESS_AUTOMATION_READINESS`; readiness remains unknown and no automation task may be created from the failed output. |
 
+## 6.1.1 Generated Case Human Review Evidence Package Trace Contract
+
+This contract defines prompt/skill trace rules for future Generated Case
+Human Review Evidence Package evidence. It is contract-only and does not
+assemble prompts, execute AITasks, call providers, run retrieval, create
+provider-backed prompt context evidence, approve or reject candidates, promote
+TestCases, create automation drafts, generate reports, expose export/download
+endpoints, or render frontend pages.
+
+Generated case human review evidence package input must include:
+
+- `generated_case_human_review_evidence_package_action=build_generated_case_human_review_evidence_package`.
+- GeneratedCaseCandidate id and candidate status.
+- Candidate summary, title, priority, test type, precondition, steps, expected
+  results, input data, tags, requirement refs, risk refs, AI reason,
+  generation reason, covered risk ids, and duplicate-of case id.
+- `source_knowledge_evidence_ids` and `knowledge_evidence_refs_json`.
+- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, duplicate candidate ids, automation
+  readiness blockers, source manifest ids, source hashes, and ReviewHistory
+  links when available.
+- Prompt context evidence artifact ids, prompt context consumption artifact
+  ids, prompt context audit summary artifact ids, prompt context audit review
+  decision artifact ids, prompt context audit review summary export artifact
+  ids, and prompt context discrepancy resolution audit handoff artifact ids.
+- PromptVersion id/name/version and SkillVersion id/name/version when the
+  evidence package is produced by a prompt or skill.
+
+Generated case human review evidence package output may include:
+
+- Generated case human review evidence package id or artifact id.
+- `generated_case_human_review_evidence_package` artifact or manifest naming.
+- `generated_case_human_review_evidence_package.json`.
+- Candidate summary, evidence chain completeness, missing evidence summary,
+  conflicting evidence summary, review blocker summary, dedup/readiness
+  summary, human review checklist, included artifact ids, excluded artifact
+  reasons, source traceability summary, ReviewHistory links, failure code, and
+  visible reason.
+
+Generated case human review evidence package rules:
+
+- Evidence package records are human-review evidence bundles only. They must
+  not be treated as approval, rejection, optimization request, TestCase
+  promotion, automation draft creation, prompt eligibility, report generation
+  behavior, export/download endpoint behavior, or proof that knowledge was
+  used.
+- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, missing evidence summary,
+  conflicting evidence summary, review blocker summary, and human review
+  checklist are review aids only.
+- Incomplete or blocked evidence packages must preserve missing evidence
+  summary, conflicting evidence summary, review blocker summary,
+  dedup/readiness summary, excluded artifact reasons, source hashes, and
+  ReviewHistory links.
+- `used_knowledge` must not be auto-marked true by generated case human
+  review evidence package.
+- Provider-specific payloads must not leak into GeneratedCaseCandidate,
+  TestCase, TestKnowledgeCard, KnowledgeEvidence, prompt context evidence,
+  reports, review surfaces, or evidence package surfaces.
+- Missing, stale, unsafe, cross-project, unbounded, evidence-missing,
+  candidate-missing, candidate-mismatched, candidate-status-invalid,
+  knowledge-evidence-missing, prompt-context-evidence-missing,
+  review-findings-missing, dedup-inconclusive, readiness-unknown,
+  review-history-missing, artifact-mismatched, source-hash-mismatched,
+  credential-required, runtime-required, provider-required, approval-required,
+  or promotion-required input must produce a failure code and visible reason
+  and must not append a successful evidence package.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, integrate an SDK, store credentials, fetch remote URLs,
+  create a vector index, create embeddings, rerank, run background indexing,
+  run a graph job, invoke MCP runtime, create provider-backed prompt context
+  evidence, generate reports, expose export/download endpoints, mutate
+  GeneratedCaseCandidate rows, approve or reject GeneratedCaseCandidate rows,
+  promote TestCase rows, create AutomationDraft rows, create ToolInvocation
+  rows, execute AITasks, mutate prompt context evidence, mutate
+  KnowledgeEvidence, mutate TestKnowledgeCard rows, mutate ReviewHistory,
+  mutate historical evidence, mutate Artifact rows outside declared evidence
+  package output, render frontend pages, expose backend feature APIs, add
+  endpoints, routers, services, workers, queues, schedulers, run migrations,
+  add package upgrades, add RBAC, create tenants, or change permissions.
+
 ## 6.2 Knowledge Feedback Seed Contract
 
 KnowledgeFeedbackAgent is bound to `knowledge_feedback:v1` and

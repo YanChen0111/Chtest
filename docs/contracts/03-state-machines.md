@@ -89,6 +89,76 @@ TestKnowledgeCard / KnowledgeEvidence rules:
   calls, MCP runtime calls, artifact mutation, runner execution, report
   generation, RBAC, tenant, permission, or remote CI provider behavior.
 
+### 3.1 Generated Case Human Review Evidence Package State Contract
+
+This state contract is planning-only. It defines future evidence package
+labels for GeneratedCaseCandidate human review evidence before any backend
+runtime API, frontend page, provider integration, provider SDK, external call,
+vector database, embedding, reranking, graph runtime, MCP runtime, runtime
+retrieval, prompt execution, AITask orchestration, TestCase promotion,
+GeneratedCaseCandidate approve/reject mutation, automation draft creation,
+RBAC, tenants, or permissions exist.
+
+```text
+generated -> generated_case_human_review_evidence_package_pending
+under_review -> generated_case_human_review_evidence_package_pending
+needs_optimization -> generated_case_human_review_evidence_package_pending
+optimization_pending_review -> generated_case_human_review_evidence_package_pending
+generated_case_human_review_evidence_package_pending -> generated_case_human_review_evidence_package_complete
+generated_case_human_review_evidence_package_pending -> generated_case_human_review_evidence_package_incomplete
+generated_case_human_review_evidence_package_pending -> generated_case_human_review_evidence_package_blocked
+generated_case_human_review_evidence_package_pending -> generated_case_human_review_evidence_package_failed_validation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| generated | build_generated_case_human_review_evidence_package | generated_case_human_review_evidence_package_pending | Future workflow/API | Packages evidence before human review |
+| under_review | build_generated_case_human_review_evidence_package | generated_case_human_review_evidence_package_pending | Future workflow/API | Refreshes reviewer-visible evidence |
+| needs_optimization | build_generated_case_human_review_evidence_package | generated_case_human_review_evidence_package_pending | Future workflow/API | Preserves optimization blockers |
+| optimization_pending_review | build_generated_case_human_review_evidence_package | generated_case_human_review_evidence_package_pending | Future workflow/API | Packages optimized candidate evidence |
+| generated_case_human_review_evidence_package_pending | complete | generated_case_human_review_evidence_package_complete | Future workflow/API | Records complete evidence chain |
+| generated_case_human_review_evidence_package_pending | incomplete | generated_case_human_review_evidence_package_incomplete | Future workflow/API | Records missing evidence summary |
+| generated_case_human_review_evidence_package_pending | blocked | generated_case_human_review_evidence_package_blocked | Future workflow/API | Records review blocker summary |
+| generated_case_human_review_evidence_package_pending | failed_validation | generated_case_human_review_evidence_package_failed_validation | Future workflow/API | Records failure code and visible reason |
+
+Generated Case Human Review Evidence Package state rules:
+
+- `build_generated_case_human_review_evidence_package` requires
+  GeneratedCaseCandidate ids, candidate status, candidate summary,
+  `source_knowledge_evidence_ids`, `knowledge_evidence_refs_json`,
+  `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, prompt context artifact lineage,
+  source hashes, source manifest ids, and ReviewHistory links when available.
+- Evidence package states are review evidence labels only. They may produce an
+  evidence package artifact id, candidate summary, evidence chain
+  completeness, missing evidence summary, conflicting evidence summary, review
+  blocker summary, dedup/readiness summary, human review checklist, included
+  artifact ids, excluded artifact reasons, ReviewHistory links, failure code,
+  and visible reason.
+- Evidence package states must not transition a GeneratedCaseCandidate to
+  approved, approved_after_edit, rejected, or needs_optimization. Existing
+  human review transitions remain the only approval/rejection path.
+- Missing, stale, unsafe, cross-project, unbounded, evidence-missing,
+  candidate-missing, candidate-mismatched, candidate-status-invalid,
+  knowledge-evidence-missing, prompt-context-evidence-missing,
+  review-findings-missing, dedup-inconclusive, readiness-unknown,
+  review-history-missing, artifact-mismatched, source-hash-mismatched,
+  credential-required, runtime-required, provider-required, approval-required,
+  or promotion-required input must produce
+  `generated_case_human_review_evidence_package_failed_validation` with a
+  visible reason and must not append a successful evidence package.
+- Evidence package states must not create backend runtime APIs, endpoints,
+  routers, services, workers, queues, schedulers, migrations, frontend pages,
+  reports, export/download endpoints, provider integrations, provider SDK
+  calls, external calls, credentials, remote URL fetches, vector indexes,
+  embeddings, reranking, graph jobs, MCP runtime calls, prompt execution,
+  AITask orchestration, TestCase promotion, GeneratedCaseCandidate
+  approve/reject mutation, automation draft creation, ToolInvocation rows,
+  TestRun/TestResult rows, artifact upload, prompt context evidence mutation,
+  KnowledgeEvidence mutation, ReviewHistory mutation, historical evidence
+  mutation, runner behavior changes, remote CI provider behavior, RBAC,
+  tenants, permissions, or package upgrades.
+
 ## 7.3 KnowledgeFeedbackDraft State Contract
 
 KnowledgeFeedbackAgent output is draft feedback evidence. It is not a

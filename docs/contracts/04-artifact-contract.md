@@ -365,6 +365,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | context_yaml | application/yaml | 轻量上下文 YAML |
 | context_openapi | application/yaml or application/json | OpenAPI 片段或文件 |
 | knowledge_retrieval | application/json | 确定性本地知识检索证据 |
+| generated_case_human_review_evidence_package | application/json | Future generated case human review evidence package |
 | knowledge_adapter_provider_evaluation_plan | application/json | Future KnowledgeAdapter provider evaluation planning evidence |
 | knowledge_adapter_provider_evaluation_review_decision | application/json | Future KnowledgeAdapter provider evaluation review decision evidence |
 | knowledge_adapter_provider_evaluation_review_summary_export | application/json | Future KnowledgeAdapter provider evaluation review summary export evidence |
@@ -598,6 +599,52 @@ Test knowledge card artifact rules:
   call external providers, invoke MCP runtime, mutate artifacts, generate
   reports, change runner behavior, call remote CI providers, add RBAC, create
   tenants, or change permissions.
+
+Generated case human review evidence package artifact rules:
+
+- `generated_case_human_review_evidence_package.json` may be stored as an
+  Artifact with
+  `artifact_type=generated_case_human_review_evidence_package`,
+  `owner_entity_type=GeneratedCaseCandidate`, and
+  `owner_entity_id=candidate_id` in a later scoped implementation. A future
+  workflow may use `owner_entity_type=AITask`, but it must preserve the
+  GeneratedCaseCandidate id in metadata.
+- The artifact must include
+  `created_by_component=GeneratedCaseHumanReviewEvidencePackage`,
+  `generated_case_human_review_evidence_package_action=build_generated_case_human_review_evidence_package`,
+  GeneratedCaseCandidate id, candidate status, candidate summary, title,
+  priority, test type, precondition, steps, expected results, input data,
+  tags, requirement refs, risk refs, AI reason, generation reason, covered
+  risk ids, duplicate-of case id, `source_knowledge_evidence_ids`,
+  `knowledge_evidence_refs_json`, `quality_score`, `review_findings_json`,
+  `coverage_gap_notes`, `automation_readiness`, dedup findings, duplicate
+  candidate ids, automation readiness blockers, prompt context evidence
+  artifact ids, prompt context consumption artifact ids, prompt context audit
+  summary artifact ids, prompt context audit review decision artifact ids,
+  prompt context audit review summary export artifact ids, prompt context
+  discrepancy resolution audit handoff artifact ids, evidence chain
+  completeness, missing evidence summary, conflicting evidence summary, review
+  blocker summary, dedup/readiness summary, human review checklist, included
+  artifact ids, excluded artifact reasons, source manifest ids, source hashes,
+  ReviewHistory links, failure code, and visible reason when applicable.
+- Generated case human review evidence package artifacts must be bounded JSON.
+  They must not contain raw LLM/provider payloads, unbounded source text,
+  credentials, API keys, tokens, OAuth state, remote fetch payloads, vector
+  store payloads, embedding vectors, reranker traces, graph runtime payloads,
+  executable prompt assembly payloads, runtime `prompt_input.json`,
+  frontend-rendered markup, report-rendered payloads, export-rendered
+  payloads, downloadable provider payloads, or generated replacement evidence.
+- Generated case human review evidence package artifacts must not approve or
+  reject GeneratedCaseCandidate rows, request optimization, promote TestCase
+  rows, create AutomationDraft rows, mutate GeneratedCaseCandidate content,
+  mutate ReviewHistory, mutate KnowledgeEvidence, mutate prompt context
+  evidence, mutate Artifact rows outside declared evidence package output,
+  upload artifacts, run prompt assembly, execute AITasks, call providers, call
+  provider SDKs, fetch remote URLs, change retrieval ranking, create vector
+  indexes, create embeddings, rerank, run background indexing, run graph jobs,
+  invoke MCP runtime, render frontend pages, generate reports, expose
+  export/download endpoints, call remote CI providers, add RBAC, create
+  tenants, change permissions, or install packages.
 
 Knowledge feedback artifact rules:
 
