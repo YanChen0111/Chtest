@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-07-05 Slice 55 Generated Case Human Review Decision Golden Smoke
+
+Completed:
+
+- Added Generated Case Human Review Decision golden fixture:
+  `docs/fixtures/43-generated-case-human-review-decision-golden.md`.
+- Added focused golden smoke:
+  `backend/app/tests/golden/test_generated_case_human_review_decision_contract_golden.py`.
+- The golden covers `generated_case_human_review_decision`,
+  `review_generated_case_human_review_evidence_package`,
+  `generated_case_human_review_evidence_package_artifact_id`, decision
+  labels, reviewer label/comment, requested edit fields, optimization request
+  summary, rejection/blocker reasons, duplicate resolution notes,
+  ReviewHistory links, failure behavior, and forbidden side effects.
+- The smoke proves no backend runtime API, frontend, provider SDK, external
+  call, vector database, embedding, reranking, prompt execution, candidate
+  approval/rejection, request optimization mutation, TestCase promotion,
+  automation draft creation, RBAC, tenants, permissions, package upgrade, or
+  source evidence mutation is introduced by the contract.
+- `NEXT_AI_TASK.md` now points to Slice 55 Completion Gate.
+
+Verification:
+
+```powershell
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `4 passed in 1.14s`.
+- Diff check reported no whitespace errors; existing LF-to-CRLF warnings only.
+
+Next recommended task:
+
+- Commit `test(golden): add generated case human review decision smoke`.
+- Continue Slice 55 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 55 Generated Case Human Review Decision Contracts
 
 Completed:
