@@ -3222,3 +3222,5 @@ Expected output:
   `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`.
 - No product code until the plan defines audit handoff inputs, evidence chain
   status, included/excluded artifact handling, failure behavior, and non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`.

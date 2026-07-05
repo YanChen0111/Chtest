@@ -1,5 +1,38 @@
 # Session Handoff
 
+## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Plan
+
+Completed:
+
+- Added Slice 49 plan:
+  `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`.
+- The plan defines a contract-first boundary for final audit handoff of prompt
+  context discrepancy resolution evidence before frontend, report,
+  export/download, external archive, or prompt runtime behavior.
+- The plan names audit handoff inputs, handoff summary, evidence chain status,
+  included artifact ids, excluded artifact reasons, unresolved follow-up flags,
+  ReviewHistory, failure behavior, and non-goals.
+- `NEXT_AI_TASK.md` now points to Slice 49 Task 2: Define TestKnowledgeCard
+  prompt context discrepancy resolution audit handoff contracts.
+
+Verification:
+
+```bash
+test -f docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md
+rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff|audit handoff|handoff summary|evidence chain status|included artifact ids|excluded artifact reasons|resolution outcome summary|accepted discrepancy group|rejected discrepancy group|acknowledged discrepancy group|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md NEXT_AI_TASK.md
+git diff --check
+```
+
+Result:
+
+- Plan file exists and required terms found.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): add test knowledge card prompt context discrepancy resolution audit handoff plan`.
+- Continue Slice 49 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 48 Completion Gate
 
 Completed:
@@ -29,7 +62,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): complete test knowledge card prompt context discrepancy resolution summary export slice`.
+- Committed `docs(v2): complete test knowledge card prompt context discrepancy resolution summary export slice` as `42c8b9a`.
 - Continue Slice 49 Task 1 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 48 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Golden Smoke

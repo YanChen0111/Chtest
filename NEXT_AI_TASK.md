@@ -10,28 +10,29 @@ Slice 49: TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff 
 
 ## Current Task
 
-Slice 49 Task 1: Add TestKnowledgeCard prompt context discrepancy resolution audit handoff task plan.
+Slice 49 Task 2: Define TestKnowledgeCard prompt context discrepancy resolution audit handoff contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for final audit handoff of prompt
-context discrepancy resolution evidence without mutating summaries, resolution
-reviews, discrepancy records, review evidence, frontend pages, report
-generation, export endpoints, or prompt runtime behavior.
+After this task, Chtest has contract definitions for final audit handoff of
+prompt context discrepancy resolution evidence without mutating summaries,
+resolution reviews, discrepancy records, review evidence, frontend pages,
+report generation, export endpoints, or prompt runtime behavior.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`
-4. `docs/implementation/10-v2-scope-options.md`
+3. `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`
+4. `docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`
 5. `docs/contracts/01-data-model-contract.md`
 6. `docs/contracts/02-api-contract.md`
 7. `docs/contracts/03-state-machines.md`
 8. `docs/contracts/04-artifact-contract.md`
 9. `docs/contracts/05-prompt-skill-contract.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+10. `docs/implementation/10-v2-scope-options.md`
+11. `memory/08-session-handoff.md`
+12. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -45,15 +46,18 @@ generation, export endpoints, or prompt runtime behavior.
 Create or update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
+docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
-contract edits,
+Contract-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -68,34 +72,37 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md
-rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff|audit handoff|handoff summary|evidence chain status|included artifact ids|excluded artifact reasons|resolution outcome summary|accepted discrepancy group|rejected discrepancy group|acknowledged discrepancy group|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md NEXT_AI_TASK.md
+rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff|prompt_context_discrepancy_resolution_audit_handoff|build_prompt_context_discrepancy_resolution_audit_handoff|handoff summary|evidence chain status|included artifact ids|excluded artifact reasons|unresolved evidence gaps|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md
 git diff --check
 ```
 
-Expected result: plan file exists, required terms are present, and diff check
-passes.
+Expected result: required terms are present and diff check passes.
 
 ## Acceptance
 
-- Slice 49 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names audit handoff inputs, handoff summary, evidence chain status,
-  included artifact ids, excluded artifact reasons, unresolved follow-up flags,
-  ReviewHistory, failure behavior, and non-goals.
-- The plan excludes frontend page, report generation behavior, export/download
+- Contracts define audit handoff inputs, resolution summary export artifact
+  references, resolution review artifact references, discrepancy artifact
+  references, handoff summary, evidence chain status, included artifact ids,
+  excluded artifact reasons, unresolved follow-up flags, ReviewHistory, source
+  hashes, context manifest links, PromptVersion/SkillVersion trace, failure
+  behavior, and forbidden side effects.
+- Contracts require audit handoff to preserve underlying resolution summaries,
+  resolution reviews, discrepancy records, review summary exports, review
+  decisions, audit summaries, consumption evidence, and knowledge artifacts
+  without inventing, mutating, or automatically resolving evidence.
+- Contracts keep frontend page, report generation behavior, export/download
   endpoint, prompt assembly implementation, prompt runtime execution, provider
   calls, retrieval ranking changes, vector indexes, embeddings, reranking,
   graph jobs, MCP runtime, broad CRUD, automatic eligibility, and historical
-  evidence mutation.
-- `NEXT_AI_TASK.md` points to Task 2.
+  evidence mutation out of scope.
+- `NEXT_AI_TASK.md` points to Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add test knowledge card prompt context discrepancy resolution audit handoff plan
+docs(v2): define test knowledge card prompt context discrepancy resolution audit handoff contracts
 ```
 
 ## Next Task
 
-Slice 49 Task 2: Define TestKnowledgeCard prompt context discrepancy resolution audit handoff contracts.
+Slice 49 Task 3: Add TestKnowledgeCard prompt context discrepancy resolution audit handoff golden smoke.
