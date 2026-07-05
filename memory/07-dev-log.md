@@ -1,5 +1,47 @@
 # Development Log
 
+## 2026-07-05 Slice 48 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Contracts
+
+### Completed
+
+- Updated TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export
+  contracts in:
+  - `docs/contracts/01-data-model-contract.md`;
+  - `docs/contracts/02-api-contract.md`;
+  - `docs/contracts/03-state-machines.md`;
+  - `docs/contracts/04-artifact-contract.md`;
+  - `docs/contracts/05-prompt-skill-contract.md`.
+- Contracts define `export_prompt_context_discrepancy_resolution_summary`,
+  `prompt_context_discrepancy_resolution_summary_export`, resolution review
+  artifact references, discrepancy artifact references, resolution outcome
+  summary, accepted/rejected/acknowledged discrepancy groups, clarification
+  requested fields, resolution status, ReviewHistory, source hashes, context
+  manifest references, and failure behavior.
+- The resolution summary export boundary preserves resolution review evidence,
+  discrepancy records, review summary exports, review decisions, audit
+  summaries, prompt context consumption artifacts, prompt context evidence
+  artifacts, `used_knowledge`, PromptVersion, SkillVersion, ReviewHistory, and
+  affected citations without adding frontend/report/export runtime.
+- The contracts keep frontend pages, report generation behavior,
+  export/download endpoints, prompt assembly, prompt runtime execution,
+  provider calls, retrieval ranking changes, vector indexes, embeddings,
+  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
+  automatic eligibility, historical evidence mutation, RBAC, tenants, and
+  permissions out of scope.
+- Updated `NEXT_AI_TASK.md` to Slice 48 Task 3.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export|prompt_context_discrepancy_resolution_summary_export|export_prompt_context_discrepancy_resolution_summary|resolution outcome summary|accepted discrepancy group|rejected discrepancy group|acknowledged discrepancy group|clarification requested fields|resolution status|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`
+- `git diff --check`
+- Result: required terms found and diff check is clean except Windows
+  LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card prompt context discrepancy resolution summary export contracts`.
+- Continue Slice 48 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 48 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Plan
 
 ### Completed
@@ -30,7 +72,7 @@
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card prompt context discrepancy resolution summary export plan`.
+- Committed `docs(v2): add test knowledge card prompt context discrepancy resolution summary export plan` as `6c17232`.
 - Continue Slice 48 Task 2 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 47 Completion Gate

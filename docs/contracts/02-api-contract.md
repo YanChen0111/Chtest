@@ -2393,6 +2393,163 @@ TestKnowledgeCard Prompt Context Discrepancy Resolution Review hard rules:
   mutation, generated-case auto-approval, runner behavior, RBAC, tenants, or
   permissions.
 
+### 3.5.15 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Contract
+
+This section is contract-only. It defines future summary export semantics for
+prompt context discrepancy resolution review evidence and does not add an
+endpoint, router, service, worker, queue, frontend page, report generation
+behavior, export/download endpoint, migration, prompt assembly implementation,
+prompt runtime execution, provider call, deterministic retrieval behavior
+change, vector index, embedding job, reranking, graph job, MCP runtime, broad
+CRUD, RBAC, tenants, or permissions.
+
+Allowed prompt-context discrepancy resolution summary export action:
+
+- `export_prompt_context_discrepancy_resolution_summary`: future scoped
+  summary export action that packages resolution outcome summary,
+  accepted discrepancy group, rejected discrepancy group, acknowledged
+  discrepancy group, clarification requested field group, unresolved follow-up
+  flag group, reviewer comment summary, resulting resolution status group,
+  source hashes, context manifest links, PromptVersion/SkillVersion trace, and
+  ReviewHistory links from discrepancy resolution review, prompt context review
+  discrepancy, review summary export, audit review decision, audit summary,
+  and prompt context consumption evidence. It does not render a UI, generate
+  reports, expose a download endpoint, assemble a runtime prompt, run an
+  AITask, call a provider, create prompt eligibility, auto-resolve
+  discrepancies, or generate model citations.
+
+Prompt context discrepancy resolution summary export payload shape:
+
+```json
+{
+  prompt_context_discrepancy_resolution_summary_export_action: export_prompt_context_discrepancy_resolution_summary,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  prompt_request_id: local-prompt-request-001,
+  ai_task_id: 00000000-0000-0000-0000-000000000701,
+  prompt_context_discrepancy_resolution_review_artifact_id: 00000000-0000-0000-0000-000000000903,
+  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
+  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
+  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
+  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
+  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
+  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  used_knowledge: true,
+  usage_status: knowledge_used,
+  resolution_action: acknowledge_discrepancy,
+  resulting_resolution_status: acknowledged,
+  accepted_discrepancy_ids: [],
+  rejected_discrepancy_ids: [],
+  acknowledged_discrepancy_ids: [discrepancy-citation-mismatch-001],
+  clarification_requested_fields: [],
+  affected_citation_ids: [knowledge-citation-expired-coupon],
+  evidence_gap_summary: cited source hash differs from audit summary,
+  mismatch_reason: source_hash_mismatch,
+  reviewer_note: discrepancy accepted for later evidence refresh,
+  unresolved_follow_up_flags: [verify-source-hash],
+  unsupported_claim_references: [claim-without-source],
+  prompt_version_id: 00000000-0000-0000-0000-000000000711,
+  skill_version_id: 00000000-0000-0000-0000-000000000712,
+  review_history_ids: [
+    00000000-0000-0000-0000-000000000895,
+    00000000-0000-0000-0000-000000000896
+  ]
+}
+```
+
+Prompt context discrepancy resolution summary export response shape for a
+future scoped implementation:
+
+```json
+{
+  prompt_context_discrepancy_resolution_summary_export_action: export_prompt_context_discrepancy_resolution_summary,
+  prompt_context_discrepancy_resolution_summary_export_artifact_id: 00000000-0000-0000-0000-000000000904,
+  prompt_context_discrepancy_resolution_review_artifact_id: 00000000-0000-0000-0000-000000000903,
+  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
+  resolution_outcome_summary: acknowledged_discrepancy_with_follow_up,
+  accepted_discrepancy_group: [],
+  rejected_discrepancy_group: [],
+  acknowledged_discrepancy_group: [
+    {
+      discrepancy_id: discrepancy-citation-mismatch-001,
+      affected_citation_ids: [knowledge-citation-expired-coupon]
+    }
+  ],
+  clarification_requested_field_group: [],
+  unresolved_follow_up_flag_group: [verify-source-hash],
+  reviewer_comment_summary: discrepancy accepted for later evidence refresh,
+  resulting_resolution_status_group: [
+    {
+      status: acknowledged,
+      discrepancy_id: discrepancy-citation-mismatch-001
+    }
+  ],
+  review_history_links: [
+    00000000-0000-0000-0000-000000000895,
+    00000000-0000-0000-0000-000000000896
+  ],
+  prompt_trace: {
+    prompt_version_id: 00000000-0000-0000-0000-000000000711,
+    skill_version_id: 00000000-0000-0000-0000-000000000712
+  },
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  source_hashes: [sha256:knowledge-source-hash],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export hard
+rules:
+
+- Resolution summary export input must reference prompt context discrepancy
+  resolution review artifact, prompt context review discrepancy artifact,
+  review summary export artifact, audit review decision artifact, audit summary
+  artifact, prompt context consumption artifact, prompt context evidence
+  artifact, context manifest, `used_knowledge` decision, usage status,
+  resolution action, resulting resolution status, accepted discrepancy ids,
+  rejected discrepancy ids, acknowledged discrepancy ids, clarification
+  requested fields, affected citation ids, evidence gap summary, mismatch
+  reason, unresolved follow-up flags, unsupported claim references,
+  PromptVersion, SkillVersion, source hash, and ReviewHistory.
+- Resolution summary export output must be evidence packaging only. It may
+  record resolution outcome summary, accepted discrepancy group, rejected
+  discrepancy group, acknowledged discrepancy group, clarification requested
+  field group, unresolved follow-up flag group, reviewer comment summary,
+  resulting resolution status group, ReviewHistory links, failure reasons,
+  visible reason, and source hash/context manifest references, but it must not
+  invent citations, rewrite `used_knowledge`, auto-resolve discrepancies, or
+  mutate resolution review evidence.
+- Resolution outcome groups and resulting resolution status group are audit
+  labels only. They must not create prompt eligibility, approve
+  TestKnowledgeCard content, approve generated cases, alter prompt context
+  consumption evidence, or mark skipped evidence as cited.
+- Accepted discrepancy group, rejected discrepancy group, acknowledged
+  discrepancy group, clarification requested field group, unresolved follow-up
+  flag group, affected citation ids, skipped evidence, evidence gap summary,
+  mismatch reason, and unsupported claims must remain visible instead of being
+  deleted, filtered, or rewritten.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
+  resolution-review-mismatched, evidence-mismatched, audit-summary-mismatched,
+  review-decision-mismatched, or summary-export-mismatched input must return a
+  failure code and visible reason and must not append a successful resolution
+  summary export.
+- `export_prompt_context_discrepancy_resolution_summary` must not write runtime
+  `prompt_input.json`, render frontend pages, generate reports, expose
+  export/download endpoints, assemble prompts, call providers, run AITasks,
+  change retrieval ranking, create vector indexes, create embeddings, rerank,
+  run graph jobs, invoke MCP runtime, approve cases, create prompt eligibility,
+  auto-resolve discrepancies, or mutate historical evidence.
+- This contract must not add frontend page, report generation behavior,
+  export/download endpoint, prompt assembly implementation, prompt runtime
+  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
+  eligibility, automatic knowledge ingestion, artifact mutation outside
+  declared prompt context discrepancy resolution summary export, historical
+  evidence mutation, generated-case auto-approval, runner behavior, RBAC,
+  tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

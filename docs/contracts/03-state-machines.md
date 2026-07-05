@@ -884,6 +884,88 @@ TestKnowledgeCard Prompt Context Discrepancy Resolution Review state rules:
   mutation, generated-case auto-approval, runner behavior changes, RBAC,
   tenants, permissions, or remote CI provider behavior.
 
+## 7.16 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export State Contract
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export is a
+contract-only state boundary for future workflows that package prompt context
+discrepancy resolution review evidence into a summary export. It starts only
+from persisted resolution review evidence and does not implement frontend
+rendering, report generation behavior, export/download endpoints, prompt
+assembly, prompt runtime execution, provider calls, retrieval ranking, model
+citation generation, prompt eligibility, card creation, or broad
+TestKnowledgeCard CRUD.
+
+```text
+prompt_context_discrepancy_resolution_acknowledged -> prompt_context_discrepancy_resolution_summary_export_pending
+prompt_context_discrepancy_resolution_rejected -> prompt_context_discrepancy_resolution_summary_export_pending
+prompt_context_discrepancy_resolution_needs_clarification -> prompt_context_discrepancy_resolution_summary_export_pending
+prompt_context_discrepancy_resolution_resolved_by_later_review -> prompt_context_discrepancy_resolution_summary_export_pending
+prompt_context_discrepancy_resolution_summary_export_pending -> prompt_context_discrepancy_resolution_summary_export_ready
+prompt_context_discrepancy_resolution_summary_export_pending -> prompt_context_discrepancy_resolution_summary_export_failed
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| prompt_context_discrepancy_resolution_acknowledged | request_prompt_context_discrepancy_resolution_summary_export | prompt_context_discrepancy_resolution_summary_export_pending | Future workflow/API | Packages acknowledged discrepancy evidence |
+| prompt_context_discrepancy_resolution_rejected | request_prompt_context_discrepancy_resolution_summary_export | prompt_context_discrepancy_resolution_summary_export_pending | Future workflow/API | Packages rejected discrepancy evidence |
+| prompt_context_discrepancy_resolution_needs_clarification | request_prompt_context_discrepancy_resolution_summary_export | prompt_context_discrepancy_resolution_summary_export_pending | Future workflow/API | Keeps clarification fields visible |
+| prompt_context_discrepancy_resolution_resolved_by_later_review | request_prompt_context_discrepancy_resolution_summary_export | prompt_context_discrepancy_resolution_summary_export_pending | Future workflow/API | References later ReviewHistory |
+| prompt_context_discrepancy_resolution_summary_export_pending | export_prompt_context_discrepancy_resolution_summary | prompt_context_discrepancy_resolution_summary_export_ready | Future workflow/API | Requires resolution review evidence |
+| prompt_context_discrepancy_resolution_summary_export_pending | fail_prompt_context_discrepancy_resolution_summary_export | prompt_context_discrepancy_resolution_summary_export_failed | Future workflow/API | Records invalid input or failure code |
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export state
+rules:
+
+- `export_prompt_context_discrepancy_resolution_summary` requires prompt
+  context discrepancy resolution review artifact id, prompt context review
+  discrepancy artifact id, prompt context audit review summary export artifact
+  id, audit review decision artifact id, audit summary artifact id, prompt
+  context consumption artifact id, prompt context evidence artifact id,
+  context manifest, `used_knowledge` decision, usage status, resolution
+  action, resulting resolution status, accepted discrepancy ids, rejected
+  discrepancy ids, acknowledged discrepancy ids, clarification requested
+  fields, affected citation ids, evidence gap summary, mismatch reason,
+  unresolved follow-up flags, unsupported claim references, PromptVersion,
+  SkillVersion, source hash, ReviewHistory, and failure code when applicable.
+- Resolution summary export states are evidence packaging only. They may
+  produce resolution outcome summary, accepted discrepancy group, rejected
+  discrepancy group, acknowledged discrepancy group, clarification requested
+  field group, unresolved follow-up flag group, reviewer comment summary,
+  resulting resolution status group, ReviewHistory links, failure reasons, and
+  visible reason, but they must not invent citations, rewrite `used_knowledge`,
+  auto-resolve discrepancies, or mutate resolution review evidence.
+- Resolution outcome groups and resulting resolution status group are audit
+  labels only. They do not create prompt eligibility, approve TestKnowledgeCard
+  content, approve generated cases, mutate prompt context consumption evidence,
+  or change `used_knowledge`.
+- Accepted/rejected/acknowledged discrepancy groups, clarification requested
+  fields, affected citation ids, unresolved follow-up flags, skipped evidence,
+  unsupported claims, source hashes, PromptVersion, SkillVersion, context
+  manifest links, and ReviewHistory must remain visible.
+- Missing, stale, unsafe, revoked, cross-project, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
+  resolution-review-mismatched, evidence-mismatched, audit-summary-mismatched,
+  review-decision-mismatched, or summary-export-mismatched input must produce
+  `prompt_context_discrepancy_resolution_summary_export_failed` with a visible
+  reason and must not append a successful resolution summary export.
+- Prompt context discrepancy resolution summary export may write summary export
+  artifacts in a later scoped workflow. It must not mutate TestKnowledgeCard
+  rows, source artifacts, prompt context discrepancy resolution review
+  artifacts, prompt context review discrepancy artifacts, review summary export
+  artifacts, audit review decision artifacts, audit summary artifacts, prompt
+  context consumption artifacts, prompt context evidence artifacts, retrieval
+  boundary artifacts, prompt eligibility artifacts, ReviewHistory,
+  KnowledgeEvidence, or historical evidence.
+- The prompt context discrepancy resolution summary export state contract must
+  not add frontend page, report generation behavior, export/download endpoint,
+  prompt assembly implementation, prompt runtime execution, provider calls,
+  retrieval ranking changes, vector indexes, embeddings, reranking, graph jobs,
+  MCP runtime, broad TestKnowledgeCard CRUD, automatic eligibility, artifact
+  mutation outside declared summary export output, historical evidence
+  mutation, generated-case auto-approval, runner behavior changes, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on
