@@ -1,5 +1,41 @@
 # Session Handoff
 
+## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Golden Smoke
+
+Completed:
+
+- Added KnowledgeAdapter Provider Evaluation Review Summary Export golden
+  fixture:
+  `docs/fixtures/40-knowledge-adapter-provider-evaluation-review-summary-export-golden.md`.
+- Added focused golden smoke:
+  `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py`.
+- Golden coverage names summary export action, provider evaluation review
+  decision artifact linkage, provider evaluation plan artifact linkage,
+  field-level API payload keys, artifact owner/component metadata, review
+  summary status, exported decision groups, provider suitability summary,
+  license/reference summary, KnowledgeEvidence normalization summary,
+  provider_state summary, disabled by default summary, fallback summary,
+  metrics summary, source traceability summary, ReviewHistory summary, failure
+  behavior, and forbidden runtime/provider/report/export endpoint side effects.
+- `NEXT_AI_TASK.md` now points to Slice 52 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `4 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `test(golden): add knowledge adapter provider evaluation review summary export smoke`.
+- Continue Slice 52 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Contracts
 
 Completed:
@@ -34,7 +70,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): define knowledge adapter provider evaluation review summary export contracts`.
+- Committed `docs(v2): define knowledge adapter provider evaluation review summary export contracts` as `6c53259`.
 - Continue Slice 52 Task 3 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Plan

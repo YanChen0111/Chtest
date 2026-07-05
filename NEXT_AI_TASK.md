@@ -10,17 +10,16 @@ Slice 52: KnowledgeAdapter Provider Evaluation Review Summary Export Contract.
 
 ## Current Task
 
-Slice 52 Task 3: Add KnowledgeAdapter provider evaluation review summary export
-golden smoke.
+Slice 52 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest will have a focused golden smoke proving
-KnowledgeAdapter provider evaluation review summary exports remain audit
-evidence before any provider integration, SDK, external call, vector database,
-embedding, reranking, runtime retrieval, provider-backed prompt context
-behavior, frontend page, report generation behavior, export/download endpoint,
-RBAC, tenants, or permissions exist.
+After this task, Slice 52 is closed with its planning, contract, and golden
+smoke commits recorded. The next worker can select the next narrow V2 slice
+without reopening provider enablement, provider SDK, external call, vector
+database, embedding, reranking, runtime retrieval, provider-backed prompt
+context behavior, frontend page, report generation behavior, export/download
+endpoint, RBAC, tenants, or permissions.
 
 ## Must Read
 
@@ -28,15 +27,12 @@ RBAC, tenants, or permissions exist.
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/10-v2-scope-options.md`
 4. `docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`
-5. `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py`
-6. `docs/fixtures/39-knowledge-adapter-provider-evaluation-review-decision-golden.md`
-7. `docs/contracts/01-data-model-contract.md`
-8. `docs/contracts/02-api-contract.md`
-9. `docs/contracts/03-state-machines.md`
-10. `docs/contracts/04-artifact-contract.md`
-11. `docs/contracts/05-prompt-skill-contract.md`
-12. `memory/08-session-handoff.md`
-13. `memory/07-dev-log.md`
+5. `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py`
+6. `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py`
+7. `docs/fixtures/40-knowledge-adapter-provider-evaluation-review-summary-export-golden.md`
+8. `docs/fixtures/39-knowledge-adapter-provider-evaluation-review-decision-golden.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -47,18 +43,17 @@ RBAC, tenants, or permissions exist.
 
 ## Expected Files
 
-Create or update only these files for the current task:
+Update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py
-docs/fixtures/40-knowledge-adapter-provider-evaluation-review-summary-export-golden.md
 docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden-only task. Do not add frontend code, backend runtime feature code,
+Completion gate only. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad KnowledgeAdapter CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -73,33 +68,25 @@ changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py -q
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: focused golden smoke passes and diff check passes.
+Expected result: focused Slice 51/52 golden smoke passes and diff check passes.
 
 ## Acceptance
 
-- Golden names KnowledgeAdapter Provider Evaluation Review Summary Export,
-  provider evaluation review summary export, provider evaluation review
-  decision artifact, accepted_for_planning, accepted_with_constraints,
-  blocked, needs_revision, unsupported, provider suitability status,
-  KnowledgeEvidence, provider_state, fallback behavior, license review,
-  reference intake, disabled by default policy, ReviewHistory, failure
-  behavior, and forbidden side effects.
-- Golden proves no provider SDK, external call, vector database, embedding,
-  reranking, background indexing, runtime retrieval, provider-backed prompt
-  context evidence, UI, report generation behavior, export/download endpoint,
-  RBAC, tenants, permissions, or package upgrade is created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 52 Completion Gate.
+- Slice 52 task table records Task 1, Task 2, and Task 3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next task.
 
 ## Commit Message
 
 ```text
-test(golden): add knowledge adapter provider evaluation review summary export smoke
+docs(v2): complete knowledge adapter provider evaluation review summary export slice
 ```
 
 ## Next Task
 
-Slice 52 Completion Gate.
+Select the next narrow V2 slice.
