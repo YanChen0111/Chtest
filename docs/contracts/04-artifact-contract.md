@@ -35,6 +35,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   test_knowledge_card_prompt_context_audit_review_decision.json
   test_knowledge_card_prompt_context_audit_review_summary_export.json
   test_knowledge_card_prompt_context_review_discrepancy.json
+  test_knowledge_card_prompt_context_discrepancy_resolution_review.json
   raw_output.json
   parsed_output.json
   schema_validation.json
@@ -370,6 +371,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | test_knowledge_card_prompt_context_audit_review_decision | application/json | Future prompt context audit review decision evidence |
 | test_knowledge_card_prompt_context_audit_review_summary_export | application/json | Future prompt context audit review summary export evidence |
 | test_knowledge_card_prompt_context_review_discrepancy | application/json | Future prompt context review discrepancy evidence |
+| test_knowledge_card_prompt_context_discrepancy_resolution_review | application/json | Future prompt context discrepancy resolution review evidence |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -1037,6 +1039,54 @@ TestKnowledgeCard Prompt Context Review Discrepancy artifact rules:
   payloads, or generated replacement evidence.
 - Prompt context review discrepancy artifacts must not mutate Artifact rows
   outside declared discrepancy output, mutate source artifacts, mutate review
+  summary export artifacts, mutate prompt context audit review decision
+  artifacts, mutate prompt context audit summary artifacts, mutate prompt
+  context consumption artifacts, mutate prompt context evidence artifacts,
+  mutate retrieval boundary artifacts, mutate prompt eligibility artifacts,
+  rewrite creation artifacts, mutate historical ReviewHistory, FailureAnalysis,
+  Report, TestRun, TestResult, TestCase, GeneratedCaseCandidate,
+  KnowledgeEvidence, or unrelated TestKnowledgeCard rows, run prompt assembly,
+  execute AITasks, call providers, change retrieval ranking, invoke MCP
+  runtime, create vector indexes, create embeddings, rerank, run graph jobs,
+  render frontend pages, generate reports, expose export/download endpoints,
+  call remote CI providers, add RBAC, create tenants, or change permissions.
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Review artifact rules:
+
+- `test_knowledge_card_prompt_context_discrepancy_resolution_review.json` may
+  be stored as an Artifact with
+  `artifact_type=test_knowledge_card_prompt_context_discrepancy_resolution_review`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=test_knowledge_card_prompt_context_discrepancy_resolution_review`
+  in a later scoped implementation.
+- The prompt context discrepancy resolution review artifact must include
+  `review_prompt_context_discrepancy_resolution`, prompt request id or AITask
+  id when available, prompt context review discrepancy artifact id, prompt
+  context audit review summary export artifact id, prompt context audit review
+  decision artifact id, prompt context audit summary artifact id, prompt
+  context consumption artifact id, prompt context evidence artifact id,
+  context manifest artifact id, `used_knowledge` decision, usage status,
+  discrepancy type, affected citation ids, evidence gap summary, mismatch
+  reason, reviewer note from discrepancy tracking, severity, current
+  resolution status, resolution action, accepted discrepancy ids, rejected
+  discrepancy ids, acknowledged discrepancy ids, clarification requested
+  fields, resulting resolution status, unresolved follow-up flags, unsupported
+  claim references, source hashes, PromptVersion id, SkillVersion id,
+  ReviewHistory links, failure code, and visible reason when applicable.
+- Resolution review artifacts are evidence about human discrepancy review. They
+  must not invent citations, rewrite `used_knowledge`, promote unsupported
+  claims, create prompt eligibility, approve TestKnowledgeCard content, approve
+  generated cases, turn skipped evidence into cited evidence, auto-resolve
+  discrepancies, render reports, or expose download endpoints.
+- Prompt context discrepancy resolution review artifacts must not contain raw
+  large source text, credentials, tokens, unsafe provider payloads, vector
+  store payloads, embedding vectors, reranker traces, graph runtime payloads,
+  executable prompt assembly payloads, provider request/response payloads,
+  frontend-rendered markup, report-rendered payloads, downloadable provider
+  payloads, or generated replacement evidence.
+- Prompt context discrepancy resolution review artifacts must not mutate
+  Artifact rows outside declared resolution review output, mutate source
+  artifacts, mutate prompt context review discrepancy artifacts, mutate review
   summary export artifacts, mutate prompt context audit review decision
   artifacts, mutate prompt context audit summary artifacts, mutate prompt
   context consumption artifacts, mutate prompt context evidence artifacts,

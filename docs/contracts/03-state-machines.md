@@ -801,6 +801,89 @@ TestKnowledgeCard Prompt Context Review Discrepancy Tracking state rules:
   generated-case auto-approval, runner behavior changes, RBAC, tenants,
   permissions, or remote CI provider behavior.
 
+## 7.15 TestKnowledgeCard Prompt Context Discrepancy Resolution Review State Contract
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Review is a
+contract-only state boundary for future workflows that record human review of
+prompt context discrepancy records. It starts only from persisted discrepancy
+tracking evidence and does not implement frontend rendering, report generation
+behavior, export/download endpoints, prompt assembly, prompt runtime
+execution, provider calls, retrieval ranking, model citation generation,
+prompt eligibility, card creation, or broad TestKnowledgeCard CRUD.
+
+```text
+prompt_context_review_discrepancy_open -> prompt_context_discrepancy_resolution_review_pending
+prompt_context_review_discrepancy_needs_clarification -> prompt_context_discrepancy_resolution_review_pending
+prompt_context_review_discrepancy_acknowledged -> prompt_context_discrepancy_resolution_review_pending
+prompt_context_discrepancy_resolution_review_pending -> prompt_context_discrepancy_resolution_review_recorded
+prompt_context_discrepancy_resolution_review_pending -> prompt_context_discrepancy_resolution_review_failed
+prompt_context_discrepancy_resolution_review_recorded -> prompt_context_discrepancy_resolution_acknowledged
+prompt_context_discrepancy_resolution_review_recorded -> prompt_context_discrepancy_resolution_rejected
+prompt_context_discrepancy_resolution_review_recorded -> prompt_context_discrepancy_resolution_needs_clarification
+prompt_context_discrepancy_resolution_review_recorded -> prompt_context_discrepancy_resolution_resolved_by_later_review
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| prompt_context_review_discrepancy_open | request_prompt_context_discrepancy_resolution_review | prompt_context_discrepancy_resolution_review_pending | Future human reviewer | Starts resolution review only |
+| prompt_context_review_discrepancy_needs_clarification | request_prompt_context_discrepancy_resolution_review | prompt_context_discrepancy_resolution_review_pending | Future human reviewer | Preserves clarification request |
+| prompt_context_review_discrepancy_acknowledged | request_prompt_context_discrepancy_resolution_review | prompt_context_discrepancy_resolution_review_pending | Future human reviewer | Adds review evidence without mutating history |
+| prompt_context_discrepancy_resolution_review_pending | review_prompt_context_discrepancy_resolution | prompt_context_discrepancy_resolution_review_recorded | Future workflow/API | Requires discrepancy evidence |
+| prompt_context_discrepancy_resolution_review_pending | fail_prompt_context_discrepancy_resolution_review | prompt_context_discrepancy_resolution_review_failed | Future workflow/API | Records invalid input or failure code |
+| prompt_context_discrepancy_resolution_review_recorded | acknowledge_discrepancy | prompt_context_discrepancy_resolution_acknowledged | Future human reviewer | Status label only |
+| prompt_context_discrepancy_resolution_review_recorded | reject_discrepancy_resolution | prompt_context_discrepancy_resolution_rejected | Future human reviewer | Status label only |
+| prompt_context_discrepancy_resolution_review_recorded | request_discrepancy_clarification | prompt_context_discrepancy_resolution_needs_clarification | Future human reviewer | Preserves requested fields |
+| prompt_context_discrepancy_resolution_review_recorded | mark_resolved_by_later_review | prompt_context_discrepancy_resolution_resolved_by_later_review | Future human reviewer | References later ReviewHistory |
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Review state rules:
+
+- `review_prompt_context_discrepancy_resolution` requires prompt context review
+  discrepancy artifact id, prompt context audit review summary export artifact
+  id, audit review decision artifact id, audit summary artifact id, prompt
+  context consumption artifact id, prompt context evidence artifact id, context
+  manifest, `used_knowledge` decision, usage status, discrepancy type,
+  affected citation ids, evidence gap summary, mismatch reason, severity,
+  current resolution status, resolution action, accepted discrepancy ids,
+  rejected discrepancy ids, acknowledged discrepancy ids, unresolved follow-up
+  flags, unsupported claim references, PromptVersion, SkillVersion, source
+  hash, ReviewHistory, and failure code when applicable.
+- Resolution review states are human review evidence only. They may produce
+  resolution action, resulting resolution status, accepted discrepancy ids,
+  rejected discrepancy ids, acknowledged discrepancy ids, clarification
+  requested fields, reviewer note, follow-up flags, ReviewHistory links,
+  failure reasons, and visible reason, but they must not invent citations, rewrite
+  `used_knowledge`, auto-resolve discrepancies, or mutate discrepancy tracking
+  evidence.
+- Resolution statuses are audit labels only. They do not create prompt
+  eligibility, approve TestKnowledgeCard content, approve generated cases,
+  mutate prompt context consumption evidence, or change `used_knowledge`.
+- Affected citation ids, accepted/rejected/acknowledged discrepancy ids,
+  questioned/rejected citation groups, unresolved follow-up flags, skipped
+  evidence, unsupported claims, source hashes, PromptVersion, SkillVersion,
+  context manifest links, and ReviewHistory must remain visible.
+- Missing, stale, unsafe, revoked, cross-project, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
+  evidence-mismatched, audit-summary-mismatched, review-decision-mismatched, or
+  summary-export-mismatched input must produce
+  `prompt_context_discrepancy_resolution_review_failed` with a visible reason
+  and must not append a successful resolution review.
+- Prompt context discrepancy resolution review may write resolution review
+  artifacts in a later scoped workflow. It must not mutate TestKnowledgeCard
+  rows, source artifacts, prompt context review discrepancy artifacts, review
+  summary export artifacts, audit review decision artifacts, audit summary
+  artifacts, prompt context consumption artifacts, prompt context evidence
+  artifacts, retrieval boundary artifacts, prompt eligibility artifacts,
+  ReviewHistory, KnowledgeEvidence, or historical evidence.
+- The prompt context discrepancy resolution review state contract must not add
+  frontend page, report generation behavior, export/download endpoint, prompt
+  assembly implementation, prompt runtime execution, provider calls, retrieval
+  ranking changes, vector indexes, embeddings, reranking, graph jobs, MCP
+  runtime, broad TestKnowledgeCard CRUD, automatic eligibility, artifact
+  mutation outside declared resolution review output, historical evidence
+  mutation, generated-case auto-approval, runner behavior changes, RBAC,
+  tenants, permissions, or remote CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on

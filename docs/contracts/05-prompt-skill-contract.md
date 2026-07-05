@@ -230,7 +230,7 @@ Prompt context audit summary input must include:
 - PromptVersion id/name/version and SkillVersion id/name/version.
 - Prompt context consumption artifact id.
 - Prompt context evidence artifact id and context manifest artifact id.
-- `used_knowledge` decision.
+- `used_knowledge` decision and usage status.
 - Output citation ids and cited TestKnowledgeCard ids.
 - Cited context entry ids, source hashes, source artifact ids, and source
   sections.
@@ -465,6 +465,73 @@ Prompt context review discrepancy tracking rules:
   eligibility, rewrite `used_knowledge`, render frontend pages, generate
   reports, expose export/download endpoints, auto-resolve discrepancies, or
   bypass human review gates.
+
+Prompt context discrepancy resolution review input must include:
+
+- `prompt_context_discrepancy_resolution_review_action=review_prompt_context_discrepancy_resolution`.
+- PromptVersion id/name/version and SkillVersion id/name/version.
+- Prompt context review discrepancy artifact id.
+- Prompt context audit review summary export artifact id.
+- Prompt context audit review decision artifact id.
+- Prompt context audit summary artifact id.
+- Prompt context consumption artifact id.
+- Prompt context evidence artifact id and context manifest artifact id.
+- `used_knowledge` decision.
+- Discrepancy type, affected citation ids, evidence gap summary, mismatch
+  reason, reviewer note from discrepancy tracking, severity, current
+  resolution status, unresolved follow-up flags, and unsupported claim
+  references.
+- Resolution action, accepted discrepancy ids, rejected discrepancy ids,
+  acknowledged discrepancy ids, clarification requested fields, resulting
+  resolution status, reviewer note, follow-up flags, and failure code when
+  applicable.
+- Visible reason when resolution review input is invalid.
+- Source hashes, source artifact ids, source sections, ReviewHistory ids, and
+  discrepancy ReviewHistory id when available.
+
+Prompt context discrepancy resolution review rules:
+
+- Resolution review records must preserve PromptVersion and SkillVersion trace
+  from referenced discrepancy tracking, review summary export, audit review
+  decision, audit summary, and consumption evidence.
+- `used_knowledge` must be copied from referenced review evidence and must not
+  be recomputed, rewritten, or auto-marked by discrepancy resolution review.
+- Accepted discrepancy ids, rejected discrepancy ids, acknowledged discrepancy
+  ids, and affected citation ids must reference existing discrepancy ids,
+  output citations, TestKnowledgeCard ids, context entry ids, source hashes or
+  source quote/hash pointers, ReviewHistory ids, PromptVersion, and
+  SkillVersion.
+- Resolution action values include `acknowledge_discrepancy`,
+  `reject_discrepancy_resolution`, `request_discrepancy_clarification`, and
+  `mark_resolved_by_later_review`.
+- Resulting resolution status values are audit labels only. They must not
+  create prompt eligibility, approve TestKnowledgeCard content, approve
+  generated cases, mutate prompt context review discrepancy evidence,
+  auto-resolve discrepancies, or change `used_knowledge`.
+- Accepted/rejected/acknowledged discrepancy ids, affected citation ids,
+  questioned/rejected citation groups, unresolved follow-up flags, skipped
+  evidence, unsupported claims, evidence gap summary, and mismatch reason must
+  remain visible. They must not be promoted into knowledge-backed facts,
+  deleted, filtered, or replaced with generated citations.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
+  evidence-mismatched, audit-summary-mismatched, review-decision-mismatched,
+  or summary-export-mismatched input must produce a failure code and visible
+  reason and must not append a successful resolution review.
+- Prompt context discrepancy resolution review must not include raw large
+  source text, hidden model context, unsafe provider payloads, vector store
+  payloads, embedding vectors, reranker traces, graph runtime payloads,
+  credentials, tokens, OAuth material, provider request payloads,
+  frontend-rendered markup, report-rendered payloads, export-rendered
+  payloads, downloadable provider payloads, or generated replacement evidence.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
+  context review discrepancy evidence, mutate artifacts outside declared
+  prompt context discrepancy resolution review, approve generated cases, create
+  prompt eligibility, rewrite `used_knowledge`, render frontend pages,
+  generate reports, expose export/download endpoints, auto-resolve
+  discrepancies, or bypass human review gates.
 
 ## 5. Skill 文件格式
 
