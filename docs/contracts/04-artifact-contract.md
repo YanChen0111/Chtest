@@ -31,6 +31,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   knowledge_retrieval.json
   knowledge_adapter_provider_evaluation_plan.json
   knowledge_adapter_provider_evaluation_review_decision.json
+  knowledge_adapter_provider_evaluation_review_summary_export.json
   test_knowledge_card_prompt_context_evidence.json
   test_knowledge_card_prompt_context_consumption.json
   test_knowledge_card_prompt_context_audit_summary.json
@@ -365,6 +366,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | knowledge_retrieval | application/json | 确定性本地知识检索证据 |
 | knowledge_adapter_provider_evaluation_plan | application/json | Future KnowledgeAdapter provider evaluation planning evidence |
 | knowledge_adapter_provider_evaluation_review_decision | application/json | Future KnowledgeAdapter provider evaluation review decision evidence |
+| knowledge_adapter_provider_evaluation_review_summary_export | application/json | Future KnowledgeAdapter provider evaluation review summary export evidence |
 | test_knowledge_card | application/json | Structured testing knowledge card snapshot |
 | test_knowledge_card_handoff | application/json | Future TestKnowledgeCard handoff candidate payload |
 | test_knowledge_card_candidate_review | application/json | Human review evidence for a handoff candidate |
@@ -1329,6 +1331,56 @@ KnowledgeAdapter Provider Evaluation Review Decision artifact rules:
   reviewed provider evaluation plan artifact, mutate KnowledgeAdapterConfig
   runtime state, mutate KnowledgeEvidence rows, mutate TestKnowledgeCard rows,
   approve or reject GeneratedCaseCandidate rows, promote TestCase rows, create
+  ToolInvocation rows, run prompt assembly, execute AITasks, call providers,
+  call provider SDKs, fetch remote URLs, change retrieval ranking, create
+  vector indexes, create embeddings, rerank, run background indexing, run graph
+  jobs, invoke MCP runtime, render frontend pages, generate reports, expose
+  export/download endpoints, upload artifacts, call remote CI providers, add
+  RBAC, create tenants, change permissions, or install packages.
+
+KnowledgeAdapter Provider Evaluation Review Summary Export artifact rules:
+
+- `knowledge_adapter_provider_evaluation_review_summary_export.json` may be
+  stored as an Artifact with
+  `artifact_type=knowledge_adapter_provider_evaluation_review_summary_export`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=knowledge_adapter_provider_evaluation_review_summary_export`
+  in a later scoped implementation.
+- The provider evaluation review summary export artifact must include
+  `export_knowledge_adapter_provider_evaluation_review_summary`, provider
+  evaluation review decision artifact id,
+  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`,
+  provider evaluation plan artifact id,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  name, provider family, adapter type, provider version, adapter version,
+  provider suitability status, review decision, review status, review summary
+  status, exported decision groups, reviewer notes, accepted constraints,
+  requested revision fields, blocked reasons, unsupported reasons, unresolved
+  safety questions, provider suitability summary, license/reference summary,
+  KnowledgeEvidence normalization summary, provider_state summary, disabled by
+  default summary, fallback summary, metrics summary, source traceability
+  summary, source manifest ids, source hashes, ReviewHistory summary,
+  ReviewHistory links, failure code, and visible reason when applicable.
+- Exported decision groups may include `accepted_for_planning`,
+  `accepted_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`. Review summary status values may include `not_exported`,
+  `exported_for_planning`, and `failed_validation`. They are audit labels only
+  and must not enable a provider, call a provider, run runtime retrieval,
+  create embeddings, generate reports, expose export/download endpoints, or
+  set `used_knowledge=true`.
+- KnowledgeAdapter provider evaluation review summary export artifacts must
+  not contain raw provider payloads, credentials, API keys, tokens, OAuth
+  state, remote fetch payloads, vector store payloads, embedding vectors,
+  reranker traces, graph runtime payloads, executable prompt assembly
+  payloads, runtime `prompt_input.json`, frontend-rendered markup,
+  report-rendered payloads, export-rendered payloads, downloadable provider
+  payloads, or generated replacement evidence.
+- KnowledgeAdapter provider evaluation review summary export artifacts must
+  not mutate Artifact rows outside declared summary export output, mutate the
+  reviewed provider evaluation review decision artifact, mutate the reviewed
+  provider evaluation plan artifact, mutate KnowledgeAdapterConfig runtime
+  state, mutate KnowledgeEvidence rows, mutate TestKnowledgeCard rows, approve
+  or reject GeneratedCaseCandidate rows, promote TestCase rows, create
   ToolInvocation rows, run prompt assembly, execute AITasks, call providers,
   call provider SDKs, fetch remote URLs, change retrieval ranking, create
   vector indexes, create embeddings, rerank, run background indexing, run graph

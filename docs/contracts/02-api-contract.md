@@ -890,6 +890,133 @@ KnowledgeAdapter Provider Evaluation Review Decision hard rules:
   RBAC, create tenants, change permissions, or update remote CI provider
   behavior.
 
+Allowed provider evaluation review summary export action:
+
+- `export_knowledge_adapter_provider_evaluation_review_summary`: future scoped
+  summary action that packages a local provider evaluation review decision
+  artifact into audit evidence for future planning while preserving review
+  decision/status labels, accepted constraints, blocked reasons, unsupported
+  reasons, requested revision fields, unresolved safety questions, license
+  review, reference intake, KnowledgeEvidence normalization, provider_state,
+  fallback behavior, metrics, source hashes, ReviewHistory links, failure
+  code, and visible reason.
+
+KnowledgeAdapter provider evaluation review summary export payload shape:
+
+```json
+{
+  knowledge_adapter_provider_evaluation_review_summary_export_action: export_knowledge_adapter_provider_evaluation_review_summary,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
+  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
+  candidate_provider_name: haystack,
+  provider_family: Haystack,
+  adapter_type: external_retrieval_provider_candidate,
+  provider_version: 2.x,
+  adapter_version: evaluation-plan-v1,
+  provider_suitability_status: needs_revision,
+  review_decision: needs_revision,
+  review_status: needs_revision,
+  reviewer_notes: [license review is required before future planning acceptance],
+  accepted_constraints: [],
+  requested_revision_fields: [license_review_result],
+  blocked_reasons: [],
+  unsupported_reasons: [],
+  unresolved_safety_questions: [license compatibility must be reviewed],
+  license_review_result: needs_license_review,
+  reference_intake_summary: documentation snapshot captured for review,
+  knowledge_evidence_normalization_notes: source trace fields required before future use,
+  provider_state_recommendation: disabled,
+  disabled_by_default_decision: true,
+  fallback_behavior_summary: local_no_knowledge_fallback remains required,
+  metrics_plan: [
+    evidence_normalization_completeness,
+    source_traceability_coverage,
+    fallback_coverage
+  ],
+  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
+  source_hashes: [sha256:provider-docs-snapshot],
+  review_history_links: [00000000-0000-0000-0000-000000000895]
+}
+```
+
+KnowledgeAdapter provider evaluation review summary export response shape for
+a future scoped implementation:
+
+```json
+{
+  knowledge_adapter_provider_evaluation_review_summary_export_action: export_knowledge_adapter_provider_evaluation_review_summary,
+  knowledge_adapter_provider_evaluation_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000923,
+  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
+  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
+  review_summary_status: exported_for_planning,
+  exported_decision_groups: [needs_revision],
+  provider_suitability_summary: needs_revision,
+  license_reference_summary: license review required; reference snapshot preserved,
+  knowledge_evidence_normalization_summary: source trace fields required before future use,
+  provider_state_summary: disabled,
+  disabled_by_default_summary: true,
+  fallback_summary: local_no_knowledge_fallback remains required,
+  metrics_summary: evidence normalization and source traceability remain incomplete,
+  source_traceability_summary: source hashes and source manifest ids preserved,
+  review_history_summary: local review decision link preserved,
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+KnowledgeAdapter Provider Evaluation Review Summary Export hard rules:
+
+- Summary export input must reference a same-project provider evaluation
+  review decision artifact,
+  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`, a
+  same-project provider evaluation plan artifact,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  metadata, provider suitability status, review decision/status labels,
+  reviewer notes, accepted constraints, blocked reasons, unsupported reasons,
+  requested revision fields, unresolved safety questions, license review
+  result, reference intake, KnowledgeEvidence normalization notes,
+  provider_state recommendation, fallback behavior, metrics, source hashes,
+  source manifest ids, and ReviewHistory links when available.
+- Summary export output must be planning/audit evidence only. It may record
+  export artifact id, review summary status, exported decision groups,
+  provider suitability summary, license/reference summary, KnowledgeEvidence
+  normalization summary, provider_state summary, disabled by default summary,
+  fallback summary, metrics summary, source traceability summary,
+  ReviewHistory summary, failure code, and visible reason.
+- Summary export is not a report generator, not a frontend workflow, and not
+  an export/download endpoint contract.
+- Exported decision groups may include `accepted_for_planning`,
+  `accepted_with_constraints`, `blocked`, `needs_revision`, and `unsupported`.
+  Review summary status values may include `not_exported`,
+  `exported_for_planning`, and `failed_validation`.
+- Accepted review summaries are accepted for future planning only. They do not
+  create provider enablement, runtime connectivity, retrieval evidence, prompt
+  eligibility, report generation behavior, export/download endpoints, or
+  `used_knowledge=true`.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, review-decision-missing,
+  review-decision-invalid, summary-export-invalid,
+  evaluation-plan-mismatched, review-decision-mismatched, cross-project,
+  unbounded, credential-required, or runtime-required input must return a
+  failure code and visible reason and must not append a successful summary
+  export.
+- `export_knowledge_adapter_provider_evaluation_review_summary` must not
+  install packages, call providers, call provider SDKs, store credentials,
+  fetch remote URLs, create vector indexes, create embeddings, rerank, run
+  background indexing, run graph jobs, start MCP runtime, run runtime
+  retrieval, create provider-backed prompt context evidence, assemble prompts,
+  run AITasks, render frontend pages, generate reports, expose
+  export/download endpoints, upload artifacts, mutate Artifact rows outside
+  declared summary export evidence, mutate the reviewed provider evaluation
+  review decision artifact, mutate the reviewed provider evaluation plan
+  artifact, mutate KnowledgeEvidence, mutate KnowledgeAdapterConfig outside
+  declared summary export evidence, mutate TestKnowledgeCard rows, approve or
+  reject GeneratedCaseCandidate rows, promote TestCase rows, create
+  ToolInvocation rows, enable a provider, add RBAC, create tenants, change
+  permissions, or update remote CI provider behavior.
+
 ## 3. Requirement To Case APIs
 
 ### 3.1 Create Requirement

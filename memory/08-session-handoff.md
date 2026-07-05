@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Contracts
+
+Completed:
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  KnowledgeAdapter Provider Evaluation Review Summary Export.
+- Added contract-only
+  `export_knowledge_adapter_provider_evaluation_review_summary` semantics with
+  provider evaluation review decision artifact linkage, provider evaluation
+  plan artifact linkage, review summary status, exported decision groups,
+  provider suitability summary, license/reference summary, KnowledgeEvidence
+  normalization summary, provider_state summary, disabled by default summary,
+  fallback summary, metrics summary, source traceability summary,
+  ReviewHistory summary, failure code, and visible reason.
+- Added future artifact type and filename:
+  `knowledge_adapter_provider_evaluation_review_summary_export` and
+  `knowledge_adapter_provider_evaluation_review_summary_export.json`.
+- `NEXT_AI_TASK.md` now points to Slice 52 Task 3: Add KnowledgeAdapter
+  provider evaluation review summary export golden smoke.
+
+Verification:
+
+```bash
+rg -n "KnowledgeAdapter Provider Evaluation Review Summary Export|knowledge_adapter_provider_evaluation_review_summary_export|export_knowledge_adapter_provider_evaluation_review_summary|provider evaluation review decision artifact|summary export|license review|reference intake|KnowledgeEvidence normalization|provider_state|fallback behavior|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define knowledge adapter provider evaluation review summary export contracts`.
+- Continue Slice 52 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Plan
 
 Completed:
@@ -41,7 +78,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): add knowledge adapter provider evaluation review summary export plan`.
+- Committed `docs(v2): add knowledge adapter provider evaluation review summary export plan` as `a066b42`.
 - Continue Slice 52 Task 2 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 51 Completion Gate

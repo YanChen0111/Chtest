@@ -1487,6 +1487,85 @@ KnowledgeAdapter Provider Evaluation Review Decision state rules:
   ToolInvocation rows, enable providers, add RBAC, create tenants, change
   permissions, or update remote CI provider behavior.
 
+## 7.1.3 KnowledgeAdapter Provider Evaluation Review Summary Export State Contract
+
+This state contract is planning-only. It defines future summary export labels
+for provider evaluation review decisions before any provider enablement,
+provider SDK, external call, vector database, embedding, reranking, background
+indexing, runtime retrieval, provider-backed prompt context behavior, frontend
+page, report generation behavior, export/download endpoint, migration, package
+upgrade, RBAC, tenants, or permissions exists.
+
+```text
+provider_evaluation_review_accepted_for_planning -> provider_evaluation_review_summary_export_pending
+provider_evaluation_review_accepted_with_constraints -> provider_evaluation_review_summary_export_pending
+provider_evaluation_review_blocked -> provider_evaluation_review_summary_export_pending
+provider_evaluation_review_needs_revision -> provider_evaluation_review_summary_export_pending
+provider_evaluation_review_unsupported -> provider_evaluation_review_summary_export_pending
+provider_evaluation_review_summary_export_pending -> provider_evaluation_review_summary_exported_for_planning
+provider_evaluation_review_summary_export_pending -> provider_evaluation_review_summary_export_failed_validation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| provider_evaluation_review_accepted_for_planning | export_knowledge_adapter_provider_evaluation_review_summary | provider_evaluation_review_summary_export_pending | Future workflow/API | Starts summary export for accepted planning evidence |
+| provider_evaluation_review_accepted_with_constraints | export_knowledge_adapter_provider_evaluation_review_summary | provider_evaluation_review_summary_export_pending | Future workflow/API | Starts summary export with accepted constraints |
+| provider_evaluation_review_blocked | export_knowledge_adapter_provider_evaluation_review_summary | provider_evaluation_review_summary_export_pending | Future workflow/API | Starts summary export with blocked reasons |
+| provider_evaluation_review_needs_revision | export_knowledge_adapter_provider_evaluation_review_summary | provider_evaluation_review_summary_export_pending | Future workflow/API | Starts summary export with requested revision fields |
+| provider_evaluation_review_unsupported | export_knowledge_adapter_provider_evaluation_review_summary | provider_evaluation_review_summary_export_pending | Future workflow/API | Starts summary export with unsupported reasons |
+| provider_evaluation_review_summary_export_pending | exported_for_planning | provider_evaluation_review_summary_exported_for_planning | Future workflow/API | Records audit summary export evidence only |
+| provider_evaluation_review_summary_export_pending | failed_validation | provider_evaluation_review_summary_export_failed_validation | Future workflow/API | Records failure code and visible reason |
+
+KnowledgeAdapter Provider Evaluation Review Summary Export state rules:
+
+- `export_knowledge_adapter_provider_evaluation_review_summary` requires
+  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  metadata, provider suitability status, review decision/status labels,
+  reviewer notes, accepted constraints, blocked reasons, unsupported reasons,
+  requested revision fields, unresolved safety questions, license review
+  result, reference intake, KnowledgeEvidence normalization notes,
+  provider_state recommendation, disabled by default decision, fallback
+  behavior, metrics, source manifest ids, source hashes, and ReviewHistory
+  links when available.
+- Summary export states are audit evidence only. They may produce provider
+  evaluation review summary export artifact id, review summary status,
+  exported decision groups, provider suitability summary,
+  license/reference summary, KnowledgeEvidence normalization summary,
+  provider_state summary, disabled by default summary, fallback summary,
+  metrics summary, source traceability summary, ReviewHistory summary, failure
+  code, and visible reason.
+- Review summary status values are `not_exported`, `exported_for_planning`,
+  and `failed_validation`. They must not mutate `KnowledgeAdapterConfig.status`,
+  create runtime connectivity, enable providers, create retrieval evidence,
+  generate reports, expose export/download endpoints, or set
+  `used_knowledge=true`.
+- Accepted summary exports are accepted for future planning only. The provider
+  remains disabled by default until a later scoped slice explicitly defines
+  implementation and enablement rules.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, review-decision-missing,
+  review-decision-invalid, summary-export-invalid,
+  evaluation-plan-mismatched, review-decision-mismatched, cross-project,
+  unbounded, credential-required, or runtime-required input must produce
+  `provider_evaluation_review_summary_export_failed_validation` with a visible
+  reason and must not append a successful summary export.
+- Provider evaluation review summary export states must not install packages,
+  call providers, call provider SDKs, store credentials, fetch remote URLs,
+  create vector indexes, create embeddings, rerank, run background indexing,
+  run graph jobs, start MCP runtime, run runtime retrieval, create
+  provider-backed prompt context evidence, assemble prompts, run AITasks,
+  render frontend pages, generate reports, expose export/download endpoints,
+  upload artifacts, mutate the reviewed provider evaluation review decision
+  artifact, mutate the reviewed provider evaluation plan artifact, mutate
+  KnowledgeAdapterConfig runtime state, mutate KnowledgeEvidence, mutate
+  Artifact rows outside declared summary export evidence, mutate
+  TestKnowledgeCard rows, approve or reject GeneratedCaseCandidate rows,
+  promote TestCase rows, create ToolInvocation rows, enable providers, add
+  RBAC, create tenants, change permissions, or update remote CI provider
+  behavior.
+
 ## 7.2 TestKnowledgeCard 状态规则
 
 TestKnowledgeCard uses `EntityStatus` only:

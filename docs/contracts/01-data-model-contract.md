@@ -1960,7 +1960,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -2034,6 +2034,39 @@ KnowledgeAdapter provider evaluation review decision Artifact rule:
   create vector indexes, create embeddings, rerank, run graph jobs, invoke MCP
   runtime, write runtime `prompt_input.json`, mark `used_knowledge=true`,
   mutate the reviewed provider evaluation plan artifact, mutate
+  KnowledgeEvidence rows, mutate TestKnowledgeCard rows, create prompt
+  eligibility, approve generated cases, add RBAC, create tenants, change
+  permissions, or install packages.
+
+KnowledgeAdapter provider evaluation review summary export Artifact rule:
+
+- Slice 52 provider evaluation review summary exports may use
+  `artifact_type=knowledge_adapter_provider_evaluation_review_summary_export`
+  in a later scoped implementation.
+- `owner_entity_type=AITask` or `owner_entity_type=Project` until a later
+  scoped provider evaluation workflow owns a dedicated summary export entity.
+- `metadata_json` must include
+  `created_by_component=KnowledgeAdapterProviderEvaluationReviewSummaryExport`,
+  `knowledge_adapter_provider_evaluation_review_summary_export_action=export_knowledge_adapter_provider_evaluation_review_summary`,
+  provider evaluation review decision artifact id,
+  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`,
+  provider evaluation plan artifact id,
+  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
+  name, provider family, adapter type, provider version, adapter version,
+  provider suitability status, review decision, review status, review summary
+  status, exported decision groups, reviewer notes, accepted constraints,
+  blocked reasons, unsupported reasons, requested revision fields, unresolved
+  safety questions, license/reference summary, KnowledgeEvidence
+  normalization summary, provider_state summary, disabled by default summary,
+  fallback summary, metrics summary, source manifest ids, source hashes,
+  ReviewHistory links, failure code, and visible reason when applicable.
+- This artifact is provider evaluation review summary evidence only. It must
+  not enable a provider, change runtime retrieval, call provider SDKs, fetch
+  remote URLs, create vector indexes, create embeddings, rerank, run graph
+  jobs, invoke MCP runtime, write runtime `prompt_input.json`, mark
+  `used_knowledge=true`, generate reports, expose export/download endpoints,
+  upload artifacts, mutate the reviewed provider evaluation review decision
+  artifact, mutate the reviewed provider evaluation plan artifact, mutate
   KnowledgeEvidence rows, mutate TestKnowledgeCard rows, create prompt
   eligibility, approve generated cases, add RBAC, create tenants, change
   permissions, or install packages.

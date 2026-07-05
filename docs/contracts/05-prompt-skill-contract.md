@@ -303,6 +303,100 @@ KnowledgeAdapter provider evaluation review decision rules:
   routers, services, workers, queues, schedulers, run migrations, add package
   upgrades, add RBAC, create tenants, or change permissions.
 
+### 4.1.3 KnowledgeAdapter Provider Evaluation Review Summary Export Contract
+
+This contract defines prompt/skill trace rules for future KnowledgeAdapter
+provider evaluation review summary export evidence. It is contract-only and
+does not assemble prompts, execute AITasks, call providers, run retrieval,
+create provider-backed prompt context evidence, generate reports, expose
+export/download endpoints, or enable providers.
+
+KnowledgeAdapter provider evaluation review summary export input must include:
+
+- `knowledge_adapter_provider_evaluation_review_summary_export_action=export_knowledge_adapter_provider_evaluation_review_summary`.
+- `knowledge_adapter_provider_evaluation_review_decision_artifact_id`.
+- `knowledge_adapter_provider_evaluation_plan_artifact_id`.
+- PromptVersion id/name/version and SkillVersion id/name/version when the
+  summary export is produced by a prompt or skill.
+- Candidate provider name, provider family, adapter type, provider version,
+  and adapter version.
+- Provider suitability status, review decision, and review status from the
+  provider evaluation review decision artifact.
+- Reviewer label, local reviewer id, reviewer notes, accepted constraints,
+  requested revision fields, blocked reasons, unsupported reasons, unresolved
+  safety questions, and decision rationale.
+- License name, license URL, license compatibility notes, license review
+  result, reference intake summary, reference intake URLs, and documentation
+  snapshot artifact ids.
+- Expected KnowledgeEvidence normalization fields and KnowledgeEvidence
+  normalization notes.
+- Expected provider_state values and provider_state recommendation.
+- Disabled by default policy and disabled by default decision.
+- Fallback behavior summary and fallback labels.
+- Metrics plan, metric set, evidence normalization completeness, source
+  traceability coverage, redaction safety status, fallback coverage, source
+  manifest ids, source hashes, ReviewHistory links, failure code, and visible
+  reason when applicable.
+
+KnowledgeAdapter provider evaluation review summary export output may include:
+
+- Provider evaluation review summary export id or artifact id.
+- `knowledge_adapter_provider_evaluation_review_summary_export` artifact or
+  manifest naming.
+- `knowledge_adapter_provider_evaluation_review_summary_export.json`.
+- Review summary status values: `not_exported`, `exported_for_planning`, and
+  `failed_validation`.
+- Exported decision groups: `accepted_for_planning`,
+  `accepted_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`.
+- Provider suitability summary, license/reference summary, KnowledgeEvidence
+  normalization summary, provider_state summary, disabled by default summary,
+  fallback summary, metrics summary, source traceability summary,
+  ReviewHistory summary, failure code, and visible reason.
+
+KnowledgeAdapter provider evaluation review summary export rules:
+
+- Review summary exports are audit evidence only. They must not be treated as
+  provider configuration enablement, runtime provider connectivity, retrieval
+  permission, prompt eligibility, report generation behavior, export/download
+  endpoint behavior, or proof that provider evidence was used.
+- `provider_state` is display/health metadata and must not start runtime
+  retrieval.
+- Disabled by default remains required until a later scoped integration
+  explicitly enables a provider.
+- Accepted for planning and accepted with constraints are future-planning
+  labels only, not runtime integration approvals.
+- Needs revision, blocked, and unsupported summaries must preserve reviewer
+  rationale, requested revision fields, blocker reasons, unsupported reasons,
+  unresolved safety questions, source hashes, and ReviewHistory links.
+- `used_knowledge` must not be auto-marked true by provider evaluation review
+  summary export.
+- Provider-specific payloads must not leak into TestKnowledgeCard,
+  KnowledgeEvidence, GeneratedCaseCandidate, prompt context evidence, reports,
+  review surfaces, or summary export surfaces.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  provider-state-unsafe, fallback-missing, review-decision-missing,
+  review-decision-invalid, summary-export-invalid,
+  evaluation-plan-mismatched, review-decision-mismatched, cross-project,
+  unbounded, credential-required, or runtime-required input must produce a
+  failure code and visible reason and must not append a successful summary
+  export.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, integrate an SDK, store credentials, fetch remote URLs,
+  create a vector index, create embeddings, rerank, run background indexing,
+  run a graph job, invoke MCP runtime, create provider-backed prompt context
+  evidence, generate reports, expose export/download endpoints, mutate the
+  reviewed provider evaluation review decision artifact, mutate the reviewed
+  provider evaluation plan artifact, mutate Artifact rows outside declared
+  summary export evidence, mutate KnowledgeAdapterConfig outside declared
+  summary export evidence, mutate KnowledgeEvidence, mutate TestKnowledgeCard
+  rows, approve or reject GeneratedCaseCandidate rows, promote TestCase rows,
+  create ToolInvocation rows, render frontend pages, expose backend feature
+  APIs, add endpoints, routers, services, workers, queues, schedulers, run
+  migrations, add package upgrades, add RBAC, create tenants, or change
+  permissions.
+
 ### 4.2 TestKnowledgeCard Prompt Context Evidence Contract
 
 This contract defines prompt/skill trace rules for future TestKnowledgeCard
