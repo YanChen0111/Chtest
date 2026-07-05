@@ -2981,3 +2981,122 @@ Expected output:
   actions, discrepancy status handling, failure behavior, and non-goals.
 - Slice plan added:
   `docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard prompt context discrepancy resolution review
+contract.
+
+Why it was selected:
+
+- Slice 46 tracked prompt context discrepancies, but Chtest still needed a
+  contract for reviewing and resolving discrepancy records without mutating
+  review summaries, review decisions, audit summaries, prompt context
+  consumption evidence, prompt context evidence, or knowledge evidence.
+- Slice 47 defined resolution review inputs and outputs from discrepancy
+  artifact ids, review summary export artifact ids, affected citation ids,
+  discrepancy type, evidence gap summary, mismatch reason, severity, current
+  resolution status, resolution action, accepted/rejected/acknowledged
+  discrepancy ids, follow-up flags, source hashes, context manifest links,
+  PromptVersion/SkillVersion trace, and ReviewHistory.
+- The slice kept discrepancy closure auditable before any UI, report
+  generator, provider, prompt runtime, or export endpoint treats a discrepancy
+  as acknowledged, rejected, or resolved by later review.
+
+Completed slice name:
+
+```text
+Slice 47: TestKnowledgeCard Prompt Context Discrepancy Resolution Review Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- TestKnowledgeCard prompt context discrepancy resolution review is now a
+  contract with `review_prompt_context_discrepancy_resolution`,
+  `prompt_context_discrepancy_resolution_review`, resolution action, accepted
+  discrepancy ids, rejected discrepancy ids, acknowledged discrepancy ids,
+  clarification requested fields, resulting resolution status, ReviewHistory
+  links, source hashes, context manifest references, PromptVersion/SkillVersion
+  trace, failure code, and visible reason.
+- No frontend page, report generation behavior, export/download endpoint,
+  prompt assembly implementation, prompt runtime execution, provider calls,
+  retrieval ranking change, model output behavior implementation, automatic
+  citation generation, vector database, embeddings, reranking, graph runtime,
+  MCP runtime, backend feature API, migration, broad TestKnowledgeCard CRUD,
+  automatic prompt eligibility, automatic card creation, automatic knowledge
+  ingestion, artifact mutation outside declared prompt-context discrepancy
+  resolution review, historical evidence mutation, generated-case
+  auto-approval, runner behavior, RBAC, tenants, permissions, or remote CI
+  provider behavior were added.
+
+## Recommended Next V2 Slice
+
+Recommended: TestKnowledgeCard prompt context discrepancy resolution summary
+export contract.
+
+Why:
+
+- Slice 47 defines human resolution reviews, but Chtest still needs a contract
+  for packaging accepted, rejected, acknowledged, clarification-needed, and
+  later-review-resolved discrepancy resolution evidence into a future summary
+  handoff without changing frontend pages, report generation behavior, export
+  endpoints, or prompt runtime behavior.
+- The next narrow boundary should define summary export inputs and outputs from
+  resolution review artifacts, discrepancy artifact ids, accepted/rejected/
+  acknowledged discrepancy ids, affected citation ids, resulting resolution
+  status, reviewer notes, follow-up flags, source hashes, context manifest
+  links, PromptVersion/SkillVersion trace, and ReviewHistory.
+- This keeps discrepancy resolution handoff auditable before any UI renderer,
+  report generator, download endpoint, provider, or prompt runtime consumes
+  the summary.
+
+Next slice name:
+
+```text
+Slice 48: TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Contract
+```
+
+Smallest useful boundary:
+
+- Define summary export inputs from discrepancy resolution review artifact ids,
+  prompt context review discrepancy artifact ids, review summary export
+  artifact ids, accepted/rejected/acknowledged discrepancy ids, clarification
+  requested fields, affected citation ids, resulting resolution status,
+  follow-up flags, source hashes, context manifest ids, PromptVersion/
+  SkillVersion ids, and ReviewHistory ids.
+- Define summary export outputs such as resolution summary export artifact id,
+  resolution outcome summary, accepted/rejected/acknowledged discrepancy
+  groups, unresolved clarification fields, follow-up flags, ReviewHistory
+  links, failure code, and visible reason.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No frontend page, report generation behavior change, actual report renderer,
+  export/download endpoint, backend feature API, prompt assembly
+  implementation, prompt runtime execution, provider call, LLM call, prompt
+  runner, deterministic retrieval behavior change, vector database, embeddings,
+  reranking, background indexing, graph runtime, MCP runtime, provider SDK,
+  credentials, migration, broad TestKnowledgeCard CRUD, automatic prompt
+  eligibility, automatic card creation, automatic knowledge ingestion, artifact
+  mutation outside declared discrepancy resolution summary export evidence,
+  historical evidence mutation, generated-case auto-approval, runner behavior,
+  RBAC, tenants, permissions, or remote CI provider behavior.
+
+Suggested next task:
+
+```text
+Slice 48 Task 1: Add TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`.
+- No product code until the plan defines resolution summary export inputs,
+  outcome groups, unresolved clarification handling, failure behavior, and
+  non-goals.

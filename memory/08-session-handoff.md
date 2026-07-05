@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-05 Slice 47 Completion Gate
+
+Completed:
+
+- Closed Slice 47: TestKnowledgeCard Prompt Context Discrepancy Resolution
+  Review Contract.
+- Recorded completed task commits in the Slice 47 task table:
+  - Task 1: `0a5c62c`;
+  - Task 2: `d6faf01`;
+  - Task 3: `65c8d28`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 47
+  completion and Slice 48 recommendation.
+- `NEXT_AI_TASK.md` now points to Slice 48 Task 1: Add TestKnowledgeCard
+  Prompt Context Discrepancy Resolution Summary Export task plan.
+
+Verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_review_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_review_discrepancy_tracking_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `6 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): complete test knowledge card prompt context discrepancy resolution review slice`.
+- Continue Slice 48 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Golden Smoke
 
 Completed:
@@ -29,7 +61,7 @@ Result:
 
 Next recommended task:
 
-- Commit `test(golden): add test knowledge card prompt context discrepancy resolution review smoke`.
+- Committed `test(golden): add test knowledge card prompt context discrepancy resolution review smoke` as `65c8d28`.
 - Continue Slice 47 Completion Gate from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Contracts
