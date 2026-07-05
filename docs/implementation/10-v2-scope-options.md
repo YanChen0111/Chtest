@@ -3100,3 +3100,5 @@ Expected output:
 - No product code until the plan defines resolution summary export inputs,
   outcome groups, unresolved clarification handling, failure behavior, and
   non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`.
