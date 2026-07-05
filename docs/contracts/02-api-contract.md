@@ -741,7 +741,7 @@ KnowledgeAdapter Provider Evaluation Plan hard rules:
   snapshot artifacts when available, supported modes, expected KnowledgeEvidence
   normalization fields, provider_state, disabled by default policy, network
   policy, credential policy, fallback behavior, metrics, source hash
-  requirements, and ReviewHistory.
+  requirements, and ReviewHistory when human review exists.
 - Provider evaluation output must be planning evidence only. It may record
   provider suitability status, KnowledgeEvidence normalization notes, citation
   traceability requirements, redaction and safety requirements, metric set,
@@ -763,10 +763,13 @@ KnowledgeAdapter Provider Evaluation Plan hard rules:
   vector indexes, create embeddings, rerank, run background indexing, run graph
   jobs, start MCP runtime, run runtime retrieval, create provider-backed prompt
   context evidence, assemble prompts, run AITasks, render frontend pages,
-  generate reports, expose export/download endpoints, mutate KnowledgeEvidence,
-  mutate KnowledgeAdapterConfig outside declared evaluation evidence, enable a
-  provider, add RBAC, create tenants, change permissions, or update remote CI
-  provider behavior.
+  generate reports, expose export/download endpoints, mutate Artifact rows
+  outside declared evaluation evidence, mutate KnowledgeEvidence, mutate
+  KnowledgeAdapterConfig outside declared evaluation evidence, mutate
+  TestKnowledgeCard rows, approve or reject GeneratedCaseCandidate rows,
+  promote TestCase rows, create ToolInvocation rows, enable a provider, add
+  RBAC, create tenants, change permissions, or update remote CI provider
+  behavior.
 
 ## 3. Requirement To Case APIs
 

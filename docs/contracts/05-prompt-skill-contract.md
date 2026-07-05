@@ -151,7 +151,8 @@ KnowledgeAdapter provider evaluation plan input must include:
 - Disabled by default policy.
 - Fallback behavior expectations.
 - Metrics to collect.
-- Safety, redaction, source-hash, source manifest, and ReviewHistory ids.
+- Safety, redaction, source-hash, source manifest, and ReviewHistory ids when
+  available.
 - Failure code and visible reason when applicable.
 
 KnowledgeAdapter provider evaluation plan output may include:
@@ -204,11 +205,13 @@ KnowledgeAdapter provider evaluation plan rules:
   call a provider, integrate an SDK, store credentials, fetch remote URLs,
   create a vector index, create embeddings, rerank, run background indexing,
   run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, mutate KnowledgeAdapterConfig outside declared evaluation
-  evidence, mutate KnowledgeEvidence, render frontend pages, expose backend
-  feature APIs, add endpoints, routers, services, workers, queues, schedulers,
-  run migrations, add package upgrades, add RBAC, create tenants, or change
-  permissions.
+  evidence, mutate Artifact rows outside declared evaluation evidence, mutate
+  KnowledgeAdapterConfig outside declared evaluation evidence, mutate
+  KnowledgeEvidence, mutate TestKnowledgeCard rows, approve or reject
+  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
+  rows, render frontend pages, expose backend feature APIs, add endpoints,
+  routers, services, workers, queues, schedulers, run migrations, add package
+  upgrades, add RBAC, create tenants, or change permissions.
 
 ### 4.2 TestKnowledgeCard Prompt Context Evidence Contract
 

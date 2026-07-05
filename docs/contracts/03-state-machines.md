@@ -1369,7 +1369,7 @@ provider_evaluation_recorded -> provider_candidate_disabled_by_default
 
 | Current state | Action | Target state | Actor | Notes |
 |---|---|---|---|---|
-| provider_candidate_not_evaluated | evaluate_provider_candidate | provider_evaluation_pending | Future workflow/API | Starts inert candidate evaluation only |
+| provider_candidate_not_evaluated | evaluate_knowledge_adapter_provider_plan | provider_evaluation_pending | Future workflow/API | Starts inert candidate evaluation only; `evaluate_provider_candidate` remains an evaluation label |
 | provider_evaluation_pending | record_provider_evaluation | provider_evaluation_recorded | Future workflow/API | Records evaluation evidence |
 | provider_evaluation_pending | block_provider_candidate | provider_evaluation_blocked | Future workflow/API | Records blocker reasons |
 | provider_evaluation_pending | request_provider_evaluation_revision | provider_evaluation_needs_revision | Future workflow/API | Requests license/reference/safety clarification |
@@ -1377,13 +1377,14 @@ provider_evaluation_recorded -> provider_candidate_disabled_by_default
 
 KnowledgeAdapter Provider Evaluation Plan state rules:
 
-- `evaluate_knowledge_adapter_provider_plan` and
-  `evaluate_provider_candidate` require candidate provider name, provider
-  family, adapter type, provider version, adapter version, license review
-  inputs, reference intake or documentation snapshot artifact ids, supported
-  modes, expected KnowledgeEvidence normalization fields, provider_state,
-  disabled by default policy, fallback behavior, metrics, source hash
-  requirements, and ReviewHistory ids when available.
+- `evaluate_knowledge_adapter_provider_plan` requires candidate provider name,
+  provider family, adapter type, provider version, adapter version, license
+  review inputs, reference intake or documentation snapshot artifact ids,
+  supported modes, expected KnowledgeEvidence normalization fields,
+  provider_state, disabled by default policy, fallback behavior, metrics,
+  source hash requirements, and ReviewHistory ids when available.
+  `evaluate_provider_candidate` remains an evaluation label and not the
+  canonical provider evaluation action.
 - Provider evaluation states are planning evidence only. They may produce
   provider evaluation artifact id, provider suitability status,
   KnowledgeEvidence normalization notes, citation traceability requirements,
@@ -1409,10 +1410,12 @@ KnowledgeAdapter Provider Evaluation Plan state rules:
   create embeddings, rerank, run background indexing, run graph jobs, start MCP
   runtime, run runtime retrieval, create provider-backed prompt context
   evidence, assemble prompts, run AITasks, render frontend pages, generate
-  reports, expose export/download endpoints, mutate KnowledgeEvidence, mutate
-  Artifact rows outside declared evaluation evidence, enable providers, add
-  RBAC, create tenants, change permissions, or update remote CI provider
-  behavior.
+  reports, expose export/download endpoints, mutate KnowledgeAdapterConfig
+  runtime state, mutate KnowledgeEvidence, mutate Artifact rows outside
+  declared evaluation evidence, mutate TestKnowledgeCard rows, approve or
+  reject GeneratedCaseCandidate rows, promote TestCase rows, create
+  ToolInvocation rows, enable providers, add RBAC, create tenants, change
+  permissions, or update remote CI provider behavior.
 
 ## 7.2 TestKnowledgeCard 状态规则
 

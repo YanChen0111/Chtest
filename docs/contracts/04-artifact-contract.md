@@ -1258,8 +1258,9 @@ KnowledgeAdapter Provider Evaluation Plan artifact rules:
   `evaluate_knowledge_adapter_provider_plan`, candidate provider name, provider
   family such as Haystack or LlamaIndex, adapter type, provider version,
   adapter version, license name, license URL, license compatibility notes,
-  reference intake URLs, documentation snapshot artifact ids, supported
-  retrieval modes, supported source types, expected KnowledgeEvidence
+  license review result, reference intake URLs, documentation snapshot
+  artifact ids, supported retrieval modes, supported source types, expected
+  KnowledgeEvidence
   normalization fields, provider_state, disabled by default policy, network
   policy, credential policy, fallback behavior, metrics plan, safety and
   redaction requirements, source manifest ids, source hashes, ReviewHistory
