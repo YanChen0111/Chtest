@@ -10,15 +10,14 @@ Slice 49: TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff 
 
 ## Current Task
 
-Slice 49 Task 3: Add TestKnowledgeCard prompt context discrepancy resolution audit handoff golden smoke.
+Slice 49 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a focused golden smoke proving the final audit
-handoff contract preserves prompt context discrepancy resolution evidence
-without mutating summaries, resolution reviews, discrepancy records, review
-evidence, frontend pages, report generation, export endpoints, or prompt
-runtime behavior.
+After this task, Slice 49 is closed with task commits recorded, focused golden
+verification passing, and the next narrow V2 task selected without adding
+frontend pages, report generation behavior, export endpoints, or prompt runtime
+behavior.
 
 ## Must Read
 
@@ -27,16 +26,11 @@ runtime behavior.
 3. `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`
 4. `docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`
 5. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py`
-6. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_review_contract_golden.py`
-7. `docs/fixtures/36-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-golden.md`
-8. `docs/contracts/01-data-model-contract.md`
-9. `docs/contracts/02-api-contract.md`
-10. `docs/contracts/03-state-machines.md`
-11. `docs/contracts/04-artifact-contract.md`
-12. `docs/contracts/05-prompt-skill-contract.md`
-13. `docs/implementation/10-v2-scope-options.md`
-14. `memory/08-session-handoff.md`
-15. `memory/07-dev-log.md`
+6. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py`
+7. `docs/fixtures/37-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-golden.md`
+8. `docs/implementation/10-v2-scope-options.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -50,15 +44,14 @@ runtime behavior.
 Create or update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py
-docs/fixtures/37-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-golden.md
 docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden-only task. Do not add frontend code, backend runtime feature code,
+Completion-gate task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -73,31 +66,25 @@ tenants, or permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py -q
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q
 git diff --check
 ```
 
-Expected result: focused golden smoke passes and diff check passes.
+Expected result: focused golden verification passes and diff check passes.
 
 ## Acceptance
 
-- Golden names resolution summary export artifact id, audit handoff artifact
-  id, handoff summary, evidence chain status, included artifact ids, excluded
-  artifact reasons, unresolved follow-up flags, ReviewHistory, failure
-  behavior, and forbidden side effects.
-- Golden proves no frontend page, report generation behavior, export/download
-  endpoint, prompt assembly implementation, prompt runtime execution, provider
-  call, retrieval ranking change, vector index, embedding, reranking, graph
-  job, MCP runtime, broad CRUD, automatic eligibility, historical evidence
-  mutation, RBAC, tenants, or permissions is created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 49 Completion Gate.
+- Slice 49 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next task.
 
 ## Commit Message
 
 ```text
-test(golden): add test knowledge card prompt context discrepancy resolution audit handoff smoke
+docs(v2): complete test knowledge card prompt context discrepancy resolution audit handoff slice
 ```
 
 ## Next Task
 
-Slice 49 Completion Gate.
+Select the next narrow V2 slice during the completion gate.

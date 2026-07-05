@@ -1,5 +1,36 @@
 # Session Handoff
 
+## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Golden Smoke
+
+Completed:
+
+- Added prompt context discrepancy resolution audit handoff golden fixture:
+  `docs/fixtures/37-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-golden.md`.
+- Added prompt context discrepancy resolution audit handoff golden smoke:
+  `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py`.
+- Golden coverage names resolution summary export artifact id, audit handoff
+  artifact id, handoff summary, evidence chain status, included artifact ids,
+  excluded artifact reasons, unresolved follow-up flags, unresolved evidence
+  gaps, ReviewHistory, failure behavior, and forbidden side effects.
+- `NEXT_AI_TASK.md` now points to Slice 49 Completion Gate.
+
+Verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `3 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `test(golden): add test knowledge card prompt context discrepancy resolution audit handoff smoke`.
+- Continue Slice 49 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contracts
 
 Completed:
@@ -32,7 +63,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): define test knowledge card prompt context discrepancy resolution audit handoff contracts`.
+- Committed `docs(v2): define test knowledge card prompt context discrepancy resolution audit handoff contracts` as `e2d912e`.
 - Continue Slice 49 Task 3 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Plan
