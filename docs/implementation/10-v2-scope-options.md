@@ -3958,3 +3958,5 @@ Expected output:
 - No contract edits or product code until the plan defines decision inputs,
   outputs, failure behavior, artifact boundaries, golden smoke plan, and
   non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-55-generated-case-human-review-decision-contract.md`.

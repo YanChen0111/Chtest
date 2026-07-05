@@ -1,5 +1,43 @@
 # Session Handoff
 
+## 2026-07-05 Slice 55 Generated Case Human Review Decision Plan
+
+Completed:
+
+- Added Slice 55 plan:
+  `docs/implementation/slices/slice-55-generated-case-human-review-decision-contract.md`.
+- The plan scopes Generated Case Human Review Decision as contract-only
+  decision evidence from `generated_case_human_review_evidence_package`, not
+  actual GeneratedCaseCandidate approval/rejection, request optimization, or
+  TestCase promotion.
+- The plan names evidence package artifact linkage, GeneratedCaseCandidate
+  id/status, candidate summary, evidence chain completeness,
+  missing/conflicting evidence summaries, review blocker summary,
+  dedup/readiness summary, human review checklist, decision labels, reviewer
+  label/comment, requested edit fields, duplicate notes, ReviewHistory,
+  failure behavior, and forbidden side effects.
+- `NEXT_AI_TASK.md` now points to Slice 55 Task 2: Define Generated Case
+  Human Review Decision contracts.
+
+Verification:
+
+```powershell
+if (-not (Test-Path docs/implementation/slices/slice-55-generated-case-human-review-decision-contract.md)) { exit 1 }
+rg -n "Generated Case Human Review Decision|generated_case_human_review_decision|review_generated_case_human_review_evidence_package|generated_case_human_review_evidence_package_artifact_id|accepted_for_future_promotion|accepted_with_required_edits|needs_optimization|rejected_for_insufficient_evidence|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-55-generated-case-human-review-decision-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+git diff --check
+```
+
+Result:
+
+- Focused PowerShell plan-term check passed with `plan terms ok`.
+- `git diff --check` passed with no whitespace errors; Git reported expected
+  Windows LF-to-CRLF working-copy warnings.
+
+Next recommended task:
+
+- Commit `docs(v2): add generated case human review decision plan`.
+- Continue Slice 55 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 54 Completion Gate
 
 Completed:
