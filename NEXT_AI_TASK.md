@@ -10,28 +10,33 @@ Slice 52: KnowledgeAdapter Provider Evaluation Review Summary Export Contract.
 
 ## Current Task
 
-Slice 52 Task 1: Add KnowledgeAdapter Provider Evaluation Review Summary Export
-task plan.
+Slice 52 Task 2: Define KnowledgeAdapter provider evaluation review summary
+export contracts.
 
 ## Product Value Answer
 
-After this task, Chtest will have a narrow plan for exporting a local
-KnowledgeAdapter provider evaluation review summary as audit evidence for
-future planning. The plan must stay contract-only and must not enable a
-provider, install a provider SDK, fetch remote URLs, run retrieval, create
-vector infrastructure, change prompt context behavior, add a frontend page,
-or add RBAC, tenants, or permissions.
+After this task, Chtest will have data, API, state-machine, artifact, and
+prompt/skill contracts for exporting a local KnowledgeAdapter provider
+evaluation review summary as audit evidence for future planning. The contract
+must not enable a provider, install a provider SDK, fetch remote URLs, run
+retrieval, create vector infrastructure, change prompt context behavior, add a
+frontend page, generate reports, expose an export/download endpoint, or add
+RBAC, tenants, or permissions.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/10-v2-scope-options.md`
-4. `docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`
-5. `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py`
-6. `docs/fixtures/39-knowledge-adapter-provider-evaluation-review-decision-golden.md`
-7. `memory/08-session-handoff.md`
-8. `memory/07-dev-log.md`
+4. `docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`
+5. `docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`
+6. `docs/contracts/01-data-model-contract.md`
+7. `docs/contracts/02-api-contract.md`
+8. `docs/contracts/03-state-machines.md`
+9. `docs/contracts/04-artifact-contract.md`
+10. `docs/contracts/05-prompt-skill-contract.md`
+11. `memory/08-session-handoff.md`
+12. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -42,17 +47,21 @@ or add RBAC, tenants, or permissions.
 
 ## Expected Files
 
-Create or update only these files for the current task:
+Update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
+docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning-only task. Do not add frontend code, backend runtime feature code,
+Contract-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad KnowledgeAdapter CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -67,35 +76,33 @@ changes, remote CI provider behavior, RBAC, tenants, or permissions.
 ## Verification Command
 
 ```bash
-test -f docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md
-rg -n "KnowledgeAdapter Provider Evaluation Review Summary Export|provider evaluation review summary export|export_knowledge_adapter_provider_evaluation_review_summary|knowledge_adapter_provider_evaluation_review_summary_export|provider evaluation review decision artifact|accepted_for_planning|accepted_with_constraints|blocked|needs_revision|unsupported|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|disabled by default|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+rg -n "KnowledgeAdapter Provider Evaluation Review Summary Export|knowledge_adapter_provider_evaluation_review_summary_export|export_knowledge_adapter_provider_evaluation_review_summary|provider evaluation review decision artifact|summary export|license review|reference intake|KnowledgeEvidence normalization|provider_state|fallback behavior|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md
 git diff --check
 ```
 
-Expected result: plan file exists, required planning terms are present, and
-diff check passes.
+Expected result: required contract terms are present and diff check passes.
 
 ## Acceptance
 
-- Slice 52 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit messages.
-- The plan names provider evaluation review summary export inputs and outputs,
-  review decision artifact linkage, accepted/blocked/unsupported/revision
-  decision groups, license/reference intake, KnowledgeEvidence normalization,
-  provider_state, fallback behavior, disabled by default policy,
-  ReviewHistory, failure behavior, and forbidden side effects.
-- The plan excludes provider enablement, provider integration, provider SDKs,
-  external calls, vector database, embeddings, reranking, background indexing,
-  runtime retrieval, UI, RBAC, tenants, permissions, and package upgrades.
-- `NEXT_AI_TASK.md` points to Task 2.
+- Contracts define provider evaluation review summary export inputs, outputs,
+  summary export status labels, provider evaluation review decision artifact
+  linkage, provider suitability status, KnowledgeEvidence normalization,
+  provider_state, disabled by default policy, fallback behavior,
+  license/version/reference intake, metrics, ReviewHistory, failure behavior,
+  and forbidden side effects.
+- Contracts keep provider enablement, Haystack/LlamaIndex provider
+  integration, SDKs, external calls, vector database, embeddings, reranking,
+  background indexing, runtime retrieval, UI, export/download endpoints, RBAC,
+  tenants, permissions, and package upgrades out of scope.
+- `NEXT_AI_TASK.md` points to Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add knowledge adapter provider evaluation review summary export plan
+docs(v2): define knowledge adapter provider evaluation review summary export contracts
 ```
 
 ## Next Task
 
-Slice 52 Task 2: Define KnowledgeAdapter provider evaluation review summary
-export contracts.
+Slice 52 Task 3: Add KnowledgeAdapter provider evaluation review summary export
+golden smoke.

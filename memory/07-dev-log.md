@@ -1,5 +1,43 @@
 # Development Log
 
+## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Plan
+
+### Completed
+
+- Added Slice 52 plan:
+  `docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`.
+- The plan scopes KnowledgeAdapter Provider Evaluation Review Summary Export
+  as a contract-only audit evidence artifact from provider evaluation review
+  decision artifact ids, provider evaluation plan artifact ids, review
+  decision/status labels, reviewer notes, accepted constraints, blocked
+  reasons, unsupported reasons, requested revision fields, unresolved safety
+  questions, source hashes, source manifest ids, and ReviewHistory links.
+- The plan names `export_knowledge_adapter_provider_evaluation_review_summary`,
+  `knowledge_adapter_provider_evaluation_review_summary_export`, export
+  artifact id, review summary status, exported decision groups, provider
+  suitability summary, license/reference summary, KnowledgeEvidence
+  normalization summary, provider_state, fallback behavior, disabled by
+  default, failure code, and visible reason.
+- The plan keeps summary export separate from provider enablement,
+  Haystack/LlamaIndex/GraphRAG integration, provider SDKs, credentials, remote
+  fetch, runtime retrieval, provider-backed prompt context evidence, vector
+  infrastructure, frontend pages, report generation behavior,
+  export/download endpoints, RBAC, tenants, permissions, and package upgrades.
+- Updated `NEXT_AI_TASK.md` to Slice 52 Task 2.
+
+### Verification
+
+- `test -f docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`
+- `rg -n "KnowledgeAdapter Provider Evaluation Review Summary Export|provider evaluation review summary export|export_knowledge_adapter_provider_evaluation_review_summary|knowledge_adapter_provider_evaluation_review_summary_export|provider evaluation review decision artifact|accepted_for_planning|accepted_with_constraints|blocked|needs_revision|unsupported|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|disabled by default|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md`
+- `git diff --check`
+- Result: required terms found.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): add knowledge adapter provider evaluation review summary export plan`.
+- Continue Slice 52 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 51 Completion Gate
 
 ### Completed

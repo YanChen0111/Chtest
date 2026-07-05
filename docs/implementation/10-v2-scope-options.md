@@ -3584,3 +3584,5 @@ Expected output:
 - No product code until the plan defines provider evaluation review summary
   export inputs, outputs, failure behavior, artifact boundaries, and
   non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`.
