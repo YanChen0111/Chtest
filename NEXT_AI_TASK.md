@@ -6,31 +6,32 @@ full docs so an AI worker can start fast without rereading the full planning set
 
 ## Current Slice
 
-Slice 49: TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contract.
+Slice 50: KnowledgeAdapter Provider Evaluation Plan Contract.
 
 ## Current Task
 
-Slice 49 Completion Gate.
+Slice 50 Task 1: Add KnowledgeAdapter Provider Evaluation Plan task plan.
 
 ## Product Value Answer
 
-After this task, Slice 49 is closed with task commits recorded, focused golden
-verification passing, and the next narrow V2 task selected without adding
-frontend pages, report generation behavior, export endpoints, or prompt runtime
-behavior.
+After this task, Chtest has a narrow plan for evaluating future
+KnowledgeAdapter providers before any Haystack/LlamaIndex integration,
+provider SDK, external call, vector database, embedding, reranking, runtime
+retrieval, or provider-backed prompt context behavior exists.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
-3. `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`
-4. `docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`
-5. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py`
-6. `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py`
-7. `docs/fixtures/37-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-golden.md`
-8. `docs/implementation/10-v2-scope-options.md`
-9. `memory/08-session-handoff.md`
-10. `memory/07-dev-log.md`
+3. `docs/implementation/10-v2-scope-options.md`
+4. `docs/contracts/01-data-model-contract.md`
+5. `docs/contracts/02-api-contract.md`
+6. `docs/contracts/03-state-machines.md`
+7. `docs/contracts/04-artifact-contract.md`
+8. `docs/contracts/05-prompt-skill-contract.md`
+9. `docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
+10. `memory/08-session-handoff.md`
+11. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -44,14 +45,14 @@ behavior.
 Create or update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md
+docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
 docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion-gate task. Do not add frontend code, backend runtime feature code,
+Planning-only task. Do not add frontend code, backend runtime feature code,
 report generation behavior changes, export/download endpoints, migrations,
 package upgrades, broad TestKnowledgeCard CRUD implementation, backend feature
 API, frontend page, automatic prompt eligibility, prompt assembly
@@ -59,32 +60,41 @@ implementation, prompt runtime execution, provider calls, deterministic
 retrieval behavior change, automatic card creation from model output,
 automatic knowledge ingestion, external provider integrations, vector database,
 embeddings, reranking, graph runtime, MCP runtime, provider SDK, credentials,
-artifact upload/mutation/delete, historical evidence mutation, generated-case
-auto-approval, runner behavior changes, remote CI provider behavior, RBAC,
-tenants, or permissions.
+provider enablement, runtime retrieval, provider-backed prompt context
+evidence, artifact upload/mutation/delete, historical evidence mutation,
+generated-case auto-approval, runner behavior changes, remote CI provider
+behavior, RBAC, tenants, or permissions.
 
 ## Verification Command
 
 ```bash
-backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q
+test -f docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
+rg -n "KnowledgeAdapter Provider Evaluation Plan|Haystack|LlamaIndex|provider evaluation|KnowledgeEvidence|provider_state|fallback behavior|license|reference intake|disabled by default|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md NEXT_AI_TASK.md
 git diff --check
 ```
 
-Expected result: focused golden verification passes and diff check passes.
+Expected result: plan file exists, required terms are present, and diff check
+passes.
 
 ## Acceptance
 
-- Slice 49 task table records Task 1-3 commits.
-- Focused golden verification passes.
-- V2 scope options and handoff memory recommend the next narrow slice.
-- `NEXT_AI_TASK.md` points to the next task.
+- Slice 50 plan exists with product value, non-goals, task table, expected
+  files, verification commands, and commit messages.
+- The plan names provider evaluation inputs and outputs, KnowledgeEvidence
+  normalization, provider_state, fallback behavior, license/version/reference
+  intake, disabled-by-default policy, metrics, ReviewHistory, failure behavior,
+  and non-goals.
+- The plan excludes Haystack/LlamaIndex integration, provider SDK, external
+  calls, vector database, embeddings, reranking, background indexing, runtime
+  retrieval, UI, RBAC, tenants, permissions, and package upgrades.
+- `NEXT_AI_TASK.md` points to Task 2.
 
 ## Commit Message
 
 ```text
-docs(v2): complete test knowledge card prompt context discrepancy resolution audit handoff slice
+docs(v2): add knowledge adapter provider evaluation plan
 ```
 
 ## Next Task
 
-Select the next narrow V2 slice during the completion gate.
+Slice 50 Task 2: Define KnowledgeAdapter provider evaluation plan contracts.

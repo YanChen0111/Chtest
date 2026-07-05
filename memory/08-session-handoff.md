@@ -1,5 +1,37 @@
 # Session Handoff
 
+## 2026-07-05 Slice 49 Completion Gate
+
+Completed:
+
+- Closed Slice 49: TestKnowledgeCard Prompt Context Discrepancy Resolution
+  Audit Handoff Contract.
+- Recorded completed task commits in the Slice 49 task table:
+  - Task 1: `7669597`;
+  - Task 2: `e2d912e`;
+  - Task 3: `3e28f91`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 49
+  completion and Slice 50 recommendation.
+- `NEXT_AI_TASK.md` now points to Slice 50 Task 1: Add KnowledgeAdapter
+  Provider Evaluation Plan task plan.
+
+Verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `6 passed`.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): complete test knowledge card prompt context discrepancy resolution audit handoff slice`.
+- Continue Slice 50 Task 1 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Golden Smoke
 
 Completed:
@@ -28,7 +60,7 @@ Result:
 
 Next recommended task:
 
-- Commit `test(golden): add test knowledge card prompt context discrepancy resolution audit handoff smoke`.
+- Committed `test(golden): add test knowledge card prompt context discrepancy resolution audit handoff smoke` as `3e28f91`.
 - Continue Slice 49 Completion Gate from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contracts
@@ -96,7 +128,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): add test knowledge card prompt context discrepancy resolution audit handoff plan`.
+- Committed `docs(v2): add test knowledge card prompt context discrepancy resolution audit handoff plan` as `7669597`.
 - Continue Slice 49 Task 2 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 48 Completion Gate

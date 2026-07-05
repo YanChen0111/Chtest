@@ -221,8 +221,8 @@ The follow-up contract task should define:
 |---|---|---|---|---|
 | Add TestKnowledgeCard prompt context discrepancy resolution audit handoff task plan | done | `test -f docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md && rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff|audit handoff|handoff summary|evidence chain status|included artifact ids|excluded artifact reasons|resolution outcome summary|accepted discrepancy group|rejected discrepancy group|acknowledged discrepancy group|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md NEXT_AI_TASK.md && git diff --check` | `7669597` | planning-only scope |
 | Define TestKnowledgeCard prompt context discrepancy resolution audit handoff contracts | done | `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff|prompt_context_discrepancy_resolution_audit_handoff|build_prompt_context_discrepancy_resolution_audit_handoff|handoff summary|evidence chain status|included artifact ids|excluded artifact reasons|unresolved evidence gaps|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md && git diff --check` | `e2d912e` | contract-only |
-| Add TestKnowledgeCard prompt context discrepancy resolution audit handoff golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py -q && git diff --check` | pending | no frontend/report/export runtime |
-| Slice 49 completion gate | planned | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q && git diff --check` | pending | docs and handoff |
+| Add TestKnowledgeCard prompt context discrepancy resolution audit handoff golden smoke | done | `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py -q && git diff --check` | `3e28f91` | no frontend/report/export runtime |
+| Slice 49 completion gate | done | `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q && git diff --check` | pending | docs and handoff |
 
 ## Task 1: Add TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Task Plan
 
@@ -335,16 +335,20 @@ Expected files:
 Verification Command:
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py -q
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py -q
 git diff --check
 ```
 
 Acceptance:
 
-- Golden names resolution summary export artifact id, audit handoff artifact
-  id, handoff summary, evidence chain status, included artifact ids, excluded
-  artifact reasons, unresolved follow-up flags, ReviewHistory, failure
-  behavior, and forbidden side effects.
+- Golden names resolution summary export artifact id, resolution review
+  artifact id, discrepancy artifact id, audit handoff artifact id, handoff
+  summary, evidence chain status, included artifact ids, excluded artifact
+  reasons, unresolved follow-up flags, unresolved evidence gaps, source
+  hashes, context manifest references, PromptVersion/SkillVersion trace,
+  ReviewHistory, failure code, visible reason, `prompt_input.json`, external
+  archive exclusions, artifact upload/mutation exclusions, failure behavior,
+  and forbidden side effects.
 - Golden proves no frontend page, report generation behavior, export/download
   endpoint, prompt assembly implementation, prompt runtime execution, provider
   call, retrieval ranking change, vector index, embedding, reranking, graph
@@ -372,7 +376,7 @@ Expected files:
 Verification Command:
 
 ```bash
-backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q
 git diff --check
 ```
 

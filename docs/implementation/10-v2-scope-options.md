@@ -3224,3 +3224,123 @@ Expected output:
   status, included/excluded artifact handling, failure behavior, and non-goals.
 - Slice plan added:
   `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`.
+
+## Completed Next V2 Slice
+
+Completed: TestKnowledgeCard prompt context discrepancy resolution audit
+handoff contract.
+
+Why it was selected:
+
+- Slice 48 packaged discrepancy resolution reviews into summary export
+  evidence, but Chtest still needed a final audit handoff contract that linked
+  the resolution summary export back to discrepancy, review, audit,
+  consumption, prompt evidence, source hashes, context manifest,
+  PromptVersion/SkillVersion, and ReviewHistory without becoming a download
+  endpoint, report renderer, runtime prompt input, or external archive
+  integration.
+- Slice 49 defined audit handoff inputs and outputs from resolution summary
+  export artifacts, resolution review artifacts, discrepancy artifacts, audit
+  evidence, resolution outcome groups, affected citation ids, unresolved
+  follow-up flags, source hashes, context manifest links,
+  PromptVersion/SkillVersion trace, and ReviewHistory.
+- The slice kept the full discrepancy resolution evidence chain auditable as a
+  handoff contract before any UI, report generator, provider, prompt runtime,
+  or external archive consumes it.
+
+Completed slice name:
+
+```text
+Slice 49: TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- TestKnowledgeCard prompt context discrepancy resolution audit handoff is now
+  a contract with
+  `build_prompt_context_discrepancy_resolution_audit_handoff`,
+  `prompt_context_discrepancy_resolution_audit_handoff`, handoff summary,
+  evidence chain status, included artifact ids, excluded artifact reasons,
+  unresolved follow-up flags, unresolved evidence gaps, unsupported claim
+  references, source manifest ids, source hashes, context manifest references,
+  PromptVersion/SkillVersion trace, ReviewHistory links, failure code, and
+  visible reason.
+- No frontend page, report generation behavior, export/download endpoint,
+  external archive integration, prompt assembly implementation, prompt runtime
+  execution, provider calls, retrieval ranking change, model output behavior
+  implementation, automatic citation generation, vector database, embeddings,
+  reranking, graph runtime, MCP runtime, backend feature API, migration, broad
+  TestKnowledgeCard CRUD, automatic prompt eligibility, automatic card
+  creation, automatic knowledge ingestion, artifact upload/mutation/delete,
+  artifact mutation outside declared prompt-context discrepancy resolution
+  audit handoff, historical evidence mutation, generated-case auto-approval,
+  runner behavior, RBAC, tenants, permissions, or remote CI provider behavior
+  were added.
+
+## Recommended Next V2 Slice
+
+Recommended: KnowledgeAdapter provider evaluation plan contract.
+
+Why:
+
+- Slice 49 closes the prompt-context discrepancy audit-handoff contract chain.
+  Before adding Haystack, LlamaIndex, or any external provider integration,
+  Chtest needs a contract for evaluating providers as inert candidate
+  KnowledgeAdapter options.
+- The next narrow boundary should define provider evaluation inputs and outputs
+  from provider names, versions, licenses, reference intake, provider_state,
+  KnowledgeEvidence normalization expectations, fallback behavior, metrics,
+  and disabled-by-default policy.
+- This keeps external retrieval providers evaluable as evidence and policy
+  records before any SDK, credential, external call, vector database,
+  embedding, reranking, runtime retrieval, UI, RBAC, tenant, or permission
+  behavior exists.
+
+Next slice name:
+
+```text
+Slice 50: KnowledgeAdapter Provider Evaluation Plan Contract
+```
+
+Smallest useful boundary:
+
+- Define evaluation inputs for candidate provider name, adapter type,
+  provider version, license, supported modes, reference URLs or documentation
+  snapshots, disabled-by-default policy, provider_state, and local fallback
+  expectations.
+- Define evaluation outputs such as evaluation artifact id, provider
+  suitability status, KnowledgeEvidence normalization notes, citation
+  traceability requirements, required redaction and safety checks, metrics,
+  blocker reasons, fallback behavior, ReviewHistory links, failure code, and
+  visible reason.
+- Add one contract-level fixture and golden smoke after the contract is
+  defined.
+
+Explicit non-goals:
+
+- No Haystack or LlamaIndex provider integration, provider SDK, external call,
+  remote URL fetch, credential handling, OAuth, vector database, embeddings,
+  reranking, background indexing, graph runtime, MCP runtime, runtime
+  retrieval, prompt runtime execution, provider-backed prompt context
+  evidence, frontend page, report generation behavior, migration, broad
+  KnowledgeAdapter CRUD, automatic provider enablement, automatic knowledge
+  ingestion, RBAC, tenants, permissions, runner behavior changes, remote CI
+  behavior, or package upgrades.
+
+Suggested next task:
+
+```text
+Slice 50 Task 1: Add KnowledgeAdapter Provider Evaluation Plan task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`.
+- No product code until the plan defines evaluation inputs, provider
+  evaluation outputs, KnowledgeEvidence normalization, provider_state,
+  fallback behavior, license/reference intake, disabled-by-default policy, and
+  non-goals.
