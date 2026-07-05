@@ -1350,6 +1350,70 @@ KnowledgeAdapter safety state rules:
   call provider SDKs, create vector indexes, create embeddings, rerank, run
   graph jobs, or update remote CI provider state.
 
+## 7.1.1 KnowledgeAdapter Provider Evaluation Plan State Contract
+
+KnowledgeAdapter Provider Evaluation Plan is a contract-only state boundary for
+evaluating future provider candidates before any Haystack integration,
+LlamaIndex integration, provider SDK, external call, vector database,
+embedding, reranking, background indexing, runtime retrieval, provider-backed
+prompt context behavior, frontend page, migration, package upgrade, RBAC,
+tenants, or permissions exists.
+
+```text
+provider_candidate_not_evaluated -> provider_evaluation_pending
+provider_evaluation_pending -> provider_evaluation_recorded
+provider_evaluation_pending -> provider_evaluation_blocked
+provider_evaluation_pending -> provider_evaluation_needs_revision
+provider_evaluation_recorded -> provider_candidate_disabled_by_default
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| provider_candidate_not_evaluated | evaluate_provider_candidate | provider_evaluation_pending | Future workflow/API | Starts inert candidate evaluation only |
+| provider_evaluation_pending | record_provider_evaluation | provider_evaluation_recorded | Future workflow/API | Records evaluation evidence |
+| provider_evaluation_pending | block_provider_candidate | provider_evaluation_blocked | Future workflow/API | Records blocker reasons |
+| provider_evaluation_pending | request_provider_evaluation_revision | provider_evaluation_needs_revision | Future workflow/API | Requests license/reference/safety clarification |
+| provider_evaluation_recorded | enforce_disabled_by_default | provider_candidate_disabled_by_default | Future workflow/API | Keeps candidate inert until a later scoped integration |
+
+KnowledgeAdapter Provider Evaluation Plan state rules:
+
+- `evaluate_knowledge_adapter_provider_plan` and
+  `evaluate_provider_candidate` require candidate provider name, provider
+  family, adapter type, provider version, adapter version, license review
+  inputs, reference intake or documentation snapshot artifact ids, supported
+  modes, expected KnowledgeEvidence normalization fields, provider_state,
+  disabled by default policy, fallback behavior, metrics, source hash
+  requirements, and ReviewHistory ids when available.
+- Provider evaluation states are planning evidence only. They may produce
+  provider evaluation artifact id, provider suitability status,
+  KnowledgeEvidence normalization notes, citation traceability requirements,
+  redaction and safety requirements, metrics, blocker reasons, fallback
+  behavior, provider_state recommendation, disabled by default decision,
+  ReviewHistory links, failure code, and visible reason.
+- Provider suitability status values are `not_evaluated`, `suitable`,
+  `suitable_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`. They must not mutate `KnowledgeAdapterConfig.status`, create
+  runtime connectivity, enable providers, create retrieval evidence, or set
+  `used_knowledge=true`.
+- `provider_candidate_disabled_by_default` is not provider enablement. It keeps
+  candidate providers inert until a later scoped slice explicitly defines
+  implementation and enablement rules.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  redaction-failed, provider-state-unsafe, fallback-missing, cross-project,
+  unbounded, credential-required, runtime-required, or provider-evaluation-
+  mismatched input must produce a blocked or needs-revision state with a
+  visible reason and must not append a successful provider evaluation plan.
+- Provider evaluation states must not install packages, call providers, call
+  provider SDKs, store credentials, fetch remote URLs, create vector indexes,
+  create embeddings, rerank, run background indexing, run graph jobs, start MCP
+  runtime, run runtime retrieval, create provider-backed prompt context
+  evidence, assemble prompts, run AITasks, render frontend pages, generate
+  reports, expose export/download endpoints, mutate KnowledgeEvidence, mutate
+  Artifact rows outside declared evaluation evidence, enable providers, add
+  RBAC, create tenants, change permissions, or update remote CI provider
+  behavior.
+
 ## 7.2 TestKnowledgeCard 状态规则
 
 TestKnowledgeCard uses `EntityStatus` only:

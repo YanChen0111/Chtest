@@ -1,5 +1,39 @@
 # Session Handoff
 
+## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan Contracts
+
+Completed:
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  KnowledgeAdapter Provider Evaluation Plan.
+- Added contract-only `evaluate_knowledge_adapter_provider_plan` semantics
+  with provider suitability status, KnowledgeEvidence normalization notes,
+  provider_state recommendation, disabled by default decision, fallback
+  behavior, license review, reference intake, metrics, blocker reasons,
+  source hashes, ReviewHistory links, failure code, and visible reason.
+- Added future artifact type and filename:
+  `knowledge_adapter_provider_evaluation_plan` and
+  `knowledge_adapter_provider_evaluation_plan.json`.
+- `NEXT_AI_TASK.md` now points to Slice 50 Task 3: Add KnowledgeAdapter
+  provider evaluation plan golden smoke.
+
+Verification:
+
+```bash
+rg -n "KnowledgeAdapter Provider Evaluation Plan|knowledge_adapter_provider_evaluation_plan|evaluate_knowledge_adapter_provider_plan|Haystack|LlamaIndex|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|disabled by default|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md
+git diff --check
+```
+
+Result:
+
+- Required terms found.
+- Diff check is clean except Windows LF-to-CRLF warning.
+
+Next recommended task:
+
+- Commit `docs(v2): define knowledge adapter provider evaluation plan contracts`.
+- Continue Slice 50 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan
 
 Completed:
@@ -29,7 +63,7 @@ Result:
 
 Next recommended task:
 
-- Commit `docs(v2): add knowledge adapter provider evaluation plan`.
+- Committed `docs(v2): add knowledge adapter provider evaluation plan` as `65a5658`.
 - Continue Slice 50 Task 2 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 49 Completion Gate

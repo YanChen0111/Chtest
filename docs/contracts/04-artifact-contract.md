@@ -29,6 +29,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   input.json
   context_manifest.json
   knowledge_retrieval.json
+  knowledge_adapter_provider_evaluation_plan.json
   test_knowledge_card_prompt_context_evidence.json
   test_knowledge_card_prompt_context_consumption.json
   test_knowledge_card_prompt_context_audit_summary.json
@@ -361,6 +362,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | context_yaml | application/yaml | 轻量上下文 YAML |
 | context_openapi | application/yaml or application/json | OpenAPI 片段或文件 |
 | knowledge_retrieval | application/json | 确定性本地知识检索证据 |
+| knowledge_adapter_provider_evaluation_plan | application/json | Future KnowledgeAdapter provider evaluation planning evidence |
 | test_knowledge_card | application/json | Structured testing knowledge card snapshot |
 | test_knowledge_card_handoff | application/json | Future TestKnowledgeCard handoff candidate payload |
 | test_knowledge_card_candidate_review | application/json | Human review evidence for a handoff candidate |
@@ -1244,6 +1246,46 @@ Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
   changes, generate Reports, start MCP runtime, call provider SDKs, create
   vector indexes, create embeddings, rerank, run graph jobs, or update remote
   CI provider state.
+
+KnowledgeAdapter Provider Evaluation Plan artifact rules:
+
+- `knowledge_adapter_provider_evaluation_plan.json` may be stored as an
+  Artifact with `artifact_type=knowledge_adapter_provider_evaluation_plan`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=knowledge_adapter_provider_evaluation_plan` in a later scoped
+  implementation.
+- The provider evaluation plan artifact must include
+  `evaluate_knowledge_adapter_provider_plan`, candidate provider name, provider
+  family such as Haystack or LlamaIndex, adapter type, provider version,
+  adapter version, license name, license URL, license compatibility notes,
+  reference intake URLs, documentation snapshot artifact ids, supported
+  retrieval modes, supported source types, expected KnowledgeEvidence
+  normalization fields, provider_state, disabled by default policy, network
+  policy, credential policy, fallback behavior, metrics plan, safety and
+  redaction requirements, source manifest ids, source hashes, ReviewHistory
+  links, provider suitability status, blocker reasons, failure code, and
+  visible reason when applicable.
+- Provider suitability status values are `not_evaluated`, `suitable`,
+  `suitable_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`. They are evaluation labels only and must not enable a
+  provider, call a provider, run runtime retrieval, create embeddings, or set
+  `used_knowledge=true`.
+- KnowledgeAdapter provider evaluation plan artifacts must not contain raw
+  provider payloads, provider schemas as business truth, credentials, API keys,
+  tokens, OAuth state, remote fetch payloads, vector store payloads, embedding
+  vectors, reranker traces, graph runtime payloads, executable prompt assembly
+  payloads, runtime `prompt_input.json`, frontend-rendered markup,
+  report-rendered payloads, or generated replacement evidence.
+- KnowledgeAdapter provider evaluation plan artifacts must not mutate Artifact
+  rows outside declared evaluation output, mutate KnowledgeAdapterConfig
+  runtime state, mutate KnowledgeEvidence rows, mutate TestKnowledgeCard rows,
+  approve or reject GeneratedCaseCandidate rows, promote TestCase rows, create
+  ToolInvocation rows, run prompt assembly, execute AITasks, call providers,
+  call provider SDKs, fetch remote URLs, change retrieval ranking, create
+  vector indexes, create embeddings, rerank, run background indexing, run graph
+  jobs, invoke MCP runtime, render frontend pages, generate reports, expose
+  export/download endpoints, upload artifacts, call remote CI providers, add
+  RBAC, create tenants, change permissions, or install packages.
 
 ## 6. Evidence Manifest
 

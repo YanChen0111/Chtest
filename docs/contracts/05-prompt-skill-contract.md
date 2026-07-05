@@ -124,6 +124,92 @@ Rules:
 - Model output or parsed AITask output must expose `used_context_artifact_ids`.
 - Model output must not claim external evidence when `used_knowledge=false`.
 
+### 4.1.1 KnowledgeAdapter Provider Evaluation Plan Contract
+
+This contract defines prompt/skill trace rules for future KnowledgeAdapter
+provider evaluation plans. It is contract-only planning evidence and does not
+assemble prompts, write runtime `prompt_input.json`, execute AITasks, call
+providers, integrate provider SDKs, run retrieval, change ranking, create
+vector indexes, create embeddings, rerank, run background indexing, run graph
+jobs, invoke MCP runtime, enable providers, mutate KnowledgeAdapterConfig
+runtime state, mutate KnowledgeEvidence rows, render frontend pages, add RBAC,
+create tenants, change permissions, or install packages.
+
+KnowledgeAdapter provider evaluation plan input must include:
+
+- `knowledge_adapter_provider_evaluation_plan_action=evaluate_knowledge_adapter_provider_plan`.
+- PromptVersion id/name/version and SkillVersion id/name/version when the
+  evaluation is produced by a prompt or skill.
+- Candidate provider name and provider family such as Haystack, LlamaIndex,
+  GraphRAG, or local adapter.
+- Provider version and adapter version.
+- License name, license URL, license compatibility notes, and license review.
+- Reference intake URLs or documentation snapshot artifact ids.
+- Supported retrieval modes and supported source types.
+- Expected KnowledgeEvidence normalization fields.
+- Expected provider_state values and provider_state recommendation.
+- Disabled by default policy.
+- Fallback behavior expectations.
+- Metrics to collect.
+- Safety, redaction, source-hash, source manifest, and ReviewHistory ids.
+- Failure code and visible reason when applicable.
+
+KnowledgeAdapter provider evaluation plan output may include:
+
+- Provider evaluation plan id or artifact id.
+- `knowledge_adapter_provider_evaluation_plan` artifact or manifest naming.
+- Evaluation actions such as `evaluate_provider_candidate`,
+  `record_provider_evaluation`, `block_provider_candidate`, or
+  `request_provider_evaluation_revision`.
+- Provider suitability status values: `not_evaluated`, `suitable`,
+  `suitable_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`.
+- Normalized KnowledgeEvidence requirements.
+- Provider_state recommendation.
+- Disabled by default decision.
+- Fallback behavior summary.
+- License review result.
+- Reference intake summary.
+- Metrics plan.
+- Blocker reasons and unresolved safety questions.
+- Fallback labels such as `fallback_required`, `local_no_knowledge_fallback`,
+  `normalization_required`, `citation_traceability_required`, and
+  `license_review_required`.
+- Source manifest ids, source hashes, ReviewHistory links, failure code, and
+  visible reason.
+
+KnowledgeAdapter provider evaluation plan rules:
+
+- Provider evaluation records are planning evidence only. They must not be
+  treated as provider configuration enablement, runtime provider connectivity,
+  retrieval permission, prompt eligibility, or proof that provider evidence was
+  used.
+- `provider_state` is display/health metadata and must not start runtime
+  retrieval.
+- Disabled by default is required until a later scoped integration explicitly
+  enables a provider.
+- Fallback behavior must preserve local/no-knowledge evidence instead of
+  fabricating KnowledgeEvidence.
+- `used_knowledge` must not be auto-marked true by provider evaluation.
+- Provider-specific payloads must not leak into TestKnowledgeCard,
+  KnowledgeEvidence, GeneratedCaseCandidate, prompt context evidence, reports,
+  or review surfaces.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  redaction-failed, provider-state-unsafe, fallback-missing, cross-project,
+  unbounded, credential-required, runtime-required, or provider-evaluation-
+  mismatched input must produce a failure code and visible reason and must not
+  append a successful provider-ready state.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, integrate an SDK, store credentials, fetch remote URLs,
+  create a vector index, create embeddings, rerank, run background indexing,
+  run a graph job, invoke MCP runtime, create provider-backed prompt context
+  evidence, mutate KnowledgeAdapterConfig outside declared evaluation
+  evidence, mutate KnowledgeEvidence, render frontend pages, expose backend
+  feature APIs, add endpoints, routers, services, workers, queues, schedulers,
+  run migrations, add package upgrades, add RBAC, create tenants, or change
+  permissions.
+
 ### 4.2 TestKnowledgeCard Prompt Context Evidence Contract
 
 This contract defines prompt/skill trace rules for future TestKnowledgeCard

@@ -640,6 +640,134 @@ Forbidden side effects:
   auto-approval, TestCase auto-promotion, remote CI provider behavior, RBAC,
   tenants, or permissions.
 
+### 2.17 KnowledgeAdapter Provider Evaluation Plan Contract
+
+This section is contract-only. It defines future provider evaluation semantics
+for KnowledgeAdapter candidates before any Haystack integration, LlamaIndex
+integration, external retrieval provider, provider SDK, credential, external
+call, vector database, embedding, reranking, background indexing, runtime
+retrieval, provider-backed prompt context behavior, frontend page, migration,
+package upgrade, RBAC, tenants, or permissions exists.
+
+Allowed provider evaluation actions:
+
+- `evaluate_knowledge_adapter_provider_plan`: future scoped evaluation action
+  that packages provider candidate metadata, license review, reference intake,
+  KnowledgeEvidence normalization requirements, provider_state, disabled by
+  default policy, metrics, fallback behavior, ReviewHistory links, failure
+  code, and visible reason.
+- `evaluate_provider_candidate`, `record_provider_evaluation`,
+  `block_provider_candidate`, and `request_provider_evaluation_revision` are
+  evaluation labels only. They do not enable a provider, call a provider, run
+  retrieval, create embeddings, or set `used_knowledge=true`.
+
+KnowledgeAdapter provider evaluation plan payload shape:
+
+```json
+{
+  knowledge_adapter_provider_evaluation_plan_action: evaluate_knowledge_adapter_provider_plan,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  adapter_name: default,
+  candidate_provider_name: haystack,
+  provider_family: Haystack,
+  adapter_type: external_retrieval_provider_candidate,
+  provider_version: 2.x,
+  adapter_version: evaluation-plan-v1,
+  license_name: Apache-2.0,
+  license_url: https://example.invalid/haystack-license,
+  license_compatibility_notes: requires human review before integration,
+  reference_intake_urls: [https://example.invalid/haystack-docs],
+  documentation_snapshot_artifact_ids: [00000000-0000-0000-0000-000000000920],
+  supported_retrieval_modes: [keyword, hybrid],
+  supported_source_types: [context_artifact, test_knowledge_card],
+  expected_knowledge_evidence_fields: [
+    evidence_id,
+    source_artifact_id,
+    snippet,
+    score,
+    source_hash
+  ],
+  provider_state: disabled,
+  disabled_by_default: true,
+  network_policy: no_external_calls,
+  credential_policy: credentials_forbidden,
+  fallback_behavior: local_no_knowledge_fallback,
+  metrics_to_collect: [
+    evidence_normalization_completeness,
+    source_traceability_coverage,
+    redaction_safety_status
+  ],
+  safety_notes: provider output must normalize before citation,
+  source_hash_requirements: source hash required for every cited item,
+  review_history_ids: [00000000-0000-0000-0000-000000000895]
+}
+```
+
+KnowledgeAdapter provider evaluation plan response shape for a future scoped
+implementation:
+
+```json
+{
+  knowledge_adapter_provider_evaluation_plan_action: evaluate_knowledge_adapter_provider_plan,
+  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
+  provider_suitability_status: needs_revision,
+  provider_state_recommendation: disabled,
+  disabled_by_default_decision: true,
+  knowledge_evidence_normalization_notes: source trace fields required before future use,
+  citation_traceability_requirements: source artifact id and source hash required,
+  redaction_safety_requirements: safe bounded snippets only,
+  metric_set: [
+    evidence_normalization_completeness,
+    source_traceability_coverage,
+    fallback_coverage
+  ],
+  blocker_reasons: [license_review_required],
+  fallback_behavior: local_no_knowledge_fallback,
+  license_review_result: needs_license_review,
+  reference_intake_summary: documentation snapshot captured for review,
+  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
+  source_hashes: [sha256:provider-docs-snapshot],
+  review_history_links: [00000000-0000-0000-0000-000000000895],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+KnowledgeAdapter Provider Evaluation Plan hard rules:
+
+- Provider evaluation input must reference candidate provider name, provider
+  family, adapter type, provider version, adapter version, license name,
+  license URL, license compatibility notes, reference intake, documentation
+  snapshot artifacts when available, supported modes, expected KnowledgeEvidence
+  normalization fields, provider_state, disabled by default policy, network
+  policy, credential policy, fallback behavior, metrics, source hash
+  requirements, and ReviewHistory.
+- Provider evaluation output must be planning evidence only. It may record
+  provider suitability status, KnowledgeEvidence normalization notes, citation
+  traceability requirements, redaction and safety requirements, metric set,
+  blocker reasons, fallback behavior, provider_state recommendation, disabled
+  by default decision, license review result, reference intake summary,
+  ReviewHistory links, source hashes, failure code, and visible reason.
+- Provider suitability status values are `not_evaluated`, `suitable`,
+  `suitable_with_constraints`, `blocked`, `needs_revision`, and
+  `unsupported`. They do not create provider enablement, runtime connectivity,
+  retrieval evidence, prompt eligibility, or `used_knowledge=true`.
+- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
+  reference-missing, reference-mismatched, normalization-unsupported,
+  redaction-failed, provider-state-unsafe, fallback-missing, cross-project,
+  unbounded, credential-required, runtime-required, or provider-evaluation-
+  mismatched input must return a failure code and visible reason and must not
+  append a successful provider evaluation plan.
+- `evaluate_knowledge_adapter_provider_plan` must not install packages, call
+  providers, call provider SDKs, store credentials, fetch remote URLs, create
+  vector indexes, create embeddings, rerank, run background indexing, run graph
+  jobs, start MCP runtime, run runtime retrieval, create provider-backed prompt
+  context evidence, assemble prompts, run AITasks, render frontend pages,
+  generate reports, expose export/download endpoints, mutate KnowledgeEvidence,
+  mutate KnowledgeAdapterConfig outside declared evaluation evidence, enable a
+  provider, add RBAC, create tenants, change permissions, or update remote CI
+  provider behavior.
+
 ## 3. Requirement To Case APIs
 
 ### 3.1 Create Requirement
