@@ -3586,3 +3586,133 @@ Expected output:
   non-goals.
 - Slice plan added:
   `docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`.
+
+## Completed Next V2 Slice
+
+Completed: KnowledgeAdapter provider evaluation review summary export
+contract.
+
+Why it was selected:
+
+- Slice 51 defined local provider evaluation review decisions, and Chtest
+  needed a compact summary export contract that future provider integration
+  planning can read without mutating provider state.
+- Slice 52 defined summary export inputs and outputs from provider evaluation
+  review decision artifact ids, provider evaluation plan artifact ids, review
+  decision/status labels, reviewer notes, constraints, blocker reasons,
+  unsupported reasons, requested revisions, unresolved safety questions,
+  source hashes, source manifest ids, and ReviewHistory links.
+- The slice kept provider review summaries portable as audit evidence before
+  any provider SDK, credential, external call, vector database, embedding,
+  reranking, runtime retrieval, frontend, report, export endpoint, RBAC,
+  tenant, or permission behavior exists.
+
+Completed slice name:
+
+```text
+Slice 52: KnowledgeAdapter Provider Evaluation Review Summary Export Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- KnowledgeAdapter Provider Evaluation Review Summary Export is now a
+  contract with
+  `export_knowledge_adapter_provider_evaluation_review_summary`,
+  `knowledge_adapter_provider_evaluation_review_summary_export`, provider
+  evaluation review decision artifact linkage, provider evaluation plan
+  artifact linkage, review summary status, exported decision groups, provider
+  suitability summary, license/reference summary, KnowledgeEvidence
+  normalization summary, provider_state summary, disabled by default summary,
+  fallback summary, metrics summary, source traceability summary,
+  ReviewHistory summary, failure code, and visible reason.
+- No provider enablement, Haystack or LlamaIndex provider integration,
+  GraphRAG provider integration, provider SDK, external call, remote URL
+  fetch, credential handling, OAuth, vector database, embeddings, reranking,
+  background indexing, graph runtime, MCP runtime, runtime retrieval, prompt
+  runtime execution, provider-backed prompt context evidence, frontend page,
+  report generation behavior, export/download endpoint, migration, broad
+  KnowledgeAdapter CRUD, automatic provider enablement, automatic knowledge
+  ingestion, RBAC, tenants, permissions, runner behavior changes, remote CI
+  behavior, or package upgrades were added.
+
+## Recommended Next V2 Slice
+
+Recommended: KnowledgeAdapter provider evaluation review audit handoff
+contract.
+
+Why:
+
+- Slice 52 packages provider evaluation review decisions into summary export
+  evidence, but Chtest still needs a final audit handoff contract that links
+  the summary export back to the review decision, provider evaluation plan,
+  candidate provider metadata, license/reference evidence, KnowledgeEvidence
+  normalization expectations, provider_state recommendation, fallback
+  behavior, disabled-by-default decision, source hashes, and ReviewHistory.
+- The next narrow boundary should define what a future integration planning
+  worker can consume as one evidence-chain bundle without approving or
+  enabling a provider.
+- This keeps provider evaluation review evidence traceable as a handoff
+  contract before any SDK, credential, external call, vector infrastructure,
+  runtime retrieval, prompt-context behavior, UI, RBAC, tenant, or permission
+  behavior exists.
+
+Next slice name:
+
+```text
+Slice 53: KnowledgeAdapter Provider Evaluation Review Audit Handoff Contract
+```
+
+Smallest useful boundary:
+
+- Define audit handoff inputs from provider evaluation review summary export
+  artifact ids, provider evaluation review decision artifact ids, provider
+  evaluation plan artifact ids, candidate provider metadata, review
+  decision/status labels, accepted constraints, blocked reasons, unsupported
+  reasons, requested revision fields, unresolved safety questions,
+  license/reference summaries, KnowledgeEvidence normalization summary,
+  provider_state summary, fallback summary, metrics, source manifest ids,
+  source hashes, and ReviewHistory ids.
+- Define audit handoff outputs such as
+  `knowledge_adapter_provider_evaluation_review_audit_handoff`, audit handoff
+  artifact id, handoff summary, evidence chain status, included artifact ids,
+  excluded artifact reasons, provider review decision group summary,
+  unresolved blocker summary, unresolved safety question summary, disabled by
+  default summary, source traceability summary, ReviewHistory links, failure
+  code, and visible reason.
+- Add one contract-level fixture and golden smoke after the audit handoff
+  contract is defined.
+
+Explicit non-goals:
+
+- No provider enablement, Haystack provider integration, LlamaIndex provider
+  integration, GraphRAG provider integration, provider SDK, API key handling,
+  credentials, OAuth, remote URL fetch, external call, network retrieval,
+  runtime retrieval, provider-backed prompt context evidence, prompt assembly
+  implementation, prompt runtime execution, automatic `used_knowledge=true`,
+  vector database, vector index, embeddings, reranking, background indexing,
+  graph runtime, MCP runtime, frontend page, report generation behavior,
+  export/download endpoint, backend feature API, migration, package upgrade,
+  broad KnowledgeAdapter CRUD, automatic knowledge ingestion,
+  automatic provider enablement, TestKnowledgeCard CRUD, artifact upload,
+  artifact mutation outside declared audit handoff evidence, historical
+  evidence mutation, provider evaluation review summary export mutation,
+  provider evaluation review decision mutation, provider evaluation plan
+  mutation, generated-case auto-approval, runner behavior, remote CI provider
+  behavior, RBAC, tenants, or permissions.
+
+Suggested next task:
+
+```text
+Slice 53 Task 1: Add KnowledgeAdapter Provider Evaluation Review Audit Handoff task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md`.
+- No product code until the plan defines audit handoff inputs, evidence-chain
+  outputs, included/excluded artifact handling, failure behavior, and
+  non-goals.
