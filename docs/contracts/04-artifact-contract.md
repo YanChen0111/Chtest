@@ -606,9 +606,10 @@ Generated case human review evidence package artifact rules:
   Artifact with
   `artifact_type=generated_case_human_review_evidence_package`,
   `owner_entity_type=GeneratedCaseCandidate`, and
-  `owner_entity_id=candidate_id` in a later scoped implementation. A future
-  workflow may use `owner_entity_type=AITask`, but it must preserve the
-  GeneratedCaseCandidate id in metadata.
+  `owner_entity_id=candidate_id`, and
+  `manifest_kind=generated_case_human_review_evidence_package` in a later
+  scoped implementation. A future workflow may use `owner_entity_type=AITask`,
+  but it must preserve the GeneratedCaseCandidate id in metadata.
 - The artifact must include
   `created_by_component=GeneratedCaseHumanReviewEvidencePackage`,
   `generated_case_human_review_evidence_package_action=build_generated_case_human_review_evidence_package`,

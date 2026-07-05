@@ -10,17 +10,12 @@ Slice 54: Generated Case Human Review Evidence Package Contract.
 
 ## Current Task
 
-Slice 54 Task 3: Add Generated Case Human Review Evidence Package golden
-smoke.
+Slice 54 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-level fixture and golden smoke proving
-Generated Case Human Review Evidence Package remains human-review evidence
-packaging only. Future work can verify candidate evidence, review findings,
-dedup/readiness signals, prompt-context lineage, and ReviewHistory without
-approving or rejecting candidates, promoting TestCases, creating automation
-drafts, adding runtime APIs, or changing provider/retrieval behavior.
+After this task, Chtest has a completed Slice 54 handoff with task commits,
+focused golden verification, V2 scope notes, and the next narrow task ready.
 
 ## Must Read
 
@@ -35,8 +30,9 @@ drafts, adding runtime APIs, or changing provider/retrieval behavior.
 9. `docs/contracts/03-state-machines.md`
 10. `docs/contracts/04-artifact-contract.md`
 11. `docs/contracts/05-prompt-skill-contract.md`
-12. `memory/08-session-handoff.md`
-13. `memory/07-dev-log.md`
+12. `docs/implementation/10-v2-scope-options.md`
+13. `memory/08-session-handoff.md`
+14. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -51,15 +47,14 @@ drafts, adding runtime APIs, or changing provider/retrieval behavior.
 Update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_generated_case_human_review_evidence_package_contract_golden.py
-docs/fixtures/42-generated-case-human-review-evidence-package-golden.md
 docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden smoke only. Do not add frontend code, backend runtime feature code,
+Completion gate only. Do not add frontend code, backend runtime feature code,
 backend feature API, endpoint, router, service, worker, queue, scheduler,
 migration, package upgrade, provider integration, provider SDK, external call,
 vector database, embeddings, reranking, graph runtime, MCP runtime, runtime
@@ -80,26 +75,17 @@ Expected result: focused golden smoke passes and diff check passes.
 
 ## Acceptance
 
-- Golden names Generated Case Human Review Evidence Package,
-  `generated_case_human_review_evidence_package`,
-  `build_generated_case_human_review_evidence_package`, GeneratedCaseCandidate
-  ids, `source_knowledge_evidence_ids`, `knowledge_evidence_refs_json`,
-  `quality_score`, `review_findings_json`, `coverage_gap_notes`,
-  `automation_readiness`, dedup findings, prompt-context artifact lineage,
-  ReviewHistory, failure behavior, and forbidden side effects.
-- Golden proves no backend runtime API, frontend, provider SDK, external call,
-  vector database, embedding, reranking, prompt execution, candidate
-  approval/rejection, TestCase promotion, automation draft creation, RBAC,
-  tenants, permissions, package upgrade, or source evidence mutation is
-  created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 54 Completion Gate.
+- Slice 54 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next task.
 
 ## Commit Message
 
 ```text
-test(golden): add generated case human review evidence package smoke
+docs(v2): complete generated case human review evidence package slice
 ```
 
 ## Next Task
 
-Slice 54 Completion Gate.
+Next narrow V2 slice to be selected in this completion gate.
