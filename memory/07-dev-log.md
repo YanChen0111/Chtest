@@ -1,5 +1,34 @@
 # Development Log
 
+## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contracts
+
+### Completed
+
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff.
+- Added contract-only `build_prompt_context_discrepancy_resolution_audit_handoff`
+  semantics with handoff summary, evidence chain status, included artifact ids,
+  excluded artifact reasons, unresolved follow-up flags, unresolved evidence
+  gaps, source hashes, context manifest references, PromptVersion/SkillVersion
+  trace, ReviewHistory links, failure code, and visible reason.
+- Added future artifact type and filename:
+  `test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff`
+  and
+  `test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff.json`.
+- Updated `NEXT_AI_TASK.md` to Slice 49 Task 3.
+
+### Verification
+
+- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff|prompt_context_discrepancy_resolution_audit_handoff|build_prompt_context_discrepancy_resolution_audit_handoff|handoff summary|evidence chain status|included artifact ids|excluded artifact reasons|unresolved evidence gaps|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`
+- `git diff --check`
+- Result: required terms found.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `docs(v2): define test knowledge card prompt context discrepancy resolution audit handoff contracts`.
+- Continue Slice 49 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Plan
 
 ### Completed

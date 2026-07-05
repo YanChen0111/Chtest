@@ -2550,6 +2550,170 @@ rules:
   evidence mutation, generated-case auto-approval, runner behavior, RBAC,
   tenants, or permissions.
 
+### 3.5.16 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contract
+
+This section is contract-only. It defines future audit handoff semantics for
+prompt context discrepancy resolution summary export evidence and does not add
+an endpoint, router, service, worker, queue, frontend page, report generation
+behavior, export/download endpoint, external archive integration, migration,
+prompt assembly implementation, prompt runtime execution, provider call,
+deterministic retrieval behavior change, vector index, embedding job,
+reranking, graph job, MCP runtime, broad CRUD, RBAC, tenants, or permissions.
+
+Allowed prompt-context discrepancy resolution audit handoff action:
+
+- `build_prompt_context_discrepancy_resolution_audit_handoff`: future scoped
+  audit handoff action that packages handoff summary, evidence chain status,
+  included artifact ids, excluded artifact reasons, unresolved follow-up
+  flags, unresolved evidence gaps, unsupported claim references, source
+  hashes, context manifest links, PromptVersion/SkillVersion trace, and
+  ReviewHistory links from discrepancy resolution summary export, discrepancy
+  resolution review, prompt context review discrepancy, review summary export,
+  audit review decision, audit summary, prompt context consumption, and prompt
+  context evidence. It does not render a UI, generate reports, expose a
+  download endpoint, integrate with an external archive, assemble a runtime
+  prompt, run an AITask, call a provider, upload artifacts, create prompt
+  eligibility, auto-resolve discrepancies, or generate model citations.
+
+Prompt context discrepancy resolution audit handoff payload shape:
+
+```json
+{
+  prompt_context_discrepancy_resolution_audit_handoff_action: build_prompt_context_discrepancy_resolution_audit_handoff,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  prompt_request_id: local-prompt-request-001,
+  ai_task_id: 00000000-0000-0000-0000-000000000701,
+  prompt_context_discrepancy_resolution_summary_export_artifact_id: 00000000-0000-0000-0000-000000000904,
+  prompt_context_discrepancy_resolution_review_artifact_id: 00000000-0000-0000-0000-000000000903,
+  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
+  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
+  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
+  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
+  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
+  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  used_knowledge: true,
+  usage_status: knowledge_used,
+  resolution_outcome_summary: acknowledged_discrepancy_with_follow_up,
+  accepted_discrepancy_group: [],
+  rejected_discrepancy_group: [],
+  acknowledged_discrepancy_group: [
+    {
+      discrepancy_id: discrepancy-citation-mismatch-001,
+      affected_citation_ids: [knowledge-citation-expired-coupon]
+    }
+  ],
+  clarification_requested_fields: [],
+  clarification_requested_field_group: [],
+  resulting_resolution_status_group: [
+    {
+      status: acknowledged,
+      discrepancy_id: discrepancy-citation-mismatch-001
+    }
+  ],
+  affected_citation_ids: [knowledge-citation-expired-coupon],
+  evidence_gap_summary: cited source hash differs from audit summary,
+  mismatch_reason: source_hash_mismatch,
+  unresolved_follow_up_flags: [verify-source-hash],
+  unsupported_claim_references: [claim-without-source],
+  source_hashes: [sha256:knowledge-source-hash],
+  prompt_version_id: 00000000-0000-0000-0000-000000000711,
+  skill_version_id: 00000000-0000-0000-0000-000000000712,
+  review_history_ids: [
+    00000000-0000-0000-0000-000000000895,
+    00000000-0000-0000-0000-000000000896
+  ]
+}
+```
+
+Prompt context discrepancy resolution audit handoff response shape for a
+future scoped implementation:
+
+```json
+{
+  prompt_context_discrepancy_resolution_audit_handoff_action: build_prompt_context_discrepancy_resolution_audit_handoff,
+  prompt_context_discrepancy_resolution_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000905,
+  prompt_context_discrepancy_resolution_summary_export_artifact_id: 00000000-0000-0000-0000-000000000904,
+  handoff_summary: final handoff preserves acknowledged discrepancy and follow-up evidence,
+  evidence_chain_status: complete,
+  included_artifact_ids: [
+    00000000-0000-0000-0000-000000000904,
+    00000000-0000-0000-0000-000000000903,
+    00000000-0000-0000-0000-000000000902
+  ],
+  excluded_artifact_reasons: [],
+  unresolved_follow_up_flags: [verify-source-hash],
+  unresolved_evidence_gaps: [source hash refresh pending],
+  unsupported_claim_references: [claim-without-source],
+  review_history_links: [
+    00000000-0000-0000-0000-000000000895,
+    00000000-0000-0000-0000-000000000896
+  ],
+  prompt_trace: {
+    prompt_version_id: 00000000-0000-0000-0000-000000000711,
+    skill_version_id: 00000000-0000-0000-0000-000000000712
+  },
+  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
+  source_manifest_ids: [knowledge-source-manifest-001],
+  source_hashes: [sha256:knowledge-source-hash],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff hard
+rules:
+
+- Audit handoff input must reference prompt context discrepancy resolution
+  summary export artifact, prompt context discrepancy resolution review
+  artifact, prompt context review discrepancy artifact, review summary export
+  artifact, audit review decision artifact, audit summary artifact, prompt
+  context consumption artifact, prompt context evidence artifact, context
+  manifest, `used_knowledge` decision, usage status, resolution outcome
+  summary, accepted discrepancy group, rejected discrepancy group,
+  acknowledged discrepancy group, clarification requested fields,
+  clarification requested field group, resulting resolution status group,
+  affected citation ids, evidence gap summary, mismatch reason, unresolved
+  follow-up flags, unsupported claim references, PromptVersion, SkillVersion,
+  source hash, and ReviewHistory.
+- Audit handoff output must be evidence chain packaging only. It may record
+  handoff summary, evidence chain status, included artifact ids, excluded
+  artifact reasons, unresolved evidence gaps, unresolved follow-up flags,
+  ReviewHistory links, failure reasons, visible reason, source hash, source
+  manifest, and context manifest references, but it must not invent citations,
+  rewrite `used_knowledge`, auto-resolve discrepancies, mutate resolution
+  summary export evidence, or upload artifacts.
+- Evidence chain status values are `complete`, `incomplete`, `blocked`, and
+  `failed_validation`. They are audit labels only. They must not create prompt
+  eligibility, approve TestKnowledgeCard content, approve generated cases,
+  alter prompt context consumption evidence, or mark skipped evidence as
+  cited.
+- Included artifact ids, excluded artifact reasons, unresolved evidence gaps,
+  unresolved follow-up flags, affected citation ids, skipped evidence,
+  evidence gap summary, mismatch reason, and unsupported claims must remain
+  visible instead of being deleted, filtered, or rewritten.
+- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
+  resolution-review-mismatched, summary-export-mismatched,
+  evidence-mismatched, audit-summary-mismatched, review-decision-mismatched,
+  or audit-handoff-mismatched input must return a failure code and visible
+  reason and must not append a successful audit handoff.
+- `build_prompt_context_discrepancy_resolution_audit_handoff` must not write
+  runtime `prompt_input.json`, render frontend pages, generate reports, expose
+  export/download endpoints, integrate with an external archive, assemble
+  prompts, call providers, run AITasks, change retrieval ranking, create
+  vector indexes, create embeddings, rerank, run graph jobs, invoke MCP
+  runtime, approve cases, create prompt eligibility, auto-resolve
+  discrepancies, upload artifacts, or mutate historical evidence.
+- This contract must not add frontend page, report generation behavior,
+  export/download endpoint, external archive integration, prompt assembly
+  implementation, prompt runtime execution, provider calls, broad
+  TestKnowledgeCard CRUD, automatic eligibility, automatic knowledge ingestion,
+  artifact mutation outside declared prompt context discrepancy resolution
+  audit handoff, historical evidence mutation, generated-case auto-approval,
+  runner behavior, RBAC, tenants, or permissions.
+
 ### 3.6 Review Candidate Case
 
 `POST /api/case-review/items/{id}/approve`

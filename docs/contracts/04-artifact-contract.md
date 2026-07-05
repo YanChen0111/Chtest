@@ -37,6 +37,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   test_knowledge_card_prompt_context_review_discrepancy.json
   test_knowledge_card_prompt_context_discrepancy_resolution_review.json
   test_knowledge_card_prompt_context_discrepancy_resolution_summary_export.json
+  test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff.json
   raw_output.json
   parsed_output.json
   schema_validation.json
@@ -374,6 +375,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | test_knowledge_card_prompt_context_review_discrepancy | application/json | Future prompt context review discrepancy evidence |
 | test_knowledge_card_prompt_context_discrepancy_resolution_review | application/json | Future prompt context discrepancy resolution review evidence |
 | test_knowledge_card_prompt_context_discrepancy_resolution_summary_export | application/json | Future prompt context discrepancy resolution summary export evidence |
+| test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff | application/json | Future prompt context discrepancy resolution audit handoff evidence |
 | knowledge_evidence | application/json | Normalized knowledge evidence citations |
 | case_review_findings | application/json | Generated-case review findings and coverage gaps |
 | ci_run_metadata | application/json | Imported CI run metadata evidence |
@@ -1153,6 +1155,63 @@ TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export artifact 
   indexes, create embeddings, rerank, run graph jobs, render frontend pages,
   generate reports, expose export/download endpoints, call remote CI providers,
   add RBAC, create tenants, or change permissions.
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff artifact rules:
+
+- `test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff.json`
+  may be stored as an Artifact with
+  `artifact_type=test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff`,
+  `owner_entity_type=AITask` or `owner_entity_type=Project`, and
+  `manifest_kind=test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff`
+  in a later scoped implementation.
+- The prompt context discrepancy resolution audit handoff artifact must include
+  `build_prompt_context_discrepancy_resolution_audit_handoff`, prompt request
+  id or AITask id when available, prompt context discrepancy resolution
+  summary export artifact id, prompt context discrepancy resolution review
+  artifact id, prompt context review discrepancy artifact id, prompt context
+  audit review summary export artifact id, prompt context audit review
+  decision artifact id, prompt context audit summary artifact id, prompt
+  context consumption artifact id, prompt context evidence artifact id,
+  context manifest artifact id, `used_knowledge` decision, usage status,
+  resolution outcome summary, accepted discrepancy group, rejected discrepancy
+  group, acknowledged discrepancy group, clarification requested fields,
+  clarification requested field group, resulting resolution status group,
+  affected citation ids, evidence gap summary, mismatch reason, unresolved
+  follow-up flags, unresolved evidence gaps, unsupported claim references,
+  handoff summary, evidence chain status, included artifact ids, excluded
+  artifact reasons, source manifest ids, source hashes, context manifest
+  references, PromptVersion id, SkillVersion id, ReviewHistory links, failure
+  code, and visible reason when applicable.
+- Evidence chain status values are `complete`, `incomplete`, `blocked`, and
+  `failed_validation`. They are audit labels only and must not invent
+  citations, rewrite `used_knowledge`, promote unsupported claims, create
+  prompt eligibility, approve TestKnowledgeCard content, approve generated
+  cases, turn skipped evidence into cited evidence, auto-resolve
+  discrepancies, render reports, expose download endpoints, or integrate with
+  an external archive.
+- Prompt context discrepancy resolution audit handoff artifacts must not
+  contain raw large source text, credentials, tokens, unsafe provider payloads,
+  vector store payloads, embedding vectors, reranker traces, graph runtime
+  payloads, executable prompt assembly payloads, provider request/response
+  payloads, frontend-rendered markup, report-rendered payloads, downloadable
+  provider payloads, external archive payloads, runtime `prompt_input.json`, or
+  generated replacement evidence.
+- Prompt context discrepancy resolution audit handoff artifacts must not mutate
+  Artifact rows outside declared audit handoff output, mutate source artifacts,
+  mutate prompt context discrepancy resolution summary export artifacts, mutate
+  prompt context discrepancy resolution review artifacts, mutate prompt context
+  review discrepancy artifacts, mutate review summary export artifacts, mutate
+  prompt context audit review decision artifacts, mutate prompt context audit
+  summary artifacts, mutate prompt context consumption artifacts, mutate prompt
+  context evidence artifacts, mutate retrieval boundary artifacts, mutate
+  prompt eligibility artifacts, rewrite creation artifacts, mutate historical
+  ReviewHistory, FailureAnalysis, Report, TestRun, TestResult, TestCase,
+  GeneratedCaseCandidate, KnowledgeEvidence, PromptVersion, SkillVersion, or
+  unrelated TestKnowledgeCard rows, run prompt assembly, execute AITasks, call
+  providers, change retrieval ranking, invoke MCP runtime, create vector
+  indexes, create embeddings, rerank, run graph jobs, render frontend pages,
+  generate reports, expose export/download endpoints, upload artifacts, call
+  remote CI providers, add RBAC, create tenants, or change permissions.
 
 Slice 33 MCP-ready tool and KnowledgeAdapter safety artifact rules:
 

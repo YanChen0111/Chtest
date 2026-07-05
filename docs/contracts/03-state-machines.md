@@ -966,6 +966,91 @@ rules:
   mutation, generated-case auto-approval, runner behavior changes, RBAC,
   tenants, permissions, or remote CI provider behavior.
 
+## 7.17 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff State Contract
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff is a
+contract-only state boundary for future workflows that package the final prompt
+context discrepancy resolution evidence chain into an audit handoff. It starts
+only from a persisted discrepancy resolution summary export and does not
+implement frontend rendering, report generation behavior, export/download
+endpoints, external archive integration, prompt assembly, prompt runtime
+execution, provider calls, retrieval ranking, model citation generation,
+prompt eligibility, card creation, artifact upload, or broad TestKnowledgeCard
+CRUD.
+
+```text
+prompt_context_discrepancy_resolution_summary_export_ready -> prompt_context_discrepancy_resolution_audit_handoff_pending
+prompt_context_discrepancy_resolution_summary_export_failed -> prompt_context_discrepancy_resolution_audit_handoff_blocked
+prompt_context_discrepancy_resolution_audit_handoff_pending -> prompt_context_discrepancy_resolution_audit_handoff_ready
+prompt_context_discrepancy_resolution_audit_handoff_pending -> prompt_context_discrepancy_resolution_audit_handoff_failed
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| prompt_context_discrepancy_resolution_summary_export_ready | request_prompt_context_discrepancy_resolution_audit_handoff | prompt_context_discrepancy_resolution_audit_handoff_pending | Future workflow/API | Packages final audit handoff evidence |
+| prompt_context_discrepancy_resolution_summary_export_failed | request_prompt_context_discrepancy_resolution_audit_handoff | prompt_context_discrepancy_resolution_audit_handoff_blocked | Future workflow/API | Keeps failure visible; no successful handoff |
+| prompt_context_discrepancy_resolution_audit_handoff_pending | build_prompt_context_discrepancy_resolution_audit_handoff | prompt_context_discrepancy_resolution_audit_handoff_ready | Future workflow/API | Requires summary export and full evidence chain |
+| prompt_context_discrepancy_resolution_audit_handoff_pending | fail_prompt_context_discrepancy_resolution_audit_handoff | prompt_context_discrepancy_resolution_audit_handoff_failed | Future workflow/API | Records invalid input or failure code |
+
+TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff state
+rules:
+
+- `build_prompt_context_discrepancy_resolution_audit_handoff` requires prompt
+  context discrepancy resolution summary export artifact id, prompt context
+  discrepancy resolution review artifact id, prompt context review discrepancy
+  artifact id, prompt context audit review summary export artifact id, audit
+  review decision artifact id, audit summary artifact id, prompt context
+  consumption artifact id, prompt context evidence artifact id, context
+  manifest, `used_knowledge` decision, usage status, resolution outcome
+  summary, accepted discrepancy group, rejected discrepancy group,
+  acknowledged discrepancy group, clarification requested fields,
+  clarification requested field group, resulting resolution status group,
+  affected citation ids, evidence gap summary, mismatch reason, unresolved
+  follow-up flags, unsupported claim references, PromptVersion, SkillVersion,
+  source hash, ReviewHistory, and failure code when applicable.
+- Audit handoff states are evidence chain packaging only. They may produce
+  audit handoff artifact id, handoff summary, evidence chain status, included
+  artifact ids, excluded artifact reasons, unresolved evidence gaps,
+  unresolved follow-up flags, unsupported claim references, ReviewHistory
+  links, failure reasons, and visible reason, but they must not invent
+  citations, rewrite `used_knowledge`, auto-resolve discrepancies, or mutate
+  resolution summary export evidence.
+- Evidence chain status values are `complete`, `incomplete`, `blocked`, and
+  `failed_validation`. They are audit labels only. They do not create prompt
+  eligibility, approve TestKnowledgeCard content, approve generated cases,
+  mutate prompt context consumption evidence, or change `used_knowledge`.
+- Included artifact ids, excluded artifact reasons, accepted/rejected/
+  acknowledged discrepancy groups, clarification requested fields, affected
+  citation ids, unresolved evidence gaps, unresolved follow-up flags, skipped
+  evidence, unsupported claims, source hashes, PromptVersion, SkillVersion,
+  context manifest links, and ReviewHistory must remain visible.
+- Missing, stale, unsafe, revoked, cross-project, unsupported, unbounded,
+  citation-mismatched, context-mismatched, prompt-version-mismatched,
+  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
+  resolution-review-mismatched, summary-export-mismatched,
+  evidence-mismatched, audit-summary-mismatched, review-decision-mismatched,
+  audit-handoff-mismatched, or incomplete required input must produce
+  `prompt_context_discrepancy_resolution_audit_handoff_failed` with a visible
+  reason and must not append a successful audit handoff.
+- Prompt context discrepancy resolution audit handoff may write audit handoff
+  artifacts in a later scoped workflow. It must not mutate TestKnowledgeCard
+  rows, source artifacts, prompt context discrepancy resolution summary export
+  artifacts, prompt context discrepancy resolution review artifacts, prompt
+  context review discrepancy artifacts, review summary export artifacts, audit
+  review decision artifacts, audit summary artifacts, prompt context
+  consumption artifacts, prompt context evidence artifacts, retrieval boundary
+  artifacts, prompt eligibility artifacts, ReviewHistory, KnowledgeEvidence,
+  or historical evidence.
+- The prompt context discrepancy resolution audit handoff state contract must
+  not add frontend page, report generation behavior, export/download endpoint,
+  external archive integration, prompt assembly implementation, prompt runtime
+  execution, provider calls, retrieval ranking changes, vector indexes,
+  embeddings, reranking, graph jobs, MCP runtime, broad TestKnowledgeCard CRUD,
+  automatic eligibility, artifact upload, artifact mutation outside declared
+  audit handoff output, historical evidence mutation, generated-case
+  auto-approval, runner behavior changes, RBAC, tenants, permissions, or remote
+  CI provider behavior.
+
 ### 3.1 Requirement To Reviewed Case Agent Workflow State Contract
 
 The requirement-to-reviewed-case agent workflow is a state contract layered on
