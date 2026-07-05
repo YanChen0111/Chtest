@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Golden Smoke
+
+### Completed
+
+- Added `docs/fixtures/35-test-knowledge-card-prompt-context-discrepancy-resolution-review-golden.md`.
+- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_review_contract_golden.py`.
+- The golden fixture and test cover discrepancy artifact id, review summary
+  export artifact id, resolution action, accepted discrepancy ids, rejected
+  discrepancy ids, acknowledged discrepancy ids, affected citation ids,
+  evidence gap summary, mismatch reason, reviewer note, severity, resolution
+  status, ReviewHistory, failure behavior, and forbidden side effects.
+- Updated `NEXT_AI_TASK.md` to Slice 47 Completion Gate.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_review_contract_golden.py -q`
+- `git diff --check`
+- Result: `3 passed`.
+- Result: diff check is clean except Windows LF-to-CRLF warning.
+
+### Next Step
+
+- Commit `test(golden): add test knowledge card prompt context discrepancy resolution review smoke`.
+- Continue Slice 47 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Contracts
 
 ### Completed
@@ -41,7 +66,7 @@
 
 ### Next Step
 
-- Commit `docs(v2): define test knowledge card prompt context discrepancy resolution review contracts`.
+- Committed `docs(v2): define test knowledge card prompt context discrepancy resolution review contracts` as `d6faf01`.
 - Continue Slice 47 Task 3 from `NEXT_AI_TASK.md`.
 
 ## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Plan
