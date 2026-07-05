@@ -159,6 +159,81 @@ Generated Case Human Review Evidence Package state rules:
   mutation, runner behavior changes, remote CI provider behavior, RBAC,
   tenants, permissions, or package upgrades.
 
+### 3.2 Generated Case Human Review Decision State Contract
+
+This state contract is planning-only. It defines future decision evidence
+labels for human review of a Generated Case Human Review Evidence Package
+before any backend runtime API, frontend page, provider integration, provider
+SDK, external call, vector database, embedding, reranking, graph runtime, MCP
+runtime, runtime retrieval, prompt execution, AITask orchestration, TestCase
+promotion, GeneratedCaseCandidate approve/reject mutation, request
+optimization mutation, automation draft creation, RBAC, tenants, or
+permissions exist.
+
+```text
+generated_case_human_review_evidence_package_complete -> generated_case_human_review_decision_pending
+generated_case_human_review_evidence_package_incomplete -> generated_case_human_review_decision_pending
+generated_case_human_review_evidence_package_blocked -> generated_case_human_review_decision_pending
+generated_case_human_review_decision_pending -> generated_case_human_review_decision_recorded
+generated_case_human_review_decision_pending -> generated_case_human_review_decision_failed_validation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| generated_case_human_review_evidence_package_complete | review_generated_case_human_review_evidence_package | generated_case_human_review_decision_pending | Future workflow/API | Records reviewer decision evidence over complete package |
+| generated_case_human_review_evidence_package_incomplete | review_generated_case_human_review_evidence_package | generated_case_human_review_decision_pending | Future workflow/API | Allows needs_more_evidence or rejected_for_insufficient_evidence evidence |
+| generated_case_human_review_evidence_package_blocked | review_generated_case_human_review_evidence_package | generated_case_human_review_decision_pending | Future workflow/API | Allows blocked or duplicate evidence |
+| generated_case_human_review_decision_pending | accepted_for_future_promotion | generated_case_human_review_decision_recorded | Human reviewer | Evidence label only; no TestCase promotion |
+| generated_case_human_review_decision_pending | accepted_with_required_edits | generated_case_human_review_decision_recorded | Human reviewer | Records requested edit fields before any future promotion |
+| generated_case_human_review_decision_pending | needs_optimization | generated_case_human_review_decision_recorded | Human reviewer | Evidence label only; no request optimization mutation |
+| generated_case_human_review_decision_pending | rejected_for_insufficient_evidence | generated_case_human_review_decision_recorded | Human reviewer | Evidence label only; no candidate rejection mutation |
+| generated_case_human_review_decision_pending | blocked | generated_case_human_review_decision_recorded | Human reviewer | Records blocker reasons and visible reason |
+| generated_case_human_review_decision_pending | duplicate | generated_case_human_review_decision_recorded | Human reviewer | Records duplicate resolution notes only |
+| generated_case_human_review_decision_pending | needs_more_evidence | generated_case_human_review_decision_recorded | Human reviewer | Records missing evidence summary only |
+| generated_case_human_review_decision_pending | failed_validation | generated_case_human_review_decision_failed_validation | Future workflow/API | Records failure code and visible reason |
+
+Generated Case Human Review Decision state rules:
+
+- `review_generated_case_human_review_evidence_package` requires
+  `generated_case_human_review_evidence_package_artifact_id`,
+  GeneratedCaseCandidate id, candidate status, candidate summary, evidence
+  chain completeness, missing evidence summary, conflicting evidence summary,
+  review blocker summary, dedup/readiness summary, human review checklist,
+  `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, duplicate candidate ids,
+  duplicate-of case id, prompt context lineage artifact ids, source hashes,
+  source manifest ids, and ReviewHistory links when available.
+- Decision states are review evidence labels only. They may produce a
+  `generated_case_human_review_decision` artifact id, review decision,
+  decision status, decision label, reviewer label, reviewer comment, accepted
+  constraints, requested edit fields, optimization request summary, rejection
+  reasons, blocker reasons, duplicate resolution notes, ReviewHistory links,
+  failure code, and visible reason.
+- Decision states must not transition a GeneratedCaseCandidate to approved,
+  approved_after_edit, rejected, needs_optimization, or
+  optimization_pending_review. Existing human review transitions remain the
+  only approval/rejection/request-optimization path.
+- Missing, stale, unsafe, cross-project, unbounded, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, evidence-chain-incomplete, review-blocked,
+  dedup-conflict, duplicate-resolution-missing, review-history-missing,
+  artifact-mismatched, source-hash-mismatched, credential-required,
+  runtime-required, provider-required, approval-required,
+  optimization-required, or promotion-required input must produce
+  `generated_case_human_review_decision_failed_validation` with a failure code
+  and visible reason and must not append a successful decision.
+- Decision states must not create backend runtime APIs, endpoints, routers,
+  services, workers, queues, schedulers, migrations, frontend pages, reports,
+  export/download endpoints, provider integrations, provider SDK calls,
+  external calls, credentials, remote URL fetches, vector indexes, embeddings,
+  reranking, graph jobs, MCP runtime calls, prompt execution, AITask
+  orchestration, TestCase promotion, GeneratedCaseCandidate approve/reject
+  mutation, request optimization mutation, automation draft creation,
+  ToolInvocation rows, TestRun/TestResult rows, artifact upload, prompt
+  context evidence mutation, KnowledgeEvidence mutation, ReviewHistory
+  mutation, historical evidence mutation, runner behavior changes, remote CI
+  provider behavior, RBAC, tenants, permissions, or package upgrades.
+
 ## 7.3 KnowledgeFeedbackDraft State Contract
 
 KnowledgeFeedbackAgent output is draft feedback evidence. It is not a

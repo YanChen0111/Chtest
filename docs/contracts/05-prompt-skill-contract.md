@@ -1215,6 +1215,91 @@ Generated case human review evidence package rules:
   endpoints, routers, services, workers, queues, schedulers, run migrations,
   add package upgrades, add RBAC, create tenants, or change permissions.
 
+## 6.1.2 Generated Case Human Review Decision Trace Contract
+
+This contract defines prompt/skill trace rules for future Generated Case
+Human Review Decision evidence. It is contract-only and does not assemble
+prompts, execute AITasks, call providers, run retrieval, create
+provider-backed prompt context evidence, approve or reject candidates, request
+optimization, promote TestCases, create automation drafts, generate reports,
+expose export/download endpoints, or render frontend pages.
+
+Generated case human review decision input must include:
+
+- `generated_case_human_review_decision_action=review_generated_case_human_review_evidence_package`.
+- `generated_case_human_review_evidence_package_artifact_id`.
+- GeneratedCaseCandidate id, candidate status, and candidate summary.
+- Evidence chain completeness, missing evidence summary, conflicting evidence
+  summary, review blocker summary, dedup/readiness summary, and human review
+  checklist from the evidence package.
+- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
+  `automation_readiness`, dedup findings, duplicate candidate ids,
+  duplicate-of case id, source manifest ids, source hashes, and ReviewHistory
+  links when available.
+- Prompt context lineage artifact ids that were already present in the
+  evidence package.
+- PromptVersion id/name/version and SkillVersion id/name/version when the
+  decision evidence is produced by a prompt or skill.
+
+Generated case human review decision output may include:
+
+- Generated case human review decision id or artifact id.
+- `generated_case_human_review_decision` artifact or manifest naming.
+- `generated_case_human_review_decision.json`.
+- Review decision, decision status, and decision label.
+- Allowed decision labels:
+  `accepted_for_future_promotion`, `accepted_with_required_edits`,
+  `needs_optimization`, `rejected_for_insufficient_evidence`, `blocked`,
+  `duplicate`, `needs_more_evidence`, and `failed_validation`.
+- Reviewer label, reviewer comment, accepted constraints, requested edit
+  fields, optimization request summary, rejection reasons, blocker reasons,
+  duplicate resolution notes, ReviewHistory links, failure code, and visible
+  reason.
+
+Generated case human review decision rules:
+
+- Decision records are human-review decision evidence only. They must not be
+  treated as approval, rejection, request optimization, TestCase promotion,
+  automation draft creation, prompt eligibility, report generation behavior,
+  export/download endpoint behavior, or proof that knowledge was used.
+- Decision labels `accepted_for_future_promotion`,
+  `accepted_with_required_edits`, `needs_optimization`,
+  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation` are audit evidence only.
+- `accepted_with_required_edits` must preserve requested edit fields.
+  `needs_optimization` must preserve optimization request summary.
+  `rejected_for_insufficient_evidence` must preserve rejection reasons.
+  `blocked` must preserve blocker reasons and visible reason. `duplicate`
+  must preserve duplicate resolution notes.
+- `used_knowledge` must not be auto-marked true by generated case human
+  review decision.
+- Provider-specific payloads must not leak into GeneratedCaseCandidate,
+  TestCase, TestKnowledgeCard, KnowledgeEvidence, prompt context evidence,
+  reports, review surfaces, evidence package surfaces, or decision surfaces.
+- Missing, stale, unsafe, cross-project, unbounded, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, evidence-chain-incomplete, review-blocked,
+  dedup-conflict, duplicate-resolution-missing, review-history-missing,
+  artifact-mismatched, source-hash-mismatched, credential-required,
+  runtime-required, provider-required, approval-required,
+  optimization-required, or promotion-required input must produce a failure
+  code and visible reason and must not append a successful human review
+  decision.
+- This contract must not write runtime `prompt_input.json`, execute a prompt,
+  call a provider, integrate an SDK, store credentials, fetch remote URLs,
+  create a vector index, create embeddings, rerank, run background indexing,
+  run a graph job, invoke MCP runtime, create provider-backed prompt context
+  evidence, generate reports, expose export/download endpoints, mutate
+  GeneratedCaseCandidate rows, approve or reject GeneratedCaseCandidate rows,
+  request optimization, promote TestCase rows, create AutomationDraft rows,
+  create ToolInvocation rows, execute AITasks, mutate prompt context evidence,
+  mutate KnowledgeEvidence, mutate TestKnowledgeCard rows, mutate
+  ReviewHistory, mutate historical evidence, mutate Artifact rows outside
+  declared decision evidence, render frontend pages, expose backend feature
+  APIs, add endpoints, routers, services, workers, queues, schedulers, run
+  migrations, add package upgrades, add RBAC, create tenants, or change
+  permissions.
+
 ## 6.2 Knowledge Feedback Seed Contract
 
 KnowledgeFeedbackAgent is bound to `knowledge_feedback:v1` and

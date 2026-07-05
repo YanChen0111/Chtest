@@ -1,5 +1,53 @@
 # Session Handoff
 
+## 2026-07-05 Slice 55 Generated Case Human Review Decision Contracts
+
+Completed:
+
+- Added Generated Case Human Review Decision contract boundaries to:
+  - `docs/contracts/01-data-model-contract.md`;
+  - `docs/contracts/02-api-contract.md`;
+  - `docs/contracts/03-state-machines.md`;
+  - `docs/contracts/04-artifact-contract.md`;
+  - `docs/contracts/05-prompt-skill-contract.md`.
+- The contract defines
+  `review_generated_case_human_review_evidence_package`,
+  `generated_case_human_review_decision`, and
+  `generated_case_human_review_evidence_package_artifact_id` as
+  contract-only human review decision evidence.
+- Decision labels are `accepted_for_future_promotion`,
+  `accepted_with_required_edits`, `needs_optimization`,
+  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation`.
+- The decision evidence records reviewer label/comment, accepted constraints,
+  requested edit fields, optimization request summary, rejection/blocker
+  reasons, duplicate resolution notes, ReviewHistory links, failure code, and
+  visible reason.
+- It explicitly does not approve/reject GeneratedCaseCandidate rows, request
+  optimization, promote TestCase rows, create AutomationDraft rows, mutate
+  evidence package/source/prompt-context evidence, add runtime APIs, add UI,
+  call providers, run retrieval/vector/embedding/rerank/graph/MCP behavior, or
+  change RBAC/tenants/permissions/packages.
+- `NEXT_AI_TASK.md` now points to Slice 55 Task 3: Add Generated Case Human
+  Review Decision golden smoke.
+
+Verification:
+
+```powershell
+rg -n "Generated Case Human Review Decision|generated_case_human_review_decision|review_generated_case_human_review_evidence_package|generated_case_human_review_evidence_package_artifact_id|accepted_for_future_promotion|accepted_with_required_edits|needs_optimization|rejected_for_insufficient_evidence|blocked|duplicate|needs_more_evidence|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-55-generated-case-human-review-decision-contract.md
+git diff --check
+```
+
+Result:
+
+- Required contract terms found.
+- Diff check reported no whitespace errors; existing LF-to-CRLF warnings only.
+
+Next recommended task:
+
+- Commit `docs(v2): define generated case human review decision contracts`.
+- Continue Slice 55 Task 3 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 55 Generated Case Human Review Decision Plan
 
 Completed:
