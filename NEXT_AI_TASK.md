@@ -7,31 +7,35 @@ the full planning set.
 
 ## Current Slice
 
-Slice 57: Generated Case Human Review Decision Audit Handoff Contract.
+Slice 58: Generated Case Human Review Decision Application Preflight Contract.
 
 ## Current Task
 
-Slice 57 Completion Gate.
+Slice 58 Task 1: Add Generated Case Human Review Decision Application
+Preflight task plan.
 
 ## Product Value Answer
 
-After this task, Slice 57 is closed out with the task table recording Task
-1-3 commits, focused golden verification passing, memory updated, and the next
-narrow V2 task selected. The slice remains evidence-chain packaging only and
-does not create GeneratedCaseCandidate approval/rejection, request
-optimization, TestCase promotion, automation draft creation, runtime APIs,
-frontend surfaces, report/export endpoints, provider integration, or
-retrieval behavior.
+After this task, Chtest has a narrow plan for defining the preflight boundary
+between Slice 57 audit handoff evidence and the existing real
+GeneratedCaseCandidate review actions. The plan must keep the work
+contract-first and must not execute approve/reject/request optimization,
+promote TestCases, create automation drafts, add runtime APIs, add frontend
+surfaces, render reports, expose export/download endpoints, or add
+provider/retrieval behavior.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/10-v2-scope-options.md`
-4. `docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md`
-5. `NEXT_AI_TASK.md`
-6. `memory/08-session-handoff.md`
-7. `memory/07-dev-log.md`
+4. `docs/contracts/01-data-model-contract.md`
+5. `docs/contracts/02-api-contract.md`
+6. `docs/contracts/03-state-machines.md`
+7. `docs/contracts/04-artifact-contract.md`
+8. `docs/contracts/05-prompt-skill-contract.md`
+9. `memory/08-session-handoff.md`
+10. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -46,18 +50,18 @@ retrieval behavior.
 Update only these files for the current task:
 
 ```text
-docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md
+docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md
 docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Completion gate only. Do not add frontend code, backend runtime feature code,
-backend feature API, endpoint, router, service, worker, queue, scheduler,
-migration, package upgrade, provider integration, provider SDK, external call,
-vector database, embeddings, reranking, graph runtime, MCP runtime, runtime
-retrieval, prompt execution, AITask orchestration, automatic
+Planning only. Do not add contract edits, frontend code, backend runtime
+feature code, backend feature API, endpoint, router, service, worker, queue,
+scheduler, migration, package upgrade, provider integration, provider SDK,
+external call, vector database, embeddings, reranking, graph runtime, MCP
+runtime, runtime retrieval, prompt execution, AITask orchestration, automatic
 `used_knowledge=true`, TestCase promotion, GeneratedCaseCandidate
 approve/reject mutation, request optimization mutation, automation draft
 creation, runner behavior changes, artifact upload, report generation
@@ -67,26 +71,39 @@ permissions.
 ## Verification Command
 
 ```bash
-backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_audit_handoff_contract_golden.py -q
+if (-not (Test-Path docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md)) { exit 1 }
+rg -n "Generated Case Human Review Decision Application Preflight|generated_case_human_review_decision_application_preflight|preflight_generated_case_human_review_decision_application|generated_case_human_review_decision_audit_handoff_artifact_id|mapped review action|eligibility status|eligible candidate ids|ineligible candidate ids|blocked action reasons|required edit summary|required human confirmation summary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
 git diff --check
 ```
 
-Expected result: focused golden verification passes and diff check passes.
+Expected result: Slice 58 plan exists, required planning terms are present,
+and diff check passes.
 
 ## Acceptance
 
-- Slice 57 task table records Task 1-3 commits.
-- Focused golden verification passes.
-- V2 scope options and handoff memory recommend the next narrow slice.
-- `NEXT_AI_TASK.md` points to the next task.
+- Slice 58 plan exists with product value, non-goals, task table, expected
+  files, verification commands, and commit message.
+- The plan names audit handoff artifact linkage, summary export linkage,
+  decision artifact linkage, evidence package linkage, mapped review action,
+  eligibility status, eligible/ineligible candidate ids, blocked action
+  reasons, required edit summary, required human confirmation summary,
+  ReviewHistory handoff links, failure behavior, artifact boundaries, and
+  forbidden side effects.
+- The plan excludes runtime APIs, frontend, provider integration, provider
+  SDKs, external calls, vector database, embeddings, reranking, prompt
+  execution, AITask orchestration, actual candidate approval/rejection
+  mutation, request optimization mutation, TestCase promotion, automation
+  draft creation, report rendering, export/download endpoints, RBAC, tenants,
+  permissions, and package upgrades.
+- `NEXT_AI_TASK.md` points to Slice 58 Task 2.
 
 ## Commit Message
 
 ```text
-docs(v2): complete generated case human review decision audit handoff slice
+docs(v2): add generated case human review decision application preflight plan
 ```
 
 ## Next Task
 
-Select the next narrow V2 slice after reviewing
-`docs/implementation/10-v2-scope-options.md`.
+Slice 58 Task 2: Define Generated Case Human Review Decision Application
+Preflight contracts.
