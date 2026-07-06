@@ -11387,3 +11387,39 @@ git diff --check
 - Commit with:
   `docs(v2): complete generated case human review decision audit handoff slice`.
 - Then execute Slice 58 Task 1 from `NEXT_AI_TASK.md`.
+
+## 2026-07-06 Slice 58 Generated Case Human Review Decision Application Preflight Plan
+
+### Current State
+
+- Slice 58 Task 1 is implemented and verified pending commit.
+- Added
+  `docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md`.
+- The plan scopes Generated Case Human Review Decision Application Preflight
+  as eligibility evidence between Slice 57 audit handoff artifacts and the
+  existing real GeneratedCaseCandidate review actions.
+- The plan names audit handoff artifact linkage, summary export linkage,
+  source decision artifact linkage, evidence package linkage, mapped review
+  action, eligibility status, eligible candidate ids, ineligible candidate
+  ids, blocked action reasons, required edit summary, required human
+  confirmation summary, ReviewHistory handoff links, failure behavior,
+  artifact boundaries, and forbidden side effects.
+- Updated `NEXT_AI_TASK.md` to point to Slice 58 Task 2: Define Generated Case
+  Human Review Decision Application Preflight contracts.
+
+### Verification Run
+
+```powershell
+if (-not (Test-Path docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md)) { exit 1 }
+rg -n "Generated Case Human Review Decision Application Preflight|generated_case_human_review_decision_application_preflight|preflight_generated_case_human_review_decision_application|generated_case_human_review_decision_audit_handoff_artifact_id|mapped review action|eligibility status|eligible candidate ids|ineligible candidate ids|blocked action reasons|required edit summary|required human confirmation summary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+git diff --check
+```
+
+- Result: required planning terms found; `git diff --check` reported no
+  errors and only existing LF-to-CRLF warnings.
+
+### Next Step
+
+- Commit with:
+  `docs(v2): add generated case human review decision application preflight plan`.
+- Then execute Slice 58 Task 2 from `NEXT_AI_TASK.md`.

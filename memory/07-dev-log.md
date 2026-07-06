@@ -6172,3 +6172,36 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Commit Slice 57 completion gate, then execute Slice 58 Task 1 from
   `NEXT_AI_TASK.md`.
+
+## 2026-07-06 Slice 58 Generated Case Human Review Decision Application Preflight Plan
+
+### Completed
+
+- Completed Slice 58 Task 1: added the Generated Case Human Review Decision
+  Application Preflight task plan.
+- Scoped application preflight as eligibility evidence between Slice 57 audit
+  handoff artifacts and the existing real GeneratedCaseCandidate review
+  actions.
+- Planned audit handoff artifact linkage, summary export linkage, source
+  decision artifact linkage, evidence package linkage, mapped review action,
+  eligibility status, eligible/ineligible candidate ids, blocked action
+  reasons, required edit summary, required human confirmation summary,
+  ReviewHistory handoff links, failure behavior, artifact boundaries, and
+  forbidden side effects.
+- Kept the plan contract-first: no runtime API, frontend page, report
+  renderer, export/download endpoint, provider SDK, external call, vector
+  database, embedding, reranking, prompt execution, candidate
+  approval/rejection, request optimization, TestCase promotion, automation
+  draft creation, RBAC, tenants, permissions, package upgrade, or source
+  evidence mutation.
+
+### Verification
+
+- `if (-not (Test-Path docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md)) { exit 1 }; rg -n "Generated Case Human Review Decision Application Preflight|generated_case_human_review_decision_application_preflight|preflight_generated_case_human_review_decision_application|generated_case_human_review_decision_audit_handoff_artifact_id|mapped review action|eligibility status|eligible candidate ids|ineligible candidate ids|blocked action reasons|required edit summary|required human confirmation summary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md`
+- Result: required planning terms found.
+- `git diff --check`
+- Result: no errors; existing LF-to-CRLF warnings only.
+
+### Next Step
+
+- Commit Task 1, then execute Slice 58 Task 2 from `NEXT_AI_TASK.md`.

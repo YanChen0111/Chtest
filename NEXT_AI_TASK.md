@@ -11,18 +11,17 @@ Slice 58: Generated Case Human Review Decision Application Preflight Contract.
 
 ## Current Task
 
-Slice 58 Task 1: Add Generated Case Human Review Decision Application
-Preflight task plan.
+Slice 58 Task 2: Define Generated Case Human Review Decision Application
+Preflight contracts.
 
 ## Product Value Answer
 
-After this task, Chtest has a narrow plan for defining the preflight boundary
-between Slice 57 audit handoff evidence and the existing real
-GeneratedCaseCandidate review actions. The plan must keep the work
-contract-first and must not execute approve/reject/request optimization,
-promote TestCases, create automation drafts, add runtime APIs, add frontend
-surfaces, render reports, expose export/download endpoints, or add
-provider/retrieval behavior.
+After this task, Chtest has data, API, state-machine, artifact, and
+prompt/skill contracts for recording Generated Case Human Review Decision
+Application Preflight evidence from Slice 57 audit handoff artifacts without
+performing actual GeneratedCaseCandidate approval/rejection, request
+optimization, TestCase promotion, automation draft creation, runtime API work,
+UI work, report/export endpoints, or provider/retrieval behavior.
 
 ## Must Read
 
@@ -34,8 +33,9 @@ provider/retrieval behavior.
 6. `docs/contracts/03-state-machines.md`
 7. `docs/contracts/04-artifact-contract.md`
 8. `docs/contracts/05-prompt-skill-contract.md`
-9. `memory/08-session-handoff.md`
-10. `memory/07-dev-log.md`
+9. `docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md`
+10. `memory/08-session-handoff.md`
+11. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -50,18 +50,22 @@ provider/retrieval behavior.
 Update only these files for the current task:
 
 ```text
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
+docs/contracts/04-artifact-contract.md
+docs/contracts/05-prompt-skill-contract.md
 docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md
-docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Planning only. Do not add contract edits, frontend code, backend runtime
-feature code, backend feature API, endpoint, router, service, worker, queue,
-scheduler, migration, package upgrade, provider integration, provider SDK,
-external call, vector database, embeddings, reranking, graph runtime, MCP
-runtime, runtime retrieval, prompt execution, AITask orchestration, automatic
+Contract docs only. Do not add frontend code, backend runtime feature code,
+backend feature API, endpoint, router, service, worker, queue, scheduler,
+migration, package upgrade, provider integration, provider SDK, external call,
+vector database, embeddings, reranking, graph runtime, MCP runtime, runtime
+retrieval, prompt execution, AITask orchestration, automatic
 `used_knowledge=true`, TestCase promotion, GeneratedCaseCandidate
 approve/reject mutation, request optimization mutation, automation draft
 creation, runner behavior changes, artifact upload, report generation
@@ -71,39 +75,36 @@ permissions.
 ## Verification Command
 
 ```bash
-if (-not (Test-Path docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md)) { exit 1 }
-rg -n "Generated Case Human Review Decision Application Preflight|generated_case_human_review_decision_application_preflight|preflight_generated_case_human_review_decision_application|generated_case_human_review_decision_audit_handoff_artifact_id|mapped review action|eligibility status|eligible candidate ids|ineligible candidate ids|blocked action reasons|required edit summary|required human confirmation summary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+rg -n "Generated Case Human Review Decision Application Preflight|generated_case_human_review_decision_application_preflight|preflight_generated_case_human_review_decision_application|generated_case_human_review_decision_audit_handoff_artifact_id|generated_case_human_review_decision_summary_export_artifact_id|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|mapped review action|eligibility status|eligible candidate ids|ineligible candidate ids|blocked action reasons|required edit summary|required human confirmation summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md
 git diff --check
 ```
 
-Expected result: Slice 58 plan exists, required planning terms are present,
-and diff check passes.
+Expected result: required contract terms are present and diff check passes.
 
 ## Acceptance
 
-- Slice 58 plan exists with product value, non-goals, task table, expected
-  files, verification commands, and commit message.
-- The plan names audit handoff artifact linkage, summary export linkage,
-  decision artifact linkage, evidence package linkage, mapped review action,
-  eligibility status, eligible/ineligible candidate ids, blocked action
-  reasons, required edit summary, required human confirmation summary,
-  ReviewHistory handoff links, failure behavior, artifact boundaries, and
-  forbidden side effects.
-- The plan excludes runtime APIs, frontend, provider integration, provider
-  SDKs, external calls, vector database, embeddings, reranking, prompt
-  execution, AITask orchestration, actual candidate approval/rejection
-  mutation, request optimization mutation, TestCase promotion, automation
-  draft creation, report rendering, export/download endpoints, RBAC, tenants,
-  permissions, and package upgrades.
-- `NEXT_AI_TASK.md` points to Slice 58 Task 2.
+- Contracts define generated case human review decision application preflight
+  inputs, outputs, audit handoff artifact linkage, summary export artifact
+  linkage, decision artifact linkage, evidence package artifact linkage,
+  mapped review action, eligibility status, eligible candidate ids,
+  ineligible candidate ids, blocked action reasons, required edit summary,
+  required human confirmation summary, ReviewHistory handoff links, failure
+  behavior, and forbidden side effects.
+- Contracts keep backend runtime APIs, frontend, report rendering,
+  export/download endpoints, provider integrations, SDKs, external calls,
+  vector database, embeddings, reranking, prompt execution, candidate
+  approval/rejection, request optimization, TestCase promotion, automation
+  draft creation, RBAC, tenants, permissions, and package upgrades out of
+  scope.
+- `NEXT_AI_TASK.md` points to Slice 58 Task 3.
 
 ## Commit Message
 
 ```text
-docs(v2): add generated case human review decision application preflight plan
+docs(v2): define generated case human review decision application preflight contracts
 ```
 
 ## Next Task
 
-Slice 58 Task 2: Define Generated Case Human Review Decision Application
-Preflight contracts.
+Slice 58 Task 3: Add Generated Case Human Review Decision Application
+Preflight golden smoke.
