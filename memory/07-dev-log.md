@@ -6270,3 +6270,27 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Commit Task 3, then execute Slice 58 completion gate from `NEXT_AI_TASK.md`.
+
+## 2026-07-07 Slice 58 Generated Case Human Review Decision Application Preflight Completion Gate
+
+### Completed
+
+- Completed Slice 58 completion gate.
+- Recorded Slice 58 Task 1-3 commits in the task table:
+  `fe749e6`, `a5b385f`, and `5e40f7a`.
+- Updated V2 scope options with Slice 58 completion evidence and recommended
+  Slice 59: Generated Case Human Review Decision Application Contract.
+- Updated `NEXT_AI_TASK.md` to Slice 59 Task 1: Add Generated Case Human
+  Review Decision Application task plan.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_application_preflight_contract_golden.py -q`
+- Result: `4 passed in 1.76s`.
+- `git diff --check`
+- Result: no errors; existing LF-to-CRLF warnings only.
+
+### Next Step
+
+- Commit Slice 58 completion gate, then execute Slice 59 Task 1 from
+  `NEXT_AI_TASK.md`.

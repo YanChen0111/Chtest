@@ -4348,3 +4348,142 @@ Expected output:
   non-goals.
 - Slice plan added:
   `docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md`.
+
+## Completed Next V2 Slice
+
+Completed: Generated Case Human Review Decision Application Preflight
+contract.
+
+Why it was selected:
+
+- Slice 57 completed the generated-case human review decision audit handoff,
+  but it deliberately did not define whether that handoff was eligible to
+  drive existing GeneratedCaseCandidate review actions.
+- Slice 58 added a contract-only preflight boundary that maps audited decision
+  evidence to future review action labels while keeping every real approval,
+  rejection, request optimization, TestCase promotion, and runtime behavior
+  out of scope.
+
+Completed slice name:
+
+```text
+Slice 58: Generated Case Human Review Decision Application Preflight Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- Generated Case Human Review Decision Application Preflight is now a contract
+  with
+  `preflight_generated_case_human_review_decision_application`,
+  `generated_case_human_review_decision_application_preflight`,
+  `generated_case_human_review_decision_audit_handoff_artifact_id`,
+  `generated_case_human_review_decision_summary_export_artifact_id`, source
+  `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values, mapped
+  review action, eligibility status, eligible candidate ids, ineligible
+  candidate ids, blocked action reasons, required edit summary, required
+  human confirmation summary, ReviewHistory handoff links, failure code, and
+  visible reason.
+- No backend runtime API, frontend page, report renderer, export/download
+  endpoint, provider integration, provider SDK, external call, credential
+  handling, OAuth, vector database, embeddings, reranking, graph runtime, MCP
+  runtime, runtime retrieval, prompt execution, AITask orchestration,
+  automatic `used_knowledge=true`, GeneratedCaseCandidate approve/reject
+  mutation, status mutation, request optimization mutation, TestCase
+  promotion, automation draft creation, artifact upload, RBAC, tenants,
+  permissions, runner behavior changes, remote CI behavior, or package
+  upgrades were added.
+
+## Recommended Next V2 Slice
+
+Recommended: Generated Case Human Review Decision Application contract.
+
+Why:
+
+- Slice 58 defines eligibility preflight, but it still deliberately cannot
+  call the real review action or mutate GeneratedCaseCandidate state.
+- The next narrow boundary should define the application contract for how a
+  future implementation may use an eligible preflight, explicit human
+  confirmation, same-project source lineage, current candidate status checks,
+  and mapped review action labels before any real approve, approve-after-edit,
+  request-optimization, or reject action occurs.
+- Defining this contract first keeps the eventual action application auditable:
+  it can require stale-input checks, preflight artifact linkage, audit handoff
+  linkage, summary export linkage, decision/evidence package lineage,
+  ReviewHistory result links, created TestCase references only when future
+  approval is allowed, failure code, and visible reason before runtime work is
+  introduced.
+
+Next slice name:
+
+```text
+Slice 59: Generated Case Human Review Decision Application Contract
+```
+
+Smallest useful boundary:
+
+- Define application inputs from
+  `generated_case_human_review_decision_application_preflight_artifact_id`,
+  `generated_case_human_review_decision_audit_handoff_artifact_id`,
+  `generated_case_human_review_decision_summary_export_artifact_id`, source
+  `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values, eligible
+  candidate ids, current GeneratedCaseCandidate id/status, mapped review
+  action, required human confirmation, requested edit fields, accepted
+  constraints, optimization request summary, rejection reasons, source hashes,
+  source manifest ids, and ReviewHistory handoff links.
+- Define application outputs such as
+  `generated_case_human_review_decision_application`,
+  `apply_generated_case_human_review_decision`, application artifact id,
+  application status, applied candidate ids, skipped candidate ids, mapped
+  review action, actual review action, required edit application summary,
+  ReviewHistory result links, future TestCase reference ids when approval is
+  allowed, failure code, and visible reason.
+- Define strict action preconditions without executing them:
+  only eligible same-project preflight evidence may map to real review
+  actions; `approve_after_edit` requires bounded edit fields and explicit
+  confirmation; `request_optimization` requires a bounded optimization
+  summary; `reject` requires rejection reasons and visible reason; stale,
+  mismatched, blocked, duplicate, needs-more-evidence, or failed-validation
+  preflight evidence must fail or be skipped with visible reasons.
+- Add one contract-level fixture and golden smoke after the application
+  contract is defined.
+
+Explicit non-goals:
+
+- No backend runtime API, endpoint, router, service, worker, queue, scheduler,
+  migration, or package upgrade.
+- No frontend page, store, component, report generation behavior, report
+  renderer, export/download endpoint, or backend feature API.
+- No actual GeneratedCaseCandidate approve/reject mutation, status mutation,
+  request optimization mutation, TestCase promotion, AutomationDraft creation,
+  ToolInvocation creation, TestRun/TestResult creation, runner behavior
+  change, or remote CI provider behavior.
+- No prompt execution, AITask orchestration, automatic `used_knowledge=true`,
+  provider integration, provider SDK, external call, credential handling,
+  OAuth, remote URL fetch, vector database, embeddings, reranking, graph
+  runtime, MCP runtime, runtime retrieval, RBAC, tenants, or permissions.
+- No mutation of application preflight artifacts, audit handoff artifacts,
+  summary export artifacts, decision artifacts, evidence packages,
+  GeneratedCaseCandidate content, TestCase rows, KnowledgeEvidence,
+  prompt-context artifacts, ReviewHistory, historical evidence, or source
+  artifacts.
+
+Suggested next task:
+
+```text
+Slice 59 Task 1: Add Generated Case Human Review Decision Application task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-59-generated-case-human-review-decision-application-contract.md`.
+- No contract edits or product code until the plan defines application inputs,
+  outputs, failure behavior, artifact boundaries, golden smoke plan, and
+  non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-59-generated-case-human-review-decision-application-contract.md`.
