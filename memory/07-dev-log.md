@@ -6205,3 +6205,33 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Commit Task 1, then execute Slice 58 Task 2 from `NEXT_AI_TASK.md`.
+
+## 2026-07-07 Slice 58 Generated Case Human Review Decision Application Preflight Contracts
+
+### Completed
+
+- Completed Slice 58 Task 2: defined Generated Case Human Review Decision
+  Application Preflight contracts across data model, API, state-machine,
+  artifact, and prompt/skill contracts.
+- Locked the preflight surface around Slice 57 audit handoff artifact linkage,
+  summary export artifact linkage, source decision artifact linkage, evidence
+  package linkage, mapped review action, eligibility status, eligible
+  candidate ids, ineligible candidate ids, blocked action reasons, required
+  edit summary, required human confirmation summary, ReviewHistory handoff
+  links, failure code, and visible reason.
+- Kept the task contract-only: no runtime API, frontend page, report renderer,
+  export/download endpoint, provider SDK, external call, vector database,
+  embedding, reranking, prompt execution, candidate approval/rejection,
+  request optimization, TestCase promotion, automation draft creation, RBAC,
+  tenants, permissions, package upgrade, or source evidence mutation.
+
+### Verification
+
+- `rg -n "Generated Case Human Review Decision Application Preflight|generated_case_human_review_decision_application_preflight|preflight_generated_case_human_review_decision_application|generated_case_human_review_decision_audit_handoff_artifact_id|generated_case_human_review_decision_summary_export_artifact_id|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|mapped review action|eligibility status|eligible candidate ids|ineligible candidate ids|blocked action reasons|required edit summary|required human confirmation summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md`
+- Result: required contract terms found.
+- `git diff --check`
+- Result: no errors; existing LF-to-CRLF warnings only.
+
+### Next Step
+
+- Commit Task 2, then execute Slice 58 Task 3 from `NEXT_AI_TASK.md`.

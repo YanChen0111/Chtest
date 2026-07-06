@@ -34,6 +34,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   knowledge_adapter_provider_evaluation_review_summary_export.json
   knowledge_adapter_provider_evaluation_review_audit_handoff.json
   generated_case_human_review_decision_audit_handoff.json
+  generated_case_human_review_decision_application_preflight.json
   test_knowledge_card_prompt_context_evidence.json
   test_knowledge_card_prompt_context_consumption.json
   test_knowledge_card_prompt_context_audit_summary.json
@@ -370,6 +371,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | generated_case_human_review_decision | application/json | Future generated case human review decision evidence |
 | generated_case_human_review_decision_summary_export | application/json | Future generated case human review decision summary export evidence |
 | generated_case_human_review_decision_audit_handoff | application/json | Future generated case human review decision audit handoff evidence |
+| generated_case_human_review_decision_application_preflight | application/json | Future generated case human review decision application preflight evidence |
 | knowledge_adapter_provider_evaluation_plan | application/json | Future KnowledgeAdapter provider evaluation planning evidence |
 | knowledge_adapter_provider_evaluation_review_decision | application/json | Future KnowledgeAdapter provider evaluation review decision evidence |
 | knowledge_adapter_provider_evaluation_review_summary_export | application/json | Future KnowledgeAdapter provider evaluation review summary export evidence |
@@ -806,6 +808,78 @@ Generated case human review decision audit handoff artifact rules:
   run graph jobs, invoke MCP runtime, render frontend pages, call remote CI
   providers, add RBAC, create tenants, change permissions, or install
   packages.
+
+Generated case human review decision application preflight artifact rules:
+
+- `generated_case_human_review_decision_application_preflight.json` may be
+  stored as an Artifact with
+  `artifact_type=generated_case_human_review_decision_application_preflight`,
+  `owner_entity_type=GeneratedCaseCandidate`, and
+  `owner_entity_id=candidate_id` for a single-candidate preflight, or with
+  `owner_entity_type=AITask` or `owner_entity_type=Project` for a
+  multi-decision preflight, and
+  `manifest_kind=generated_case_human_review_decision_application_preflight`
+  in a later scoped implementation.
+- The artifact must include
+  `created_by_component=GeneratedCaseHumanReviewDecisionApplicationPreflight`,
+  `generated_case_human_review_decision_application_preflight_action=preflight_generated_case_human_review_decision_application`,
+  `generated_case_human_review_decision_audit_handoff_artifact_id`,
+  `generated_case_human_review_decision_summary_export_artifact_id`,
+  `generated_case_human_review_decision_artifact_id` values,
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate ids/statuses, decision labels, requested edit fields,
+  accepted constraints, optimization request summaries, rejection reasons,
+  blocker reasons, duplicate resolution notes, evidence chain status,
+  unresolved follow-up flags, unresolved blocker summary, mapped review
+  action, eligibility status, eligible candidate ids, ineligible candidate
+  ids, blocked action reasons, required edit summary, required human
+  confirmation summary, preflight summary, accepted-for-future-promotion
+  preflight summary, accepted-with-required-edits preflight summary,
+  needs-optimization preflight summary,
+  rejected-for-insufficient-evidence preflight summary, blocked preflight
+  summary, duplicate preflight summary, needs-more-evidence preflight summary,
+  failed-validation preflight summary, source traceability handoff summary,
+  source manifest ids, source hashes, ReviewHistory handoff links, failure
+  code, and visible reason when applicable.
+- Eligibility status values may include `eligible`, `ineligible`, `blocked`,
+  and `failed_validation`. Mapped review action values may include `approve`,
+  `approve_after_edit`, `request_optimization`, `reject`, and `none`. These
+  values are preflight labels only and must not invoke the existing review
+  action.
+- Decision-label mapping is strict. `accepted_for_future_promotion` may map
+  only to future `approve` when evidence chain status is `complete`, the
+  candidate status is reviewable, and required human confirmation summary is
+  present. `accepted_with_required_edits` may map only to future
+  `approve_after_edit` when requested edit fields are present and bounded.
+  `needs_optimization` may map only to future `request_optimization` when an
+  optimization request summary is present and bounded.
+  `rejected_for_insufficient_evidence` may map only to future `reject` when
+  rejection reasons and visible reason are present. `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation` must map to `none` and remain
+  ineligible until a later explicit human action resolves them.
+- Generated case human review decision application preflight artifacts must be
+  bounded JSON. They must not contain raw LLM/provider payloads, unbounded
+  source text, credentials, API keys, tokens, OAuth state, remote fetch
+  payloads, vector store payloads, embedding vectors, reranker traces, graph
+  runtime payloads, executable prompt assembly payloads, runtime
+  `prompt_input.json`, frontend-rendered markup, report-rendered payloads,
+  export-rendered payloads, downloadable provider payloads, or generated
+  replacement evidence.
+- Generated case human review decision application preflight artifacts must not
+  approve or reject GeneratedCaseCandidate rows, request optimization, promote
+  TestCase rows, create AutomationDraft rows, mutate GeneratedCaseCandidate
+  content or status, mutate generated case human review decision audit
+  handoff artifacts, mutate generated case human review decision summary
+  export artifacts, mutate generated case human review decision artifacts,
+  mutate evidence packages, mutate TestCase rows, mutate ReviewHistory, mutate
+  KnowledgeEvidence, mutate prompt context evidence, mutate source evidence,
+  mutate Artifact rows outside declared application preflight evidence, upload
+  artifacts, render reports, expose export/download endpoints, run prompt
+  assembly, execute AITasks, call providers, call provider SDKs, fetch remote
+  URLs, change retrieval ranking, create vector indexes, create embeddings,
+  rerank, run background indexing, run graph jobs, invoke MCP runtime, render
+  frontend pages, call remote CI providers, add RBAC, create tenants, change
+  permissions, or install packages.
 
 Knowledge feedback artifact rules:
 

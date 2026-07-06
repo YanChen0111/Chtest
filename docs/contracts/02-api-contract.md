@@ -2011,7 +2011,167 @@ Generated Case Human Review Decision Audit Handoff hard rules:
   behavior changes, remote CI provider behavior, RBAC, tenants, permissions,
   or package upgrades.
 
-### 3.5.5 Knowledge Feedback Contract
+### 3.5.5 Generated Case Human Review Decision Application Preflight Contract
+
+This section is contract-only. It defines future Generated Case Human Review
+Decision Application Preflight semantics for checking whether Slice 57 audit
+handoff evidence is eligible for a later explicit human review action. It
+does not add a `POST /api/generated-case-review-decision-application-preflights`
+endpoint, backend feature API, router, service, worker, queue, scheduler,
+frontend page, report generation behavior, report renderer, export/download
+endpoint, migration, or package upgrade.
+
+Allowed generated case human review decision application preflight action:
+
+- `preflight_generated_case_human_review_decision_application`: future scoped
+  preflight action that checks
+  `generated_case_human_review_decision_audit_handoff_artifact_id`, linked
+  `generated_case_human_review_decision_summary_export_artifact_id`, source
+  `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  candidate status, decision labels, requested edit fields, accepted
+  constraints, blocker/rejection/optimization evidence, unresolved follow-up
+  flags, source traceability, and ReviewHistory handoff links into eligibility
+  evidence without applying any review action.
+
+Generated Case Human Review Decision Application Preflight payload shape:
+
+```json
+{
+  generated_case_human_review_decision_application_preflight_action: preflight_generated_case_human_review_decision_application,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  generated_case_human_review_decision_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000960,
+  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
+  generated_case_human_review_decision_artifact_ids: [
+    00000000-0000-0000-0000-000000000940,
+    00000000-0000-0000-0000-000000000941
+  ],
+  generated_case_human_review_evidence_package_artifact_ids: [
+    00000000-0000-0000-0000-000000000930,
+    00000000-0000-0000-0000-000000000931
+  ],
+  decisions: [
+    {
+      generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
+      candidate_status: under_review,
+      decision_label: accepted_with_required_edits,
+      requested_edit_fields: [steps_json, expected_results_json],
+      accepted_constraints: [same evidence package, no runtime execution],
+      optimization_request_summary: null,
+      rejection_reasons: [],
+      blocker_reasons: [],
+      duplicate_resolution_notes: none,
+      evidence_chain_status: complete,
+      unresolved_follow_up_flags: [],
+      unresolved_blocker_summary: none,
+      source_traceability_handoff_summary: summary export, decision, evidence package, and ReviewHistory links preserved,
+      review_history_handoff_links: [00000000-0000-0000-0000-000000000895],
+      source_manifest_ids: [generated-case-review-source-manifest-001],
+      source_hashes: [sha256:generated-case-review-evidence],
+      required_human_confirmation_summary: reviewer must confirm requested edits before apply
+    }
+  ]
+}
+```
+
+Generated Case Human Review Decision Application Preflight response shape for a
+future scoped implementation:
+
+```json
+{
+  generated_case_human_review_decision_application_preflight_action: preflight_generated_case_human_review_decision_application,
+  generated_case_human_review_decision_application_preflight_artifact_id: 00000000-0000-0000-0000-000000000970,
+  generated_case_human_review_decision_application_preflight: generated_case_human_review_decision_application_preflight,
+  generated_case_human_review_decision_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000960,
+  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
+  preflight_summary: one candidate is eligible for future approve_after_edit after explicit human confirmation,
+  eligibility_status: eligible,
+  mapped_review_action: approve_after_edit,
+  eligible_candidate_ids: [00000000-0000-0000-0000-000000000801],
+  ineligible_candidate_ids: [],
+  blocked_action_reasons: [],
+  required_edit_summary: steps_json and expected_results_json must be confirmed,
+  required_human_confirmation_summary: explicit reviewer confirmation required before applying mapped action,
+  accepted_for_future_promotion_preflight_summary: none,
+  accepted_with_required_edits_preflight_summary: eligible only after requested edits are confirmed,
+  needs_optimization_preflight_summary: none,
+  rejected_for_insufficient_evidence_preflight_summary: none,
+  blocked_preflight_summary: none,
+  duplicate_preflight_summary: none,
+  needs_more_evidence_preflight_summary: none,
+  failed_validation_preflight_summary: none,
+  review_history_handoff_links: [00000000-0000-0000-0000-000000000895],
+  source_traceability_handoff_summary: source hashes and handoff lineage preserved,
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+Generated Case Human Review Decision Application Preflight hard rules:
+
+- Preflight input must reference a same-project
+  `generated_case_human_review_decision_audit_handoff_artifact_id`, linked
+  `generated_case_human_review_decision_summary_export_artifact_id`, source
+  `generated_case_human_review_decision_artifact_id` values, and linked
+  `generated_case_human_review_evidence_package_artifact_id` values.
+- Preflight output is eligibility evidence only. It may record preflight
+  artifact id, preflight summary, eligibility status, mapped review action,
+  eligible candidate ids, ineligible candidate ids, blocked action reasons,
+  required edit summary, required human confirmation summary, decision-label
+  preflight summaries, ReviewHistory handoff links, failure code, and visible
+  reason.
+- Eligibility status values may include `eligible`, `ineligible`, `blocked`,
+  and `failed_validation`. They must not approve candidates, reject
+  candidates, request optimization, promote TestCase rows, create
+  AutomationDraft rows, execute automation, create reports, expose
+  export/download endpoints, or set `used_knowledge=true`.
+- Mapped review action values may include `approve`, `approve_after_edit`,
+  `request_optimization`, `reject`, and `none`. They are preflight labels only
+  and must not call the existing `case-review` action.
+- Decision-label mapping is strict. `accepted_for_future_promotion` may map
+  only to future `approve` when evidence chain status is `complete`, the
+  candidate status is reviewable, and required human confirmation summary is
+  present. `accepted_with_required_edits` may map only to future
+  `approve_after_edit` when requested edit fields are present and bounded.
+  `needs_optimization` may map only to future `request_optimization` when an
+  optimization request summary is present and bounded.
+  `rejected_for_insufficient_evidence` may map only to future `reject` when
+  rejection reasons and visible reason are present. `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation` must map to `none` and remain
+  ineligible until a later explicit human action resolves them.
+- Invalid, stale, unsafe, cross-project, unbounded,
+  audit-handoff-missing, audit-handoff-invalid, audit-handoff-mismatched,
+  summary-export-missing, summary-export-invalid, summary-export-mismatched,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, decision-label-unsupported,
+  mapped-action-unsupported, required-edit-missing,
+  required-confirmation-missing, review-history-missing,
+  source-hash-mismatched, artifact-mismatched, incomplete-required-input,
+  credential-required, runtime-required, provider-required, approval-required,
+  optimization-required, or promotion-required input must return failure code
+  and visible reason and must not append a successful application preflight or
+  successful ReviewHistory decision.
+- `preflight_generated_case_human_review_decision_application` must not create
+  backend runtime APIs, endpoints, routers, services, workers, queues,
+  schedulers, migrations, frontend pages, reports, report renderers,
+  export/download endpoints, provider integrations, provider SDK calls,
+  external calls, credentials, remote URL fetches, vector indexes, embeddings,
+  reranking, graph jobs, MCP runtime calls, runtime retrieval, prompt
+  execution, AITask orchestration, TestCase promotion, GeneratedCaseCandidate
+  approve/reject mutation, request optimization mutation, automation draft
+  creation, ToolInvocation rows, TestRun/TestResult rows, artifact upload,
+  Artifact rows outside declared application preflight evidence, generated
+  case human review decision audit handoff artifact mutation, generated case
+  human review decision summary export artifact mutation, generated case human
+  review decision artifact mutation, evidence package mutation, prompt
+  context evidence mutation, KnowledgeEvidence mutation, TestKnowledgeCard
+  mutation, ReviewHistory mutation, source evidence mutation, historical
+  evidence mutation, runner behavior changes, remote CI provider behavior,
+  RBAC, tenants, permissions, or package upgrades.
+
+### 3.5.6 Knowledge Feedback Contract
 
 This section is contract-only. It defines the API payload shape that a future
 KnowledgeFeedbackAgent may return through existing AITask/artifact surfaces. It

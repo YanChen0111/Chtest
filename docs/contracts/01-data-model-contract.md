@@ -439,6 +439,76 @@ Slice 57 generated case human review decision audit handoff rules:
   produce failure code and visible reason and must not append a successful
   audit handoff.
 
+Slice 58 generated case human review decision application preflight rules:
+
+- Generated Case Human Review Decision Application Preflight is a
+  contract-only eligibility evidence bundle over a same-project
+  `generated_case_human_review_decision_audit_handoff` artifact. It carries
+  audit handoff linkage, summary export linkage, generated case human review
+  decision artifact ids, generated case human review evidence package artifact
+  ids, mapped review action, eligibility status, eligible candidate ids,
+  ineligible candidate ids, blocked action reasons, required edit summary,
+  required human confirmation summary, ReviewHistory handoff links, failure
+  code, and visible reason without applying a review action.
+- The contract-only application preflight action is
+  `preflight_generated_case_human_review_decision_application`. Future
+  payloads may store
+  `generated_case_human_review_decision_application_preflight_action=preflight_generated_case_human_review_decision_application`.
+- Inputs must preserve
+  `generated_case_human_review_decision_audit_handoff_artifact_id`,
+  `generated_case_human_review_decision_summary_export_artifact_id`,
+  `generated_case_human_review_decision_artifact_id` values,
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate id/status, decision label, requested edit fields,
+  accepted constraints, optimization request summary, rejection reasons,
+  blocker reasons, duplicate resolution notes, evidence chain status,
+  unresolved follow-up flags, unresolved blocker summary, source traceability
+  handoff summary, ReviewHistory handoff links, source hashes, source
+  manifest ids, failure code, and visible reason.
+- Outputs may include generated case human review decision application
+  preflight id or preflight artifact id,
+  `generated_case_human_review_decision_application_preflight`, preflight
+  summary, eligibility status, mapped review action, eligible candidate ids,
+  ineligible candidate ids, blocked action reasons, required edit summary,
+  required human confirmation summary, accepted-for-future-promotion preflight
+  summary, accepted-with-required-edits preflight summary, needs-optimization
+  preflight summary, rejected-for-insufficient-evidence preflight summary,
+  blocked preflight summary, duplicate preflight summary,
+  needs-more-evidence preflight summary, failed-validation preflight summary,
+  ReviewHistory handoff links, source traceability handoff summary, failure
+  code, and visible reason.
+- Eligibility status values may include `eligible`, `ineligible`, `blocked`,
+  and `failed_validation`. These labels are preflight evidence only and must
+  not mutate GeneratedCaseCandidate status.
+- Mapped review action values may include `approve`, `approve_after_edit`,
+  `request_optimization`, `reject`, and `none`. They are planned action labels
+  only and must not invoke the existing review action.
+- Decision-label mapping is strict: `accepted_for_future_promotion` may map
+  only to future `approve` when evidence chain status is `complete`, the
+  candidate status is reviewable, and required human confirmation summary is
+  present; `accepted_with_required_edits` may map only to future
+  `approve_after_edit` when requested edit fields are present and bounded;
+  `needs_optimization` may map only to future `request_optimization` when an
+  optimization request summary is present and bounded;
+  `rejected_for_insufficient_evidence` may map only to future `reject` when
+  rejection reasons and visible reason are present; `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation` must map to `none` and remain
+  ineligible until a later explicit human action resolves them.
+- Invalid, stale, unsafe, cross-project, unbounded,
+  audit-handoff-missing, audit-handoff-invalid, audit-handoff-mismatched,
+  summary-export-missing, summary-export-invalid, summary-export-mismatched,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, decision-label-unsupported,
+  mapped-action-unsupported, required-edit-missing,
+  required-confirmation-missing, review-history-missing,
+  source-hash-mismatched, artifact-mismatched, incomplete-required-input,
+  credential-required, runtime-required, provider-required, approval-required,
+  optimization-required, or promotion-required input must produce failure code
+  and visible reason and must not append a successful application preflight or
+  successful ReviewHistory decision.
+
 ## 15. TestCase
 
 | Field | Type | Required | Default | Notes |
@@ -2139,7 +2209,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, generated_case_human_review_evidence_package, generated_case_human_review_decision, generated_case_human_review_decision_summary_export, generated_case_human_review_decision_audit_handoff, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, knowledge_adapter_provider_evaluation_review_audit_handoff, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, generated_case_human_review_evidence_package, generated_case_human_review_decision, generated_case_human_review_decision_summary_export, generated_case_human_review_decision_audit_handoff, generated_case_human_review_decision_application_preflight, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, knowledge_adapter_provider_evaluation_review_audit_handoff, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -2304,6 +2374,54 @@ Generated Case Human Review Decision Audit Handoff Artifact rule:
   generated case human review decision artifacts, mutate evidence packages,
   mutate ReviewHistory, mutate KnowledgeEvidence, mutate prompt context
   evidence, mutate source evidence, upload artifacts, render reports, expose
+  export/download endpoints, run prompts, execute AITasks, run retrieval, call
+  providers, call provider SDKs, create vector indexes, create embeddings,
+  rerank, run graph jobs, invoke MCP runtime, render frontend pages, add
+  RBAC, create tenants, change permissions, or install packages.
+
+Generated Case Human Review Decision Application Preflight Artifact rule:
+
+- Slice 58 generated case human review decision application preflights may use
+  `artifact_type=generated_case_human_review_decision_application_preflight`
+  in a later scoped implementation.
+- `owner_entity_type=GeneratedCaseCandidate` with
+  `owner_entity_id=candidate_id` may be used for a single-candidate
+  preflight. `owner_entity_type=AITask` or `owner_entity_type=Project` may be
+  used for a multi-decision preflight, but metadata must preserve
+  `generated_case_human_review_decision_audit_handoff_artifact_id`,
+  `generated_case_human_review_decision_summary_export_artifact_id`, every
+  `generated_case_human_review_decision_artifact_id`, and every linked
+  `generated_case_human_review_evidence_package_artifact_id`.
+- `metadata_json` must include
+  `created_by_component=GeneratedCaseHumanReviewDecisionApplicationPreflight`,
+  `generated_case_human_review_decision_application_preflight_action=preflight_generated_case_human_review_decision_application`,
+  `generated_case_human_review_decision_audit_handoff_artifact_id`,
+  `generated_case_human_review_decision_summary_export_artifact_id`,
+  `generated_case_human_review_decision_artifact_id` values,
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate ids/statuses, decision labels, requested edit fields,
+  accepted constraints, optimization request summaries, rejection reasons,
+  blocker reasons, duplicate resolution notes, evidence chain status,
+  unresolved follow-up flags, unresolved blocker summary, mapped review
+  action, eligibility status, eligible candidate ids, ineligible candidate
+  ids, blocked action reasons, required edit summary, required human
+  confirmation summary, preflight summary, accepted-for-future-promotion
+  preflight summary, accepted-with-required-edits preflight summary,
+  needs-optimization preflight summary,
+  rejected-for-insufficient-evidence preflight summary, blocked preflight
+  summary, duplicate preflight summary, needs-more-evidence preflight summary,
+  failed-validation preflight summary, source traceability handoff summary,
+  source manifest ids, source hashes, ReviewHistory handoff links, failure
+  code, and visible reason when applicable.
+- This artifact is application preflight eligibility evidence only. It must
+  not approve or reject GeneratedCaseCandidate rows, request optimization,
+  promote TestCase rows, create AutomationDraft rows, mutate
+  GeneratedCaseCandidate content or status, mutate generated case human review
+  decision audit handoff artifacts, mutate generated case human review
+  decision summary export artifacts, mutate generated case human review
+  decision artifacts, mutate evidence packages, mutate TestCase rows, mutate
+  ReviewHistory, mutate KnowledgeEvidence, mutate prompt context evidence,
+  mutate source evidence, upload artifacts, render reports, expose
   export/download endpoints, run prompts, execute AITasks, run retrieval, call
   providers, call provider SDKs, create vector indexes, create embeddings,
   rerank, run graph jobs, invoke MCP runtime, render frontend pages, add

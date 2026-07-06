@@ -399,6 +399,110 @@ Generated Case Human Review Decision Audit Handoff state rules:
   remote CI provider behavior, RBAC, tenants, permissions, or package
   upgrades.
 
+### 3.5 Generated Case Human Review Decision Application Preflight State Contract
+
+This state contract is planning-only. It defines future preflight eligibility
+labels for Generated Case Human Review Decision Audit Handoff evidence before
+any backend runtime API, frontend page, report renderer, export/download
+endpoint, provider integration, provider SDK, external call, vector database,
+embedding, reranking, graph runtime, MCP runtime, runtime retrieval, prompt
+execution, AITask orchestration, TestCase promotion, GeneratedCaseCandidate
+approve/reject mutation, request optimization mutation, automation draft
+creation, RBAC, tenants, or permissions exist.
+
+```text
+generated_case_human_review_decision_audit_handoff_complete -> generated_case_human_review_decision_application_preflight_pending
+generated_case_human_review_decision_audit_handoff_incomplete -> generated_case_human_review_decision_application_preflight_pending
+generated_case_human_review_decision_audit_handoff_blocked -> generated_case_human_review_decision_application_preflight_pending
+generated_case_human_review_decision_audit_handoff_failed_validation -> generated_case_human_review_decision_application_preflight_failed_validation
+generated_case_human_review_decision_application_preflight_pending -> generated_case_human_review_decision_application_preflight_eligible
+generated_case_human_review_decision_application_preflight_pending -> generated_case_human_review_decision_application_preflight_ineligible
+generated_case_human_review_decision_application_preflight_pending -> generated_case_human_review_decision_application_preflight_blocked
+generated_case_human_review_decision_application_preflight_pending -> generated_case_human_review_decision_application_preflight_failed_validation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| generated_case_human_review_decision_audit_handoff_complete | preflight_generated_case_human_review_decision_application | generated_case_human_review_decision_application_preflight_pending | Future workflow/API | Starts eligibility preflight over complete handoff evidence |
+| generated_case_human_review_decision_audit_handoff_incomplete | preflight_generated_case_human_review_decision_application | generated_case_human_review_decision_application_preflight_pending | Future workflow/API | Carries missing or excluded artifact reasons forward |
+| generated_case_human_review_decision_audit_handoff_blocked | preflight_generated_case_human_review_decision_application | generated_case_human_review_decision_application_preflight_pending | Future workflow/API | Carries unresolved blocker summary forward |
+| generated_case_human_review_decision_audit_handoff_failed_validation | preflight_generated_case_human_review_decision_application | generated_case_human_review_decision_application_preflight_failed_validation | Future workflow/API | Fails because audit handoff is already invalid |
+| generated_case_human_review_decision_application_preflight_pending | eligible | generated_case_human_review_decision_application_preflight_eligible | Future workflow/API | Records eligible candidate ids and mapped review action labels |
+| generated_case_human_review_decision_application_preflight_pending | ineligible | generated_case_human_review_decision_application_preflight_ineligible | Future workflow/API | Records ineligible candidate ids and blocked action reasons |
+| generated_case_human_review_decision_application_preflight_pending | blocked | generated_case_human_review_decision_application_preflight_blocked | Future workflow/API | Records unresolved blocker or required confirmation gaps |
+| generated_case_human_review_decision_application_preflight_pending | failed_validation | generated_case_human_review_decision_application_preflight_failed_validation | Future workflow/API | Records failure code and visible reason |
+
+Generated Case Human Review Decision Application Preflight state rules:
+
+- `preflight_generated_case_human_review_decision_application` requires
+  `generated_case_human_review_decision_audit_handoff_artifact_id`,
+  `generated_case_human_review_decision_summary_export_artifact_id`, source
+  `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate ids/statuses, decision labels, requested edit
+  fields, accepted constraints, optimization request summaries, rejection
+  reasons, blocker reasons, duplicate resolution notes, evidence chain status,
+  unresolved follow-up flags, unresolved blocker summary, source traceability
+  handoff summary, ReviewHistory handoff links, source hashes, and source
+  manifest ids.
+- Application preflight states are eligibility evidence labels only. They may
+  produce a `generated_case_human_review_decision_application_preflight`
+  artifact id, preflight summary, eligibility status, mapped review action,
+  eligible candidate ids, ineligible candidate ids, blocked action reasons,
+  required edit summary, required human confirmation summary, decision-label
+  preflight summaries, ReviewHistory handoff links, failure code, and visible
+  reason.
+- Eligibility status values are `eligible`, `ineligible`, `blocked`, and
+  `failed_validation`. They must not transition a GeneratedCaseCandidate to
+  approved, approved_after_edit, rejected, needs_optimization, or
+  optimization_pending_review. Existing human review transitions remain the
+  only approval/rejection/request-optimization path.
+- Mapped review action values are `approve`, `approve_after_edit`,
+  `request_optimization`, `reject`, and `none`. They are planned action labels
+  only and must not invoke the existing review action.
+- Decision-label mapping is strict. `accepted_for_future_promotion` may map
+  only to future `approve` when evidence chain status is `complete`, the
+  candidate status is reviewable, and required human confirmation summary is
+  present. `accepted_with_required_edits` may map only to future
+  `approve_after_edit` when requested edit fields are present and bounded.
+  `needs_optimization` may map only to future `request_optimization` when an
+  optimization request summary is present and bounded.
+  `rejected_for_insufficient_evidence` may map only to future `reject` when
+  rejection reasons and visible reason are present. `blocked`, `duplicate`,
+  `needs_more_evidence`, and `failed_validation` must map to `none` and remain
+  ineligible until a later explicit human action resolves them.
+- Invalid, stale, unsafe, cross-project, unbounded,
+  audit-handoff-missing, audit-handoff-invalid, audit-handoff-mismatched,
+  summary-export-missing, summary-export-invalid, summary-export-mismatched,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, decision-label-unsupported,
+  mapped-action-unsupported, required-edit-missing,
+  required-confirmation-missing, review-history-missing,
+  source-hash-mismatched, artifact-mismatched, incomplete-required-input,
+  credential-required, runtime-required, provider-required, approval-required,
+  optimization-required, or promotion-required input must produce
+  `generated_case_human_review_decision_application_preflight_failed_validation`
+  with a failure code and visible reason and must not append a successful
+  application preflight or successful ReviewHistory decision.
+- Application preflight states must not create backend runtime APIs,
+  endpoints, routers, services, workers, queues, schedulers, migrations,
+  frontend pages, reports, report renderers, export/download endpoints,
+  provider integrations, provider SDK calls, external calls, credentials,
+  remote URL fetches, vector indexes, embeddings, reranking, graph jobs, MCP
+  runtime calls, runtime retrieval, prompt execution, AITask orchestration,
+  TestCase promotion, GeneratedCaseCandidate approve/reject mutation, request
+  optimization mutation, automation draft creation, ToolInvocation rows,
+  TestRun/TestResult rows, artifact upload, prompt context evidence mutation,
+  KnowledgeEvidence mutation, TestKnowledgeCard mutation, ReviewHistory
+  mutation, generated case human review decision audit handoff artifact
+  mutation, generated case human review decision summary export artifact
+  mutation, generated case human review decision artifact mutation, evidence
+  package mutation, source evidence mutation, historical evidence mutation,
+  runner behavior changes, remote CI provider behavior, RBAC, tenants,
+  permissions, or package upgrades.
+
 ## 7.3 KnowledgeFeedbackDraft State Contract
 
 KnowledgeFeedbackAgent output is draft feedback evidence. It is not a
