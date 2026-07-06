@@ -1,5 +1,46 @@
 # Session Handoff
 
+## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Golden Smoke
+
+Completed:
+
+- Added Generated Case Human Review Decision Summary Export golden fixture:
+  `docs/fixtures/44-generated-case-human-review-decision-summary-export-golden.md`.
+- Added focused golden smoke:
+  `backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py`.
+- The golden covers
+  `generated_case_human_review_decision_summary_export`,
+  `build_generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_artifact_id`,
+  `generated_case_human_review_evidence_package_artifact_id`, exported
+  decision groups, included/excluded decision artifact ids, source
+  traceability summary, ReviewHistory links, failure behavior, and forbidden
+  side effects.
+- The smoke proves no backend runtime API, frontend, report renderer,
+  export/download endpoint, provider SDK, external call, vector database,
+  embedding, reranking, prompt execution, candidate approval/rejection,
+  request optimization mutation, TestCase promotion, automation draft
+  creation, RBAC, tenants, permissions, package upgrade, or source evidence
+  mutation is introduced by the contract.
+- `NEXT_AI_TASK.md` now points to Slice 56 Completion Gate.
+
+Verification:
+
+```powershell
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py -q
+git diff --check
+```
+
+Result:
+
+- `4 passed in 1.02s`.
+- Diff check reported no whitespace errors; existing LF-to-CRLF warnings only.
+
+Next recommended task:
+
+- Commit `test(golden): add generated case human review decision summary export smoke`.
+- Continue Slice 56 Completion Gate from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Contracts
 
 Completed:

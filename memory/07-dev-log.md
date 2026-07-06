@@ -1,5 +1,37 @@
 # Development Log
 
+## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Golden Smoke
+
+### Completed
+
+- Added Generated Case Human Review Decision Summary Export golden fixture:
+  `docs/fixtures/44-generated-case-human-review-decision-summary-export-golden.md`.
+- Added focused golden smoke:
+  `backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py`.
+- The golden locks
+  `generated_case_human_review_decision_summary_export`,
+  `build_generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_artifact_id`,
+  `generated_case_human_review_evidence_package_artifact_id`, exported
+  decision groups, included/excluded decision artifact ids, source
+  traceability summary, ReviewHistory, failure behavior, and forbidden side
+  effects.
+- Updated the Slice 56 task table with Task 2 commit `7262a88` and Task 3
+  status.
+- Updated `NEXT_AI_TASK.md` to Slice 56 Completion Gate.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py -q`
+- Result: `4 passed in 1.02s`.
+- `git diff --check`
+- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
+  working-copy warnings.
+
+### Next Step
+
+- Commit Task 3, then complete Slice 56.
+
 ## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Contracts
 
 ### Completed
