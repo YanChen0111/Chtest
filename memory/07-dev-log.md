@@ -6235,3 +6235,38 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Commit Task 2, then execute Slice 58 Task 3 from `NEXT_AI_TASK.md`.
+
+## 2026-07-07 Slice 58 Generated Case Human Review Decision Application Preflight Golden Smoke
+
+### Completed
+
+- Completed Slice 58 Task 3: added the Generated Case Human Review Decision
+  Application Preflight golden fixture and smoke test.
+- Added
+  `docs/fixtures/46-generated-case-human-review-decision-application-preflight-golden.md`
+  to lock the fixture surface around audit handoff artifact linkage, summary
+  export artifact linkage, decision artifact linkage, evidence package
+  linkage, mapped review action, eligibility status, eligible/ineligible
+  candidate ids, blocked action reasons, required edit summary, required
+  human confirmation summary, ReviewHistory handoff links, failure code,
+  visible reason, state transitions, and forbidden side effects.
+- Added
+  `backend/app/tests/golden/test_generated_case_human_review_decision_application_preflight_contract_golden.py`
+  to statically verify the fixture, Slice 58 plan, and data/API/state/artifact
+  prompt-skill contracts.
+- Kept the task golden-only: no runtime API, frontend page, report renderer,
+  export/download endpoint, provider SDK, external call, vector database,
+  embedding, reranking, prompt execution, candidate approval/rejection,
+  request optimization, TestCase promotion, automation draft creation, RBAC,
+  tenants, permissions, package upgrade, or source evidence mutation.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_application_preflight_contract_golden.py -q`
+- Result: `4 passed in 1.72s`.
+- `git diff --check`
+- Result: no errors; existing LF-to-CRLF warnings only.
+
+### Next Step
+
+- Commit Task 3, then execute Slice 58 completion gate from `NEXT_AI_TASK.md`.

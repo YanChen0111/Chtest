@@ -240,8 +240,8 @@ the data, API, state, artifact, and prompt/skill contracts consistently:
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
 | Add Generated Case Human Review Decision Application Preflight task plan | done | See Task 1 verification command | fe749e6 | planning-only |
-| Define Generated Case Human Review Decision Application Preflight contracts | done | See Task 2 verification command | pending | contract-only |
-| Add Generated Case Human Review Decision Application Preflight golden smoke | planned | See Task 3 verification command | pending | no approval/promotion/runtime/report/export integration |
+| Define Generated Case Human Review Decision Application Preflight contracts | done | See Task 2 verification command | a5b385f | contract-only |
+| Add Generated Case Human Review Decision Application Preflight golden smoke | done | See Task 3 verification command | pending | no approval/promotion/runtime/report/export integration |
 | Slice 58 completion gate | planned | See completion gate verification command | pending | docs and handoff |
 
 ## Task 1: Add Generated Case Human Review Decision Application Preflight Task Plan

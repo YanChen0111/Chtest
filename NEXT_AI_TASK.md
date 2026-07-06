@@ -11,17 +11,13 @@ Slice 58: Generated Case Human Review Decision Application Preflight Contract.
 
 ## Current Task
 
-Slice 58 Task 3: Add Generated Case Human Review Decision Application
-Preflight golden smoke.
+Slice 58 completion gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a golden smoke fixture and test proving the
-Generated Case Human Review Decision Application Preflight contract remains
-eligibility evidence only and cannot approve or reject GeneratedCaseCandidate
-records, request optimization, promote TestCases, create automation drafts,
-render reports, expose export/download endpoints, or create runtime,
-provider, prompt-execution, or retrieval behavior.
+After this task, Chtest has Slice 58 verified, the task table records Task
+1-3 commits, V2 scope options recommend the next narrow slice, and handoff
+memory plus `NEXT_AI_TASK.md` point to the next task.
 
 ## Must Read
 
@@ -50,15 +46,14 @@ provider, prompt-execution, or retrieval behavior.
 Update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_generated_case_human_review_decision_application_preflight_contract_golden.py
-docs/fixtures/46-generated-case-human-review-decision-application-preflight-golden.md
 docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden test and fixture only. Do not add frontend code, backend runtime
+Completion docs and handoff only. Do not add frontend code, backend runtime
 feature code, backend feature API, endpoint, router, service, worker, queue,
 scheduler, migration, package upgrade, provider integration, provider SDK,
 external call, vector database, embeddings, reranking, graph runtime, MCP
@@ -76,32 +71,21 @@ backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generat
 git diff --check
 ```
 
-Expected result: golden smoke passes and diff check passes.
+Expected result: focused golden verification passes and diff check passes.
 
 ## Acceptance
 
-- Golden names Generated Case Human Review Decision Application Preflight,
-  `generated_case_human_review_decision_application_preflight`,
-  `preflight_generated_case_human_review_decision_application`, audit handoff
-  artifact id, summary export artifact id, decision artifact id, evidence
-  package artifact id, mapped review action, eligibility status, eligible
-  candidate ids, ineligible candidate ids, blocked action reasons, required
-  edit summary, required human confirmation summary, ReviewHistory handoff
-  links, failure code, and visible reason.
-- Golden asserts the preflight remains eligibility evidence and cannot perform
-  runtime APIs, frontend, report rendering, export/download endpoints,
-  provider integrations, SDKs, external calls, vector database, embeddings,
-  reranking, prompt execution, candidate approval/rejection, request
-  optimization, TestCase promotion, automation draft creation, RBAC, tenants,
-  permissions, or package upgrades.
-- `NEXT_AI_TASK.md` points to Slice 58 completion gate.
+- Slice 58 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next task.
 
 ## Commit Message
 
 ```text
-test(golden): add generated case human review decision application preflight smoke
+docs(v2): complete generated case human review decision application preflight slice
 ```
 
 ## Next Task
 
-Slice 58 completion gate.
+Next narrow V2 slice selected by the completion gate.

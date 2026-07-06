@@ -11457,3 +11457,39 @@ git diff --check
 - Commit with:
   `docs(v2): define generated case human review decision application preflight contracts`.
 - Then execute Slice 58 Task 3 from `NEXT_AI_TASK.md`.
+
+## 2026-07-07 Slice 58 Generated Case Human Review Decision Application Preflight Golden Smoke
+
+### Current State
+
+- Slice 58 Task 3 is implemented and verified pending commit.
+- Added the generated case human review decision application preflight golden
+  fixture and smoke test.
+- The golden locks Generated Case Human Review Decision Application Preflight,
+  `generated_case_human_review_decision_application_preflight`,
+  `preflight_generated_case_human_review_decision_application`, audit handoff
+  artifact linkage, summary export artifact linkage, decision artifact
+  linkage, evidence package linkage, mapped review action, eligibility
+  status, eligible candidate ids, ineligible candidate ids, blocked action
+  reasons, required edit summary, required human confirmation summary,
+  ReviewHistory handoff links, failure code, visible reason, state
+  transitions, API payload fields, and forbidden runtime side effects.
+- Updated the Slice 58 task table so Task 2 records commit `a5b385f` and
+  Task 3 is done with commit pending.
+- Updated `NEXT_AI_TASK.md` to point to Slice 58 completion gate.
+
+### Verification Run
+
+```powershell
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_application_preflight_contract_golden.py -q
+git diff --check
+```
+
+- Result: `4 passed in 1.72s`; `git diff --check` reported no errors and
+  only existing LF-to-CRLF warnings.
+
+### Next Step
+
+- Commit with:
+  `test(golden): add generated case human review decision application preflight smoke`.
+- Then execute Slice 58 completion gate from `NEXT_AI_TASK.md`.
