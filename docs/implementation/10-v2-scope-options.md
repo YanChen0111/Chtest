@@ -4210,3 +4210,5 @@ Expected output:
 - No contract edits or product code until the plan defines handoff inputs,
   outputs, failure behavior, artifact boundaries, golden smoke plan, and
   non-goals.
+- Slice plan added:
+  `docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md`.

@@ -1,5 +1,44 @@
 # Session Handoff
 
+## 2026-07-05 Slice 57 Generated Case Human Review Decision Audit Handoff Plan
+
+Completed:
+
+- Added Slice 57 plan:
+  `docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md`.
+- The plan scopes Generated Case Human Review Decision Audit Handoff as
+  contract-only evidence-chain packaging over Slice 56 summary export
+  artifacts. It does not approve/reject GeneratedCaseCandidate rows, request
+  optimization, promote TestCase rows, create AutomationDraft rows, render
+  reports, expose export/download endpoints, or add runtime/provider/retrieval
+  behavior.
+- The plan names summary export artifact linkage, source decision artifact
+  linkage, evidence package artifact linkage, evidence chain status, included
+  artifact ids, excluded artifact reasons, unresolved follow-up flags, source
+  traceability handoff summary, ReviewHistory links, failure behavior, and
+  forbidden side effects.
+- `NEXT_AI_TASK.md` now points to Slice 57 Task 2: Define Generated Case Human
+  Review Decision Audit Handoff contracts.
+
+Verification:
+
+```powershell
+if (-not (Test-Path docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md)) { exit 1 }
+rg -n "Generated Case Human Review Decision Audit Handoff|generated_case_human_review_decision_audit_handoff|build_generated_case_human_review_decision_audit_handoff|generated_case_human_review_decision_summary_export_artifact_id|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|evidence chain status|unresolved follow-up flags|source traceability handoff summary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md
+git diff --check
+```
+
+Result:
+
+- Focused PowerShell plan-term check passed with `plan terms ok`.
+- `git diff --check` passed with no whitespace errors; Git reported expected
+  Windows LF-to-CRLF working-copy warnings.
+
+Next recommended task:
+
+- Commit `docs(v2): add generated case human review decision audit handoff plan`.
+- Continue Slice 57 Task 2 from `NEXT_AI_TASK.md`.
+
 ## 2026-07-05 Slice 56 Completion Gate
 
 Completed:
