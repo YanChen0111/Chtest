@@ -392,6 +392,53 @@ Slice 56 generated case human review decision summary export rules:
   promotion-required input must produce failure code and visible reason and
   must not append a successful summary export.
 
+Slice 57 generated case human review decision audit handoff rules:
+
+- Generated Case Human Review Decision Audit Handoff is a contract-only
+  evidence-chain package over a same-project
+  `generated_case_human_review_decision_summary_export` artifact. It carries
+  summary export linkage, generated case human review decision artifact ids,
+  generated case human review evidence package artifact ids, exported
+  decision groups, included artifact ids, excluded artifact reasons,
+  unresolved follow-up flags, source traceability handoff summary,
+  ReviewHistory links, failure code, and visible reason without approving or
+  rejecting candidates.
+- The contract-only audit handoff action is
+  `build_generated_case_human_review_decision_audit_handoff`. Future payloads
+  may store
+  `generated_case_human_review_decision_audit_handoff_action=build_generated_case_human_review_decision_audit_handoff`.
+- Inputs must preserve
+  `generated_case_human_review_decision_summary_export_artifact_id`,
+  `generated_case_human_review_decision_artifact_id` values,
+  `generated_case_human_review_evidence_package_artifact_id` values, exported
+  decision groups, included decision artifact ids, excluded decision artifact
+  ids, excluded decision artifact reasons, source traceability summary,
+  ReviewHistory summary, ReviewHistory ids or ReviewHistory links, source
+  hashes, source manifest ids, failure code, and visible reason.
+- Outputs may include generated case human review decision audit handoff id or
+  handoff artifact id, `generated_case_human_review_decision_audit_handoff`,
+  handoff summary, evidence chain status, included artifact ids, excluded
+  artifact reasons, accepted-for-future-promotion handoff summary,
+  accepted-with-required-edits handoff summary, needs-optimization handoff
+  summary, rejected-for-insufficient-evidence handoff summary, blocked
+  handoff summary, duplicate handoff summary, needs-more-evidence handoff
+  summary, failed-validation handoff summary, unresolved follow-up flags,
+  unresolved blocker summary, source traceability handoff summary,
+  ReviewHistory links, failure code, and visible reason.
+- Evidence chain status values may include `complete`, `incomplete`,
+  `blocked`, and `failed_validation`. These labels are audit handoff evidence
+  only and must not mutate GeneratedCaseCandidate status.
+- Invalid, stale, unsafe, cross-project, unbounded, summary-export-missing,
+  summary-export-invalid, summary-export-mismatched,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, decision-label-unsupported,
+  review-history-missing, source-hash-mismatched, artifact-mismatched,
+  credential-required, runtime-required, provider-required,
+  approval-required, optimization-required, or promotion-required input must
+  produce failure code and visible reason and must not append a successful
+  audit handoff.
+
 ## 15. TestCase
 
 | Field | Type | Required | Default | Notes |
@@ -2092,7 +2139,7 @@ ToolInvocation safety rules:
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, generated_case_human_review_evidence_package, generated_case_human_review_decision, generated_case_human_review_decision_summary_export, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, knowledge_adapter_provider_evaluation_review_audit_handoff, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval, generated_case_human_review_evidence_package, generated_case_human_review_decision, generated_case_human_review_decision_summary_export, generated_case_human_review_decision_audit_handoff, knowledge_adapter_provider_evaluation_plan, knowledge_adapter_provider_evaluation_review_decision, knowledge_adapter_provider_evaluation_review_summary_export, knowledge_adapter_provider_evaluation_review_audit_handoff, test_knowledge_card_retrieval_boundary, test_knowledge_card_prompt_context_evidence, test_knowledge_card_prompt_context_consumption, test_knowledge_card_prompt_context_audit_summary, test_knowledge_card_prompt_context_audit_review_decision, test_knowledge_card_prompt_context_audit_review_summary_export, test_knowledge_card_prompt_context_review_discrepancy, test_knowledge_card_prompt_context_discrepancy_resolution_review, test_knowledge_card_prompt_context_discrepancy_resolution_summary_export, test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -2219,6 +2266,48 @@ Generated Case Human Review Decision Summary Export Artifact rule:
   retrieval, call providers, call provider SDKs, create vector indexes, create
   embeddings, rerank, run graph jobs, invoke MCP runtime, render frontend
   pages, add RBAC, create tenants, change permissions, or install packages.
+
+Generated Case Human Review Decision Audit Handoff Artifact rule:
+
+- Slice 57 generated case human review decision audit handoffs may use
+  `artifact_type=generated_case_human_review_decision_audit_handoff` in a
+  later scoped implementation.
+- `owner_entity_type=GeneratedCaseCandidate` with
+  `owner_entity_id=candidate_id` may be used for a single-candidate handoff.
+  `owner_entity_type=AITask` or `owner_entity_type=Project` may be used for a
+  multi-decision handoff, but metadata must preserve
+  `generated_case_human_review_decision_summary_export_artifact_id`, every
+  `generated_case_human_review_decision_artifact_id`, and every linked
+  `generated_case_human_review_evidence_package_artifact_id`.
+- `metadata_json` must include
+  `created_by_component=GeneratedCaseHumanReviewDecisionAuditHandoff`,
+  `generated_case_human_review_decision_audit_handoff_action=build_generated_case_human_review_decision_audit_handoff`,
+  `generated_case_human_review_decision_summary_export_artifact_id`,
+  `generated_case_human_review_decision_artifact_id` values,
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  exported decision groups, included decision artifact ids, excluded decision
+  artifact ids, excluded decision artifact reasons, handoff summary, evidence
+  chain status, included artifact ids, excluded artifact reasons,
+  accepted-for-future-promotion handoff summary,
+  accepted-with-required-edits handoff summary, needs-optimization handoff
+  summary, rejected-for-insufficient-evidence handoff summary, blocked
+  handoff summary, duplicate handoff summary, needs-more-evidence handoff
+  summary, failed-validation handoff summary, unresolved follow-up flags,
+  unresolved blocker summary, source traceability handoff summary, source
+  traceability summary, source manifest ids, source hashes, ReviewHistory
+  links, ReviewHistory summary, failure code, and visible reason when
+  applicable.
+- This artifact is audit handoff evidence only. It must not approve or reject
+  GeneratedCaseCandidate rows, request optimization, promote TestCase rows,
+  create AutomationDraft rows, mutate GeneratedCaseCandidate content, mutate
+  generated case human review decision summary export artifacts, mutate
+  generated case human review decision artifacts, mutate evidence packages,
+  mutate ReviewHistory, mutate KnowledgeEvidence, mutate prompt context
+  evidence, mutate source evidence, upload artifacts, render reports, expose
+  export/download endpoints, run prompts, execute AITasks, run retrieval, call
+  providers, call provider SDKs, create vector indexes, create embeddings,
+  rerank, run graph jobs, invoke MCP runtime, render frontend pages, add
+  RBAC, create tenants, change permissions, or install packages.
 
 KnowledgeAdapter provider evaluation plan Artifact rule:
 

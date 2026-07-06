@@ -1848,7 +1848,170 @@ Generated Case Human Review Decision Summary Export hard rules:
   historical evidence mutation, runner behavior changes, remote CI provider
   behavior, RBAC, tenants, permissions, or package upgrades.
 
-### 3.5.4 Knowledge Feedback Contract
+### 3.5.4 Generated Case Human Review Decision Audit Handoff Contract
+
+This section is contract-only. It defines future Generated Case Human Review
+Decision Audit Handoff semantics for packaging Slice 56 summary export
+evidence into an evidence-chain handoff bundle. It does not add a
+`POST /api/generated-case-review-decision-audit-handoffs` endpoint, backend
+feature API, router, service, worker, queue, scheduler, frontend page, report
+generation behavior, report renderer, export/download endpoint, migration, or
+package upgrade.
+
+Allowed generated case human review decision audit handoff action:
+
+- `build_generated_case_human_review_decision_audit_handoff`: future scoped
+  handoff action that packages
+  `generated_case_human_review_decision_summary_export_artifact_id`, source
+  `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values, exported
+  decision groups, included decision artifact ids, excluded decision artifact
+  ids, excluded decision artifact reasons, source traceability summary,
+  ReviewHistory summary, source hashes, and source manifest ids into an audit
+  handoff without approving or rejecting candidates.
+
+Generated Case Human Review Decision Audit Handoff payload shape:
+
+```json
+{
+  generated_case_human_review_decision_audit_handoff_action: build_generated_case_human_review_decision_audit_handoff,
+  project_id: 00000000-0000-0000-0000-000000000101,
+  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
+  generated_case_human_review_decision_artifact_ids: [
+    00000000-0000-0000-0000-000000000940,
+    00000000-0000-0000-0000-000000000941
+  ],
+  generated_case_human_review_evidence_package_artifact_ids: [
+    00000000-0000-0000-0000-000000000930,
+    00000000-0000-0000-0000-000000000931
+  ],
+  exported_decision_groups: {
+    accepted_for_future_promotion: [00000000-0000-0000-0000-000000000941],
+    accepted_with_required_edits: [00000000-0000-0000-0000-000000000940],
+    needs_optimization: [],
+    rejected_for_insufficient_evidence: [],
+    blocked: [],
+    duplicate: [],
+    needs_more_evidence: [],
+    failed_validation: []
+  },
+  included_decision_artifact_ids: [
+    00000000-0000-0000-0000-000000000940,
+    00000000-0000-0000-0000-000000000941
+  ],
+  excluded_decision_artifact_ids: [],
+  excluded_decision_artifact_reasons: [],
+  source_traceability_summary: source hashes and ReviewHistory links preserved,
+  review_history_summary: one reviewer decision linked,
+  review_history_links: [00000000-0000-0000-0000-000000000895],
+  source_manifest_ids: [generated-case-review-source-manifest-001],
+  source_hashes: [sha256:generated-case-review-evidence],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+Generated Case Human Review Decision Audit Handoff response shape for a future
+scoped implementation:
+
+```json
+{
+  generated_case_human_review_decision_audit_handoff_action: build_generated_case_human_review_decision_audit_handoff,
+  generated_case_human_review_decision_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000960,
+  generated_case_human_review_decision_audit_handoff: generated_case_human_review_decision_audit_handoff,
+  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
+  handoff_summary: human review decision evidence is ready for future audit review,
+  evidence_chain_status: complete,
+  included_artifact_ids: [
+    00000000-0000-0000-0000-000000000930,
+    00000000-0000-0000-0000-000000000940,
+    00000000-0000-0000-0000-000000000950
+  ],
+  excluded_artifact_reasons: [],
+  exported_decision_groups: {
+    accepted_for_future_promotion: [00000000-0000-0000-0000-000000000941],
+    accepted_with_required_edits: [00000000-0000-0000-0000-000000000940],
+    needs_optimization: [],
+    rejected_for_insufficient_evidence: [],
+    blocked: [],
+    duplicate: [],
+    needs_more_evidence: [],
+    failed_validation: []
+  },
+  included_decision_artifact_ids: [00000000-0000-0000-0000-000000000940],
+  excluded_decision_artifact_ids: [],
+  excluded_decision_artifact_reasons: [],
+  accepted_for_future_promotion_handoff_summary: one candidate is future planning evidence only,
+  accepted_with_required_edits_handoff_summary: one candidate needs explicit edits,
+  needs_optimization_handoff_summary: none,
+  rejected_for_insufficient_evidence_handoff_summary: none,
+  blocked_handoff_summary: none,
+  duplicate_handoff_summary: none,
+  needs_more_evidence_handoff_summary: none,
+  failed_validation_handoff_summary: none,
+  unresolved_follow_up_flags: [],
+  unresolved_blocker_summary: none,
+  source_traceability_summary: source hashes and source manifest ids preserved,
+  source_traceability_handoff_summary: summary export, decision, evidence package, and ReviewHistory links preserved,
+  review_history_links: [00000000-0000-0000-0000-000000000895],
+  failure_code: null,
+  visible_reason: null
+}
+```
+
+Generated Case Human Review Decision Audit Handoff hard rules:
+
+- Audit handoff input must reference a same-project
+  `generated_case_human_review_decision_summary_export_artifact_id`, its
+  source `generated_case_human_review_decision_artifact_id` values, and linked
+  `generated_case_human_review_evidence_package_artifact_id` values.
+- Audit handoff output is evidence-chain packaging only. It may record audit
+  handoff artifact id, handoff summary, evidence chain status, included
+  artifact ids, excluded artifact reasons, exported decision groups, included
+  decision artifact ids, excluded decision artifact ids, excluded decision
+  artifact reasons, decision-label handoff summaries, unresolved follow-up
+  flags, unresolved blocker summary, source traceability summary, source
+  traceability handoff summary, ReviewHistory links, failure code, and visible
+  reason.
+- Evidence chain status values may include `complete`, `incomplete`,
+  `blocked`, and `failed_validation`. They must not approve candidates,
+  reject candidates, request optimization, promote TestCase rows, create
+  AutomationDraft rows, execute automation, create reports, expose
+  export/download endpoints, or set `used_knowledge=true`.
+- Accepted-for-future-promotion and accepted-with-required-edits handoff
+  summaries are future-planning labels only. Needs-optimization handoff
+  summaries must not trigger the existing request optimization transition.
+- Invalid, stale, unsafe, cross-project, unbounded,
+  summary-export-missing, summary-export-invalid, summary-export-mismatched,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, review-decision-missing,
+  review-decision-invalid, decision-label-unsupported,
+  review-history-missing, source-hash-mismatched, artifact-mismatched,
+  incomplete-required-input, credential-required, runtime-required,
+  provider-required, approval-required, optimization-required, or
+  promotion-required input must return failure code and visible reason and
+  must not append a successful audit handoff or successful ReviewHistory
+  decision.
+- `build_generated_case_human_review_decision_audit_handoff` must not create
+  backend runtime APIs, endpoints, routers, services, workers, queues,
+  schedulers, migrations, frontend pages, reports, report renderers,
+  export/download endpoints, provider integrations, provider SDK calls,
+  external calls, credentials, remote URL fetches, vector indexes, embeddings,
+  reranking, graph jobs, MCP runtime calls, runtime retrieval, prompt
+  execution, AITask orchestration, TestCase promotion, GeneratedCaseCandidate
+  approve/reject mutation, request optimization mutation, automation draft
+  creation, ToolInvocation rows, TestRun/TestResult rows, artifact upload,
+  Artifact rows outside declared audit handoff evidence, generated case human
+  review decision summary export artifact mutation, generated case human
+  review decision artifact mutation, evidence package mutation, prompt
+  context evidence mutation, KnowledgeEvidence mutation, ReviewHistory
+  mutation, source evidence mutation, historical evidence mutation, runner
+  behavior changes, remote CI provider behavior, RBAC, tenants, permissions,
+  or package upgrades.
+
+### 3.5.5 Knowledge Feedback Contract
 
 This section is contract-only. It defines the API payload shape that a future
 KnowledgeFeedbackAgent may return through existing AITask/artifact surfaces. It

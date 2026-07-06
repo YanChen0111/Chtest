@@ -309,6 +309,96 @@ Generated Case Human Review Decision Summary Export state rules:
   runner behavior changes, remote CI provider behavior, RBAC, tenants,
   permissions, or package upgrades.
 
+### 3.4 Generated Case Human Review Decision Audit Handoff State Contract
+
+This state contract is planning-only. It defines future audit handoff labels
+for Generated Case Human Review Decision Summary Export evidence before any
+backend runtime API, frontend page, report renderer, export/download endpoint,
+provider integration, provider SDK, external call, vector database, embedding,
+reranking, graph runtime, MCP runtime, runtime retrieval, prompt execution,
+AITask orchestration, TestCase promotion, GeneratedCaseCandidate
+approve/reject mutation, request optimization mutation, automation draft
+creation, RBAC, tenants, or permissions exist.
+
+```text
+generated_case_human_review_decision_summary_exported_for_human_review_audit -> generated_case_human_review_decision_audit_handoff_pending
+generated_case_human_review_decision_summary_export_incomplete -> generated_case_human_review_decision_audit_handoff_pending
+generated_case_human_review_decision_summary_export_failed_validation -> generated_case_human_review_decision_audit_handoff_failed_validation
+generated_case_human_review_decision_audit_handoff_pending -> generated_case_human_review_decision_audit_handoff_complete
+generated_case_human_review_decision_audit_handoff_pending -> generated_case_human_review_decision_audit_handoff_incomplete
+generated_case_human_review_decision_audit_handoff_pending -> generated_case_human_review_decision_audit_handoff_blocked
+generated_case_human_review_decision_audit_handoff_pending -> generated_case_human_review_decision_audit_handoff_failed_validation
+```
+
+| Current state | Action | Target state | Actor | Notes |
+|---|---|---|---|---|
+| generated_case_human_review_decision_summary_exported_for_human_review_audit | build_generated_case_human_review_decision_audit_handoff | generated_case_human_review_decision_audit_handoff_pending | Future workflow/API | Starts audit handoff evidence packaging |
+| generated_case_human_review_decision_summary_export_incomplete | build_generated_case_human_review_decision_audit_handoff | generated_case_human_review_decision_audit_handoff_pending | Future workflow/API | Carries excluded decision artifact reasons forward |
+| generated_case_human_review_decision_summary_export_failed_validation | build_generated_case_human_review_decision_audit_handoff | generated_case_human_review_decision_audit_handoff_failed_validation | Future workflow/API | Fails because summary export is already invalid |
+| generated_case_human_review_decision_audit_handoff_pending | complete | generated_case_human_review_decision_audit_handoff_complete | Future workflow/API | Records complete evidence chain status |
+| generated_case_human_review_decision_audit_handoff_pending | incomplete | generated_case_human_review_decision_audit_handoff_incomplete | Future workflow/API | Records missing or excluded artifact reasons |
+| generated_case_human_review_decision_audit_handoff_pending | blocked | generated_case_human_review_decision_audit_handoff_blocked | Future workflow/API | Records unresolved blocker summary |
+| generated_case_human_review_decision_audit_handoff_pending | failed_validation | generated_case_human_review_decision_audit_handoff_failed_validation | Future workflow/API | Records failure code and visible reason |
+
+Generated Case Human Review Decision Audit Handoff state rules:
+
+- `build_generated_case_human_review_decision_audit_handoff` requires
+  `generated_case_human_review_decision_summary_export_artifact_id`, source
+  `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values, exported
+  decision groups, included decision artifact ids, excluded decision artifact
+  ids, excluded decision artifact reasons, source traceability summary,
+  ReviewHistory summary, ReviewHistory links, source hashes, and source
+  manifest ids.
+- Audit handoff states are evidence-chain labels only. They may produce a
+  `generated_case_human_review_decision_audit_handoff` artifact id, handoff
+  summary, evidence chain status, included artifact ids, excluded artifact
+  reasons, accepted-for-future-promotion handoff summary,
+  accepted-with-required-edits handoff summary, needs-optimization handoff
+  summary, rejected-for-insufficient-evidence handoff summary, blocked
+  handoff summary, duplicate handoff summary, needs-more-evidence handoff
+  summary, failed-validation handoff summary, unresolved follow-up flags,
+  unresolved blocker summary, source traceability summary, source
+  traceability handoff summary, ReviewHistory links, failure code, and visible
+  reason.
+- Evidence chain status values are `complete`, `incomplete`, `blocked`, and
+  `failed_validation`. They must not transition a GeneratedCaseCandidate to
+  approved, approved_after_edit, rejected, needs_optimization, or
+  optimization_pending_review. Existing human review transitions remain the
+  only approval/rejection/request-optimization path.
+- Accepted-for-future-promotion and accepted-with-required-edits handoff
+  summaries are future-planning labels only. Needs-optimization handoff
+  summaries must not trigger the existing request_optimization transition.
+- Invalid, stale, unsafe, cross-project, unbounded,
+  summary-export-missing, summary-export-invalid, summary-export-mismatched,
+  decision-artifact-missing, decision-artifact-invalid,
+  decision-artifact-mismatched, evidence-package-missing,
+  evidence-package-mismatched, candidate-missing, candidate-mismatched,
+  candidate-status-invalid, review-decision-missing,
+  review-decision-invalid, decision-label-unsupported,
+  review-history-missing, source-hash-mismatched, artifact-mismatched,
+  incomplete-required-input, credential-required, runtime-required,
+  provider-required, approval-required, optimization-required, or
+  promotion-required input must produce
+  `generated_case_human_review_decision_audit_handoff_failed_validation` with
+  a failure code and visible reason and must not append a successful audit
+  handoff or successful ReviewHistory decision.
+- Audit handoff states must not create backend runtime APIs, endpoints,
+  routers, services, workers, queues, schedulers, migrations, frontend pages,
+  reports, report renderers, export/download endpoints, provider
+  integrations, provider SDK calls, external calls, credentials, remote URL
+  fetches, vector indexes, embeddings, reranking, graph jobs, MCP runtime
+  calls, runtime retrieval, prompt execution, AITask orchestration, TestCase
+  promotion, GeneratedCaseCandidate approve/reject mutation, request
+  optimization mutation, automation draft creation, ToolInvocation rows,
+  TestRun/TestResult rows, artifact upload, prompt context evidence mutation,
+  KnowledgeEvidence mutation, ReviewHistory mutation, generated case human
+  review decision summary export artifact mutation, generated case human
+  review decision artifact mutation, evidence package mutation, source
+  evidence mutation, historical evidence mutation, runner behavior changes,
+  remote CI provider behavior, RBAC, tenants, permissions, or package
+  upgrades.
+
 ## 7.3 KnowledgeFeedbackDraft State Contract
 
 KnowledgeFeedbackAgent output is draft feedback evidence. It is not a

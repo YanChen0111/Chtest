@@ -11293,3 +11293,39 @@ git diff --check
 - Commit with:
   `test(golden): add knowledge adapter provider evaluation review audit handoff smoke`.
 - Then complete Slice 53 completion gate.
+
+## 2026-07-06 Slice 57 Generated Case Human Review Decision Audit Handoff Contracts
+
+### Current State
+
+- Slice 57 Task 2 is implemented and verified pending commit.
+- Updated data, API, state-machine, artifact, and prompt/skill contracts for
+  Generated Case Human Review Decision Audit Handoff.
+- Added `generated_case_human_review_decision_audit_handoff`,
+  `build_generated_case_human_review_decision_audit_handoff`,
+  `generated_case_human_review_decision_summary_export_artifact_id`,
+  source `generated_case_human_review_decision_artifact_id` values, linked
+  `generated_case_human_review_evidence_package_artifact_id` values, evidence
+  chain status, included artifact ids, excluded artifact reasons, unresolved
+  follow-up flags, source traceability handoff summary, ReviewHistory links,
+  failure code, and visible reason to the contract set.
+- Updated Slice 57 task table so Task 1 records commit `90e1cd4` and Task 2
+  is done with commit pending.
+- Updated `NEXT_AI_TASK.md` to point to Slice 57 Task 3: Add Generated Case
+  Human Review Decision Audit Handoff golden smoke.
+
+### Verification Run
+
+```powershell
+rg -n "Generated Case Human Review Decision Audit Handoff|generated_case_human_review_decision_audit_handoff|build_generated_case_human_review_decision_audit_handoff|generated_case_human_review_decision_summary_export_artifact_id|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|evidence chain status|included artifact ids|excluded artifact reasons|unresolved follow-up flags|source traceability handoff summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md
+git diff --check
+```
+
+- Result: required contract terms found; `git diff --check` reported no
+  errors and only existing LF-to-CRLF warnings.
+
+### Next Step
+
+- Commit with:
+  `docs(v2): define generated case human review decision audit handoff contracts`.
+- Then execute Slice 57 Task 3 from `NEXT_AI_TASK.md`.

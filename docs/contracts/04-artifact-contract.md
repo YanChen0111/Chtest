@@ -33,6 +33,7 @@ artifacts/projects/{project_id}/ai-tasks/{ai_task_id}/
   knowledge_adapter_provider_evaluation_review_decision.json
   knowledge_adapter_provider_evaluation_review_summary_export.json
   knowledge_adapter_provider_evaluation_review_audit_handoff.json
+  generated_case_human_review_decision_audit_handoff.json
   test_knowledge_card_prompt_context_evidence.json
   test_knowledge_card_prompt_context_consumption.json
   test_knowledge_card_prompt_context_audit_summary.json
@@ -368,6 +369,7 @@ V1 ContextArtifact uses the Artifact table with `owner_entity_type=Project` and 
 | generated_case_human_review_evidence_package | application/json | Future generated case human review evidence package |
 | generated_case_human_review_decision | application/json | Future generated case human review decision evidence |
 | generated_case_human_review_decision_summary_export | application/json | Future generated case human review decision summary export evidence |
+| generated_case_human_review_decision_audit_handoff | application/json | Future generated case human review decision audit handoff evidence |
 | knowledge_adapter_provider_evaluation_plan | application/json | Future KnowledgeAdapter provider evaluation planning evidence |
 | knowledge_adapter_provider_evaluation_review_decision | application/json | Future KnowledgeAdapter provider evaluation review decision evidence |
 | knowledge_adapter_provider_evaluation_review_summary_export | application/json | Future KnowledgeAdapter provider evaluation review summary export evidence |
@@ -749,6 +751,61 @@ Generated case human review decision summary export artifact rules:
   indexes, create embeddings, rerank, run background indexing, run graph jobs,
   invoke MCP runtime, render frontend pages, call remote CI providers, add
   RBAC, create tenants, change permissions, or install packages.
+
+Generated case human review decision audit handoff artifact rules:
+
+- `generated_case_human_review_decision_audit_handoff.json` may be stored as
+  an Artifact with
+  `artifact_type=generated_case_human_review_decision_audit_handoff`,
+  `owner_entity_type=GeneratedCaseCandidate`, and
+  `owner_entity_id=candidate_id` for a single-candidate handoff, or with
+  `owner_entity_type=AITask` or `owner_entity_type=Project` for a
+  multi-decision handoff, and
+  `manifest_kind=generated_case_human_review_decision_audit_handoff` in a
+  later scoped implementation.
+- The artifact must include
+  `created_by_component=GeneratedCaseHumanReviewDecisionAuditHandoff`,
+  `generated_case_human_review_decision_audit_handoff_action=build_generated_case_human_review_decision_audit_handoff`,
+  `generated_case_human_review_decision_summary_export_artifact_id`,
+  `generated_case_human_review_decision_artifact_id` values,
+  `generated_case_human_review_evidence_package_artifact_id` values,
+  GeneratedCaseCandidate ids/statuses, candidate summaries, decision labels,
+  decision statuses, exported decision groups, included decision artifact
+  ids, excluded decision artifact ids, excluded decision artifact reasons,
+  source traceability summary, source manifest ids, source hashes,
+  ReviewHistory links, ReviewHistory summary, handoff summary, evidence chain
+  status, included artifact ids, excluded artifact reasons,
+  accepted-for-future-promotion handoff summary,
+  accepted-with-required-edits handoff summary, needs-optimization handoff
+  summary, rejected-for-insufficient-evidence handoff summary, blocked
+  handoff summary, duplicate handoff summary, needs-more-evidence handoff
+  summary, failed-validation handoff summary, unresolved follow-up flags,
+  unresolved blocker summary, source traceability handoff summary, failure
+  code, and visible reason when applicable.
+- Evidence chain status values may include `complete`, `incomplete`,
+  `blocked`, and `failed_validation`.
+- Generated case human review decision audit handoff artifacts must be bounded
+  JSON. They must not contain raw LLM/provider payloads, unbounded source
+  text, credentials, API keys, tokens, OAuth state, remote fetch payloads,
+  vector store payloads, embedding vectors, reranker traces, graph runtime
+  payloads, executable prompt assembly payloads, runtime `prompt_input.json`,
+  frontend-rendered markup, report-rendered payloads, export-rendered
+  payloads, downloadable provider payloads, or generated replacement
+  evidence.
+- Generated case human review decision audit handoff artifacts must not
+  approve or reject GeneratedCaseCandidate rows, request optimization, promote
+  TestCase rows, create AutomationDraft rows, mutate GeneratedCaseCandidate
+  content, mutate generated case human review decision summary export
+  artifacts, mutate generated case human review decision artifacts, mutate
+  evidence packages, mutate ReviewHistory, mutate KnowledgeEvidence, mutate
+  prompt context evidence, mutate source evidence, mutate Artifact rows
+  outside declared audit handoff evidence, upload artifacts, render reports,
+  expose export/download endpoints, run prompt assembly, execute AITasks, call
+  providers, call provider SDKs, fetch remote URLs, change retrieval ranking,
+  create vector indexes, create embeddings, rerank, run background indexing,
+  run graph jobs, invoke MCP runtime, render frontend pages, call remote CI
+  providers, add RBAC, create tenants, change permissions, or install
+  packages.
 
 Knowledge feedback artifact rules:
 
