@@ -4087,3 +4087,126 @@ Expected output:
   and non-goals.
 - Slice plan added:
   `docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md`.
+
+## Completed Next V2 Slice
+
+Completed: Generated Case Human Review Decision Summary Export contract.
+
+Why it was selected:
+
+- Slice 55 recorded per-candidate generated case human review decision
+  evidence but did not provide a bounded export that grouped decision outcomes
+  for later audit or handoff work.
+- Slice 56 added a summary export evidence boundary over one or more decision
+  artifacts without mutating candidates, promoting TestCase rows, rendering
+  reports, exposing export/download endpoints, or adding runtime/UI/provider
+  behavior.
+
+Completed slice name:
+
+```text
+Slice 56: Generated Case Human Review Decision Summary Export Contract
+```
+
+Delivered output:
+
+- Slice plan, data/API/state/artifact/prompt-skill contracts, fixture,
+  contract-level golden smoke, and completion gate.
+- Generated Case Human Review Decision Summary Export is now a contract with
+  `build_generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_summary_export`,
+  `generated_case_human_review_decision_artifact_id`,
+  `generated_case_human_review_evidence_package_artifact_id`, exported
+  decision groups, accepted-for-future-promotion summary,
+  accepted-with-required-edits summary, needs-optimization summary,
+  rejected-for-insufficient-evidence summary, blocked summary, duplicate
+  summary, needs-more-evidence summary, failed-validation summary,
+  included/excluded decision artifact ids, excluded decision artifact reasons,
+  source traceability summary, ReviewHistory summary, failure code, and
+  visible reason.
+- No backend runtime API, frontend page, report renderer, export/download
+  endpoint, provider integration, provider SDK, external call, credential
+  handling, OAuth, vector database, embeddings, reranking, graph runtime, MCP
+  runtime, runtime retrieval, prompt execution, AITask orchestration,
+  automatic `used_knowledge=true`, GeneratedCaseCandidate approve/reject
+  mutation, request optimization mutation, TestCase promotion, automation
+  draft creation, artifact upload, RBAC, tenants, permissions, runner
+  behavior changes, remote CI behavior, or package upgrades were added.
+
+## Recommended Next V2 Slice
+
+Recommended: Generated Case Human Review Decision Audit Handoff contract.
+
+Why:
+
+- Slice 56 summarizes generated-case human review decisions, but it does not
+  define a final audit handoff artifact that bundles the summary export with
+  source decision artifacts, evidence package lineage, ReviewHistory, and
+  unresolved follow-up visibility.
+- The next narrow boundary is an audit handoff contract over the summary
+  export. It can package the summary export and source decision artifacts for
+  future review operations while preserving all labels as audit evidence.
+- Runtime review workflows, reports, downloads, and actual candidate mutation
+  should remain out of scope until the handoff evidence chain is complete.
+
+Next slice name:
+
+```text
+Slice 57: Generated Case Human Review Decision Audit Handoff Contract
+```
+
+Smallest useful boundary:
+
+- Define handoff inputs from
+  `generated_case_human_review_decision_summary_export_artifact_id`,
+  source `generated_case_human_review_decision_artifact_id` values,
+  linked `generated_case_human_review_evidence_package_artifact_id` values,
+  exported decision groups, included/excluded decision artifact ids,
+  source traceability summary, ReviewHistory summary, failure code, and
+  visible reason.
+- Define handoff outputs such as
+  `generated_case_human_review_decision_audit_handoff`,
+  `build_generated_case_human_review_decision_audit_handoff`, handoff artifact
+  id, handoff summary, evidence chain status, included artifact ids, excluded
+  artifact reasons, accepted-for-future-promotion handoff summary,
+  accepted-with-required-edits handoff summary, needs-optimization handoff
+  summary, rejected-for-insufficient-evidence handoff summary, blocked
+  handoff summary, duplicate handoff summary, needs-more-evidence handoff
+  summary, failed-validation handoff summary, unresolved follow-up flags,
+  unresolved blocker summary, source traceability handoff summary, failure
+  code, and visible reason.
+- Add one contract-level fixture and golden smoke after the audit handoff
+  contract is defined.
+
+Explicit non-goals:
+
+- No backend runtime API, endpoint, router, service, worker, queue, scheduler,
+  migration, or package upgrade.
+- No frontend page, store, component, report generation behavior, report
+  renderer, export/download endpoint, or backend feature API.
+- No actual GeneratedCaseCandidate approve/reject mutation, status mutation,
+  request optimization mutation, TestCase promotion, AutomationDraft creation,
+  ToolInvocation creation, TestRun/TestResult creation, runner behavior
+  change, or remote CI provider behavior.
+- No prompt execution, AITask orchestration, automatic `used_knowledge=true`,
+  provider integration, provider SDK, external call, credential handling,
+  OAuth, remote URL fetch, vector database, embeddings, reranking, graph
+  runtime, MCP runtime, runtime retrieval, RBAC, tenants, or permissions.
+- No mutation of summary export artifacts, decision artifacts, evidence
+  packages, GeneratedCaseCandidate content, KnowledgeEvidence, prompt-context
+  artifacts, ReviewHistory, historical evidence, or source artifacts.
+
+Suggested next task:
+
+```text
+Slice 57 Task 1: Add Generated Case Human Review Decision Audit Handoff task plan
+```
+
+Expected output:
+
+- A small slice plan under `docs/implementation/slices/`.
+- Plan file:
+  `docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md`.
+- No contract edits or product code until the plan defines handoff inputs,
+  outputs, failure behavior, artifact boundaries, golden smoke plan, and
+  non-goals.
