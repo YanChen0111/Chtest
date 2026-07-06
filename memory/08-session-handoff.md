@@ -11329,3 +11329,32 @@ git diff --check
 - Commit with:
   `docs(v2): define generated case human review decision audit handoff contracts`.
 - Then execute Slice 57 Task 3 from `NEXT_AI_TASK.md`.
+
+## 2026-07-06 Slice 57 Generated Case Human Review Decision Audit Handoff Golden Smoke
+
+### Current State
+
+- Slice 57 Task 3 is implemented and verified pending commit.
+- Added
+  `backend/app/tests/golden/test_generated_case_human_review_decision_audit_handoff_contract_golden.py`.
+- Added
+  `docs/fixtures/45-generated-case-human-review-decision-audit-handoff-golden.md`.
+- Updated Slice 57 task table so Task 2 records commit `efa3fd7` and Task 3
+  is done with commit pending.
+- Updated `NEXT_AI_TASK.md` to point to Slice 57 Completion Gate.
+
+### Verification Run
+
+```powershell
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_audit_handoff_contract_golden.py -q
+git diff --check
+```
+
+- Result: `4 passed in 1.31s`; `git diff --check` reported no errors and
+  only existing LF-to-CRLF warnings.
+
+### Next Step
+
+- Commit with:
+  `test(golden): add generated case human review decision audit handoff smoke`.
+- Then execute Slice 57 Completion Gate.

@@ -11,34 +11,27 @@ Slice 57: Generated Case Human Review Decision Audit Handoff Contract.
 
 ## Current Task
 
-Slice 57 Task 3: Add Generated Case Human Review Decision Audit Handoff golden
-smoke.
+Slice 57 Completion Gate.
 
 ## Product Value Answer
 
-After this task, Chtest has a contract-level golden fixture and smoke test
-proving Generated Case Human Review Decision Audit Handoff remains
-evidence-chain packaging only. It preserves Slice 56 summary export linkage,
-source decision artifacts, linked evidence package artifacts, evidence chain
-status, included/excluded artifact reasons, unresolved follow-up flags, source
-traceability handoff summary, ReviewHistory links, failure code, and visible
-reason without performing actual GeneratedCaseCandidate approval/rejection,
-request optimization, TestCase promotion, automation draft creation, runtime
-API work, UI work, report/export endpoints, or provider/retrieval behavior.
+After this task, Slice 57 is closed out with the task table recording Task
+1-3 commits, focused golden verification passing, memory updated, and the next
+narrow V2 task selected. The slice remains evidence-chain packaging only and
+does not create GeneratedCaseCandidate approval/rejection, request
+optimization, TestCase promotion, automation draft creation, runtime APIs,
+frontend surfaces, report/export endpoints, provider integration, or
+retrieval behavior.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/10-v2-scope-options.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `docs/contracts/04-artifact-contract.md`
-8. `docs/contracts/05-prompt-skill-contract.md`
-9. `docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md`
-10. `memory/08-session-handoff.md`
-11. `memory/07-dev-log.md`
+4. `docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md`
+5. `NEXT_AI_TASK.md`
+6. `memory/08-session-handoff.md`
+7. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
@@ -53,15 +46,14 @@ API work, UI work, report/export endpoints, or provider/retrieval behavior.
 Update only these files for the current task:
 
 ```text
-backend/app/tests/golden/test_generated_case_human_review_decision_audit_handoff_contract_golden.py
-docs/fixtures/45-generated-case-human-review-decision-audit-handoff-golden.md
 docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md
+docs/implementation/10-v2-scope-options.md
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 ```
 
-Golden smoke only. Do not add frontend code, backend runtime feature code,
+Completion gate only. Do not add frontend code, backend runtime feature code,
 backend feature API, endpoint, router, service, worker, queue, scheduler,
 migration, package upgrade, provider integration, provider SDK, external call,
 vector database, embeddings, reranking, graph runtime, MCP runtime, runtime
@@ -79,31 +71,22 @@ backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generat
 git diff --check
 ```
 
-Expected result: focused golden smoke passes and diff check passes.
+Expected result: focused golden verification passes and diff check passes.
 
 ## Acceptance
 
-- Golden names Generated Case Human Review Decision Audit Handoff,
-  `generated_case_human_review_decision_audit_handoff`,
-  `build_generated_case_human_review_decision_audit_handoff`, summary export
-  artifact id, decision artifact id, evidence package artifact id, evidence
-  chain status, included artifact ids, excluded artifact reasons, unresolved
-  follow-up flags, source traceability handoff summary, ReviewHistory, failure
-  behavior, and forbidden side effects.
-- Golden proves no backend runtime API, frontend, report renderer,
-  export/download endpoint, provider SDK, external call, vector database,
-  embedding, reranking, prompt execution, candidate approval/rejection,
-  request optimization mutation, TestCase promotion, automation draft
-  creation, RBAC, tenants, permissions, package upgrade, or source evidence
-  mutation is created by the contract.
-- `NEXT_AI_TASK.md` points to Slice 57 Completion Gate.
+- Slice 57 task table records Task 1-3 commits.
+- Focused golden verification passes.
+- V2 scope options and handoff memory recommend the next narrow slice.
+- `NEXT_AI_TASK.md` points to the next task.
 
 ## Commit Message
 
 ```text
-test(golden): add generated case human review decision audit handoff smoke
+docs(v2): complete generated case human review decision audit handoff slice
 ```
 
 ## Next Task
 
-Slice 57 Completion Gate.
+Select the next narrow V2 slice after reviewing
+`docs/implementation/10-v2-scope-options.md`.

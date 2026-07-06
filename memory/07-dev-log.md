@@ -6119,3 +6119,32 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Commit Task 2, then execute Slice 57 Task 3 from `NEXT_AI_TASK.md`: add the
   Generated Case Human Review Decision Audit Handoff golden smoke.
+
+## 2026-07-06 Slice 57 Generated Case Human Review Decision Audit Handoff Golden Smoke
+
+### Completed
+
+- Completed Slice 57 Task 3: added the contract-level golden smoke and fixture
+  for Generated Case Human Review Decision Audit Handoff.
+- Locked the audit handoff surface around summary export artifact linkage,
+  source decision artifact linkage, evidence package artifact linkage,
+  evidence chain status, included artifact ids, excluded artifact reasons,
+  included/excluded decision artifact ids, unresolved follow-up flags,
+  unresolved blocker summary, source traceability handoff summary,
+  ReviewHistory, failure code, and visible reason.
+- Kept the task contract-only: no runtime API, frontend page, report renderer,
+  export/download endpoint, provider SDK, external call, vector database,
+  embedding, reranking, prompt execution, candidate approval/rejection,
+  request optimization, TestCase promotion, automation draft creation, RBAC,
+  tenants, permissions, package upgrade, or source evidence mutation.
+
+### Verification
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_audit_handoff_contract_golden.py -q`
+- Result: `4 passed in 1.31s`.
+- `git diff --check`
+- Result: no errors; existing LF-to-CRLF warnings only.
+
+### Next Step
+
+- Commit Task 3, then execute Slice 57 completion gate from `NEXT_AI_TASK.md`.
