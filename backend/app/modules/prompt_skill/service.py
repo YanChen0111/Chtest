@@ -42,3 +42,36 @@ def get_skill_version(session: Session, skill_version_id: uuid.UUID) -> SkillVer
     if skill is None:
         raise SkillVersionNotFoundError
     return skill
+
+
+def get_active_prompt_version_by_ref(session: Session, version_ref: str) -> PromptVersion:
+    name, version = split_version_ref(version_ref)
+    prompt = session.scalar(
+        select(PromptVersion).where(
+            PromptVersion.name == name,
+            PromptVersion.version == version,
+            PromptVersion.status == "active",
+        ),
+    )
+    if prompt is None:
+        raise PromptVersionNotFoundError
+    return prompt
+
+
+def get_active_skill_version_by_ref(session: Session, version_ref: str) -> SkillVersion:
+    name, version = split_version_ref(version_ref)
+    skill = session.scalar(
+        select(SkillVersion).where(
+            SkillVersion.name == name,
+            SkillVersion.version == version,
+            SkillVersion.status == "active",
+        ),
+    )
+    if skill is None:
+        raise SkillVersionNotFoundError
+    return skill
+
+
+def split_version_ref(version_ref: str) -> tuple[str, str]:
+    name, separator, version = version_ref.partition(":")
+    return name, version if separator and version else "v1"

@@ -7,7 +7,7 @@
         <p>把需求先转成可审查证据：评分、问题、澄清问题和风险项都在生成用例前确认。</p>
       </div>
       <a-space>
-        <a-tag color="blue">模拟 RequirementReviewAgent</a-tag>
+        <a-tag color="blue">RequirementReviewAgent</a-tag>
         <a-tag color="green">人工评审前置</a-tag>
       </a-space>
     </div>
@@ -92,6 +92,21 @@
               </a-list>
             </div>
 
+            <div v-if="store.review.clarification_questions.length > 0" class="review-section clarification-panel">
+              <h3>补充说明</h3>
+              <label>
+                <span>整体补充</span>
+                <a-textarea data-test="supplement-text" v-model="supplementText" :auto-size="{ minRows: 3, maxRows: 6 }" />
+              </label>
+              <label v-for="question in store.review.clarification_questions" :key="question">
+                <span>{{ question }}</span>
+                <a-input data-test="clarification-answer" v-model="clarificationAnswerMap[question]" />
+              </label>
+              <a-button data-test="submit-supplement" type="primary" :loading="store.loading" @click="submitSupplement">
+                补充后重新评审
+              </a-button>
+            </div>
+
             <div class="review-section">
               <h3>风险项</h3>
               <a-table :columns="riskColumns" :data="store.review.risk_items" :pagination="false" size="small">
@@ -99,6 +114,32 @@
                   <a-tag :color="riskColor(record.risk_level)">{{ riskLevelLabel(record.risk_level) }}</a-tag>
                 </template>
               </a-table>
+            </div>
+
+            <div class="review-section document-panel">
+              <h3>正式需求文档</h3>
+              <a-space wrap>
+                <a-button data-test="generate-document" type="primary" :loading="store.loadingDocument" @click="store.generateRequirementDocument()">
+                  生成需求文档
+                </a-button>
+                <a-button :loading="store.loadingDocument" @click="store.loadRequirementDocuments()">刷新文档</a-button>
+              </a-space>
+              <div v-if="store.createdDocument" class="document-result">
+                <strong>{{ store.createdDocument.document_number }}</strong>
+                <span>{{ store.createdDocument.title }} · {{ store.createdDocument.status }}</span>
+                <a :href="store.createdDocument.download_url">下载 Markdown</a>
+              </div>
+              <a-list v-if="store.documents.length > 0" :data="store.documents" :bordered="false">
+                <template #item="{ item }">
+                  <a-list-item>
+                    <a-space direction="vertical" size="mini">
+                      <strong>{{ item.document_number }}</strong>
+                      <span>{{ item.title }} · {{ item.version }} · {{ item.status }}</span>
+                      <a :href="item.download_url">下载 Markdown</a>
+                    </a-space>
+                  </a-list-item>
+                </template>
+              </a-list>
             </div>
           </template>
 
@@ -110,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
 import { useRequirementsStore } from '../../stores/requirements';
 
@@ -123,6 +164,8 @@ const form = reactive({
     '用户在提交订单时，可以选择一张可用优惠券。优惠券不可与积分同时使用。过期优惠券不可使用。优惠券金额不能超过订单应付金额。提交订单后，系统需要展示优惠后的最终支付金额。',
 });
 const contextIdsText = ref('');
+const supplementText = ref('');
+const clarificationAnswerMap = reactive<Record<string, string>>({});
 
 const riskColumns = [
   { title: '风险', dataIndex: 'title' },
@@ -206,6 +249,27 @@ function submitReview() {
     contextArtifactIds: contextArtifactIds(),
   });
 }
+
+function submitSupplement() {
+  const answers = (store.review?.clarification_questions ?? [])
+    .map((question) => ({
+      question,
+      answer: clarificationAnswerMap[question]?.trim() ?? '',
+    }))
+    .filter((item) => item.answer);
+  void store.reviewRequirement({
+    title: form.title,
+    content: form.content,
+    sourceRef: form.sourceRef,
+    contextArtifactIds: contextArtifactIds(),
+    supplementText: supplementText.value,
+    clarificationAnswers: answers,
+  });
+}
+
+onMounted(() => {
+  void store.loadRequirementDocuments();
+});
 </script>
 
 <style scoped>
@@ -248,7 +312,8 @@ function submitReview() {
 }
 
 .requirement-form,
-.review-section {
+.review-section,
+.clarification-panel label {
   display: grid;
   gap: 14px;
 }
@@ -297,6 +362,29 @@ function submitReview() {
 .review-section h3 {
   margin: 0;
   font-size: 16px;
+}
+
+.clarification-panel,
+.document-panel {
+  padding: 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.clarification-panel label span {
+  color: #344054;
+  font-weight: 700;
+}
+
+.document-result {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  background: #f0fdf4;
 }
 
 @media (max-width: 1100px) {

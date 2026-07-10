@@ -58,6 +58,192 @@ export interface KnowledgeBaseRead {
   readonly non_goals: string[];
 }
 
+export interface TestKnowledgeCardRead {
+  readonly id: string;
+  readonly project_id: string;
+  readonly source_artifact_id: string;
+  readonly source_document_version: string;
+  readonly source_section: string | null;
+  readonly source_quote_hash: string;
+  readonly knowledge_type: string;
+  readonly title: string;
+  readonly content: string;
+  readonly module_key: string | null;
+  readonly api_endpoint: string | null;
+  readonly risk_type: string | null;
+  readonly case_type_hint: string | null;
+  readonly applicability: string | null;
+  readonly confidence: number;
+  readonly safe_to_show: boolean;
+  readonly allowed_for_prompt: boolean;
+  readonly status: string;
+  readonly created_at: string;
+}
+
+export interface TestKnowledgeCardListRead {
+  readonly items: TestKnowledgeCardRead[];
+  readonly total: number;
+}
+
+export interface TestKnowledgeCardExtractRequest {
+  readonly project_id: string;
+  readonly source_artifact_id: string;
+}
+
+export interface TestKnowledgeCardExtractRead {
+  readonly source_artifact_id: string;
+  readonly created_count: number;
+  readonly skipped_count: number;
+  readonly items: TestKnowledgeCardRead[];
+}
+
+export interface TestKnowledgeCardExtractBatchRequest {
+  readonly project_id: string;
+  readonly source_artifact_ids?: string[];
+}
+
+export interface TestKnowledgeCardExtractBatchRead {
+  readonly project_id: string;
+  readonly source_artifact_ids: string[];
+  readonly created_count: number;
+  readonly skipped_count: number;
+  readonly items: TestKnowledgeCardRead[];
+}
+
+export interface TestKnowledgeCardReviewRequest {
+  readonly project_id: string;
+  readonly status: string;
+}
+
+export interface TestKnowledgeCardEvidenceRead {
+  readonly evidence_id: string;
+  readonly knowledge_card_id: string;
+  readonly source_artifact_id: string;
+  readonly knowledge_type: string;
+  readonly title: string;
+  readonly snippet: string;
+  readonly score: number;
+  readonly matched_terms: string[];
+  readonly retrieval_reason: string;
+  readonly safe_to_show: boolean;
+  readonly allowed_for_prompt: boolean;
+  readonly status: string;
+  readonly semantic_score?: number;
+  readonly embedding_model?: string;
+}
+
+export interface TestKnowledgeCardRetrievalRequest {
+  readonly project_id: string;
+  readonly query_text: string;
+  readonly limit?: number;
+  readonly approved_only?: boolean;
+}
+
+export interface TestKnowledgeCardRetrievalRead {
+  readonly project_id: string;
+  readonly query_text: string;
+  readonly approved_only: boolean;
+  readonly items: TestKnowledgeCardEvidenceRead[];
+  readonly total: number;
+}
+
+export interface TestKnowledgeGraphRead {
+  readonly project_id: string;
+  readonly nodes: Record<string, unknown>[];
+  readonly edges: Record<string, unknown>[];
+  readonly coverage: Record<string, unknown>;
+}
+
+export interface TestKnowledgeIndexItemRead {
+  readonly id: string;
+  readonly project_id: string;
+  readonly knowledge_card_id: string;
+  readonly index_kind: string;
+  readonly embedding_provider: string;
+  readonly embedding_model: string;
+  readonly embedding_dim: number;
+  readonly content_hash: string;
+  readonly status: string;
+  readonly metadata: Record<string, unknown>;
+  readonly created_at: string | null;
+}
+
+export interface TestKnowledgeIndexRead {
+  readonly project_id: string;
+  readonly total: number;
+  readonly indexed_count: number;
+  readonly embedding_models: string[];
+  readonly items: TestKnowledgeIndexItemRead[];
+}
+
+export interface TestKnowledgeIndexRebuildRequest {
+  readonly project_id: string;
+  readonly knowledge_card_ids?: string[];
+  readonly embedding_model?: string;
+  readonly embedding_dim?: number;
+}
+
+export interface TestKnowledgeIndexRebuildRead {
+  readonly project_id: string;
+  readonly indexed_count: number;
+  readonly skipped_count: number;
+  readonly embedding_model: string;
+  readonly embedding_dim: number;
+  readonly items: TestKnowledgeIndexItemRead[];
+}
+
+export interface ContextArtifactCreateRequest {
+  readonly project_id: string;
+  readonly title: string;
+  readonly artifact_type: 'context_markdown' | 'context_text';
+  readonly mime_type: 'text/markdown' | 'text/plain';
+  readonly content: string;
+  readonly source_ref: string;
+}
+
+export interface ContextArtifactRead {
+  readonly id: string;
+  readonly project_id: string;
+  readonly owner_entity_type: string;
+  readonly owner_entity_id: string;
+  readonly artifact_type: string;
+  readonly file_path: string;
+  readonly mime_type: string;
+  readonly size_bytes: number;
+  readonly sha256: string;
+  readonly title: string;
+  readonly source_ref: string;
+  readonly safe_to_show: boolean;
+  readonly redaction_applied: boolean;
+  readonly allowed_for_prompt: boolean;
+}
+
+export interface KnowledgeAdapterUpdateRequest {
+  readonly adapter_name: string;
+  readonly status: 'not_configured' | 'disabled' | 'configured_stub';
+  readonly provider_type: 'none' | 'stub' | 'deterministic_local';
+  readonly config: Record<string, unknown>;
+  readonly safety_policy: Record<string, unknown>;
+  readonly notes?: string | null;
+}
+
+export interface KnowledgeRetrievalRequest {
+  readonly query_text: string;
+  readonly adapter_name?: string;
+  readonly max_results?: number;
+  readonly max_snippet_chars?: number;
+}
+
+export interface KnowledgeRetrievalRead {
+  readonly adapter_name: string;
+  readonly retrieval_mode: string;
+  readonly query_text: string;
+  readonly query_terms: string[];
+  readonly used_knowledge: boolean;
+  readonly used_context_artifact_ids: string[];
+  readonly results: KnowledgeRetrievalResultRead[];
+}
+
 export interface ToolDefinitionRead {
   readonly id: string;
   readonly project_id: string | null;
@@ -87,6 +273,88 @@ export interface ToolDefinitionListRead {
 
 export async function getKnowledgeBase(projectId: string): Promise<KnowledgeBaseRead> {
   return apiClient.getJson<KnowledgeBaseRead>(`/projects/${projectId}/knowledge-base`);
+}
+
+export async function listTestKnowledgeCards(projectId: string): Promise<TestKnowledgeCardListRead> {
+  return apiClient.getJson<TestKnowledgeCardListRead>(`/projects/${projectId}/test-knowledge/cards`);
+}
+
+export async function getTestKnowledgeGraph(projectId: string): Promise<TestKnowledgeGraphRead> {
+  return apiClient.getJson<TestKnowledgeGraphRead>(`/projects/${projectId}/test-knowledge/graph`);
+}
+
+export async function getTestKnowledgeIndex(projectId: string): Promise<TestKnowledgeIndexRead> {
+  return apiClient.getJson<TestKnowledgeIndexRead>(`/projects/${projectId}/test-knowledge/index`);
+}
+
+export async function rebuildTestKnowledgeIndex(
+  data: TestKnowledgeIndexRebuildRequest,
+): Promise<TestKnowledgeIndexRebuildRead> {
+  return apiClient.postJson<TestKnowledgeIndexRebuildRead, TestKnowledgeIndexRebuildRequest>(
+    '/test-knowledge/index/rebuild',
+    data,
+  );
+}
+
+export async function extractTestKnowledgeCards(
+  data: TestKnowledgeCardExtractRequest,
+): Promise<TestKnowledgeCardExtractRead> {
+  return apiClient.postJson<TestKnowledgeCardExtractRead, TestKnowledgeCardExtractRequest>(
+    '/test-knowledge/cards/extract',
+    data,
+  );
+}
+
+export async function extractAllTestKnowledgeCards(
+  data: TestKnowledgeCardExtractBatchRequest,
+): Promise<TestKnowledgeCardExtractBatchRead> {
+  return apiClient.postJson<TestKnowledgeCardExtractBatchRead, TestKnowledgeCardExtractBatchRequest>(
+    '/test-knowledge/cards/extract-batch',
+    data,
+  );
+}
+
+export async function reviewTestKnowledgeCard(
+  cardId: string,
+  data: TestKnowledgeCardReviewRequest,
+): Promise<TestKnowledgeCardRead> {
+  return apiClient.patchJson<TestKnowledgeCardRead, TestKnowledgeCardReviewRequest>(
+    `/test-knowledge/cards/${cardId}`,
+    data,
+  );
+}
+
+export async function retrieveTestKnowledgeCards(
+  data: TestKnowledgeCardRetrievalRequest,
+): Promise<TestKnowledgeCardRetrievalRead> {
+  return apiClient.postJson<TestKnowledgeCardRetrievalRead, TestKnowledgeCardRetrievalRequest>(
+    '/test-knowledge/cards/retrieve',
+    data,
+  );
+}
+
+export async function createContextArtifact(data: ContextArtifactCreateRequest): Promise<ContextArtifactRead> {
+  return apiClient.postJson<ContextArtifactRead, ContextArtifactCreateRequest>('/context-artifacts', data);
+}
+
+export async function updateKnowledgeAdapter(
+  projectId: string,
+  data: KnowledgeAdapterUpdateRequest,
+): Promise<KnowledgeAdapterRead> {
+  return apiClient.putJson<KnowledgeAdapterRead, KnowledgeAdapterUpdateRequest>(
+    `/projects/${projectId}/knowledge-adapter`,
+    data,
+  );
+}
+
+export async function retrieveKnowledge(
+  projectId: string,
+  data: KnowledgeRetrievalRequest,
+): Promise<KnowledgeRetrievalRead> {
+  return apiClient.postJson<KnowledgeRetrievalRead, KnowledgeRetrievalRequest>(
+    `/projects/${projectId}/knowledge-adapter/retrieve`,
+    data,
+  );
 }
 
 export async function listToolDefinitions(projectId: string): Promise<ToolDefinitionListRead> {

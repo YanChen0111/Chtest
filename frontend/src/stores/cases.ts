@@ -14,30 +14,40 @@ import {
   type TestCaseListItem,
 } from '../api/cases';
 import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
-
-const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
-const DEFAULT_REQUIREMENT_ID = '00000000-0000-0000-0000-000000000401';
-const DEFAULT_REVIEW_ID = '00000000-0000-0000-0000-000000000601';
+import { listRequirementDocuments, type RequirementDocumentRead } from '../api/requirements';
+import {
+  DEFAULT_PROJECT_ID,
+  getLatestRequirementDocumentContext,
+  getLatestRequirementReviewContext,
+  saveLatestApprovedTestCaseContext,
+} from './workflowContext';
 
 export const useCasesStore = defineStore('cases', {
-  state: () => ({
-    projectId: DEFAULT_PROJECT_ID,
-    requirementId: DEFAULT_REQUIREMENT_ID,
-    requirementReviewId: DEFAULT_REVIEW_ID,
-    generation: null as CaseGenerationStartRead | null,
-    candidates: [] as GeneratedCaseCandidateListItem[],
-    metrics: null as CaseMetricsRead | null,
-    testCases: [] as TestCaseListItem[],
-    totalTestCases: 0,
-    selectedTestCaseId: '',
-    totalCandidates: 0,
-    selectedCandidateId: '',
-    lastReview: null as CaseReviewRead | null,
-    reviewHistory: [] as ReviewHistoryItem[],
-    loadingGeneration: false,
-    loadingReview: false,
-    errorMessage: '',
-  }),
+  state: () => {
+    const latestDocument = getLatestRequirementDocumentContext();
+    const latestContext = getLatestRequirementReviewContext();
+    return {
+      projectId: latestDocument?.projectId ?? latestContext?.projectId ?? DEFAULT_PROJECT_ID,
+      requirementId: latestDocument?.requirementId ?? latestContext?.requirementId ?? '',
+      requirementReviewId: latestDocument?.requirementReviewId ?? latestContext?.requirementReviewId ?? '',
+      requirementDocumentArtifactId: latestDocument?.requirementDocumentArtifactId ?? '',
+      selectedRequirementDocumentNumber: latestDocument?.documentNumber ?? '',
+      requirementDocuments: [] as RequirementDocumentRead[],
+      generation: null as CaseGenerationStartRead | null,
+      candidates: [] as GeneratedCaseCandidateListItem[],
+      metrics: null as CaseMetricsRead | null,
+      testCases: [] as TestCaseListItem[],
+      totalTestCases: 0,
+      selectedTestCaseId: '',
+      totalCandidates: 0,
+      selectedCandidateId: '',
+      lastReview: null as CaseReviewRead | null,
+      reviewHistory: [] as ReviewHistoryItem[],
+      loadingGeneration: false,
+      loadingReview: false,
+      errorMessage: '',
+    };
+  },
   getters: {
     selectedCandidate(state) {
       return state.candidates.find((candidate) => candidate.id === state.selectedCandidateId) ?? state.candidates[0] ?? null;
@@ -47,6 +57,54 @@ export const useCasesStore = defineStore('cases', {
     },
   },
   actions: {
+    loadLatestRequirementReviewContext() {
+      const latestDocument = getLatestRequirementDocumentContext();
+      if (latestDocument) {
+        this.projectId = latestDocument.projectId;
+        this.requirementId = latestDocument.requirementId;
+        this.requirementReviewId = latestDocument.requirementReviewId;
+        this.requirementDocumentArtifactId = latestDocument.requirementDocumentArtifactId;
+        this.selectedRequirementDocumentNumber = latestDocument.documentNumber;
+        return true;
+      }
+      const latestContext = getLatestRequirementReviewContext();
+      if (!latestContext) {
+        return false;
+      }
+      this.projectId = latestContext.projectId;
+      this.requirementId = latestContext.requirementId;
+      this.requirementReviewId = latestContext.requirementReviewId;
+      this.requirementDocumentArtifactId = '';
+      this.selectedRequirementDocumentNumber = '';
+      return true;
+    },
+    async loadRequirementDocuments() {
+      this.loadingGeneration = true;
+      this.errorMessage = '';
+      try {
+        const documents = await listRequirementDocuments(this.projectId);
+        this.requirementDocuments = documents.items;
+        if (!this.requirementDocumentArtifactId && this.requirementDocuments.length > 0) {
+          this.selectRequirementDocument(this.requirementDocuments[0].artifact_id);
+        }
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '需求文档加载失败';
+      } finally {
+        this.loadingGeneration = false;
+      }
+    },
+    selectRequirementDocument(artifactId: string) {
+      const document = this.requirementDocuments.find((item) => item.artifact_id === artifactId);
+      if (!document) {
+        return false;
+      }
+      this.projectId = document.project_id;
+      this.requirementId = document.requirement_id;
+      this.requirementReviewId = document.requirement_review_id;
+      this.requirementDocumentArtifactId = document.artifact_id;
+      this.selectedRequirementDocumentNumber = document.document_number;
+      return true;
+    },
     async loadTestCases() {
       this.loadingGeneration = true;
       this.errorMessage = '';
@@ -66,6 +124,7 @@ export const useCasesStore = defineStore('cases', {
       requirementReviewId: string;
       targetTestTypes: string[];
       contextArtifactIds: string[];
+      requirementDocumentArtifactId?: string;
     }) {
       this.loadingGeneration = true;
       this.errorMessage = '';
@@ -76,16 +135,21 @@ export const useCasesStore = defineStore('cases', {
       this.reviewHistory = [];
       this.requirementId = data.requirementId;
       this.requirementReviewId = data.requirementReviewId;
+      this.requirementDocumentArtifactId = data.requirementDocumentArtifactId ?? this.requirementDocumentArtifactId;
+      if (!data.requirementId || !data.requirementReviewId) {
+        this.errorMessage = '请先选择已评审需求或正式需求文档';
+        this.loadingGeneration = false;
+        return;
+      }
       try {
         this.generation = await startCaseGeneration({
           project_id: this.projectId,
           requirement_id: data.requirementId,
           requirement_review_id: data.requirementReviewId,
+          requirement_document_artifact_id: data.requirementDocumentArtifactId || null,
           target_test_types: data.targetTestTypes,
           prompt_version: 'case_generation:v1',
           skill_version: 'test-case-generation-skill:v1',
-          model_provider: 'mock',
-          model_name: 'mock-case-generator',
           use_knowledge: false,
           context_artifact_ids: data.contextArtifactIds,
         });
@@ -129,6 +193,7 @@ export const useCasesStore = defineStore('cases', {
         this.candidates = this.candidates.map((item) =>
           item.id === candidate.id ? { ...item, status: this.lastReview?.status ?? item.status } : item,
         );
+        this.rememberLatestApprovedTestCase(candidate.id, this.lastReview);
         await this.loadSelectedCandidateReviewHistory();
         if (this.generation) {
           this.metrics = await getCaseMetrics(this.generation.case_generation_task_id);
@@ -138,6 +203,18 @@ export const useCasesStore = defineStore('cases', {
       } finally {
         this.loadingReview = false;
       }
+    },
+    rememberLatestApprovedTestCase(candidateId: string, review: CaseReviewRead | null) {
+      if (!review?.test_case_id || !['approved', 'approved_after_edit'].includes(review.status)) {
+        return;
+      }
+      saveLatestApprovedTestCaseContext({
+        projectId: this.projectId,
+        testCaseId: review.test_case_id,
+        sourceCandidateId: candidateId,
+        reviewStatus: review.status,
+      });
+      this.selectedTestCaseId = review.test_case_id;
     },
     async loadSelectedCandidateReviewHistory() {
       const candidate = this.selectedCandidate;

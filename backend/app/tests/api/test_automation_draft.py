@@ -4,6 +4,7 @@ import asyncio
 import json
 import uuid
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -13,12 +14,15 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app.main import app
 from backend.app.models.base import Base
+from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask
+from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.automation.models import AutomationDraft
 from backend.app.modules.automation.schemas import AutomationDraftRead
 from backend.app.modules.cases.models import TestCase as CaseModel
 from backend.app.modules.projects.models import Project, Workspace
 from backend.app.modules.projects.router import get_session
+from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.review_history.models import ReviewHistory
 
 
@@ -99,14 +103,19 @@ def session_factory() -> sessionmaker[Session]:
 
 
 @pytest.fixture()
-def api_client() -> Iterator[tuple[ASGIClient, sessionmaker[Session]]]:
+def api_client(tmp_path: Path) -> Iterator[tuple[ASGIClient, sessionmaker[Session]]]:
     SessionLocal = session_factory()
+    artifact_root = tmp_path / "artifacts"
 
     def override_get_session() -> Iterator[Session]:
         with SessionLocal() as session:
             yield session
 
+    def override_get_artifact_store() -> LocalArtifactStore:
+        return LocalArtifactStore(root=artifact_root)
+
     app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_artifact_store] = override_get_artifact_store
     yield ASGIClient(app), SessionLocal
     app.dependency_overrides.clear()
 
@@ -147,6 +156,26 @@ def seed_project_case_and_task(session: Session) -> tuple[Project, CaseModel, AI
     session.add_all([test_case, ai_task])
     session.flush()
     return project, test_case, ai_task
+
+
+def seed_automation_draft_prompt_skill(session: Session) -> tuple[PromptVersion, SkillVersion]:
+    prompt = PromptVersion(
+        name="automation_draft_generation",
+        version="v1",
+        hash="sha256:" + "a" * 64,
+        agent_name="AutomationDraftAgent",
+        content="# Automation Draft Prompt",
+    )
+    skill = SkillVersion(
+        name="automation-draft-skill",
+        version="v1",
+        hash="sha256:" + "b" * 64,
+        applicable_agents=["AutomationDraftAgent"],
+        content="# Automation Draft Skill",
+    )
+    session.add_all([prompt, skill])
+    session.flush()
+    return prompt, skill
 
 
 def test_automation_draft_model_persists_contract_fields() -> None:
@@ -194,6 +223,7 @@ def test_automation_draft_read_schema_uses_contract_field_names() -> None:
         test_case_id=test_case_id,
         requirement_id=None,
         ai_task_id=ai_task_id,
+        automation_plan_id=None,
         target_framework="pytest",
         title="pytest draft for expired coupon",
         draft_code="def test_expired_coupon():\n    assert True\n",
@@ -213,6 +243,7 @@ def test_automation_draft_read_schema_uses_contract_field_names() -> None:
     assert body["id"] == str(draft_id)
     assert body["test_case_id"] == str(test_case_id)
     assert body["draft_code"].startswith("def test_expired_coupon")
+    assert body["automation_plan_id"] is None
     assert body["execution_strategy"] == "artifact_runtime_copy"
     assert body["approval_required"] is True
 
@@ -223,9 +254,12 @@ def test_create_automation_draft_from_reviewed_test_case(
     client, SessionLocal = api_client
     with SessionLocal() as session:
         project, test_case, _ai_task = seed_project_case_and_task(session)
+        prompt, skill = seed_automation_draft_prompt_skill(session)
         session.commit()
         project_id = project.id
         test_case_id = test_case.id
+        prompt_id = prompt.id
+        skill_id = skill.id
 
     response = client.post(
         "/api/automation/drafts",
@@ -265,11 +299,14 @@ def test_create_automation_draft_from_reviewed_test_case(
         assert draft.promoted_artifact_id is None
         assert ai_task.agent_name == "AutomationDraftAgent"
         assert ai_task.status == "succeeded"
+        assert ai_task.prompt_version_id == prompt_id
+        assert ai_task.skill_version_id == skill_id
 
 
 def create_draft_via_api(client: ASGIClient, SessionLocal: sessionmaker[Session]) -> uuid.UUID:
     with SessionLocal() as session:
         project, test_case, _ai_task = seed_project_case_and_task(session)
+        seed_automation_draft_prompt_skill(session)
         session.commit()
         project_id = project.id
         test_case_id = test_case.id
@@ -305,7 +342,7 @@ def test_get_edit_and_approve_automation_draft(api_client: tuple[ASGIClient, ses
     edit_response = client.patch(
         f"/api/automation/drafts/{draft_id}",
         json_body={
-            "draft_code": "def test_expired_coupon_reviewed():\n    assert True\n",
+            "draft_code": "def test_expired_coupon_reviewed():\n    result = {'blocked': True}\n    assert result['blocked'] is True\n",
             "suggested_file_path": "tests/test_coupon_reviewed.py",
             "execution_notes": "Reviewed but not executed.",
             "risk_notes": "Fixture names still need local confirmation.",
@@ -345,6 +382,38 @@ def test_get_edit_and_approve_automation_draft(api_client: tuple[ASGIClient, ses
         ("edit", "draft_generated", "edited", "Adjusted naming before approval."),
         ("approve", "edited", "approved", "Draft is safe to execute later."),
     }
+
+
+def test_automation_draft_approval_rejects_placeholder_review_edit(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    draft_id = create_draft_via_api(client, SessionLocal)
+
+    edit_response = client.patch(
+        f"/api/automation/drafts/{draft_id}",
+        json_body={
+            "draft_code": "def test_expired_coupon_reviewed():\n    assert True  # reviewed\n",
+            "suggested_file_path": "tests/test_coupon_reviewed.py",
+            "execution_notes": "Reviewed but not executed.",
+            "risk_notes": "Still a placeholder assertion.",
+            "review_comment": "Only renamed the placeholder.",
+        },
+    )
+    assert edit_response.status_code == 200
+
+    approve_response = client.post(
+        f"/api/automation/drafts/{draft_id}/approve",
+        json_body={"action": "approve", "review_comment": "Approve placeholder."},
+    )
+
+    assert approve_response.status_code == 400
+    assert approve_response.json()["error_code"] == "AUTOMATION_DRAFT_QUALITY_GATE_FAILED"
+
+    with SessionLocal() as session:
+        draft = session.get(AutomationDraft, draft_id)
+        assert draft is not None
+        assert draft.status == "edited"
 
 
 def test_invalid_automation_draft_approve_action_returns_error(

@@ -25,6 +25,11 @@ reports/generated/
 logs/
 .tmp/
 .worktrees/
+backend/tmp-pytest-artifacts/
+tmp_acceptance_artifacts/
+tmp_acceptance_artifacts_final/
+tmp_serial_logs/
+evse_auto/
 
 # Environment and secrets
 .env

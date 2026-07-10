@@ -53,8 +53,8 @@ snapshots exist, and which local artifacts can be opened.
 - No new runner types, Docker runner enablement, browser grid, distributed
   load agents, cloud execution, scheduling, retries, cancellation workflow, or
   live log streaming.
-- No report generation, FailureAnalysis, QualityGateDecision, AutomationRepair,
-  or AutomationDraft behavior changes.
+- No report generation, FailureAnalysis, QualityGateDecision,
+  AutomationRepairTask, or AutomationDraft behavior changes.
 - No artifact upload, mutation, delete, sharing, signed URL, cloud storage,
   broad artifact browser, indexing, search, retention policy, or external
   artifact fetch.
@@ -82,10 +82,10 @@ snapshots exist, and which local artifacts can be opened.
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
 | Add Execution Run Manifest task plan | done | `test -f docs/implementation/slices/slice-29-execution-run-manifest.md && rg -n "Execution Run Manifest|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-29-execution-run-manifest.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md && git diff --check` | `22b1071` | planning-only scope |
-| Define execution run manifest contract | done | `rg -n "execution run manifest|runtime artifact|dependency snapshot|environment snapshot|network policy" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-29-execution-run-manifest.md && git diff --check` | `d1995eb` | contract-only |
-| Add frontend run manifest panel | done | `npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts && npm --prefix frontend run build && git diff --check` | `32f2f25` | execution page only |
-| Add execution run manifest golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q && git diff --check` | `b62afaa` | evidence-only proof |
-| Slice 29 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q && npm --prefix frontend run build && npm --prefix frontend run test -- --run && git diff --check` | pending | docs and handoff |
+| Define execution run manifest contract | done | `rg -n "execution run manifest|runtime artifact|dependency snapshot|environment snapshot|network policy" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-29-execution-run-manifest.md && git diff --check` | pending | contract-only |
+| Add frontend run manifest panel | done | `npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts && npm --prefix frontend run build && git diff --check` | pending | frontend test/build passed; `git diff --check` unavailable because this workspace has no usable git checkout |
+| Add execution run manifest golden smoke | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q && git diff --check` | pending | golden smoke passed; `git diff --check` clean after restoring workspace-local uv/Git tooling |
+| Slice 29 completion gate | done | `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q && npm --prefix frontend run build && npm --prefix frontend run test -- --run && git diff --check` | pending | backend golden checks, frontend build/tests, and diff check passed |
 
 ## Task 1: Add Execution Run Manifest Task Plan
 
@@ -232,8 +232,9 @@ Acceptance:
 - Golden proves missing snapshot ids remain visible as missing/unavailable
   evidence.
 - Golden proves run manifest display inputs do not create Report,
-  FailureAnalysis, QualityGateDecision, AutomationRepair, new TestRun, artifact
-  mutation, remote provider behavior, RAG runtime, or MCP runtime.
+  FailureAnalysis, QualityGateDecision, AutomationRepairTask, AutomationDraft,
+  new TestRun, artifact mutation, remote provider behavior, RAG runtime, or MCP
+  runtime.
 
 Commit message:
 
@@ -274,3 +275,27 @@ Commit message:
 ```text
 docs(v2): complete execution run manifest slice
 ```
+
+## Completion Evidence
+
+2026-07-07 verification:
+
+```bash
+backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+git diff --check
+```
+
+Results:
+
+- Backend golden checks: `2 passed`.
+- Frontend build: passed with the existing Vite large chunk warning.
+- Frontend test suite: `16` files passed, `21` tests passed.
+- `git diff --check`: no output.
+
+Slice 29 remains inside the read-only execution run manifest boundary. It does
+not add runner behavior changes, report generation, FailureAnalysis,
+QualityGateDecision, AutomationRepairTask, AutomationDraft behavior, artifact
+mutation, remote provider behavior, RAG runtime, MCP runtime, RBAC, tenants, or
+permissions.

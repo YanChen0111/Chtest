@@ -19,16 +19,6 @@ prompts/
   tool_execution/v1.md
   failure_analysis/v1.md
   report_generation/v1.md
-  knowledge_card_extraction/v1.md
-  requirement_understanding/v1.md
-  risk_analysis/v1.md
-  coverage_analysis/v1.md
-  test_design/v1.md
-  evidence_case_generation/v1.md
-  evidence_case_review/v1.md
-  case_dedup/v1.md
-  automation_readiness/v1.md
-  knowledge_feedback/v1.md
 ```
 
 ## 3. Skill 目录
@@ -44,17 +34,7 @@ skills/
   tool-execution-skill/v1.md
   failure-analysis-skill/v1.md
   report-generation-skill/v1.md
-  knowledge-ingestion-skill/v1.md
-  risk-analysis-skill/v1.md
-  coverage-analysis-skill/v1.md
-  test-design-skill/v1.md
-  knowledge-feedback-skill/v1.md
 ```
-
-Slice 31 adds the knowledge-driven seeds above as versioned prompt/skill files.
-They are seed artifacts only. They do not enable RAG runtime, vector databases,
-GraphRAG runtime, MCP runtime, external provider calls, generated-case
-auto-approval, or tool execution by themselves.
 
 ## 4. Prompt 文件格式
 
@@ -116,6 +96,56 @@ Prompt input must include:
 }
 ```
 
+RequirementReviewAgent may also receive clarification input for a follow-up
+review pass:
+
+```json
+{
+  "clarification_context": {
+    "supplement_text": "Coupons can stack with platform campaigns but not points.",
+    "clarification_answers": [
+      {
+        "question": "Can coupons be combined with campaign discounts?",
+        "answer": "Yes, coupons can stack with platform campaigns."
+      }
+    ]
+  }
+}
+```
+
+CaseGenerationAgent may receive a generated requirement document:
+
+```json
+{
+  "requirement_document": {
+    "artifact_id": "00000000-0000-0000-0000-000000000d01",
+    "document_number": "RD-CHECKOUT-SYSTEM-20260709-0001",
+    "version": "v1",
+    "title": "Coupon checkout rules",
+    "content": "# 需求规格说明书\n...",
+    "sha256": "sha256:example"
+  }
+}
+```
+
+CaseGenerationAgent may also receive deterministic TestKnowledgeCard evidence:
+
+```json
+{
+  "knowledge_evidence": [
+    {
+      "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "knowledge_type": "BoundaryCondition",
+      "title": "BoundaryCondition: expired coupon checkout",
+      "snippet": "Expired coupon validation blocks checkout.",
+      "score": 3,
+      "matched_terms": ["expired", "coupon", "checkout"]
+    }
+  ]
+}
+```
+
 Rules:
 
 - `use_knowledge=false` means external RAG/KnowledgeAdapter is disabled.
@@ -123,918 +153,15 @@ Rules:
 - Prompt input artifacts must save `context_manifest.json`.
 - Model output or parsed AITask output must expose `used_context_artifact_ids`.
 - Model output must not claim external evidence when `used_knowledge=false`.
-
-### 4.1.1 KnowledgeAdapter Provider Evaluation Plan Contract
-
-This contract defines prompt/skill trace rules for future KnowledgeAdapter
-provider evaluation plans. It is contract-only planning evidence and does not
-assemble prompts, write runtime `prompt_input.json`, execute AITasks, call
-providers, integrate provider SDKs, run retrieval, change ranking, create
-vector indexes, create embeddings, rerank, run background indexing, run graph
-jobs, invoke MCP runtime, enable providers, mutate KnowledgeAdapterConfig
-runtime state, mutate KnowledgeEvidence rows, render frontend pages, add RBAC,
-create tenants, change permissions, or install packages.
-
-KnowledgeAdapter provider evaluation plan input must include:
-
-- `knowledge_adapter_provider_evaluation_plan_action=evaluate_knowledge_adapter_provider_plan`.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  evaluation is produced by a prompt or skill.
-- Candidate provider name and provider family such as Haystack, LlamaIndex,
-  GraphRAG, or local adapter.
-- Provider version and adapter version.
-- License name, license URL, license compatibility notes, and license review.
-- Reference intake URLs or documentation snapshot artifact ids.
-- Supported retrieval modes and supported source types.
-- Expected KnowledgeEvidence normalization fields.
-- Expected provider_state values and provider_state recommendation.
-- Disabled by default policy.
-- Fallback behavior expectations.
-- Metrics to collect.
-- Safety, redaction, source-hash, source manifest, and ReviewHistory ids when
-  available.
-- Failure code and visible reason when applicable.
-
-KnowledgeAdapter provider evaluation plan output may include:
-
-- Provider evaluation plan id or artifact id.
-- `knowledge_adapter_provider_evaluation_plan` artifact or manifest naming.
-- Evaluation actions such as `evaluate_provider_candidate`,
-  `record_provider_evaluation`, `block_provider_candidate`, or
-  `request_provider_evaluation_revision`.
-- Provider suitability status values: `not_evaluated`, `suitable`,
-  `suitable_with_constraints`, `blocked`, `needs_revision`, and
-  `unsupported`.
-- Normalized KnowledgeEvidence requirements.
-- Provider_state recommendation.
-- Disabled by default decision.
-- Fallback behavior summary.
-- License review result.
-- Reference intake summary.
-- Metrics plan.
-- Blocker reasons and unresolved safety questions.
-- Fallback labels such as `fallback_required`, `local_no_knowledge_fallback`,
-  `normalization_required`, `citation_traceability_required`, and
-  `license_review_required`.
-- Source manifest ids, source hashes, ReviewHistory links, failure code, and
-  visible reason.
-
-KnowledgeAdapter provider evaluation plan rules:
-
-- Provider evaluation records are planning evidence only. They must not be
-  treated as provider configuration enablement, runtime provider connectivity,
-  retrieval permission, prompt eligibility, or proof that provider evidence was
-  used.
-- `provider_state` is display/health metadata and must not start runtime
-  retrieval.
-- Disabled by default is required until a later scoped integration explicitly
-  enables a provider.
-- Fallback behavior must preserve local/no-knowledge evidence instead of
-  fabricating KnowledgeEvidence.
-- `used_knowledge` must not be auto-marked true by provider evaluation.
-- Provider-specific payloads must not leak into TestKnowledgeCard,
-  KnowledgeEvidence, GeneratedCaseCandidate, prompt context evidence, reports,
-  or review surfaces.
-- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
-  reference-missing, reference-mismatched, normalization-unsupported,
-  redaction-failed, provider-state-unsafe, fallback-missing, cross-project,
-  unbounded, credential-required, runtime-required, or provider-evaluation-
-  mismatched input must produce a failure code and visible reason and must not
-  append a successful provider-ready state.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, mutate Artifact rows outside declared evaluation evidence, mutate
-  KnowledgeAdapterConfig outside declared evaluation evidence, mutate
-  KnowledgeEvidence, mutate TestKnowledgeCard rows, approve or reject
-  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
-  rows, render frontend pages, expose backend feature APIs, add endpoints,
-  routers, services, workers, queues, schedulers, run migrations, add package
-  upgrades, add RBAC, create tenants, or change permissions.
-
-### 4.1.2 KnowledgeAdapter Provider Evaluation Review Decision Contract
-
-This contract defines prompt/skill trace rules for future KnowledgeAdapter
-provider evaluation review decisions. It is contract-only audit evidence and
-does not enable providers, assemble prompts, write runtime `prompt_input.json`,
-execute AITasks, call providers, integrate provider SDKs, run retrieval, change
-ranking, create vector indexes, create embeddings, rerank, run background
-indexing, run graph jobs, invoke MCP runtime, mutate the reviewed provider
-evaluation plan artifact, mutate KnowledgeAdapterConfig runtime state, mutate
-KnowledgeEvidence rows, render frontend pages, add RBAC, create tenants,
-change permissions, or install packages.
-
-KnowledgeAdapter provider evaluation review decision input must include:
-
-- `knowledge_adapter_provider_evaluation_review_decision_action=review_knowledge_adapter_provider_evaluation`.
-- `knowledge_adapter_provider_evaluation_plan_artifact_id`.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  review decision is produced by a prompt or skill.
-- Candidate provider name, provider family, adapter type, provider version,
-  and adapter version.
-- Provider suitability status from the provider evaluation plan.
-- License name, license URL, license compatibility notes, and license review
-  result.
-- Reference intake summary, reference intake URLs, and documentation snapshot
-  artifact ids.
-- Expected KnowledgeEvidence normalization fields and KnowledgeEvidence
-  normalization notes.
-- Expected provider_state values and provider_state recommendation.
-- Disabled by default policy and disabled by default decision.
-- Fallback behavior summary and fallback labels.
-- Metrics plan, metric set, evidence normalization completeness, source
-  traceability coverage, redaction safety status, and fallback coverage.
-- Blocker reasons, unresolved safety questions, source manifest ids, source
-  hashes, and ReviewHistory ids when available.
-- Failure code and visible reason when applicable.
-
-KnowledgeAdapter provider evaluation review decision output may include:
-
-- Provider evaluation review decision id or artifact id.
-- `knowledge_adapter_provider_evaluation_review_decision` artifact or manifest
-  naming.
-- Review decision values: `accepted_for_planning`,
-  `accepted_with_constraints`, `blocked`, `needs_revision`, and
-  `unsupported`.
-- Review status values: `not_reviewed`, `accepted_for_planning`,
-  `accepted_with_constraints`, `blocked`, `needs_revision`, `unsupported`, and
-  `failed_validation`.
-- Reviewer label, local reviewer id, reviewer note, accepted constraints,
-  requested revision fields, blocked reasons, unsupported reasons, unresolved
-  safety questions, and decision rationale.
-- Source manifest ids, source hashes, ReviewHistory links, failure code, and
-  visible reason.
-
-KnowledgeAdapter provider evaluation review decision rules:
-
-- Review decisions are audit evidence only. They must not be treated as
-  provider configuration enablement, runtime provider connectivity, retrieval
-  permission, prompt eligibility, or proof that provider evidence was used.
-- `provider_state` is display/health metadata and must not start runtime
-  retrieval.
-- Disabled by default remains required until a later scoped integration
-  explicitly enables a provider.
-- Accepted for planning and accepted with constraints are future-planning
-  labels only, not runtime integration approvals.
-- Needs revision, blocked, and unsupported decisions must preserve reviewer
-  rationale, requested revision fields, blocker reasons, unsupported reasons,
-  unresolved safety questions, source hashes, and ReviewHistory links.
-- `used_knowledge` must not be auto-marked true by provider evaluation review.
-- Provider-specific payloads must not leak into TestKnowledgeCard,
-  KnowledgeEvidence, GeneratedCaseCandidate, prompt context evidence, reports,
-  or review surfaces.
-- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
-  reference-missing, reference-mismatched, normalization-unsupported,
-  provider-state-unsafe, fallback-missing, review-decision-invalid,
-  evaluation-plan-mismatched, cross-project, unbounded, credential-required,
-  or runtime-required input must produce a failure code and visible reason and
-  must not append a successful review decision.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, mutate the reviewed provider evaluation plan artifact, mutate
-  Artifact rows outside declared review decision evidence, mutate
-  KnowledgeAdapterConfig outside declared review decision evidence, mutate
-  KnowledgeEvidence, mutate TestKnowledgeCard rows, approve or reject
-  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
-  rows, render frontend pages, expose backend feature APIs, add endpoints,
-  routers, services, workers, queues, schedulers, run migrations, add package
-  upgrades, add RBAC, create tenants, or change permissions.
-
-### 4.1.3 KnowledgeAdapter Provider Evaluation Review Summary Export Contract
-
-This contract defines prompt/skill trace rules for future KnowledgeAdapter
-provider evaluation review summary export evidence. It is contract-only and
-does not assemble prompts, execute AITasks, call providers, run retrieval,
-create provider-backed prompt context evidence, generate reports, expose
-export/download endpoints, or enable providers.
-
-KnowledgeAdapter provider evaluation review summary export input must include:
-
-- `knowledge_adapter_provider_evaluation_review_summary_export_action=export_knowledge_adapter_provider_evaluation_review_summary`.
-- `knowledge_adapter_provider_evaluation_review_decision_artifact_id`.
-- `knowledge_adapter_provider_evaluation_plan_artifact_id`.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  summary export is produced by a prompt or skill.
-- Candidate provider name, provider family, adapter type, provider version,
-  and adapter version.
-- Provider suitability status, review decision, and review status from the
-  provider evaluation review decision artifact.
-- Reviewer label, local reviewer id, reviewer notes, accepted constraints,
-  requested revision fields, blocked reasons, unsupported reasons, unresolved
-  safety questions, and decision rationale.
-- License name, license URL, license compatibility notes, license review
-  result, reference intake summary, reference intake URLs, and documentation
-  snapshot artifact ids.
-- Expected KnowledgeEvidence normalization fields and KnowledgeEvidence
-  normalization notes.
-- Expected provider_state values and provider_state recommendation.
-- Disabled by default policy and disabled by default decision.
-- Fallback behavior summary and fallback labels.
-- Metrics plan, metric set, evidence normalization completeness, source
-  traceability coverage, redaction safety status, fallback coverage, source
-  manifest ids, source hashes, ReviewHistory links, failure code, and visible
-  reason when applicable.
-
-KnowledgeAdapter provider evaluation review summary export output may include:
-
-- Provider evaluation review summary export id or artifact id.
-- `knowledge_adapter_provider_evaluation_review_summary_export` artifact or
-  manifest naming.
-- `knowledge_adapter_provider_evaluation_review_summary_export.json`.
-- Review summary status values: `not_exported`, `exported_for_planning`, and
-  `failed_validation`.
-- Exported decision groups: `accepted_for_planning`,
-  `accepted_with_constraints`, `blocked`, `needs_revision`, and
-  `unsupported`.
-- Provider suitability summary, license/reference summary, KnowledgeEvidence
-  normalization summary, provider_state summary, disabled by default summary,
-  fallback summary, metrics summary, source traceability summary,
-  ReviewHistory summary, failure code, and visible reason.
-
-KnowledgeAdapter provider evaluation review summary export rules:
-
-- Review summary exports are audit evidence only. They must not be treated as
-  provider configuration enablement, runtime provider connectivity, retrieval
-  permission, prompt eligibility, report generation behavior, export/download
-  endpoint behavior, or proof that provider evidence was used.
-- `provider_state` is display/health metadata and must not start runtime
-  retrieval.
-- Disabled by default remains required until a later scoped integration
-  explicitly enables a provider.
-- Accepted for planning and accepted with constraints are future-planning
-  labels only, not runtime integration approvals.
-- Needs revision, blocked, and unsupported summaries must preserve reviewer
-  rationale, requested revision fields, blocker reasons, unsupported reasons,
-  unresolved safety questions, source hashes, and ReviewHistory links.
-- `used_knowledge` must not be auto-marked true by provider evaluation review
-  summary export.
-- Provider-specific payloads must not leak into TestKnowledgeCard,
-  KnowledgeEvidence, GeneratedCaseCandidate, prompt context evidence, reports,
-  review surfaces, or summary export surfaces.
-- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
-  reference-missing, reference-mismatched, normalization-unsupported,
-  provider-state-unsafe, fallback-missing, review-decision-missing,
-  review-decision-invalid, summary-export-invalid,
-  evaluation-plan-mismatched, review-decision-mismatched, cross-project,
-  unbounded, credential-required, or runtime-required input must produce a
-  failure code and visible reason and must not append a successful summary
-  export.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, generate reports, expose export/download endpoints, mutate the
-  reviewed provider evaluation review decision artifact, mutate the reviewed
-  provider evaluation plan artifact, mutate Artifact rows outside declared
-  summary export evidence, mutate KnowledgeAdapterConfig outside declared
-  summary export evidence, mutate KnowledgeEvidence, mutate TestKnowledgeCard
-  rows, approve or reject GeneratedCaseCandidate rows, promote TestCase rows,
-  create ToolInvocation rows, render frontend pages, expose backend feature
-  APIs, add endpoints, routers, services, workers, queues, schedulers, run
-  migrations, add package upgrades, add RBAC, create tenants, or change
-  permissions.
-
-### 4.1.4 KnowledgeAdapter Provider Evaluation Review Audit Handoff Contract
-
-This contract defines prompt/skill trace rules for future KnowledgeAdapter
-provider evaluation review audit handoff evidence. It is contract-only and
-does not assemble prompts, execute AITasks, call providers, run retrieval,
-create provider-backed prompt context evidence, generate reports, expose
-export/download endpoints, or enable providers.
-
-KnowledgeAdapter provider evaluation review audit handoff input must include:
-
-- `knowledge_adapter_provider_evaluation_review_audit_handoff_action=build_knowledge_adapter_provider_evaluation_review_audit_handoff`.
-- `knowledge_adapter_provider_evaluation_review_summary_export_artifact_id`.
-- `knowledge_adapter_provider_evaluation_review_decision_artifact_id`.
-- `knowledge_adapter_provider_evaluation_plan_artifact_id`.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  audit handoff is produced by a prompt or skill.
-- Candidate provider name, provider family, adapter type, provider version,
-  and adapter version.
-- Review summary status, review decision, review status, exported decision
-  groups, accepted constraints, requested revision fields, blocked reasons,
-  unsupported reasons, unresolved safety questions, unresolved follow-up
-  flags, and decision rationale.
-- Provider suitability summary, license/reference summary, KnowledgeEvidence
-  normalization summary, provider_state summary, disabled by default summary,
-  fallback summary, metrics summary, source manifest ids, source hashes,
-  ReviewHistory links, failure code, and visible reason when applicable.
-
-KnowledgeAdapter provider evaluation review audit handoff output may include:
-
-- Provider evaluation review audit handoff id or artifact id.
-- `knowledge_adapter_provider_evaluation_review_audit_handoff` artifact or
-  manifest naming.
-- `knowledge_adapter_provider_evaluation_review_audit_handoff.json`.
-- Evidence chain status values: `complete`, `incomplete`, `blocked`, and
-  `failed_validation`.
-- Handoff summary, included artifact ids, excluded artifact reasons, provider
-  review decision group summary, unresolved blocker summary, unresolved safety
-  question summary, disabled by default summary, source traceability summary,
-  ReviewHistory links, failure code, and visible reason.
-
-KnowledgeAdapter provider evaluation review audit handoff rules:
-
-- Audit handoff records are evidence-chain packages only. They must not be
-  treated as provider configuration enablement, runtime provider connectivity,
-  retrieval permission, prompt eligibility, report generation behavior,
-  export/download endpoint behavior, or proof that provider evidence was used.
-- `provider_state` is display/health metadata and must not start runtime
-  retrieval.
-- Disabled by default remains required until a later scoped integration
-  explicitly enables a provider.
-- Accepted for planning and accepted with constraints remain future-planning
-  labels only, not runtime integration approvals.
-- Incomplete or blocked audit handoffs must preserve excluded artifact
-  reasons, unresolved blocker summary, unresolved safety questions,
-  unresolved follow-up flags, source hashes, and ReviewHistory links.
-- `used_knowledge` must not be auto-marked true by provider evaluation review
-  audit handoff.
-- Provider-specific payloads must not leak into TestKnowledgeCard,
-  KnowledgeEvidence, GeneratedCaseCandidate, prompt context evidence, reports,
-  review surfaces, summary export surfaces, or audit handoff surfaces.
-- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
-  reference-missing, reference-mismatched, normalization-unsupported,
-  provider-state-unsafe, fallback-missing, summary-export-missing,
-  summary-export-invalid, review-decision-missing, review-decision-invalid,
-  evaluation-plan-missing, evaluation-plan-mismatched,
-  review-decision-mismatched, cross-project, unbounded, credential-required,
-  runtime-required, or provider-enable-required input must produce a failure
-  code and visible reason and must not append a successful audit handoff.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, generate reports, expose export/download endpoints, mutate the
-  provider evaluation review summary export artifact, mutate the reviewed
-  provider evaluation review decision artifact, mutate the reviewed provider
-  evaluation plan artifact, mutate provider metadata, mutate Artifact rows
-  outside declared audit handoff evidence, mutate KnowledgeAdapterConfig
-  outside declared audit handoff evidence, mutate KnowledgeEvidence, mutate
-  historical evidence, mutate TestKnowledgeCard rows, approve or reject
-  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
-  rows, render frontend pages, expose backend feature APIs, add endpoints,
-  routers, services, workers, queues, schedulers, run migrations, add package
-  upgrades, add RBAC, create tenants, or change permissions.
-
-### 4.2 TestKnowledgeCard Prompt Context Evidence Contract
-
-This contract defines prompt/skill trace rules for future TestKnowledgeCard
-prompt context evidence. It is contract-only and does not assemble prompts,
-execute AITasks, call providers, run retrieval, change ranking, create vector
-indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime, or
-mutate TestKnowledgeCard rows.
-
-Prompt context evidence input must include:
-
-- `prompt_context_evidence_action=build_prompt_context_evidence`.
-- PromptVersion id and SkillVersion id.
-- PromptVersion name/version and SkillVersion name/version when available.
-- Retrieval boundary artifact id.
-- Selected TestKnowledgeCard ids and omitted TestKnowledgeCard ids.
-- Prompt eligibility artifact ids and ReviewHistory ids.
-- Source manifest ids, source artifact ids, source hash values, and source
-  trace labels.
-- Context manifest artifact id when available.
-- Omission reason values and failure code when applicable.
-
-Prompt context evidence rules:
-
-- Every prompt context evidence artifact must preserve PromptVersion and
-  SkillVersion trace before any selected card evidence is eligible for future
-  prompt context.
-- `context_manifest` entries for TestKnowledgeCard-derived context must point
-  to prompt context evidence artifacts, source hashes, source artifact ids,
-  bounded snippet metadata, redaction status, and `safe_to_show=true` evidence.
-- Bounded snippet text may be present only when safe-to-show and reviewed
-  redaction are proven. Otherwise the context entry must use source hash or
-  source quote/hash pointer and record omission reason.
-- A prompt or skill must not cite TestKnowledgeCard content unless the
-  TestKnowledgeCard id appears in prompt context evidence and the referenced
-  retrieval boundary artifact selected it.
-- Prompt context evidence must not include raw large source text, hidden model
-  context, unsafe provider payloads, vector store payloads, embedding vectors,
-  reranker traces, graph runtime payloads, credentials, tokens, OAuth material,
-  or provider request payloads.
-- This contract must not set `used_knowledge=true`, write runtime
-  `prompt_input.json`, execute a prompt, call a provider, mutate
-  PromptVersion/SkillVersion rows, mutate artifacts outside declared prompt
-  context evidence, approve generated cases, or bypass human review gates.
-
-### 4.3 TestKnowledgeCard Prompt Context Consumption Contract
-
-This contract defines prompt/skill citation rules for future TestKnowledgeCard
-prompt context consumption. It is contract-only and does not assemble prompts,
-execute AITasks, call providers, run retrieval, change ranking, create vector
-indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime, mutate
-TestKnowledgeCard rows, or generate model citations.
-
-Prompt context consumption input must include:
-
-- `prompt_context_consumption_action=consume_prompt_context_evidence`.
-- PromptVersion id/name/version and SkillVersion id/name/version.
-- Prompt context evidence artifact id and context manifest artifact id.
-- Consumed TestKnowledgeCard ids and consumed context entry ids.
-- Consumed source hashes or source quote/hash pointers.
-- Source artifact ids, source sections, source manifest ids, and retrieval
-  boundary artifact id.
-- Prompt eligibility artifact ids and ReviewHistory ids.
-- Consuming agent step, intended output artifact type, skipped evidence ids,
-  skip reasons, unsupported claim markers, and failure code when applicable.
-
-Prompt context consumption rules:
-
-- A prompt or skill may mark `used_knowledge=true` only when a future scoped
-  consumption record includes at least one valid citation to consumed prompt
-  context evidence.
-- Every output citation that claims TestKnowledgeCard support must reference the
-  prompt context evidence artifact id, context entry id, TestKnowledgeCard id,
-  source hash or source quote/hash pointer, source artifact id, source section,
-  ReviewHistory id, PromptVersion, and SkillVersion.
-- `used_knowledge=false` is required when no valid prompt context evidence is
-  consumed, when citations are missing, or when cited evidence is stale, unsafe,
-  revoked, cross-project, unbounded, redaction-failed, context-mismatched,
-  prompt-version-mismatched, skill-version-mismatched, or evidence-mismatched.
-- Unsupported claims must remain visible as unsupported claims or review
-  findings. They must not be promoted into knowledge-backed facts only because
-  prompt context evidence was available.
-- Prompt context consumption must not include raw large source text, hidden
-  model context, unsafe provider payloads, vector store payloads, embedding
-  vectors, reranker traces, graph runtime payloads, credentials, tokens, OAuth
-  material, or provider request payloads.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
-  context evidence, mutate artifacts outside declared prompt context
-  consumption, approve generated cases, auto-mark `used_knowledge=true`, or
-  bypass human review gates.
-
-### 4.4 TestKnowledgeCard Prompt Context Audit Summary Contract
-
-This contract defines prompt/skill trace rules for future read-only audit
-summaries of TestKnowledgeCard prompt context consumption. It is contract-only
-and does not assemble prompts, execute AITasks, call providers, run retrieval,
-change ranking, create vector indexes, create embeddings, rerank, run graph
-jobs, invoke MCP runtime, render frontend pages, generate reports, mutate
-TestKnowledgeCard rows, or generate model citations.
-
-Prompt context audit summary input must include:
-
-- `prompt_context_audit_summary_action=summarize_prompt_context_consumption`.
-- PromptVersion id/name/version and SkillVersion id/name/version.
-- Prompt context consumption artifact id.
-- Prompt context evidence artifact id and context manifest artifact id.
-- `used_knowledge` decision and usage status.
-- Output citation ids and cited TestKnowledgeCard ids.
-- Cited context entry ids, source hashes, source artifact ids, and source
-  sections.
-- Skipped evidence ids, skip reasons, unsupported claim summaries, and failure
-  code when applicable.
-- ReviewHistory ids and review flags.
-
-Prompt context audit summary rules:
-
-- Audit summaries must preserve PromptVersion and SkillVersion trace from the
-  referenced prompt context consumption evidence.
-- `used_knowledge` must be copied from prompt context consumption evidence and
-  must not be recomputed, rewritten, or auto-marked by an audit summary.
-- Cited entries must reference existing output citations, TestKnowledgeCard ids,
-  context entry ids, source hashes or source quote/hash pointers,
-  ReviewHistory ids, PromptVersion, and SkillVersion.
-- Skipped evidence and unsupported claims must remain visible as skipped or
-  unsupported. They must not be promoted into knowledge-backed facts only
-  because an audit summary is generated.
-- Prompt context audit summary must not include raw large source text, hidden
-  model context, unsafe provider payloads, vector store payloads, embedding
-  vectors, reranker traces, graph runtime payloads, credentials, tokens, OAuth
-  material, provider request payloads, frontend-rendered markup, or
-  report-rendered payloads.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
-  context consumption evidence, mutate artifacts outside declared prompt
-  context audit summary, approve generated cases, rewrite `used_knowledge`,
-  render frontend pages, generate reports, or bypass human review gates.
-
-### 4.5 TestKnowledgeCard Prompt Context Audit Review Decision Contract
-
-This contract defines prompt/skill trace rules for future human review
-decisions of TestKnowledgeCard prompt context audit summaries. It is
-contract-only and does not assemble prompts, execute AITasks, call providers,
-run retrieval, change ranking, create vector indexes, create embeddings,
-rerank, run graph jobs, invoke MCP runtime, render frontend pages, generate
-reports, mutate TestKnowledgeCard rows, create prompt eligibility, or generate
-model citations.
-
-Prompt context audit review decision input must include:
-
-- `prompt_context_audit_review_decision_action=review_prompt_context_audit_summary`.
-- PromptVersion id/name/version and SkillVersion id/name/version.
-- Prompt context audit summary artifact id.
-- Prompt context consumption artifact id.
-- Prompt context evidence artifact id and context manifest artifact id.
-- `used_knowledge` decision and usage status.
-- Output citation ids and cited TestKnowledgeCard ids.
-- Cited context entry ids, source hashes, source artifact ids, and source
-  sections.
-- Skipped evidence ids, skip reasons, unsupported claim summaries, review
-  flags, and failure code when applicable.
-- Review action, reviewer comment, accepted citation ids, questioned citation
-  ids, rejected citation ids, follow-up flags, and requested clarification.
-- ReviewHistory ids from prior evidence and the review decision ReviewHistory
-  id when a future scoped workflow persists one.
-
-Prompt context audit review decision rules:
-
-- Audit review decisions must preserve PromptVersion and SkillVersion trace
-  from the referenced prompt context audit summary evidence.
-- `used_knowledge` must be copied from prompt context audit summary evidence
-  and must not be recomputed, rewritten, or auto-marked by a review decision.
-- Allowed review actions are `accepted`, `needs_clarification`,
-  `rejected_for_missing_evidence`, `rejected_for_unsupported_claim`,
-  `rejected_for_citation_mismatch`, `rejected_for_stale_evidence`, and
-  `rejected_for_cross_project_evidence`.
-- Accepted, questioned, and rejected citation ids must reference existing
-  output citations, TestKnowledgeCard ids, context entry ids, source hashes or
-  source quote/hash pointers, ReviewHistory ids, PromptVersion, and
-  SkillVersion.
-- `accepted` must not create prompt eligibility, approve TestKnowledgeCard
-  content, approve generated cases, mutate prompt context audit summary
-  evidence, or change `used_knowledge`.
-- `needs_clarification` and rejected decisions must keep skipped evidence and
-  unsupported claims visible. They must not be promoted into knowledge-backed
-  facts, deleted, or replaced with generated citations.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, evidence-mismatched, or audit
-  summary-mismatched input must produce a failure code and must not append a
-  successful ReviewHistory decision.
-- Prompt context audit review decision must not include raw large source text,
-  hidden model context, unsafe provider payloads, vector store payloads,
-  embedding vectors, reranker traces, graph runtime payloads, credentials,
-  tokens, OAuth material, provider request payloads, frontend-rendered markup,
-  or report-rendered payloads.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
-  context audit summary evidence, mutate artifacts outside declared prompt
-  context audit review decision, approve generated cases, create prompt
-  eligibility, rewrite `used_knowledge`, render frontend pages, generate
-  reports, or bypass human review gates.
-
-### 4.6 TestKnowledgeCard Prompt Context Audit Review Summary Export Contract
-
-This contract defines prompt/skill trace rules for future summary exports of
-TestKnowledgeCard prompt context audit review decisions. It is contract-only
-and does not assemble prompts, execute AITasks, call providers, run retrieval,
-change ranking, create vector indexes, create embeddings, rerank, run graph
-jobs, invoke MCP runtime, render frontend pages, generate reports, expose
-export/download endpoints, mutate TestKnowledgeCard rows, create prompt
-eligibility, or generate model citations.
-
-Prompt context audit review summary export input must include:
-
-- `prompt_context_audit_review_summary_export_action=export_prompt_context_audit_review_summary`.
-- PromptVersion id/name/version and SkillVersion id/name/version.
-- Prompt context audit review decision artifact id.
-- Prompt context audit summary artifact id.
-- Prompt context consumption artifact id.
-- Prompt context evidence artifact id and context manifest artifact id.
-- `used_knowledge` decision and usage status.
-- Review action and review outcome summary.
-- Accepted citation ids, questioned citation ids, rejected citation ids, and
-  output citation ids.
-- Cited TestKnowledgeCard ids, context entry ids, source hashes, source
-  artifact ids, and source sections.
-- Skipped evidence ids, skip reasons, unsupported claim references, unresolved
-  follow-up flags, reviewer comment summary, and failure code when applicable.
-- ReviewHistory ids from prior evidence and the review decision ReviewHistory
-  id when a future scoped workflow persists one.
-
-Prompt context audit review summary export rules:
-
-- Summary exports must preserve PromptVersion and SkillVersion trace from the
-  referenced prompt context audit review decision evidence.
-- `used_knowledge` must be copied from prompt context audit review decision
-  evidence and must not be recomputed, rewritten, or auto-marked by a summary
-  export.
-- Accepted, questioned, and rejected citation groups must reference existing
-  output citations, TestKnowledgeCard ids, context entry ids, source hashes or
-  source quote/hash pointers, ReviewHistory ids, PromptVersion, and
-  SkillVersion.
-- Accepted citation groups must not create prompt eligibility, approve
-  TestKnowledgeCard content, approve generated cases, mutate prompt context
-  audit review decision evidence, or change `used_knowledge`.
-- Questioned citation groups, rejected citation groups, unresolved follow-up
-  flags, skipped evidence, and unsupported claims must remain visible. They
-  must not be promoted into knowledge-backed facts, deleted, filtered, or
-  replaced with generated citations.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, evidence-mismatched,
-  audit-summary-mismatched, or review-decision-mismatched input must produce a
-  failure code and must not append a successful summary export.
-- Prompt context audit review summary export must not include raw large source
-  text, hidden model context, unsafe provider payloads, vector store payloads,
-  embedding vectors, reranker traces, graph runtime payloads, credentials,
-  tokens, OAuth material, provider request payloads, frontend-rendered markup,
-  report-rendered payloads, export-rendered payloads, or downloadable provider
-  payloads.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
-  context audit review decision evidence, mutate artifacts outside declared
-  prompt context audit review summary export, approve generated cases, create
-  prompt eligibility, rewrite `used_knowledge`, render frontend pages,
-  generate reports, expose export/download endpoints, or bypass human review
-  gates.
-
-### 4.7 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Contract
-
-This contract defines prompt/skill trace rules for future discrepancy tracking
-across TestKnowledgeCard prompt context consumption, audit summaries, review
-decisions, and summary exports. It is contract-only and does not assemble
-prompts, execute AITasks, call providers, run retrieval, change ranking, create
-vector indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime,
-render frontend pages, generate reports, expose export/download endpoints,
-mutate TestKnowledgeCard rows, create prompt eligibility, auto-resolve
-discrepancies, or generate model citations.
-
-Prompt context review discrepancy input must include:
-
-- `prompt_context_review_discrepancy_action=track_prompt_context_review_discrepancy`.
-- PromptVersion id/name/version and SkillVersion id/name/version.
-- Prompt context audit review summary export artifact id.
-- Prompt context audit review decision artifact id.
-- Prompt context audit summary artifact id.
-- Prompt context consumption artifact id.
-- Prompt context evidence artifact id and context manifest artifact id.
-- `used_knowledge` decision and usage status.
-- Review action, review outcome summary, accepted citation group, questioned
-  citation group, and rejected citation group.
-- Affected citation ids, skipped evidence ids, skip reasons, unsupported claim
-  references, unresolved follow-up flags, discrepancy type, evidence gap
-  summary, mismatch reason, reviewer note, severity, resolution status, and
-  failure code when applicable.
-- Source hashes, source artifact ids, source sections, ReviewHistory ids, and
-  review decision ReviewHistory id when available.
-
-Prompt context review discrepancy tracking rules:
-
-- Discrepancy records must preserve PromptVersion and SkillVersion trace from
-  referenced review summary export, audit review decision, audit summary, and
-  consumption evidence.
-- `used_knowledge` must be copied from referenced review evidence and must not
-  be recomputed, rewritten, or auto-marked by discrepancy tracking.
-- Affected citation ids must reference existing output citations,
-  TestKnowledgeCard ids, context entry ids, source hashes or source quote/hash
-  pointers, ReviewHistory ids, PromptVersion, and SkillVersion.
-- Discrepancy types include `citation_mismatch`, `missing_evidence`,
-  `unsupported_claim`, `stale_evidence`, `cross_project_evidence`,
-  `context_manifest_mismatch`, `prompt_version_mismatch`,
-  `skill_version_mismatch`, `used_knowledge_mismatch`, and
-  `unresolved_follow_up`.
-- Resolution status values are audit labels only. They must not create prompt
-  eligibility, approve TestKnowledgeCard content, approve generated cases,
-  mutate review summary export evidence, auto-resolve discrepancies, or change
-  `used_knowledge`.
-- Affected citation ids, questioned/rejected citation groups, unresolved
-  follow-up flags, skipped evidence, unsupported claims, evidence gap summary,
-  and mismatch reason must remain visible. They must not be promoted into
-  knowledge-backed facts, deleted, filtered, or replaced with generated
-  citations.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, evidence-mismatched,
-  audit-summary-mismatched, review-decision-mismatched, or
-  summary-export-mismatched input must produce a failure code and must not
-  append a successful discrepancy record.
-- Prompt context review discrepancy tracking must not include raw large source
-  text, hidden model context, unsafe provider payloads, vector store payloads,
-  embedding vectors, reranker traces, graph runtime payloads, credentials,
-  tokens, OAuth material, provider request payloads, frontend-rendered markup,
-  report-rendered payloads, export-rendered payloads, downloadable provider
-  payloads, or generated replacement evidence.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, mutate PromptVersion/SkillVersion rows, mutate review
-  summary export evidence, mutate artifacts outside declared prompt context
-  review discrepancy tracking, approve generated cases, create prompt
-  eligibility, rewrite `used_knowledge`, render frontend pages, generate
-  reports, expose export/download endpoints, auto-resolve discrepancies, or
-  bypass human review gates.
-
-Prompt context discrepancy resolution review input must include:
-
-- `prompt_context_discrepancy_resolution_review_action=review_prompt_context_discrepancy_resolution`.
-- PromptVersion id/name/version and SkillVersion id/name/version.
-- Prompt context review discrepancy artifact id.
-- Prompt context audit review summary export artifact id.
-- Prompt context audit review decision artifact id.
-- Prompt context audit summary artifact id.
-- Prompt context consumption artifact id.
-- Prompt context evidence artifact id and context manifest artifact id.
-- `used_knowledge` decision.
-- Discrepancy type, affected citation ids, evidence gap summary, mismatch
-  reason, reviewer note from discrepancy tracking, severity, current
-  resolution status, unresolved follow-up flags, and unsupported claim
-  references.
-- Resolution action, accepted discrepancy ids, rejected discrepancy ids,
-  acknowledged discrepancy ids, clarification requested fields, resulting
-  resolution status, reviewer note, follow-up flags, and failure code when
-  applicable.
-- Visible reason when resolution review input is invalid.
-- Source hashes, source artifact ids, source sections, ReviewHistory ids, and
-  discrepancy ReviewHistory id when available.
-
-Prompt context discrepancy resolution review rules:
-
-- Resolution review records must preserve PromptVersion and SkillVersion trace
-  from referenced discrepancy tracking, review summary export, audit review
-  decision, audit summary, and consumption evidence.
-- `used_knowledge` must be copied from referenced review evidence and must not
-  be recomputed, rewritten, or auto-marked by discrepancy resolution review.
-- Accepted discrepancy ids, rejected discrepancy ids, acknowledged discrepancy
-  ids, and affected citation ids must reference existing discrepancy ids,
-  output citations, TestKnowledgeCard ids, context entry ids, source hashes or
-  source quote/hash pointers, ReviewHistory ids, PromptVersion, and
-  SkillVersion.
-- Resolution action values include `acknowledge_discrepancy`,
-  `reject_discrepancy_resolution`, `request_discrepancy_clarification`, and
-  `mark_resolved_by_later_review`.
-- Resulting resolution status values are audit labels only. They must not
-  create prompt eligibility, approve TestKnowledgeCard content, approve
-  generated cases, mutate prompt context review discrepancy evidence,
-  auto-resolve discrepancies, or change `used_knowledge`.
-- Accepted/rejected/acknowledged discrepancy ids, affected citation ids,
-  questioned/rejected citation groups, unresolved follow-up flags, skipped
-  evidence, unsupported claims, evidence gap summary, and mismatch reason must
-  remain visible. They must not be promoted into knowledge-backed facts,
-  deleted, filtered, or replaced with generated citations.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
-  evidence-mismatched, audit-summary-mismatched, review-decision-mismatched,
-  or summary-export-mismatched input must produce a failure code and visible
-  reason and must not append a successful resolution review.
-- Prompt context discrepancy resolution review must not include raw large
-  source text, hidden model context, unsafe provider payloads, vector store
-  payloads, embedding vectors, reranker traces, graph runtime payloads,
-  credentials, tokens, OAuth material, provider request payloads,
-  frontend-rendered markup, report-rendered payloads, export-rendered
-  payloads, downloadable provider payloads, or generated replacement evidence.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
-  context review discrepancy evidence, mutate artifacts outside declared
-  prompt context discrepancy resolution review, approve generated cases, create
-  prompt eligibility, rewrite `used_knowledge`, render frontend pages,
-  generate reports, expose export/download endpoints, auto-resolve
-  discrepancies, or bypass human review gates.
-
-Prompt context discrepancy resolution summary export input must include:
-
-- `prompt_context_discrepancy_resolution_summary_export_action=export_prompt_context_discrepancy_resolution_summary`.
-- PromptVersion id/name/version and SkillVersion id/name/version.
-- Prompt context discrepancy resolution review artifact id.
-- Prompt context review discrepancy artifact id.
-- Prompt context audit review summary export artifact id.
-- Prompt context audit review decision artifact id.
-- Prompt context audit summary artifact id.
-- Prompt context consumption artifact id.
-- Prompt context evidence artifact id and context manifest artifact id.
-- `used_knowledge` decision and usage status.
-- Resolution action, resulting resolution status, accepted discrepancy ids,
-  rejected discrepancy ids, acknowledged discrepancy ids, clarification
-  requested fields, affected citation ids, evidence gap summary, mismatch
-  reason, reviewer note, follow-up flags, unsupported claim references, and
-  failure code when applicable.
-- Resolution outcome summary, accepted discrepancy group, rejected discrepancy
-  group, acknowledged discrepancy group, clarification requested field group,
-  unresolved follow-up flag group, reviewer comment summary, resulting
-  resolution status group, and visible reason when export input is invalid.
-- Source hashes, source artifact ids, source sections, ReviewHistory ids,
-  discrepancy ReviewHistory id, and resolution review ReviewHistory id when
-  available.
-
-Prompt context discrepancy resolution summary export rules:
-
-- Resolution summary export records must preserve PromptVersion and
-  SkillVersion trace from referenced resolution review, discrepancy tracking,
-  review summary export, audit review decision, audit summary, and consumption
-  evidence.
-- `used_knowledge` must be copied from referenced review evidence and must not
-  be recomputed, rewritten, or auto-marked by discrepancy resolution summary
-  export.
-- Accepted discrepancy group, rejected discrepancy group, acknowledged
-  discrepancy group, clarification requested field group, and affected
-  citation ids must reference existing discrepancy ids, output citations,
-  TestKnowledgeCard ids, context entry ids, source hashes or source quote/hash
-  pointers, ReviewHistory ids, PromptVersion, and SkillVersion.
-- Resolution outcome summary and resulting resolution status group are audit
-  labels only. They must not create prompt eligibility, approve
-  TestKnowledgeCard content, approve generated cases, mutate discrepancy
-  resolution review evidence, auto-resolve discrepancies, or change
-  `used_knowledge`.
-- Accepted/rejected/acknowledged discrepancy groups, clarification requested
-  field group, unresolved follow-up flag group, affected citation ids,
-  questioned/rejected citation groups, skipped evidence, unsupported claims,
-  evidence gap summary, and mismatch reason must remain visible. They must not
-  be promoted into knowledge-backed facts, deleted, filtered, or replaced with
-  generated citations.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
-  resolution-review-mismatched, evidence-mismatched, audit-summary-mismatched,
-  review-decision-mismatched, or summary-export-mismatched input must produce
-  a failure code and visible reason and must not append a successful resolution
-  summary export.
-- Prompt context discrepancy resolution summary export must not include raw
-  large source text, hidden model context, unsafe provider payloads, vector
-  store payloads, embedding vectors, reranker traces, graph runtime payloads,
-  credentials, tokens, OAuth material, provider request payloads,
-  frontend-rendered markup, report-rendered payloads, export-rendered
-  payloads, downloadable provider payloads, or generated replacement evidence.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
-  context discrepancy resolution review evidence, mutate artifacts outside
-  declared prompt context discrepancy resolution summary export, approve
-  generated cases, create prompt eligibility, rewrite `used_knowledge`, render
-  frontend pages, generate reports, expose export/download endpoints,
-  auto-resolve discrepancies, or bypass human review gates.
-
-Prompt context discrepancy resolution audit handoff input must include:
-
-- `prompt_context_discrepancy_resolution_audit_handoff_action=build_prompt_context_discrepancy_resolution_audit_handoff`.
-- PromptVersion id/name/version and SkillVersion id/name/version.
-- Prompt context discrepancy resolution summary export artifact id.
-- Prompt context discrepancy resolution review artifact id.
-- Prompt context review discrepancy artifact id.
-- Prompt context audit review summary export artifact id.
-- Prompt context audit review decision artifact id.
-- Prompt context audit summary artifact id.
-- Prompt context consumption artifact id.
-- Prompt context evidence artifact id and context manifest artifact id.
-- `used_knowledge` decision and usage status.
-- Resolution outcome summary, accepted discrepancy group, rejected discrepancy
-  group, acknowledged discrepancy group, clarification requested fields,
-  clarification requested field group, resulting resolution status group,
-  affected citation ids, evidence gap summary, mismatch reason, unresolved
-  follow-up flags, unsupported claim references, and failure code when
-  applicable.
-- Handoff summary, evidence chain status, included artifact ids, excluded
-  artifact reasons, unresolved evidence gaps, source manifest ids, source
-  hashes, context manifest references, ReviewHistory links, failure code, and
-  visible reason when audit handoff input is invalid.
-- Source hashes, source artifact ids, source sections, source quote/hash
-  pointers, ReviewHistory ids, discrepancy ReviewHistory id, resolution review
-  ReviewHistory id, and summary export ReviewHistory id when available.
-
-Prompt context discrepancy resolution audit handoff rules:
-
-- Audit handoff records must preserve PromptVersion and SkillVersion trace from
-  referenced resolution summary export, resolution review, discrepancy
-  tracking, review summary export, audit review decision, audit summary, and
-  consumption evidence.
-- `used_knowledge` must be copied from referenced summary export and review
-  evidence and must not be recomputed, rewritten, or auto-marked by discrepancy
-  resolution audit handoff.
-- Included artifact ids must reference persisted artifacts. Excluded artifact
-  reasons must name why an upstream artifact was not included and must not hide
-  unresolved follow-up flags, unsupported claims, skipped evidence, source
-  hashes, evidence gap summary, mismatch reason, ReviewHistory links,
-  PromptVersion, or SkillVersion.
-- Evidence chain status values are `complete`, `incomplete`, `blocked`, and
-  `failed_validation`. They are audit labels only. They must not create prompt
-  eligibility, approve TestKnowledgeCard content, approve generated cases,
-  mutate discrepancy resolution summary export evidence, auto-resolve
-  discrepancies, or change `used_knowledge`.
-- Handoff summary, included artifact ids, excluded artifact reasons,
-  unresolved evidence gaps, unresolved follow-up flags, affected citation ids,
-  questioned/rejected citation groups, skipped evidence, unsupported claims,
-  source hashes, evidence gap summary, and mismatch reason must remain visible.
-  They must not be promoted into knowledge-backed facts, deleted, filtered, or
-  replaced with generated citations.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
-  resolution-review-mismatched, summary-export-mismatched,
-  evidence-mismatched, audit-summary-mismatched, review-decision-mismatched,
-  audit-handoff-mismatched, or incomplete required input must produce a failure
-  code and visible reason and must not append a successful audit handoff.
-- Prompt context discrepancy resolution audit handoff must not include raw
-  large source text, hidden model context, unsafe provider payloads, vector
-  store payloads, embedding vectors, reranker traces, graph runtime payloads,
-  credentials, tokens, OAuth material, provider request payloads,
-  frontend-rendered markup, report-rendered payloads, export-rendered
-  payloads, downloadable provider payloads, external archive payloads, runtime
-  `prompt_input.json`, or generated replacement evidence.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, mutate PromptVersion/SkillVersion rows, mutate prompt
-  context discrepancy resolution summary export evidence, mutate artifacts
-  outside declared prompt context discrepancy resolution audit handoff, upload
-  artifacts, approve generated cases, create prompt eligibility, rewrite
-  `used_knowledge`, render frontend pages, generate reports, expose
-  export/download endpoints, integrate with an external archive, auto-resolve
-  discrepancies, or bypass human review gates.
+- CaseGeneration `knowledge_evidence` must be derived from same-project
+  TestKnowledgeCard rows with `status=approved`, `safe_to_show=true`, and
+  `allowed_for_prompt=true`.
+- CaseGenerationAgent output should copy used card references into each
+  candidate `source_knowledge_evidence` item.
+- Clarification input must be recorded as prompt input evidence and must not
+  overwrite the original Requirement.
+- Requirement document input must come from a same-project `requirement_md`
+  Artifact generated for the same Requirement.
 
 ## 5. Skill 文件格式
 
@@ -1078,6 +205,7 @@ Describe required output fields.
 | 风险矩阵 | RequirementReviewAgent | risk_matrix:v1 | requirement-review-skill:v1 |
 | 用例生成 | CaseGenerationAgent | case_generation:v1 | test-case-generation-skill:v1 |
 | 用例评审 | CaseReviewAgent | case_review:v1 | testcase-review-skill:v1 |
+| 自动化方案 | AutomationPlanAgent | automation_plan_generation:v1 | automation-plan-skill:v1 |
 | 自动化草稿 | AutomationDraftAgent | automation_draft_generation:v1 | automation-draft-skill:v1 |
 | CI/CD 变更分析 | CICDChangeAnalysisAgent | cicd_change_analysis:v1 | regression-selection-skill:v1 |
 | 单测 patch | UnitTestAgent | unit_test_generation:v1 | unit-test-generation-skill:v1 |
@@ -1085,547 +213,6 @@ Describe required output fields.
 | 工具执行计划 | ToolExecutionAgent | tool_execution:v1 | tool-execution-skill:v1 |
 | 失败归因 | FailureAnalysisAgent | failure_analysis:v1 | failure-analysis-skill:v1 |
 | 报告生成 | ReportAgent | report_generation:v1 | report-generation-skill:v1 |
-| 知识卡片抽取 | KnowledgeIngestionAgent | knowledge_card_extraction:v1 | knowledge-ingestion-skill:v1 |
-| 需求理解 | RequirementUnderstandingAgent | requirement_understanding:v1 | requirement-review-skill:v1 |
-| 风险分析 | RiskAnalysisAgent | risk_analysis:v1 | risk-analysis-skill:v1 |
-| 覆盖分析 | CoverageAnalysisAgent | coverage_analysis:v1 | coverage-analysis-skill:v1 |
-| 测试设计 | TestDesignAgent | test_design:v1 | test-design-skill:v1 |
-| 证据化用例生成 | CaseGenerationAgent | evidence_case_generation:v1 | test-case-generation-skill:v1 |
-| 证据化用例评审 | CaseReviewAgent | evidence_case_review:v1 | testcase-review-skill:v1 |
-| 用例去重 | DedupAgent | case_dedup:v1 | testcase-review-skill:v1 |
-| 自动化可行性 | AutomationReadinessAgent | automation_readiness:v1 | automation-draft-skill:v1 |
-| 知识反馈 | KnowledgeFeedbackAgent | knowledge_feedback:v1 | knowledge-feedback-skill:v1 |
-
-## 6.1 Requirement-To-Reviewed-Case Workflow Seed Contract
-
-This workflow contract binds the planned requirement-to-reviewed-case agents to
-PromptVersion and SkillVersion seed files. It is seed/contract only: it does
-not enable runtime orchestration, workflow queues, RAG runtime, MCP runtime,
-provider calls, vector search, graph runtime, background indexing, tool
-execution, or automatic TestCase promotion.
-
-Global rules:
-
-- Every step records the PromptVersion seed, SkillVersion seed, prompt hash,
-  skill hash, input evidence ids, output ids, schema result, quality gate
-  result, and failure behavior on the future AITask trace.
-- `use_knowledge=false` remains the default unless a later runtime contract
-  explicitly enables knowledge retrieval. Local ContextArtifacts may be cited
-  only when they are present in `context_manifest`.
-- The write permission granted by this contract is limited to the named draft
-  output for each step and its AITask/artifact trace metadata. It grants no
-  permission to mutate requirements, canonical TestCase records, automation
-  scripts, reports, providers, vector indexes, graph stores, MCP tools, or
-  external systems.
-- GeneratedCaseCandidate records remain review-gated. No agent output may
-  automatically promote a candidate into TestCase.
-- When input evidence is missing or inconsistent, the agent must return the
-  documented structured failure output instead of inventing evidence or
-  fetching remote context.
-
-| Agent | PromptVersion / SkillVersion seed | Input evidence | Output contract and write permission | Quality gates | Forbidden actions | Human gate | Failure behavior |
-|---|---|---|---|---|---|---|---|
-| RequirementUnderstandingAgent | `requirement_understanding:v1` / `requirement-review-skill:v1` | Requirement id, source requirement text, requirement artifact ids, ContextArtifact manifest when supplied, requester notes, prior review findings. | Requirement understanding draft with normalized intent, actors, flows, constraints, ambiguities, assumptions, evidence refs, and `used_context_artifact_ids`; write permission is AITask output plus draft artifact only. | Must cite the requirement text or artifact for each normalized statement; ambiguities and assumptions must be explicit; schema must pass. | Do not rewrite the source requirement, close ambiguity without evidence, call external knowledge, or create cases. | Human gate requires product/test owner review when ambiguities, assumptions, or conflicting evidence are present before downstream design is treated as accepted. | Return `UNABLE_TO_UNDERSTAND_REQUIREMENT` with missing/conflicting evidence details; downstream steps must treat the output as blocked, not as low-confidence success. |
-| RiskAnalysisAgent | `risk_analysis:v1` / `risk-analysis-skill:v1` | Accepted or draft requirement understanding, requirement refs, domain risk notes, historical defect/knowledge evidence ids when locally supplied. | Risk analysis draft with risk ids, severity, likelihood, affected flows, evidence refs, and mitigation notes; write permission is AITask output plus risk draft artifact only. | Each P0/P1 risk must cite input evidence and affected behavior; risk ids must be stable within the output; schema must pass. | Do not fabricate production incidents, query external risk sources, change requirement priority, or approve mitigations. | Human gate requires test lead review for P0/P1 risks and unresolved mitigation gaps before case generation priority is accepted. | Return `UNABLE_TO_ANALYZE_RISK`; block risk-derived prioritization and preserve upstream understanding unchanged. |
-| CoverageAnalysisAgent | `coverage_analysis:v1` / `coverage-analysis-skill:v1` | Requirement understanding, risk analysis draft, existing reviewed case ids when supplied, coverage matrix evidence, local knowledge evidence ids. | Coverage analysis draft with covered behaviors, uncovered behaviors, trace gaps, risk-to-coverage mapping, and evidence refs; write permission is AITask output plus coverage draft artifact only. | Every gap must map to a requirement or risk ref; covered claims must cite reviewed cases or supplied evidence; schema must pass. | Do not mark coverage complete without evidence, mutate existing cases, promote candidates, or pull cases from external systems. | Human gate requires reviewer confirmation for accepted residual gaps or coverage-complete claims. | Return `UNABLE_TO_ANALYZE_COVERAGE`; downstream test design must include a gap marker rather than assuming full coverage. |
-| TestDesignAgent | `test_design:v1` / `test-design-skill:v1` | Requirement understanding, risk analysis, coverage analysis, constraints, target test levels/types, local methodology notes. | Test design draft with scenario groups, techniques, priorities, negative/boundary/state coverage, data needs, and trace refs; write permission is AITask output plus design draft artifact only. | Must include positive, negative, and boundary/state considerations where applicable; every scenario group must trace to requirement/risk/coverage evidence; schema must pass. | Do not generate executable automation, create TestCase records, omit P0/P1 negative paths without rationale, or use hidden knowledge. | Human gate requires test designer review before design guidance is used as accepted input for candidate generation. | Return `UNABLE_TO_DESIGN_TESTS`; case generation must stop or proceed only with an explicit human-supplied design override. |
-| CaseGenerationAgent | `evidence_case_generation:v1` / `test-case-generation-skill:v1` | Human-accepted or draft test design, requirement/risk/coverage evidence, ContextArtifact manifest, existing case refs for avoidance only. | GeneratedCaseCandidate drafts with title, priority, type, preconditions, steps, expected results, input data, requirement refs, risk refs, knowledge evidence ids, and AI reason; write permission is AITask output plus generated candidate drafts only. | Every candidate must have steps, expected results, requirement refs, evidence refs, and AI reason; P0/P1 flows require negative or boundary candidates unless explicitly justified; schema must pass. | Do not create canonical TestCase, auto-approve, execute tools, mutate requirements, or use RAG/provider/vector/graph/MCP runtime. | Human gate requires reviewer action before any candidate is accepted, rejected, or later promoted by non-agent workflow. | Return `UNABLE_TO_GENERATE_CASES`; no empty success output and no fallback to generic "verify it works" cases. |
-| CaseReviewAgent | `evidence_case_review:v1` / `testcase-review-skill:v1` | GeneratedCaseCandidate drafts, requirement/risk/coverage/design evidence, duplicate hints, reviewer policy, local knowledge evidence ids. | Review draft with per-case findings, quality score, coverage gap notes, correction suggestions, reject/needs-fix recommendation, and evidence refs; write permission is AITask output plus review findings on candidate draft only. | Findings must cite candidate fields and evidence; severity and recommendation must be structured; no pass recommendation without checking steps, expected results, refs, and duplicates; schema must pass. | Do not approve as human, promote to TestCase, delete candidates, rewrite source requirements, or call external reviewers/tools. | Human gate is mandatory: a human reviewer decides accept/reject/needs-fix and any TestCase promotion outside this seed contract. | Return `UNABLE_TO_REVIEW_CASE`; candidate stays in pending/needs-review state and cannot advance by agent output alone. |
-| DedupAgent | `case_dedup:v1` / `testcase-review-skill:v1` | GeneratedCaseCandidate drafts, reviewed case ids when supplied, case titles/steps/expected results, requirement and risk refs, review findings. | Dedup draft with duplicate groups, similarity reasons, keep/merge/split suggestions, and evidence refs; write permission is AITask output plus dedup suggestion artifact only. | Duplicate claims must cite matching fields; keep/merge suggestions must preserve requirement/risk coverage; schema must pass. | Do not delete, merge, hide, or mutate cases; do not infer duplicates from title alone; do not promote candidates. | Human gate requires reviewer confirmation before any merge, removal, or canonical case change. | Return `UNABLE_TO_DEDUP_CASES`; leave all candidates unchanged and mark dedup status inconclusive. |
-| AutomationReadinessAgent | `automation_readiness:v1` / `automation-draft-skill:v1` | Reviewed candidate drafts, review findings, dedup suggestions, target framework notes, execution constraints, known test data/dependency evidence. | Automation readiness draft with readiness status, blockers, data/fixture needs, suggested framework fit, risk notes, and trace refs; write permission is AITask output plus readiness fields on candidate draft only. | Must distinguish automatable, manual-only, blocked, and needs-design states; blockers must cite evidence; no readiness claim without preconditions and expected results; schema must pass. | Do not generate automation code, execute tests, create runner commands, mutate repositories, call providers, or promote candidates. | Human gate requires automation owner review before automation drafting or implementation work is scheduled. | Return `UNABLE_TO_ASSESS_AUTOMATION_READINESS`; readiness remains unknown and no automation task may be created from the failed output. |
-
-## 6.1.1 Generated Case Human Review Evidence Package Trace Contract
-
-This contract defines prompt/skill trace rules for future Generated Case
-Human Review Evidence Package evidence. It is contract-only and does not
-assemble prompts, execute AITasks, call providers, run retrieval, create
-provider-backed prompt context evidence, approve or reject candidates, promote
-TestCases, create automation drafts, generate reports, expose export/download
-endpoints, or render frontend pages.
-
-Generated case human review evidence package input must include:
-
-- `generated_case_human_review_evidence_package_action=build_generated_case_human_review_evidence_package`.
-- GeneratedCaseCandidate id and candidate status.
-- Candidate summary, title, priority, test type, precondition, steps, expected
-  results, input data, tags, requirement refs, risk refs, AI reason,
-  generation reason, covered risk ids, and duplicate-of case id.
-- `source_knowledge_evidence_ids` and `knowledge_evidence_refs_json`.
-- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
-  `automation_readiness`, dedup findings, duplicate candidate ids, automation
-  readiness blockers, source manifest ids, source hashes, and ReviewHistory
-  links when available.
-- Prompt context evidence artifact ids, prompt context consumption artifact
-  ids, prompt context audit summary artifact ids, prompt context audit review
-  decision artifact ids, prompt context audit review summary export artifact
-  ids, and prompt context discrepancy resolution audit handoff artifact ids.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  evidence package is produced by a prompt or skill.
-
-Generated case human review evidence package output may include:
-
-- Generated case human review evidence package id or artifact id.
-- `generated_case_human_review_evidence_package` artifact or manifest naming.
-- `generated_case_human_review_evidence_package.json`.
-- Candidate summary, evidence chain completeness, missing evidence summary,
-  conflicting evidence summary, review blocker summary, dedup/readiness
-  summary, human review checklist, included artifact ids, excluded artifact
-  reasons, source traceability summary, ReviewHistory links, failure code, and
-  visible reason.
-
-Generated case human review evidence package rules:
-
-- Evidence package records are human-review evidence bundles only. They must
-  not be treated as approval, rejection, optimization request, TestCase
-  promotion, automation draft creation, prompt eligibility, report generation
-  behavior, export/download endpoint behavior, or proof that knowledge was
-  used.
-- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
-  `automation_readiness`, dedup findings, missing evidence summary,
-  conflicting evidence summary, review blocker summary, and human review
-  checklist are review aids only.
-- Incomplete or blocked evidence packages must preserve missing evidence
-  summary, conflicting evidence summary, review blocker summary,
-  dedup/readiness summary, excluded artifact reasons, source hashes, and
-  ReviewHistory links.
-- `used_knowledge` must not be auto-marked true by generated case human
-  review evidence package.
-- Provider-specific payloads must not leak into GeneratedCaseCandidate,
-  TestCase, TestKnowledgeCard, KnowledgeEvidence, prompt context evidence,
-  reports, review surfaces, or evidence package surfaces.
-- Missing, stale, unsafe, cross-project, unbounded, evidence-missing,
-  candidate-missing, candidate-mismatched, candidate-status-invalid,
-  knowledge-evidence-missing, prompt-context-evidence-missing,
-  review-findings-missing, dedup-inconclusive, readiness-unknown,
-  review-history-missing, artifact-mismatched, source-hash-mismatched,
-  credential-required, runtime-required, provider-required, approval-required,
-  or promotion-required input must produce a failure code and visible reason
-  and must not append a successful evidence package.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, generate reports, expose export/download endpoints, mutate
-  GeneratedCaseCandidate rows, approve or reject GeneratedCaseCandidate rows,
-  promote TestCase rows, create AutomationDraft rows, create ToolInvocation
-  rows, execute AITasks, mutate prompt context evidence, mutate
-  KnowledgeEvidence, mutate TestKnowledgeCard rows, mutate ReviewHistory,
-  mutate historical evidence, mutate Artifact rows outside declared evidence
-  package output, render frontend pages, expose backend feature APIs, add
-  endpoints, routers, services, workers, queues, schedulers, run migrations,
-  add package upgrades, add RBAC, create tenants, or change permissions.
-
-## 6.1.2 Generated Case Human Review Decision Trace Contract
-
-This contract defines prompt/skill trace rules for future Generated Case
-Human Review Decision evidence. It is contract-only and does not assemble
-prompts, execute AITasks, call providers, run retrieval, create
-provider-backed prompt context evidence, approve or reject candidates, request
-optimization, promote TestCases, create automation drafts, generate reports,
-expose export/download endpoints, or render frontend pages.
-
-Generated case human review decision input must include:
-
-- `generated_case_human_review_decision_action=review_generated_case_human_review_evidence_package`.
-- `generated_case_human_review_evidence_package_artifact_id`.
-- GeneratedCaseCandidate id, candidate status, and candidate summary.
-- Evidence chain completeness, missing evidence summary, conflicting evidence
-  summary, review blocker summary, dedup/readiness summary, and human review
-  checklist from the evidence package.
-- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
-  `automation_readiness`, dedup findings, duplicate candidate ids,
-  duplicate-of case id, source manifest ids, source hashes, and ReviewHistory
-  links when available.
-- Prompt context lineage artifact ids that were already present in the
-  evidence package.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  decision evidence is produced by a prompt or skill.
-
-Generated case human review decision output may include:
-
-- Generated case human review decision id or artifact id.
-- `generated_case_human_review_decision` artifact or manifest naming.
-- `generated_case_human_review_decision.json`.
-- Review decision, decision status, and decision label.
-- Allowed decision labels:
-  `accepted_for_future_promotion`, `accepted_with_required_edits`,
-  `needs_optimization`, `rejected_for_insufficient_evidence`, `blocked`,
-  `duplicate`, `needs_more_evidence`, and `failed_validation`.
-- Reviewer label, reviewer comment, accepted constraints, requested edit
-  fields, optimization request summary, rejection reasons, blocker reasons,
-  duplicate resolution notes, ReviewHistory links, failure code, and visible
-  reason.
-
-Generated case human review decision rules:
-
-- Decision records are human-review decision evidence only. They must not be
-  treated as approval, rejection, request optimization, TestCase promotion,
-  automation draft creation, prompt eligibility, report generation behavior,
-  export/download endpoint behavior, or proof that knowledge was used.
-- Decision labels `accepted_for_future_promotion`,
-  `accepted_with_required_edits`, `needs_optimization`,
-  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
-  `needs_more_evidence`, and `failed_validation` are audit evidence only.
-- `accepted_with_required_edits` must preserve requested edit fields.
-  `needs_optimization` must preserve optimization request summary.
-  `rejected_for_insufficient_evidence` must preserve rejection reasons.
-  `blocked` must preserve blocker reasons and visible reason. `duplicate`
-  must preserve duplicate resolution notes.
-- `used_knowledge` must not be auto-marked true by generated case human
-  review decision.
-- Provider-specific payloads must not leak into GeneratedCaseCandidate,
-  TestCase, TestKnowledgeCard, KnowledgeEvidence, prompt context evidence,
-  reports, review surfaces, evidence package surfaces, or decision surfaces.
-- Missing, stale, unsafe, cross-project, unbounded, evidence-package-missing,
-  evidence-package-mismatched, candidate-missing, candidate-mismatched,
-  candidate-status-invalid, evidence-chain-incomplete, review-blocked,
-  dedup-conflict, duplicate-resolution-missing, review-history-missing,
-  artifact-mismatched, source-hash-mismatched, credential-required,
-  runtime-required, provider-required, approval-required,
-  optimization-required, or promotion-required input must produce a failure
-  code and visible reason and must not append a successful human review
-  decision.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, generate reports, expose export/download endpoints, mutate
-  GeneratedCaseCandidate rows, approve or reject GeneratedCaseCandidate rows,
-  request optimization, promote TestCase rows, create AutomationDraft rows,
-  create ToolInvocation rows, execute AITasks, mutate prompt context evidence,
-  mutate KnowledgeEvidence, mutate TestKnowledgeCard rows, mutate
-  ReviewHistory, mutate historical evidence, mutate Artifact rows outside
-  declared decision evidence, render frontend pages, expose backend feature
-  APIs, add endpoints, routers, services, workers, queues, schedulers, run
-  migrations, add package upgrades, add RBAC, create tenants, or change
-  permissions.
-
-## 6.1.3 Generated Case Human Review Decision Summary Export Trace Contract
-
-This contract defines prompt/skill trace rules for future Generated Case
-Human Review Decision Summary Export evidence. It is contract-only and does
-not assemble prompts, execute AITasks, call providers, run retrieval, create
-provider-backed prompt context evidence, approve or reject candidates, request
-optimization, promote TestCases, create automation drafts, render reports,
-expose export/download endpoints, or render frontend pages.
-
-Generated case human review decision summary export input must include:
-
-- `generated_case_human_review_decision_summary_export_action=build_generated_case_human_review_decision_summary_export`.
-- One or more `generated_case_human_review_decision_artifact_id` values.
-- Linked `generated_case_human_review_evidence_package_artifact_id` values.
-- GeneratedCaseCandidate ids/statuses and candidate summaries.
-- Decision labels, decision statuses, reviewer labels/comments, accepted
-  constraints, requested edit fields, optimization request summaries,
-  rejection reasons, blocker reasons, duplicate resolution notes,
-  ReviewHistory links, source hashes, and source manifest ids.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  summary export evidence is produced by a prompt or skill.
-
-Generated case human review decision summary export output may include:
-
-- Generated case human review decision summary export id or artifact id.
-- `generated_case_human_review_decision_summary_export` artifact or manifest
-  naming.
-- `generated_case_human_review_decision_summary_export.json`.
-- Summary status, exported decision groups, included decision artifact ids,
-  excluded decision artifact ids, excluded decision artifact reasons, source
-  traceability summary, ReviewHistory summary, failure code, and visible
-  reason.
-- Exported decision groups for `accepted_for_future_promotion`,
-  `accepted_with_required_edits`, `needs_optimization`,
-  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
-  `needs_more_evidence`, and `failed_validation`.
-- Accepted-for-future-promotion summary, accepted-with-required-edits summary,
-  needs-optimization summary, rejected-for-insufficient-evidence summary,
-  blocked summary, duplicate summary, needs-more-evidence summary, and
-  failed-validation summary.
-
-Generated case human review decision summary export rules:
-
-- Summary export records are audit evidence only. They must not be treated as
-  approval, rejection, request optimization, TestCase promotion, automation
-  draft creation, prompt eligibility, report generation behavior,
-  export/download endpoint behavior, or proof that knowledge was used.
-- Exported decision groups `accepted_for_future_promotion`,
-  `accepted_with_required_edits`, `needs_optimization`,
-  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
-  `needs_more_evidence`, and `failed_validation` are summary labels only.
-- Needs-optimization summaries must preserve optimization request summary but
-  must not trigger request optimization. Rejected-for-insufficient-evidence,
-  blocked, duplicate, needs-more-evidence, and failed-validation summaries
-  must preserve visible reasons and must not hide, merge, archive, reject, or
-  delete candidates.
-- `used_knowledge` must not be auto-marked true by generated case human
-  review decision summary export.
-- Provider-specific payloads must not leak into GeneratedCaseCandidate,
-  TestCase, TestKnowledgeCard, KnowledgeEvidence, prompt context evidence,
-  reports, review surfaces, evidence package surfaces, decision surfaces, or
-  summary export surfaces.
-- Missing, stale, unsafe, cross-project, unbounded,
-  decision-artifact-missing, decision-artifact-invalid,
-  decision-artifact-mismatched, evidence-package-missing,
-  evidence-package-mismatched, candidate-missing, candidate-mismatched,
-  candidate-status-invalid, review-decision-missing,
-  review-decision-invalid, decision-label-unsupported, reviewer-missing,
-  source-hash-mismatched, review-history-missing, artifact-mismatched,
-  summary-export-invalid, credential-required, runtime-required,
-  provider-required, approval-required, optimization-required, or
-  promotion-required input must produce a failure code and visible reason and
-  must not append a successful summary export.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, generate reports, render reports, expose export/download
-  endpoints, mutate GeneratedCaseCandidate rows, approve or reject
-  GeneratedCaseCandidate rows, request optimization, promote TestCase rows,
-  create AutomationDraft rows, create ToolInvocation rows, execute AITasks,
-  mutate prompt context evidence, mutate KnowledgeEvidence, mutate
-  TestKnowledgeCard rows, mutate ReviewHistory, mutate generated case human
-  review decision artifacts, mutate evidence packages, mutate historical
-  evidence, mutate Artifact rows outside declared summary export evidence,
-  render frontend pages, expose backend feature APIs, add endpoints, routers,
-  services, workers, queues, schedulers, run migrations, add package upgrades,
-  add RBAC, create tenants, or change permissions.
-
-## 6.1.4 Generated Case Human Review Decision Audit Handoff Trace Contract
-
-This contract defines prompt/skill trace rules for future Generated Case
-Human Review Decision Audit Handoff evidence. It is contract-only and does
-not assemble prompts, execute AITasks, call providers, run retrieval, create
-provider-backed prompt context evidence, approve or reject candidates, request
-optimization, promote TestCases, create automation drafts, render reports,
-expose export/download endpoints, or render frontend pages.
-
-Generated case human review decision audit handoff input must include:
-
-- `generated_case_human_review_decision_audit_handoff_action=build_generated_case_human_review_decision_audit_handoff`.
-- `generated_case_human_review_decision_summary_export_artifact_id`.
-- One or more `generated_case_human_review_decision_artifact_id` values.
-- Linked `generated_case_human_review_evidence_package_artifact_id` values.
-- Exported decision groups, included decision artifact ids, excluded decision
-  artifact ids, excluded decision artifact reasons, source traceability
-  summary, ReviewHistory summary, ReviewHistory links, source hashes, and
-  source manifest ids.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  audit handoff evidence is produced by a prompt or skill.
-- Failure code and visible reason when the summary export, decision artifact,
-  evidence package, ReviewHistory, source hash, or artifact linkage is
-  invalid.
-
-Generated case human review decision audit handoff output may include:
-
-- Generated case human review decision audit handoff id or handoff artifact
-  id.
-- `generated_case_human_review_decision_audit_handoff` artifact or manifest
-  naming.
-- `generated_case_human_review_decision_audit_handoff.json`.
-- Evidence chain status values: `complete`, `incomplete`, `blocked`, and
-  `failed_validation`.
-- Handoff summary, included artifact ids, excluded artifact reasons,
-  exported decision groups, included decision artifact ids, excluded decision
-  artifact ids, excluded decision artifact reasons, unresolved follow-up
-  flags, unresolved blocker summary, source traceability summary, source
-  traceability handoff summary, ReviewHistory links, failure code, and visible
-  reason.
-- Accepted-for-future-promotion handoff summary,
-  accepted-with-required-edits handoff summary, needs-optimization handoff
-  summary, rejected-for-insufficient-evidence handoff summary, blocked
-  handoff summary, duplicate handoff summary, needs-more-evidence handoff
-  summary, and failed-validation handoff summary.
-
-Generated case human review decision audit handoff rules:
-
-- Audit handoff records are evidence-chain packages only. They must not be
-  treated as approval, rejection, request optimization, TestCase promotion,
-  automation draft creation, prompt eligibility, report generation behavior,
-  export/download endpoint behavior, or proof that knowledge was used.
-- Evidence chain status values `complete`, `incomplete`, `blocked`, and
-  `failed_validation` are audit labels only. They must not change
-  GeneratedCaseCandidate state or invoke existing human review transitions.
-- Accepted-for-future-promotion and accepted-with-required-edits handoff
-  summaries remain future-planning labels only. Needs-optimization handoff
-  summaries must preserve optimization request summary when present but must
-  not trigger request optimization.
-- Incomplete or blocked audit handoffs must preserve included artifact ids,
-  excluded artifact reasons, included decision artifact ids, excluded decision
-  artifact ids, excluded decision artifact reasons, unresolved blocker
-  summary, unresolved follow-up flags, source hashes, source manifest ids, and
-  ReviewHistory links.
-- `used_knowledge` must not be auto-marked true by generated case human
-  review decision audit handoff.
-- Provider-specific payloads must not leak into GeneratedCaseCandidate,
-  TestCase, TestKnowledgeCard, KnowledgeEvidence, prompt context evidence,
-  reports, review surfaces, evidence package surfaces, decision surfaces,
-  summary export surfaces, or audit handoff surfaces.
-- Invalid, stale, unsafe, cross-project, unbounded,
-  summary-export-missing, summary-export-invalid, summary-export-mismatched,
-  decision-artifact-missing, decision-artifact-invalid,
-  decision-artifact-mismatched, evidence-package-missing,
-  evidence-package-mismatched, candidate-missing, candidate-mismatched,
-  candidate-status-invalid, review-decision-missing,
-  review-decision-invalid, decision-label-unsupported,
-  review-history-missing, source-hash-mismatched, artifact-mismatched,
-  incomplete-required-input, credential-required, runtime-required,
-  provider-required, approval-required, optimization-required, or
-  promotion-required input must produce a failure code and visible reason and
-  must not append a successful audit handoff or successful ReviewHistory
-  decision.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, generate reports, render reports, expose export/download
-  endpoints, mutate GeneratedCaseCandidate rows, approve or reject
-  GeneratedCaseCandidate rows, request optimization, promote TestCase rows,
-  create AutomationDraft rows, create ToolInvocation rows, execute AITasks,
-  mutate prompt context evidence, mutate KnowledgeEvidence, mutate
-  TestKnowledgeCard rows, mutate ReviewHistory, mutate generated case human
-  review decision summary export artifacts, mutate generated case human
-  review decision artifacts, mutate evidence packages, mutate source
-  evidence, mutate historical evidence, mutate Artifact rows outside declared
-  audit handoff evidence, render frontend pages, expose backend feature APIs,
-  add endpoints, routers, services, workers, queues, schedulers, run
-  migrations, add package upgrades, add RBAC, create tenants, or change
-  permissions.
-
-## 6.1.5 Generated Case Human Review Decision Application Preflight Trace Contract
-
-This contract defines prompt/skill trace rules for future Generated Case
-Human Review Decision Application Preflight evidence. It is contract-only and
-does not assemble prompts, execute AITasks, call providers, run retrieval,
-create provider-backed prompt context evidence, approve or reject candidates,
-request optimization, promote TestCases, create automation drafts, render
-reports, expose export/download endpoints, or render frontend pages.
-
-Generated case human review decision application preflight input must include:
-
-- `generated_case_human_review_decision_application_preflight_action=preflight_generated_case_human_review_decision_application`.
-- `generated_case_human_review_decision_audit_handoff_artifact_id`.
-- `generated_case_human_review_decision_summary_export_artifact_id`.
-- One or more `generated_case_human_review_decision_artifact_id` values.
-- Linked `generated_case_human_review_evidence_package_artifact_id` values.
-- GeneratedCaseCandidate ids/statuses, decision labels, requested edit fields,
-  accepted constraints, optimization request summaries, rejection reasons,
-  blocker reasons, duplicate resolution notes, evidence chain status,
-  unresolved follow-up flags, unresolved blocker summary, source traceability
-  handoff summary, ReviewHistory handoff links, source hashes, and source
-  manifest ids.
-- PromptVersion id/name/version and SkillVersion id/name/version when the
-  application preflight evidence is produced by a prompt or skill.
-- Failure code and visible reason when the audit handoff, summary export,
-  decision artifact, evidence package, candidate, ReviewHistory, source hash,
-  or artifact linkage is invalid.
-
-Generated case human review decision application preflight output may include:
-
-- Generated case human review decision application preflight id or preflight
-  artifact id.
-- `generated_case_human_review_decision_application_preflight` artifact or
-  manifest naming.
-- `generated_case_human_review_decision_application_preflight.json`.
-- Eligibility status values: `eligible`, `ineligible`, `blocked`, and
-  `failed_validation`.
-- Mapped review action values: `approve`, `approve_after_edit`,
-  `request_optimization`, `reject`, and `none`.
-- Preflight summary, eligible candidate ids, ineligible candidate ids, blocked
-  action reasons, required edit summary, required human confirmation summary,
-  ReviewHistory handoff links, source traceability handoff summary, failure
-  code, and visible reason.
-- Accepted-for-future-promotion preflight summary,
-  accepted-with-required-edits preflight summary, needs-optimization preflight
-  summary, rejected-for-insufficient-evidence preflight summary, blocked
-  preflight summary, duplicate preflight summary, needs-more-evidence
-  preflight summary, and failed-validation preflight summary.
-
-Generated case human review decision application preflight rules:
-
-- Application preflight records are eligibility evidence only. They must not
-  be treated as approval, rejection, request optimization, TestCase promotion,
-  automation draft creation, prompt eligibility, report generation behavior,
-  export/download endpoint behavior, or proof that knowledge was used.
-- Eligibility status values `eligible`, `ineligible`, `blocked`, and
-  `failed_validation` are preflight labels only. They must not change
-  GeneratedCaseCandidate state or invoke existing human review transitions.
-- Mapped review action values `approve`, `approve_after_edit`,
-  `request_optimization`, `reject`, and `none` are planned action labels only.
-  They must not call the existing `case-review` action.
-- Decision-label mapping is strict. `accepted_for_future_promotion` may map
-  only to future `approve` when evidence chain status is `complete`, the
-  candidate status is reviewable, and required human confirmation summary is
-  present. `accepted_with_required_edits` may map only to future
-  `approve_after_edit` when requested edit fields are present and bounded.
-  `needs_optimization` may map only to future `request_optimization` when an
-  optimization request summary is present and bounded.
-  `rejected_for_insufficient_evidence` may map only to future `reject` when
-  rejection reasons and visible reason are present. `blocked`, `duplicate`,
-  `needs_more_evidence`, and `failed_validation` must map to `none` and remain
-  ineligible until a later explicit human action resolves them.
-- Ineligible or blocked application preflights must preserve ineligible
-  candidate ids, blocked action reasons, unresolved blocker summary,
-  unresolved follow-up flags, source hashes, source manifest ids, and
-  ReviewHistory handoff links.
-- Required human confirmation summary must remain visible for every eligible
-  mapped review action.
-- `used_knowledge` must not be auto-marked true by generated case human
-  review decision application preflight.
-- Provider-specific payloads must not leak into GeneratedCaseCandidate,
-  TestCase, TestKnowledgeCard, KnowledgeEvidence, prompt context evidence,
-  reports, review surfaces, evidence package surfaces, decision surfaces,
-  summary export surfaces, audit handoff surfaces, or application preflight
-  surfaces.
-- Invalid, stale, unsafe, cross-project, unbounded,
-  audit-handoff-missing, audit-handoff-invalid, audit-handoff-mismatched,
-  summary-export-missing, summary-export-invalid, summary-export-mismatched,
-  decision-artifact-missing, decision-artifact-invalid,
-  decision-artifact-mismatched, evidence-package-missing,
-  evidence-package-mismatched, candidate-missing, candidate-mismatched,
-  candidate-status-invalid, decision-label-unsupported,
-  mapped-action-unsupported, required-edit-missing,
-  required-confirmation-missing, review-history-missing,
-  source-hash-mismatched, artifact-mismatched, incomplete-required-input,
-  credential-required, runtime-required, provider-required, approval-required,
-  optimization-required, or promotion-required input must produce a failure
-  code and visible reason and must not append a successful application
-  preflight or successful ReviewHistory decision.
-- This contract must not write runtime `prompt_input.json`, execute a prompt,
-  call a provider, integrate an SDK, store credentials, fetch remote URLs,
-  create a vector index, create embeddings, rerank, run background indexing,
-  run a graph job, invoke MCP runtime, create provider-backed prompt context
-  evidence, generate reports, render reports, expose export/download
-  endpoints, mutate GeneratedCaseCandidate rows, approve or reject
-  GeneratedCaseCandidate rows, request optimization, promote TestCase rows,
-  create AutomationDraft rows, create ToolInvocation rows, execute AITasks,
-  mutate prompt context evidence, mutate KnowledgeEvidence, mutate
-  TestKnowledgeCard rows, mutate ReviewHistory, mutate generated case human
-  review decision audit handoff artifacts, mutate generated case human review
-  decision summary export artifacts, mutate generated case human review
-  decision artifacts, mutate evidence packages, mutate source evidence, mutate
-  historical evidence, mutate Artifact rows outside declared application
-  preflight evidence, render frontend pages, expose backend feature APIs, add
-  endpoints, routers, services, workers, queues, schedulers, run migrations,
-  add package upgrades, add RBAC, create tenants, or change permissions.
-
-## 6.2 Knowledge Feedback Seed Contract
-
-KnowledgeFeedbackAgent is bound to `knowledge_feedback:v1` and
-`knowledge-feedback-skill:v1`. This seed contract is draft-only: it does not
-enable runtime orchestration, TestKnowledgeCard CRUD, prompt-eligible
-auto-marking, automatic knowledge ingestion, provider calls, vector search,
-graph runtime, MCP runtime, tool execution, or historical evidence mutation.
-
-| Agent | PromptVersion / SkillVersion seed | Input evidence | Output contract and write permission | Quality gates | Forbidden actions | Human gate | Failure behavior |
-|---|---|---|---|---|---|---|---|
-| KnowledgeFeedbackAgent | `knowledge_feedback:v1` / `knowledge-feedback-skill:v1` | Accepted/rejected GeneratedCaseCandidate summaries, reviewed TestCase summaries, ReviewHistory comments/actions/evidence ids, FailureAnalysis summaries, Report summaries/evidence manifests, TestRun/TestResult summaries, normalized KnowledgeEvidence, existing TestKnowledgeCard summaries. | Draft KnowledgeFeedbackDraft entries with feedback_type, draft_knowledge_type, source_entity_type/id, source_quote_or_hash, source_span, recommendation, confidence, used_knowledge_evidence_ids, unsupported_claims, review_findings, `prompt_eligible=false`; write permission is AITask output plus feedback draft artifact only. | Every feedback item cites source evidence; accepted and rejected examples are labeled separately; failure/report-derived bug patterns cite execution or report evidence; schema passes; unsupported claims remain visible. | Do not create or approve TestKnowledgeCard rows, mark prompt-eligible, mutate ReviewHistory/FailureAnalysis/Report/TestRun/TestCase/GeneratedCaseCandidate/Artifact rows, call providers, use MCP/tools, or fabricate fallback knowledge. | Human review is required before feedback can become a TestKnowledgeCard or prompt-eligible knowledge. | Return `UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK` with empty feedback and visible unsupported claims when evidence is insufficient. |
-
-Trace requirements:
-
-- Record `prompt_version`, `skill_version`, prompt hash, skill hash, input
-  evidence ids, output artifact ids, schema validation status, unsupported
-  claim count, and failure code.
-- Model confidence is advisory only. It must not imply approval or prompt
-  eligibility.
 
 ## 7. 输出 JSON 约束
 
@@ -1644,13 +231,47 @@ Trace requirements:
       "input_data": {"coupon_status": "expired"},
       "requirement_refs": ["过期优惠券不可使用"],
       "risk_refs": ["RISK-001"],
+      "source_knowledge_evidence": [
+        {
+          "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
+          "knowledge_type": "BoundaryCondition",
+          "title": "BoundaryCondition: expired coupon checkout",
+          "snippet": "Expired coupon validation blocks checkout."
+        }
+      ],
       "ai_reason": "覆盖优惠券有效期边界"
     }
   ]
 }
 ```
 
-### 7.2 AutomationDraft 输出
+### 7.2 AutomationPlan 输出
+
+AutomationPlan output must be reviewable before code generation and must be
+derived from a reviewed TestCase.
+
+```json
+{
+  "title": "pytest automation plan for Expired coupon cannot submit order",
+  "plan": {
+    "source": "reviewed_test_case",
+    "test_case_title": "Expired coupon cannot submit order",
+    "target_framework": "pytest",
+    "knowledge_evidence": []
+  },
+  "execution_steps": ["Prepare precondition: User has an expired coupon"],
+  "test_data": {"coupon_state": "expired"},
+  "dependency_notes": "Requires pytest and project-local fixtures.",
+  "risk_notes": "Review selectors, fixtures, and environment data before generating executable code."
+}
+```
+
+AutomationPlan prompt input must include `test_case_id`, `source_candidate_id`,
+source `requirement_id`, `requirement_review_id`, `target_framework`,
+`use_knowledge`, selected `context_artifact_ids`, and deterministic retrieval
+evidence when used.
+
+### 7.3 AutomationDraft 输出
 
 ```json
 {
@@ -1668,7 +289,11 @@ Trace requirements:
 }
 ```
 
-### 7.3 UnitTestPatch 输出
+AutomationDraft prompt input may include an `automation_plan` summary. If it
+does, the generated draft must preserve `automation_plan_id` traceability and
+must not mark the draft approved.
+
+### 7.4 UnitTestPatch 输出
 
 ```json
 {
@@ -1680,7 +305,7 @@ Trace requirements:
 }
 ```
 
-### 7.4 RegressionPlan 输出
+### 7.5 RegressionPlan 输出
 
 ```json
 {
@@ -1691,7 +316,7 @@ Trace requirements:
 }
 ```
 
-### 7.5 Report 输出
+### 7.6 Report 输出
 
 ```json
 {
@@ -1709,6 +334,7 @@ Trace requirements:
 |---|---|
 | RequirementReview | 必须包含六维评分和至少一个测试设计建议 |
 | GeneratedCaseCandidate | 必须有步骤、预期、需求引用、AI 理由 |
+| AutomationPlan | 必须标明 source、target_framework、execution_steps、risk_notes |
 | AutomationDraft | 必须标明 target_framework、suggested_file_path、draft_code |
 | UnitTestPatch | 必须通过 PatchScopeGate，不能修改业务源码 |
 | RegressionPlan | 每个推荐命令必须有 reason |

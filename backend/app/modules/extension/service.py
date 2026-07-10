@@ -45,8 +45,8 @@ RUNTIME_CONFIG_KEYS = {
     "mcp_transport",
 }
 KNOWLEDGE_BASE_NON_GOALS = [
-    "no_vector_index",
-    "no_embedding",
+    "no_external_vector_runtime",
+    "no_online_embedding_provider",
     "no_reranking",
     "no_external_rag_runtime",
 ]

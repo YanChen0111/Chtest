@@ -19,11 +19,33 @@
         <template #title>生成入口</template>
         <form class="case-generation-form" @submit.prevent="submitGeneration">
           <label>
-            <span>Requirement ID</span>
+            <span>需求文档</span>
+            <a-select
+              v-model="form.requirementDocumentArtifactId"
+              placeholder="选择正式需求文档"
+              allow-clear
+              @change="selectRequirementDocument"
+            >
+              <a-option
+                v-for="document in store.requirementDocuments"
+                :key="document.artifact_id"
+                :value="document.artifact_id"
+              >
+                {{ document.document_number }} · {{ document.title }}
+              </a-option>
+            </a-select>
+          </label>
+          <div v-if="selectedRequirementDocument" class="document-source">
+            <strong>{{ selectedRequirementDocument.document_number }}</strong>
+            <span>{{ selectedRequirementDocument.title }} · {{ selectedRequirementDocument.status }}</span>
+            <a :href="selectedRequirementDocument.download_url">下载 Markdown</a>
+          </div>
+          <label>
+            <span>需求 ID（高级）</span>
             <a-input v-model="form.requirementId" />
           </label>
           <label>
-            <span>RequirementReview ID</span>
+            <span>评审 ID（高级）</span>
             <a-input v-model="form.requirementReviewId" />
           </label>
           <label>
@@ -34,6 +56,8 @@
             <span>ContextArtifact ID 列表</span>
             <a-input v-model="contextIdsText" placeholder="多个 ID 用逗号分隔" />
           </label>
+          <p v-if="!hasGenerationSource" class="source-hint">请先完成需求评审，或选择一份正式需求文档。</p>
+          <a-alert v-if="!hasGenerationSource" type="warning" content="请先完成需求评审，或选择一份正式需求文档。" show-icon />
           <a-button html-type="submit" type="primary" :loading="store.loadingGeneration">开始生成候选用例</a-button>
         </form>
 
@@ -109,6 +133,14 @@
                 <li v-for="result in store.selectedCandidate.expected_results" :key="result">{{ result }}</li>
               </ol>
             </section>
+            <section v-if="(store.selectedCandidate.source_knowledge_evidence ?? []).length">
+              <h3>知识证据</h3>
+              <ol>
+                <li v-for="evidence in store.selectedCandidate.source_knowledge_evidence ?? []" :key="String(evidence.evidence_id)">
+                  {{ evidenceTitle(evidence) }}
+                </li>
+              </ol>
+            </section>
           </div>
 
           <a-space class="review-actions" wrap>
@@ -148,18 +180,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import type { CaseReviewAction } from '../../api/cases';
 import { useCasesStore } from '../../stores/cases';
 
 const store = useCasesStore();
 
 const form = reactive({
-  requirementId: '00000000-0000-0000-0000-000000000401',
-  requirementReviewId: '00000000-0000-0000-0000-000000000601',
+  requirementId: store.requirementId,
+  requirementReviewId: store.requirementReviewId,
+  requirementDocumentArtifactId: store.requirementDocumentArtifactId,
 });
 const targetTypesText = ref('functional, ui');
 const contextIdsText = ref('');
+
+const selectedRequirementDocument = computed(() =>
+  store.requirementDocuments.find((document) => document.artifact_id === form.requirementDocumentArtifactId) ?? null,
+);
+
+const hasGenerationSource = computed(() => Boolean(form.requirementId && form.requirementReviewId));
 
 function commaList(value: string): string[] {
   return value
@@ -170,6 +209,12 @@ function commaList(value: string): string[] {
 
 function listText(items: string[]): string {
   return items.length > 0 ? items.join(', ') : '无';
+}
+
+function evidenceTitle(evidence: Record<string, unknown>): string {
+  const title = typeof evidence.title === 'string' ? evidence.title : 'KnowledgeEvidence';
+  const score = typeof evidence.score === 'number' ? evidence.score : 0;
+  return `${title} · score ${score}`;
 }
 
 function formatRate(value: number | undefined): string {
@@ -193,12 +238,38 @@ const metricItems = computed(() => {
 });
 
 function submitGeneration() {
+  if (!hasGenerationSource.value) {
+    store.errorMessage = '请先选择已评审需求或正式需求文档';
+    return;
+  }
   void store.generateCandidates({
     requirementId: form.requirementId,
     requirementReviewId: form.requirementReviewId,
+    requirementDocumentArtifactId: form.requirementDocumentArtifactId,
     targetTestTypes: commaList(targetTypesText.value),
     contextArtifactIds: commaList(contextIdsText.value),
   });
+}
+
+function syncLatestRequirementReviewContext() {
+  if (!store.loadLatestRequirementReviewContext()) {
+    return;
+  }
+  form.requirementId = store.requirementId;
+  form.requirementReviewId = store.requirementReviewId;
+  form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
+}
+
+function selectRequirementDocument(value: unknown) {
+  if (typeof value !== 'string') {
+    return;
+  }
+  if (!store.selectRequirementDocument(value)) {
+    return;
+  }
+  form.requirementId = store.requirementId;
+  form.requirementReviewId = store.requirementReviewId;
+  form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
 }
 
 function review(action: CaseReviewAction) {
@@ -266,6 +337,16 @@ function formatDateTime(value: string): string {
     minute: '2-digit',
   }).format(new Date(value));
 }
+
+onMounted(async () => {
+  syncLatestRequirementReviewContext();
+  await store.loadRequirementDocuments();
+  if (store.requirementDocumentArtifactId) {
+    form.requirementId = store.requirementId;
+    form.requirementReviewId = store.requirementReviewId;
+    form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
+  }
+});
 </script>
 
 <style scoped>
@@ -316,6 +397,25 @@ function formatDateTime(value: string): string {
   display: grid;
   gap: 7px;
   color: #344054;
+  font-weight: 700;
+}
+
+.document-source {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  background: #f0fdf4;
+}
+
+.document-source span {
+  color: #64748b;
+}
+
+.source-hint {
+  margin: 0;
+  color: #b45309;
   font-weight: 700;
 }
 

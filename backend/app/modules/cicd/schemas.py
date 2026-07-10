@@ -28,8 +28,8 @@ class CICDRunCreateRead(BaseModel):
 class CICDRunAnalyzeRequest(BaseModel):
     prompt_version: str = "cicd_change_analysis:v1"
     skill_version: str = "regression-selection-skill:v1"
-    model_provider: str = "mock"
-    model_name: str = "mock-cicd-analysis"
+    model_provider: str | None = None
+    model_name: str | None = None
 
 
 class CICDRunAnalyzeRead(BaseModel):
@@ -129,8 +129,8 @@ class UnitTestPatchGenerateRequest(BaseModel):
     coverage_target: list[dict[str, Any]] = Field(default_factory=list)
     prompt_version: str = "unit_test_patch:v1"
     skill_version: str = "unit-test-patch-skill:v1"
-    model_provider: str = "mock"
-    model_name: str = "mock-unit-test-patch"
+    model_provider: str | None = None
+    model_name: str | None = None
 
 
 class UnitTestPatchRead(BaseModel):

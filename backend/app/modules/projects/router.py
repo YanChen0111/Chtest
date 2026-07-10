@@ -3,12 +3,14 @@ from __future__ import annotations
 import os
 import uuid
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from backend.app.bootstrap import ensure_local_database_bootstrap
 from backend.app.models.base import Base
 from backend.app.modules.projects import service
 from backend.app.modules.projects.schemas import (
@@ -38,7 +40,9 @@ from backend.app.modules.projects.schemas import (
 )
 
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+pysqlite:////tmp/chtest-dev.db")
+DEFAULT_SQLITE_PATH = Path("storage") / "chtest-dev.db"
+DEFAULT_SQLITE_PATH.parent.mkdir(parents=True, exist_ok=True)
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+pysqlite:///{DEFAULT_SQLITE_PATH.as_posix()}")
 engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(engine, expire_on_commit=False, future=True)
 
@@ -48,6 +52,7 @@ router = APIRouter(tags=["projects"])
 def get_session() -> Iterator[Session]:
     Base.metadata.create_all(engine)
     with SessionLocal() as session:
+        ensure_local_database_bootstrap(session, database_key=DATABASE_URL)
         yield session
 
 

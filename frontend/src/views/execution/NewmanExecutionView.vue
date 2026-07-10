@@ -42,47 +42,33 @@
         <a-spin :loading="store.loading">
           <template v-if="store.run">
             <a-descriptions :column="2" bordered size="small">
-              <a-descriptions-item label="状态">{{ runStatusLabel(store.run.status) }}</a-descriptions-item>
+              <a-descriptions-item label="状态">{{ executionRunStatusLabel(store.run.status) }}</a-descriptions-item>
               <a-descriptions-item label="退出码">{{ store.run.exit_code ?? '运行中' }}</a-descriptions-item>
               <a-descriptions-item label="耗时">{{ durationLabel }}</a-descriptions-item>
               <a-descriptions-item label="运行器">{{ store.run.runner_mode }}</a-descriptions-item>
+              <a-descriptions-item label="只读仓库">{{ store.run.repository_readonly ? '是' : '否' }}</a-descriptions-item>
               <a-descriptions-item label="网络">{{ store.run.network_enabled ? '开启' : '关闭' }}</a-descriptions-item>
               <a-descriptions-item label="集合">{{ collectionName }}</a-descriptions-item>
               <a-descriptions-item label="命令" :span="2">{{ store.run.command }}</a-descriptions-item>
+              <a-descriptions-item label="工作目录" :span="2">{{ store.run.working_directory }}</a-descriptions-item>
             </a-descriptions>
 
-            <div class="result-metrics">
-              <div v-for="item in metricItems" :key="item.label" class="metric-tile">
-                <span>{{ item.label }}</span>
-                <strong>{{ item.value }}</strong>
-              </div>
-            </div>
+            <ExecutionRunManifestPanel :run="store.run" :rows="manifestRows" title-id="newman-run-manifest-title" />
 
-            <section class="evidence-section">
-              <h3>Newman 工件</h3>
-              <a-table
-                :columns="artifactColumns"
-                :data="newmanArtifacts"
-                :pagination="false"
-                row-key="id"
-                size="small"
-              >
-                <template #action="{ record }">
-                  <a :href="artifactDownloadUrl(record.id)" target="_blank" rel="noreferrer">打开</a>
-                </template>
-              </a-table>
-            </section>
+            <ExecutionMetricsPanel :items="metricItems" />
 
-            <section class="evidence-section">
-              <h3>断言结果</h3>
-              <a-table
-                :columns="resultColumns"
-                :data="store.run.test_results"
-                :pagination="false"
-                row-key="id"
-                size="small"
-              />
-            </section>
+            <ExecutionArtifactTable
+              title="Newman 工件"
+              title-id="newman-artifacts-title"
+              :artifacts="newmanArtifacts"
+            />
+
+            <ExecutionResultTable
+              title="断言结果"
+              title-id="newman-results-title"
+              :columns="resultColumns"
+              :rows="store.run.test_results"
+            />
           </template>
 
           <a-empty v-else description="启动后展示 Newman API 执行证据" />
@@ -95,17 +81,16 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 
-import { artifactDownloadUrl } from '../../api/execution';
 import { useExecutionStore } from '../../stores/execution';
+import ExecutionArtifactTable from './ExecutionArtifactTable.vue';
+import ExecutionMetricsPanel from './ExecutionMetricsPanel.vue';
+import ExecutionResultTable from './ExecutionResultTable.vue';
+import ExecutionRunManifestPanel from './ExecutionRunManifestPanel.vue';
+import { executionRunDurationLabel, executionRunStatusLabel } from './executionDisplay';
+import { newmanOutputArtifacts } from './executionOutputArtifacts';
+import { buildExecutionRunManifestRows } from './executionRunManifest';
 
 const store = useExecutionStore();
-
-const artifactColumns = [
-  { title: '类型', dataIndex: 'artifact_type' },
-  { title: '路径', dataIndex: 'file_path' },
-  { title: 'MIME', dataIndex: 'mime_type' },
-  { title: 'Artifact', slotName: 'action' },
-];
 
 const resultColumns = [
   { title: '断言', dataIndex: 'test_name' },
@@ -114,10 +99,7 @@ const resultColumns = [
 ];
 
 const durationLabel = computed(() => {
-  if (!store.run || store.run.duration_ms === null) {
-    return '运行中';
-  }
-  return `${store.run.duration_ms} ms`;
+  return executionRunDurationLabel(store.run?.duration_ms ?? null);
 });
 
 const collectionName = computed(() => {
@@ -143,17 +125,7 @@ const newmanArtifacts = computed(() => {
   );
 });
 
-function runStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    passed: '通过',
-    failed: '失败',
-    running: '运行中',
-    pending: '排队中',
-    error: '错误',
-    timeout: '超时',
-  };
-  return labels[status] ?? status;
-}
+const manifestRows = computed(() => buildExecutionRunManifestRows(store.run, newmanOutputArtifacts));
 
 function startRun() {
   store.sourceMode = 'test_command';
@@ -223,52 +195,10 @@ onMounted(() => {
   font-weight: 700;
 }
 
-.result-metrics {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(86px, 1fr));
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.metric-tile {
-  min-height: 72px;
-  padding: 12px;
-  border: 1px solid #dbe6f3;
-  border-radius: 8px;
-  background: #f8fbff;
-}
-
-.metric-tile span,
-.metric-tile strong {
-  display: block;
-}
-
-.metric-tile span {
-  color: #64748b;
-}
-
-.metric-tile strong {
-  margin-top: 8px;
-  color: #0f172a;
-  font-size: 22px;
-}
-
-.evidence-section {
-  margin-top: 18px;
-}
-
-.evidence-section h3 {
-  margin: 0 0 10px;
-  font-size: 16px;
-}
-
 @media (max-width: 980px) {
   .execution-layout {
     grid-template-columns: 1fr;
   }
 
-  .result-metrics {
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
-  }
 }
 </style>

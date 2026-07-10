@@ -73,6 +73,8 @@ def start_case_generation(
         raise not_found("REQUIREMENT_NOT_FOUND", "Requirement not found.") from exc
     except service.RequirementReviewNotFoundError as exc:
         raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except service.RequirementDocumentNotFoundError as exc:
+        raise not_found("REQUIREMENT_DOCUMENT_NOT_FOUND", "Requirement document not found.") from exc
     except (service.PromptVersionNotFoundError, service.SkillVersionNotFoundError) as exc:
         raise not_found("PROMPT_OR_SKILL_NOT_FOUND", "Prompt or skill version not found.") from exc
     except service.ContextArtifactNotFoundError as exc:

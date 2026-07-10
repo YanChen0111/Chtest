@@ -13,6 +13,7 @@ EXPECTED_PROMPTS = {
     "risk_matrix": "RequirementReviewAgent",
     "case_generation": "CaseGenerationAgent",
     "case_review": "CaseReviewAgent",
+    "automation_plan_generation": "AutomationPlanAgent",
     "automation_draft_generation": "AutomationDraftAgent",
     "cicd_change_analysis": "CICDChangeAnalysisAgent",
     "unit_test_generation": "UnitTestAgent",
@@ -81,3 +82,19 @@ def test_prompt_failure_outputs_are_json_objects() -> None:
         failure_output = json_section(content, "Failure Output")
 
         assert {"error_code", "message", "recoverable"}.issubset(failure_output)
+
+
+def test_automation_plan_prompt_requires_reviewed_evidence_and_approval_gate() -> None:
+    content = (PROMPT_ROOT / "automation_plan_generation" / "v1.md").read_text(encoding="utf-8")
+    instructions = section_body(content, "Instructions").lower()
+    normalized_instructions = " ".join(instructions.split())
+    output_schema = json_section(content, "Output Schema")
+
+    assert "approved testcase" in normalized_instructions
+    assert "requirement evidence" in normalized_instructions
+    assert "requirement review evidence" in normalized_instructions
+    assert "knowledge evidence" in normalized_instructions
+    assert "approval before automationdraft or code generation" in normalized_instructions
+    assert "do not execute" in normalized_instructions
+    assert "arbitrary commands" in normalized_instructions
+    assert "used_context_artifact_ids" in output_schema["required"]

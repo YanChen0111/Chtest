@@ -90,7 +90,7 @@ class ASGIClient:
 
 
 @pytest.fixture()
-def api_client(tmp_path: Path) -> Iterator[tuple[ASGIClient, sessionmaker[Session]]]:
+def api_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[ASGIClient, sessionmaker[Session]]]:
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -100,6 +100,7 @@ def api_client(tmp_path: Path) -> Iterator[tuple[ASGIClient, sessionmaker[Sessio
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(engine, expire_on_commit=False, future=True)
     artifact_root = tmp_path / "artifacts"
+    monkeypatch.setenv("CHTEST_MODEL_CONNECTION_PATH", str(tmp_path / "model-connection.json"))
 
     def override_get_session() -> Iterator[Session]:
         with SessionLocal() as session:
@@ -193,6 +194,21 @@ def configure_deterministic_adapter(SessionLocal: sessionmaker[Session], project
         session.commit()
 
 
+def write_model_connection_config(path: Path, *, provider: str, model_name: str) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "provider": provider,
+                "model_name": model_name,
+                "base_url": "https://gateway.example.test/v1",
+                "wire_api": "responses",
+                "api_key": "sk-local-secret",
+            },
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_start_requirement_review_persists_review_risks_and_ai_evidence(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:
@@ -244,6 +260,207 @@ def test_start_requirement_review_persists_review_risks_and_ai_evidence(
         assert ai_task.context_artifact_ids == [uuid.UUID(context_id)]
         assert session.scalar(select(RequirementReview).where(RequirementReview.requirement_id == uuid.UUID(requirement["id"])))
         assert len(list(session.scalars(select(RiskItem)))) >= 2
+
+
+def test_start_requirement_review_uses_saved_model_connection_when_request_omits_model(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    write_model_connection_config(
+        tmp_path / "model-connection.json",
+        provider="OpenAI Compatible",
+        model_name="gpt-live-review",
+    )
+    observed_task_ids: list[uuid.UUID] = []
+
+    def fake_run_ai_task(session: Session, _store: LocalArtifactStore, job: Any) -> None:
+        ai_task = session.get(AITask, job.ai_task_id)
+        assert ai_task is not None
+        observed_task_ids.append(ai_task.id)
+        assert ai_task.model_provider == "OpenAI Compatible"
+        assert ai_task.model_name == "gpt-live-review"
+        ai_task.status = "succeeded"
+        ai_task.output_json = {
+            "overall_score": 91,
+            "scores": {
+                "completeness": 90,
+                "clarity": 91,
+                "consistency": 92,
+                "testability": 90,
+                "feasibility": 93,
+                "logic": 90,
+            },
+            "issues": [],
+            "clarification_questions": [],
+            "test_design_notes": ["Ready for model-backed review."],
+            "risk_items": [],
+            "used_knowledge": False,
+            "used_context_artifact_ids": [],
+        }
+        session.add(ai_task)
+        session.commit()
+
+    monkeypatch.setattr("backend.app.modules.requirements.service.run_ai_task", fake_run_ai_task)
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert observed_task_ids == [uuid.UUID(body["ai_task_id"])]
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert ai_task is not None
+        assert ai_task.model_provider == "OpenAI Compatible"
+        assert ai_task.model_name == "gpt-live-review"
+        review = session.scalar(select(RequirementReview).where(RequirementReview.ai_task_id == ai_task.id))
+        assert review is not None
+        assert review.overall_score == 91
+
+
+def test_requirement_review_accepts_clarification_supplement(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    observed_inputs: list[dict[str, Any]] = []
+
+    def fake_run_ai_task(session: Session, _store: LocalArtifactStore, job: Any) -> None:
+        ai_task = session.get(AITask, job.ai_task_id)
+        assert ai_task is not None
+        observed_inputs.append(ai_task.input_json)
+        ai_task.status = "succeeded"
+        ai_task.output_json = {
+            "overall_score": 93,
+            "scores": {
+                "completeness": 92,
+                "clarity": 94,
+                "consistency": 93,
+                "testability": 95,
+                "feasibility": 90,
+                "logic": 94,
+            },
+            "issues": [],
+            "clarification_questions": [],
+            "test_design_notes": ["Supplement resolved the open discount stacking question."],
+            "risk_items": [],
+            "used_knowledge": False,
+            "used_context_artifact_ids": [],
+        }
+        session.add(ai_task)
+        session.commit()
+
+    monkeypatch.setattr("backend.app.modules.requirements.service.run_ai_task", fake_run_ai_task)
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+            "supplement_text": "平台活动可以叠加，但积分不可与优惠券同时使用。",
+            "clarification_answers": [
+                {
+                    "question": "优惠券是否可以与平台活动叠加？",
+                    "answer": "可以与平台活动叠加。",
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 202
+    assert observed_inputs
+    assert observed_inputs[0]["clarification_context"] == {
+        "supplement_text": "平台活动可以叠加，但积分不可与优惠券同时使用。",
+        "clarification_answers": [
+            {
+                "question": "优惠券是否可以与平台活动叠加？",
+                "answer": "可以与平台活动叠加。",
+            },
+        ],
+    }
+
+    review_response = client.get(f"/api/requirements/{requirement['id']}/review")
+    assert review_response.status_code == 200
+    assert review_response.json()["overall_score"] == 93
+
+
+def test_requirement_review_generates_downloadable_requirement_document(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    review_start = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    )
+    assert review_start.status_code == 202
+    review = client.get(f"/api/requirements/{requirement['id']}/review").json()
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/documents",
+        json_body={
+            "requirement_review_id": review["id"],
+            "version": "v1",
+            "status": "confirmed",
+        },
+    )
+
+    assert response.status_code == 201
+    document = response.json()
+    assert document["requirement_id"] == requirement["id"]
+    assert document["requirement_review_id"] == review["id"]
+    assert document["document_number"].startswith("RD-CHECKOUT-SYSTEM-")
+    assert document["version"] == "v1"
+    assert document["status"] == "confirmed"
+    assert document["artifact_id"] == document["id"]
+    assert document["download_url"] == f"/api/artifacts/{document['artifact_id']}/download"
+
+    list_response = client.get(f"/api/projects/{requirement['project_id']}/requirement-documents")
+    assert list_response.status_code == 200
+    listed = list_response.json()
+    assert listed["total"] == 1
+    assert listed["items"][0]["document_number"] == document["document_number"]
+
+    download_response = client.get(document["download_url"])
+    assert download_response.status_code == 200
+    markdown = download_response.body.decode("utf-8")
+    assert "# 需求规格说明书" in markdown
+    assert document["document_number"] in markdown
+    assert "## 4. 功能需求" in markdown
+    assert "## 9. 追踪矩阵" in markdown
+
+    with SessionLocal() as session:
+        artifact = session.get(Artifact, uuid.UUID(document["artifact_id"]))
+        assert artifact is not None
+        assert artifact.artifact_type == "requirement_md"
+        assert artifact.owner_entity_type == "RequirementReview"
+        assert artifact.owner_entity_id == uuid.UUID(review["id"])
+        assert artifact.metadata_json["document_number"] == document["document_number"]
 
 
 def test_requirement_review_attaches_deterministic_retrieval_evidence(
@@ -324,6 +541,67 @@ def test_requirement_review_attaches_deterministic_retrieval_evidence(
         assert evidence["results"][0]["sha256"].startswith("sha256:")
         assert evidence["results"][0]["allowed_for_prompt"] is True
         assert evidence["results"][0]["redaction_applied"] is False
+
+
+def test_requirement_review_uses_approved_test_knowledge_cards_without_legacy_adapter(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    context_id = create_context_artifact(
+        client,
+        requirement["project_id"],
+        content="# Coupon Boundary\nExpired coupons cannot be used during checkout.",
+    )
+    extraction_response = client.post(
+        "/api/test-knowledge/cards/extract",
+        json_body={
+            "project_id": requirement["project_id"],
+            "source_artifact_id": context_id,
+        },
+    )
+    assert extraction_response.status_code == 201
+    extracted_card = extraction_response.json()["items"][0]
+    approval_response = client.request(
+        "PATCH",
+        f"/api/test-knowledge/cards/{extracted_card['id']}",
+        json_body={
+            "project_id": requirement["project_id"],
+            "status": "approved",
+        },
+    )
+    assert approval_response.status_code == 200
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": True,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert body["used_knowledge"] is True
+    assert body["used_context_artifact_ids"] == [context_id]
+
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert ai_task is not None
+        retrieval = ai_task.input_json["knowledge_retrieval"]
+        assert retrieval["retrieval_mode"] == "test_knowledge_hybrid"
+        assert retrieval["result_sources"] == ["test_knowledge_card"]
+        assert retrieval["results"][0]["knowledge_card_id"] == extracted_card["id"]
+        evidence_artifact = session.get(Artifact, uuid.UUID(ai_task.output_json["retrieval_evidence_artifact_id"]))
+        assert evidence_artifact is not None
+        assert evidence_artifact.metadata_json["created_by_component"] == "TestKnowledgeHybridRetriever"
+        assert evidence_artifact.metadata_json["retrieval_mode"] == "test_knowledge_hybrid"
+        assert evidence_artifact.metadata_json["results"][0]["knowledge_card_id"] == extracted_card["id"]
 
 
 def test_requirement_review_merges_explicit_and_retrieved_context_ids(

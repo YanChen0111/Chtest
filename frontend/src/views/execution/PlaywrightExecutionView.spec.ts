@@ -19,8 +19,11 @@ function playwrightRunBody() {
     run_workspace: '/tmp/chtest-playwright-run',
     repository_readonly: true,
     network_enabled: false,
-    runtime_artifact_ids: ['00000000-0000-0000-0000-000000001501'],
-    dependency_snapshot_artifact_id: null,
+    runtime_artifact_ids: [
+      '00000000-0000-0000-0000-000000001501',
+      '00000000-0000-0000-0000-000000001502',
+    ],
+    dependency_snapshot_artifact_id: '00000000-0000-0000-0000-000000001603',
     environment_snapshot_artifact_id: null,
     status: 'passed',
     exit_code: 0,
@@ -48,6 +51,18 @@ function playwrightRunBody() {
     ],
     artifacts: [
       {
+        id: '00000000-0000-0000-0000-000000001501',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001411',
+        artifact_type: 'automation_draft_code',
+        file_path: 'automation-drafts/00000000-0000-0000-0000-000000001011/runtime/test_from_draft.spec.ts',
+        mime_type: 'text/plain',
+        size_bytes: 118,
+        sha256: 'sha256:runtime',
+        metadata_json: { created_by_component: 'PlaywrightRunner' },
+      },
+      {
         id: '00000000-0000-0000-0000-000000001601',
         project_id: '00000000-0000-0000-0000-000000000101',
         owner_entity_type: 'TestRun',
@@ -69,6 +84,30 @@ function playwrightRunBody() {
         mime_type: 'image/png',
         size_bytes: 256,
         sha256: 'sha256:screenshot',
+        metadata_json: { created_by_component: 'PlaywrightRunner' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001603',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001411',
+        artifact_type: 'dependency_snapshot',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001411/dependency_snapshot.json',
+        mime_type: 'application/json',
+        size_bytes: 96,
+        sha256: 'sha256:dependency',
+        metadata_json: { created_by_component: 'PlaywrightRunner' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001604',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001411',
+        artifact_type: 'stdout',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001411/stdout.log',
+        mime_type: 'text/plain',
+        size_bytes: 64,
+        sha256: 'sha256:stdout',
         metadata_json: { created_by_component: 'PlaywrightRunner' },
       },
     ],
@@ -110,13 +149,47 @@ describe('PlaywrightExecutionView', () => {
 
     expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('npx playwright test tests/checkout.spec.ts');
+    expect(wrapper.text()).toContain('/tmp/chtest-playwright-run');
     expect(wrapper.text()).toContain('playwright_local');
+    expect(wrapper.text()).toContain('执行运行清单');
+    expect(wrapper.text()).toContain('执行命令');
+    expect(wrapper.text()).toContain('工作目录');
+    expect(wrapper.text()).toContain('运行器模式');
+    expect(wrapper.text()).toContain('运行工作区');
+    expect(wrapper.text()).toContain('仓库只读策略');
+    expect(wrapper.text()).toContain('网络策略');
+    expect(wrapper.text()).toContain('只读挂载');
+    expect(wrapper.text()).toContain('网络关闭');
+    expect(wrapper.text()).toContain('运行时文件 1');
+    expect(wrapper.text()).toContain('运行时文件 2');
+    expect(wrapper.text()).toContain('运行时文件未返回本地元数据');
+    expect(wrapper.text()).toContain('依赖快照');
+    expect(wrapper.text()).toContain('环境快照');
+    expect(wrapper.text()).toContain('未生成环境快照');
+    expect(wrapper.text()).toContain('不可用');
+    expect(wrapper.text()).toContain('标准输出');
+    expect(wrapper.text()).toContain('标准错误不可用');
+    expect(wrapper.text()).toContain('解析结果不可用');
+    expect(wrapper.text()).toContain('JUnit 结果不可用');
     expect(wrapper.text()).toContain('playwright_trace');
     expect(wrapper.text()).toContain('screenshot');
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001501/download"]').text(),
+    ).toBe('打开');
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001502/download"]').exists(),
+    ).toBe(false);
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001601/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001602/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001603/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001604/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('generated::checkout smoke');
     expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('1');
+    expect(wrapper.text()).not.toContain('重新运行');
+    expect(wrapper.text()).not.toContain('生成报告');
+    expect(wrapper.text()).not.toContain('远程执行');
+    expect(wrapper.text()).not.toContain('远程控制');
 
     await wrapper.find('[data-test="refresh-playwright-run"]').trigger('click');
     await flushPromises();

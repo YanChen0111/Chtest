@@ -19,8 +19,11 @@ function jmeterRunBody() {
     run_workspace: '/tmp/chtest-jmeter-run',
     repository_readonly: true,
     network_enabled: false,
-    runtime_artifact_ids: ['00000000-0000-0000-0000-000000001721'],
-    dependency_snapshot_artifact_id: null,
+    runtime_artifact_ids: [
+      '00000000-0000-0000-0000-000000001721',
+      '00000000-0000-0000-0000-000000001722',
+    ],
+    dependency_snapshot_artifact_id: '00000000-0000-0000-0000-000000001703',
     environment_snapshot_artifact_id: null,
     status: 'failed',
     exit_code: 0,
@@ -52,6 +55,18 @@ function jmeterRunBody() {
     ],
     artifacts: [
       {
+        id: '00000000-0000-0000-0000-000000001721',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001621',
+        artifact_type: 'runtime_manifest',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001621/runtime_manifest.json',
+        mime_type: 'application/json',
+        size_bytes: 118,
+        sha256: 'sha256:runtime',
+        metadata_json: { created_by_component: 'JMeterRunner' },
+      },
+      {
         id: '00000000-0000-0000-0000-000000001701',
         project_id: '00000000-0000-0000-0000-000000000101',
         owner_entity_type: 'TestRun',
@@ -73,6 +88,30 @@ function jmeterRunBody() {
         mime_type: 'application/json',
         size_bytes: 128,
         sha256: 'sha256:parsed',
+        metadata_json: { created_by_component: 'JMeterRunner' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001703',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001621',
+        artifact_type: 'dependency_snapshot',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001621/dependency_snapshot.json',
+        mime_type: 'application/json',
+        size_bytes: 96,
+        sha256: 'sha256:dependency',
+        metadata_json: { created_by_component: 'JMeterRunner' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001704',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001621',
+        artifact_type: 'stdout',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001621/stdout.log',
+        mime_type: 'text/plain',
+        size_bytes: 64,
+        sha256: 'sha256:stdout',
         metadata_json: { created_by_component: 'JMeterRunner' },
       },
     ],
@@ -116,10 +155,41 @@ describe('JMeterExecutionView', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain('失败');
+    expect(wrapper.text()).toContain('jmeter -n -t plans/coupon.jmx -l results.jtl');
+    expect(wrapper.text()).toContain('/tmp/chtest-jmeter-run');
     expect(wrapper.text()).toContain('jmeter_local');
+    expect(wrapper.text()).toContain('执行运行清单');
+    expect(wrapper.text()).toContain('执行命令');
+    expect(wrapper.text()).toContain('工作目录');
+    expect(wrapper.text()).toContain('运行器模式');
+    expect(wrapper.text()).toContain('运行工作区');
+    expect(wrapper.text()).toContain('仓库只读策略');
+    expect(wrapper.text()).toContain('网络策略');
+    expect(wrapper.text()).toContain('只读挂载');
+    expect(wrapper.text()).toContain('网络关闭');
+    expect(wrapper.text()).toContain('运行时文件 1');
+    expect(wrapper.text()).toContain('运行时文件 2');
+    expect(wrapper.text()).toContain('运行时文件未返回本地元数据');
+    expect(wrapper.text()).toContain('依赖快照');
+    expect(wrapper.text()).toContain('环境快照');
+    expect(wrapper.text()).toContain('未生成环境快照');
+    expect(wrapper.text()).toContain('不可用');
+    expect(wrapper.text()).toContain('标准输出');
+    expect(wrapper.text()).toContain('标准错误不可用');
+    expect(wrapper.text()).toContain('解析结果');
+    expect(wrapper.text()).toContain('JMeter JTL');
     expect(wrapper.text()).toContain('jmeter_jtl');
     expect(wrapper.text()).toContain('parsed_output');
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001721/download"]').text(),
+    ).toBe('打开');
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001722/download"]').exists(),
+    ).toBe(false);
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001701/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001702/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001703/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001704/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('jmeter/POST /coupons');
     expect(wrapper.text()).toContain('500 Internal Server Error');
     expect(wrapper.text()).toContain('总样本');
@@ -127,6 +197,10 @@ describe('JMeterExecutionView', () => {
     expect(wrapper.text()).toContain('断言数');
     expect(wrapper.text()).toContain('平均延迟');
     expect(wrapper.text()).toContain('103 ms');
+    expect(wrapper.text()).not.toContain('重新运行');
+    expect(wrapper.text()).not.toContain('生成报告');
+    expect(wrapper.text()).not.toContain('远程执行');
+    expect(wrapper.text()).not.toContain('远程控制');
 
     await wrapper.find('[data-test="refresh-jmeter-run"]').trigger('click');
     await flushPromises();

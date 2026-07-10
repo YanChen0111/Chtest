@@ -12,22 +12,65 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert v-if="store.errorMessage" type="error" show-icon>{{ store.errorMessage }}</a-alert>
 
     <div class="automation-draft-layout">
       <a-card class="draft-panel" :bordered="false">
         <template #title>草稿入口</template>
-        <form class="draft-form" @submit.prevent="submitDraft">
+        <form class="draft-form" @submit.prevent="submitPlan">
           <label>
             <span>TestCase ID</span>
-            <a-input v-model="form.testCaseId" />
+            <a-input data-test="automation-test-case-id" v-model="form.testCaseId" />
           </label>
           <label>
             <span>目标框架</span>
             <a-input v-model="form.targetFramework" />
           </label>
-          <a-button html-type="submit" type="primary" :loading="store.loading">生成自动化草稿</a-button>
+          <a-checkbox v-model="form.useKnowledge">结合 RAG 知识库</a-checkbox>
+          <a-button data-test="generate-plan" html-type="submit" type="primary" :loading="store.loading">生成自动化方案</a-button>
         </form>
+
+        <section v-if="store.plan" class="automation-plan-panel">
+          <h3>AutomationPlan</h3>
+          <a-descriptions :column="1" bordered size="small">
+            <a-descriptions-item label="标题">{{ store.plan.title }}</a-descriptions-item>
+            <a-descriptions-item label="状态">{{ store.plan.status }}</a-descriptions-item>
+            <a-descriptions-item label="知识证据">
+              {{ store.plan.knowledge_retrieval_artifact_id ?? '无命中证据' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="依赖说明">{{ store.plan.dependency_notes ?? '无' }}</a-descriptions-item>
+            <a-descriptions-item label="风险说明">{{ store.plan.risk_notes ?? '无' }}</a-descriptions-item>
+          </a-descriptions>
+          <ol class="automation-plan-steps">
+            <li v-for="step in store.plan.execution_steps" :key="step">{{ step }}</li>
+          </ol>
+          <a-space class="draft-actions" wrap>
+            <a-button data-test="approve-plan" :disabled="!canApprovePlan" :loading="store.loading" @click="approvePlan">
+              批准方案
+            </a-button>
+            <a-button
+              data-test="generate-draft-from-plan"
+              type="primary"
+              :disabled="store.plan.status !== 'approved'"
+              :loading="store.loading"
+              @click="generateDraftFromPlan"
+            >
+              生成草稿
+            </a-button>
+          </a-space>
+          <div v-if="store.lastPlanReview" class="draft-result">
+            <span>方案评审结果：{{ store.lastPlanReview.status }}</span>
+            <strong>AutomationPlan：{{ store.lastPlanReview.automation_plan_id }}</strong>
+          </div>
+          <section v-if="store.planReviewHistory.length" class="review-history-panel" aria-label="方案评审历史">
+            <h3>方案评审历史</h3>
+            <div v-for="item in store.planReviewHistory" :key="item.id" class="review-history-item">
+              <strong>{{ actionLabel(item.action) }}</strong>
+              <span>{{ item.reviewer }} 路 {{ statusTransition(item.from_status, item.to_status) }}</span>
+              <small>{{ formatDateTime(item.created_at) }} 路 {{ item.comment || '无评审备注' }} 路 证据 {{ item.evidence_artifact_ids.length }}</small>
+            </div>
+          </section>
+        </section>
       </a-card>
 
       <a-card class="draft-panel draft-detail-panel" :bordered="false">
@@ -54,6 +97,14 @@
               <h3>草稿代码</h3>
               <pre>{{ store.draft.draft_code }}</pre>
             </section>
+
+            <div class="draft-quality-gate" data-test="draft-quality-gate" role="note">
+              <strong>Quality gate</strong>
+              <span>
+                fake, stub, placeholder, or assert True-only drafts cannot be approved. Replace them with real selectors,
+                steps, and assertions before approval.
+              </span>
+            </div>
 
             <a-space class="draft-actions" wrap>
               <a-button data-test="edit-draft" :loading="store.loading" @click="editDraft">保存评审编辑</a-button>
@@ -83,22 +134,34 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { computed, onMounted, reactive } from 'vue';
 
 import { useAutomationStore } from '../../stores/automation';
 
 const store = useAutomationStore();
 
 const form = reactive({
-  testCaseId: '00000000-0000-0000-0000-000000000901',
+  testCaseId: store.testCaseId,
   targetFramework: 'pytest',
+  useKnowledge: true,
 });
 
-function submitDraft() {
-  void store.createDraft({
+const canApprovePlan = computed(() => ['plan_generated', 'edited'].includes(store.plan?.status ?? ''));
+
+function submitPlan() {
+  void store.createPlan({
     testCaseId: form.testCaseId,
     targetFramework: form.targetFramework,
+    useKnowledge: form.useKnowledge,
   });
+}
+
+function approvePlan() {
+  void store.approveCurrentPlan('前端批准自动化方案');
+}
+
+function generateDraftFromPlan() {
+  void store.generateDraftFromPlan();
 }
 
 function editDraft() {
@@ -114,6 +177,7 @@ function actionLabel(action: string): string {
     edit: '编辑',
     approve: '批准',
     reject: '拒绝',
+    generate_draft: '生成草稿',
   };
   return labels[action] ?? action;
 }
@@ -127,6 +191,7 @@ function statusLabel(status: string | null): string {
     draft_generated: '已生成',
     edited: '已编辑',
     approved: '已批准',
+    plan_generated: '方案已生成',
     rejected: '已拒绝',
   };
   return status ? (labels[status] ?? status) : '未知';
@@ -140,6 +205,12 @@ function formatDateTime(value: string): string {
     minute: '2-digit',
   }).format(new Date(value));
 }
+
+onMounted(() => {
+  if (store.loadLatestApprovedTestCaseContext()) {
+    form.testCaseId = store.testCaseId;
+  }
+});
 </script>
 
 <style scoped>
@@ -193,6 +264,23 @@ function formatDateTime(value: string): string {
   font-weight: 700;
 }
 
+.automation-plan-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.automation-plan-panel h3,
+.automation-plan-steps {
+  margin: 0;
+}
+
+.automation-plan-steps {
+  padding-left: 20px;
+  color: #475569;
+  line-height: 1.7;
+}
+
 .draft-code-panel {
   margin-top: 18px;
 }
@@ -216,6 +304,10 @@ function formatDateTime(value: string): string {
 .draft-actions,
 .draft-result {
   margin-top: 16px;
+}
+
+.draft-quality-gate {
+  margin-top: 14px;
 }
 
 .draft-result {

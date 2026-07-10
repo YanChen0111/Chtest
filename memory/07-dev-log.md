@@ -1,3302 +1,1143 @@
 # Development Log
 
-## 2026-07-05 Slice 57 Generated Case Human Review Decision Audit Handoff Plan
+## 2026-07-08 Slice 46 Completion Gate
 
 ### Completed
 
-- Added Slice 57 plan:
-  `docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md`.
-- The plan scopes Generated Case Human Review Decision Audit Handoff as
-  contract-only evidence-chain packaging over Slice 56 summary export
-  artifacts, not actual GeneratedCaseCandidate approval/rejection, request
-  optimization, TestCase promotion, report rendering, export/download
-  endpoints, or runtime behavior.
-- The plan names
-  `build_generated_case_human_review_decision_audit_handoff`,
-  `generated_case_human_review_decision_audit_handoff`,
-  `generated_case_human_review_decision_summary_export_artifact_id`,
-  source decision artifact ids, evidence package artifact ids, evidence chain
-  status, included artifact ids, excluded artifact reasons, unresolved
-  follow-up flags, source traceability handoff summary, ReviewHistory links,
-  failure code, and visible reason.
-- Updated `NEXT_AI_TASK.md` to Slice 57 Task 2.
+- Completed Slice 46: AI Workbench Evidence Table Empty States.
+- Selected-task artifact summary now shows an explicit empty state when no
+  artifact evidence is recorded.
+- Selected-task LLM call log now shows an explicit empty state when no LLM call
+  logs are recorded.
+- Existing populated artifact and LLM call tables still render as before.
+- Raw prompt, raw request, and raw LLM output remain metadata-only; no backend,
+  provider, prompt, skill, contract, fixture, execution page, package, RAG
+  runtime, or MCP runtime behavior changed.
+- Updated `NEXT_AI_TASK.md` to select the next narrow V2 task.
 
 ### Verification
 
-- Focused PowerShell plan-term check over the Slice 57 plan,
-  `NEXT_AI_TASK.md`, scope options, and handoff.
-- Result: `plan terms ok`.
+- `npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- Result: `1` file passed, `4` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
+- Result: no output.
 
 ### Next Step
 
-- Commit Task 1, then continue Slice 57 Task 2 from `NEXT_AI_TASK.md`.
+- Select another narrow V2 task outside broad refactors and unrelated
+  dirty-worktree scope.
 
-## 2026-07-05 Slice 56 Completion Gate
-
-### Completed
-
-- Closed Slice 56: Generated Case Human Review Decision Summary Export
-  Contract.
-- Recorded completed task commits in the Slice 56 task table:
-  - Task 1: `79d68ab`;
-  - Task 2: `7262a88`;
-  - Task 3: `4165d01`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 56
-  completion and Slice 57 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 57 Task 1.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py -q`
-- Result: `4 passed in 1.04s`.
-- `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
-
-### Next Step
-
-- Commit `docs(v2): complete generated case human review decision summary export slice`.
-- Continue Slice 57 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Golden Smoke
+## 2026-07-08 Slice 46 AI Workbench Evidence Table Empty States Plan
 
 ### Completed
 
-- Added Generated Case Human Review Decision Summary Export golden fixture:
-  `docs/fixtures/44-generated-case-human-review-decision-summary-export-golden.md`.
-- Added focused golden smoke:
-  `backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py`.
-- The golden locks
-  `generated_case_human_review_decision_summary_export`,
-  `build_generated_case_human_review_decision_summary_export`,
-  `generated_case_human_review_decision_artifact_id`,
-  `generated_case_human_review_evidence_package_artifact_id`, exported
-  decision groups, included/excluded decision artifact ids, source
-  traceability summary, ReviewHistory, failure behavior, and forbidden side
-  effects.
-- Updated the Slice 56 task table with Task 2 commit `7262a88` and Task 3
-  status.
-- Updated `NEXT_AI_TASK.md` to Slice 56 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_summary_export_contract_golden.py -q`
-- Result: `4 passed in 1.02s`.
-- `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
-
-### Next Step
-
-- Commit Task 3, then complete Slice 56.
-
-## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Contracts
-
-### Completed
-
-- Added Generated Case Human Review Decision Summary Export contract
-  boundaries to data, API, state-machine, artifact, and prompt/skill
-  contracts.
-- Defined
-  `build_generated_case_human_review_decision_summary_export`,
-  `generated_case_human_review_decision_summary_export`,
-  `generated_case_human_review_decision_artifact_id`, and
-  `generated_case_human_review_evidence_package_artifact_id` as
-  contract-only summary export audit evidence.
-- Defined exported decision groups, included/excluded decision artifact ids,
-  excluded decision artifact reasons, source traceability summary,
-  ReviewHistory summary, failure code, visible reason, and forbidden side
-  effects.
-- Updated the Slice 56 task table with Task 1 commit `79d68ab` and Task 2
-  status.
-- Updated `NEXT_AI_TASK.md` to Slice 56 Task 3.
-
-### Verification
-
-- `rg -n "Generated Case Human Review Decision Summary Export|generated_case_human_review_decision_summary_export|build_generated_case_human_review_decision_summary_export|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|exported decision groups|included decision artifact ids|excluded decision artifact reasons|source traceability summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md`
-- Result: required contract terms found.
-- `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
-
-### Next Step
-
-- Commit Task 2, then continue Slice 56 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 56 Generated Case Human Review Decision Summary Export Plan
-
-### Completed
-
-- Added Slice 56 plan:
-  `docs/implementation/slices/slice-56-generated-case-human-review-decision-summary-export-contract.md`.
-- The plan scopes Generated Case Human Review Decision Summary Export as
-  contract-only audit evidence over Slice 55 decision artifacts, not actual
-  GeneratedCaseCandidate approval/rejection, request optimization, TestCase
-  promotion, report rendering, export/download endpoints, or runtime behavior.
-- The plan names
-  `build_generated_case_human_review_decision_summary_export`,
-  `generated_case_human_review_decision_summary_export`,
-  `generated_case_human_review_decision_artifact_id`,
-  `generated_case_human_review_evidence_package_artifact_id`, exported
-  decision groups, included/excluded decision artifact ids, source
-  traceability summary, ReviewHistory links, failure code, and visible reason.
-- Updated `NEXT_AI_TASK.md` to Slice 56 Task 2.
-
-### Verification
-
-- Focused PowerShell plan-term check over the Slice 56 plan,
-  `NEXT_AI_TASK.md`, scope options, and handoff.
-- Result: `plan terms ok`.
-- `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
-
-### Next Step
-
-- Commit Task 1, then continue Slice 56 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 55 Completion Gate
-
-### Completed
-
-- Closed Slice 55: Generated Case Human Review Decision Contract.
-- Recorded completed task commits in the Slice 55 task table:
-  - Task 1: `bd26296`;
-  - Task 2: `cb533a6`;
-  - Task 3: `781041a`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 55
-  completion and Slice 56 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 56 Task 1.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_contract_golden.py -q`
-- Result: `4 passed in 1.20s`.
-- `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
-
-### Next Step
-
-- Commit `docs(v2): complete generated case human review decision slice`.
-- Continue Slice 56 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 55 Generated Case Human Review Decision Golden Smoke
-
-### Completed
-
-- Added Generated Case Human Review Decision golden fixture:
-  `docs/fixtures/43-generated-case-human-review-decision-golden.md`.
-- Added focused golden smoke:
-  `backend/app/tests/golden/test_generated_case_human_review_decision_contract_golden.py`.
-- The golden locks
-  `generated_case_human_review_decision`,
-  `review_generated_case_human_review_evidence_package`,
-  `generated_case_human_review_evidence_package_artifact_id`, decision
-  labels, reviewer label/comment, requested edit fields, optimization request
-  summary, rejection/blocker reasons, duplicate resolution notes,
-  ReviewHistory, failure behavior, and forbidden side effects.
-- Updated the Slice 55 task table with Task 2 commit `cb533a6` and Task 3
-  status.
-- Updated `NEXT_AI_TASK.md` to Slice 55 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_contract_golden.py -q`
-- Result: `4 passed in 1.14s`.
-- `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
-
-### Next Step
-
-- Commit Task 3, then complete Slice 55.
-
-## 2026-07-05 Slice 55 Generated Case Human Review Decision Contracts
-
-### Completed
-
-- Added Generated Case Human Review Decision contract boundaries to data,
-  API, state-machine, artifact, and prompt/skill contracts.
-- Defined
-  `review_generated_case_human_review_evidence_package`,
-  `generated_case_human_review_decision`, and
-  `generated_case_human_review_evidence_package_artifact_id` as
-  contract-only decision evidence over the Slice 54 evidence package.
-- Added decision labels: `accepted_for_future_promotion`,
-  `accepted_with_required_edits`, `needs_optimization`,
-  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
-  `needs_more_evidence`, and `failed_validation`.
-- Defined reviewer label/comment, accepted constraints, requested edit fields,
-  optimization request summary, rejection/blocker reasons, duplicate
-  resolution notes, ReviewHistory links, failure code, visible reason, and
-  forbidden side effects.
-- Updated the Slice 55 task table with Task 1 commit `bd26296` and Task 2
-  status.
-- Updated `NEXT_AI_TASK.md` to Slice 55 Task 3.
-
-### Verification
-
-- `rg -n "Generated Case Human Review Decision|generated_case_human_review_decision|review_generated_case_human_review_evidence_package|generated_case_human_review_evidence_package_artifact_id|accepted_for_future_promotion|accepted_with_required_edits|needs_optimization|rejected_for_insufficient_evidence|blocked|duplicate|needs_more_evidence|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-55-generated-case-human-review-decision-contract.md`
-- Result: required contract terms found.
-- `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
-
-### Next Step
-
-- Commit Task 2, then continue Slice 55 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 55 Generated Case Human Review Decision Plan
-
-### Completed
-
-- Added Slice 55 plan:
-  `docs/implementation/slices/slice-55-generated-case-human-review-decision-contract.md`.
-- The plan scopes Generated Case Human Review Decision as contract-only
-  decision evidence from the Slice 54 evidence package, GeneratedCaseCandidate
-  id/status, candidate summary, evidence chain completeness, missing/conflicting
-  evidence summaries, review blocker summary, dedup/readiness summary, human
-  review checklist, review findings, automation readiness, source hashes,
-  source manifest ids, and ReviewHistory links.
-- The plan names `review_generated_case_human_review_evidence_package`,
-  `generated_case_human_review_decision`, decision labels, reviewer
-  label/comment, accepted constraints, requested edit fields, optimization
-  request summary, rejection/blocker reasons, duplicate resolution notes,
-  failure code, and visible reason.
-- Updated `NEXT_AI_TASK.md` to Slice 55 Task 2.
-
-### Verification
-
-- Focused PowerShell plan-term check over the Slice 55 plan,
-  `NEXT_AI_TASK.md`, scope options, and handoff.
-- Result: `plan terms ok`.
-- `git diff --check`
-- Result: no whitespace errors; Git reported expected Windows LF-to-CRLF
-  working-copy warnings.
-
-### Next Step
-
-- Commit Task 1, then continue Slice 55 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 54 Completion Gate
-
-### Completed
-
-- Closed Slice 54: Generated Case Human Review Evidence Package Contract.
-- Recorded completed task commits in the Slice 54 task table:
-  - Task 1: `c5f5661`;
-  - Task 2: `108fcbb`;
-  - Task 3: `09e7086`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 54
-  completion and Slice 55 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 55 Task 1.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_evidence_package_contract_golden.py -q`
-- Result: `4 passed in 1.20s`.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit `docs(v2): complete generated case human review evidence package slice`.
-- Continue Slice 55 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 54 Generated Case Human Review Evidence Package Golden Smoke
-
-### Completed
-
-- Added Generated Case Human Review Evidence Package golden fixture:
-  `docs/fixtures/42-generated-case-human-review-evidence-package-golden.md`.
-- Added focused golden smoke:
-  `backend/app/tests/golden/test_generated_case_human_review_evidence_package_contract_golden.py`.
-- Golden coverage names the package action, artifact naming, manifest kind,
-  GeneratedCaseCandidate linkage, candidate fields, knowledge evidence refs,
-  review findings, quality score, coverage gap notes, automation readiness,
-  dedup findings, prompt-context artifact lineage, evidence chain completeness,
-  missing/conflicting evidence summaries, review blocker summary, human review
-  checklist, ReviewHistory, failure behavior, and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 54 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_evidence_package_contract_golden.py -q`
-- Result: `4 passed in 1.14s`.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit Task 3, then execute Slice 54 completion gate.
-
-## 2026-07-05 Slice 54 Generated Case Human Review Evidence Package Contracts
-
-### Completed
-
-- Updated data, API, state-machine, artifact, and prompt/skill contracts for
-  Generated Case Human Review Evidence Package.
-- Added contract-only `build_generated_case_human_review_evidence_package`
-  semantics with GeneratedCaseCandidate linkage, `source_knowledge_evidence_ids`,
-  `knowledge_evidence_refs_json`, `quality_score`, `review_findings_json`,
-  `coverage_gap_notes`, `automation_readiness`, dedup findings, prompt-context
-  artifact lineage, evidence chain completeness, missing/conflicting evidence
-  summaries, review blocker summary, dedup/readiness summary, human review
-  checklist, ReviewHistory links, failure code, and visible reason.
-- Added future artifact type and filename:
-  `generated_case_human_review_evidence_package` and
-  `generated_case_human_review_evidence_package.json`.
-- Updated `NEXT_AI_TASK.md` to Slice 54 Task 3.
-
-### Verification
-
-- `rg -n "Generated Case Human Review Evidence Package|generated_case_human_review_evidence_package|build_generated_case_human_review_evidence_package|GeneratedCaseCandidate|source_knowledge_evidence_ids|knowledge_evidence_refs_json|quality_score|review_findings_json|coverage_gap_notes|automation_readiness|dedup findings|human review checklist|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warnings.
-
-### Next Step
-
-- Commit Task 2, then continue Slice 54 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 54 Generated Case Human Review Evidence Package Plan
-
-### Completed
-
-- Added Slice 54 plan:
-  `docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md`.
-- The plan scopes Generated Case Human Review Evidence Package as a
-  contract-only human-review evidence bundle from GeneratedCaseCandidate ids,
-  `source_knowledge_evidence_ids`, `knowledge_evidence_refs_json`,
-  `quality_score`, `review_findings_json`, `coverage_gap_notes`,
-  `automation_readiness`, dedup findings, prompt-context artifact lineage,
-  and ReviewHistory.
-- The plan names `build_generated_case_human_review_evidence_package`,
-  `generated_case_human_review_evidence_package`, candidate summary, evidence
-  chain completeness, missing/conflicting evidence summaries, review blocker
-  summary, dedup/readiness summary, human review checklist, failure code, and
-  visible reason.
-- Updated `NEXT_AI_TASK.md` to Slice 54 Task 2.
-
-### Verification
-
-- `if (-not (Test-Path docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md)) { exit 1 }`
-- `rg -n "Generated Case Human Review Evidence Package|generated_case_human_review_evidence_package|GeneratedCaseCandidate|source_knowledge_evidence_ids|knowledge_evidence_refs_json|quality_score|review_findings_json|coverage_gap_notes|automation_readiness|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-54-generated-case-human-review-evidence-package-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warnings.
-
-### Next Step
-
-- Commit Task 1, then continue Slice 54 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 53 Completion Gate
-
-### Completed
-
-- Closed Slice 53: KnowledgeAdapter Provider Evaluation Review Audit Handoff
-  Contract.
-- Recorded completed task commits in the Slice 53 task table:
-  - Task 1: `1dd952a`;
-  - Task 2: `e747a96`;
-  - Task 3: `4467765`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 53
-  completion and Slice 54 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 54 Task 1.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_audit_handoff_contract_golden.py backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py -q`
-- Result: `8 passed in 1.65s`.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit `docs(v2): complete knowledge adapter provider evaluation review audit handoff slice`.
-- Continue Slice 54 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 53 KnowledgeAdapter Provider Evaluation Review Audit Handoff Contracts
-
-### Completed
-
-- Updated data, API, state-machine, artifact, and prompt/skill contracts for
-  KnowledgeAdapter Provider Evaluation Review Audit Handoff.
-- Added contract-only
-  `build_knowledge_adapter_provider_evaluation_review_audit_handoff`
-  semantics with provider evaluation review summary export artifact linkage,
-  provider evaluation review decision artifact linkage, provider evaluation
-  plan artifact linkage, evidence chain status, included artifact ids,
-  excluded artifact reasons, provider review decision group summary,
-  unresolved blocker summary, unresolved safety question summary, unresolved
-  follow-up flags, ReviewHistory links, failure code, and visible reason.
-- Added future artifact type and filename:
-  `knowledge_adapter_provider_evaluation_review_audit_handoff` and
-  `knowledge_adapter_provider_evaluation_review_audit_handoff.json`.
-- Updated `NEXT_AI_TASK.md` to Slice 53 Task 3.
-
-### Verification
-
-- `rg -n "KnowledgeAdapter Provider Evaluation Review Audit Handoff|knowledge_adapter_provider_evaluation_review_audit_handoff|build_knowledge_adapter_provider_evaluation_review_audit_handoff|provider evaluation review summary export artifact|provider evaluation review decision artifact|provider evaluation plan artifact|evidence chain status|included artifact ids|excluded artifact reasons|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warnings.
-
-### Next Step
-
-- Commit `docs(v2): define knowledge adapter provider evaluation review audit handoff contracts`.
-- Continue Slice 53 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 53 KnowledgeAdapter Provider Evaluation Review Audit Handoff Plan
-
-### Completed
-
-- Added Slice 53 plan:
-  `docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md`.
-- The plan scopes KnowledgeAdapter Provider Evaluation Review Audit Handoff
-  as a contract-only evidence-chain bundle from provider evaluation review
-  summary export artifact ids, provider evaluation review decision artifact
-  ids, provider evaluation plan artifact ids, provider metadata, review
-  decision groups, license/reference evidence, KnowledgeEvidence
-  normalization, provider_state, fallback behavior, disabled-by-default
-  summary, source hashes, and ReviewHistory links.
-- The plan names
-  `build_knowledge_adapter_provider_evaluation_review_audit_handoff`,
-  `knowledge_adapter_provider_evaluation_review_audit_handoff`, evidence chain
-  status, included artifact ids, excluded artifact reasons, provider review
-  decision group summary, unresolved blocker summary, unresolved safety
-  question summary, failure code, and visible reason.
-- Updated `NEXT_AI_TASK.md` to Slice 53 Task 2.
-
-### Verification
-
-- `if (-not (Test-Path docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md)) { exit 1 }`
-- `rg -n "KnowledgeAdapter Provider Evaluation Review Audit Handoff|provider evaluation review audit handoff|knowledge_adapter_provider_evaluation_review_audit_handoff|provider evaluation review summary export artifact|provider evaluation review decision artifact|provider evaluation plan artifact|evidence chain status|included artifact ids|excluded artifact reasons|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-53-knowledge-adapter-provider-evaluation-review-audit-handoff-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warnings.
-
-### Next Step
-
-- Commit `docs(v2): add knowledge adapter provider evaluation review audit handoff plan`.
-- Continue Slice 53 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 52 Completion Gate
-
-### Completed
-
-- Closed Slice 52: KnowledgeAdapter Provider Evaluation Review Summary Export
-  Contract.
-- Recorded completed task commits in the Slice 52 task table:
-  - Task 1: `a066b42`;
-  - Task 2: `6c53259`;
-  - Task 3: `8e31fa6`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 52
-  completion and Slice 53 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 53 Task 1.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py -q`
-- `git diff --check`
-- Result: `8 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warnings.
-
-### Next Step
-
-- Commit `docs(v2): complete knowledge adapter provider evaluation review summary export slice`.
-- Continue Slice 53 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Golden Smoke
-
-### Completed
-
-- Added KnowledgeAdapter Provider Evaluation Review Summary Export golden
-  fixture:
-  `docs/fixtures/40-knowledge-adapter-provider-evaluation-review-summary-export-golden.md`.
-- Added focused golden smoke:
-  `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py`.
-- Golden coverage names summary export action, provider evaluation review
-  decision artifact linkage, provider evaluation plan artifact linkage,
-  field-level API payload keys, artifact owner/component metadata, review
-  summary status, exported decision groups, provider suitability summary,
-  license/reference summary, KnowledgeEvidence normalization summary,
-  provider_state summary, disabled by default summary, fallback summary,
-  metrics summary, source traceability summary, ReviewHistory summary, failure
-  behavior, and forbidden runtime/provider/report/export endpoint side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 52 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_summary_export_contract_golden.py -q`
-- `git diff --check`
-- Result: `4 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `test(golden): add knowledge adapter provider evaluation review summary export smoke`.
-- Continue Slice 52 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Contracts
-
-### Completed
-
-- Updated data, API, state-machine, artifact, and prompt/skill contracts for
-  KnowledgeAdapter Provider Evaluation Review Summary Export.
-- Added contract-only
-  `export_knowledge_adapter_provider_evaluation_review_summary` semantics with
-  provider evaluation review decision artifact linkage, provider evaluation
-  plan artifact linkage, review summary status, exported decision groups,
-  provider suitability summary, license/reference summary, KnowledgeEvidence
-  normalization summary, provider_state summary, disabled by default summary,
-  fallback summary, metrics summary, source traceability summary,
-  ReviewHistory summary, failure code, and visible reason.
-- Added future artifact type and filename:
-  `knowledge_adapter_provider_evaluation_review_summary_export` and
-  `knowledge_adapter_provider_evaluation_review_summary_export.json`.
-- Updated `NEXT_AI_TASK.md` to Slice 52 Task 3.
-
-### Verification
-
-- `rg -n "KnowledgeAdapter Provider Evaluation Review Summary Export|knowledge_adapter_provider_evaluation_review_summary_export|export_knowledge_adapter_provider_evaluation_review_summary|provider evaluation review decision artifact|summary export|license review|reference intake|KnowledgeEvidence normalization|provider_state|fallback behavior|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define knowledge adapter provider evaluation review summary export contracts` as `6c53259`.
-- Continue Slice 52 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 52 KnowledgeAdapter Provider Evaluation Review Summary Export Plan
-
-### Completed
-
-- Added Slice 52 plan:
-  `docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`.
-- The plan scopes KnowledgeAdapter Provider Evaluation Review Summary Export
-  as a contract-only audit evidence artifact from provider evaluation review
-  decision artifact ids, provider evaluation plan artifact ids, review
-  decision/status labels, reviewer notes, accepted constraints, blocked
-  reasons, unsupported reasons, requested revision fields, unresolved safety
-  questions, source hashes, source manifest ids, and ReviewHistory links.
-- The plan names `export_knowledge_adapter_provider_evaluation_review_summary`,
-  `knowledge_adapter_provider_evaluation_review_summary_export`, export
-  artifact id, review summary status, exported decision groups, provider
-  suitability summary, license/reference summary, KnowledgeEvidence
-  normalization summary, provider_state, fallback behavior, disabled by
-  default, failure code, and visible reason.
-- The plan keeps summary export separate from provider enablement,
-  Haystack/LlamaIndex/GraphRAG integration, provider SDKs, credentials, remote
-  fetch, runtime retrieval, provider-backed prompt context evidence, vector
-  infrastructure, frontend pages, report generation behavior,
-  export/download endpoints, RBAC, tenants, permissions, and package upgrades.
-- Updated `NEXT_AI_TASK.md` to Slice 52 Task 2.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md`
-- `rg -n "KnowledgeAdapter Provider Evaluation Review Summary Export|provider evaluation review summary export|export_knowledge_adapter_provider_evaluation_review_summary|knowledge_adapter_provider_evaluation_review_summary_export|provider evaluation review decision artifact|accepted_for_planning|accepted_with_constraints|blocked|needs_revision|unsupported|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|disabled by default|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-52-knowledge-adapter-provider-evaluation-review-summary-export-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): add knowledge adapter provider evaluation review summary export plan` as `a066b42`.
-- Continue Slice 52 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 51 Completion Gate
-
-### Completed
-
-- Closed Slice 51: KnowledgeAdapter Provider Evaluation Review Decision
-  Contract.
-- Recorded completed task commits in the Slice 51 task table:
-  - Task 1: `48ecad5`;
-  - Task 2: `5659644`;
-  - Task 3: `3df4f9d`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 51
-  completion and Slice 52 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 52 Task 1.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py -q`
-- `git diff --check`
-- Result: `7 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): complete knowledge adapter provider evaluation review decision slice`.
-- Continue Slice 52 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Golden Smoke
-
-### Completed
-
-- Added KnowledgeAdapter Provider Evaluation Review Decision golden fixture:
-  `docs/fixtures/39-knowledge-adapter-provider-evaluation-review-decision-golden.md`.
-- Added focused golden smoke:
-  `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py`.
-- Golden coverage names review action, provider evaluation plan artifact id,
-  same-project plan artifact, field-level API payload keys, artifact
-  owner/component metadata, review decision/status values, provider
-  suitability status, KnowledgeEvidence normalization, provider_state
-  recommendation, disabled by default decision, fallback behavior, license
-  review, reference intake, metrics, ReviewHistory, PromptVersion/SkillVersion
-  trace, failure behavior, and forbidden runtime/provider side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 51 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_decision_contract_golden.py -q`
-- `git diff --check`
-- Result: `4 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `test(golden): add knowledge adapter provider evaluation review decision smoke`.
-- Continue Slice 51 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Contracts
-
-### Completed
-
-- Updated data, API, state-machine, artifact, and prompt/skill contracts for
-  KnowledgeAdapter Provider Evaluation Review Decision.
-- Added contract-only `review_knowledge_adapter_provider_evaluation`
-  semantics with provider evaluation plan artifact linkage, review decision
-  and review status labels, provider suitability status, KnowledgeEvidence
-  normalization notes, provider_state recommendation, disabled by default
-  decision, fallback behavior, license review, reference intake, metrics,
-  blocker/unsupported reasons, requested revision fields, ReviewHistory links,
-  failure code, and visible reason.
-- Added future artifact type and filename:
-  `knowledge_adapter_provider_evaluation_review_decision` and
-  `knowledge_adapter_provider_evaluation_review_decision.json`.
-- Updated `NEXT_AI_TASK.md` to Slice 51 Task 3.
-
-### Verification
-
-- `rg -n "KnowledgeAdapter Provider Evaluation Review Decision|knowledge_adapter_provider_evaluation_review_decision|review_knowledge_adapter_provider_evaluation|provider evaluation plan artifact id|license review|reference intake|KnowledgeEvidence normalization|provider_state|fallback behavior|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define knowledge adapter provider evaluation review decision contracts` as `5659644`.
-- Continue Slice 51 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 51 KnowledgeAdapter Provider Evaluation Review Decision Plan
-
-### Completed
-
-- Added Slice 51 plan:
-  `docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`.
-- The plan scopes KnowledgeAdapter Provider Evaluation Review Decision
-  contracts for human review decisions on provider evaluation plan evidence:
-  provider evaluation plan artifact review inputs, review decisions, review
-  status labels, provider suitability status, KnowledgeEvidence
-  normalization, provider_state recommendation, fallback behavior,
-  license/reference intake, metrics, disabled by default policy,
-  ReviewHistory, failure behavior, and non-goals.
-- The plan keeps provider evaluation review decision contract-only and
-  excludes provider enablement, Haystack/LlamaIndex/GraphRAG integration,
-  provider SDKs, credentials, external calls, vector database, embeddings,
-  reranking, background indexing, runtime retrieval, provider-backed prompt
-  context evidence, frontend pages, RBAC, tenants, permissions, and package
-  upgrades.
-- Updated `NEXT_AI_TASK.md` to Slice 51 Task 2.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md`
-- `rg -n "KnowledgeAdapter Provider Evaluation Review Decision|provider evaluation review|review_knowledge_adapter_provider_evaluation|review decision|accepted with constraints|blocked|needs revision|unsupported|provider suitability status|disabled by default|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-51-knowledge-adapter-provider-evaluation-review-decision-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists and required terms are present.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): add knowledge adapter provider evaluation review decision plan` as `48ecad5`.
-- Continue Slice 51 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 50 Completion Gate
-
-### Completed
-
-- Closed Slice 50: KnowledgeAdapter Provider Evaluation Plan Contract.
-- Recorded completed task commits in the Slice 50 task table:
-  - Task 1: `65a5658`;
-  - Task 2: `c2fcfba` plus alignment `77ab0eb`;
-  - Task 3: `c234028`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 50
-  completion and Slice 51 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 51 Task 1: Add KnowledgeAdapter Provider
-  Evaluation Review Decision task plan.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py -q`
-- `git diff --check`
-- Result: `6 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): complete knowledge adapter provider evaluation plan slice`.
-- Continue Slice 51 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan Golden Smoke
-
-### Completed
-
-- Added KnowledgeAdapter Provider Evaluation Plan golden fixture:
-  `docs/fixtures/38-knowledge-adapter-provider-evaluation-plan-golden.md`.
-- Added focused golden smoke:
-  `backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py`.
-- Golden coverage names provider evaluation actions/states, Haystack,
-  LlamaIndex, GraphRAG, KnowledgeEvidence normalization, provider_state,
-  fallback behavior, license review, reference intake, disabled by default,
-  metrics, ReviewHistory, failure behavior, and provider/runtime forbidden
-  side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 50 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_plan_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `test(golden): add knowledge adapter provider evaluation plan smoke` as `c234028`.
-- Continue Slice 50 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan Contracts
-
-### Completed
-
-- Updated data, API, state-machine, artifact, and prompt/skill contracts for
-  KnowledgeAdapter Provider Evaluation Plan.
-- Added contract-only `evaluate_knowledge_adapter_provider_plan` semantics
-  with provider suitability status, KnowledgeEvidence normalization notes,
-  provider_state recommendation, disabled by default decision, fallback
-  behavior, license review, reference intake, metrics, blocker reasons,
-  source hashes, ReviewHistory links, failure code, and visible reason.
-- Added future artifact type and filename:
-  `knowledge_adapter_provider_evaluation_plan` and
-  `knowledge_adapter_provider_evaluation_plan.json`.
-- Updated `NEXT_AI_TASK.md` to Slice 50 Task 3.
-
-### Verification
-
-- `rg -n "KnowledgeAdapter Provider Evaluation Plan|knowledge_adapter_provider_evaluation_plan|evaluate_knowledge_adapter_provider_plan|Haystack|LlamaIndex|KnowledgeEvidence|provider_state|fallback behavior|license review|reference intake|disabled by default|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define knowledge adapter provider evaluation plan contracts` as `c2fcfba`.
-- Continue Slice 50 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 50 KnowledgeAdapter Provider Evaluation Plan
-
-### Completed
-
-- Added Slice 50 plan:
-  `docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`.
-- The plan scopes KnowledgeAdapter Provider Evaluation Plan contracts:
-  provider evaluation inputs and outputs, KnowledgeEvidence normalization,
-  provider_state, fallback behavior, license/version/reference intake,
-  disabled by default policy, metrics, evaluation-only actions, provider
-  suitability status labels, ReviewHistory, failure behavior, and non-goals.
-- The plan keeps provider evaluation contract-only and excludes Haystack or
-  LlamaIndex integration, provider SDKs, credentials, external calls, vector
-  database, embeddings, reranking, background indexing, runtime retrieval,
-  provider-backed prompt context evidence, frontend pages, RBAC, tenants,
-  permissions, and package upgrades.
-- Updated `NEXT_AI_TASK.md` to Slice 50 Task 2.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md`
-- `rg -n "KnowledgeAdapter Provider Evaluation Plan|Haystack|LlamaIndex|provider evaluation|KnowledgeEvidence|provider_state|fallback behavior|license|reference intake|disabled by default|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-50-knowledge-adapter-provider-evaluation-plan-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists and required terms are present.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): add knowledge adapter provider evaluation plan` as `65a5658`.
-- Continue Slice 50 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 49 Completion Gate
-
-### Completed
-
-- Closed Slice 49: TestKnowledgeCard Prompt Context Discrepancy Resolution
-  Audit Handoff Contract.
-- Recorded completed task commits in the Slice 49 task table:
-  - Task 1: `7669597`;
-  - Task 2: `e2d912e`;
-  - Task 3: `3e28f91`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 49
-  completion and Slice 50 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 50 Task 1: Add KnowledgeAdapter Provider
-  Evaluation Plan task plan.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q`
-- `git diff --check`
-- Result: `6 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): complete test knowledge card prompt context discrepancy resolution audit handoff slice` as `f8ebe50`.
-- Continue Slice 50 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/37-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py`.
-- The golden fixture and test cover resolution summary export artifact id,
-  audit handoff artifact id, handoff summary, evidence chain status, included
-  artifact ids, excluded artifact reasons, unresolved follow-up flags,
-  unresolved evidence gaps, ReviewHistory, failure behavior, and forbidden
-  side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 49 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `test(golden): add test knowledge card prompt context discrepancy resolution audit handoff smoke` as `3e28f91`.
-- Continue Slice 49 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contracts
-
-### Completed
-
-- Updated data, API, state-machine, artifact, and prompt/skill contracts for
-  TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff.
-- Added contract-only `build_prompt_context_discrepancy_resolution_audit_handoff`
-  semantics with handoff summary, evidence chain status, included artifact ids,
-  excluded artifact reasons, unresolved follow-up flags, unresolved evidence
-  gaps, source hashes, context manifest references, PromptVersion/SkillVersion
-  trace, ReviewHistory links, failure code, and visible reason.
-- Added future artifact type and filename:
-  `test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff`
-  and
-  `test_knowledge_card_prompt_context_discrepancy_resolution_audit_handoff.json`.
-- Updated `NEXT_AI_TASK.md` to Slice 49 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff|prompt_context_discrepancy_resolution_audit_handoff|build_prompt_context_discrepancy_resolution_audit_handoff|handoff summary|evidence chain status|included artifact ids|excluded artifact reasons|unresolved evidence gaps|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define test knowledge card prompt context discrepancy resolution audit handoff contracts` as `e2d912e`.
-- Continue Slice 49 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 49 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Plan
-
-### Completed
-
-- Added Slice 49 plan:
-  `docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Discrepancy Resolution Audit
-  Handoff contracts: audit handoff inputs, handoff summary, evidence chain
-  status, included artifact ids, excluded artifact reasons, unresolved
-  follow-up flags, ReviewHistory, failure behavior, and non-goals.
-- The plan keeps discrepancy resolution audit handoff contract-only and
-  excludes frontend pages, report generation behavior, export/download
-  endpoints, prompt assembly implementation, prompt runtime execution,
-  provider calls, deterministic retrieval behavior changes, vector indexes,
-  embeddings, reranking, graph runtime, MCP runtime, broad TestKnowledgeCard
-  CRUD, automatic eligibility, historical evidence mutation, RBAC, tenants,
-  and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 49 Task 2.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff|audit handoff|handoff summary|evidence chain status|included artifact ids|excluded artifact reasons|resolution outcome summary|accepted discrepancy group|rejected discrepancy group|acknowledged discrepancy group|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-49-test-knowledge-card-prompt-context-discrepancy-resolution-audit-handoff-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists and required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): add test knowledge card prompt context discrepancy resolution audit handoff plan` as `7669597`.
-- Continue Slice 49 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 48 Completion Gate
-
-### Completed
-
-- Closed Slice 48: TestKnowledgeCard Prompt Context Discrepancy Resolution
-  Summary Export Contract.
-- Recorded completed task commits in the Slice 48 task table:
-  - Task 1: `6c17232`;
-  - Task 2: `e351933`;
-  - Task 3: `8c93cbb`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 48
-  completion and Slice 49 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 49 Task 1: Add TestKnowledgeCard Prompt
-  Context Discrepancy Resolution Audit Handoff task plan.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_review_contract_golden.py -q`
-- `git diff --check`
-- Result: `6 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): complete test knowledge card prompt context discrepancy resolution summary export slice` as `42c8b9a`.
-- Continue Slice 49 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 48 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/36-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py`.
-- The golden fixture and test cover resolution review artifact id,
-  discrepancy artifact id, resolution outcome summary, accepted discrepancy
-  group, rejected discrepancy group, acknowledged discrepancy group,
-  clarification requested fields, resolution status, ReviewHistory, failure
-  behavior, and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 48 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_summary_export_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `test(golden): add test knowledge card prompt context discrepancy resolution summary export smoke` as `8c93cbb`.
-- Continue Slice 48 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 48 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Contracts
-
-### Completed
-
-- Updated TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export
-  contracts in:
-  - `docs/contracts/01-data-model-contract.md`;
-  - `docs/contracts/02-api-contract.md`;
-  - `docs/contracts/03-state-machines.md`;
-  - `docs/contracts/04-artifact-contract.md`;
-  - `docs/contracts/05-prompt-skill-contract.md`.
-- Contracts define `export_prompt_context_discrepancy_resolution_summary`,
-  `prompt_context_discrepancy_resolution_summary_export`, resolution review
-  artifact references, discrepancy artifact references, resolution outcome
-  summary, accepted/rejected/acknowledged discrepancy groups, clarification
-  requested fields, resolution status, ReviewHistory, source hashes, context
-  manifest references, and failure behavior.
-- The resolution summary export boundary preserves resolution review evidence,
-  discrepancy records, review summary exports, review decisions, audit
-  summaries, prompt context consumption artifacts, prompt context evidence
-  artifacts, `used_knowledge`, PromptVersion, SkillVersion, ReviewHistory, and
-  affected citations without adding frontend/report/export runtime.
-- The contracts keep frontend pages, report generation behavior,
-  export/download endpoints, prompt assembly, prompt runtime execution,
-  provider calls, retrieval ranking changes, vector indexes, embeddings,
-  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
-  automatic eligibility, historical evidence mutation, RBAC, tenants, and
-  permissions out of scope.
-- Updated `NEXT_AI_TASK.md` to Slice 48 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export|prompt_context_discrepancy_resolution_summary_export|export_prompt_context_discrepancy_resolution_summary|resolution outcome summary|accepted discrepancy group|rejected discrepancy group|acknowledged discrepancy group|clarification requested fields|resolution status|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define test knowledge card prompt context discrepancy resolution summary export contracts` as `e351933`.
-- Continue Slice 48 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 48 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Plan
-
-### Completed
-
-- Added Slice 48 plan:
-  `docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Discrepancy Resolution
-  Summary Export contracts: resolution summary export inputs, resolution
-  outcome summary, accepted/rejected/acknowledged discrepancy groups,
-  clarification requested fields, resolution status, ReviewHistory, failure
-  behavior, and non-goals.
-- The plan keeps discrepancy resolution summary export contract-only and
-  excludes frontend pages, report generation behavior, export/download
-  endpoints, prompt assembly implementation, prompt runtime execution,
-  provider calls, deterministic retrieval behavior changes, vector indexes,
-  embeddings, reranking, graph runtime, MCP runtime, broad TestKnowledgeCard
-  CRUD, automatic eligibility, historical evidence mutation, RBAC, tenants,
-  and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 48 Task 2.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export|resolution summary export|resolution outcome summary|accepted discrepancy group|rejected discrepancy group|acknowledged discrepancy group|clarification requested fields|resolution status|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-48-test-knowledge-card-prompt-context-discrepancy-resolution-summary-export-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists and required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): add test knowledge card prompt context discrepancy resolution summary export plan` as `6c17232`.
-- Continue Slice 48 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 47 Completion Gate
-
-### Completed
-
-- Closed Slice 47: TestKnowledgeCard Prompt Context Discrepancy Resolution
-  Review Contract.
-- Recorded completed task commits in the Slice 47 task table:
-  - Task 1: `0a5c62c`;
-  - Task 2: `d6faf01`;
-  - Task 3: `65c8d28`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 47
-  completion and Slice 48 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 48 Task 1: Add TestKnowledgeCard Prompt
-  Context Discrepancy Resolution Summary Export task plan.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_review_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_review_discrepancy_tracking_contract_golden.py -q`
-- `git diff --check`
-- Result: `6 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): complete test knowledge card prompt context discrepancy resolution review slice` as `a42dbb4`.
-- Continue Slice 48 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/35-test-knowledge-card-prompt-context-discrepancy-resolution-review-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_review_contract_golden.py`.
-- The golden fixture and test cover discrepancy artifact id, review summary
-  export artifact id, resolution action, accepted discrepancy ids, rejected
-  discrepancy ids, acknowledged discrepancy ids, affected citation ids,
-  evidence gap summary, mismatch reason, reviewer note, severity, resolution
-  status, ReviewHistory, failure behavior, and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 47 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_discrepancy_resolution_review_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `test(golden): add test knowledge card prompt context discrepancy resolution review smoke` as `65c8d28`.
-- Continue Slice 47 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Contracts
-
-### Completed
-
-- Updated TestKnowledgeCard Prompt Context Discrepancy Resolution Review
-  contracts in:
-  - `docs/contracts/01-data-model-contract.md`;
-  - `docs/contracts/02-api-contract.md`;
-  - `docs/contracts/03-state-machines.md`;
-  - `docs/contracts/04-artifact-contract.md`;
-  - `docs/contracts/05-prompt-skill-contract.md`.
-- Contracts define `review_prompt_context_discrepancy_resolution`,
-  `prompt_context_discrepancy_resolution_review`, discrepancy artifact
-  references, review summary export artifact references, resolution action,
-  accepted discrepancy ids, rejected discrepancy ids, acknowledged discrepancy
-  ids, affected citation ids, evidence gap summary, mismatch reason, reviewer
-  note, resulting resolution status, ReviewHistory, source hashes, context
-  manifest references, and failure behavior.
-- The resolution review boundary preserves discrepancy tracking artifacts,
-  review summary export artifacts, audit review decision artifacts, audit
-  summary artifacts, prompt context consumption artifacts, prompt context
-  evidence artifacts, `used_knowledge`, PromptVersion, SkillVersion,
-  ReviewHistory, and affected citations without adding frontend/report/export
-  runtime.
-- The contracts keep frontend pages, report generation behavior,
-  export/download endpoints, prompt assembly, prompt runtime execution,
-  provider calls, retrieval ranking changes, vector indexes, embeddings,
-  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
-  automatic eligibility, historical evidence mutation, RBAC, tenants, and
-  permissions out of scope.
-- Updated `NEXT_AI_TASK.md` to Slice 47 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Review|prompt_context_discrepancy_resolution_review|review_prompt_context_discrepancy_resolution|resolution action|accepted discrepancy ids|rejected discrepancy ids|acknowledged discrepancy ids|affected citation ids|evidence gap summary|mismatch reason|resolution status|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`
-- `git diff --check`
-- Result: required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define test knowledge card prompt context discrepancy resolution review contracts` as `d6faf01`.
-- Continue Slice 47 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 47 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Plan
-
-### Completed
-
-- Added Slice 47 plan:
-  `docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Discrepancy Resolution
-  Review contracts: resolution review inputs, resolution action,
-  accepted/rejected/acknowledged discrepancy ids, affected citation ids,
-  evidence gap summary, mismatch reason, reviewer note, severity, resolution
-  status, ReviewHistory, failure behavior, and non-goals.
-- The plan keeps discrepancy resolution review contract-only and excludes
-  frontend pages, report generation behavior, export/download endpoints, prompt
-  assembly implementation, prompt runtime execution, provider calls,
-  deterministic retrieval behavior changes, vector indexes, embeddings,
-  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
-  automatic eligibility, historical evidence mutation, RBAC, tenants, and
-  permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 47 Task 2.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Discrepancy Resolution Review|review discrepancy|resolution review|resolution action|discrepancy type|affected citation ids|evidence gap summary|mismatch reason|severity|resolution status|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-47-test-knowledge-card-prompt-context-discrepancy-resolution-review-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists and required terms found.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): add test knowledge card prompt context discrepancy resolution review plan` as `0a5c62c`.
-- Continue Slice 47 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 46 Completion Gate
-
-### Completed
-
-- Closed Slice 46: TestKnowledgeCard Prompt Context Review Discrepancy
-  Tracking Contract.
-- Recorded completed task commits in the Slice 46 task table:
-  - Task 1: `b380592`;
-  - Task 2: `a1cc283`;
-  - Task 3: `04530c9`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 46
-  completion and Slice 47 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 47 Task 1: Add TestKnowledgeCard Prompt
-  Context Discrepancy Resolution Review task plan.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_review_discrepancy_tracking_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py -q`
-- `git diff --check`
-- Result: `6 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): complete test knowledge card prompt context review discrepancy tracking slice` as `ad8b216`.
-- Continue Slice 47 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 46 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/34-test-knowledge-card-prompt-context-review-discrepancy-tracking-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_review_discrepancy_tracking_contract_golden.py`.
-- The golden fixture and test cover review summary export artifact id,
-  discrepancy type, affected citation ids, evidence gap summary, mismatch
-  reason, reviewer note, severity, resolution status, ReviewHistory, failure
-  behavior, and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 46 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_review_discrepancy_tracking_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `test(golden): add test knowledge card prompt context review discrepancy tracking smoke` as `04530c9`.
-- Continue Slice 46 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 46 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Contracts
-
-### Completed
-
-- Updated TestKnowledgeCard Prompt Context Review Discrepancy Tracking
-  contracts in:
-  - `docs/contracts/01-data-model-contract.md`;
-  - `docs/contracts/02-api-contract.md`;
-  - `docs/contracts/03-state-machines.md`;
-  - `docs/contracts/04-artifact-contract.md`;
-  - `docs/contracts/05-prompt-skill-contract.md`.
-- Contracts define `track_prompt_context_review_discrepancy`,
-  `prompt_context_review_discrepancy`, review summary export artifact
-  references, discrepancy type, affected citation ids, evidence gap summary,
-  mismatch reason, reviewer note, severity, resolution status, ReviewHistory,
-  source hashes, context manifest references, and failure behavior.
-- The discrepancy tracking boundary preserves review summary export artifacts,
-  audit review decision artifacts, audit summary artifacts, prompt context
-  consumption artifacts, prompt context evidence artifacts, `used_knowledge`,
-  PromptVersion, SkillVersion, ReviewHistory, and affected citations without
-  adding frontend/report/export runtime.
-- The contracts keep frontend pages, report generation behavior,
-  export/download endpoints, prompt assembly, prompt runtime execution,
-  provider calls, retrieval ranking changes, vector indexes, embeddings,
-  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
-  automatic eligibility, historical evidence mutation, RBAC, tenants, and
-  permissions out of scope.
-- Updated `NEXT_AI_TASK.md` to Slice 46 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Review Discrepancy Tracking|prompt_context_review_discrepancy|track_prompt_context_review_discrepancy|review summary export artifact|discrepancy type|affected citation ids|evidence gap summary|mismatch reason|severity|resolution status|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define test knowledge card prompt context review discrepancy tracking contracts` as `a1cc283`.
-- Continue Slice 46 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 46 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Plan
-
-### Completed
-
-- Added Slice 46 plan:
-  `docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Review Discrepancy Tracking
-  contracts: discrepancy inputs, affected citation ids, evidence gap summary,
-  mismatch reason, reviewer note, severity, resolution status, ReviewHistory,
-  failure behavior, and non-goals.
-- The plan keeps discrepancy tracking contract-only and excludes frontend
-  pages, report generation behavior, export/download endpoints, prompt
-  assembly implementation, prompt runtime execution, provider calls,
-  deterministic retrieval behavior changes, vector indexes, embeddings,
-  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
-  automatic eligibility, historical evidence mutation, RBAC, tenants, and
-  permissions.
+- Selected `Slice 46: AI Workbench Evidence Table Empty States` after Slice 45
+  completion.
+- The slice adds explicit selected-task empty states for missing artifact
+  evidence and missing LLM call logs.
+- Added the Slice 46 task plan.
 - Updated `NEXT_AI_TASK.md` to Slice 46 Task 2.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Review Discrepancy Tracking|review summary export|discrepancy|accepted citation group|questioned citation group|rejected citation group|unsupported claim references|unresolved follow-up flags|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-46-test-knowledge-card-prompt-context-review-discrepancy-tracking-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Planning verification will be covered by the Slice 46 focused frontend gate.
 
 ### Next Step
 
-- Committed `docs(v2): add test knowledge card prompt context review discrepancy tracking plan` as `b380592`.
-- Continue Slice 46 Task 2 from `NEXT_AI_TASK.md`.
+- Add focused AI Workbench coverage for a selected task with empty artifacts
+  and empty LLM call logs, then render the explicit empty states.
 
-## 2026-07-05 Slice 45 Completion Gate
+## 2026-07-08 Slice 45 Completion Gate
 
 ### Completed
 
-- Closed Slice 45: TestKnowledgeCard Prompt Context Audit Review Summary Export
-  Contract.
-- Recorded completed task commits in the Slice 45 task table:
-  - Task 1: `a5fe0c8`;
-  - Task 2: `c733a70`;
-  - Task 3: `fcf31a3`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 45
-  completion and Slice 46 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 46 Task 1: Add TestKnowledgeCard Prompt
-  Context Review Discrepancy Tracking task plan.
+- Completed Slice 45: AI Workbench Token Usage Empty State.
+- Empty task-level and LLM-call token usage metadata now renders as not
+  recorded instead of a blank AI Workbench value.
+- Non-empty token usage metadata still renders formatted token labels.
+- Raw prompt, raw request, and raw LLM output remain metadata-only; no backend,
+  provider, prompt, skill, contract, fixture, execution page, package, RAG
+  runtime, or MCP runtime behavior changed.
+- Updated `NEXT_AI_TASK.md` to select the next narrow V2 task.
 
 ### Verification
 
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py -q`
+- `npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- Result: `1` file passed, `3` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
-- Result: `6 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Committed `docs(v2): complete test knowledge card prompt context audit review summary export slice` as `fa368bd`.
-- Continue Slice 46 Task 1 from `NEXT_AI_TASK.md`.
+- Select another narrow V2 task outside broad refactors and unrelated
+  dirty-worktree scope.
 
-## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/33-test-knowledge-card-prompt-context-audit-review-summary-export-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py`.
-- The golden fixture and test cover audit review decision artifact id, audit
-  summary artifact id, review outcome summary, accepted citation group,
-  questioned citation group, rejected citation group, unresolved follow-up
-  flags, unsupported claim references, ReviewHistory, failure behavior, and
-  forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 45 Completion Gate.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_summary_export_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `test(golden): add test knowledge card prompt context audit review summary export smoke` as `fcf31a3`.
-- Continue Slice 45 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Contracts
+## 2026-07-08 Slice 45 AI Workbench Token Usage Empty State Plan
 
 ### Completed
 
-- Updated TestKnowledgeCard Prompt Context Audit Review Summary Export
-  contracts in:
-  - `docs/contracts/01-data-model-contract.md`;
-  - `docs/contracts/02-api-contract.md`;
-  - `docs/contracts/03-state-machines.md`;
-  - `docs/contracts/04-artifact-contract.md`;
-  - `docs/contracts/05-prompt-skill-contract.md`.
-- Contracts define `export_prompt_context_audit_review_summary`,
-  `prompt_context_audit_review_summary_export`, audit review decision artifact
-  references, review outcome summary, accepted citation group, questioned
-  citation group, rejected citation group, unresolved follow-up flags,
-  unsupported claim references, ReviewHistory, source hashes, context manifest
-  references, and failure behavior.
-- The summary export boundary preserves audit review decision artifacts, audit
-  summary artifacts, prompt context consumption artifacts, prompt context
-  evidence artifacts, `used_knowledge`, PromptVersion, SkillVersion,
-  ReviewHistory, and citation groups without adding export/download runtime.
-- The contracts keep frontend pages, report generation behavior,
-  export/download endpoints, prompt assembly, prompt runtime execution,
-  provider calls, retrieval ranking changes, vector indexes, embeddings,
-  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
-  automatic eligibility, historical evidence mutation, RBAC, tenants, and
-  permissions out of scope.
-- Updated `NEXT_AI_TASK.md` to Slice 45 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Audit Review Summary Export|prompt_context_audit_review_summary_export|export_prompt_context_audit_review_summary|audit review decision artifact|review outcome summary|accepted citation group|questioned citation group|rejected citation group|unresolved follow-up flags|unsupported claim references|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define test knowledge card prompt context audit review summary export contracts` as `c733a70`.
-- Continue Slice 45 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 45 TestKnowledgeCard Prompt Context Audit Review Summary Export Plan
-
-### Completed
-
-- Added Slice 45 plan:
-  `docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Audit Review Summary Export
-  contracts: export summary inputs, review outcome outputs,
-  accepted/questioned/rejected citation groups, unresolved follow-up flags,
-  unsupported claim references, ReviewHistory, failure behavior, and non-goals.
-- The plan keeps summary export contract-only and excludes frontend pages,
-  report generation behavior, export/download endpoints, prompt assembly
-  implementation, prompt runtime execution, provider calls, deterministic
-  retrieval behavior changes, vector indexes, embeddings, reranking, graph
-  runtime, MCP runtime, broad TestKnowledgeCard CRUD, automatic eligibility,
-  historical evidence mutation, RBAC, tenants, and permissions.
+- Selected `Slice 45: AI Workbench Token Usage Empty State` after Slice 44
+  completion.
+- The slice renders empty token usage metadata as not recorded instead of a
+  blank AI Workbench task detail or LLM call cell.
+- Added the Slice 45 task plan.
 - Updated `NEXT_AI_TASK.md` to Slice 45 Task 2.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Audit Review Summary Export|audit review decision|summary export|accepted|needs_clarification|rejected_for_missing_evidence|rejected_for_unsupported_claim|rejected_for_citation_mismatch|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-45-test-knowledge-card-prompt-context-audit-review-summary-export-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Planning verification will be covered by the Slice 45 focused frontend gate.
 
 ### Next Step
 
-- Committed `docs(v2): add test knowledge card prompt context audit review summary export plan` as `a5fe0c8`.
-- Continue Slice 45 Task 2 from `NEXT_AI_TASK.md`.
+- Add focused AI Workbench coverage for empty token usage and update the shared
+  token usage display helper.
 
-## 2026-07-05 Slice 44 Completion Gate
+## 2026-07-08 Slice 44 Completion Gate
 
 ### Completed
 
-- Closed Slice 44: TestKnowledgeCard Prompt Context Audit Review Decision
-  Contract.
-- Recorded completed task commits in the Slice 44 task table:
-  - Task 1: `3f1920f`;
-  - Task 2: `2eac56d`;
-  - Task 3: `f119744`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 44
-  completion and Slice 45 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 45 Task 1: Add TestKnowledgeCard Prompt
-  Context Audit Review Summary Export task plan.
+- Completed Slice 44: AI Workbench Request Evidence Visibility.
+- AI Workbench LLM call rows now show request evidence as recorded or not
+  recorded.
+- Local open links render only when the request artifact id matches an existing
+  selected-task Artifact with `safe_to_show=true`.
+- Focused coverage now includes the safe request link path, an unsafe artifact
+  negative path, and a missing request artifact row.
+- Raw prompt, raw request, and raw LLM output remain metadata-only; no backend,
+  provider, prompt, skill, contract, fixture, execution page, package, RAG
+  runtime, or MCP runtime behavior changed.
+- Updated `NEXT_AI_TASK.md` to select the next narrow V2 task.
 
 ### Verification
 
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py -q`
+- `npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- Result: `1` file passed, `3` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
-- Result: `6 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Committed `docs(v2): complete test knowledge card prompt context audit review decision slice` as `b297bee`.
-- Continue Slice 45 Task 1 from `NEXT_AI_TASK.md`.
+- Select another narrow V2 task outside broad refactors and unrelated
+  dirty-worktree scope.
 
-## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Golden Smoke
+## 2026-07-08 Slice 43 Completion Gate
 
 ### Completed
 
-- Added `docs/fixtures/32-test-knowledge-card-prompt-context-audit-review-decision-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py`.
-- The golden fixture and test cover prompt context audit summary artifact id,
-  prompt context consumption artifact id, prompt context evidence artifact id,
-  review action, `accepted`, `needs_clarification`,
-  `rejected_for_missing_evidence`, `rejected_for_unsupported_claim`,
-  `rejected_for_citation_mismatch`, ReviewHistory, follow-up flags, failure
-  behavior, and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 44 Completion Gate.
+- Completed Slice 43: AI Workbench Parsed Output Evidence Visibility.
+- AI Workbench LLM call rows now show parsed output evidence as recorded or not
+  recorded.
+- Local open links render only when the parsed output artifact id matches an
+  existing selected-task Artifact with `safe_to_show=true`.
+- Raw LLM output remains metadata-only; no backend, provider, prompt, skill,
+  contract, fixture, execution page, package, RAG runtime, or MCP runtime
+  behavior changed.
+- Updated `NEXT_AI_TASK.md` to select the next narrow V2 task.
 
 ### Verification
 
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_review_decision_contract_golden.py -q`
+- `npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- Result: `1` file passed, `3` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
-- Result: `3 passed`.
-- Result: diff check is clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Committed `test(golden): add test knowledge card prompt context audit review decision smoke` as `f119744`.
-- Continue Slice 44 Completion Gate from `NEXT_AI_TASK.md`.
+- Select another narrow V2 task outside broad refactors and unrelated
+  dirty-worktree scope.
 
-## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Contracts
-
-### Completed
-
-- Updated TestKnowledgeCard Prompt Context Audit Review Decision contracts in:
-  - `docs/contracts/01-data-model-contract.md`;
-  - `docs/contracts/02-api-contract.md`;
-  - `docs/contracts/03-state-machines.md`;
-  - `docs/contracts/04-artifact-contract.md`;
-  - `docs/contracts/05-prompt-skill-contract.md`.
-- Contracts define `review_prompt_context_audit_summary`,
-  `prompt_context_audit_review_decision`, `accepted`,
-  `needs_clarification`, `rejected_for_missing_evidence`,
-  `rejected_for_unsupported_claim`, `rejected_for_citation_mismatch`,
-  `rejected_for_stale_evidence`, and
-  `rejected_for_cross_project_evidence`.
-- The decision boundary preserves audit summary artifacts, prompt context
-  consumption artifacts, prompt context evidence artifacts, `used_knowledge`,
-  source hash/context manifest references, PromptVersion, SkillVersion,
-  ReviewHistory, accepted/questioned/rejected citation ids, follow-up flags,
-  and failure codes.
-- The contracts keep frontend pages, report generation behavior, prompt
-  assembly, prompt runtime execution, provider calls, retrieval ranking changes,
-  vector indexes, embeddings, reranking, graph runtime, MCP runtime, broad
-  TestKnowledgeCard CRUD, automatic eligibility, historical evidence mutation,
-  RBAC, tenants, and permissions out of scope.
-- Updated `NEXT_AI_TASK.md` to Slice 44 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Audit Review Decision|prompt_context_audit_review_decision|review_prompt_context_audit_summary|accepted|needs_clarification|rejected_for_missing_evidence|rejected_for_unsupported_claim|rejected_for_citation_mismatch|ReviewHistory|follow-up flags|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): define test knowledge card prompt context audit review decision contracts` as `2eac56d`.
-- Continue Slice 44 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 44 TestKnowledgeCard Prompt Context Audit Review Decision Plan
+## 2026-07-08 Slice 43 AI Workbench Parsed Output Evidence Visibility Plan
 
 ### Completed
 
-- Added Slice 44 plan:
-  `docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Audit Review Decision
-  contracts: review decision inputs, reviewer action outputs, `accepted`,
-  `needs_clarification`, rejected states, ReviewHistory, follow-up flags,
-  failure behavior, and non-goals.
-- The plan keeps review decision contract-only and excludes frontend pages,
-  report generation behavior, prompt assembly implementation, prompt runtime
-  execution, provider calls, deterministic retrieval behavior changes, vector
-  indexes, embeddings, reranking, graph runtime, MCP runtime, broad
-  TestKnowledgeCard CRUD, automatic eligibility, historical evidence mutation,
-  RBAC, tenants, and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 44 Task 2.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Audit Review Decision|audit summary|review decision|accepted|needs_clarification|rejected_for_missing_evidence|rejected_for_unsupported_claim|rejected_for_citation_mismatch|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-44-test-knowledge-card-prompt-context-audit-review-decision-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Committed `docs(v2): add test knowledge card prompt context audit review decision plan` as `3f1920f`.
-- Continue Slice 44 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 43 Completion Gate
-
-### Completed
-
-- Closed Slice 43: TestKnowledgeCard Prompt Context Audit Summary Contract.
-- Recorded completed task commits in the Slice 43 task table:
-  - Task 1: `24f05c3`;
-  - Task 2: `7e146d3`;
-  - Task 3: `67e29b3`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 43
-  completion and Slice 44 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 44 Task 1: Add TestKnowledgeCard Prompt
-  Context Audit Review Decision task plan.
-
-### Verification
-
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py -q`
-- `git diff --check`
-- Result: `6 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): complete test knowledge card prompt context audit summary slice`.
-- Continue Slice 44 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 43 TestKnowledgeCard Prompt Context Audit Summary Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/31-test-knowledge-card-prompt-context-audit-summary-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py`.
-- The golden fixture and test cover prompt context consumption artifact id,
-  prompt context evidence artifact id, `used_knowledge`, output citations,
-  skipped evidence, unsupported claims, source hash, context manifest,
-  PromptVersion, SkillVersion, ReviewHistory, failure behavior, and forbidden
-  side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 43 Completion Gate.
-
-### Verification
-
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_audit_summary_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `test(golden): add test knowledge card prompt context audit summary smoke`.
-- Continue Slice 43 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 43 TestKnowledgeCard Prompt Context Audit Summary Contracts
-
-### Completed
-
-- Added TestKnowledgeCard Prompt Context Audit Summary rules to data, API,
-  state-machine, artifact, and prompt/skill contracts.
-- Contracts define `summarize_prompt_context_consumption`,
-  `prompt_context_audit_summary`, prompt context consumption artifact
-  references, context manifest links, `used_knowledge`, output citations,
-  skipped evidence, unsupported claim summaries, source hashes, PromptVersion/
-  SkillVersion trace, ReviewHistory ids, usage status, and failure behavior.
-- Added `test_knowledge_card_prompt_context_audit_summary` artifact type and
-  `test_knowledge_card_prompt_context_audit_summary.json` artifact path rules.
-- Kept the scope contract-only: no frontend page, report generation behavior,
-  prompt assembly implementation, prompt runtime execution, provider calls,
-  retrieval ranking change, vector indexes, embeddings, reranking, graph
-  runtime, MCP runtime, broad TestKnowledgeCard CRUD, automatic eligibility,
-  historical evidence mutation, RBAC, tenants, or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 43 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Audit Summary|prompt_context_audit_summary|summarize_prompt_context_consumption|used_knowledge|output citations|skipped evidence|unsupported claims|PromptVersion|SkillVersion|ReviewHistory|source hash|context manifest" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): define test knowledge card prompt context audit summary contracts`.
-- Continue Slice 43 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 43 TestKnowledgeCard Prompt Context Audit Summary Plan
-
-### Completed
-
-- Added Slice 43 plan:
-  `docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Audit Summary contracts:
-  audit summary inputs, cited/skipped evidence summaries, unsupported claim
-  handling, `used_knowledge`, PromptVersion/SkillVersion trace, source
-  hash/context manifest links, ReviewHistory, failure behavior, and non-goals.
-- The plan keeps audit summary contract-only and excludes frontend pages,
-  report generation behavior, prompt assembly implementation, prompt runtime
-  execution, provider calls, deterministic retrieval behavior changes, vector
-  indexes, embeddings, reranking, graph runtime, MCP runtime, broad
-  TestKnowledgeCard CRUD, automatic eligibility, historical evidence mutation,
-  RBAC, tenants, and permissions.
+- Selected `Slice 43: AI Workbench Parsed Output Evidence Visibility` after
+  Slice 42 completion.
+- The slice shows whether each LLM call has parsed output evidence, with a
+  local open link only for safe persisted artifacts.
+- Added the Slice 43 task plan.
 - Updated `NEXT_AI_TASK.md` to Slice 43 Task 2.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Audit Summary|prompt context consumption|used_knowledge|output citations|skipped evidence|PromptVersion|SkillVersion|ReviewHistory|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-43-test-knowledge-card-prompt-context-audit-summary-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Planning verification will be covered by the Slice 43 focused frontend gate.
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card prompt context audit summary plan`.
-- Continue Slice 43 Task 2 from `NEXT_AI_TASK.md`.
+- Show parsed output evidence status in the AI Workbench LLM call log.
 
-## 2026-07-05 Slice 42 Completion Gate
+## 2026-07-08 Slice 42 Completion Gate
 
 ### Completed
 
-- Closed Slice 42: TestKnowledgeCard Prompt Context Consumption Contract.
-- Recorded completed task commits in the Slice 42 task table:
-  - Task 1: `990e757`;
-  - Task 2: `e3aa956`;
-  - Task 3: `9da8cc8`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 42
-  completion and Slice 43 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 43 Task 1: Add TestKnowledgeCard Prompt
-  Context Audit Summary task plan.
+- Completed Slice 42: AI Workbench Context Manifest Evidence Visibility.
+- AI Workbench task details now show context manifest evidence as recorded or
+  not generated.
+- Local open links render only when the context manifest artifact id matches an
+  existing selected-task Artifact with `safe_to_show=true`.
+- Raw LLM output remains metadata-only; no backend, provider, prompt, skill,
+  contract, fixture, execution page, package, RAG runtime, or MCP runtime
+  behavior changed.
+- Updated `NEXT_AI_TASK.md` to select the next narrow V2 task.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py -q`
+- `npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- Result: `1` file passed, `3` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
-- Result: `6 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card prompt context consumption slice`.
-- Continue Slice 43 Task 1 from `NEXT_AI_TASK.md`.
+- Select another narrow V2 task outside broad refactors and unrelated
+  dirty-worktree scope.
 
-## 2026-07-05 Slice 42 TestKnowledgeCard Prompt Context Consumption Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/30-test-knowledge-card-prompt-context-consumption-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py`.
-- The golden fixture and test cover prompt context evidence artifact id,
-  context manifest, `used_knowledge`, consumed TestKnowledgeCard ids, source
-  hash, output citations, PromptVersion, SkillVersion, ReviewHistory, skipped
-  evidence, failure behavior, and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 42 Completion Gate.
-
-### Verification
-
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_consumption_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `test(golden): add test knowledge card prompt context consumption smoke`.
-- Continue Slice 42 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-05 Slice 42 TestKnowledgeCard Prompt Context Consumption Contracts
+## 2026-07-08 Slice 42 AI Workbench Context Manifest Evidence Visibility Plan
 
 ### Completed
 
-- Added TestKnowledgeCard Prompt Context Consumption rules to data, API,
-  state-machine, artifact, and prompt/skill contracts.
-- Contracts define `consume_prompt_context_evidence`,
-  `prompt_context_consumption`, prompt context evidence artifact references,
-  context manifest links, consumed TestKnowledgeCard ids, consumed source
-  hashes, output citations, `used_knowledge` semantics, PromptVersion/
-  SkillVersion trace, ReviewHistory ids, skipped evidence, and failure
-  behavior.
-- Added `test_knowledge_card_prompt_context_consumption` artifact type and
-  `test_knowledge_card_prompt_context_consumption.json` artifact path rules.
-- Kept the scope contract-only: no prompt assembly implementation, prompt
-  runtime execution, provider calls, retrieval ranking change, vector indexes,
-  embeddings, reranking, graph runtime, MCP runtime, broad TestKnowledgeCard
-  CRUD, automatic eligibility, historical evidence mutation, RBAC, tenants, or
-  permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 42 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Consumption|prompt_context_consumption|consume_prompt_context_evidence|used_knowledge|prompt context evidence artifact|citation|PromptVersion|SkillVersion|source hash|context manifest|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): define test knowledge card prompt context consumption contracts`.
-- Continue Slice 42 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 42 TestKnowledgeCard Prompt Context Consumption Plan
-
-### Completed
-
-- Added Slice 42 plan:
-  `docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Consumption contracts:
-  prompt context evidence inputs, consumption/citation rules, `used_knowledge`
-  semantics, PromptVersion/SkillVersion trace, source hash/context manifest
-  links, skipped evidence, failure behavior, and non-goals.
-- The plan keeps consumption contract-only and excludes prompt assembly
-  implementation, prompt runtime execution, provider calls, deterministic
-  retrieval behavior changes, vector indexes, embeddings, reranking, graph
-  runtime, MCP runtime, broad TestKnowledgeCard CRUD, automatic eligibility,
-  historical evidence mutation, RBAC, tenants, and permissions.
+- Selected `Slice 42: AI Workbench Context Manifest Evidence Visibility` after
+  Slice 41 completion.
+- The slice shows whether AI task context manifest evidence was recorded, with
+  a local open link only for safe persisted artifacts.
+- Added the Slice 42 task plan.
 - Updated `NEXT_AI_TASK.md` to Slice 42 Task 2.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Consumption|prompt context evidence|used_knowledge|PromptVersion|SkillVersion|source hash|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-42-test-knowledge-card-prompt-context-consumption-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Planning verification will be covered by the Slice 42 focused frontend gate.
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card prompt context consumption plan`.
-- Continue Slice 42 Task 2 from `NEXT_AI_TASK.md`.
+- Show context manifest evidence status in the AI Workbench task detail.
 
-## 2026-07-04 Slice 41 Completion Gate
+## 2026-07-08 Slice 41 Completion Gate
 
 ### Completed
 
-- Closed Slice 41: TestKnowledgeCard Prompt Context Evidence Contract.
-- Recorded completed task commits in the Slice 41 task table:
-  - Task 1: `7d2e11e`;
-  - Task 2: `6f8c0b9`;
-  - Task 3: `f304c54`.
-- Updated `docs/implementation/10-v2-scope-options.md` with Slice 41
-  completion and Slice 42 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 42 Task 1: Add TestKnowledgeCard Prompt
-  Context Consumption task plan.
+- Completed Slice 41: AI Workbench Artifact Link Accessibility.
+- AI Workbench artifact summary links now expose row-specific `aria-label` and
+  `title` attributes while preserving visible `打开` text.
+- Safe-to-show link conditions and artifact URLs remain unchanged.
+- No backend, provider, prompt, skill, contract, fixture, execution page,
+  package, RAG runtime, or MCP runtime behavior changed.
+- Updated `NEXT_AI_TASK.md` to select the next narrow V2 task.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py -q`
+- `npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- Result: `1` file passed, `3` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
-- Result: `6 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card prompt context evidence slice`.
-- Continue Slice 42 Task 1 from `NEXT_AI_TASK.md`.
+- Select another narrow V2 task outside execution shell/form refactor and
+  unrelated dirty-worktree scope.
 
-## 2026-07-04 Slice 41 TestKnowledgeCard Prompt Context Evidence Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/29-test-knowledge-card-prompt-context-evidence-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py`.
-- The golden fixture and test cover prompt context evidence inputs, bounded
-  snippet, source hash, source manifest, retrieval boundary artifact, prompt
-  eligibility artifact, PromptVersion, SkillVersion, context manifest,
-  omission reasons, failure behavior, and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 41 Completion Gate.
-
-### Verification
-
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_context_evidence_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `test(golden): add test knowledge card prompt context evidence smoke`.
-- Continue Slice 41 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 41 TestKnowledgeCard Prompt Context Evidence Contracts
+## 2026-07-08 Slice 41 AI Workbench Artifact Link Accessibility Plan
 
 ### Completed
 
-- Added TestKnowledgeCard Prompt Context Evidence rules to data, API,
-  state-machine, artifact, and prompt/skill contracts.
-- Contracts define `build_prompt_context_evidence`, prompt context evidence
-  input, bounded snippet/source hash entries, source evidence references,
-  PromptVersion/SkillVersion trace, context manifest links, omission reason,
-  failure behavior, and artifact evidence.
-- Added `test_knowledge_card_prompt_context_evidence` artifact type and
-  `test_knowledge_card_prompt_context_evidence.json` artifact path rules.
-- Kept the scope contract-only: no prompt assembly implementation, prompt
-  runtime execution, provider calls, retrieval ranking change, vector indexes,
-  embeddings, reranking, graph runtime, MCP runtime, broad TestKnowledgeCard
-  CRUD, automatic eligibility, historical evidence mutation, RBAC, tenants, or
-  permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 41 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Prompt Context Evidence|prompt_context_evidence|bounded snippet|source hash|retrieval boundary artifact|PromptVersion|SkillVersion|omission reason|context manifest|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): define test knowledge card prompt context evidence contracts`.
-- Continue Slice 41 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 41 TestKnowledgeCard Prompt Context Evidence Plan
-
-### Completed
-
-- Added Slice 41 plan:
-  `docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`.
-- The plan scopes TestKnowledgeCard Prompt Context Evidence contracts:
-  prompt context evidence inputs, bounded snippet/source hash outputs, source
-  evidence, source manifest, retrieval boundary artifact, PromptVersion/
-  SkillVersion trace, context manifest links, omission summaries, failure
-  behavior, and non-goals.
-- The plan keeps prompt context evidence contract-only and excludes prompt
-  assembly implementation, prompt runtime execution, provider calls,
-  deterministic retrieval behavior changes, vector indexes, embeddings,
-  reranking, graph runtime, MCP runtime, broad TestKnowledgeCard CRUD,
-  automatic eligibility, historical evidence mutation, RBAC, tenants, and
-  permissions.
+- Selected `Slice 41: AI Workbench Artifact Link Accessibility` after Slice 40
+  completion.
+- The slice adds row-specific accessible labels to AI Workbench artifact summary
+  links while preserving visible text, href generation, and safe-to-show link
+  conditions.
+- Added the Slice 41 task plan.
 - Updated `NEXT_AI_TASK.md` to Slice 41 Task 2.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Context Evidence|prompt context evidence|bounded snippet|source hash|retrieval boundary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-41-test-knowledge-card-prompt-context-evidence-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Planning verification will be covered by the Slice 41 focused frontend gate.
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card prompt context evidence plan`.
-- Continue Slice 41 Task 2 from `NEXT_AI_TASK.md`.
+- Add `aria-label` and `title` to AI Workbench artifact summary open links.
 
-## 2026-07-04 Slice 40 Completion Gate
+## 2026-07-08 Slice 40 Completion Gate
 
 ### Completed
 
-- Closed Slice 40: TestKnowledgeCard Retrieval Boundary Contract.
-- Updated Slice 40 task table with completed commits:
-  - Task 1: `2db2bff`;
-  - Task 2: `d334d8c`;
-  - Task 3: `78ff239`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 40
-  completion and recommend Slice 41: TestKnowledgeCard Prompt Context
-  Evidence Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 41 Task 1.
+- Completed Slice 40: AI Task Schema Validation Evidence Visibility.
+- AI Workbench LLM call rows now expose schema-validation evidence as recorded
+  or not recorded.
+- Local open links render only when the schema-validation artifact id matches
+  an existing selected-task Artifact with `safe_to_show=true`.
+- Raw LLM output remains metadata-only; no backend, provider, prompt, skill,
+  contract, fixture, execution page, package, RAG runtime, or MCP runtime
+  behavior changed.
+- Updated `NEXT_AI_TASK.md` to select the next narrow V2 task.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py -q`
+- `npm --prefix frontend run test -- --run src/views/ai-workbench/AiWorkbenchView.spec.ts`
+- Result: `1` file passed, `3` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
-- Result: `6 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card retrieval boundary slice`.
-- Continue Slice 41 Task 1 from `NEXT_AI_TASK.md`.
+- Select another narrow V2 task outside execution shell/form refactor and
+  unrelated dirty-worktree scope.
 
-## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/28-test-knowledge-card-retrieval-boundary-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py`.
-- The golden fixture and test cover selection inputs,
-  `select_prompt_eligible_cards`, `allowed_for_prompt`, `prompt_eligible`,
-  `safe_to_show`, source manifest, ReviewHistory, prompt eligibility artifact
-  evidence, retrieval evidence outputs, exclusion reasons, failure behavior,
-  and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 40 Completion Gate.
-
-### Verification
-
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_retrieval_boundary_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `test(golden): add test knowledge card retrieval boundary smoke`.
-- Continue Slice 40 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Contracts
+## 2026-07-08 Slice 40 AI Task Schema Validation Evidence Visibility Plan
 
 ### Completed
 
-- Added TestKnowledgeCard Retrieval Boundary rules to data, API,
-  state-machine, and artifact contracts.
-- Contracts define read-only selection input, `select_prompt_eligible_cards`,
-  prompt eligibility filters, `allowed_for_prompt`, `prompt_eligible`,
-  safe_to_show/redaction requirements, source evidence, source manifest,
-  ReviewHistory, retrieval evidence outputs, `excluded_card_reason`, failure
-  behavior, and forbidden side effects.
-- Kept the scope contract-only: no prompt runtime retrieval implementation,
-  deterministic retrieval behavior change, vector indexes, embeddings,
-  reranking, graph runtime, MCP runtime, provider calls, broad
-  TestKnowledgeCard CRUD, automatic eligibility, historical evidence mutation,
-  RBAC, tenants, or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 40 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard Retrieval Boundary|select_prompt_eligible_cards|excluded_card_reason|allowed_for_prompt|prompt_eligible|safe_to_show|source manifest|retrieval evidence|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): define test knowledge card retrieval boundary contracts`.
-- Continue Slice 40 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 40 TestKnowledgeCard Retrieval Boundary Plan
-
-### Completed
-
-- Added Slice 40 plan:
-  `docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`.
-- The plan scopes read-only TestKnowledgeCard retrieval boundary contracts:
-  selection inputs, prompt eligibility filters, `safe_to_show`, source
-  evidence, source manifest, ReviewHistory, retrieval evidence outputs,
-  exclusion reasons, failure behavior, and non-goals.
-- The plan keeps retrieval boundary contract-only and excludes prompt runtime
-  retrieval implementation, deterministic retrieval behavior changes, vector
-  indexes, embeddings, reranking, graph runtime, MCP runtime, provider calls,
-  broad TestKnowledgeCard CRUD, automatic eligibility, historical evidence
-  mutation, RBAC, tenants, and permissions.
+- Selected `Slice 40: AI Task Schema Validation Evidence Visibility` as the
+  next narrow V2 task outside automatic execution-page cleanup.
+- Added the Slice 40 task plan.
 - Updated `NEXT_AI_TASK.md` to Slice 40 Task 2.
+- Recorded that Slice 39 remains verified but uncommitted because shared
+  docs/memory files contain large unrelated dirty-worktree changes; do not use
+  broad staging.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md`
-- `rg -n "TestKnowledgeCard Retrieval Boundary|allowed_for_prompt|prompt_eligible|retrieval evidence|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-40-test-knowledge-card-retrieval-boundary-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Planning verification will be covered by the Slice 40 focused frontend gate.
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card retrieval boundary plan`.
-- Continue Slice 40 Task 2 from `NEXT_AI_TASK.md`.
+- Show schema-validation evidence status in the AI Workbench LLM call log.
 
-## 2026-07-04 Slice 39 Completion Gate
+## 2026-07-08 Slice 39 Completion Gate
 
 ### Completed
 
-- Closed Slice 39: TestKnowledgeCard Prompt Eligibility Contract.
-- Updated Slice 39 task table with completed commits:
-  - Task 1: `2c56822`;
-  - Task 2: `cb0c9b6`;
-  - Task 3: `fbc5d32`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 39
-  completion and recommend Slice 40: TestKnowledgeCard Retrieval Boundary
-  Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 40 Task 1.
+- Completed Slice 39: Execution Evidence Link Accessibility.
+- Added row-specific `aria-label` and `title` attributes to
+  `ExecutionRunManifestPanel.vue` open links.
+- Updated focused component coverage to assert accessible labels while
+  preserving visible `打开` text and existing artifact URL behavior.
+- Preserved run manifest row availability rules, output definitions, display
+  helpers, result tables, metrics, artifact tables, and start/refresh behavior.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py -q`
+- `npm --prefix frontend run test -- --run src/views/execution/ExecutionRunManifestPanel.spec.ts src/views/execution/executionOutputArtifacts.spec.ts src/views/execution/executionDisplay.spec.ts src/views/execution/ExecutionResultTable.spec.ts src/views/execution/ExecutionMetricsPanel.spec.ts src/views/execution/ExecutionArtifactTable.spec.ts src/views/execution/executionRunManifest.spec.ts src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `12` files passed, `20` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
-- Result: `6 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card prompt eligibility slice`.
-- Continue Slice 40 Task 1 from `NEXT_AI_TASK.md`.
+- Before new product-code work, path-limit review/stage/commit the Slice 39
+  implementation and handoff files, or explicitly document why Slice 39 remains
+  uncommitted.
+- Stop automatic execution-page cleanup here. Remaining execution-page changes
+  should be selected as a fresh product-value task or explicitly promoted as a
+  broader shell/form refactor.
 
-## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Golden Smoke
+## 2026-07-08 Slice 39 Execution Evidence Link Accessibility Plan
 
 ### Completed
 
-- Added `docs/fixtures/27-test-knowledge-card-prompt-eligibility-golden.md`.
-- Added `backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py`.
-- The golden fixture and test cover prompt eligibility actions,
-  `allowed_for_prompt`, `safe_to_show`, redaction, source manifest,
-  ReviewHistory, prompt eligibility reason, artifact evidence,
-  revocation/failure behavior, and forbidden side effects.
-- Updated `NEXT_AI_TASK.md` to Slice 39 Completion Gate.
+- Selected `Slice 39: Execution Evidence Link Accessibility` as the next narrow
+  V2 task after Slice 38 completion.
+- The slice adds row-specific accessible labels to run manifest evidence links
+  while preserving visible text, href generation, and availability rules.
+- Added `docs/implementation/slices/slice-39-execution-evidence-link-accessibility.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 38 completion
+  and the Slice 39 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 39 planning.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_prompt_eligibility_contract_golden.py -q`
+- `rg -n "Slice 39|Execution Evidence Link Accessibility|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-39-execution-evidence-link-accessibility.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
 - `git diff --check`
-- Result: `3 passed`.
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `test(golden): add test knowledge card prompt eligibility smoke`.
-- Continue Slice 39 Completion Gate from `NEXT_AI_TASK.md`.
+- Continue Slice 39 Task 2: Add accessible labels to manifest evidence links.
 
-## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Contracts
+## 2026-07-08 Slice 38 Completion Gate
 
 ### Completed
 
-- Added TestKnowledgeCard Prompt Eligibility rules to data, API, state-machine,
-  and artifact contracts.
-- Contracts define prompt eligibility input, actions, `allowed_for_prompt`,
-  safe_to_show/redaction requirements, source evidence, ReviewHistory,
-  prompt eligibility reason, artifact evidence, revocation/failure behavior,
-  and forbidden side effects.
-- Kept the scope contract-only: no prompt runtime retrieval change, vector
-  indexes, embeddings, reranking, graph runtime, MCP runtime, provider calls,
-  broad TestKnowledgeCard CRUD, automatic eligibility, historical evidence
-  mutation, RBAC, tenants, or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 39 Task 3.
+- Completed Slice 38: Execution Output Artifact Definitions.
+- Added `frontend/src/views/execution/executionOutputArtifacts.ts`.
+- Added focused definition coverage for pytest, Playwright, Newman, and JMeter
+  manifest output artifact ordering and labels.
+- Replaced page-local manifest output artifact arrays in pytest, Playwright,
+  Newman, and JMeter execution pages with shared constants.
+- Preserved manifest row semantics, artifact filters, artifact links, metrics,
+  result tables, display helpers, and start/refresh behavior.
 
 ### Verification
 
-- `rg -n "TestKnowledgeCard Prompt Eligibility|mark_card_prompt_eligible|deny_card_prompt_eligibility|request_prompt_eligibility_revision|revoke_card_prompt_eligibility|allowed_for_prompt|safe_to_show|prompt eligibility reason|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md`
+- `npm --prefix frontend run test -- --run src/views/execution/executionOutputArtifacts.spec.ts src/views/execution/executionDisplay.spec.ts src/views/execution/ExecutionResultTable.spec.ts src/views/execution/ExecutionMetricsPanel.spec.ts src/views/execution/ExecutionArtifactTable.spec.ts src/views/execution/ExecutionRunManifestPanel.spec.ts src/views/execution/executionRunManifest.spec.ts src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `12` files passed, `20` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): define test knowledge card prompt eligibility contracts`.
-- Continue Slice 39 Task 3 from `NEXT_AI_TASK.md`.
+- Stop automatic execution-page cleanup here. Remaining duplication is mostly
+  page shell/layout and entry forms, which should be planned explicitly before
+  editing because the blast radius is broader than Slices 33-38.
 
-## 2026-07-04 Slice 39 TestKnowledgeCard Prompt Eligibility Plan
+## 2026-07-08 Slice 38 Execution Output Artifact Definitions Plan
 
 ### Completed
 
-- Added Slice 39 plan:
-  `docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md`.
-- The plan scopes human-reviewed TestKnowledgeCard prompt eligibility:
-  mark/deny/request-revision/revoke actions, safe_to_show, redaction, source
-  evidence, ReviewHistory, prompt eligibility reason, artifact evidence,
-  revocation/failure behavior, and non-goals.
-- The plan keeps prompt eligibility contract-only and excludes prompt runtime
-  retrieval changes, vector indexes, embeddings, reranking, graph runtime, MCP
-  runtime, provider calls, broad TestKnowledgeCard CRUD, automatic eligibility,
-  historical evidence mutation, RBAC, tenants, and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 39 Task 2.
+- Selected `Slice 38: Execution Output Artifact Definitions` as the next safe
+  V2 slice after Slice 37 completion.
+- The slice extracts duplicated manifest output artifact definition arrays while
+  keeping artifact lookup, artifact filtering, manifest row-building semantics,
+  and runner behavior unchanged.
+- Added `docs/implementation/slices/slice-38-execution-output-artifact-definitions.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 37 completion
+  and the Slice 38 recommendation.
+- `NEXT_AI_TASK.md` already points to Slice 38 planning.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md`
-- `rg -n "TestKnowledgeCard Prompt Eligibility|allowed_for_prompt|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-39-test-knowledge-card-prompt-eligibility-contract.md NEXT_AI_TASK.md`
+- `rg -n "Slice 38|Execution Output Artifact Definitions|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-38-execution-output-artifact-definitions.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
 - `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card prompt eligibility plan`.
-- Continue Slice 39 Task 2 from `NEXT_AI_TASK.md`.
+- Continue Slice 38 Task 2: Add shared execution output artifact definitions.
 
-## 2026-07-04 Slice 38 Completion Gate
+## 2026-07-07 Slice 37 Completion Gate
 
 ### Completed
 
-- Closed Slice 38: Reviewed TestKnowledgeCard Creation Contract.
-- Updated `docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`
-  task table with completed commits:
-  - Task 1: `972c572`;
-  - Task 2: `68b93dd`;
-  - Task 3: `03e79cc`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 38
-  completion and recommend Slice 39: TestKnowledgeCard Prompt Eligibility
-  Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 39 Task 1.
+- Completed Slice 37: Execution Display Helpers.
+- Added `frontend/src/views/execution/executionDisplay.ts`.
+- Added focused helper coverage for run status labels and run duration labels.
+- Replaced page-local status label and run duration display logic in pytest,
+  Playwright, Newman, and JMeter execution pages with the shared helper.
+- Preserved page layout, forms, JMeter parsed JTL duration formatting, result
+  row shaping, run manifest, metrics panel, artifact table, result table, and
+  start/refresh behavior.
 
 ### Verification
 
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_reviewed_test_knowledge_card_creation_contract_golden.py backend\app\tests\golden\test_test_knowledge_card_candidate_review_contract_golden.py -q`
-- Result: `6 passed`.
+- `npm --prefix frontend run test -- --run src/views/execution/executionDisplay.spec.ts src/views/execution/ExecutionResultTable.spec.ts src/views/execution/ExecutionMetricsPanel.spec.ts src/views/execution/ExecutionArtifactTable.spec.ts src/views/execution/ExecutionRunManifestPanel.spec.ts src/views/execution/executionRunManifest.spec.ts src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `11` files passed, `16` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete reviewed test knowledge card creation slice`.
-- Continue Slice 39 Task 1 from `NEXT_AI_TASK.md`.
+- Pause broad automatic extraction. Remaining duplication is mostly execution
+  page shell/layout and entry forms, which should be planned only if explicitly
+  promoted because the blast radius is larger than Slices 33-37.
 
-## 2026-07-04 Slice 38 Reviewed TestKnowledgeCard Creation Golden Smoke
+## 2026-07-07 Slice 37 Execution Display Helpers Plan
 
 ### Completed
 
-- Added `docs/fixtures/26-reviewed-test-knowledge-card-creation-golden.md`.
-- Added
-  `backend/app/tests/golden/test_reviewed_test_knowledge_card_creation_contract_golden.py`.
-- Golden smoke validates Reviewed TestKnowledgeCard Creation, approved
-  candidate review, creation action, card field mapping, source evidence,
-  source manifest, duplicate/merge preconditions, `allowed_for_prompt=false`,
-  unsupported claims, ReviewHistory, and creation artifact evidence.
-- Golden proves the contract forbids broad TestKnowledgeCard CRUD,
-  auto-creation from model output, automatic prompt eligibility, automatic
-  merge/archive/delete, historical evidence mutation, provider calls,
-  vector/graph runtime, MCP runtime, artifact mutation, review bypass,
-  auto-promotion, RBAC, tenants, and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 38 Completion Gate.
+- Selected `Slice 37: Execution Display Helpers` as the next safe V2 slice
+  after Slice 36 completion.
+- The slice extracts pure status and run-duration display helpers while keeping
+  page layout, forms, result data, and runner-specific JMeter formatting in the
+  pages.
+- Added `docs/implementation/slices/slice-37-execution-display-helpers.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 36 completion
+  and the Slice 37 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 37 Task 1: Add Execution Display Helpers
+  task plan.
 
 ### Verification
 
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_reviewed_test_knowledge_card_creation_contract_golden.py -q`
+- `rg -n "Slice 37|Execution Display Helpers|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-37-execution-display-helpers.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
 - `git diff --check`
-- Result: `3 passed`; diff check is clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `test(golden): add reviewed test knowledge card creation smoke`.
-- Continue Slice 38 Completion Gate from `NEXT_AI_TASK.md`.
+- Continue Slice 37 Task 2: Add shared execution display helpers.
 
-## 2026-07-04 Slice 38 Reviewed TestKnowledgeCard Creation Contracts
+## 2026-07-07 Slice 36 Completion Gate
 
 ### Completed
 
-- Added Reviewed TestKnowledgeCard Creation rules to data, API, state-machine,
-  and artifact contracts.
-- Contracts define creation input, `create_reviewed_test_knowledge_card`,
-  approved candidate review artifact, card field mapping, source manifest,
-  duplicate/merge preconditions, `allowed_for_prompt=false`,
-  `prompt_eligibility_decision=deferred`, failure behavior, and ReviewHistory
-  linkage.
-- Kept the scope contract-only: no endpoint, backend feature API, frontend
-  page, migration, broad TestKnowledgeCard CRUD, automatic card creation from
-  model output, automatic prompt eligibility, automatic merge/archive/delete,
-  provider calls, MCP runtime, vector/graph runtime, artifact mutation outside
-  declared creation output, historical evidence mutation, RBAC, tenants, or
-  permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 38 Task 3.
+- Completed Slice 36: Execution Result Table Panel.
+- Added `frontend/src/views/execution/ExecutionResultTable.vue`.
+- Added focused component coverage for page-owned columns and rows.
+- Replaced duplicated result table section markup in pytest, Playwright,
+  Newman, and JMeter execution pages with the shared component.
+- Preserved page-owned runner-specific result columns, JMeter result row
+  shaping, run manifest, metrics panel, artifact table, and start/refresh
+  behavior.
 
 ### Verification
 
-- `rg -n "Reviewed TestKnowledgeCard Creation|create_reviewed_test_knowledge_card|approved candidate|candidate review artifact|source manifest|allowed_for_prompt=false|duplicate|merge|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`
+- `npm --prefix frontend run test -- --run src/views/execution/ExecutionResultTable.spec.ts src/views/execution/ExecutionMetricsPanel.spec.ts src/views/execution/ExecutionArtifactTable.spec.ts src/views/execution/ExecutionRunManifestPanel.spec.ts src/views/execution/executionRunManifest.spec.ts src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `10` files passed, `14` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): define reviewed test knowledge card creation contracts`.
-- Continue Slice 38 Task 3 from `NEXT_AI_TASK.md`.
+- Select the next narrow V2 task after Slice 36 completion.
 
-## 2026-07-04 Slice 38 Reviewed TestKnowledgeCard Creation Plan
+## 2026-07-07 Slice 36 Execution Result Table Panel Plan
 
 ### Completed
 
-- Added Slice 38 plan:
-  `docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`.
-- The plan scopes reviewed creation from approved TestKnowledgeCard candidates:
-  creation input, card field mapping, source evidence, source manifest,
-  duplicate/merge preconditions, `allowed_for_prompt=false`, failure behavior,
-  ReviewHistory, and creation artifact evidence.
-- The plan keeps creation contract-only and excludes broad TestKnowledgeCard
-  CRUD, backend feature APIs, frontend pages, migrations, automatic card
-  creation from model output, automatic prompt eligibility, automatic
-  duplicate merge, historical evidence mutation, provider calls, MCP runtime,
-  vector/graph runtime, RBAC, tenants, and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 38 Task 2.
+- Selected `Slice 36: Execution Result Table Panel` as the next safe V2 slice
+  after Slice 35 completion.
+- The slice extracts duplicated result table section display while keeping
+  runner-specific result columns and row shaping on each execution page.
+- Added `docs/implementation/slices/slice-36-execution-result-table-panel.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 35 completion
+  and the Slice 36 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 36 Task 1: Add Execution Result Table
+  Panel task plan.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md`
-- `rg -n "Reviewed TestKnowledgeCard Creation|approved candidate|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-38-reviewed-test-knowledge-card-creation-contract.md NEXT_AI_TASK.md`
+- `rg -n "Slice 36|Execution Result Table Panel|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-36-execution-result-table-panel.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
 - `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): add reviewed test knowledge card creation plan`.
-- Continue Slice 38 Task 2 from `NEXT_AI_TASK.md`.
+- Continue Slice 36 Task 2: Add shared execution result table component.
 
-## 2026-07-04 Slice 37 Completion Gate
+## 2026-07-07 Slice 35 Completion Gate
 
 ### Completed
 
-- Closed Slice 37: TestKnowledgeCard Candidate Review Contract.
-- Updated `docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
-  task table with completed commits:
-  - Task 1: `052756a`;
-  - Task 2: `1341d1f`;
-  - Task 3: `05913ea`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 37
-  completion and recommend Slice 38: Reviewed TestKnowledgeCard Creation
-  Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 38 Task 1.
+- Completed Slice 35: Execution Metrics Panel.
+- Added `frontend/src/views/execution/ExecutionMetricsPanel.vue`.
+- Added focused component coverage for numeric and string metric values.
+- Replaced duplicated metric tile markup and scoped CSS in pytest,
+  Playwright, Newman, and JMeter execution pages with the shared component.
+- Preserved page-owned runner-specific metric item computation, result tables,
+  artifact filters, start/refresh behavior, and evidence links.
 
 ### Verification
 
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_test_knowledge_card_candidate_review_contract_golden.py backend\app\tests\golden\test_test_knowledge_card_handoff_contract_golden.py -q`
-- Result: `6 passed`.
+- `npm --prefix frontend run test -- --run src/views/execution/ExecutionMetricsPanel.spec.ts src/views/execution/ExecutionArtifactTable.spec.ts src/views/execution/ExecutionRunManifestPanel.spec.ts src/views/execution/executionRunManifest.spec.ts src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `9` files passed, `13` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card candidate review slice`.
-- Continue Slice 38 Task 1 from `NEXT_AI_TASK.md`.
+- Plan Slice 36: Execution Result Table Panel.
 
-## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Golden Smoke
+## 2026-07-07 Slice 35 Execution Metrics Panel Plan
 
 ### Completed
 
-- Added `docs/fixtures/25-test-knowledge-card-candidate-review-golden.md`.
-- Added
-  `backend/app/tests/golden/test_test_knowledge_card_candidate_review_contract_golden.py`.
-- Golden smoke validates TestKnowledgeCard Candidate Review actions,
-  ReviewHistory, candidate review artifact, handoff source evidence,
-  duplicate/merge routing, prompt eligibility separation, unsupported claims,
-  human review, and forbidden side effects.
-- Golden proves the contract forbids TestKnowledgeCard CRUD/auto-creation,
-  automatic card approval, automatic prompt eligibility, automatic
-  merge/archive/delete/relabel, historical evidence mutation, provider calls,
-  vector/graph runtime, MCP runtime, artifact mutation, review bypass,
-  auto-promotion, RBAC, tenants, and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 37 Completion Gate.
+- Selected `Slice 35: Execution Metrics Panel` as the next safe V2 slice after
+  Slice 34 completion.
+- The slice extracts duplicated metric tile display while keeping
+  runner-specific metric item computation on each execution page.
+- Added `docs/implementation/slices/slice-35-execution-metrics-panel.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 34 completion
+  and the Slice 35 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 35 Task 1: Add Execution Metrics Panel
+  task plan.
 
 ### Verification
 
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_test_knowledge_card_candidate_review_contract_golden.py -q`
+- `rg -n "Slice 35|Execution Metrics Panel|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-35-execution-metrics-panel.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
 - `git diff --check`
-- Result: `3 passed`; diff check is clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `test(golden): add test knowledge card candidate review smoke`.
-- Continue Slice 37 Completion Gate from `NEXT_AI_TASK.md`.
+- Continue Slice 35 Task 2: Add shared execution metrics panel component.
 
-## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Contracts
+## 2026-07-07 Slice 34 Completion Gate
 
 ### Completed
 
-- Added TestKnowledgeCard Candidate Review rules to data, API, state-machine,
-  and artifact contracts.
-- Contracts define candidate review input, actions, output evidence,
-  ReviewHistory linkage, candidate review artifact evidence,
-  duplicate/merge routing, `allowed_for_prompt=false`,
-  `prompt_eligibility_decision=deferred`, failure behavior, and unsupported
-  claims.
-- Kept the scope contract-only: no endpoint, backend feature API, frontend
-  page, migration, TestKnowledgeCard CRUD, automatic card creation, automatic
-  prompt eligibility, automatic merge/archive/delete, provider calls, MCP
-  runtime, vector/graph runtime, artifact mutation outside declared candidate
-  review output, historical evidence mutation, RBAC, tenants, or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 37 Task 3.
+- Completed Slice 34: Execution Artifact Table Panel.
+- Added `frontend/src/views/execution/ExecutionArtifactTable.vue`.
+- Added focused component coverage for artifact metadata, local open links, and
+  accessible open-link labels.
+- Replaced duplicated artifact table markup in pytest, Playwright, Newman, and
+  JMeter execution pages with the shared component.
+- Preserved page-owned runner-specific artifact filtering, metrics, result
+  tables, start/refresh behavior, and read-only local artifact semantics.
+- Updated `NEXT_AI_TASK.md` to plan Slice 35: Execution Metrics Panel.
 
 ### Verification
 
-- `rg -n "TestKnowledgeCard Candidate Review|approve_candidate_for_creation|reject_candidate|request_candidate_revision|flag_duplicate|request_merge_review|defer_prompt_eligibility|ReviewHistory|candidate review artifact" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
+- `npm --prefix frontend run test -- --run src/views/execution/ExecutionArtifactTable.spec.ts src/views/execution/ExecutionRunManifestPanel.spec.ts src/views/execution/executionRunManifest.spec.ts src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `8` files passed, `12` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): define test knowledge card candidate review contracts`.
-- Continue Slice 37 Task 3 from `NEXT_AI_TASK.md`.
+- Plan Slice 35: Execution Metrics Panel.
 
-## 2026-07-04 Slice 37 TestKnowledgeCard Candidate Review Plan
+## 2026-07-07 Slice 34 Execution Artifact Table Panel Plan
 
 ### Completed
 
-- Added Slice 37 plan:
-  `docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`.
-- The plan scopes candidate review actions for TestKnowledgeCard handoff
-  candidates: approve_candidate_for_creation, reject_candidate,
-  request_candidate_revision, flag_duplicate, request_merge_review, and
-  defer_prompt_eligibility.
-- The plan keeps candidate review contract-only and excludes TestKnowledgeCard
-  CRUD, backend feature APIs, frontend pages, migrations, automatic card
-  creation, automatic prompt eligibility, automatic duplicate merge,
-  historical evidence mutation, provider calls, MCP runtime, vector/graph
-  runtime, RBAC, tenants, and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 37 Task 2.
+- Selected `Slice 34: Execution Artifact Table Panel` as the next safe V2 slice
+  after Slice 33 completion.
+- The slice extracts duplicated artifact table display while keeping
+  runner-specific artifact filters on each execution page.
+- Added `docs/implementation/slices/slice-34-execution-artifact-table-panel.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 33 completion
+  and the Slice 34 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 34 Task 2: Add shared execution artifact
+  table component.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md`
-- `rg -n "TestKnowledgeCard Candidate Review|TestKnowledgeCard handoff|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-37-test-knowledge-card-candidate-review-contract.md NEXT_AI_TASK.md`
+- `rg -n "Slice 34|Execution Artifact Table Panel|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-34-execution-artifact-table-panel.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
 - `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card candidate review plan`.
-- Continue Slice 37 Task 2 from `NEXT_AI_TASK.md`.
+- Continue Slice 34 Task 2: Add shared execution artifact table component.
 
-## 2026-07-04 Slice 36 Completion Gate
+## 2026-07-07 Slice 33 Completion Gate
 
 ### Completed
 
-- Closed Slice 36: TestKnowledgeCard Handoff Contract.
-- Updated `docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`
-  task table with completed commits:
-  - Task 1: `6ce8970`;
-  - Task 2: `de2b2be`;
-  - Task 3: `87f2b20`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 36
-  completion and recommend Slice 37: TestKnowledgeCard Candidate Review
-  Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 37 Task 1.
+- Completed Slice 33: Execution Run Manifest Panel.
+- Execution pages now render the run manifest through one shared
+  `ExecutionRunManifestPanel.vue` component.
+- Pytest, Playwright, Newman, and JMeter pages preserve runner-specific metrics,
+  output artifact definitions, start/refresh behavior, local link rules, and
+  missing evidence visibility.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 task.
 
 ### Verification
 
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_test_knowledge_card_handoff_contract_golden.py backend\app\tests\golden\test_knowledge_feedback_review_gate_contract_golden.py -q`
-- Result: `6 passed`.
+- `npm --prefix frontend run test -- --run src/views/execution/ExecutionRunManifestPanel.spec.ts src/views/execution/executionRunManifest.spec.ts src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `7` files passed, `11` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card handoff slice`.
-- Continue Slice 37 Task 1 from `NEXT_AI_TASK.md`.
+- Select and plan the next narrow V2 task after Slice 33 completion.
 
-## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/24-test-knowledge-card-handoff-golden.md`.
-- Added
-  `backend/app/tests/golden/test_test_knowledge_card_handoff_contract_golden.py`.
-- Golden smoke validates approved KnowledgeFeedbackDraft handoff,
-  ReviewHistory, feedback review artifact, TestKnowledgeCard candidate fields,
-  source evidence, safe_to_show, `allowed_for_prompt=false`, duplicate/merge
-  hints, unsupported claims, human review, and forbidden side effects.
-- Golden proves the contract forbids TestKnowledgeCard CRUD/auto-creation,
-  automatic prompt eligibility, historical evidence mutation, provider calls,
-  vector/graph runtime, MCP runtime, artifact mutation, review bypass,
-  auto-promotion, RBAC, tenants, and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 36 Completion Gate.
-
-### Verification
-
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_test_knowledge_card_handoff_contract_golden.py -q`
-- `git diff --check`
-- Result: `3 passed`; diff check is clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `test(golden): add test knowledge card handoff smoke`.
-- Continue Slice 36 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Contracts
+## 2026-07-07 Slice 33 Execution Run Manifest Panel Implementation
 
 ### Completed
 
-- Added TestKnowledgeCard handoff candidate rules to data, API,
-  state-machine, and artifact contracts.
-- Contracts define approved KnowledgeFeedbackDraft handoff input,
-  `handoff_payload_json`, candidate card fields, same-project source evidence,
-  duplicate/merge hints, `safe_to_show`, `allowed_for_prompt=false`,
-  ReviewHistory/review artifact trace, handoff failure behavior, and
-  unsupported claims.
-- Kept the scope contract-only: no endpoint, backend feature API, frontend
-  page, migration, TestKnowledgeCard CRUD, automatic card creation, automatic
-  prompt eligibility, automatic knowledge ingestion, provider calls, MCP
-  runtime, vector/graph runtime, artifact mutation outside declared handoff
-  output, historical evidence mutation, RBAC, tenants, or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 36 Task 3.
-
-### Verification
-
-- `rg -n "TestKnowledgeCard handoff|KnowledgeFeedbackDraft|handoff_payload|allowed_for_prompt=false|duplicate|merge|safe_to_show|ReviewHistory" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`
-- `git diff --check`
-- Result: required terms found and diff check is clean except Windows
-  LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): define test knowledge card handoff contracts`.
-- Continue Slice 36 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 36 TestKnowledgeCard Handoff Plan
-
-### Completed
-
-- Added Slice 36 plan:
-  `docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`.
-- The plan scopes approved KnowledgeFeedbackDraft handoff payloads into future
-  TestKnowledgeCard candidate fields with source evidence, duplicate/merge
-  hints, `safe_to_show`, `allowed_for_prompt=false`, human review, artifact
-  trace, failure behavior, and unsupported claims.
-- Kept the scope planning-only: no TestKnowledgeCard CRUD, backend feature API,
-  frontend page, migration, automatic card creation, automatic prompt
-  eligibility, automatic knowledge ingestion, provider calls, MCP runtime,
-  vector/graph runtime, artifact mutation, historical evidence mutation, RBAC,
-  tenants, or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 36 Task 2.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md`
-- `rg -n "TestKnowledgeCard Handoff|KnowledgeFeedbackDraft|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-36-test-knowledge-card-handoff-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: plan file exists, required terms found, and diff check is clean
-  except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): add test knowledge card handoff plan`.
-- Continue Slice 36 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 35 Completion Gate
-
-### Completed
-
-- Closed Slice 35: Knowledge Feedback Review Gate Contract.
-- Updated `docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
-  task table with completed commits:
-  - Task 1: `b3faec3`;
-  - Task 2: `a523a76`;
-  - Task 3: `65d51d0`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 35
-  completion and recommend Slice 36: TestKnowledgeCard Handoff Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 36 Task 1.
-
-### Verification
-
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_knowledge_feedback_review_gate_contract_golden.py backend\app\tests\golden\test_knowledge_feedback_contract_golden.py -q`
-- Result: `6 passed`.
-- `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): complete knowledge feedback review gate slice`.
-- Continue Slice 36 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-04 Slice 35 Knowledge Feedback Review Gate Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/23-knowledge-feedback-review-gate-golden.md`.
-- Added `backend/app/tests/golden/test_knowledge_feedback_review_gate_contract_golden.py`.
-- Golden smoke validates KnowledgeFeedbackDraft review actions,
-  ReviewHistory, feedback review artifact, prompt eligibility,
-  TestKnowledgeCard handoff, unsupported claims, human review, and forbidden
-  side effects.
-- Golden proves the contract forbids feedback review runtime APIs, frontend
-  review pages, TestKnowledgeCard CRUD/auto-creation, prompt-eligible
-  auto-marking, historical evidence mutation, provider calls, vector/graph
-  runtime, MCP runtime, artifact mutation, review bypass, auto-promotion, RBAC,
-  tenants, and permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 35 Completion Gate.
-
-### Verification
-
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_knowledge_feedback_review_gate_contract_golden.py -q`
-- Result: `3 passed`.
-- `git diff --check`
-- Result: clean.
-
-### Next Step
-
-- Commit `test(golden): add knowledge feedback review gate smoke`.
-- Continue Slice 35 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-03 Slice 35 Knowledge Feedback Review Gate Contracts
-
-### Completed
-
-- Added KnowledgeFeedbackDraft review gate rules to data, API, state-machine,
-  and artifact contracts.
-- Contracts now define `approve_feedback`, `reject_feedback`,
-  `request_revision`, `mark_prompt_eligible`, ReviewHistory linkage,
-  feedback review artifact evidence, prompt eligibility reasons, and future
-  TestKnowledgeCard handoff payloads.
-- Kept the scope contract-only: no review runtime API, frontend page,
-  TestKnowledgeCard CRUD, automatic prompt eligibility, provider calls, MCP
-  runtime, vector/graph runtime, historical evidence mutation, RBAC, tenants,
-  or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 35 Task 3.
-
-### Verification
-
-- `rg -n "KnowledgeFeedbackDraft|approve_feedback|reject_feedback|request_revision|mark_prompt_eligible|ReviewHistory|prompt eligibility|feedback review artifact" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
-- `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): define knowledge feedback review gate contracts`.
-- Continue Slice 35 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-03 Slice 35 Knowledge Feedback Review Gate Plan
-
-### Completed
-
-- Added Slice 35 plan:
-  `docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`.
-- The plan scopes human review actions for KnowledgeFeedbackDraft:
-  approve_feedback, reject_feedback, request_revision, mark_prompt_eligible,
-  and future TestKnowledgeCard handoff.
-- The plan keeps review-gate work contract-only and excludes runtime review
-  APIs, frontend pages, TestKnowledgeCard CRUD, automatic prompt eligibility,
-  automatic knowledge ingestion, provider calls, MCP runtime, vector/graph
-  runtime, historical evidence mutation, RBAC, tenants, and permissions.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md`
-- PowerShell equivalent result: `True`.
-- `rg -n "Knowledge Feedback Review Gate|KnowledgeFeedbackDraft|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-35-knowledge-feedback-review-gate-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): add knowledge feedback review gate plan`.
-- Continue Slice 35 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-03 Slice 34 Completion Gate
-
-### Completed
-
-- Closed Slice 34: Knowledge Feedback Contract.
-- Updated `docs/implementation/slices/slice-34-knowledge-feedback-contract.md`
-  task table with completed commits:
-  - Task 1: `83abc73`;
-  - Task 2: `f351634`;
-  - Task 3: `aa66538`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 34
-  completion and recommend Slice 35: Knowledge Feedback Review Gate Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 35 Task 1.
-
-### Verification
-
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_knowledge_feedback_contract_golden.py backend\app\tests\golden\test_mcp_ready_tool_knowledge_safety_contract_golden.py -q`
-- `git diff --check`
-
-### Next Step
-
-- Commit `docs(v2): complete knowledge feedback contract slice`.
-- Continue Slice 35 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-03 Slice 34 Knowledge Feedback Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/22-knowledge-feedback-contract-golden.md`.
-- Added `backend/app/tests/golden/test_knowledge_feedback_contract_golden.py`.
-- Golden smoke validates KnowledgeFeedbackAgent, `knowledge_feedback:v1`,
-  `knowledge-feedback-skill:v1`, KnowledgeFeedbackDraft, input evidence
-  sources, draft feedback fields, unsupported claims, human review, prompt
-  eligibility, and failure behavior.
-- Golden proves the contract forbids KnowledgeFeedbackAgent runtime,
-  TestKnowledgeCard CRUD/auto-creation, prompt-eligible auto-marking,
-  historical evidence mutation, provider calls, vector/graph runtime, MCP
-  runtime, artifact mutation, review bypass, auto-promotion, RBAC, tenants, and
-  permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 34 Completion Gate.
-
-### Verification
-
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_knowledge_feedback_contract_golden.py -q`
-- Result: `3 passed`.
-- `git diff --check`
-
-### Next Step
-
-- Commit `test(golden): add knowledge feedback contract smoke`.
-- Continue Slice 34 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-03 Slice 34 Knowledge Feedback Contracts
-
-### Completed
-
-- Added `KnowledgeFeedbackDraft` data contract as draft-only feedback output.
-- Added API contract section for KnowledgeFeedbackAgent draft responses, input
-  evidence sources, prompt/skill trace fields, unsupported claims, and
-  forbidden side effects.
-- Added KnowledgeFeedbackDraft state contract: draft, needs_review,
-  approved_by_human, and rejected remain separate from TestKnowledgeCard state
-  and prompt eligibility.
-- Added artifact rules for `knowledge_feedback.json`, `feedback_sources.json`,
-  `unsupported_claims.json`, and draft feedback trace evidence.
-- Added prompt/skill contract binding for `knowledge_feedback:v1` and
-  `knowledge-feedback-skill:v1`.
-- Updated `NEXT_AI_TASK.md` to Slice 34 Task 3.
-
-### Verification
-
-- `rg -n "KnowledgeFeedbackAgent|knowledge_feedback|draft feedback|prompt-eligible|UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK|ReviewHistory|FailureAnalysis|Report|KnowledgeEvidence" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-34-knowledge-feedback-contract.md`
-- `git diff --check`
-
-### Next Step
-
-- Commit `docs(v2): define knowledge feedback contracts`.
-- Continue Slice 34 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-03 Slice 34 Knowledge Feedback Contract Plan
-
-### Completed
-
-- Added Slice 34 plan:
-  `docs/implementation/slices/slice-34-knowledge-feedback-contract.md`.
-- The plan scopes KnowledgeFeedbackAgent feedback contracts from accepted and
-  rejected cases, ReviewHistory, FailureAnalysis, Report, TestRun/TestResult
-  summaries, KnowledgeEvidence, and existing TestKnowledgeCard summaries.
-- The plan keeps feedback draft-only until human review and forbids automatic
-  TestKnowledgeCard creation, prompt-eligible auto-marking, historical evidence
-  mutation, provider calls, MCP runtime, vector/graph runtime, RBAC, tenants,
-  and permissions.
-- `NEXT_AI_TASK.md` already points to Slice 34 Task 1 from the Slice 33
-  completion gate.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-34-knowledge-feedback-contract.md`
-- `rg -n "Knowledge Feedback Contract|KnowledgeFeedbackAgent|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-34-knowledge-feedback-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-
-### Next Step
-
-- Commit `docs(v2): add knowledge feedback contract plan`.
-- Continue Slice 34 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-03 Slice 33 Completion Gate
-
-### Completed
-
-- Closed Slice 33: MCP-Ready ToolDefinition And KnowledgeAdapter Safety
-  Contract.
-- Updated `docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
-  task table with completed commits:
-  - Task 1: `2c18e57`;
-  - Task 2: `9a872cd`;
-  - Task 3: `cdcc23f`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 33
-  completion and recommend Slice 34: Knowledge Feedback Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 34 Task 1.
-
-### Verification
-
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_mcp_ready_tool_knowledge_safety_contract_golden.py backend\app\tests\golden\test_agent_workflow_contract_golden.py -q`
-- Result: `6 passed`.
-- `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): complete mcp-ready tool knowledge safety slice`.
-- Continue Slice 34 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-03 Slice 33 MCP-Ready Tool/Knowledge Safety Golden Smoke
-
-### Completed
-
-- Added `docs/fixtures/21-mcp-ready-tool-knowledge-safety-golden.md`.
-- Added `backend/app/tests/golden/test_mcp_ready_tool_knowledge_safety_contract_golden.py`.
-- Golden smoke validates ToolDefinition, ToolInvocation,
-  KnowledgeAdapterConfig, KnowledgeEvidence, Artifact, approval, risk,
-  timeout, artifact policy, provider state, fallback, and human gate terms.
-- Golden proves the contract forbids MCP runtime, external provider calls,
-  credentials, vector indexes, graph jobs, Report conclusions, review bypass,
-  artifact mutation, generated-case auto-approval, TestCase auto-promotion,
-  RBAC, tenants, and permissions.
+- Added `frontend/src/views/execution/ExecutionRunManifestPanel.vue`.
+- Added focused component coverage.
+- Replaced duplicated run manifest panel markup in pytest, Playwright, Newman,
+  and JMeter execution pages with the shared component.
+- Removed page-local manifest table columns and scoped manifest CSS.
 - Updated `NEXT_AI_TASK.md` to Slice 33 Completion Gate.
 
 ### Verification
 
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_mcp_ready_tool_knowledge_safety_contract_golden.py -q`
-- Result: `3 passed`.
+- `npm --prefix frontend run test -- --run src/views/execution/ExecutionRunManifestPanel.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `5` files passed, `5` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
-- Result: clean.
+- Result: no output.
 
 ### Next Step
 
-- Commit `test(golden): add mcp-ready tool knowledge safety smoke`.
-- Continue Slice 33 Completion Gate from `NEXT_AI_TASK.md`.
+- Run Slice 33 Completion Gate.
 
-## 2026-07-03 Slice 33 MCP-Ready Tool/Knowledge Safety Contracts
+## 2026-07-07 Slice 33 Execution Run Manifest Panel Plan
 
 ### Completed
 
-- Updated data, API, state-machine, and artifact contracts with MCP-ready
-  ToolDefinition and KnowledgeAdapter safety rules.
-- ToolDefinition safety now names strict input/output schema, risk,
-  `approval_required`, timeout, `artifact_policy`, and display-only
-  `provider_state` metadata.
-- ToolInvocation safety now names approval/status/failure/artifact behavior and
-  keeps tool output as execution evidence only.
-- KnowledgeAdapter safety now defines `provider_state=disabled`,
-  `provider_state=configured`, `provider_state=unhealthy`, local/no-knowledge
-  fallback, and KnowledgeEvidence normalization before provider outputs may be
-  cited.
-- Artifact rules now require bounded ToolInvocation artifacts and normalized
-  KnowledgeEvidence while forbidding raw provider payloads, credentials,
-  transport settings, artifact mutation, MCP runtime, provider SDK calls,
-  review bypass, and auto-promotion.
-- Updated `NEXT_AI_TASK.md` to Slice 33 Task 3.
+- Selected `Slice 33: Execution Run Manifest Panel` as the next safe V2 slice
+  after Slice 32 completion.
+- The slice extracts the remaining duplicated manifest display block while
+  keeping helper semantics and runner-specific evidence unchanged.
+- Added `docs/implementation/slices/slice-33-execution-run-manifest-panel.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 32 completion
+  and the Slice 33 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 33 Task 2: Add shared execution run
+  manifest panel component.
 
 ### Verification
 
-- `rg -n "ToolDefinition safety|KnowledgeAdapter safety|approval_required|artifact_policy|provider_state|disabled|unhealthy|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
+- `rg -n "Slice 33|Execution Run Manifest Panel|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-33-execution-run-manifest-panel.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
 - `git diff --check`
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): define mcp-ready tool knowledge safety contracts`.
-- Continue Slice 33 Task 3 from `NEXT_AI_TASK.md`.
+- Continue Slice 33 Task 2: Add shared execution run manifest panel component.
 
-## 2026-07-02 Slice 33 MCP-Ready Tool/Knowledge Safety Plan
+## 2026-07-07 Slice 32 Completion Gate
 
 ### Completed
 
-- Added Slice 33 plan:
-  `docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`.
-- Updated `docs/implementation/10-v2-scope-options.md` to record Slice 32
-  completion and recommend Slice 33.
-- The plan scopes ToolDefinition, ToolInvocation, KnowledgeAdapterConfig,
-  KnowledgeEvidence, Artifact, approval, risk, timeout, artifact policy,
-  provider state, fallback, and MCP runtime boundaries.
-- Kept the task planning-only: no MCP runtime, MCP transport, provider SDK,
-  credentials, external calls, vector/graph runtime, frontend, migration,
-  runner behavior, report behavior, artifact mutation, auto-approval, RBAC,
-  tenants, or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 33 Task 2.
+- Completed Slice 32: Execution Run Manifest Helper.
+- `buildExecutionRunManifestRows` now centralizes runtime, snapshot, and output
+  artifact row construction for execution run manifests.
+- Pytest, Playwright, Newman, and JMeter execution pages reuse the helper while
+  keeping runner-specific output artifact definitions.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 task.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md`
-- PowerShell equivalent result: `True`.
-- `rg -n "MCP-Ready ToolDefinition|KnowledgeAdapter|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-33-mcp-ready-tool-knowledge-safety-contract.md NEXT_AI_TASK.md`
+- `npm --prefix frontend run test -- --run src/views/execution/executionRunManifest.spec.ts src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `6` files passed, `10` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): add mcp-ready tool knowledge safety plan`.
-- Continue Slice 33 Task 2 from `NEXT_AI_TASK.md`.
+- Select and plan the next narrow V2 task after Slice 32 completion.
 
-## 2026-07-02 Slice 32 Completion Gate
-
-### Completed
-
-- Closed Slice 32: Agent Workflow Contract.
-- Updated `docs/implementation/slices/slice-32-agent-workflow-contract.md`
-  task table with completed commits:
-  - Task 1: `42580e2`;
-  - Task 2: `5bbf91f`;
-  - Task 3: `0591cb0`.
-- Kept Slice 32 contract-only: no runtime orchestration, provider calls, RAG
-  runtime, MCP runtime, frontend, migration, auto-approval, runner behavior,
-  reports, RBAC, tenants, or permissions.
-- Updated `NEXT_AI_TASK.md` to Slice 33 Task 1: Add MCP-ready ToolDefinition
-  and KnowledgeAdapter safety contract task plan.
-
-### Verification
-
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_agent_workflow_contract_golden.py backend\app\tests\golden\test_generated_case_knowledge_evidence_persistence_golden.py -q`
-- Result: `4 passed`.
-- `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `docs(v2): complete agent workflow contract slice`.
-- Continue Slice 33 Task 1 from `NEXT_AI_TASK.md`.
-
-## 2026-07-02 Slice 32 Agent Workflow Contract Golden Smoke
+## 2026-07-07 Slice 32 Execution Run Manifest Helper Implementation
 
 ### Completed
 
-- Added `docs/fixtures/20-agent-workflow-contract-golden.md`.
-- Added `backend/app/tests/golden/test_agent_workflow_contract_golden.py`.
-- Golden smoke validates all eight requirement-to-reviewed-case agents:
-  RequirementUnderstandingAgent, RiskAnalysisAgent, CoverageAnalysisAgent,
-  TestDesignAgent, CaseGenerationAgent, CaseReviewAgent, DedupAgent, and
-  AutomationReadinessAgent.
-- The fixture and test preserve the contract-only boundary: no TestCase
-  auto-promotion, TestRun, Report, provider call, vector index, graph job, MCP
-  runtime, artifact mutation, runtime orchestration, or remote CI provider
-  behavior.
+- Added `frontend/src/views/execution/executionRunManifest.ts`.
+- Added focused helper tests for runtime, dependency snapshot, environment
+  snapshot, and output artifact rows.
+- Replaced duplicated manifest row-building code in pytest, Playwright, Newman,
+  and JMeter execution pages with the shared helper.
+- Preserved runner-specific output artifact lists and existing page layouts.
 - Updated `NEXT_AI_TASK.md` to Slice 32 Completion Gate.
 
 ### Verification
 
-- `backend\.venv\Scripts\python.exe -m pytest backend\app\tests\golden\test_agent_workflow_contract_golden.py -q`
-- Result: `3 passed`.
-- `git diff --check`
-- Result: clean except Windows LF-to-CRLF warning.
-
-### Next Step
-
-- Commit `test(golden): add agent workflow contract smoke`.
-- Continue Slice 32 Completion Gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-02 Slice 32 Agent Workflow Contract
-
-### Completed
-
-- Defined requirement-to-reviewed-case workflow contracts in:
-  - `docs/contracts/02-api-contract.md`;
-  - `docs/contracts/03-state-machines.md`;
-  - `docs/contracts/05-prompt-skill-contract.md`;
-  - `docs/implementation/slices/slice-32-agent-workflow-contract.md`.
-- Documented per-agent inputs, outputs, write permission, human gate, failure
-  behavior, prompt/skill seed, trace fields, and progression rules.
-- Kept generated candidates review-gated and explicitly prevented automatic
-  TestCase promotion.
-- Updated `NEXT_AI_TASK.md` to Slice 32 Task 3.
-
-### Verification
-
-- `rg -n "RequirementUnderstandingAgent|CaseReviewAgent|human gate|write permission|failure behavior" docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-32-agent-workflow-contract.md`
-- `git diff --check`
-
-### Next Step
-
-- Commit `docs(v2): define agent workflow contract`.
-- Continue Slice 32 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-02 Slice 32 Agent Workflow Contract Plan
-
-### Completed
-
-- Added Slice 32 plan:
-  `docs/implementation/slices/slice-32-agent-workflow-contract.md`.
-- Updated `docs/implementation/10-v2-scope-options.md` with:
-  - Slice 31 Generated Case Knowledge Evidence Persistence completion;
-  - integrated Knowledge Prompt/Skill Seeds completion;
-  - Slice 32 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 32 Task 2.
-- Kept the slice planning-only: no runtime orchestration, provider calls,
-  frontend, migration, RAG runtime, MCP runtime, auto-approval, RBAC, tenants,
-  or permissions.
-
-### Verification
-
-- `test -f docs/implementation/slices/slice-32-agent-workflow-contract.md`
-- `rg -n "Agent Workflow Contract|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-32-agent-workflow-contract.md NEXT_AI_TASK.md`
-- `git diff --check`
-
-### Next Step
-
-- Commit `docs(v2): add agent workflow contract plan`.
-- Continue Slice 32 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-02 Branch Integration And Slice 31 Completion Gate
-
-### Completed
-
-- Installed local tooling under `D:\workspaces\Chtest\.tools`: Git for Windows
-  MinGit `2.55.0.windows.1` and uv `0.11.26`.
-- Created a real git working copy at `D:\workspaces\Chtest\.repo-cache\Chtest`
-  because the extracted project directory has no `.git` metadata.
-- Created local branch `codex/integrate-unmerged`.
-- Integrated unmerged remote branches:
-  - `origin/codex/cicd-quality-docs`;
-  - `origin/codex/prompt-skill-seeds`;
-  - `origin/codex/final-rag-agent-strategy`.
-- Resolved RAG/agent planning conflicts by keeping the newer evidence-first
-  testing knowledge constraints while adding final workflow and provider-safety
-  details.
-- Completed Slice 31 Generated Case Knowledge Evidence Persistence gate and
-  moved `NEXT_AI_TASK.md` to Slice 32 Task 1.
-
-### Verification
-
-- `npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts`
-- Result: `1` file passed, `1` test passed.
+- `npm --prefix frontend run test -- --run src/views/execution/executionRunManifest.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `5` files passed, `8` tests passed.
 - `npm --prefix frontend run build`
-- Result: passed with the existing Vite large chunk warning.
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/prompt_skill/test_registry_loader.py backend/app/tests/prompt_skill/test_skill_files.py backend/app/tests/prompt_skill/test_knowledge_prompt_skill_seeds.py -q`
-- Result: `14 passed`.
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_test_knowledge_card_contract_golden.py backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q`
-- Result: `19 passed`.
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
 - Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete generated case knowledge evidence persistence slice`.
-- Continue Slice 32 Task 1 from `NEXT_AI_TASK.md`.
+- Run Slice 32 Completion Gate.
 
-## 2026-07-01 Slice 31 Task 4 Generated-Case Evidence Golden Smoke
+## 2026-07-07 Slice 32 Execution Run Manifest Helper Plan
 
 ### Completed
 
-- Completed Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden
-  Smoke.
-- Added
-  `backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py`.
-- Golden runs the real case-generation API flow with three normalized evidence
-  conditions:
-  - accepted evidence;
-  - needs-review evidence;
-  - rejected/missing evidence.
-- Golden verifies candidate list exposes evidence ids, knowledge evidence
-  refs, covered risk ids, generation reason, automation readiness, quality
-  score, review findings, and coverage gap notes.
-- Golden verifies no TestCase is created and runtime/report side-effect fields
-  are absent.
+- Selected `Slice 32: Execution Run Manifest Helper` as the next safe V2 slice
+  after Slice 31 completion.
+- The slice removes real duplication in execution run manifest row-building
+  while avoiding backend, contracts, fixtures, prompts, skills, and deleted
+  knowledge-card scope.
+- Added `docs/implementation/slices/slice-32-execution-run-manifest-helper.md`.
+- Updated `docs/implementation/10-v2-scope-options.md` with Slice 31 completion
+  and the Slice 32 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 32 Task 2: Add execution run manifest
+  helper.
+
+### Verification
+
+- `rg -n "Slice 32|Execution Run Manifest Helper|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-32-execution-run-manifest-helper.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Continue Slice 32 Task 2: Add execution run manifest helper.
+
+## 2026-07-07 Slice 31 Completion Gate
+
+### Completed
+
+- Completed Slice 31: Execution Evidence Availability Labels.
+- The execution evidence availability helper now standardizes labels for
+  local-openable, unavailable, external-reference, and metadata-only states.
+- Pytest, Playwright, Newman, and JMeter execution run manifest rows now use the
+  helper while preserving local link rules and runner-specific evidence tables.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 task.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/execution/evidenceAvailability.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `5` files passed, `6` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Select and plan the next narrow V2 task after Slice 31 completion.
+
+## 2026-07-07 Slice 31 Task 3 Execution Manifest Availability Labels
+
+### Completed
+
+- Applied the shared evidence availability label helper to pytest,
+  Playwright, Newman, and JMeter execution run manifest rows.
+- Preserved local link rules: links still require a persisted local Artifact id
+  in `TestRunRead.artifacts`.
+- Preserved runner-specific metrics and artifact tables.
 - Updated `NEXT_AI_TASK.md` to Slice 31 Completion Gate.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_generated_case_knowledge_evidence_persistence_golden.py -q`
-- Result: `1 passed in 0.72s`
+- `npm --prefix frontend run test -- --run src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts src/views/execution/PytestExecutionView.spec.ts`
+- Result: `4` files passed, `4` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
 - Result: no output.
 
 ### Next Step
 
-- Continue Slice 31 Completion Gate.
+- Run Slice 31 Completion Gate.
 
-## 2026-07-01 Slice 31 Task 3 Generated-Case Evidence Persistence
+## 2026-07-07 Slice 31 Task 2 Evidence Availability Label Helper
 
 ### Completed
 
-- Completed Slice 31 Task 3: Persist Generated-Case Knowledge Evidence Fields.
-- Added GeneratedCaseCandidate persistence fields for knowledge evidence ids,
-  knowledge evidence refs, covered risk ids, generation reason, automation
-  readiness, quality score, review findings, and coverage gap notes.
-- Added migration
-  `backend/alembic/versions/20260701_0007_generated_case_knowledge_evidence.py`.
-- Updated case generation persistence and candidate list mapping.
-- Added DB/API coverage for migration columns/types/check constraints,
-  defaults, mutable list/json updates, AI-output evidence persistence, UUID
-  covered-risk ids, automation readiness and quality score value ranges,
-  bounded safe display JSON, and no TestCase side effect.
-- Updated `NEXT_AI_TASK.md` to Slice 31 Task 4.
+- Added `frontend/src/views/execution/evidenceAvailability.ts`.
+- Added focused helper tests for local-openable, unavailable, external
+  reference, and metadata-only evidence states.
+- The helper returns labels only; it does not create URLs, inspect files, fetch
+  remote data, mutate artifacts, or depend on backend changes.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Task 3: Apply availability labels to
+  execution run manifests.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/db/test_case_generation_models.py backend/app/tests/api/test_case_generation.py -q`
-- Result: `15 passed in 1.71s`
+- `npm --prefix frontend run test -- --run src/views/execution/evidenceAvailability.spec.ts`
+- Result: `1` file passed, `2` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
 - Result: no output.
 
 ### Next Step
 
-- Continue Slice 31 Task 4: Add Generated-Case Knowledge Evidence Golden
-  Smoke.
+- Continue Slice 31 Task 3: Apply availability labels to execution run
+  manifests.
 
-## 2026-07-01 Slice 31 Persistence Contract Boundary
-
-### Completed
-
-- Clarified Slice 31 persistence rules in the data/API/state/artifact
-  contracts.
-- Data contract now states generated-case knowledge evidence fields are
-  persisted from validated AI output when present, with defaults when absent.
-- API contract now states candidate list returns safe defaults and does not
-  imply TestKnowledgeCard CRUD or runtime retrieval behavior.
-- State-machine contract now states persistence does not add review states or
-  append ReviewHistory by itself.
-- Artifact contract now states row-level evidence refs do not require creating
-  new artifacts when owning AI/case-generation evidence already exists.
-- Updated `NEXT_AI_TASK.md` to Slice 31 Task 3: Persist Generated-Case
-  Knowledge Evidence Fields.
-
-### Verification
-
-- `rg -n "source_knowledge_evidence_ids|knowledge_evidence_refs_json|review_findings_json|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
-- `git diff --check`
-
-### Next Step
-
-- Commit `docs(v2): clarify generated case knowledge evidence persistence`.
-- Continue Slice 31 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-01 Slice 31 Generated Case Knowledge Evidence Persistence Plan
+## 2026-07-07 Slice 31 Execution Evidence Availability Labels Plan
 
 ### Completed
 
-- Selected Slice 31: Generated Case Knowledge Evidence Persistence.
-- Added `docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`.
+- Selected `Slice 31: Execution Evidence Availability Labels` as the next safe
+  V2 slice after Slice 30 completion.
+- The slice continues the evidence-readability thread while avoiding the
+  current dirty worktree's deleted knowledge-card, prompt, skill, contract, and
+  fixture scope.
+- Added `docs/implementation/slices/slice-31-execution-evidence-availability-labels.md`.
 - Updated `docs/implementation/10-v2-scope-options.md` with Slice 30 completion
-  and Slice 31 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 31 Task 2: Confirm Persistence Contract
-  Boundary.
-
-### Rationale
-
-- Slice 30 defined and proved generated-case knowledge evidence fields at
-  contract/schema level.
-- The next smallest product step is persisting those fields in the existing
-  GeneratedCaseCandidate data flow and returning them through the candidate list
-  API.
-- The slice avoids TestKnowledgeCard CRUD, RAG runtime, external providers,
-  vector infrastructure, graph runtime, frontend work, and review bypass.
+  and the Slice 31 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 31 Task 2: Add execution evidence
+  availability label helper.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md`
-- `rg -n "Generated Case Knowledge Evidence Persistence|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-31-generated-case-knowledge-evidence-persistence.md NEXT_AI_TASK.md`
-- `git diff --check`
-
-### Next Step
-
-- Commit `docs(v2): add generated case knowledge evidence persistence plan`.
-- Continue Slice 31 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-01 Slice 30 Completion Gate
-
-### Completed
-
-- Completed Slice 30: Test Knowledge Card Contract.
-- Recorded Task commits:
-  - Task 1: `2cd72e8`
-  - Task 2: `2898126`
-  - Task 3: `5beedf1`
-  - Task 4: `43c35e6`
-- Verified contracts define TestKnowledgeCard, KnowledgeEvidence,
-  GeneratedCaseCandidate evidence fields, artifact rules, and state/API
-  non-goals.
-- Verified fixture covers accepted, needs-review, and rejected evidence
-  conditions.
-- Verified golden smoke covers schema-level serialization of generated-case
-  knowledge evidence without TestCase/TestRun/Report/retrieval/vector/graph
-  side-effect ids.
-- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
-
-### Verification
-
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
-- Result: `2` passed.
+- `rg -n "Slice 31|Execution Evidence Availability Labels|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-31-execution-evidence-availability-labels.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md memory/08-session-handoff.md memory/07-dev-log.md`
+- Result: planning references present.
 - `git diff --check`
 - Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): complete test knowledge card contract slice`.
-- Continue with `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+- Continue Slice 31 Task 2: Add execution evidence availability label helper.
 
-## 2026-07-01 Slice 30 Contract Smoke
+## 2026-07-07 Slice 30 Completion Gate
 
 ### Completed
 
-- Added `backend/app/tests/golden/test_test_knowledge_card_contract_golden.py`.
-- Extended `GeneratedCaseCandidateListItemRead` schema with knowledge evidence
-  fields:
-  `source_knowledge_evidence_ids`, `knowledge_evidence_refs`,
-  `covered_risk_ids`, `generation_reason`, `automation_readiness`,
-  `quality_score`, `review_findings`, and `coverage_gap_notes`.
-- Golden proves accepted and rejected evidence conditions serialize without
-  adding TestCase, TestRun, Report, retrieval job, vector index, or graph job
-  ids.
+- Completed Slice 30: Execution Run Manifest Parity.
+- Playwright, Newman, and JMeter execution pages now all show the compact
+  read-only run manifest panel established by Slice 29.
+- The panels preserve runner-specific evidence sections while adding common
+  command/workspace/safety-policy/snapshot/output availability cues.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 task.
+
+### Verification
+
+- `npm --prefix frontend run test -- --run src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts`
+- Result: `3` files passed, `3` tests passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
+- `git diff --check`
+- Result: no output.
+
+### Next Step
+
+- Select and plan the next narrow V2 task after Slice 30 completion.
+
+## 2026-07-07 Slice 30 Task 4 JMeter Run Manifest Panel
+
+### Completed
+
+- Added the read-only `执行运行清单` panel to the JMeter execution page.
+- The panel shows command, working directory, runner mode, run workspace,
+  repository read-only policy, network policy, runtime files, snapshots, and
+  JMeter output artifact availability.
+- Local download links render only when an id matches a persisted local
+  `TestRunRead.artifacts` row.
+- Focused JMeter coverage now includes persisted runtime/dependency/stdout/
+  JTL/parsed-output artifacts plus missing runtime, environment snapshot, and
+  stderr rows.
 - Updated `NEXT_AI_TASK.md` to Slice 30 Completion Gate.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
-- Result: `2` passed.
-- `backend/.venv/bin/python -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/golden/test_test_knowledge_card_contract_golden.py -q`
-- Result: `5` passed.
+- `npm --prefix frontend run test -- --run src/views/execution/JMeterExecutionView.spec.ts`
+- Result: `1` file passed, `1` test passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
 - Result: no output.
 
 ### Next Step
 
-- Commit `test(golden): add test knowledge card contract smoke`.
-- Continue Slice 30 Completion Gate.
+- Run Slice 30 Completion Gate.
 
-## 2026-07-01 Slice 30 Test Knowledge Card Golden Fixture
+## 2026-07-07 Slice 30 Task 3 Newman Run Manifest Panel
 
 ### Completed
 
-- Added `docs/fixtures/18-test-knowledge-card-contract-golden.md`.
-- Fixture defines checkout coupon requirement text, source ContextArtifacts,
-  TestKnowledgeCard examples, KnowledgeEvidence examples, and three
-  GeneratedCaseCandidate evidence conditions.
-- Fixture covers accepted, needs-review, and rejected candidate evidence.
-- Fixture states provider payloads must be normalized into KnowledgeEvidence
-  before generated cases cite them.
-- Updated `NEXT_AI_TASK.md` to Slice 30 Task 4: Add Contract Smoke For
-  Generated-Case Evidence Fields.
+- Added the read-only `执行运行清单` panel to the Newman execution page.
+- The panel shows command, working directory, runner mode, run workspace,
+  repository read-only policy, network policy, runtime files, snapshots, and
+  Newman output artifact availability.
+- Local download links render only when an id matches a persisted local
+  `TestRunRead.artifacts` row.
+- Focused Newman coverage now includes persisted runtime/dependency/stdout/
+  newman-json/parsed-output artifacts plus missing runtime, environment
+  snapshot, stderr, and JUnit rows.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 4: Add JMeter run manifest panel.
 
 ### Verification
 
-- `test -f docs/fixtures/18-test-knowledge-card-contract-golden.md`
-- `rg -n "TestKnowledgeCard|KnowledgeEvidence|GeneratedCaseCandidate|review_findings|coverage_gap_notes" docs/fixtures/18-test-knowledge-card-contract-golden.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+- `npm --prefix frontend run test -- --run src/views/execution/NewmanExecutionView.spec.ts`
+- Result: `1` file passed, `1` test passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(fixtures): add test knowledge card contract golden`.
-- Continue Slice 30 Task 4 from `NEXT_AI_TASK.md`.
+- Continue Slice 30 Task 4: Add JMeter run manifest panel.
 
-## 2026-07-01 Slice 30 TestKnowledgeCard Contract
+## 2026-07-07 Slice 30 Task 2 Playwright Run Manifest Panel
 
 ### Completed
 
-- Defined `TestKnowledgeCard` and `KnowledgeEvidence` in the data model
-  contract.
-- Added GeneratedCaseCandidate evidence fields:
-  `source_knowledge_evidence_ids`, `knowledge_evidence_refs_json`,
-  `covered_risk_ids`, `generation_reason`, `automation_readiness`,
-  `quality_score`, `review_findings_json`, and `coverage_gap_notes`.
-- Updated API contract so candidate-case responses can display normalized
-  KnowledgeEvidence references and review findings.
-- Updated state-machine contract so knowledge evidence supports review but does
-  not auto-approve candidates, create TestCase records, trigger retrieval jobs,
-  or start indexing/provider behavior.
-- Updated artifact contract with `test_knowledge_card`, `knowledge_evidence`,
-  and `case_review_findings` artifact rules.
-- Updated `NEXT_AI_TASK.md` to Slice 30 Task 3: Add Test Knowledge Card Golden
-  Fixture.
+- Added the read-only `执行运行清单` panel to the Playwright execution page.
+- The panel shows command, working directory, runner mode, run workspace,
+  repository read-only policy, network policy, runtime files, snapshots, and
+  output artifact availability.
+- Local download links render only when an id matches a persisted local
+  `TestRunRead.artifacts` row.
+- Focused Playwright coverage now includes persisted runtime/dependency/stdout/
+  trace/screenshot artifacts plus missing runtime, environment snapshot,
+  stderr, parsed output, and JUnit rows.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 3: Add Newman run manifest panel.
 
 ### Verification
 
-- `rg -n "TestKnowledgeCard|KnowledgeEvidence|source_knowledge_evidence_ids|coverage_gap_notes|RAG runtime|MCP runtime" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
+- `npm --prefix frontend run test -- --run src/views/execution/PlaywrightExecutionView.spec.ts`
+- Result: `1` file passed, `1` test passed.
+- `npm --prefix frontend run build`
+- Result: passed with existing Vite large chunk warning.
 - `git diff --check`
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): define test knowledge card contract`.
-- Continue Slice 30 Task 3 from `NEXT_AI_TASK.md`.
+- Continue Slice 30 Task 3: Add Newman run manifest panel.
 
-## 2026-07-01 Slice 30 Test Knowledge Card Contract Plan
+## 2026-07-07 Slice 30 Execution Run Manifest Parity Plan
 
 ### Completed
 
-- Selected Slice 30: Test Knowledge Card Contract.
-- Added `docs/implementation/slices/slice-30-test-knowledge-card-contract.md`.
+- Used three parallel subagents to evaluate the next V2 slice after Slice 29:
+  V2 priority, Git/worktree risk, and contracts/fixtures readiness.
+- Selected `Slice 30: Execution Run Manifest Parity` as the safest next slice.
+- Added `docs/implementation/slices/slice-30-execution-run-manifest-parity.md`.
 - Updated `docs/implementation/10-v2-scope-options.md` with Slice 29 completion
-  and Slice 30 recommendation.
-- Updated `NEXT_AI_TASK.md` to Slice 30 Task 2: Define TestKnowledgeCard and
-  KnowledgeEvidence contracts.
+  and the Slice 30 recommendation.
+- Updated `NEXT_AI_TASK.md` to Slice 30 Task 1.
 
 ### Rationale
 
-- Slice 19 proved deterministic local ContextArtifact retrieval evidence, but
-  generated test cases still need structured testing knowledge evidence.
-- The next smallest final RAG/Agent step is contract-first: define
-  `TestKnowledgeCard`, `KnowledgeEvidence`, and generated-case evidence fields
-  before any vector database, embedding, reranking, provider, graph, or frontend
-  implementation.
-- The slice keeps human review gates intact and does not add RAG runtime or MCP
-  runtime behavior.
+- Slice 29 proved the run manifest contract and pytest page implementation.
+- Playwright, Newman, and JMeter pages can reuse the same existing `TestRunRead`
+  evidence without backend/API changes.
+- The current worktree has large unrelated unstaged changes and deletions, so
+  this planning task avoided backend, frontend, contracts, fixtures, prompt, and
+  skill files.
 
 ### Verification
 
-- `test -f docs/implementation/slices/slice-30-test-knowledge-card-contract.md`
-- `rg -n "Test Knowledge Card|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-30-test-knowledge-card-contract.md NEXT_AI_TASK.md`
+- `rg -n "Execution Run Manifest Parity|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-30-execution-run-manifest-parity.md docs/implementation/10-v2-scope-options.md NEXT_AI_TASK.md`
+- Result: planning references present.
 - `git diff --check`
+- Result: no output.
 
 ### Next Step
 
-- Commit `docs(v2): add test knowledge card contract plan`.
-- Continue Slice 30 Task 2 from `NEXT_AI_TASK.md`.
+- Continue Slice 30 Task 2: Add Playwright run manifest panel.
 
-## 2026-07-01 Slice 29 Completion Gate
+## 2026-07-07 Slice 29 Completion Gate
 
 ### Completed
 
 - Completed Slice 29: Execution Run Manifest.
-- Recorded Task 4 commit `b62afaa`.
-- Verified pytest execution page shows a read-only TestRun run manifest.
-- Confirmed manifest inputs remain tied to existing TestRun fields and Artifact
-  metadata.
-- Confirmed no runner behavior, report generation, FailureAnalysis,
-  QualityGateDecision, remote provider, RAG runtime, or MCP runtime behavior was
-  added.
-- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+- Recorded Task 4 verification and Slice 29 completion evidence.
+- Updated `NEXT_AI_TASK.md` to select and plan the next narrow V2 task.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q`
-- Result: `2` passed.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py backend/app/tests/golden/test_artifact_access_golden.py -q`
+- Result: `2 passed`.
 - `npm --prefix frontend run build`
-- Result: passed with Vite large chunk warning.
+- Result: passed with existing Vite large chunk warning.
 - `npm --prefix frontend run test -- --run`
 - Result: `16` files passed, `21` tests passed.
 - `git diff --check`
 - Result: no output.
 
+### Notes
+
+- Workspace-local `uv` and MinGit live under `.tmp/tools`, which is ignored.
+- Current Git status still includes broad unrelated working tree changes and
+  deletions outside Slice 29; they were not reverted or staged.
+
 ### Next Step
 
-- Commit `docs(v2): complete execution run manifest slice`.
-- Continue with `NEXT_AI_TASK.md` to select and plan the next narrow V2 slice.
+- Select and plan the next narrow V2 slice from `NEXT_AI_TASK.md`.
 
-## 2026-07-01 Slice 29 Execution Run Manifest Golden Smoke
+
+## 2026-07-07 Slice 29 Execution Run Manifest Golden Smoke Verified
 
 ### Completed
 
-- Added a Slice 29 golden smoke for execution run manifest inputs.
-- Golden proves TestRun read data keeps command, working directory,
-  runner_mode, run workspace, repository/network policy, parsed result, and
-  artifact metadata available for manifest display.
-- Golden proves persisted local runtime manifest artifact remains openable.
-- Golden proves missing dependency/environment snapshots remain unavailable
-  evidence.
-- Added fixture documentation:
-  `docs/fixtures/17-execution-run-manifest-golden.md`.
+- Restored workspace-local tooling under `.tmp/tools`: portable `uv` and
+  portable MinGit.
+- Created `backend/.venv` with `uv --project backend sync --dev`.
+- Restored Git metadata for `origin/docs/preflight-vibecoding-fixes` without
+  overwriting working tree files.
+- Updated `NEXT_AI_TASK.md` to Slice 29 Completion Gate.
 
 ### Verification
 
-- `backend/.venv/bin/python -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
-- Result: `1` passed.
+- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_execution_run_manifest_golden.py -q`
+- Result: `1 passed`.
 - `git diff --check`
 - Result: no output.
 
+### Notes
+
+- Current Git status includes many unrelated pre-existing working tree changes
+  and deletions outside Slice 29 Task 4; they were not reverted or staged.
+
 ### Next Step
 
-- Commit `test(golden): add execution run manifest smoke`.
-- Continue Slice 29 Completion Gate.
+- Run Slice 29 Completion Gate from `NEXT_AI_TASK.md`.
 
-## 2026-07-01 Slice 29 Frontend Run Manifest Panel
+
+## 2026-07-06 Slice 29 Execution Run Manifest Golden Smoke
 
 ### Completed
 
-- Pytest execution page now shows a compact `执行运行清单` panel.
-- Panel displays command, working directory, runner mode, run workspace,
-  repository-readonly policy, and network policy.
-- Panel displays runtime/dependency/environment snapshot rows, keeping missing
-  snapshots visible as `缺失不可打开`.
-- Local open links are rendered only for persisted local Artifact ids.
+- Added `backend/app/tests/golden/test_execution_run_manifest_golden.py`.
+- Added `docs/fixtures/17-execution-run-manifest-golden.md`.
+- Golden seed covers existing TestRun manifest fields, persisted local Artifact
+  rows and metadata, missing snapshot id visibility, missing runtime Artifact
+  id visibility, and local artifact access only for persisted Artifact ids.
+- Golden asserts read/display inputs do not create or mutate Report,
+  FailureAnalysis, QualityGateDecision, AutomationRepairTask, AutomationDraft,
+  AITask, TestRun, or Artifact rows.
+
+### Verification
+
+- Scoped whitespace/conflict-marker check passed.
+- Backend golden pytest could not run because `backend/.venv` is missing and
+  system `python.exe` is an unusable WindowsApps stub.
+- Attempts to install/download missing Git/Python tooling were blocked by the
+  escalation auto-review, even after user allowed environment setup.
+
+### Next Step
+
+- Restore backend Python 3.12/uv or `backend/.venv`, restore usable git checkout,
+  then run the Slice 29 Task 4 golden smoke and `git diff --check`.
+
+## 2026-07-06 Slice 29 Frontend Run Manifest Panel
+
+### Completed
+
+- Added the pytest execution page `执行运行清单` panel.
+- The panel derives command, working directory, runner mode, run workspace,
+  repository-readonly policy, network policy, runtime files, dependency
+  snapshot, environment snapshot, and output artifact availability from
+  existing `TestRunRead` fields and Artifact metadata.
+- Local open links are rendered only when an id matches a persisted Artifact row
+  returned in `TestRunRead.artifacts`.
+- Missing snapshots and missing output artifacts remain visible as unavailable
+  evidence.
+- Added focused frontend coverage for persisted local Artifact links and missing
+  snapshot rows.
+- Used parallel subagents for read-only implementation mapping and scoped Vue /
+  spec drafts; main thread integrated and verified the final changes.
 - Updated `NEXT_AI_TASK.md` to Slice 29 Task 4: Add execution run manifest
   golden smoke.
 
@@ -3305,14 +1146,16 @@
 - `npm --prefix frontend run test -- --run src/views/execution/PytestExecutionView.spec.ts`
 - Result: `1` file passed, `1` test passed.
 - `npm --prefix frontend run build`
-- Result: passed with Vite large chunk warning.
-- `git diff --check`
-- Result: no output.
+- Result: passed with existing Vite large chunk warning.
+- Scoped whitespace/conflict-marker check on the two changed frontend files:
+  no output.
 
-### Next Step
+### Notes
 
-- Commit `feat(frontend): show execution run manifest`.
-- Continue Slice 29 Task 4 from `NEXT_AI_TASK.md`.
+- Standard `git status`, `git diff --check`, and commit were blocked because
+  this workspace has an empty `.git/` directory and no `git` executable on PATH.
+- GitHub remote state for `YanChen0111/Chtest` could not be confirmed because
+  the network request failed and the escalation request was rejected.
 
 ## 2026-07-01 Slice 29 Execution Run Manifest Contract
 
@@ -6069,228 +3912,47 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next Step
 
 - Continue Slice 05 Task 2 from `NEXT_AI_TASK.md`: add built-in prompt files.
-## 2026-07-05 Slice 53 KnowledgeAdapter Provider Evaluation Review Audit Handoff Golden Smoke
+
+## 2026-07-10 V2 Acceptance Stabilization
 
 ### Completed
 
-- Completed Slice 53 Task 3: added the contract-level golden smoke and fixture for KnowledgeAdapter provider evaluation review audit handoff.
-- Locked the audit handoff surface around summary export artifact linkage, review decision artifact linkage, provider evaluation plan artifact linkage, evidence chain status, included artifact ids, excluded artifact reasons, provider review decision group summary, unresolved blocker/safety/follow-up fields, KnowledgeEvidence normalization, provider_state, fallback behavior, disabled-by-default policy, ReviewHistory, failure code, and visible reason.
-- Kept the task contract-only: no provider enablement, SDK calls, external calls, vector database, embeddings, reranking, background indexing, runtime retrieval, frontend page, export/download endpoint, RBAC, tenants, permissions, package upgrade, or provider-state mutation.
+- Repaired Alembic bootstrap and verified an empty database upgrades to head.
+- Added automatic Prompt/Skill registry bootstrap for new local databases.
+- Added AutomationPlan prompt/skill contracts and active-version traceability.
+- Connected approved TestKnowledgeCard evidence to RequirementReview,
+  CaseGeneration, and AutomationPlan.
+- Added OpenAI-compatible Responses-to-Chat-Completions fallback for gateways
+  that return reasoning-only Responses payloads.
+- Fixed the Docker image/runtime configuration so migrations, registry files,
+  and model connection persistence are present in containers.
+- Ran a fresh local HTTP acceptance path and a real-model RequirementReview.
 
 ### Verification
 
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_knowledge_adapter_provider_evaluation_review_audit_handoff_contract_golden.py -q`
-- Result: `4 passed in 0.78s`.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
+- Backend related suite: `84 passed`.
+- Frontend focused suite: `10 passed`.
+- Frontend build: passed, existing Vite chunk-size warning remains.
+- Alembic empty database: passed.
+- Compose config and `git diff --check`: passed.
+- Real model RequirementReview: passed through
+  `openai_chat_completions_fallback`, score `78`, `used_knowledge=true`.
 
-### Next Step
+### Blocker
 
-- Commit Task 3, then execute Slice 53 completion gate.
+- Docker Desktop `desktop-linux` engine returns HTTP 500 for `/v1.55/version`.
+  Project compose configuration is valid, but container startup cannot be
+  accepted until the local Docker engine recovers.
 
-## 2026-07-06 Slice 57 Generated Case Human Review Decision Audit Handoff Contracts
+### Follow-up Fix
 
-### Completed
-
-- Completed Slice 57 Task 2: defined Generated Case Human Review Decision
-  Audit Handoff contracts across data model, API, state-machine, artifact, and
-  prompt/skill documentation.
-- Added the
-  `generated_case_human_review_decision_audit_handoff` artifact type,
-  `build_generated_case_human_review_decision_audit_handoff` action, summary
-  export artifact linkage, source decision artifact linkage, evidence package
-  linkage, evidence chain status, included artifact ids, excluded artifact
-  reasons, unresolved follow-up flags, source traceability handoff summary,
-  ReviewHistory links, failure code, and visible reason.
-- Kept the task contract-only: no runtime API, frontend page, report renderer,
-  export/download endpoint, provider SDK, external call, vector database,
-  embedding, reranking, prompt execution, candidate approval/rejection,
-  request optimization, TestCase promotion, automation draft creation, RBAC,
-  tenants, permissions, package upgrade, or source evidence mutation.
-
-### Verification
-
-- `rg -n "Generated Case Human Review Decision Audit Handoff|generated_case_human_review_decision_audit_handoff|build_generated_case_human_review_decision_audit_handoff|generated_case_human_review_decision_summary_export_artifact_id|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|evidence chain status|included artifact ids|excluded artifact reasons|unresolved follow-up flags|source traceability handoff summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-57-generated-case-human-review-decision-audit-handoff-contract.md`
-- Result: required contract terms found.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit Task 2, then execute Slice 57 Task 3 from `NEXT_AI_TASK.md`: add the
-  Generated Case Human Review Decision Audit Handoff golden smoke.
-
-## 2026-07-06 Slice 57 Generated Case Human Review Decision Audit Handoff Golden Smoke
-
-### Completed
-
-- Completed Slice 57 Task 3: added the contract-level golden smoke and fixture
-  for Generated Case Human Review Decision Audit Handoff.
-- Locked the audit handoff surface around summary export artifact linkage,
-  source decision artifact linkage, evidence package artifact linkage,
-  evidence chain status, included artifact ids, excluded artifact reasons,
-  included/excluded decision artifact ids, unresolved follow-up flags,
-  unresolved blocker summary, source traceability handoff summary,
-  ReviewHistory, failure code, and visible reason.
-- Kept the task contract-only: no runtime API, frontend page, report renderer,
-  export/download endpoint, provider SDK, external call, vector database,
-  embedding, reranking, prompt execution, candidate approval/rejection,
-  request optimization, TestCase promotion, automation draft creation, RBAC,
-  tenants, permissions, package upgrade, or source evidence mutation.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_audit_handoff_contract_golden.py -q`
-- Result: `4 passed in 1.31s`.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit Task 3, then execute Slice 57 completion gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-06 Slice 57 Generated Case Human Review Decision Audit Handoff Completion Gate
-
-### Completed
-
-- Completed Slice 57 completion gate.
-- Recorded Task 1-3 commits in the Slice 57 task table:
-  `90e1cd4`, `efa3fd7`, and `85801c2`.
-- Updated V2 scope options with Slice 57 completion evidence and recommended
-  Slice 58: Generated Case Human Review Decision Application Preflight
-  Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 58 Task 1.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_audit_handoff_contract_golden.py -q`
-- Result: `4 passed in 1.46s`.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit Slice 57 completion gate, then execute Slice 58 Task 1 from
-  `NEXT_AI_TASK.md`.
-
-## 2026-07-06 Slice 58 Generated Case Human Review Decision Application Preflight Plan
-
-### Completed
-
-- Completed Slice 58 Task 1: added the Generated Case Human Review Decision
-  Application Preflight task plan.
-- Scoped application preflight as eligibility evidence between Slice 57 audit
-  handoff artifacts and the existing real GeneratedCaseCandidate review
-  actions.
-- Planned audit handoff artifact linkage, summary export linkage, source
-  decision artifact linkage, evidence package linkage, mapped review action,
-  eligibility status, eligible/ineligible candidate ids, blocked action
-  reasons, required edit summary, required human confirmation summary,
-  ReviewHistory handoff links, failure behavior, artifact boundaries, and
-  forbidden side effects.
-- Kept the plan contract-first: no runtime API, frontend page, report
-  renderer, export/download endpoint, provider SDK, external call, vector
-  database, embedding, reranking, prompt execution, candidate
-  approval/rejection, request optimization, TestCase promotion, automation
-  draft creation, RBAC, tenants, permissions, package upgrade, or source
-  evidence mutation.
-
-### Verification
-
-- `if (-not (Test-Path docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md)) { exit 1 }; rg -n "Generated Case Human Review Decision Application Preflight|generated_case_human_review_decision_application_preflight|preflight_generated_case_human_review_decision_application|generated_case_human_review_decision_audit_handoff_artifact_id|mapped review action|eligibility status|eligible candidate ids|ineligible candidate ids|blocked action reasons|required edit summary|required human confirmation summary|Product Value Answer|Non-goals|Task Table" docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md NEXT_AI_TASK.md docs/implementation/10-v2-scope-options.md memory/08-session-handoff.md`
-- Result: required planning terms found.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit Task 1, then execute Slice 58 Task 2 from `NEXT_AI_TASK.md`.
-
-## 2026-07-07 Slice 58 Generated Case Human Review Decision Application Preflight Contracts
-
-### Completed
-
-- Completed Slice 58 Task 2: defined Generated Case Human Review Decision
-  Application Preflight contracts across data model, API, state-machine,
-  artifact, and prompt/skill contracts.
-- Locked the preflight surface around Slice 57 audit handoff artifact linkage,
-  summary export artifact linkage, source decision artifact linkage, evidence
-  package linkage, mapped review action, eligibility status, eligible
-  candidate ids, ineligible candidate ids, blocked action reasons, required
-  edit summary, required human confirmation summary, ReviewHistory handoff
-  links, failure code, and visible reason.
-- Kept the task contract-only: no runtime API, frontend page, report renderer,
-  export/download endpoint, provider SDK, external call, vector database,
-  embedding, reranking, prompt execution, candidate approval/rejection,
-  request optimization, TestCase promotion, automation draft creation, RBAC,
-  tenants, permissions, package upgrade, or source evidence mutation.
-
-### Verification
-
-- `rg -n "Generated Case Human Review Decision Application Preflight|generated_case_human_review_decision_application_preflight|preflight_generated_case_human_review_decision_application|generated_case_human_review_decision_audit_handoff_artifact_id|generated_case_human_review_decision_summary_export_artifact_id|generated_case_human_review_decision_artifact_id|generated_case_human_review_evidence_package_artifact_id|mapped review action|eligibility status|eligible candidate ids|ineligible candidate ids|blocked action reasons|required edit summary|required human confirmation summary|ReviewHistory|failure code|visible reason" docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/contracts/05-prompt-skill-contract.md docs/implementation/slices/slice-58-generated-case-human-review-decision-application-preflight-contract.md`
-- Result: required contract terms found.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit Task 2, then execute Slice 58 Task 3 from `NEXT_AI_TASK.md`.
-
-## 2026-07-07 Slice 58 Generated Case Human Review Decision Application Preflight Golden Smoke
-
-### Completed
-
-- Completed Slice 58 Task 3: added the Generated Case Human Review Decision
-  Application Preflight golden fixture and smoke test.
-- Added
-  `docs/fixtures/46-generated-case-human-review-decision-application-preflight-golden.md`
-  to lock the fixture surface around audit handoff artifact linkage, summary
-  export artifact linkage, decision artifact linkage, evidence package
-  linkage, mapped review action, eligibility status, eligible/ineligible
-  candidate ids, blocked action reasons, required edit summary, required
-  human confirmation summary, ReviewHistory handoff links, failure code,
-  visible reason, state transitions, and forbidden side effects.
-- Added
-  `backend/app/tests/golden/test_generated_case_human_review_decision_application_preflight_contract_golden.py`
-  to statically verify the fixture, Slice 58 plan, and data/API/state/artifact
-  prompt-skill contracts.
-- Kept the task golden-only: no runtime API, frontend page, report renderer,
-  export/download endpoint, provider SDK, external call, vector database,
-  embedding, reranking, prompt execution, candidate approval/rejection,
-  request optimization, TestCase promotion, automation draft creation, RBAC,
-  tenants, permissions, package upgrade, or source evidence mutation.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_application_preflight_contract_golden.py -q`
-- Result: `4 passed in 1.72s`.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit Task 3, then execute Slice 58 completion gate from `NEXT_AI_TASK.md`.
-
-## 2026-07-07 Slice 58 Generated Case Human Review Decision Application Preflight Completion Gate
-
-### Completed
-
-- Completed Slice 58 completion gate.
-- Recorded Slice 58 Task 1-3 commits in the task table:
-  `fe749e6`, `a5b385f`, and `5e40f7a`.
-- Updated V2 scope options with Slice 58 completion evidence and recommended
-  Slice 59: Generated Case Human Review Decision Application Contract.
-- Updated `NEXT_AI_TASK.md` to Slice 59 Task 1: Add Generated Case Human
-  Review Decision Application task plan.
-
-### Verification
-
-- `backend/.venv/Scripts/python.exe -m pytest backend/app/tests/golden/test_generated_case_human_review_decision_application_preflight_contract_golden.py -q`
-- Result: `4 passed in 1.76s`.
-- `git diff --check`
-- Result: no errors; existing LF-to-CRLF warnings only.
-
-### Next Step
-
-- Commit Slice 58 completion gate, then execute Slice 59 Task 1 from
-  `NEXT_AI_TASK.md`.
+- Fixed `frontend/vite.config.ts` so the local dev `/api` proxy uses
+  `VITE_API_PROXY_TARGET` or `VITE_API_BASE_URL` before falling back to
+  `http://127.0.0.1:8000`.
+- Restarted Vite with `VITE_API_BASE_URL=http://127.0.0.1:8010/api`.
+- Verified the browser RAG page now renders the acceptance data:
+  `ContextArtifact1`, `测试知识卡3`, `知识覆盖率67%`,
+  `Vector Index3`, `Vector Coverage100%`.
+- Verification:
+  - Frontend focused suite: `5 passed`.
+  - Frontend build: passed with the existing Vite chunk-size warning.

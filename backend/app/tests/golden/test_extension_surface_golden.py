@@ -96,8 +96,8 @@ def test_golden_extension_surface_exposes_context_and_schema_without_runtimes(
     assert knowledge["knowledge_adapter"]["provider_type"] == "none"
     assert knowledge["knowledge_adapter"]["used_knowledge"] is False
     assert knowledge["non_goals"] == [
-        "no_vector_index",
-        "no_embedding",
+        "no_external_vector_runtime",
+        "no_online_embedding_provider",
         "no_reranking",
         "no_external_rag_runtime",
     ]

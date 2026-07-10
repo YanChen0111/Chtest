@@ -187,3 +187,38 @@ class AITaskListItemRead(BaseModel):
 class AITaskListRead(BaseModel):
     items: list[AITaskListItemRead]
     total: int
+
+
+class ModelConnectionConfigRead(BaseModel):
+    configured: bool
+    provider: str | None
+    model_name: str | None
+    base_url: str | None
+    wire_api: str
+    api_key_configured: bool
+    api_key_hint: str | None
+
+
+class ModelConnectionConfigUpdate(BaseModel):
+    import_config_text: str | None = Field(default=None, max_length=20000)
+    import_auth_json: str | None = Field(default=None, max_length=20000)
+    codex_config_toml: str | None = Field(default=None, max_length=20000)
+    codex_auth_json: str | None = Field(default=None, max_length=20000)
+    api_key: str | None = Field(default=None, max_length=4000)
+    provider: str | None = Field(default=None, max_length=80)
+    model_name: str | None = Field(default=None, max_length=120)
+    base_url: str | None = Field(default=None, max_length=500)
+    wire_api: str | None = Field(default=None, max_length=40)
+
+
+class ModelConnectionTestRead(BaseModel):
+    ok: bool
+    provider: str | None
+    model_name: str | None
+    base_url: str | None
+    wire_api: str
+    message: str
+    error_code: str | None = None
+    http_status: int | None = None
+    diagnostic: str | None = None
+    suggestion: str | None = None

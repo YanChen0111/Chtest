@@ -1,37 +1,39 @@
 # Execution Run Manifest Golden Fixture
 
 This fixture proves Slice 29 execution run manifest inputs without changing
-TestRun or runner behavior.
+runner behavior or artifact storage.
 
 ## Scenario
 
-1. A passed TestRun already exists with command, working directory, runner mode,
-   run workspace, repository policy, network policy, parsed result, and local
-   Artifact metadata.
-2. Runtime manifest and stdout artifacts are persisted as local Artifact rows.
-3. Dependency and environment snapshot ids are intentionally missing.
-4. `GET /api/test-runs/{id}` returns the existing data needed for manifest
-   display.
-5. Local artifact access opens the runtime manifest by Artifact id.
+1. A local pytest `TestRun` records the executed command, working directory,
+   runner mode, run workspace, repository-readonly policy, network policy, and
+   parsed result.
+2. The run owns persisted local Artifact rows for `runtime_manifest`,
+   `dependency_snapshot`, `stdout`, and `parsed_output`.
+3. The run records an `environment_snapshot_artifact_id` that has no matching
+   persisted local Artifact row.
+4. The run also records a runtime artifact id that is not returned as a
+   persisted local Artifact row.
+5. The execution page can derive a read-only run manifest from the TestRun read
+   model and Artifact metadata.
 
 ## Expected Evidence
 
-- TestRun read data keeps command, working directory, runner mode, run
-  workspace, repository-readonly policy, network policy, parsed result, and
-  artifact metadata available.
-- Runtime artifact ids can point to persisted local Artifact rows.
-- Missing dependency and environment snapshot ids remain visible as unavailable
-  evidence for the frontend manifest.
-- Persisted local Artifact ids remain openable through
+- `GET /api/test-runs/{test_run_id}` returns command, working directory,
+  `runner_mode`, `run_workspace`, `repository_readonly`, `network_enabled`,
+  `parsed_result`, `runtime_artifact_ids`, snapshot ids, and Artifact metadata.
+- Persisted local Artifact ids are openable through
   `GET /api/artifacts/{artifact_id}/download`.
-- Manifest display inputs create no Report, FailureAnalysis,
-  QualityGateDecision, AutomationRepairTask, new TestRun, artifact mutation,
-  remote provider behavior, RAG runtime, or MCP runtime.
+- Runtime or snapshot ids without a matching persisted local Artifact row remain
+  visible as unavailable evidence and are not given local open links.
+- Missing snapshot ids remain visible as missing evidence.
+- Output artifact availability is derived from existing Artifact rows such as
+  `stdout`, `stderr`, `parsed_output`, `junit`, and `coverage`.
 
 ## Non-Goals
 
-- No runner execution change, command assembly change, allowlist change,
-  TestRun state-machine change, report generation, failure analysis, quality
-  gate computation, repair workflow, artifact upload/mutation/delete, remote
-  provider integration, PR comment, deploy/release control, RBAC, tenants,
-  permissions, RAG runtime, MCP runtime, or marketplace behavior.
+- No runner execution change, command assembly change, ToolDefinition change,
+  allowlist expansion, report generation, FailureAnalysis,
+  QualityGateDecision, AutomationRepairTask, AutomationDraft, new TestRun
+  creation, artifact mutation, external provider fetch, remote CI provider
+  behavior, RBAC, tenants, permissions, RAG runtime, or MCP runtime.

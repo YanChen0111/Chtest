@@ -7,6 +7,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.app.modules.ai_runtime.model_config import resolve_model_identity
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.cicd.models import CICDChangedFile, CICDRun, QualityGateDecision, UnitTestPatch
 from backend.app.modules.cicd.schemas import (
@@ -901,14 +902,20 @@ def analyze_cicd_run(session: Session, cicd_run_id: uuid.UUID, data: CICDRunAnal
         "risk_reasons": sorted({reason for item in changed_files for reason in item.risk_reasons_json}),
         "recommended_actions": ["Review changed files before UnitTestPatch generation."],
     }
+    model_provider, model_name = resolve_model_identity(
+        model_provider=data.model_provider,
+        model_name=data.model_name,
+        default_provider="mock",
+        default_model_name="mock-cicd-analysis",
+    )
     ai_task = AITask(
         project_id=cicd_run.project_id,
         agent_name="CICDChangeAnalysisAgent",
         task_type="cicd_change_analysis",
         prompt_version_id=stable_version_uuid(data.prompt_version),
         skill_version_id=stable_version_uuid(data.skill_version),
-        model_provider=data.model_provider,
-        model_name=data.model_name,
+        model_provider=model_provider,
+        model_name=model_name,
         status="succeeded",
         input_json={
             "cicd_run_id": str(cicd_run.id),
@@ -928,8 +935,8 @@ def analyze_cicd_run(session: Session, cicd_run_id: uuid.UUID, data: CICDRunAnal
         size_bytes=0,
         sha256=f"sha256:risk_analysis:{cicd_run.id}",
         metadata_json={
-            "model_provider": data.model_provider,
-            "model_name": data.model_name,
+            "model_provider": model_provider,
+            "model_name": model_name,
             "prompt_version": data.prompt_version,
             "skill_version": data.skill_version,
             "overall_risk": overall_risk,
@@ -955,14 +962,20 @@ def generate_unit_test_patch(
     patch_text = data.patch_text or default_unit_test_patch(cicd_run)
     scope_gate_result = evaluate_patch_scope(patch_text)
     status = "scope_validated" if scope_gate_result.allowed else "scope_rejected"
+    model_provider, model_name = resolve_model_identity(
+        model_provider=data.model_provider,
+        model_name=data.model_name,
+        default_provider="mock",
+        default_model_name="mock-unit-test-generator",
+    )
     ai_task = AITask(
         project_id=cicd_run.project_id,
         agent_name="UnitTestAgent",
         task_type="unit_test_patch",
         prompt_version_id=stable_version_uuid(data.prompt_version),
         skill_version_id=stable_version_uuid(data.skill_version),
-        model_provider=data.model_provider,
-        model_name=data.model_name,
+        model_provider=model_provider,
+        model_name=model_name,
         status="succeeded",
         input_json={
             "cicd_run_id": str(cicd_run.id),

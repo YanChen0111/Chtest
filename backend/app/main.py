@@ -12,11 +12,15 @@ from backend.app.modules.cases.router import router as cases_router
 from backend.app.modules.cicd.router import router as cicd_router
 from backend.app.modules.execution.router import router as execution_router
 from backend.app.modules.extension.router import router as extension_router
+from backend.app.modules.knowledge.router import router as knowledge_router
 from backend.app.modules.projects.router import router as projects_router
 from backend.app.modules.prompt_skill.router import router as prompt_skill_router
 from backend.app.modules.reporting.router import router as reporting_router
 from backend.app.modules.requirements.router import router as requirements_router
 from backend.app.modules.review_history.router import router as review_history_router
+
+
+VALIDATION_ERROR_SAFE_KEYS = {"loc", "msg", "type", "ctx"}
 
 
 app = FastAPI(title="Chtest API")
@@ -28,6 +32,7 @@ app.include_router(cases_router, prefix="/api")
 app.include_router(automation_router, prefix="/api")
 app.include_router(execution_router, prefix="/api")
 app.include_router(extension_router, prefix="/api")
+app.include_router(knowledge_router, prefix="/api")
 app.include_router(reporting_router, prefix="/api")
 app.include_router(cicd_router, prefix="/api")
 app.include_router(review_history_router, prefix="/api")
@@ -62,6 +67,13 @@ async def request_validation_exception_handler(
         content={
             "error_code": "VALIDATION_ERROR",
             "message": "Request validation failed.",
-            "details": {"errors": exc.errors()},
+            "details": {"errors": safe_validation_errors(exc)},
         },
     )
+
+
+def safe_validation_errors(exc: RequestValidationError) -> list[dict[str, Any]]:
+    return [
+        {key: value for key, value in error.items() if key in VALIDATION_ERROR_SAFE_KEYS}
+        for error in exc.errors()
+    ]

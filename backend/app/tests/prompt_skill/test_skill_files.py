@@ -11,17 +11,13 @@ EXPECTED_SKILLS = {
     "requirement-review-skill": ["RequirementReviewAgent"],
     "test-case-generation-skill": ["CaseGenerationAgent"],
     "testcase-review-skill": ["CaseReviewAgent"],
+    "automation-plan-skill": ["AutomationPlanAgent"],
     "automation-draft-skill": ["AutomationDraftAgent"],
     "unit-test-generation-skill": ["UnitTestAgent"],
     "regression-selection-skill": ["CICDChangeAnalysisAgent", "RegressionAgent"],
     "tool-execution-skill": ["ToolExecutionAgent"],
     "failure-analysis-skill": ["FailureAnalysisAgent"],
     "report-generation-skill": ["ReportAgent"],
-    "knowledge-ingestion-skill": ["KnowledgeIngestionAgent"],
-    "risk-analysis-skill": ["RiskAnalysisAgent"],
-    "coverage-analysis-skill": ["CoverageAnalysisAgent"],
-    "test-design-skill": ["TestDesignAgent"],
-    "knowledge-feedback-skill": ["KnowledgeFeedbackAgent"],
 }
 
 REQUIRED_SECTIONS = [
@@ -87,3 +83,20 @@ def test_skill_files_do_not_contain_secret_or_customer_placeholders() -> None:
 
         for forbidden_pattern in FORBIDDEN_CONTENT_PATTERNS:
             assert forbidden_pattern.search(content) is None
+
+
+def test_automation_plan_skill_quality_gates_require_evidence_and_approval_gate() -> None:
+    content = (SKILL_ROOT / "automation-plan-skill" / "v1.md").read_text(encoding="utf-8")
+    quality_gates = " ".join(bullet_items(content, "Quality Gates")).lower()
+    forbidden_actions = " ".join(bullet_items(content, "Forbidden Actions")).lower()
+    tool_permissions = " ".join(bullet_items(content, "Tool Permissions")).lower()
+
+    assert "approved testcase" in quality_gates
+    assert "requirement evidence" in quality_gates
+    assert "requirement review evidence" in quality_gates
+    assert "knowledge evidence" in quality_gates
+    assert "approval before automationdraft or code generation" in quality_gates
+    assert "arbitrary shell commands" in quality_gates
+    assert "unapproved testcase" in forbidden_actions
+    assert "execute arbitrary commands" in forbidden_actions
+    assert "no execution tools" in tool_permissions

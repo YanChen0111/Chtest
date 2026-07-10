@@ -13,6 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app.main import app
 from backend.app.models.base import Base
+from backend.app.modules.projects import service as project_service
 from backend.app.modules.projects.models import (
     Environment,
     Module,
@@ -235,6 +236,20 @@ def test_project_settings_bootstrap_returns_related_context(
     assert body["environments"][0]["variables_json"] == {"BASE_URL": "http://localhost:8000"}
     assert body["test_commands"][0]["name"] == "pytest unit"
     assert body["tool_definitions"] == []
+
+
+def test_ensure_local_default_project_creates_frontend_project(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    _client, SessionLocal = api_client
+
+    with SessionLocal() as session:
+        project = project_service.ensure_local_default_project(session)
+        repeated_project = project_service.ensure_local_default_project(session)
+
+    assert str(project.id) == "00000000-0000-0000-0000-000000000101"
+    assert project.name == "Chtest Demo Project"
+    assert repeated_project.id == project.id
 
 
 def test_unknown_project_returns_contract_error(

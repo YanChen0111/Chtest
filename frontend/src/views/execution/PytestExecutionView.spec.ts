@@ -19,8 +19,11 @@ function testRunBody() {
     run_workspace: '/tmp/chtest-test-run',
     repository_readonly: true,
     network_enabled: false,
-    runtime_artifact_ids: ['00000000-0000-0000-0000-000000001201'],
-    dependency_snapshot_artifact_id: null,
+    runtime_artifact_ids: [
+      '00000000-0000-0000-0000-000000001201',
+      '00000000-0000-0000-0000-000000001202',
+    ],
+    dependency_snapshot_artifact_id: '00000000-0000-0000-0000-000000001402',
     environment_snapshot_artifact_id: null,
     status: 'passed',
     exit_code: 0,
@@ -52,11 +55,11 @@ function testRunBody() {
         project_id: '00000000-0000-0000-0000-000000000101',
         owner_entity_type: 'TestRun',
         owner_entity_id: '00000000-0000-0000-0000-000000001301',
-        artifact_type: 'runtime_manifest',
-        file_path: 'test-runs/00000000-0000-0000-0000-000000001301/runtime_manifest.json',
-        mime_type: 'application/json',
-        size_bytes: 96,
-        sha256: 'sha256:runtime_manifest',
+        artifact_type: 'automation_draft_code',
+        file_path: 'automation-drafts/00000000-0000-0000-0000-000000001001/runtime/test_from_draft.py',
+        mime_type: 'text/plain',
+        size_bytes: 128,
+        sha256: 'sha256:runtime',
         metadata_json: { created_by_component: 'PytestRunner' },
       },
       {
@@ -69,6 +72,30 @@ function testRunBody() {
         mime_type: 'text/plain',
         size_bytes: 64,
         sha256: 'sha256:stdout',
+        metadata_json: { created_by_component: 'PytestRunner' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001402',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001301',
+        artifact_type: 'dependency_snapshot',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001301/dependency_snapshot.json',
+        mime_type: 'application/json',
+        size_bytes: 96,
+        sha256: 'sha256:dependency',
+        metadata_json: { created_by_component: 'PytestRunner' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001404',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001301',
+        artifact_type: 'parsed_output',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001301/parsed_result.json',
+        mime_type: 'application/json',
+        size_bytes: 80,
+        sha256: 'sha256:parsed',
         metadata_json: { created_by_component: 'PytestRunner' },
       },
     ],
@@ -111,19 +138,44 @@ describe('PytestExecutionView', () => {
     expect(wrapper.text()).toContain('pytest tests/test_generated_ok.py -q');
     expect(wrapper.text()).toContain('/tmp/chtest-test-run');
     expect(wrapper.text()).toContain('local_subprocess');
+    expect(wrapper.text()).toContain('执行命令');
+    expect(wrapper.text()).toContain('工作目录');
+    expect(wrapper.text()).toContain('运行器模式');
+    expect(wrapper.text()).toContain('仓库只读策略');
+    expect(wrapper.text()).toContain('网络策略');
     expect(wrapper.text()).toContain('关闭');
     expect(wrapper.text()).toContain('执行运行清单');
-    expect(wrapper.text()).toContain('本地网络关闭');
-    expect(wrapper.text()).toContain('Runtime manifest');
-    expect(wrapper.text()).toContain('Dependency snapshot');
-    expect(wrapper.text()).toContain('Environment snapshot');
-    expect(wrapper.text()).toContain('缺失不可打开');
-    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001201/download"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('运行工作区');
+    expect(wrapper.text()).toContain('只读挂载');
+    expect(wrapper.text()).toContain('网络关闭');
+    expect(wrapper.text()).toContain('运行时文件 1');
+    expect(wrapper.text()).toContain('运行时文件 2');
+    expect(wrapper.text()).toContain('运行时文件未返回本地元数据');
+    expect(wrapper.text()).toContain('依赖快照');
+    expect(wrapper.text()).toContain('环境快照');
+    expect(wrapper.text()).toContain('未生成环境快照');
+    expect(wrapper.text()).toContain('不可用');
+    expect(wrapper.text()).toContain('标准输出');
+    expect(wrapper.text()).toContain('标准错误不可用');
+    expect(wrapper.text()).toContain('解析结果');
     expect(wrapper.text()).toContain('stdout');
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001201/download"]').text(),
+    ).toBe('打开');
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001202/download"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001402/download"]').text(),
+    ).toBe('打开');
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001401/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('generated::test_generated_ok');
     expect(wrapper.text()).toContain('通过');
     expect(wrapper.text()).toContain('1');
+    expect(wrapper.text()).not.toContain('重新运行');
+    expect(wrapper.text()).not.toContain('生成报告');
+    expect(wrapper.text()).not.toContain('远程执行');
+    expect(wrapper.text()).not.toContain('远程控制');
 
     await wrapper.find('[data-test="refresh-run"]').trigger('click');
     await flushPromises();

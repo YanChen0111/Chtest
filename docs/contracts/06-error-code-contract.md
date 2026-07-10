@@ -18,6 +18,11 @@ Common error response:
 
 | Error Code | HTTP Status | Meaning | Typical Trigger |
 |---|---:|---|---|
+| AUTOMATION_PLAN_NOT_FOUND | 404 | AutomationPlan does not exist | Reading, approving, or generating draft from an unknown plan |
+| AUTOMATION_PLAN_INVALID_INPUT | 400 | AutomationPlan payload is invalid | Invalid source references or malformed plan edits |
+| AUTOMATION_PLAN_INVALID_ACTION | 400 | AutomationPlan transition is invalid | Approving an already finalized plan or unsupported action |
+| AUTOMATION_PLAN_NOT_APPROVED | 409 | AutomationPlan is not approved | Generating AutomationDraft from unapproved plan |
+| AUTOMATION_PLAN_SOURCE_NOT_APPROVED | 409 | AutomationPlan source TestCase is not approved or not generated from candidate review | Creating plan from manual/unsourced/unapproved TestCase |
 | DRAFT_NOT_APPROVED | 409 | AutomationDraft is not approved | Creating TestRun from unapproved draft |
 | PATCH_SCOPE_REJECTED | 422 | UnitTestPatch modifies forbidden paths | PatchScopeGate rejects patch |
 | TOOL_NOT_ALLOWED | 403 | Tool is not registered or disabled | ToolDefinition missing/disabled |
@@ -29,6 +34,10 @@ Common error response:
 | CONTEXT_ARTIFACT_NOT_ALLOWED | 422 | ContextArtifact cannot be used for prompt input | Unsafe MIME, binary file, missing owner, or allowed_for_prompt=false |
 | CONTEXT_ARTIFACT_TOO_LARGE | 413 | ContextArtifact exceeds V1 size limit | Single file > 1 MiB or AITask context total > 2 MiB |
 | CONTEXT_ARTIFACT_SECRET_DETECTED | 422 | ContextArtifact contains high-risk secret | Secret scan finds token, credential, cookie, or production connection string |
+| TEST_KNOWLEDGE_SOURCE_NOT_ALLOWED | 400 | ContextArtifact cannot be extracted into TestKnowledgeCard rows | Source artifact is not same-project, not a prompt-safe context artifact, unsafe to show, or not allowed for prompt use |
+| TEST_KNOWLEDGE_CARD_NOT_FOUND | 404 | TestKnowledgeCard does not exist | Reviewing an unknown or cross-project knowledge card |
+| TEST_KNOWLEDGE_CARD_INVALID_STATUS | 400 | TestKnowledgeCard review status is invalid | Reviewing a card with unsupported status |
+| REQUIREMENT_DOCUMENT_NOT_FOUND | 404 | Requirement document artifact does not exist or does not match the requirement/project | Case generation references an unknown or mismatched requirement document |
 | REPOSITORY_PATH_NOT_ALLOWED | 422 | Repository path is outside allowlist | Creating/updating Repository |
 | REPORT_INSUFFICIENT_EVIDENCE | 409 | Report cannot make conclusion with available evidence | ReportAgent lacks required artifacts |
 | INVALID_CI_IMPORT_PAYLOAD | 400 | CI import payload is malformed or unsupported | Missing required fields, invalid conclusion, invalid changed file |

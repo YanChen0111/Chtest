@@ -20,8 +20,11 @@ function newmanRunBody() {
     run_workspace: '/tmp/chtest-newman-run',
     repository_readonly: true,
     network_enabled: false,
-    runtime_artifact_ids: ['00000000-0000-0000-0000-000000001521'],
-    dependency_snapshot_artifact_id: null,
+    runtime_artifact_ids: [
+      '00000000-0000-0000-0000-000000001521',
+      '00000000-0000-0000-0000-000000001522',
+    ],
+    dependency_snapshot_artifact_id: '00000000-0000-0000-0000-000000001603',
     environment_snapshot_artifact_id: null,
     status: 'failed',
     exit_code: 0,
@@ -52,6 +55,18 @@ function newmanRunBody() {
     ],
     artifacts: [
       {
+        id: '00000000-0000-0000-0000-000000001521',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001421',
+        artifact_type: 'runtime_manifest',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001421/runtime_manifest.json',
+        mime_type: 'application/json',
+        size_bytes: 118,
+        sha256: 'sha256:runtime',
+        metadata_json: { created_by_component: 'NewmanRunner' },
+      },
+      {
         id: '00000000-0000-0000-0000-000000001601',
         project_id: '00000000-0000-0000-0000-000000000101',
         owner_entity_type: 'TestRun',
@@ -73,6 +88,30 @@ function newmanRunBody() {
         mime_type: 'application/json',
         size_bytes: 128,
         sha256: 'sha256:parsed',
+        metadata_json: { created_by_component: 'NewmanRunner' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001603',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001421',
+        artifact_type: 'dependency_snapshot',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001421/dependency_snapshot.json',
+        mime_type: 'application/json',
+        size_bytes: 96,
+        sha256: 'sha256:dependency',
+        metadata_json: { created_by_component: 'NewmanRunner' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000001604',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        owner_entity_type: 'TestRun',
+        owner_entity_id: '00000000-0000-0000-0000-000000001421',
+        artifact_type: 'stdout',
+        file_path: 'test-runs/00000000-0000-0000-0000-000000001421/stdout.log',
+        mime_type: 'text/plain',
+        size_bytes: 64,
+        sha256: 'sha256:stdout',
         metadata_json: { created_by_component: 'NewmanRunner' },
       },
     ],
@@ -117,14 +156,49 @@ describe('NewmanExecutionView', () => {
 
     expect(wrapper.text()).toContain('失败');
     expect(wrapper.text()).toContain('coupon-api');
+    expect(wrapper.text()).toContain('/tmp/chtest-newman-run');
     expect(wrapper.text()).toContain('newman_local');
+    expect(wrapper.text()).toContain('执行运行清单');
+    expect(wrapper.text()).toContain('执行命令');
+    expect(wrapper.text()).toContain('工作目录');
+    expect(wrapper.text()).toContain('运行器模式');
+    expect(wrapper.text()).toContain('运行工作区');
+    expect(wrapper.text()).toContain('仓库只读策略');
+    expect(wrapper.text()).toContain('网络策略');
+    expect(wrapper.text()).toContain('只读挂载');
+    expect(wrapper.text()).toContain('网络关闭');
+    expect(wrapper.text()).toContain('运行时文件 1');
+    expect(wrapper.text()).toContain('运行时文件 2');
+    expect(wrapper.text()).toContain('运行时文件未返回本地元数据');
+    expect(wrapper.text()).toContain('依赖快照');
+    expect(wrapper.text()).toContain('环境快照');
+    expect(wrapper.text()).toContain('未生成环境快照');
+    expect(wrapper.text()).toContain('不可用');
+    expect(wrapper.text()).toContain('标准输出');
+    expect(wrapper.text()).toContain('标准错误不可用');
+    expect(wrapper.text()).toContain('Newman JSON');
+    expect(wrapper.text()).toContain('解析结果');
+    expect(wrapper.text()).toContain('JUnit 结果不可用');
     expect(wrapper.text()).toContain('newman_json');
     expect(wrapper.text()).toContain('parsed_output');
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001521/download"]').text(),
+    ).toBe('打开');
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001522/download"]').exists(),
+    ).toBe(false);
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001601/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001602/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001603/download"]').text()).toBe('打开');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000001604/download"]').text()).toBe('打开');
     expect(wrapper.text()).toContain('coupon-api/Reject expired coupon::message is explicit');
     expect(wrapper.text()).toContain('expected clear message');
     expect(wrapper.text()).toContain('总断言');
     expect(wrapper.text()).toContain('请求数');
+    expect(wrapper.text()).not.toContain('重新运行');
+    expect(wrapper.text()).not.toContain('生成报告');
+    expect(wrapper.text()).not.toContain('远程执行');
+    expect(wrapper.text()).not.toContain('远程控制');
 
     await wrapper.find('[data-test="refresh-newman-run"]').trigger('click');
     await flushPromises();

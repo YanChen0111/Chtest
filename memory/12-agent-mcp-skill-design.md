@@ -172,13 +172,13 @@ KnowledgeAdapter.list_sources(project_id) -> source[]
   -> 执行证据 -> 反馈回知识库
 ```
 
-推荐三层测试知识能力，而不是一次性建设重型 RAG 平台：
+推荐三层 RAG：
 
 | 层级 | 目的 | 主要参考 |
 |---|---|---|
-| L1 Structured Test Knowledge Evidence | 把需求、接口、缺陷、测试规范抽取成 TestKnowledgeCard 和 KnowledgeEvidence | 结构化文档解析、测试领域 schema |
-| L2 Hybrid Retrieval | 大知识库下用结构化过滤、全文检索、可选向量和 rerank 提升召回 | PostgreSQL full-text、pgvector、Haystack / LlamaIndex behind KnowledgeAdapter |
-| L3 Test Relationship Graph | 用需求、模块、接口、风险、缺陷、用例、执行结果做覆盖和影响分析 | 确定性关系图优先，Microsoft GraphRAG-style offline reasoning 后置 |
+| Structured Test Knowledge RAG | 把需求、接口、缺陷、测试规范抽取成 TestKnowledgeCard | PageIndex-style tree/section reasoning |
+| Hybrid Retrieval RAG | 大知识库下用结构化过滤、关键词、向量和 rerank 提升召回 | Haystack / LlamaIndex behind KnowledgeAdapter |
+| Test Relationship Graph RAG | 用需求、模块、接口、风险、缺陷、用例、执行结果做覆盖和影响分析 | Microsoft GraphRAG-style offline graph reasoning |
 
 最终版 Agent 分工应扩展为：
 
@@ -195,33 +195,6 @@ AutomationReadinessAgent
 KnowledgeFeedbackAgent
 ```
 
-最终版 AI 全流程应按测试流程提效来组织，而不是按单个模型调用组织：
-
-```text
-导入需求/接口/缺陷/历史用例
-  -> 知识卡片抽取与审核
-  -> 需求理解
-  -> 风险分析
-  -> 覆盖分析
-  -> 测试设计
-  -> 证据化用例生成
-  -> Agent 用例评审与去重
-  -> 人工评审
-  -> 自动化可行性判断
-  -> 自动化草稿
-  -> 批准后执行
-  -> 失败分析和报告
-  -> 知识反馈
-```
-
-推荐提前完善但不触发完整 RAG/MCP runtime 的内容：
-
-- Prompt/Skill 合同：知识卡片抽取、风险分析、覆盖分析、测试设计、证据化用例生成、证据化用例评审、去重、自动化可行性、知识反馈。
-- Agent workflow contract：每个 Agent 的输入证据、输出 artifact、读写权限、同步/异步、人工审核点、失败回退。
-- ToolDefinition/MCP 合同：风险级别、审批、timeout、artifact policy、ToolInvocation 记录。
-- KnowledgeAdapter 合同：provider 输出必须归一化为 KnowledgeEvidence，缺失或失败时不阻断主流程。
-- Eval 规则：PromptVersion / SkillVersion 晋升必须看 schema、evidence precision、hallucination、duplicate、coverage、human acceptance。
-
 开源复用原则：
 
 - 优先通过库、API、外部 provider 或独立服务复用开源能力。
@@ -229,9 +202,3 @@ KnowledgeFeedbackAgent
 - 所有 provider 结果必须转换成 Chtest 的 KnowledgeEvidence。
 - 每个 provider 引入前必须记录许可证、版本、升级方式、fallback 行为和
   golden/eval 验证。
-- 开源参考清单、迁移边界和 AI coding 填写模板见
-  `docs/reference/01-open-source-migration-map.md`。
-- L1 是最终版主线能力；L2/L3 必须由 eval 证明能提升用例接受率、覆盖率、
-  自动化可执行性或证据可查验性后再启用。
-- 任何检索或图能力都不能绕过 GeneratedCaseCandidate、CaseReviewAgent 和
-  人工评审状态机。

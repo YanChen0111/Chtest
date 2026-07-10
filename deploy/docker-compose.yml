@@ -37,14 +37,15 @@ services:
 
   backend:
     build:
-      context: ../backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: backend/Dockerfile
     container_name: chtest-backend
     environment:
       APP_ENV: ${APP_ENV:-dev}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://chtest:chtest@postgres:5432/chtest}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      ARTIFACT_ROOT: ${ARTIFACT_ROOT:-/opt/chtest/artifacts}
+      CHTEST_ARTIFACT_ROOT: ${CHTEST_ARTIFACT_ROOT:-/opt/chtest/artifacts}
+      CHTEST_MODEL_CONNECTION_PATH: ${CHTEST_MODEL_CONNECTION_PATH:-/app/storage/model-connection.json}
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
       TOOL_EXECUTION_MODE: ${TOOL_EXECUTION_MODE:-local}
     depends_on:
@@ -56,6 +57,7 @@ services:
       - "${CHTEST_BACKEND_PORT:-8000}:8000"
     volumes:
       - ../artifacts:/opt/chtest/artifacts
+      - ../storage:/app/storage
 
   frontend:
     build:

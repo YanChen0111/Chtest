@@ -25,7 +25,7 @@ class LocalArtifactStore:
     def write_bytes(self, file_path: str, content: bytes) -> ArtifactWriteResult:
         destination = self._resolve_relative_path(file_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        temp_path = destination.with_name(f".{destination.name}.{uuid.uuid4().hex}.tmp")
+        temp_path = destination.with_name(f".{uuid.uuid4().hex[:16]}.tmp")
 
         try:
             temp_path.write_bytes(content)

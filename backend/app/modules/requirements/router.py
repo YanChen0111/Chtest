@@ -12,6 +12,9 @@ from backend.app.modules.projects.router import get_session
 from backend.app.modules.requirements import service
 from backend.app.modules.requirements.schemas import (
     RequirementCreate,
+    RequirementDocumentCreate,
+    RequirementDocumentListRead,
+    RequirementDocumentRead,
     RequirementListRead,
     RequirementRead,
     RequirementReviewDetailRead,
@@ -89,6 +92,17 @@ def requirement_review_not_found() -> HTTPException:
     )
 
 
+def requirement_document_not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "error_code": "REQUIREMENT_DOCUMENT_NOT_FOUND",
+            "message": "Requirement document not found.",
+            "details": {},
+        },
+    )
+
+
 def context_artifact_not_found() -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -137,6 +151,18 @@ def list_requirements(
     return RequirementListRead(items=requirements, total=len(requirements))
 
 
+@router.get("/projects/{project_id}/requirement-documents", response_model=RequirementDocumentListRead)
+def list_requirement_documents(
+    project_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> RequirementDocumentListRead:
+    try:
+        items = service.list_requirement_documents(session, project_id)
+    except service.ProjectNotFoundError as exc:
+        raise project_not_found() from exc
+    return RequirementDocumentListRead(items=items, total=len(items))
+
+
 @router.post(
     "/requirements/{requirement_id}/review",
     response_model=RequirementReviewStartRead,
@@ -170,6 +196,25 @@ def start_requirement_review(
             for context_id in ai_task.output_json.get("used_context_artifact_ids", ai_task.context_artifact_ids)
         ],
     )
+
+
+@router.post(
+    "/requirements/{requirement_id}/documents",
+    response_model=RequirementDocumentRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_requirement_document(
+    requirement_id: uuid.UUID,
+    data: RequirementDocumentCreate,
+    session: Session = Depends(get_session),
+    store: LocalArtifactStore = Depends(get_artifact_store),
+) -> RequirementDocumentRead:
+    try:
+        return service.create_requirement_document(session, store, requirement_id, data)
+    except service.RequirementNotFoundError as exc:
+        raise requirement_not_found() from exc
+    except service.RequirementReviewNotFoundError as exc:
+        raise requirement_review_not_found() from exc
 
 
 @router.get("/requirements/{requirement_id}/review", response_model=RequirementReviewDetailRead)

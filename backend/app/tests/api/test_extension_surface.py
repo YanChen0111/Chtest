@@ -245,8 +245,8 @@ def test_get_knowledge_base_lists_context_artifacts_and_usage(
     assert body["knowledge_adapter"]["status"] == "not_configured"
     assert body["knowledge_adapter"]["used_knowledge"] is False
     assert body["non_goals"] == [
-        "no_vector_index",
-        "no_embedding",
+        "no_external_vector_runtime",
+        "no_online_embedding_provider",
         "no_reranking",
         "no_external_rag_runtime",
     ]

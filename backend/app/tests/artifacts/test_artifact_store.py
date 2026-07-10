@@ -46,6 +46,35 @@ def test_write_bytes_replaces_existing_file_atomically(tmp_path: Path) -> None:
     assert not list(tmp_path.rglob("*.tmp"))
 
 
+def test_write_bytes_uses_short_temp_file_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = LocalArtifactStore(root=tmp_path)
+    artifact_path = (
+        "projects/00000000-0000-0000-0000-000000000101/"
+        "ai-tasks/00000000-0000-0000-0000-000000000501/"
+        "schema_validation.json"
+    )
+    replace_sources: list[Path] = []
+    original_replace = os.replace
+
+    def capture_replace(source: str | os.PathLike[str], destination: str | os.PathLike[str]) -> None:
+        replace_sources.append(Path(source))
+        original_replace(source, destination)
+
+    monkeypatch.setattr(os, "replace", capture_replace)
+
+    result = store.write_bytes(artifact_path, b'{"schema_valid":true}')
+
+    assert (tmp_path / result.file_path).read_bytes() == b'{"schema_valid":true}'
+    assert replace_sources
+    assert replace_sources[0].name.startswith(".")
+    assert replace_sources[0].name.endswith(".tmp")
+    assert "schema_validation" not in replace_sources[0].name
+    assert not list(tmp_path.rglob("*.tmp"))
+
+
 def test_write_bytes_cleans_temp_file_when_replace_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

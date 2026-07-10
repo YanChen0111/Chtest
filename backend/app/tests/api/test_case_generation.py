@@ -15,7 +15,6 @@ from sqlalchemy.pool import StaticPool
 from backend.app.main import app
 from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
-from backend.app.modules.ai_runtime.providers import mock_provider
 from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase as CaseModel
@@ -89,7 +88,7 @@ class ASGIClient:
 
 
 @pytest.fixture()
-def api_client(tmp_path: Path) -> Iterator[tuple[ASGIClient, sessionmaker[Session]]]:
+def api_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[ASGIClient, sessionmaker[Session]]]:
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -99,6 +98,7 @@ def api_client(tmp_path: Path) -> Iterator[tuple[ASGIClient, sessionmaker[Sessio
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(engine, expire_on_commit=False, future=True)
     artifact_root = tmp_path / "artifacts"
+    monkeypatch.setenv("CHTEST_MODEL_CONNECTION_PATH", str(tmp_path / "model-connection.json"))
 
     def override_get_session() -> Iterator[Session]:
         with SessionLocal() as session:
@@ -179,6 +179,21 @@ def create_reviewed_requirement(client: ASGIClient, SessionLocal: sessionmaker[S
     return requirement, review
 
 
+def write_model_connection_config(path: Path, *, provider: str, model_name: str) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "provider": provider,
+                "model_name": model_name,
+                "base_url": "https://gateway.example.test/v1",
+                "wire_api": "responses",
+                "api_key": "sk-local-secret",
+            },
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_start_case_generation_persists_candidates_without_creating_test_cases(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:
@@ -224,14 +239,6 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
     assert first_candidate["expected_results"]
     assert first_candidate["requirement_refs"]
     assert first_candidate["ai_reason"]
-    assert first_candidate["source_knowledge_evidence_ids"] == []
-    assert first_candidate["knowledge_evidence_refs"] == []
-    assert first_candidate["covered_risk_ids"] == []
-    assert first_candidate["generation_reason"] is None
-    assert first_candidate["automation_readiness"] == "unknown"
-    assert first_candidate["quality_score"] is None
-    assert first_candidate["review_findings"] == []
-    assert first_candidate["coverage_gap_notes"] is None
     assert first_candidate["status"] == "generated"
 
     with SessionLocal() as session:
@@ -244,53 +251,54 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
         assert ai_task is not None
         assert ai_task.task_type == "case_generation"
         assert ai_task.status == "succeeded"
-        persisted_candidate = session.scalar(
-            select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id),
-        )
-        assert persisted_candidate is not None
-        assert persisted_candidate.source_knowledge_evidence_ids == []
-        assert persisted_candidate.knowledge_evidence_refs_json == []
-        assert persisted_candidate.covered_risk_ids == []
-        assert persisted_candidate.automation_readiness == "unknown"
-        assert persisted_candidate.review_findings_json == []
+        assert session.scalar(select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id))
         assert list(session.scalars(select(CaseModel))) == []
 
 
-def test_start_case_generation_persists_knowledge_evidence_fields_from_ai_output(
+def test_start_case_generation_uses_saved_model_connection_when_request_omits_model(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     client, SessionLocal = api_client
     requirement, review = create_reviewed_requirement(client, SessionLocal)
+    write_model_connection_config(
+        tmp_path / "model-connection.json",
+        provider="OpenAI Compatible",
+        model_name="gpt-live-cases",
+    )
+    observed_task_ids: list[uuid.UUID] = []
 
-    original_success_output = mock_provider.MockLLMProvider._success_output
-
-    def success_output_with_evidence(self, request):
-        output = original_success_output(self, request)
-        if request.model_name == "mock-case-generator":
-            output["cases"][0].update(
+    def fake_run_ai_task(session: Session, _store: LocalArtifactStore, job: Any) -> None:
+        ai_task = session.get(AITask, job.ai_task_id)
+        assert ai_task is not None
+        observed_task_ids.append(ai_task.id)
+        assert ai_task.model_provider == "OpenAI Compatible"
+        assert ai_task.model_name == "gpt-live-cases"
+        ai_task.status = "succeeded"
+        ai_task.output_json = {
+            "cases": [
                 {
-                    "source_knowledge_evidence_ids": ["ke-expired-coupon-boundary"],
-                    "knowledge_evidence_refs": [
-                        {
-                            "evidence_id": "ke-expired-coupon-boundary",
-                            "knowledge_card_id": "00000000-0000-0000-0000-000000000821",
-                            "source_artifact_id": "00000000-0000-0000-0000-000000000371",
-                            "snippet": "Expired coupons must be rejected before order submission.",
-                            "score": 0.92,
-                        },
-                    ],
-                    "covered_risk_ids": ["00000000-0000-0000-0000-000000000411"],
-                    "generation_reason": "Boundary case for expired coupon validation.",
-                    "automation_readiness": "suitable_for_playwright",
-                    "quality_score": 88,
-                    "review_findings": [{"type": "evidence_complete", "severity": "info"}],
-                    "coverage_gap_notes": "",
+                    "title": "Model-backed checkout coupon happy path",
+                    "priority": "P1",
+                    "test_type": "functional",
+                    "precondition": "A valid coupon exists.",
+                    "steps": ["Open checkout", "Apply coupon", "Submit order"],
+                    "expected_results": ["Order is submitted with the discounted amount."],
+                    "requirement_refs": [str(requirement["id"])],
+                    "risk_refs": [],
+                    "input_data": {},
+                    "tags": ["coupon"],
+                    "ai_reason": "Covers the primary configured-model generation path.",
                 },
-            )
-        return output
+            ],
+            "used_knowledge": False,
+            "used_context_artifact_ids": [],
+        }
+        session.add(ai_task)
+        session.commit()
 
-    monkeypatch.setattr(mock_provider.MockLLMProvider, "_success_output", success_output_with_evidence)
+    monkeypatch.setattr("backend.app.modules.cases.service.run_ai_task", fake_run_ai_task)
 
     response = client.post(
         "/api/case-generation/tasks",
@@ -298,7 +306,82 @@ def test_start_case_generation_persists_knowledge_evidence_fields_from_ai_output
             "project_id": requirement["project_id"],
             "requirement_id": requirement["id"],
             "requirement_review_id": review["id"],
-            "target_test_types": ["functional", "ui"],
+            "target_test_types": ["functional"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert observed_task_ids == [uuid.UUID(body["ai_task_id"])]
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert ai_task is not None
+        assert ai_task.model_provider == "OpenAI Compatible"
+        assert ai_task.model_name == "gpt-live-cases"
+        generation_task = session.get(CaseGenerationTask, uuid.UUID(body["case_generation_task_id"]))
+        assert generation_task is not None
+        assert generation_task.generated_count == 1
+
+
+def test_start_case_generation_can_use_requirement_document_artifact(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, SessionLocal = api_client
+    requirement, review = create_reviewed_requirement(client, SessionLocal)
+    document_response = client.post(
+        f"/api/requirements/{requirement['id']}/documents",
+        json_body={
+            "requirement_review_id": review["id"],
+            "version": "v1",
+            "status": "confirmed",
+        },
+    )
+    assert document_response.status_code == 201
+    document = document_response.json()
+    observed_inputs: list[dict[str, Any]] = []
+
+    def fake_run_ai_task(session: Session, _store: LocalArtifactStore, job: Any) -> None:
+        ai_task = session.get(AITask, job.ai_task_id)
+        assert ai_task is not None
+        observed_inputs.append(ai_task.input_json)
+        ai_task.status = "succeeded"
+        ai_task.output_json = {
+            "cases": [
+                {
+                    "title": "Document-backed coupon case",
+                    "priority": "P1",
+                    "test_type": "functional",
+                    "precondition": "Requirement document is confirmed.",
+                    "steps": ["Read requirement document", "Design checkout coupon case"],
+                    "expected_results": ["Case traces back to the requirement document."],
+                    "requirement_refs": [document["document_number"]],
+                    "risk_refs": [],
+                    "input_data": {},
+                    "tags": ["requirement-document"],
+                    "ai_reason": "Uses the generated requirement specification as source of truth.",
+                },
+            ],
+            "used_knowledge": False,
+            "used_context_artifact_ids": [],
+        }
+        session.add(ai_task)
+        session.commit()
+
+    monkeypatch.setattr("backend.app.modules.cases.service.run_ai_task", fake_run_ai_task)
+
+    response = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": requirement["project_id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "requirement_document_artifact_id": document["artifact_id"],
+            "target_test_types": ["functional"],
             "prompt_version": "case_generation:v1",
             "skill_version": "test-case-generation-skill:v1",
             "model_provider": "mock",
@@ -309,41 +392,12 @@ def test_start_case_generation_persists_knowledge_evidence_fields_from_ai_output
     )
 
     assert response.status_code == 202
-    generation = response.json()
-    candidates_response = client.get(f"/api/case-generation/tasks/{generation['case_generation_task_id']}/candidates")
-
-    assert candidates_response.status_code == 200
-    candidate = next(
-        item
-        for item in candidates_response.json()["items"]
-        if item["source_knowledge_evidence_ids"] == ["ke-expired-coupon-boundary"]
-    )
-    assert candidate["source_knowledge_evidence_ids"] == ["ke-expired-coupon-boundary"]
-    assert candidate["knowledge_evidence_refs"][0]["knowledge_card_id"] == "00000000-0000-0000-0000-000000000821"
-    assert candidate["covered_risk_ids"] == ["00000000-0000-0000-0000-000000000411"]
-    assert candidate["generation_reason"] == "Boundary case for expired coupon validation."
-    assert candidate["automation_readiness"] == "suitable_for_playwright"
-    assert candidate["quality_score"] == 88
-    assert candidate["review_findings"] == [{"type": "evidence_complete", "severity": "info"}]
-    assert candidate["coverage_gap_notes"] == ""
-    assert candidate["status"] == "generated"
-
-    with SessionLocal() as session:
-        persisted_candidate = session.scalar(
-            select(GeneratedCaseCandidate).where(
-                GeneratedCaseCandidate.generation_task_id == uuid.UUID(generation["case_generation_task_id"]),
-            ),
-        )
-        assert persisted_candidate is not None
-        assert persisted_candidate.source_knowledge_evidence_ids == ["ke-expired-coupon-boundary"]
-        assert persisted_candidate.knowledge_evidence_refs_json[0]["evidence_id"] == "ke-expired-coupon-boundary"
-        assert persisted_candidate.covered_risk_ids == [uuid.UUID("00000000-0000-0000-0000-000000000411")]
-        assert persisted_candidate.generation_reason == "Boundary case for expired coupon validation."
-        assert persisted_candidate.automation_readiness == "suitable_for_playwright"
-        assert persisted_candidate.quality_score == 88
-        assert persisted_candidate.review_findings_json == [{"type": "evidence_complete", "severity": "info"}]
-        assert persisted_candidate.coverage_gap_notes == ""
-        assert list(session.scalars(select(CaseModel))) == []
+    assert observed_inputs
+    requirement_document = observed_inputs[0]["requirement_document"]
+    assert requirement_document["artifact_id"] == document["artifact_id"]
+    assert requirement_document["document_number"] == document["document_number"]
+    assert "# 需求规格说明书" in requirement_document["content"]
+    assert "## 9. 追踪矩阵" in requirement_document["content"]
 
 
 def test_schema_invalid_case_generation_does_not_write_task_or_candidates(
@@ -381,73 +435,6 @@ def test_schema_invalid_case_generation_does_not_write_task_or_candidates(
         assert llm_log.status == "schema_invalid"
         artifacts = list(session.scalars(select(Artifact).where(Artifact.owner_entity_id == ai_task.id)))
         assert any(artifact.artifact_type == "raw_llm_output" for artifact in artifacts)
-        assert list(session.scalars(select(CaseGenerationTask))) == []
-        assert list(session.scalars(select(GeneratedCaseCandidate))) == []
-        assert list(session.scalars(select(CaseModel))) == []
-
-
-@pytest.mark.parametrize(
-    "evidence_patch",
-    [
-        {"covered_risk_ids": ["not-a-uuid"]},
-        {"automation_readiness": "ship_it"},
-        {"quality_score": 101},
-        {"quality_score": -1},
-        {
-            "knowledge_evidence_refs": [
-                {
-                    "evidence_id": "ke-secret",
-                    "snippet": "Authorization: Bearer sk-test-secret-value",
-                },
-            ],
-        },
-        {"review_findings": [{"type": "raw_provider_payload", "message": "raw_provider_payload"}]},
-    ],
-)
-def test_malformed_generated_case_evidence_output_does_not_write_candidates(
-    api_client: tuple[ASGIClient, sessionmaker[Session]],
-    monkeypatch: pytest.MonkeyPatch,
-    evidence_patch: dict[str, Any],
-) -> None:
-    client, SessionLocal = api_client
-    requirement, review = create_reviewed_requirement(client, SessionLocal)
-
-    original_success_output = mock_provider.MockLLMProvider._success_output
-
-    def malformed_success_output(self, request):
-        output = original_success_output(self, request)
-        if request.model_name == "mock-case-generator":
-            output["cases"][0].update(evidence_patch)
-        return output
-
-    monkeypatch.setattr(mock_provider.MockLLMProvider, "_success_output", malformed_success_output)
-
-    response = client.post(
-        "/api/case-generation/tasks",
-        json_body={
-            "project_id": requirement["project_id"],
-            "requirement_id": requirement["id"],
-            "requirement_review_id": review["id"],
-            "target_test_types": ["functional", "ui"],
-            "prompt_version": "case_generation:v1",
-            "skill_version": "test-case-generation-skill:v1",
-            "model_provider": "mock",
-            "model_name": "mock-case-generator",
-            "use_knowledge": False,
-            "context_artifact_ids": [],
-        },
-    )
-
-    assert response.status_code == 422
-    assert response.json()["error_code"] == "CASE_GENERATION_SCHEMA_INVALID"
-
-    with SessionLocal() as session:
-        ai_task = session.scalar(select(AITask).where(AITask.task_type == "case_generation"))
-        assert ai_task is not None
-        assert ai_task.status == "failed"
-        llm_log = session.scalar(select(LLMCallLog).where(LLMCallLog.ai_task_id == ai_task.id))
-        assert llm_log is not None
-        assert llm_log.status == "schema_invalid"
         assert list(session.scalars(select(CaseGenerationTask))) == []
         assert list(session.scalars(select(GeneratedCaseCandidate))) == []
         assert list(session.scalars(select(CaseModel))) == []

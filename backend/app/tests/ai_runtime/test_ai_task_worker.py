@@ -26,6 +26,7 @@ def session_factory() -> sessionmaker[Session]:
 def create_ai_task(
     session: Session,
     *,
+    model_provider: str = "mock",
     model_name: str = "mock-requirement-review",
     mode: str = "success",
     status: str = "created",
@@ -37,6 +38,7 @@ def create_ai_task(
         task_type="requirement_review",
         prompt_version_id=uuid.uuid4(),
         skill_version_id=uuid.uuid4(),
+        model_provider=model_provider,
         model_name=model_name,
         input_json={
             "requirement": "# 优惠券结算规则",
@@ -271,6 +273,79 @@ def test_worker_commits_running_state_before_provider_call(
         )
 
         assert observed_statuses == ["running"]
+
+
+def test_worker_selects_provider_from_ai_task_model_provider(
+    session_factory: sessionmaker[Session],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    selected_provider_names: list[str] = []
+
+    class StubProvider:
+        def generate(self, request):
+            from backend.app.modules.ai_runtime.providers.base import LLMProviderResponse
+
+            return LLMProviderResponse(
+                provider="openai",
+                model_name=request.model_name,
+                status="succeeded",
+                output_json={
+                    "response_text": "connected",
+                    "used_knowledge": False,
+                    "used_context_artifact_ids": [],
+                },
+                artifacts=[],
+                token_usage_json={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            )
+
+    def fake_create_llm_provider(provider_name: str):
+        selected_provider_names.append(provider_name)
+        return StubProvider()
+
+    monkeypatch.setattr(
+        "backend.app.workers.handlers.ai_task_handler.create_llm_provider",
+        fake_create_llm_provider,
+    )
+
+    with session_factory() as session:
+        ai_task = create_ai_task(session, model_provider="openai", model_name="gpt-5.5")
+        queue = FakeAIQueue()
+        enqueue_ai_task(session, queue, ai_task.id)
+
+        run_ai_task(session, LocalArtifactStore(tmp_path), queue.pop_next())
+
+        session.refresh(ai_task)
+        llm_log = session.scalar(select(LLMCallLog).where(LLMCallLog.ai_task_id == ai_task.id))
+        assert selected_provider_names == ["openai"]
+        assert ai_task.status == "succeeded"
+        assert ai_task.output_json["response_text"] == "connected"
+        assert ai_task.token_usage_json["total_tokens"] == 2
+        assert llm_log is not None
+        assert llm_log.provider == "openai"
+
+
+def test_worker_normalizes_provider_name_in_error_code(
+    session_factory: sessionmaker[Session],
+    tmp_path: Path,
+) -> None:
+    from backend.app.modules.ai_runtime.providers.base import LLMProviderError
+
+    class FailingProvider:
+        def generate(self, request):
+            raise LLMProviderError("provider unavailable")
+
+    with session_factory() as session:
+        ai_task = create_ai_task(session, model_provider="openai-compatible", model_name="gpt-5.5")
+        queue = FakeAIQueue()
+        enqueue_ai_task(session, queue, ai_task.id)
+
+        run_ai_task(session, LocalArtifactStore(tmp_path), queue.pop_next(), provider=FailingProvider())
+
+        session.refresh(ai_task)
+        assert ai_task.status == "failed"
+        assert ai_task.error_json is not None
+        assert ai_task.error_json["error_code"] == "OPENAI_COMPATIBLE_PROVIDER_ERROR"
 
 
 def test_worker_marks_task_failed_when_artifact_write_fails(

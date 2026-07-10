@@ -14,7 +14,7 @@ from backend.app.modules.ai_runtime.providers.base import (
     LLMProviderTimeoutError,
     ProviderArtifactPayload,
 )
-from backend.app.modules.ai_runtime.providers.mock_provider import MockLLMProvider
+from backend.app.modules.ai_runtime.providers.factory import LLMProvider, create_llm_provider
 from backend.app.workers.enqueue import AIQueueJob
 
 
@@ -22,7 +22,7 @@ def run_ai_task(
     session: Session,
     store: LocalArtifactStore,
     job: AIQueueJob | None,
-    provider: MockLLMProvider | None = None,
+    provider: LLMProvider | None = None,
 ) -> None:
     if job is None:
         return
@@ -33,7 +33,7 @@ def run_ai_task(
     if ai_task.status != "pending":
         raise ValueError("AI task must be pending before worker start.")
 
-    provider = provider or MockLLMProvider()
+    provider = provider or create_llm_provider(ai_task.model_provider)
     ai_task.status = "running"
     ai_task.started_at = service.utc_now()
     session.add(ai_task)
@@ -59,7 +59,7 @@ def run_ai_task(
         response = provider.generate(request)
     except LLMProviderTimeoutError as exc:
         error_json = {
-            "error_code": "MOCK_PROVIDER_TIMEOUT",
+            "error_code": f"{provider_error_code_prefix(ai_task.model_provider)}_PROVIDER_TIMEOUT",
             "message": str(exc),
             "recoverable": True,
         }
@@ -73,7 +73,7 @@ def run_ai_task(
         return
     except LLMProviderError as exc:
         error_json = {
-            "error_code": "MOCK_PROVIDER_ERROR",
+            "error_code": f"{provider_error_code_prefix(ai_task.model_provider)}_PROVIDER_ERROR",
             "message": str(exc),
             "recoverable": True,
         }
@@ -116,6 +116,11 @@ def run_ai_task(
     )
     session.add(ai_task)
     session.commit()
+
+
+def provider_error_code_prefix(model_provider: str) -> str:
+    normalized = "".join(character if character.isalnum() else "_" for character in model_provider)
+    return normalized.strip("_").upper() or "LLM"
 
 
 def write_request_artifacts(

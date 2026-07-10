@@ -25,10 +25,12 @@ export interface RequirementRead {
 export interface RequirementReviewStartRequest {
   readonly prompt_version: 'requirement_review:v1';
   readonly skill_version: 'requirement-review-skill:v1';
-  readonly model_provider: 'mock';
-  readonly model_name: 'mock-requirement-review';
+  readonly model_provider?: string | null;
+  readonly model_name?: string | null;
   readonly use_knowledge: boolean;
   readonly context_artifact_ids: string[];
+  readonly supplement_text?: string | null;
+  readonly clarification_answers?: ClarificationAnswer[];
 }
 
 export interface RequirementReviewStartRead {
@@ -73,6 +75,36 @@ export interface RequirementReviewRead {
   readonly status: string;
 }
 
+export interface ClarificationAnswer {
+  readonly question: string;
+  readonly answer: string;
+}
+
+export interface RequirementDocumentCreateRequest {
+  readonly requirement_review_id: string;
+  readonly version?: string;
+  readonly status?: 'draft' | 'confirmed';
+}
+
+export interface RequirementDocumentRead {
+  readonly id: string;
+  readonly project_id: string;
+  readonly requirement_id: string;
+  readonly requirement_review_id: string;
+  readonly document_number: string;
+  readonly version: string;
+  readonly title: string;
+  readonly status: string;
+  readonly artifact_id: string;
+  readonly download_url: string;
+  readonly created_at: string;
+}
+
+export interface RequirementDocumentListRead {
+  readonly items: RequirementDocumentRead[];
+  readonly total: number;
+}
+
 export async function createRequirement(data: RequirementCreateRequest): Promise<RequirementRead> {
   return apiClient.postJson<RequirementRead, RequirementCreateRequest>('/requirements', data);
 }
@@ -89,4 +121,18 @@ export async function startRequirementReview(
 
 export async function getRequirementReview(requirementId: string): Promise<RequirementReviewRead> {
   return apiClient.getJson<RequirementReviewRead>(`/requirements/${requirementId}/review`);
+}
+
+export async function createRequirementDocument(
+  requirementId: string,
+  data: RequirementDocumentCreateRequest,
+): Promise<RequirementDocumentRead> {
+  return apiClient.postJson<RequirementDocumentRead, RequirementDocumentCreateRequest>(
+    `/requirements/${requirementId}/documents`,
+    data,
+  );
+}
+
+export async function listRequirementDocuments(projectId: string): Promise<RequirementDocumentListRead> {
+  return apiClient.getJson<RequirementDocumentListRead>(`/projects/${projectId}/requirement-documents`);
 }

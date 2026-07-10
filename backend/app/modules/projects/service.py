@@ -25,6 +25,8 @@ from backend.app.modules.projects.schemas import (
 
 
 DEFAULT_WORKSPACE_NAME = "Personal Workspace"
+DEFAULT_FRONTEND_PROJECT_ID = uuid.UUID("00000000-0000-0000-0000-000000000101")
+DEFAULT_FRONTEND_PROJECT_NAME = "Chtest Demo Project"
 
 
 class ProjectAlreadyExistsError(Exception):
@@ -92,6 +94,33 @@ def get_or_create_default_workspace(session: Session) -> Workspace:
     session.add(workspace)
     session.flush()
     return workspace
+
+
+def ensure_local_default_project(session: Session) -> Project:
+    project = session.get(Project, DEFAULT_FRONTEND_PROJECT_ID)
+    if project is not None:
+        return project
+
+    workspace = get_or_create_default_workspace(session)
+    project_name = DEFAULT_FRONTEND_PROJECT_NAME
+    existing_named_project = session.scalar(
+        select(Project).where(Project.workspace_id == workspace.id, Project.name == project_name),
+    )
+    if existing_named_project is not None:
+        project_name = f"{DEFAULT_FRONTEND_PROJECT_NAME} Default"
+
+    project = Project(
+        id=DEFAULT_FRONTEND_PROJECT_ID,
+        workspace=workspace,
+        name=project_name,
+        description="Local acceptance project for Chtest web validation.",
+        default_language="python",
+        default_test_type="functional",
+    )
+    session.add(project)
+    session.commit()
+    session.refresh(project)
+    return project
 
 
 def create_project(session: Session, data: ProjectCreate) -> Project:

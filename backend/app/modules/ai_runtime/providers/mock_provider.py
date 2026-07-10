@@ -54,10 +54,16 @@ class MockLLMProvider:
     def _success_output(self, request: LLMProviderRequest) -> dict:
         context_ids = [str(context_id) for context_id in request.context_artifact_ids]
         knowledge_retrieval = request.input_json.get("knowledge_retrieval")
+        knowledge_evidence = request.input_json.get("knowledge_evidence")
+        if not isinstance(knowledge_evidence, list):
+            knowledge_evidence = []
         used_knowledge = bool(
-            isinstance(knowledge_retrieval, dict)
-            and knowledge_retrieval.get("used_knowledge")
-            and knowledge_retrieval.get("results"),
+            (
+                isinstance(knowledge_retrieval, dict)
+                and knowledge_retrieval.get("used_knowledge")
+                and knowledge_retrieval.get("results")
+            )
+            or knowledge_evidence,
         )
         if request.model_name == "mock-requirement-review":
             return {
@@ -103,6 +109,14 @@ class MockLLMProvider:
             }
 
         if request.model_name == "mock-case-generator":
+            case_evidence = knowledge_evidence[:2]
+            used_context_ids = sorted(
+                {
+                    str(item.get("source_artifact_id"))
+                    for item in case_evidence
+                    if isinstance(item, dict) and item.get("source_artifact_id")
+                },
+            )
             return {
                 "cases": [
                     {
@@ -113,6 +127,7 @@ class MockLLMProvider:
                         "steps": ["登录用户账号", "创建包含可用商品的订单", "进入结算页", "选择可用优惠券", "提交订单"],
                         "expected_results": ["订单提交成功", "最终支付金额等于订单应付金额减优惠券金额"],
                         "requirement_refs": ["用户在提交订单时，可以选择一张可用优惠券"],
+                        "source_knowledge_evidence": case_evidence,
                         "ai_reason": "覆盖优惠券主流程",
                     },
                     {
@@ -123,6 +138,7 @@ class MockLLMProvider:
                         "steps": ["进入结算页", "选择优惠券", "选择积分抵扣", "提交订单"],
                         "expected_results": ["系统阻止同时使用", "页面提示优惠券不可与积分同时使用"],
                         "requirement_refs": ["优惠券不可与积分同时使用"],
+                        "source_knowledge_evidence": case_evidence,
                         "ai_reason": "覆盖互斥规则",
                     },
                     {
@@ -133,6 +149,7 @@ class MockLLMProvider:
                         "steps": ["进入结算页", "查看优惠券列表", "尝试选择已过期优惠券", "提交订单"],
                         "expected_results": ["已过期优惠券不可选或提交失败", "页面提示优惠券已过期"],
                         "requirement_refs": ["过期优惠券不可使用"],
+                        "source_knowledge_evidence": case_evidence,
                         "ai_reason": "覆盖有效期边界",
                     },
                     {
@@ -143,6 +160,7 @@ class MockLLMProvider:
                         "steps": ["进入结算页", "选择金额大于订单应付金额的优惠券", "提交订单"],
                         "expected_results": ["系统按规则阻断或限制抵扣", "最终支付金额不会为负数"],
                         "requirement_refs": ["优惠券金额不能超过订单应付金额"],
+                        "source_knowledge_evidence": case_evidence,
                         "ai_reason": "覆盖金额边界",
                     },
                     {
@@ -153,18 +171,40 @@ class MockLLMProvider:
                         "steps": ["进入结算页", "选择优惠券", "提交订单", "查看订单确认页"],
                         "expected_results": ["订单确认页展示优惠后的最终支付金额", "金额与结算页一致"],
                         "requirement_refs": ["系统需要展示优惠后的最终支付金额"],
+                        "source_knowledge_evidence": case_evidence,
                         "ai_reason": "覆盖 UI 展示一致性",
                     },
                 ],
-                "used_knowledge": False,
-                "used_context_artifact_ids": context_ids,
+                "used_knowledge": used_knowledge,
+                "used_context_artifact_ids": used_context_ids or context_ids,
             }
 
         if request.model_name == "mock-automation-draft":
+            source_title = self._source_title(request)
+            test_name = self._slug(source_title)
+            plan_title = self._automation_plan_title(request)
             return self._with_context(
                 {
                     "target_framework": "pytest",
-                    "draft_code": "def test_coupon_amount_cannot_exceed_order_total():\n    assert True\n",
+                    "title": f"pytest draft for {source_title}",
+                    "draft_language": "python",
+                    "draft_code": (
+                        f"def test_{test_name}():\n"
+                        f"    \"\"\"Generated from reviewed TestCase: {source_title}\"\"\"\n"
+                        f"    # AutomationPlan: {plan_title or 'direct test case draft'}\n"
+                        f"    scenario = {{\"title\": {source_title!r}, \"plan\": {plan_title!r}}}\n"
+                        "    actual = {\n"
+                        "        \"scenario_title\": scenario[\"title\"],\n"
+                        "        \"block_master_visible\": False,\n"
+                        "        \"uses_regular_icon\": True,\n"
+                        "    }\n"
+                        "    assert actual[\"scenario_title\"] == scenario[\"title\"]\n"
+                        "    assert actual[\"block_master_visible\"] is False\n"
+                        "    assert actual[\"uses_regular_icon\"] is True\n"
+                    ),
+                    "suggested_file_path": f"tests/test_{test_name}.py",
+                    "execution_notes": "Generated from an approved AutomationPlan by deterministic mock provider.",
+                    "risk_notes": "Replace inline scenario doubles with project fixtures before production execution.",
                     "review_notes": ["Generated by deterministic mock provider."],
                 },
                 context_ids,
@@ -289,6 +329,35 @@ class MockLLMProvider:
             "used_knowledge": False,
             "used_context_artifact_ids": context_ids,
         }
+
+    def _source_title(self, request: LLMProviderRequest) -> str:
+        test_case = request.input_json.get("test_case")
+        if isinstance(test_case, dict) and isinstance(test_case.get("title"), str) and test_case["title"].strip():
+            return test_case["title"].strip()
+        automation_plan = request.input_json.get("automation_plan")
+        if (
+            isinstance(automation_plan, dict)
+            and isinstance(automation_plan.get("test_case_title"), str)
+            and automation_plan["test_case_title"].strip()
+        ):
+            return automation_plan["test_case_title"].strip()
+        if isinstance(request.input_json.get("source_title"), str) and request.input_json["source_title"].strip():
+            return request.input_json["source_title"].strip()
+        return "automation draft"
+
+    def _automation_plan_title(self, request: LLMProviderRequest) -> str | None:
+        automation_plan = request.input_json.get("automation_plan")
+        if isinstance(automation_plan, dict) and isinstance(automation_plan.get("title"), str):
+            return automation_plan["title"]
+        return None
+
+    def _slug(self, value: str) -> str:
+        slugged = "".join(
+            character.lower() if character.isascii() and character.isalnum() else "_"
+            for character in value
+        )
+        slugged = "_".join(part for part in slugged.split("_") if part)
+        return slugged or "automation_draft"
 
     def _json_artifact(self, artifact_type: str, file_name: str, payload: dict) -> ProviderArtifactPayload:
         content = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")

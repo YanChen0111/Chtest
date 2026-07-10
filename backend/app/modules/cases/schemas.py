@@ -12,11 +12,12 @@ class CaseGenerationStartRequest(BaseModel):
     project_id: uuid.UUID
     requirement_id: uuid.UUID
     requirement_review_id: uuid.UUID | None = None
+    requirement_document_artifact_id: uuid.UUID | None = None
     target_test_types: list[str] = Field(default_factory=list)
     prompt_version: Literal["case_generation:v1"] = "case_generation:v1"
     skill_version: Literal["test-case-generation-skill:v1"] = "test-case-generation-skill:v1"
-    model_provider: Literal["mock"] = "mock"
-    model_name: Literal["mock-case-generator"] = "mock-case-generator"
+    model_provider: str | None = None
+    model_name: str | None = None
     use_knowledge: bool = False
     context_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
     mock_mode: Literal["success", "schema_invalid"] = "success"
@@ -62,6 +63,7 @@ class GeneratedCaseCandidateRead(BaseModel):
     tags: list[str]
     requirement_refs_json: list[Any]
     risk_refs_json: list[Any]
+    source_knowledge_evidence_json: list[Any]
     ai_reason: str
     duplicate_of_case_id: uuid.UUID | None
     status: str
@@ -81,15 +83,8 @@ class GeneratedCaseCandidateListItemRead(BaseModel):
     input_data: dict[str, Any]
     requirement_refs: list[Any]
     risk_refs: list[Any]
+    source_knowledge_evidence: list[Any] = Field(default_factory=list)
     ai_reason: str
-    source_knowledge_evidence_ids: list[str] = Field(default_factory=list)
-    knowledge_evidence_refs: list[dict[str, Any]] = Field(default_factory=list)
-    covered_risk_ids: list[str] = Field(default_factory=list)
-    generation_reason: str | None = None
-    automation_readiness: str = "unknown"
-    quality_score: int | None = None
-    review_findings: list[dict[str, Any]] = Field(default_factory=list)
-    coverage_gap_notes: str | None = None
     status: str
 
 

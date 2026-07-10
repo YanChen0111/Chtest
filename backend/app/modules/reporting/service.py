@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.app.modules.ai_runtime.model_config import resolve_model_identity
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.execution.models import TestResult, TestRun
 from backend.app.modules.reporting.models import FailureAnalysis, Report
@@ -65,6 +66,12 @@ def create_failure_analysis(
     )
     evidence_artifact_ids = collect_evidence_artifact_ids(test_results, artifacts)
     classification = classify_failure(test_run, test_results, artifacts)
+    model_provider, model_name = resolve_model_identity(
+        model_provider=data.model_provider,
+        model_name=data.model_name,
+        default_provider="mock",
+        default_model_name="mock-failure-analysis",
+    )
 
     ai_task = AITask(
         project_id=test_run.project_id,
@@ -72,8 +79,8 @@ def create_failure_analysis(
         task_type="failure_analysis",
         prompt_version_id=stable_version_uuid(data.prompt_version),
         skill_version_id=stable_version_uuid(data.skill_version),
-        model_provider=data.model_provider,
-        model_name=data.model_name,
+        model_provider=model_provider,
+        model_name=model_name,
         status="succeeded",
         input_json={
             "test_run_id": str(test_run.id),

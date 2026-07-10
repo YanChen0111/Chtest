@@ -24,7 +24,7 @@ export class ApiClient {
   async getText(path: string): Promise<string> {
     const response = await fetch(`${this.baseUrl}${path}`);
     if (!response.ok) {
-      throw new ApiError(response.status, `请求失败：${response.status}`);
+      throw await this.errorFromResponse(response);
     }
     return response.text();
   }
@@ -36,7 +36,7 @@ export class ApiClient {
       },
     });
     if (!response.ok) {
-      throw new ApiError(response.status, `请求失败：${response.status}`);
+      throw await this.errorFromResponse(response);
     }
     return response.json() as Promise<T>;
   }
@@ -51,7 +51,22 @@ export class ApiClient {
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-      throw new ApiError(response.status, `请求失败：${response.status}`);
+      throw await this.errorFromResponse(response);
+    }
+    return response.json() as Promise<TResponse>;
+  }
+
+  async putJson<TResponse, TBody extends object>(path: string, body: TBody): Promise<TResponse> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw await this.errorFromResponse(response);
     }
     return response.json() as Promise<TResponse>;
   }
@@ -66,10 +81,45 @@ export class ApiClient {
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-      throw new ApiError(response.status, `请求失败：${response.status}`);
+      throw await this.errorFromResponse(response);
     }
     return response.json() as Promise<TResponse>;
   }
+
+  private async errorFromResponse(response: Response): Promise<ApiError> {
+    let message = `请求失败：${response.status}`;
+    try {
+      const payload = (await response.clone().json()) as unknown;
+      const record = isRecord(payload) ? payload : null;
+      const payloadMessage =
+        typeof record?.message === 'string'
+          ? record.message
+          : typeof record?.detail === 'string'
+            ? record.detail
+            : '';
+      const errorCode = typeof record?.error_code === 'string' ? record.error_code : '';
+      if (payloadMessage) {
+        message = payloadMessage;
+      }
+      if (errorCode) {
+        message = `${message}（${errorCode}）`;
+      }
+    } catch {
+      try {
+        const text = (await response.clone().text()).trim();
+        if (text) {
+          message = text.slice(0, 300);
+        }
+      } catch {
+        // Keep the status-only fallback.
+      }
+    }
+    return new ApiError(response.status, message);
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export const apiClient = new ApiClient();

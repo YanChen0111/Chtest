@@ -4,11 +4,12 @@ export interface CaseGenerationStartRequest {
   readonly project_id: string;
   readonly requirement_id: string;
   readonly requirement_review_id?: string | null;
+  readonly requirement_document_artifact_id?: string | null;
   readonly target_test_types: string[];
   readonly prompt_version: 'case_generation:v1';
   readonly skill_version: 'test-case-generation-skill:v1';
-  readonly model_provider: 'mock';
-  readonly model_name: 'mock-case-generator';
+  readonly model_provider?: string | null;
+  readonly model_name?: string | null;
   readonly use_knowledge: boolean;
   readonly context_artifact_ids: string[];
 }
@@ -32,6 +33,7 @@ export interface GeneratedCaseCandidateListItem {
   readonly input_data: Record<string, unknown>;
   readonly requirement_refs: string[];
   readonly risk_refs: string[];
+  readonly source_knowledge_evidence: Record<string, unknown>[];
   readonly ai_reason: string;
   readonly status: string;
 }

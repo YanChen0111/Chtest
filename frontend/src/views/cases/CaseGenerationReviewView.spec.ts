@@ -1,16 +1,37 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import CaseGenerationReviewView from './CaseGenerationReviewView.vue';
 
 describe('CaseGenerationReviewView', () => {
+  afterEach(() => {
+    window.localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
   it('starts case generation, lists candidates, and submits a review action', async () => {
     let metricsRequestCount = 0;
+    let generationBody: unknown = null;
+    window.localStorage.setItem(
+      'chtest.latestRequirementReview',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        requirementId: '00000000-0000-0000-0000-000000000411',
+        requirementReviewId: '00000000-0000-0000-0000-000000000611',
+      }),
+    );
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
+        return new Response(JSON.stringify({ items: [], total: 0 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
       if (url.endsWith('/case-generation/tasks') && init?.method === 'POST') {
+        generationBody = JSON.parse(String(init.body));
         return new Response(
           JSON.stringify({
             case_generation_task_id: '00000000-0000-0000-0000-000000000701',
@@ -137,6 +158,14 @@ describe('CaseGenerationReviewView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
+    expect(generationBody).toEqual(
+      expect.objectContaining({
+        project_id: '00000000-0000-0000-0000-000000000101',
+        requirement_id: '00000000-0000-0000-0000-000000000411',
+        requirement_review_id: '00000000-0000-0000-0000-000000000611',
+        requirement_document_artifact_id: null,
+      }),
+    );
     expect(wrapper.text()).toContain('候选用例');
     expect(wrapper.text()).toContain('过期优惠券不可用于结算');
     expect(wrapper.text()).toContain('优惠券金额不能超过订单应付金额');
@@ -163,6 +192,12 @@ describe('CaseGenerationReviewView', () => {
     expect(wrapper.text()).toContain('已生成 -> 编辑后通过');
     expect(wrapper.text()).toContain('前端评审动作');
     expect(wrapper.text()).toContain('证据 2');
+    expect(JSON.parse(window.localStorage.getItem('chtest.latestApprovedTestCase') ?? '{}')).toEqual({
+      projectId: '00000000-0000-0000-0000-000000000101',
+      testCaseId: '00000000-0000-0000-0000-000000000901',
+      sourceCandidateId: '00000000-0000-0000-0000-000000000801',
+      reviewStatus: 'approved_after_edit',
+    });
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/case-review/items/00000000-0000-0000-0000-000000000801/approve',
       expect.objectContaining({ method: 'POST' }),
@@ -171,5 +206,129 @@ describe('CaseGenerationReviewView', () => {
       '/api/review-history?project_id=00000000-0000-0000-0000-000000000101&entity_type=GeneratedCaseCandidate&entity_id=00000000-0000-0000-0000-000000000801&limit=20',
       expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),
     );
+  });
+
+  it('uses a generated requirement document as the case generation source', async () => {
+    let generationBody: unknown = null;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
+        return new Response(
+          JSON.stringify({
+            total: 1,
+            items: [
+              {
+                id: '00000000-0000-0000-0000-000000000d01',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                requirement_id: '00000000-0000-0000-0000-000000000421',
+                requirement_review_id: '00000000-0000-0000-0000-000000000621',
+                document_number: 'RD-CHECKOUT-SYSTEM-20260709-0001',
+                version: 'v1',
+                title: '优惠券结算规则',
+                status: 'confirmed',
+                artifact_id: '00000000-0000-0000-0000-000000000d01',
+                download_url: '/api/artifacts/00000000-0000-0000-0000-000000000d01/download',
+                created_at: '2026-07-09T10:00:00Z',
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/case-generation/tasks') && init?.method === 'POST') {
+        generationBody = JSON.parse(String(init.body));
+        return new Response(
+          JSON.stringify({
+            case_generation_task_id: '00000000-0000-0000-0000-000000000701',
+            ai_task_id: '00000000-0000-0000-0000-000000000702',
+            status: 'pending',
+            used_knowledge: false,
+            used_context_artifact_ids: [],
+          }),
+          { status: 202, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/case-generation/tasks/00000000-0000-0000-0000-000000000701/candidates')) {
+        return new Response(JSON.stringify({ total: 0, items: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/case-generation/tasks/00000000-0000-0000-0000-000000000701/metrics')) {
+        return new Response(
+          JSON.stringify({
+            generation_task_id: '00000000-0000-0000-0000-000000000701',
+            generated_count: 0,
+            approved_count: 0,
+            edited_count: 0,
+            rejected_count: 0,
+            optimization_count: 0,
+            reviewed_count: 0,
+            acceptance_rate: 0,
+            edit_rate: 0,
+            rejection_rate: 0,
+            optimization_rate: 0,
+            review_progress: 0,
+            field_complete_rate: 0,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: {
+        plugins: [createPinia(), ArcoVue],
+      },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('RD-CHECKOUT-SYSTEM-20260709-0001');
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000d01/download"]').exists()).toBe(true);
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(generationBody).toEqual(
+      expect.objectContaining({
+        project_id: '00000000-0000-0000-0000-000000000101',
+        requirement_id: '00000000-0000-0000-0000-000000000421',
+        requirement_review_id: '00000000-0000-0000-0000-000000000621',
+        requirement_document_artifact_id: '00000000-0000-0000-0000-000000000d01',
+      }),
+    );
+  });
+
+  it('does not submit case generation without a review or document source', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
+        return new Response(JSON.stringify({ items: [], total: 0 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: {
+        plugins: [createPinia(), ArcoVue],
+      },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('请先完成需求评审，或选择一份正式需求文档。');
+    expect(fetchMock).not.toHaveBeenCalledWith('/api/case-generation/tasks', expect.objectContaining({ method: 'POST' }));
   });
 });

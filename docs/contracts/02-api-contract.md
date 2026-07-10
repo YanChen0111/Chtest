@@ -23,8 +23,6 @@ Context rules:
   return `used_knowledge=true`; otherwise return `used_knowledge=false`.
 - `used_knowledge=true` must be supported by retrieval evidence, not by model
   text alone.
-- Generated case candidates that cite testing knowledge must expose normalized
-  `KnowledgeEvidence` references, not provider-specific payloads.
 
 Extension surface rules:
 
@@ -33,9 +31,11 @@ Extension surface rules:
 - KnowledgeAdapter APIs expose empty configuration state only in V1.
 - MCP-ready ToolDefinition APIs expose stable schema metadata only; ToolInvocation
   remains the executable boundary.
-- V1 APIs must not add vector indexing, embeddings, reranking, external
-  KnowledgeAdapter calls, MCP server/client runtime calls, RBAC, tenants, or
-  permissions.
+- TestKnowledgeCard APIs may expose deterministic local embedding index
+  rebuilds for same-project prompt-safe cards. APIs must not add external
+  vector database runtime dependencies, online embedding provider calls,
+  reranking services, external KnowledgeAdapter calls, MCP server/client
+  runtime calls, RBAC, tenants, or permissions.
 
 Deterministic retrieval rules:
 
@@ -45,23 +45,13 @@ Deterministic retrieval rules:
   to show and allowed for prompt use.
 - Retrieval evidence must include ContextArtifact ids, snippets, scores, matched
   terms, and query terms.
-- APIs must not expose vector search controls, embedding configuration,
-  external provider configuration, reranking controls, MCP runtime controls,
+- TestKnowledgeCard APIs may extract deterministic, prompt-safe testing evidence
+  from eligible ContextArtifacts and list those card rows for review surfaces.
+- APIs may expose deterministic local TestKnowledgeCard vector-index rebuild
+  controls. They must not expose external vector database configuration, online
+  embedding provider configuration, reranking controls, MCP runtime controls,
   RBAC, tenants, permissions, marketplace, cloud sync, or remote CI/CD provider
   controls.
-
-Test knowledge card rules:
-
-- Slice 30 may define TestKnowledgeCard and KnowledgeEvidence contract shapes
-  for future APIs and generated-case evidence.
-- TestKnowledgeCard represents structured testing knowledge, not generic chat
-  chunks. It must cite same-project source artifacts or reviewed project data.
-- KnowledgeEvidence is the normalized citation shape used by generated cases,
-  agent review, and fixtures.
-- TestKnowledgeCard and KnowledgeEvidence contract definitions must not enable
-  vector indexing, embeddings, reranking, external provider calls, graph
-  extraction, MCP runtime, RBAC, tenants, permissions, marketplace, cloud sync,
-  or remote CI/CD provider behavior.
 
 Newman execution rules:
 
@@ -415,27 +405,9 @@ Response 200:
       "created_at": "2026-06-30T10:00:00Z"
     }
   ],
-  "test_knowledge_cards": [
-    {
-      "id": "00000000-0000-0000-0000-000000000821",
-      "title": "Expired coupon boundary",
-      "knowledge_type": "boundary_condition",
-      "summary": "Expired coupons must be rejected before order submission.",
-      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
-      "source_section": "coupon validation",
-      "related_requirement_ids": ["00000000-0000-0000-0000-000000000401"],
-      "related_risk_ids": ["00000000-0000-0000-0000-000000000411"],
-      "test_type": "functional",
-      "risk_level": "high",
-      "confidence": 92,
-      "safe_to_show": true,
-      "allowed_for_prompt": true,
-      "status": "active"
-    }
-  ],
   "non_goals": [
-    "no_vector_index",
-    "no_embedding",
+    "no_external_vector_runtime",
+    "no_online_embedding_provider",
     "no_reranking",
     "no_external_rag_runtime"
   ]
@@ -452,11 +424,10 @@ Hard rules:
   available.
 - `knowledge_adapter.used_knowledge` must be `false` in V1. In V2 Slice 19 it
   may be `true` only when deterministic local retrieval evidence exists.
-- `test_knowledge_cards`, when exposed by a future task, are local structured
-  evidence records. Listing them must not trigger extraction, indexing,
-  retrieval, embeddings, reranking, external provider calls, or graph jobs.
-- The endpoint must not create vector indexes, chunk content, call embedding
-  models, semantically rank results, or call external providers.
+- The endpoint must not mutate knowledge, call online embedding models,
+  semantically rank results, or call external providers. TestKnowledgeCard
+  vector indexing is exposed through dedicated `/test-knowledge/index/*`
+  endpoints.
 
 ### 2.13 Get KnowledgeAdapter Config
 
@@ -509,27 +480,306 @@ Hard rules:
 - `provider_type` must be `none` or `stub` in V1.
 - `provider_type=deterministic_local` is allowed only for the V2 Slice 19 local
   retrieval stub.
-- KnowledgeAdapter safety treats `provider_state` as non-secret display or
-  health metadata only. Allowed values include `disabled`, `configured`, and
-  `unhealthy`; API handlers must not treat those values as permission to call
-  an external provider.
-- `status=disabled` or `provider_state=disabled` forces `used_knowledge=false`.
-  `provider_state=unhealthy` requires local/no-knowledge fallback evidence
-  unless the caller explicitly requires knowledge evidence and accepts failure.
-- Any future provider result must normalize into `KnowledgeEvidence` plus
-  persisted Artifact metadata before prompts, generated cases, or review
-  surfaces cite it. Provider-specific payloads must not leak into response
-  fields as business truth.
 - Secret-like fields, remote provider URLs, vector DB settings, embedding model
   settings, OAuth state, and MCP transport settings are rejected.
 - Updating KnowledgeAdapterConfig alone must not set `used_knowledge=true`.
   `used_knowledge=true` requires a later AI task to produce deterministic
   retrieval evidence.
-- Updating KnowledgeAdapterConfig must not create TestKnowledgeCard rows,
-  mutate artifacts, approve or reject GeneratedCaseCandidate rows, promote
-  TestCase rows, create ToolInvocation rows, generate Reports, update CI/CD
-  state, call provider SDKs, call MCP runtime, create vector indexes, create
-  embeddings, rerank, or run graph jobs.
+
+### 2.14.1 Extract TestKnowledgeCards
+
+`POST /api/test-knowledge/cards/extract`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "source_artifact_id": "00000000-0000-0000-0000-000000000371"
+}
+```
+
+Response 201:
+
+```json
+{
+  "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+  "created_count": 1,
+  "skipped_count": 0,
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000c01",
+      "project_id": "00000000-0000-0000-0000-000000000101",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "knowledge_type": "BoundaryCondition",
+      "title": "BoundaryCondition: expired coupon checkout",
+      "content": "Expired coupon validation blocks checkout.",
+      "confidence": 80,
+      "safe_to_show": true,
+      "allowed_for_prompt": true,
+      "status": "extracted"
+    }
+  ]
+}
+```
+
+Rules:
+
+- `source_artifact_id` must reference a same-project project-level
+  ContextArtifact that is safe to show and allowed for prompt use.
+- Extraction is deterministic local parsing only. It must not call models,
+  embeddings, vector databases, external providers, or MCP runtime services.
+- Duplicate source snippets are skipped by deterministic quote hash.
+- Source validation failure returns `TEST_KNOWLEDGE_SOURCE_NOT_ALLOWED`.
+
+### 2.14.1A Extract TestKnowledgeCards Batch
+
+`POST /api/test-knowledge/cards/extract-batch`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "source_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
+}
+```
+
+If `source_artifact_ids` is omitted, the endpoint extracts all same-project
+project-level ContextArtifacts that are safe to show and allowed for prompt use.
+
+Response 201:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "source_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+  "created_count": 1,
+  "skipped_count": 0,
+  "items": []
+}
+```
+
+### 2.14.2 List TestKnowledgeCards
+
+`GET /api/projects/{project_id}/test-knowledge/cards`
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000c01",
+      "project_id": "00000000-0000-0000-0000-000000000101",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "knowledge_type": "BoundaryCondition",
+      "title": "BoundaryCondition: expired coupon checkout",
+      "content": "Expired coupon validation blocks checkout.",
+      "confidence": 80,
+      "safe_to_show": true,
+      "allowed_for_prompt": true,
+      "status": "extracted"
+    }
+  ],
+  "total": 1
+}
+```
+
+### 2.14.2A Review TestKnowledgeCard
+
+`PATCH /api/test-knowledge/cards/{card_id}`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "status": "approved"
+}
+```
+
+Supported review statuses are `approved`, `stale`, `unsafe`, `duplicate`, and
+`archived`.
+
+Rules:
+
+- `approved` cards remain safe and prompt-eligible.
+- `stale`, `unsafe`, `duplicate`, and `archived` cards are removed from prompt
+  eligibility.
+- `unsafe` cards must also become unsafe to show.
+- CaseGeneration may use only approved cards as knowledge evidence.
+
+### 2.14.3 Retrieve TestKnowledgeCard Evidence
+
+`POST /api/test-knowledge/cards/retrieve`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "query_text": "expired coupon checkout",
+  "limit": 5,
+  "approved_only": false
+}
+```
+
+Response 200:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "query_text": "expired coupon checkout",
+  "approved_only": false,
+  "items": [
+    {
+      "evidence_id": "deterministic-evidence-id",
+      "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "knowledge_type": "BoundaryCondition",
+      "title": "BoundaryCondition: expired coupon checkout",
+      "snippet": "Expired coupon validation blocks checkout.",
+      "score": 3,
+      "matched_terms": ["expired", "coupon", "checkout"],
+      "retrieval_reason": "deterministic_hybrid_keyword_vector",
+      "semantic_score": 0.92,
+      "embedding_model": "deterministic-hashing-v1",
+      "safe_to_show": true,
+      "allowed_for_prompt": true,
+      "status": "approved"
+    }
+  ],
+  "total": 1
+}
+```
+
+Rules:
+
+- Default preview retrieval reads same-project TestKnowledgeCard rows with
+  `status in (approved, extracted)`, `safe_to_show=true`, and
+  `allowed_for_prompt=true`, with approved cards sorted first.
+- `approved_only=true` restricts retrieval to reviewed `approved` cards and is
+  required for CaseGeneration prompt evidence.
+- Scores and matched terms are deterministic keyword-overlap evidence for
+  review and prompt context preview. When a local embedding index exists, the
+  endpoint may add deterministic vector similarity to the score and return
+  `semantic_score`.
+- This endpoint must not call online models, external vector databases,
+  external providers, rerankers, or MCP runtime services.
+
+### 2.14.3A Rebuild TestKnowledgeCard Embedding Index
+
+`POST /api/test-knowledge/index/rebuild`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "knowledge_card_ids": ["00000000-0000-0000-0000-000000000c01"],
+  "embedding_model": "deterministic-hashing-v1",
+  "embedding_dim": 64
+}
+```
+
+If `knowledge_card_ids` is omitted, the endpoint rebuilds the full same-project
+index for prompt-safe `approved` and `extracted` TestKnowledgeCards.
+
+Response 201:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "indexed_count": 1,
+  "skipped_count": 0,
+  "embedding_model": "deterministic-hashing-v1",
+  "embedding_dim": 64,
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000e01",
+      "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
+      "embedding_provider": "deterministic_local",
+      "embedding_model": "deterministic-hashing-v1",
+      "embedding_dim": 64,
+      "content_hash": "sha256-like-hash",
+      "status": "indexed"
+    }
+  ]
+}
+```
+
+Rules:
+
+- Rebuild is deterministic and idempotent. Unchanged card/model rows must be
+  counted in `skipped_count`.
+- The current storage is portable JSON vector storage so SQLite tests and
+  PostgreSQL deployments share the same contract. A later pgvector migration may
+  optimize storage/query execution without changing this API.
+- The endpoint must not call online embedding providers, external vector
+  databases, rerankers, or MCP runtime services.
+
+### 2.14.3B Get TestKnowledgeCard Embedding Index
+
+`GET /api/projects/{project_id}/test-knowledge/index`
+
+Response 200:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "total": 1,
+  "indexed_count": 1,
+  "embedding_models": ["deterministic-hashing-v1"],
+  "items": []
+}
+```
+
+### 2.14.4 Get Test Knowledge Graph
+
+`GET /api/projects/{project_id}/test-knowledge/graph`
+
+Response 200:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "nodes": [
+    {"id": "knowledge_card:00000000-0000-0000-0000-000000000c01", "node_type": "knowledge_card"},
+    {"id": "embedding_index:00000000-0000-0000-0000-000000000e01", "node_type": "embedding_index"}
+  ],
+  "edges": [
+    {"source": "generated_case_candidate:...", "target": "knowledge_card:...", "edge_type": "uses_knowledge_card"},
+    {"source": "embedding_index:...", "target": "knowledge_card:...", "edge_type": "indexes_knowledge_card"}
+  ],
+  "coverage": {
+    "knowledge_card_count": 8,
+    "approved_card_count": 5,
+    "prompt_eligible_card_count": 6,
+    "covered_knowledge_card_count": 3,
+    "embedding_index_count": 6,
+    "embedding_indexed_card_count": 6,
+    "generated_candidate_count": 12,
+    "candidates_with_knowledge_evidence_count": 8,
+    "test_case_count": 4,
+    "knowledge_coverage_ratio": 0.6,
+    "vector_index_coverage_ratio": 1.0
+  }
+}
+```
+
+Rules:
+
+- The graph is a derived TestKnowledgeCard/TestCase coverage surface in this
+  slice; it does not create a separate graph database.
+- Nodes may include TestKnowledgeCard, TestKnowledgeEmbeddingIndex,
+  GeneratedCaseCandidate, and reviewed TestCase entities.
+- Edges must reflect persisted evidence references such as
+  `source_knowledge_evidence_json`.
+- This endpoint is the first GraphRAG coverage layer for testing quality. It
+  must remain deterministic and auditable: vector index coverage is derived
+  from persisted TestKnowledgeEmbeddingIndex rows, while case coverage is
+  derived from persisted candidate evidence references.
 
 ### 2.15 List MCP-ready ToolDefinitions
 
@@ -565,579 +815,9 @@ Response 200:
 Hard rules:
 
 - The API exposes ToolDefinition schema/readiness only.
-- ToolDefinition safety requires strict `input_schema`, `output_schema`,
-  `risk_level`, `approval_required`, `timeout_seconds`, and `artifact_policy`
-  metadata. Unknown free-form command strings, credentials, remote transport
-  handles, provider-specific payloads, and shell fragments must not be exposed
-  as valid inputs.
-- `artifact_policy` must describe bounded expected artifacts such as stdout,
-  stderr, structured runner output, runtime manifests, dependency snapshots,
-  and environment snapshots. It must not authorize artifact upload, mutation,
-  deletion, signed URLs, cloud storage, or broad artifact browsing.
 - Tool execution still requires ToolInvocation and the internal allowlist rules.
 - `is_mcp_ready=true` must not expose MCP transport controls or execute remote
   MCP calls.
-- `mcp_metadata.provider_state` may display `disabled`, `configured`, or
-  `unhealthy`, but it is not a runtime state and must not start MCP servers,
-  install plugins, call provider SDKs, or perform external network calls.
-- ToolDefinition listing must not create ToolInvocation rows, TestRun rows,
-  Reports, QualityGateDecision results, GeneratedCaseCandidate review actions,
-  TestCase promotions, artifacts, RAG retrieval, MCP runtime calls, remote CI
-  provider calls, RBAC, tenants, or permissions.
-
-### 2.16 MCP-Ready ToolDefinition And KnowledgeAdapter Safety Contract
-
-This section is contract-only. It defines API response semantics for future
-local tools, MCP-ready tools, and KnowledgeAdapter providers before any MCP
-runtime, provider SDK, external retrieval provider, or transport control exists.
-
-ToolDefinition safety response fields:
-
-- `input_schema` and `output_schema`: strict JSON schemas for bounded inputs
-  and normalized outputs.
-- `risk_level`: low, medium, high, or critical risk classification used by
-  ToolInvocation approval.
-- `approval_required`: whether a human gate is required before running.
-- `timeout_seconds`: upper execution bound copied into ToolInvocation.
-- `artifact_policy`: expected artifact types, size limits, redaction rules, and
-  persistence requirements.
-- `mcp_metadata.provider_state`: display-only readiness such as `disabled`,
-  `configured`, or `unhealthy`.
-
-ToolInvocation safety response behavior:
-
-- Invocation creation must snapshot ToolDefinition safety fields before
-  execution.
-- Medium/high-risk invocations with `approval_required=true` must remain in
-  `waiting_approval` until a human approval action records
-  `approval_status=approved`.
-- Rejected, failed, timed-out, or cancelled invocations must preserve bounded
-  error/stdout/stderr artifacts when available and must not rewrite previous
-  successful evidence.
-- ToolInvocation output is execution evidence only; it must not conclude
-  Reports, approve cases, promote TestCase rows, bypass AutomationDraft review,
-  or bypass QualityGateDecision evidence.
-
-KnowledgeAdapter safety response behavior:
-
-- `provider_state=disabled` or `status=disabled` forces `used_knowledge=false`.
-- `provider_state=unhealthy` records provider health/fallback evidence and
-  degrades to local/no-knowledge workflows unless the caller explicitly marks
-  knowledge evidence as mandatory.
-- Provider outputs must be normalized to Chtest `KnowledgeEvidence` and
-  Artifact metadata before downstream prompts or review surfaces cite them.
-- Raw provider payloads, provider schemas, credentials, OAuth state, tokens,
-  remote URLs, vector DB settings, embedding model settings, reranker settings,
-  graph runtime settings, and MCP transport settings must not appear in API
-  responses except as redacted metadata saying they were rejected.
-
-Forbidden side effects:
-
-- The safety contract must not start MCP runtime, MCP server/client transport,
-  plugin installation, provider SDK calls, external provider calls, vector
-  indexes, embeddings, reranking, graph jobs, artifact mutation, Report
-  generation, runner behavior changes, review bypass, generated-case
-  auto-approval, TestCase auto-promotion, remote CI provider behavior, RBAC,
-  tenants, or permissions.
-
-### 2.17 KnowledgeAdapter Provider Evaluation Plan Contract
-
-This section is contract-only. It defines future provider evaluation semantics
-for KnowledgeAdapter candidates before any Haystack integration, LlamaIndex
-integration, external retrieval provider, provider SDK, credential, external
-call, vector database, embedding, reranking, background indexing, runtime
-retrieval, provider-backed prompt context behavior, frontend page, migration,
-package upgrade, RBAC, tenants, or permissions exists.
-
-Allowed provider evaluation actions:
-
-- `evaluate_knowledge_adapter_provider_plan`: future scoped evaluation action
-  that packages provider candidate metadata, license review, reference intake,
-  KnowledgeEvidence normalization requirements, provider_state, disabled by
-  default policy, metrics, fallback behavior, ReviewHistory links, failure
-  code, and visible reason.
-- `evaluate_provider_candidate`, `record_provider_evaluation`,
-  `block_provider_candidate`, and `request_provider_evaluation_revision` are
-  evaluation labels only. They do not enable a provider, call a provider, run
-  retrieval, create embeddings, or set `used_knowledge=true`.
-
-KnowledgeAdapter provider evaluation plan payload shape:
-
-```json
-{
-  knowledge_adapter_provider_evaluation_plan_action: evaluate_knowledge_adapter_provider_plan,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  adapter_name: default,
-  candidate_provider_name: haystack,
-  provider_family: Haystack,
-  adapter_type: external_retrieval_provider_candidate,
-  provider_version: 2.x,
-  adapter_version: evaluation-plan-v1,
-  license_name: Apache-2.0,
-  license_url: https://example.invalid/haystack-license,
-  license_compatibility_notes: requires human review before integration,
-  reference_intake_urls: [https://example.invalid/haystack-docs],
-  documentation_snapshot_artifact_ids: [00000000-0000-0000-0000-000000000920],
-  supported_retrieval_modes: [keyword, hybrid],
-  supported_source_types: [context_artifact, test_knowledge_card],
-  expected_knowledge_evidence_fields: [
-    evidence_id,
-    source_artifact_id,
-    snippet,
-    score,
-    source_hash
-  ],
-  provider_state: disabled,
-  disabled_by_default: true,
-  network_policy: no_external_calls,
-  credential_policy: credentials_forbidden,
-  fallback_behavior: local_no_knowledge_fallback,
-  metrics_to_collect: [
-    evidence_normalization_completeness,
-    source_traceability_coverage,
-    redaction_safety_status
-  ],
-  safety_notes: provider output must normalize before citation,
-  source_hash_requirements: source hash required for every cited item,
-  review_history_ids: [00000000-0000-0000-0000-000000000895]
-}
-```
-
-KnowledgeAdapter provider evaluation plan response shape for a future scoped
-implementation:
-
-```json
-{
-  knowledge_adapter_provider_evaluation_plan_action: evaluate_knowledge_adapter_provider_plan,
-  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
-  provider_suitability_status: needs_revision,
-  provider_state_recommendation: disabled,
-  disabled_by_default_decision: true,
-  knowledge_evidence_normalization_notes: source trace fields required before future use,
-  citation_traceability_requirements: source artifact id and source hash required,
-  redaction_safety_requirements: safe bounded snippets only,
-  metric_set: [
-    evidence_normalization_completeness,
-    source_traceability_coverage,
-    fallback_coverage
-  ],
-  blocker_reasons: [license_review_required],
-  fallback_behavior: local_no_knowledge_fallback,
-  license_review_result: needs_license_review,
-  reference_intake_summary: documentation snapshot captured for review,
-  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
-  source_hashes: [sha256:provider-docs-snapshot],
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-KnowledgeAdapter Provider Evaluation Plan hard rules:
-
-- Provider evaluation input must reference candidate provider name, provider
-  family, adapter type, provider version, adapter version, license name,
-  license URL, license compatibility notes, reference intake, documentation
-  snapshot artifacts when available, supported modes, expected KnowledgeEvidence
-  normalization fields, provider_state, disabled by default policy, network
-  policy, credential policy, fallback behavior, metrics, source hash
-  requirements, and ReviewHistory when human review exists.
-- Provider evaluation output must be planning evidence only. It may record
-  provider suitability status, KnowledgeEvidence normalization notes, citation
-  traceability requirements, redaction and safety requirements, metric set,
-  blocker reasons, fallback behavior, provider_state recommendation, disabled
-  by default decision, license review result, reference intake summary,
-  ReviewHistory links, source hashes, failure code, and visible reason.
-- Provider suitability status values are `not_evaluated`, `suitable`,
-  `suitable_with_constraints`, `blocked`, `needs_revision`, and
-  `unsupported`. They do not create provider enablement, runtime connectivity,
-  retrieval evidence, prompt eligibility, or `used_knowledge=true`.
-- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
-  reference-missing, reference-mismatched, normalization-unsupported,
-  redaction-failed, provider-state-unsafe, fallback-missing, cross-project,
-  unbounded, credential-required, runtime-required, or provider-evaluation-
-  mismatched input must return a failure code and visible reason and must not
-  append a successful provider evaluation plan.
-- `evaluate_knowledge_adapter_provider_plan` must not install packages, call
-  providers, call provider SDKs, store credentials, fetch remote URLs, create
-  vector indexes, create embeddings, rerank, run background indexing, run graph
-  jobs, start MCP runtime, run runtime retrieval, create provider-backed prompt
-  context evidence, assemble prompts, run AITasks, render frontend pages,
-  generate reports, expose export/download endpoints, mutate Artifact rows
-  outside declared evaluation evidence, mutate KnowledgeEvidence, mutate
-  KnowledgeAdapterConfig outside declared evaluation evidence, mutate
-  TestKnowledgeCard rows, approve or reject GeneratedCaseCandidate rows,
-  promote TestCase rows, create ToolInvocation rows, enable a provider, add
-  RBAC, create tenants, change permissions, or update remote CI provider
-  behavior.
-
-### 2.18 KnowledgeAdapter Provider Evaluation Review Decision Contract
-
-This section is contract-only. It defines future local review decision
-semantics for KnowledgeAdapter provider evaluation plan artifacts before any
-provider enablement, Haystack integration, LlamaIndex integration, GraphRAG
-integration, provider SDK, credential, external call, vector database,
-embedding, reranking, background indexing, runtime retrieval,
-provider-backed prompt context behavior, frontend page, migration, package
-upgrade, RBAC, tenants, or permissions exists.
-
-Allowed provider evaluation review action:
-
-- `review_knowledge_adapter_provider_evaluation`: future scoped review action
-  that records a local review decision for a provider evaluation plan artifact
-  while preserving license review, reference intake, KnowledgeEvidence
-  normalization, provider_state, disabled by default, fallback behavior,
-  metrics, ReviewHistory links, failure code, and visible reason.
-
-KnowledgeAdapter provider evaluation review decision payload shape:
-
-```json
-{
-  knowledge_adapter_provider_evaluation_review_decision_action: review_knowledge_adapter_provider_evaluation,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
-  candidate_provider_name: haystack,
-  provider_family: Haystack,
-  adapter_type: external_retrieval_provider_candidate,
-  provider_version: 2.x,
-  adapter_version: evaluation-plan-v1,
-  provider_suitability_status: needs_revision,
-  provider_state_recommendation: disabled,
-  disabled_by_default_decision: true,
-  license_review_result: needs_license_review,
-  reference_intake_summary: documentation snapshot captured for review,
-  knowledge_evidence_normalization_notes: source trace fields required before future use,
-  fallback_behavior_summary: local_no_knowledge_fallback remains required,
-  metrics_plan: [
-    evidence_normalization_completeness,
-    source_traceability_coverage,
-    fallback_coverage
-  ],
-  blocker_reasons: [license_review_required],
-  unresolved_safety_questions: [license compatibility must be reviewed],
-  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
-  source_hashes: [sha256:provider-docs-snapshot],
-  review_history_ids: [00000000-0000-0000-0000-000000000895],
-  review_decision: needs_revision,
-  reviewer_label: local_reviewer,
-  reviewer_note: license review is required before future planning acceptance
-}
-```
-
-KnowledgeAdapter provider evaluation review decision response shape for a
-future scoped implementation:
-
-```json
-{
-  knowledge_adapter_provider_evaluation_review_decision_action: review_knowledge_adapter_provider_evaluation,
-  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
-  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
-  review_decision: needs_revision,
-  review_status: needs_revision,
-  accepted_constraints: [],
-  requested_revision_fields: [license_review_result],
-  blocked_reasons: [],
-  unsupported_reasons: [],
-  unresolved_safety_questions: [license compatibility must be reviewed],
-  provider_state_recommendation: disabled,
-  disabled_by_default_decision: true,
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
-  source_hashes: [sha256:provider-docs-snapshot],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-KnowledgeAdapter Provider Evaluation Review Decision hard rules:
-
-- Review input must reference a same-project provider evaluation plan artifact,
-  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
-  metadata, provider suitability status, license review result, reference
-  intake, KnowledgeEvidence normalization notes, provider_state recommendation,
-  disabled by default decision, fallback behavior, metrics, source hashes, and
-  ReviewHistory when human review exists.
-- Review output must be planning/audit evidence only. It may record review
-  decision, review status, reviewer label, reviewer note, accepted
-  constraints, requested revision fields, blocked reasons, unsupported reasons,
-  unresolved safety questions, ReviewHistory links, source hashes, failure
-  code, and visible reason.
-- Review decision values are `accepted_for_planning`,
-  `accepted_with_constraints`, `blocked`, `needs_revision`, and
-  `unsupported`. Review status values may include `not_reviewed`,
-  `accepted_for_planning`, `accepted_with_constraints`, `blocked`,
-  `needs_revision`, `unsupported`, and `failed_validation`.
-- Accepted decisions are accepted for future planning only. They do not create
-  provider enablement, runtime connectivity, retrieval evidence, prompt
-  eligibility, or `used_knowledge=true`.
-- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
-  reference-missing, reference-mismatched, normalization-unsupported,
-  provider-state-unsafe, fallback-missing, review-decision-invalid,
-  evaluation-plan-mismatched, cross-project, unbounded, credential-required,
-  or runtime-required input must return a failure code and visible reason and
-  must not append a successful review decision.
-- `review_knowledge_adapter_provider_evaluation` must not install packages,
-  call providers, call provider SDKs, store credentials, fetch remote URLs,
-  create vector indexes, create embeddings, rerank, run background indexing,
-  run graph jobs, start MCP runtime, run runtime retrieval, create
-  provider-backed prompt context evidence, assemble prompts, run AITasks,
-  render frontend pages, generate reports, expose export/download endpoints,
-  mutate Artifact rows outside declared review decision evidence, mutate the
-  reviewed provider evaluation plan artifact, mutate KnowledgeEvidence, mutate
-  KnowledgeAdapterConfig outside declared review decision evidence, mutate
-  TestKnowledgeCard rows, approve or reject GeneratedCaseCandidate rows,
-  promote TestCase rows, create ToolInvocation rows, enable a provider, add
-  RBAC, create tenants, change permissions, or update remote CI provider
-  behavior.
-
-Allowed provider evaluation review summary export action:
-
-- `export_knowledge_adapter_provider_evaluation_review_summary`: future scoped
-  summary action that packages a local provider evaluation review decision
-  artifact into audit evidence for future planning while preserving review
-  decision/status labels, accepted constraints, blocked reasons, unsupported
-  reasons, requested revision fields, unresolved safety questions, license
-  review, reference intake, KnowledgeEvidence normalization, provider_state,
-  fallback behavior, metrics, source hashes, ReviewHistory links, failure
-  code, and visible reason.
-
-KnowledgeAdapter provider evaluation review summary export payload shape:
-
-```json
-{
-  knowledge_adapter_provider_evaluation_review_summary_export_action: export_knowledge_adapter_provider_evaluation_review_summary,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
-  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
-  candidate_provider_name: haystack,
-  provider_family: Haystack,
-  adapter_type: external_retrieval_provider_candidate,
-  provider_version: 2.x,
-  adapter_version: evaluation-plan-v1,
-  provider_suitability_status: needs_revision,
-  review_decision: needs_revision,
-  review_status: needs_revision,
-  reviewer_notes: [license review is required before future planning acceptance],
-  accepted_constraints: [],
-  requested_revision_fields: [license_review_result],
-  blocked_reasons: [],
-  unsupported_reasons: [],
-  unresolved_safety_questions: [license compatibility must be reviewed],
-  license_review_result: needs_license_review,
-  reference_intake_summary: documentation snapshot captured for review,
-  knowledge_evidence_normalization_notes: source trace fields required before future use,
-  provider_state_recommendation: disabled,
-  disabled_by_default_decision: true,
-  fallback_behavior_summary: local_no_knowledge_fallback remains required,
-  metrics_plan: [
-    evidence_normalization_completeness,
-    source_traceability_coverage,
-    fallback_coverage
-  ],
-  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
-  source_hashes: [sha256:provider-docs-snapshot],
-  review_history_links: [00000000-0000-0000-0000-000000000895]
-}
-```
-
-KnowledgeAdapter provider evaluation review summary export response shape for
-a future scoped implementation:
-
-```json
-{
-  knowledge_adapter_provider_evaluation_review_summary_export_action: export_knowledge_adapter_provider_evaluation_review_summary,
-  knowledge_adapter_provider_evaluation_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000923,
-  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
-  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
-  review_summary_status: exported_for_planning,
-  exported_decision_groups: [needs_revision],
-  provider_suitability_summary: needs_revision,
-  license_reference_summary: license review required; reference snapshot preserved,
-  knowledge_evidence_normalization_summary: source trace fields required before future use,
-  provider_state_summary: disabled,
-  disabled_by_default_summary: true,
-  fallback_summary: local_no_knowledge_fallback remains required,
-  metrics_summary: evidence normalization and source traceability remain incomplete,
-  source_traceability_summary: source hashes and source manifest ids preserved,
-  review_history_summary: local review decision link preserved,
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-KnowledgeAdapter Provider Evaluation Review Summary Export hard rules:
-
-- Summary export input must reference a same-project provider evaluation
-  review decision artifact,
-  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`, a
-  same-project provider evaluation plan artifact,
-  `knowledge_adapter_provider_evaluation_plan_artifact_id`, candidate provider
-  metadata, provider suitability status, review decision/status labels,
-  reviewer notes, accepted constraints, blocked reasons, unsupported reasons,
-  requested revision fields, unresolved safety questions, license review
-  result, reference intake, KnowledgeEvidence normalization notes,
-  provider_state recommendation, fallback behavior, metrics, source hashes,
-  source manifest ids, and ReviewHistory links when available.
-- Summary export output must be planning/audit evidence only. It may record
-  export artifact id, review summary status, exported decision groups,
-  provider suitability summary, license/reference summary, KnowledgeEvidence
-  normalization summary, provider_state summary, disabled by default summary,
-  fallback summary, metrics summary, source traceability summary,
-  ReviewHistory summary, failure code, and visible reason.
-- Summary export is not a report generator, not a frontend workflow, and not
-  an export/download endpoint contract.
-- Exported decision groups may include `accepted_for_planning`,
-  `accepted_with_constraints`, `blocked`, `needs_revision`, and `unsupported`.
-  Review summary status values may include `not_exported`,
-  `exported_for_planning`, and `failed_validation`.
-- Accepted review summaries are accepted for future planning only. They do not
-  create provider enablement, runtime connectivity, retrieval evidence, prompt
-  eligibility, report generation behavior, export/download endpoints, or
-  `used_knowledge=true`.
-- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
-  reference-missing, reference-mismatched, normalization-unsupported,
-  provider-state-unsafe, fallback-missing, review-decision-missing,
-  review-decision-invalid, summary-export-invalid,
-  evaluation-plan-mismatched, review-decision-mismatched, cross-project,
-  unbounded, credential-required, or runtime-required input must return a
-  failure code and visible reason and must not append a successful summary
-  export.
-- `export_knowledge_adapter_provider_evaluation_review_summary` must not
-  install packages, call providers, call provider SDKs, store credentials,
-  fetch remote URLs, create vector indexes, create embeddings, rerank, run
-  background indexing, run graph jobs, start MCP runtime, run runtime
-  retrieval, create provider-backed prompt context evidence, assemble prompts,
-  run AITasks, render frontend pages, generate reports, expose
-  export/download endpoints, upload artifacts, mutate Artifact rows outside
-  declared summary export evidence, mutate the reviewed provider evaluation
-  review decision artifact, mutate the reviewed provider evaluation plan
-  artifact, mutate KnowledgeEvidence, mutate KnowledgeAdapterConfig outside
-  declared summary export evidence, mutate TestKnowledgeCard rows, approve or
-  reject GeneratedCaseCandidate rows, promote TestCase rows, create
-  ToolInvocation rows, enable a provider, add RBAC, create tenants, change
-  permissions, or update remote CI provider behavior.
-
-Allowed provider evaluation review audit handoff action:
-
-- `build_knowledge_adapter_provider_evaluation_review_audit_handoff`: future
-  scoped handoff action that packages provider evaluation review summary
-  export evidence into an audit evidence-chain bundle for future planning
-  while preserving summary export artifact linkage, review decision artifact
-  linkage, provider evaluation plan artifact linkage, included artifact ids,
-  excluded artifact reasons, evidence chain status, unresolved blocker
-  summary, unresolved safety question summary, unresolved follow-up flags,
-  source hashes, ReviewHistory links, failure code, and visible reason.
-
-KnowledgeAdapter provider evaluation review audit handoff payload shape:
-
-```json
-{
-  knowledge_adapter_provider_evaluation_review_audit_handoff_action: build_knowledge_adapter_provider_evaluation_review_audit_handoff,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  knowledge_adapter_provider_evaluation_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000923,
-  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
-  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
-  candidate_provider_name: haystack,
-  provider_family: Haystack,
-  adapter_type: external_retrieval_provider_candidate,
-  provider_version: 2.x,
-  adapter_version: evaluation-plan-v1,
-  review_summary_status: exported_for_planning,
-  review_decision: needs_revision,
-  review_status: needs_revision,
-  exported_decision_groups: [needs_revision],
-  accepted_constraints: [],
-  requested_revision_fields: [license_review_result],
-  blocked_reasons: [],
-  unsupported_reasons: [],
-  unresolved_safety_questions: [license compatibility must be reviewed],
-  unresolved_follow_up_flags: [license_review_required],
-  provider_suitability_summary: needs_revision,
-  license_reference_summary: license review required; reference snapshot preserved,
-  knowledge_evidence_normalization_summary: source trace fields required before future use,
-  provider_state_summary: disabled,
-  disabled_by_default_summary: true,
-  fallback_summary: local_no_knowledge_fallback remains required,
-  metrics_summary: evidence normalization and source traceability remain incomplete,
-  source_manifest_ids: [knowledge-adapter-provider-eval-source-manifest-001],
-  source_hashes: [sha256:provider-docs-snapshot],
-  review_history_links: [00000000-0000-0000-0000-000000000895]
-}
-```
-
-KnowledgeAdapter provider evaluation review audit handoff response shape for a
-future scoped implementation:
-
-```json
-{
-  knowledge_adapter_provider_evaluation_review_audit_handoff_action: build_knowledge_adapter_provider_evaluation_review_audit_handoff,
-  knowledge_adapter_provider_evaluation_review_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000924,
-  knowledge_adapter_provider_evaluation_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000923,
-  knowledge_adapter_provider_evaluation_review_decision_artifact_id: 00000000-0000-0000-0000-000000000922,
-  knowledge_adapter_provider_evaluation_plan_artifact_id: 00000000-0000-0000-0000-000000000921,
-  handoff_summary: provider evaluation review requires license revision before integration planning,
-  evidence_chain_status: incomplete,
-  included_artifact_ids: [
-    00000000-0000-0000-0000-000000000921,
-    00000000-0000-0000-0000-000000000922,
-    00000000-0000-0000-0000-000000000923
-  ],
-  excluded_artifact_reasons: [],
-  provider_review_decision_group_summary: needs_revision,
-  unresolved_blocker_summary: none,
-  unresolved_safety_question_summary: license compatibility must be reviewed,
-  disabled_by_default_summary: true,
-  source_traceability_summary: source hashes and source manifest ids preserved,
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-KnowledgeAdapter Provider Evaluation Review Audit Handoff hard rules:
-
-- Audit handoff input must reference a same-project provider evaluation review
-  summary export artifact,
-  `knowledge_adapter_provider_evaluation_review_summary_export_artifact_id`, a
-  same-project provider evaluation review decision artifact,
-  `knowledge_adapter_provider_evaluation_review_decision_artifact_id`, and a
-  same-project provider evaluation plan artifact,
-  `knowledge_adapter_provider_evaluation_plan_artifact_id`.
-- Audit handoff output must be evidence-chain packaging only. It may record
-  audit handoff artifact id, handoff summary, evidence chain status, included
-  artifact ids, excluded artifact reasons, provider review decision group
-  summary, unresolved blocker summary, unresolved safety question summary,
-  unresolved follow-up flags, disabled by default summary, source
-  traceability summary, ReviewHistory links, failure code, and visible reason.
-- Evidence chain status values may include `complete`, `incomplete`,
-  `blocked`, and `failed_validation`. They must not mutate
-  `KnowledgeAdapterConfig.status`, create runtime connectivity, enable
-  providers, create retrieval evidence, generate reports, expose
-  export/download endpoints, or set `used_knowledge=true`.
-- Missing, stale, unsafe, unlicensed, license-unknown, version-unknown,
-  reference-missing, reference-mismatched, normalization-unsupported,
-  provider-state-unsafe, fallback-missing, summary-export-missing,
-  summary-export-invalid, review-decision-missing, review-decision-invalid,
-  evaluation-plan-missing, evaluation-plan-mismatched,
-  review-decision-mismatched, cross-project, unbounded, credential-required,
-  runtime-required, or provider-enable-required input must return a failure
-  code and visible reason and must not append a successful audit handoff.
-- `build_knowledge_adapter_provider_evaluation_review_audit_handoff` must not
-  install packages, call providers, call provider SDKs, store credentials,
-  fetch remote URLs, create vector indexes, create embeddings, rerank, run
-  background indexing, run graph jobs, start MCP runtime, run runtime
-  retrieval, create provider-backed prompt context evidence, assemble prompts,
-  run AITasks, render frontend pages, generate reports, expose
-  export/download endpoints, upload artifacts, mutate Artifact rows outside
-  declared audit handoff evidence, mutate the provider evaluation review
-  summary export artifact, mutate the reviewed provider evaluation review
-  decision artifact, mutate the reviewed provider evaluation plan artifact,
-  mutate provider metadata, mutate KnowledgeEvidence, mutate
-  KnowledgeAdapterConfig outside declared audit handoff evidence, mutate
-  historical evidence, mutate TestKnowledgeCard rows, approve or reject
-  GeneratedCaseCandidate rows, promote TestCase rows, create ToolInvocation
-  rows, enable a provider, add RBAC, create tenants, change permissions, or
-  update remote CI provider behavior.
 
 ## 3. Requirement To Case APIs
 
@@ -1173,7 +853,14 @@ Request:
   "model_provider": "mock",
   "model_name": "mock-requirement-review",
   "use_knowledge": false,
-  "context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
+  "context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
+  "supplement_text": "Coupons can stack with platform campaigns but not points.",
+  "clarification_answers": [
+    {
+      "question": "Can coupons be combined with campaign discounts?",
+      "answer": "Yes, coupons can stack with platform campaigns."
+    }
+  ]
 }
 ```
 
@@ -1191,6 +878,11 @@ Response 202:
 ```
 
 `use_knowledge=false` disables only external RAG/KnowledgeAdapter. The listed `context_artifact_ids` are still included in the prompt input and recorded on AITask.
+
+`supplement_text` and `clarification_answers` are optional. When present they
+must be recorded in AITask input as `clarification_context` and used as the
+next review pass input. They must not mutate the original Requirement content
+silently.
 
 ### 3.3 Get Requirement Review
 
@@ -1225,6 +917,73 @@ Response 200:
 }
 ```
 
+### 3.3.1 Create Requirement Document
+
+`POST /api/requirements/{id}/documents`
+
+Request:
+
+```json
+{
+  "requirement_review_id": "00000000-0000-0000-0000-000000000601",
+  "version": "v1",
+  "status": "confirmed"
+}
+```
+
+Response 201:
+
+```json
+{
+  "id": "00000000-0000-0000-0000-000000000d01",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "requirement_id": "00000000-0000-0000-0000-000000000401",
+  "requirement_review_id": "00000000-0000-0000-0000-000000000601",
+  "document_number": "RD-CHECKOUT-SYSTEM-20260709-0001",
+  "version": "v1",
+  "title": "Coupon checkout rules",
+  "status": "confirmed",
+  "artifact_id": "00000000-0000-0000-0000-000000000d01",
+  "download_url": "/api/artifacts/00000000-0000-0000-0000-000000000d01/download",
+  "created_at": "2026-07-09T10:00:00Z"
+}
+```
+
+Rules:
+
+- Requirement documents are persisted as local `Artifact` rows with
+  `artifact_type=requirement_md`.
+- The API returns only metadata and the local artifact download URL.
+- Document generation must not create a separate RAG/vector index.
+- Document generation must not silently promote generated cases or automation.
+
+### 3.3.2 List Requirement Documents
+
+`GET /api/projects/{project_id}/requirement-documents`
+
+Response 200:
+
+```json
+{
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000d01",
+      "project_id": "00000000-0000-0000-0000-000000000101",
+      "requirement_id": "00000000-0000-0000-0000-000000000401",
+      "requirement_review_id": "00000000-0000-0000-0000-000000000601",
+      "document_number": "RD-CHECKOUT-SYSTEM-20260709-0001",
+      "version": "v1",
+      "title": "Coupon checkout rules",
+      "status": "confirmed",
+      "artifact_id": "00000000-0000-0000-0000-000000000d01",
+      "download_url": "/api/artifacts/00000000-0000-0000-0000-000000000d01/download",
+      "created_at": "2026-07-09T10:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
 ### 3.4 Create Case Generation Task
 
 `POST /api/case-generation/tasks`
@@ -1236,6 +995,7 @@ Request:
   "project_id": "00000000-0000-0000-0000-000000000101",
   "requirement_id": "00000000-0000-0000-0000-000000000401",
   "requirement_review_id": "00000000-0000-0000-0000-000000000601",
+  "requirement_document_artifact_id": "00000000-0000-0000-0000-000000000d01",
   "target_test_types": ["functional", "ui"],
   "prompt_version": "case_generation:v1",
   "skill_version": "test-case-generation-skill:v1",
@@ -1245,6 +1005,11 @@ Request:
   "context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
 }
 ```
+
+`requirement_document_artifact_id` is optional. When present it must reference a
+same-project `requirement_md` Artifact generated for the same Requirement, and
+the CaseGenerationAgent input must include a `requirement_document` object with
+artifact id, document number, version, title, content, and sha256.
 
 Response 202:
 
@@ -1257,94 +1022,6 @@ Response 202:
   "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
 }
 ```
-
-### 3.4.1 Requirement To Reviewed Case Agent Workflow Contract
-
-This is a contract-only workflow decomposition for requirement-to-reviewed-case
-generation. It is exposed through existing requirement review, case generation,
-candidate listing, candidate review, and AI task APIs. It must not add a new API
-endpoint, add a new orchestrator runtime, add runtime code, automatically
-promote a generated case into a TestCase, or enable RAG, MCP, external provider,
-vector, embedding, reranking, or graph runtime behavior.
-
-Workflow trace envelope:
-
-```json
-{
-  "workflow_name": "requirement_to_reviewed_case",
-  "workflow_version": "v1",
-  "workflow_run_id": "00000000-0000-0000-0000-000000000701",
-  "project_id": "00000000-0000-0000-0000-000000000101",
-  "requirement_id": "00000000-0000-0000-0000-000000000401",
-  "case_generation_task_id": "00000000-0000-0000-0000-000000000701",
-  "candidate_id": null,
-  "agent_name": "RequirementUnderstandingAgent",
-  "agent_step": "requirement_understanding",
-  "step_status": "succeeded",
-  "input_artifact_ids": ["00000000-0000-0000-0000-000000000372"],
-  "output_artifact_ids": ["00000000-0000-0000-0000-000000000711"],
-  "context_manifest_artifact_id": "00000000-0000-0000-0000-000000000372",
-  "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"],
-  "used_knowledge": false,
-  "prompt_version": "requirement_understanding:v1",
-  "skill_version": "requirement-review-skill:v1",
-  "model_provider": "mock",
-  "model_name": "mock-requirement-workflow",
-  "schema_version": "requirement_to_case_agent_trace:v1",
-  "schema_validation_status": "valid",
-  "human_gate": "not_required_for_step",
-  "write_permission": "ai_task_artifacts_only",
-  "fallback_applied": false,
-  "failure_code": null
-}
-```
-
-Required trace fields for every workflow step:
-
-- `workflow_name`, `workflow_version`, `workflow_run_id`, `project_id`, and
-  `requirement_id`.
-- `agent_name`, `agent_step`, `step_status`, `prompt_version`,
-  `skill_version`, `model_provider`, `model_name`, and `schema_version`.
-- `input_artifact_ids`, `output_artifact_ids`,
-  `context_manifest_artifact_id`, `used_context_artifact_ids`, and
-  `used_knowledge`.
-- `human_gate`, `write_permission`, `schema_validation_status`,
-  `fallback_applied`, and `failure_code`.
-- `case_generation_task_id` when the step belongs to a case generation task.
-- `candidate_id` when the step evaluates or annotates a specific
-  GeneratedCaseCandidate.
-
-Agent step contracts:
-
-| Agent | Inputs | Outputs/artifacts | write permission | human gate | failure behavior and fallback | Trace fields |
-|---|---|---|---|---|---|---|
-| RequirementUnderstandingAgent | Requirement read model, project/module metadata, prompt/skill versions, context manifest, allowed context artifact ids | `requirement_understanding` parsed artifact with normalized summary, acceptance criteria, constraints, assumptions, ambiguities, and source references; raw LLM output artifact when applicable | May write AITask artifacts and the parsed payload consumed by RequirementReview. Must not edit Requirement content, module, project settings, TestCase, or GeneratedCaseCandidate rows | No approval gate inside the agent. Human clarification happens by normal requirement editing or review outside this step | On schema failure, mark the AITask step failed, persist raw/error artifacts, and do not continue to case generation. On incomplete input, fallback is an artifact with `insufficient_requirement_detail` findings and no automatic promotion | `agent_step=requirement_understanding`, `requirement_id`, `context_manifest_artifact_id`, `ambiguity_count`, `acceptance_criteria_count`, `failure_code` |
-| RiskAnalysisAgent | RequirementUnderstandingAgent output, RequirementReview scores/issues when available, same-project context artifacts, target test types | `risk_analysis` artifact with risk items, severity, likelihood, affected flows, suggested coverage, and traceable source refs | May write AITask artifacts and derived risk fields in RequirementReview or case generation output. Must not create TestCase records or approve candidates | No approval gate. Risk findings are shown to the later reviewer | If risk scoring fails, fallback to `risk_level=unknown` with an error finding; valid understanding output may still proceed, but high-risk unknowns must be visible to review | `agent_step=risk_analysis`, `risk_item_count`, `max_risk_level`, `source_requirement_understanding_artifact_id`, `fallback_applied` |
-| CoverageAnalysisAgent | RequirementUnderstandingAgent output, RiskAnalysisAgent output, existing approved TestCase summaries when available, generated candidate summaries when retrying | `coverage_analysis` artifact with requirement-to-risk-to-case matrix, uncovered criteria, duplicate-sensitive areas, and gap notes | May write AITask artifacts and candidate evidence fields such as `covered_risk_ids` and `coverage_gap_notes` during validated case generation persistence. Must not mutate approved TestCase rows | No approval gate. Coverage gaps are review evidence | If coverage cannot be computed, fallback to `coverage_status=unknown`; candidate generation may continue only with visible gap findings and without auto approval | `agent_step=coverage_analysis`, `covered_requirement_ref_count`, `gap_count`, `matrix_artifact_id`, `failure_code` |
-| TestDesignAgent | Understanding, risk, and coverage artifacts; target test types; project default language/test type; normalized KnowledgeEvidence when present | `test_design` artifact with scenario outlines, positive/negative/boundary partitions, data needs, priority rationale, and traceability refs | May write AITask artifacts and transient case generation design payloads. Must not create GeneratedCaseCandidate or TestCase rows directly | No approval gate | If design output is invalid, fail the step and do not call CaseGenerationAgent. If only some scenario outlines are invalid, fallback may drop invalid outlines and record `partial_design_used=true` | `agent_step=test_design`, `scenario_outline_count`, `target_test_types`, `partial_design_used`, `schema_validation_status` |
-| CaseGenerationAgent | TestDesignAgent output, requirement read model, risk and coverage artifacts, target test types, prompt/skill versions, context manifest | `case_generation_output` artifact plus GeneratedCaseCandidate rows with `status=generated`, traceability fields, review findings, knowledge evidence refs, and raw/parsed output artifacts | May create GeneratedCaseCandidate rows and AITask artifacts through the existing case generation task. Must not create TestCase records, set candidate status to approved, execute automation, or generate reports | Human gate is required after generation; every candidate remains review-gated | Invalid candidates are rejected from persistence with validation findings. If no valid candidate remains, the case generation task fails or returns an empty candidate list with error artifacts. No fallback may create a TestCase | `agent_step=case_generation`, `case_generation_task_id`, `candidate_ids`, `valid_candidate_count`, `invalid_candidate_count`, `failure_code` |
-| CaseReviewAgent | GeneratedCaseCandidate rows, case generation artifacts, risk/coverage/design artifacts, normalized KnowledgeEvidence, reviewer-visible candidate fields | `case_review` artifact with quality score, findings, optimization suggestions, missing evidence, and recommended reviewer action | May write AITask artifacts and candidate review evidence fields such as `quality_score`, `review_findings`, and optimization notes. Must not approve, reject, or promote a candidate | Human gate is required. Only explicit candidate review actions may approve, approve after edit, reject, or request optimization | If review analysis fails, leave candidate status unchanged and surface `case_review_unavailable`. Human review can still proceed from persisted candidate content, but without auto approval | `agent_step=case_review`, `candidate_id`, `quality_score`, `finding_count`, `recommended_action`, `human_gate=required` |
-| DedupAgent | GeneratedCaseCandidate rows, candidate review artifacts, approved TestCase summaries, requirement refs, normalized steps/expected results | `dedup_analysis` artifact with duplicate clusters, similarity reasons, keep/drop recommendations, and affected candidate ids | May write AITask artifacts and candidate review findings. Must not delete, merge, archive, reject, or approve candidates and must not mutate TestCase rows | Human gate is required for any duplicate resolution that changes candidate status | If dedup fails, fallback to `dedup_status=unknown`; candidates remain reviewable and must not be auto-promoted because dedup evidence is missing | `agent_step=dedup`, `candidate_id`, `duplicate_cluster_id`, `duplicate_candidate_ids`, `dedup_status`, `fallback_applied` |
-| AutomationReadinessAgent | Candidate content, TestDesignAgent output, project settings, ToolDefinition metadata, repository/language hints, existing TestCommand metadata when available | `automation_readiness` artifact and candidate field such as `automation_readiness` with blockers, suggested framework, required test data, and manual-only reasons | May write AITask artifacts and candidate readiness/review evidence. Must not create AutomationDraft, ToolInvocation, TestRun, TestCommand, repository changes, or code files | Human gate remains required for candidate approval. Automation draft creation is a later explicit workflow | If readiness analysis fails, fallback to `automation_readiness=unknown` with blocker findings. This must not block manual review or start automation | `agent_step=automation_readiness`, `candidate_id`, `readiness`, `blocker_count`, `suggested_framework`, `failure_code` |
-
-Workflow boundary rules:
-
-- This section defines artifact and state contracts only. It does not create
-  `POST /api/agent-workflows`, `POST /api/agents/run`, or any other new API
-  endpoint.
-- The workflow reuses AITask evidence and existing case generation/review
-  surfaces. It does not add a separate orchestrator runtime, queue, scheduler,
-  graph executor, or provider runtime.
-- GeneratedCaseCandidate may become TestCase only through the existing human
-  review action in `POST /api/case-review/items/{id}/approve`.
-- Agent recommendations, quality scores, dedup clusters, coverage matrices, and
-  automation readiness values are review evidence only; they must not
-  automatically promote, approve, reject, archive, merge, execute, or report.
-- `used_knowledge=true` remains invalid unless existing deterministic local
-  retrieval evidence is present. This workflow must not enable RAG runtime, MCP
-  runtime, external provider calls, vector indexes, embeddings, reranking, graph
-  extraction, RBAC, tenants, permissions, marketplace, cloud sync, or remote
-  CI/CD provider behavior.
 
 ### 3.5 List Candidate Cases
 
@@ -1363,2597 +1040,23 @@ Response 200:
       "steps": ["Login", "Open checkout", "Select expired coupon", "Submit order"],
       "expected_results": ["Submission is blocked", "Expired coupon message is shown"],
       "requirement_refs": ["Expired coupons cannot be used"],
-      "source_knowledge_evidence_ids": ["ke-expired-coupon-boundary"],
-      "knowledge_evidence_refs": [
+      "source_knowledge_evidence": [
         {
-          "evidence_id": "ke-expired-coupon-boundary",
-          "knowledge_card_id": "00000000-0000-0000-0000-000000000821",
-          "source_artifact_id": "00000000-0000-0000-0000-000000000371",
-          "snippet": "Expired coupons cannot be applied during checkout.",
-          "score": 0.92,
-          "retrieval_reason": "Supports the expired-coupon rejection path"
+          "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
+          "knowledge_type": "BoundaryCondition",
+          "title": "BoundaryCondition: expired coupon checkout",
+          "snippet": "Expired coupon validation blocks checkout.",
+          "score": 3,
+          "matched_terms": ["expired", "coupon", "checkout"]
         }
       ],
-      "covered_risk_ids": ["00000000-0000-0000-0000-000000000411"],
       "ai_reason": "Covers coupon expiration boundary",
-      "generation_reason": "Boundary case for expired coupon validation",
-      "automation_readiness": "suitable_for_playwright",
-      "quality_score": 84,
-      "review_findings": [
-        {
-          "type": "evidence_complete",
-          "severity": "info",
-          "message": "Candidate cites the coupon expiration boundary card"
-        }
-      ],
-      "coverage_gap_notes": "Does not cover coupon and points conflict",
       "status": "generated"
     }
   ],
   "total": 1
 }
 ```
-
-Slice 30 candidate evidence rules:
-
-- `source_knowledge_evidence_ids` must reference normalized KnowledgeEvidence
-  ids present in the candidate, the case generation artifact, or a related
-  AITask output artifact.
-- `knowledge_evidence_refs` is display metadata. It must cite same-project
-  TestKnowledgeCard or Artifact evidence and must not contain unbounded raw
-  provider payloads.
-- `quality_score` and `review_findings` are review aids only. They must not
-  create TestCase records, approve candidates, execute automation, or generate
-  reports.
-- Missing or weak KnowledgeEvidence should appear as review findings or
-  coverage gap notes instead of being hidden.
-- Candidate listing must not run retrieval, indexing, embeddings, reranking,
-  external provider calls, graph jobs, MCP runtime calls, artifact mutation, or
-  remote CI provider behavior.
-
-Slice 31 candidate persistence/display rules:
-
-- Case generation persistence must copy normalized knowledge evidence fields
-  from validated AI output when they are present.
-- `GET /api/case-generation/tasks/{id}/candidates` must return the fields with
-  safe defaults when absent:
-  `source_knowledge_evidence_ids=[]`, `knowledge_evidence_refs=[]`,
-  `covered_risk_ids=[]`, `generation_reason=null`,
-  `automation_readiness="unknown"`, `quality_score=null`,
-  `review_findings=[]`, and `coverage_gap_notes=null`.
-- List responses must not imply a TestKnowledgeCard table or knowledge-card
-  CRUD API exists. References may be historical ids, same-project Artifact ids,
-  or normalized evidence ids from the owning case generation output.
-- Returning persisted evidence fields must not create TestCase records, approve
-  candidates, execute automation, generate reports, run retrieval, index
-  vectors, create embeddings, run graph jobs, call external providers, mutate
-  artifacts, invoke MCP runtime, or call remote CI providers.
-
-### 3.5.1 Generated Case Human Review Evidence Package Contract
-
-This section is contract-only. It defines future Generated Case Human Review
-Evidence Package semantics for packaging GeneratedCaseCandidate review
-evidence. It does not add a `POST /api/generated-case-review-packages`
-endpoint, backend feature API, router, service, worker, queue, scheduler,
-frontend page, report generation behavior, export/download endpoint,
-migration, or package upgrade.
-
-Allowed generated case human review evidence package action:
-
-- `build_generated_case_human_review_evidence_package`: future scoped package
-  action that packages GeneratedCaseCandidate content, knowledge evidence,
-  prompt-context lineage, CaseReviewAgent findings, dedup findings,
-  automation readiness, and ReviewHistory into a human review evidence bundle
-  without approving or rejecting candidates.
-
-Generated Case Human Review Evidence Package payload shape:
-
-```json
-{
-  generated_case_human_review_evidence_package_action: build_generated_case_human_review_evidence_package,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
-  candidate_status: generated,
-  candidate_title: Expired coupon cannot be used during checkout,
-  candidate_priority: P0,
-  candidate_test_type: functional,
-  candidate_precondition: user has an expired coupon,
-  candidate_steps: [Login, Open checkout, Select expired coupon, Submit order],
-  candidate_expected_results: [Submission is blocked, Expired coupon message is shown],
-  candidate_input_data: { coupon_code: EXPIRED10 },
-  candidate_tags: [checkout, coupon],
-  requirement_refs: [Expired coupons cannot be used],
-  risk_refs: [coupon-expiration-boundary],
-  ai_reason: Covers coupon expiration boundary,
-  generation_reason: Boundary case for expired coupon validation,
-  covered_risk_ids: [00000000-0000-0000-0000-000000000411],
-  duplicate_of_case_id: null,
-  source_knowledge_evidence_ids: [ke-expired-coupon-boundary],
-  knowledge_evidence_refs_json: [
-    {
-      evidence_id: ke-expired-coupon-boundary,
-      knowledge_card_id: 00000000-0000-0000-0000-000000000821,
-      source_artifact_id: 00000000-0000-0000-0000-000000000371,
-      snippet: Expired coupons cannot be applied during checkout.,
-      score: 0.92
-    }
-  ],
-  quality_score: 84,
-  review_findings_json: [{ type: evidence_complete, severity: info }],
-  coverage_gap_notes: Does not cover coupon and points conflict,
-  automation_readiness: suitable_for_playwright,
-  dedup_findings: [{ duplicate_cluster_id: checkout-coupon-boundary }],
-  duplicate_candidate_ids: [],
-  automation_readiness_blockers: [],
-  prompt_context_evidence_artifact_ids: [00000000-0000-0000-0000-000000000901],
-  prompt_context_consumption_artifact_ids: [00000000-0000-0000-0000-000000000902],
-  prompt_context_audit_summary_artifact_ids: [00000000-0000-0000-0000-000000000903],
-  prompt_context_audit_review_decision_artifact_ids: [00000000-0000-0000-0000-000000000904],
-  prompt_context_audit_review_summary_export_artifact_ids: [00000000-0000-0000-0000-000000000905],
-  prompt_context_discrepancy_resolution_audit_handoff_artifact_ids: [00000000-0000-0000-0000-000000000906],
-  source_manifest_ids: [generated-case-review-source-manifest-001],
-  source_hashes: [sha256:generated-case-review-evidence],
-  review_history_links: [00000000-0000-0000-0000-000000000895]
-}
-```
-
-Generated Case Human Review Evidence Package response shape for a future
-scoped implementation:
-
-```json
-{
-  generated_case_human_review_evidence_package_action: build_generated_case_human_review_evidence_package,
-  generated_case_human_review_evidence_package_artifact_id: 00000000-0000-0000-0000-000000000930,
-  generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
-  generated_case_human_review_evidence_package: generated_case_human_review_evidence_package,
-  candidate_summary: expired coupon checkout boundary candidate with local evidence,
-  evidence_chain_completeness: incomplete,
-  missing_evidence_summary: coupon and points conflict not covered,
-  conflicting_evidence_summary: none,
-  review_blocker_summary: coverage gap remains visible,
-  dedup_readiness_summary: no duplicate selected; suitable for Playwright after review,
-  human_review_checklist: [check evidence refs, resolve coverage gap, confirm automation readiness],
-  included_artifact_ids: [
-    00000000-0000-0000-0000-000000000901,
-    00000000-0000-0000-0000-000000000902,
-    00000000-0000-0000-0000-000000000903
-  ],
-  excluded_artifact_reasons: [],
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-Generated Case Human Review Evidence Package hard rules:
-
-- Input must reference a same-project GeneratedCaseCandidate and may include
-  same-project prompt-context artifact lineage, source manifest ids, source
-  hashes, and ReviewHistory links.
-- Output is human-review evidence only. It may record candidate summary,
-  evidence chain completeness, missing evidence summary, conflicting evidence
-  summary, review blocker summary, dedup/readiness summary, human review
-  checklist, included artifact ids, excluded artifact reasons, ReviewHistory
-  links, failure code, and visible reason.
-- `quality_score`, `review_findings_json`, `coverage_gap_notes`,
-  `automation_readiness`, dedup findings, evidence chain completeness, and
-  human review checklist must not approve candidates, reject candidates,
-  request optimization, promote TestCase rows, create AutomationDraft rows,
-  execute automation, create reports, or set `used_knowledge=true`.
-- Missing, stale, unsafe, cross-project, unbounded, evidence-missing,
-  candidate-missing, candidate-mismatched, candidate-status-invalid,
-  knowledge-evidence-missing, prompt-context-evidence-missing,
-  review-findings-missing, dedup-inconclusive, readiness-unknown,
-  review-history-missing, artifact-mismatched, source-hash-mismatched,
-  credential-required, runtime-required, provider-required, approval-required,
-  or promotion-required input must return failure code and visible reason and
-  must not append a successful evidence package.
-- `build_generated_case_human_review_evidence_package` must not create
-  backend runtime APIs, endpoints, routers, services, workers, queues,
-  schedulers, migrations, frontend pages, reports, export/download endpoints,
-  provider integrations, provider SDK calls, external calls, credentials,
-  remote URL fetches, vector indexes, embeddings, reranking, graph jobs, MCP
-  runtime calls, prompt execution, AITask orchestration, TestCase promotion,
-  GeneratedCaseCandidate approve/reject mutation, automation draft creation,
-  ToolInvocation rows, TestRun/TestResult rows, artifact upload, Artifact rows
-  outside declared evidence package output, prompt context evidence mutation,
-  KnowledgeEvidence mutation, ReviewHistory mutation, historical evidence
-  mutation, runner behavior changes, remote CI provider behavior, RBAC,
-  tenants, permissions, or package upgrades.
-
-### 3.5.2 Generated Case Human Review Decision Contract
-
-This section is contract-only. It defines future Generated Case Human Review
-Decision semantics for recording a human review decision over the Slice 54
-Generated Case Human Review Evidence Package. It does not add a
-`POST /api/generated-case-review-decisions` endpoint, backend feature API,
-router, service, worker, queue, scheduler, frontend page, report generation
-behavior, export/download endpoint, migration, or package upgrade.
-
-Allowed generated case human review decision action:
-
-- `review_generated_case_human_review_evidence_package`: future scoped action
-  that records human review decision evidence from
-  `generated_case_human_review_evidence_package_artifact_id`,
-  GeneratedCaseCandidate id/status, candidate summary, evidence chain
-  completeness, missing/conflicting evidence summaries, review blocker
-  summary, dedup/readiness summary, human review checklist, review findings,
-  automation readiness, source hashes, source manifest ids, and ReviewHistory
-  links without approving or rejecting candidates.
-
-Generated Case Human Review Decision payload shape:
-
-```json
-{
-  generated_case_human_review_decision_action: review_generated_case_human_review_evidence_package,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  generated_case_human_review_evidence_package_artifact_id: 00000000-0000-0000-0000-000000000930,
-  generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
-  candidate_status: generated,
-  candidate_summary: expired coupon checkout boundary candidate with local evidence,
-  evidence_chain_completeness: incomplete,
-  missing_evidence_summary: coupon and points conflict not covered,
-  conflicting_evidence_summary: none,
-  review_blocker_summary: coverage gap remains visible,
-  dedup_readiness_summary: no duplicate selected; suitable for Playwright after review,
-  human_review_checklist: [check evidence refs, resolve coverage gap, confirm automation readiness],
-  quality_score: 84,
-  review_findings_json: [{ type: evidence_complete, severity: info }],
-  coverage_gap_notes: Does not cover coupon and points conflict,
-  automation_readiness: suitable_for_playwright,
-  dedup_findings: [{ duplicate_cluster_id: checkout-coupon-boundary }],
-  duplicate_candidate_ids: [],
-  duplicate_of_case_id: null,
-  prompt_context_lineage_artifact_ids: [
-    00000000-0000-0000-0000-000000000901,
-    00000000-0000-0000-0000-000000000902,
-    00000000-0000-0000-0000-000000000903
-  ],
-  source_manifest_ids: [generated-case-review-source-manifest-001],
-  source_hashes: [sha256:generated-case-review-evidence],
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  review_decision: accept_with_required_edits_before_future_promotion,
-  decision_label: accepted_with_required_edits,
-  reviewer_label: qa_lead,
-  reviewer_comment: Accept after adding coupon and points conflict coverage,
-  accepted_constraints: [same evidence package, no runtime execution],
-  requested_edit_fields: [steps_json, expected_results_json, coverage_gap_notes],
-  optimization_request_summary: null,
-  rejection_reasons: [],
-  blocker_reasons: [],
-  duplicate_resolution_notes: none
-}
-```
-
-Generated Case Human Review Decision response shape for a future scoped
-implementation:
-
-```json
-{
-  generated_case_human_review_decision_action: review_generated_case_human_review_evidence_package,
-  generated_case_human_review_decision_artifact_id: 00000000-0000-0000-0000-000000000940,
-  generated_case_human_review_evidence_package_artifact_id: 00000000-0000-0000-0000-000000000930,
-  generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
-  generated_case_human_review_decision: generated_case_human_review_decision,
-  review_decision: accept_with_required_edits_before_future_promotion,
-  decision_status: recorded,
-  decision_label: accepted_with_required_edits,
-  allowed_decision_labels: [
-    accepted_for_future_promotion,
-    accepted_with_required_edits,
-    needs_optimization,
-    rejected_for_insufficient_evidence,
-    blocked,
-    duplicate,
-    needs_more_evidence,
-    failed_validation
-  ],
-  reviewer_label: qa_lead,
-  reviewer_comment: Accept after adding coupon and points conflict coverage,
-  accepted_constraints: [same evidence package, no runtime execution],
-  requested_edit_fields: [steps_json, expected_results_json, coverage_gap_notes],
-  optimization_request_summary: null,
-  rejection_reasons: [],
-  blocker_reasons: [],
-  duplicate_resolution_notes: none,
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-Generated Case Human Review Decision hard rules:
-
-- Input must reference a same-project
-  `generated_case_human_review_evidence_package_artifact_id` and
-  same-project GeneratedCaseCandidate. The decision must preserve candidate
-  status, candidate summary, evidence chain completeness, missing evidence
-  summary, conflicting evidence summary, review blocker summary,
-  dedup/readiness summary, human review checklist, source hashes, source
-  manifest ids, and ReviewHistory links.
-- Output is human-review decision evidence only. It may record review
-  decision, decision status, decision label, reviewer label, reviewer comment,
-  accepted constraints, requested edit fields, optimization request summary,
-  rejection reasons, blocker reasons, duplicate resolution notes,
-  ReviewHistory links, failure code, and visible reason.
-- Decision labels `accepted_for_future_promotion`,
-  `accepted_with_required_edits`, `needs_optimization`,
-  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
-  `needs_more_evidence`, and `failed_validation` must not approve candidates,
-  reject candidates, request optimization, promote TestCase rows, create
-  AutomationDraft rows, execute automation, create reports, or set
-  `used_knowledge=true`.
-- Missing, stale, unsafe, cross-project, unbounded, evidence-package-missing,
-  evidence-package-mismatched, candidate-missing, candidate-mismatched,
-  candidate-status-invalid, evidence-chain-incomplete, review-blocked,
-  dedup-conflict, duplicate-resolution-missing, review-history-missing,
-  artifact-mismatched, source-hash-mismatched, credential-required,
-  runtime-required, provider-required, approval-required,
-  optimization-required, or promotion-required input must return failure code
-  and visible reason and must not append a successful decision.
-- `review_generated_case_human_review_evidence_package` must not create
-  backend runtime APIs, endpoints, routers, services, workers, queues,
-  schedulers, migrations, frontend pages, reports, export/download endpoints,
-  provider integrations, provider SDK calls, external calls, credentials,
-  remote URL fetches, vector indexes, embeddings, reranking, graph jobs, MCP
-  runtime calls, prompt execution, AITask orchestration, TestCase promotion,
-  GeneratedCaseCandidate approve/reject mutation, request optimization
-  mutation, automation draft creation, ToolInvocation rows, TestRun/TestResult
-  rows, artifact upload, Artifact rows outside declared decision evidence,
-  prompt context evidence mutation, KnowledgeEvidence mutation, ReviewHistory
-  mutation, historical evidence mutation, runner behavior changes, remote CI
-  provider behavior, RBAC, tenants, permissions, or package upgrades.
-
-### 3.5.3 Generated Case Human Review Decision Summary Export Contract
-
-This section is contract-only. It defines future Generated Case Human Review
-Decision Summary Export semantics for grouping one or more Slice 55 decision
-artifacts. It does not add a
-`POST /api/generated-case-review-decision-summary-exports` endpoint, backend
-feature API, router, service, worker, queue, scheduler, frontend page, report
-generation behavior, report renderer, export/download endpoint, migration, or
-package upgrade.
-
-Allowed generated case human review decision summary export action:
-
-- `build_generated_case_human_review_decision_summary_export`: future scoped
-  action that packages
-  `generated_case_human_review_decision_artifact_id` values, linked
-  `generated_case_human_review_evidence_package_artifact_id` values,
-  GeneratedCaseCandidate id/status/summary, decision label/status, reviewer
-  label/comment, accepted constraints, requested edit fields, optimization
-  request summary, rejection/blocker reasons, duplicate resolution notes,
-  ReviewHistory links, source hashes, and source manifest ids into an audit
-  summary without approving or rejecting candidates.
-
-Generated Case Human Review Decision Summary Export payload shape:
-
-```json
-{
-  generated_case_human_review_decision_summary_export_action: build_generated_case_human_review_decision_summary_export,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  generated_case_human_review_decision_artifact_ids: [
-    00000000-0000-0000-0000-000000000940,
-    00000000-0000-0000-0000-000000000941
-  ],
-  generated_case_human_review_evidence_package_artifact_ids: [
-    00000000-0000-0000-0000-000000000930,
-    00000000-0000-0000-0000-000000000931
-  ],
-  decisions: [
-    {
-      generated_case_human_review_decision_artifact_id: 00000000-0000-0000-0000-000000000940,
-      generated_case_human_review_evidence_package_artifact_id: 00000000-0000-0000-0000-000000000930,
-      generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
-      candidate_status: generated,
-      candidate_summary: expired coupon checkout boundary candidate,
-      decision_label: accepted_with_required_edits,
-      decision_status: recorded,
-      reviewer_label: qa_lead,
-      reviewer_comment: Accept after adding coupon and points conflict coverage,
-      accepted_constraints: [same evidence package, no runtime execution],
-      requested_edit_fields: [steps_json, expected_results_json],
-      optimization_request_summary: null,
-      rejection_reasons: [],
-      blocker_reasons: [],
-      duplicate_resolution_notes: none,
-      review_history_links: [00000000-0000-0000-0000-000000000895],
-      source_manifest_ids: [generated-case-review-source-manifest-001],
-      source_hashes: [sha256:generated-case-review-evidence]
-    }
-  ]
-}
-```
-
-Generated Case Human Review Decision Summary Export response shape for a
-future scoped implementation:
-
-```json
-{
-  generated_case_human_review_decision_summary_export_action: build_generated_case_human_review_decision_summary_export,
-  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
-  generated_case_human_review_decision_summary_export: generated_case_human_review_decision_summary_export,
-  summary_status: exported_for_human_review_audit,
-  exported_decision_groups: {
-    accepted_for_future_promotion: [00000000-0000-0000-0000-000000000942],
-    accepted_with_required_edits: [00000000-0000-0000-0000-000000000940],
-    needs_optimization: [],
-    rejected_for_insufficient_evidence: [],
-    blocked: [],
-    duplicate: [],
-    needs_more_evidence: [],
-    failed_validation: []
-  },
-  accepted_for_future_promotion_summary: no immediate promotion is performed,
-  accepted_with_required_edits_summary: one candidate needs explicit edits,
-  needs_optimization_summary: none,
-  rejected_for_insufficient_evidence_summary: none,
-  blocked_summary: none,
-  duplicate_summary: none,
-  needs_more_evidence_summary: none,
-  failed_validation_summary: none,
-  included_decision_artifact_ids: [00000000-0000-0000-0000-000000000940],
-  excluded_decision_artifact_ids: [],
-  excluded_decision_artifact_reasons: [],
-  source_traceability_summary: source hashes and ReviewHistory links preserved,
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-Generated Case Human Review Decision Summary Export hard rules:
-
-- Input must reference same-project
-  `generated_case_human_review_decision_artifact_id` values and their linked
-  `generated_case_human_review_evidence_package_artifact_id` values.
-- Output is summary export audit evidence only. It may record exported
-  decision groups, accepted-for-future-promotion summary,
-  accepted-with-required-edits summary, needs-optimization summary,
-  rejected-for-insufficient-evidence summary, blocked summary, duplicate
-  summary, needs-more-evidence summary, failed-validation summary, included
-  decision artifact ids, excluded decision artifact ids, excluded decision
-  artifact reasons, source traceability summary, ReviewHistory summary,
-  failure code, and visible reason.
-- Exported decision groups `accepted_for_future_promotion`,
-  `accepted_with_required_edits`, `needs_optimization`,
-  `rejected_for_insufficient_evidence`, `blocked`, `duplicate`,
-  `needs_more_evidence`, and `failed_validation` must not approve candidates,
-  reject candidates, request optimization, promote TestCase rows, create
-  AutomationDraft rows, execute automation, create reports, expose
-  export/download endpoints, or set `used_knowledge=true`.
-- Missing, stale, unsafe, cross-project, unbounded,
-  decision-artifact-missing, decision-artifact-invalid,
-  decision-artifact-mismatched, evidence-package-missing,
-  evidence-package-mismatched, candidate-missing, candidate-mismatched,
-  candidate-status-invalid, review-decision-missing,
-  review-decision-invalid, decision-label-unsupported, reviewer-missing,
-  source-hash-mismatched, review-history-missing, artifact-mismatched,
-  summary-export-invalid, credential-required, runtime-required,
-  provider-required, approval-required, optimization-required, or
-  promotion-required input must return failure code and visible reason and
-  must not append a successful summary export.
-- `build_generated_case_human_review_decision_summary_export` must not create
-  backend runtime APIs, endpoints, routers, services, workers, queues,
-  schedulers, migrations, frontend pages, reports, report renderers,
-  export/download endpoints, provider integrations, provider SDK calls,
-  external calls, credentials, remote URL fetches, vector indexes, embeddings,
-  reranking, graph jobs, MCP runtime calls, prompt execution, AITask
-  orchestration, TestCase promotion, GeneratedCaseCandidate approve/reject
-  mutation, request optimization mutation, automation draft creation,
-  ToolInvocation rows, TestRun/TestResult rows, artifact upload, Artifact rows
-  outside declared summary export evidence, generated case human review
-  decision artifact mutation, evidence package mutation, prompt context
-  evidence mutation, KnowledgeEvidence mutation, ReviewHistory mutation,
-  historical evidence mutation, runner behavior changes, remote CI provider
-  behavior, RBAC, tenants, permissions, or package upgrades.
-
-### 3.5.4 Generated Case Human Review Decision Audit Handoff Contract
-
-This section is contract-only. It defines future Generated Case Human Review
-Decision Audit Handoff semantics for packaging Slice 56 summary export
-evidence into an evidence-chain handoff bundle. It does not add a
-`POST /api/generated-case-review-decision-audit-handoffs` endpoint, backend
-feature API, router, service, worker, queue, scheduler, frontend page, report
-generation behavior, report renderer, export/download endpoint, migration, or
-package upgrade.
-
-Allowed generated case human review decision audit handoff action:
-
-- `build_generated_case_human_review_decision_audit_handoff`: future scoped
-  handoff action that packages
-  `generated_case_human_review_decision_summary_export_artifact_id`, source
-  `generated_case_human_review_decision_artifact_id` values, linked
-  `generated_case_human_review_evidence_package_artifact_id` values, exported
-  decision groups, included decision artifact ids, excluded decision artifact
-  ids, excluded decision artifact reasons, source traceability summary,
-  ReviewHistory summary, source hashes, and source manifest ids into an audit
-  handoff without approving or rejecting candidates.
-
-Generated Case Human Review Decision Audit Handoff payload shape:
-
-```json
-{
-  generated_case_human_review_decision_audit_handoff_action: build_generated_case_human_review_decision_audit_handoff,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
-  generated_case_human_review_decision_artifact_ids: [
-    00000000-0000-0000-0000-000000000940,
-    00000000-0000-0000-0000-000000000941
-  ],
-  generated_case_human_review_evidence_package_artifact_ids: [
-    00000000-0000-0000-0000-000000000930,
-    00000000-0000-0000-0000-000000000931
-  ],
-  exported_decision_groups: {
-    accepted_for_future_promotion: [00000000-0000-0000-0000-000000000941],
-    accepted_with_required_edits: [00000000-0000-0000-0000-000000000940],
-    needs_optimization: [],
-    rejected_for_insufficient_evidence: [],
-    blocked: [],
-    duplicate: [],
-    needs_more_evidence: [],
-    failed_validation: []
-  },
-  included_decision_artifact_ids: [
-    00000000-0000-0000-0000-000000000940,
-    00000000-0000-0000-0000-000000000941
-  ],
-  excluded_decision_artifact_ids: [],
-  excluded_decision_artifact_reasons: [],
-  source_traceability_summary: source hashes and ReviewHistory links preserved,
-  review_history_summary: one reviewer decision linked,
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  source_manifest_ids: [generated-case-review-source-manifest-001],
-  source_hashes: [sha256:generated-case-review-evidence],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-Generated Case Human Review Decision Audit Handoff response shape for a future
-scoped implementation:
-
-```json
-{
-  generated_case_human_review_decision_audit_handoff_action: build_generated_case_human_review_decision_audit_handoff,
-  generated_case_human_review_decision_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000960,
-  generated_case_human_review_decision_audit_handoff: generated_case_human_review_decision_audit_handoff,
-  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
-  handoff_summary: human review decision evidence is ready for future audit review,
-  evidence_chain_status: complete,
-  included_artifact_ids: [
-    00000000-0000-0000-0000-000000000930,
-    00000000-0000-0000-0000-000000000940,
-    00000000-0000-0000-0000-000000000950
-  ],
-  excluded_artifact_reasons: [],
-  exported_decision_groups: {
-    accepted_for_future_promotion: [00000000-0000-0000-0000-000000000941],
-    accepted_with_required_edits: [00000000-0000-0000-0000-000000000940],
-    needs_optimization: [],
-    rejected_for_insufficient_evidence: [],
-    blocked: [],
-    duplicate: [],
-    needs_more_evidence: [],
-    failed_validation: []
-  },
-  included_decision_artifact_ids: [00000000-0000-0000-0000-000000000940],
-  excluded_decision_artifact_ids: [],
-  excluded_decision_artifact_reasons: [],
-  accepted_for_future_promotion_handoff_summary: one candidate is future planning evidence only,
-  accepted_with_required_edits_handoff_summary: one candidate needs explicit edits,
-  needs_optimization_handoff_summary: none,
-  rejected_for_insufficient_evidence_handoff_summary: none,
-  blocked_handoff_summary: none,
-  duplicate_handoff_summary: none,
-  needs_more_evidence_handoff_summary: none,
-  failed_validation_handoff_summary: none,
-  unresolved_follow_up_flags: [],
-  unresolved_blocker_summary: none,
-  source_traceability_summary: source hashes and source manifest ids preserved,
-  source_traceability_handoff_summary: summary export, decision, evidence package, and ReviewHistory links preserved,
-  review_history_links: [00000000-0000-0000-0000-000000000895],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-Generated Case Human Review Decision Audit Handoff hard rules:
-
-- Audit handoff input must reference a same-project
-  `generated_case_human_review_decision_summary_export_artifact_id`, its
-  source `generated_case_human_review_decision_artifact_id` values, and linked
-  `generated_case_human_review_evidence_package_artifact_id` values.
-- Audit handoff output is evidence-chain packaging only. It may record audit
-  handoff artifact id, handoff summary, evidence chain status, included
-  artifact ids, excluded artifact reasons, exported decision groups, included
-  decision artifact ids, excluded decision artifact ids, excluded decision
-  artifact reasons, decision-label handoff summaries, unresolved follow-up
-  flags, unresolved blocker summary, source traceability summary, source
-  traceability handoff summary, ReviewHistory links, failure code, and visible
-  reason.
-- Evidence chain status values may include `complete`, `incomplete`,
-  `blocked`, and `failed_validation`. They must not approve candidates,
-  reject candidates, request optimization, promote TestCase rows, create
-  AutomationDraft rows, execute automation, create reports, expose
-  export/download endpoints, or set `used_knowledge=true`.
-- Accepted-for-future-promotion and accepted-with-required-edits handoff
-  summaries are future-planning labels only. Needs-optimization handoff
-  summaries must not trigger the existing request optimization transition.
-- Invalid, stale, unsafe, cross-project, unbounded,
-  summary-export-missing, summary-export-invalid, summary-export-mismatched,
-  decision-artifact-missing, decision-artifact-invalid,
-  decision-artifact-mismatched, evidence-package-missing,
-  evidence-package-mismatched, candidate-missing, candidate-mismatched,
-  candidate-status-invalid, review-decision-missing,
-  review-decision-invalid, decision-label-unsupported,
-  review-history-missing, source-hash-mismatched, artifact-mismatched,
-  incomplete-required-input, credential-required, runtime-required,
-  provider-required, approval-required, optimization-required, or
-  promotion-required input must return failure code and visible reason and
-  must not append a successful audit handoff or successful ReviewHistory
-  decision.
-- `build_generated_case_human_review_decision_audit_handoff` must not create
-  backend runtime APIs, endpoints, routers, services, workers, queues,
-  schedulers, migrations, frontend pages, reports, report renderers,
-  export/download endpoints, provider integrations, provider SDK calls,
-  external calls, credentials, remote URL fetches, vector indexes, embeddings,
-  reranking, graph jobs, MCP runtime calls, runtime retrieval, prompt
-  execution, AITask orchestration, TestCase promotion, GeneratedCaseCandidate
-  approve/reject mutation, request optimization mutation, automation draft
-  creation, ToolInvocation rows, TestRun/TestResult rows, artifact upload,
-  Artifact rows outside declared audit handoff evidence, generated case human
-  review decision summary export artifact mutation, generated case human
-  review decision artifact mutation, evidence package mutation, prompt
-  context evidence mutation, KnowledgeEvidence mutation, ReviewHistory
-  mutation, source evidence mutation, historical evidence mutation, runner
-  behavior changes, remote CI provider behavior, RBAC, tenants, permissions,
-  or package upgrades.
-
-### 3.5.5 Generated Case Human Review Decision Application Preflight Contract
-
-This section is contract-only. It defines future Generated Case Human Review
-Decision Application Preflight semantics for checking whether Slice 57 audit
-handoff evidence is eligible for a later explicit human review action. It
-does not add a `POST /api/generated-case-review-decision-application-preflights`
-endpoint, backend feature API, router, service, worker, queue, scheduler,
-frontend page, report generation behavior, report renderer, export/download
-endpoint, migration, or package upgrade.
-
-Allowed generated case human review decision application preflight action:
-
-- `preflight_generated_case_human_review_decision_application`: future scoped
-  preflight action that checks
-  `generated_case_human_review_decision_audit_handoff_artifact_id`, linked
-  `generated_case_human_review_decision_summary_export_artifact_id`, source
-  `generated_case_human_review_decision_artifact_id` values, linked
-  `generated_case_human_review_evidence_package_artifact_id` values,
-  candidate status, decision labels, requested edit fields, accepted
-  constraints, blocker/rejection/optimization evidence, unresolved follow-up
-  flags, source traceability, and ReviewHistory handoff links into eligibility
-  evidence without applying any review action.
-
-Generated Case Human Review Decision Application Preflight payload shape:
-
-```json
-{
-  generated_case_human_review_decision_application_preflight_action: preflight_generated_case_human_review_decision_application,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  generated_case_human_review_decision_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000960,
-  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
-  generated_case_human_review_decision_artifact_ids: [
-    00000000-0000-0000-0000-000000000940,
-    00000000-0000-0000-0000-000000000941
-  ],
-  generated_case_human_review_evidence_package_artifact_ids: [
-    00000000-0000-0000-0000-000000000930,
-    00000000-0000-0000-0000-000000000931
-  ],
-  decisions: [
-    {
-      generated_case_candidate_id: 00000000-0000-0000-0000-000000000801,
-      candidate_status: under_review,
-      decision_label: accepted_with_required_edits,
-      requested_edit_fields: [steps_json, expected_results_json],
-      accepted_constraints: [same evidence package, no runtime execution],
-      optimization_request_summary: null,
-      rejection_reasons: [],
-      blocker_reasons: [],
-      duplicate_resolution_notes: none,
-      evidence_chain_status: complete,
-      unresolved_follow_up_flags: [],
-      unresolved_blocker_summary: none,
-      source_traceability_handoff_summary: summary export, decision, evidence package, and ReviewHistory links preserved,
-      review_history_handoff_links: [00000000-0000-0000-0000-000000000895],
-      source_manifest_ids: [generated-case-review-source-manifest-001],
-      source_hashes: [sha256:generated-case-review-evidence],
-      required_human_confirmation_summary: reviewer must confirm requested edits before apply
-    }
-  ]
-}
-```
-
-Generated Case Human Review Decision Application Preflight response shape for a
-future scoped implementation:
-
-```json
-{
-  generated_case_human_review_decision_application_preflight_action: preflight_generated_case_human_review_decision_application,
-  generated_case_human_review_decision_application_preflight_artifact_id: 00000000-0000-0000-0000-000000000970,
-  generated_case_human_review_decision_application_preflight: generated_case_human_review_decision_application_preflight,
-  generated_case_human_review_decision_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000960,
-  generated_case_human_review_decision_summary_export_artifact_id: 00000000-0000-0000-0000-000000000950,
-  preflight_summary: one candidate is eligible for future approve_after_edit after explicit human confirmation,
-  eligibility_status: eligible,
-  mapped_review_action: approve_after_edit,
-  eligible_candidate_ids: [00000000-0000-0000-0000-000000000801],
-  ineligible_candidate_ids: [],
-  blocked_action_reasons: [],
-  required_edit_summary: steps_json and expected_results_json must be confirmed,
-  required_human_confirmation_summary: explicit reviewer confirmation required before applying mapped action,
-  accepted_for_future_promotion_preflight_summary: none,
-  accepted_with_required_edits_preflight_summary: eligible only after requested edits are confirmed,
-  needs_optimization_preflight_summary: none,
-  rejected_for_insufficient_evidence_preflight_summary: none,
-  blocked_preflight_summary: none,
-  duplicate_preflight_summary: none,
-  needs_more_evidence_preflight_summary: none,
-  failed_validation_preflight_summary: none,
-  review_history_handoff_links: [00000000-0000-0000-0000-000000000895],
-  source_traceability_handoff_summary: source hashes and handoff lineage preserved,
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-Generated Case Human Review Decision Application Preflight hard rules:
-
-- Preflight input must reference a same-project
-  `generated_case_human_review_decision_audit_handoff_artifact_id`, linked
-  `generated_case_human_review_decision_summary_export_artifact_id`, source
-  `generated_case_human_review_decision_artifact_id` values, and linked
-  `generated_case_human_review_evidence_package_artifact_id` values.
-- Preflight output is eligibility evidence only. It may record preflight
-  artifact id, preflight summary, eligibility status, mapped review action,
-  eligible candidate ids, ineligible candidate ids, blocked action reasons,
-  required edit summary, required human confirmation summary, decision-label
-  preflight summaries, ReviewHistory handoff links, failure code, and visible
-  reason.
-- Eligibility status values may include `eligible`, `ineligible`, `blocked`,
-  and `failed_validation`. They must not approve candidates, reject
-  candidates, request optimization, promote TestCase rows, create
-  AutomationDraft rows, execute automation, create reports, expose
-  export/download endpoints, or set `used_knowledge=true`.
-- Mapped review action values may include `approve`, `approve_after_edit`,
-  `request_optimization`, `reject`, and `none`. They are preflight labels only
-  and must not call the existing `case-review` action.
-- Decision-label mapping is strict. `accepted_for_future_promotion` may map
-  only to future `approve` when evidence chain status is `complete`, the
-  candidate status is reviewable, and required human confirmation summary is
-  present. `accepted_with_required_edits` may map only to future
-  `approve_after_edit` when requested edit fields are present and bounded.
-  `needs_optimization` may map only to future `request_optimization` when an
-  optimization request summary is present and bounded.
-  `rejected_for_insufficient_evidence` may map only to future `reject` when
-  rejection reasons and visible reason are present. `blocked`, `duplicate`,
-  `needs_more_evidence`, and `failed_validation` must map to `none` and remain
-  ineligible until a later explicit human action resolves them.
-- Invalid, stale, unsafe, cross-project, unbounded,
-  audit-handoff-missing, audit-handoff-invalid, audit-handoff-mismatched,
-  summary-export-missing, summary-export-invalid, summary-export-mismatched,
-  decision-artifact-missing, decision-artifact-invalid,
-  decision-artifact-mismatched, evidence-package-missing,
-  evidence-package-mismatched, candidate-missing, candidate-mismatched,
-  candidate-status-invalid, decision-label-unsupported,
-  mapped-action-unsupported, required-edit-missing,
-  required-confirmation-missing, review-history-missing,
-  source-hash-mismatched, artifact-mismatched, incomplete-required-input,
-  credential-required, runtime-required, provider-required, approval-required,
-  optimization-required, or promotion-required input must return failure code
-  and visible reason and must not append a successful application preflight or
-  successful ReviewHistory decision.
-- `preflight_generated_case_human_review_decision_application` must not create
-  backend runtime APIs, endpoints, routers, services, workers, queues,
-  schedulers, migrations, frontend pages, reports, report renderers,
-  export/download endpoints, provider integrations, provider SDK calls,
-  external calls, credentials, remote URL fetches, vector indexes, embeddings,
-  reranking, graph jobs, MCP runtime calls, runtime retrieval, prompt
-  execution, AITask orchestration, TestCase promotion, GeneratedCaseCandidate
-  approve/reject mutation, request optimization mutation, automation draft
-  creation, ToolInvocation rows, TestRun/TestResult rows, artifact upload,
-  Artifact rows outside declared application preflight evidence, generated
-  case human review decision audit handoff artifact mutation, generated case
-  human review decision summary export artifact mutation, generated case human
-  review decision artifact mutation, evidence package mutation, prompt
-  context evidence mutation, KnowledgeEvidence mutation, TestKnowledgeCard
-  mutation, ReviewHistory mutation, source evidence mutation, historical
-  evidence mutation, runner behavior changes, remote CI provider behavior,
-  RBAC, tenants, permissions, or package upgrades.
-
-### 3.5.6 Knowledge Feedback Contract
-
-This section is contract-only. It defines the API payload shape that a future
-KnowledgeFeedbackAgent may return through existing AITask/artifact surfaces. It
-does not add a `POST /api/knowledge-feedback` endpoint or runtime worker.
-
-Knowledge feedback input evidence may include:
-
-- accepted and rejected GeneratedCaseCandidate summaries;
-- reviewed TestCase summaries;
-- ReviewHistory comments, actions, reviewer labels, and evidence artifact ids;
-- FailureAnalysis summaries;
-- Report summaries and evidence manifests;
-- TestRun/TestResult execution evidence summaries;
-- normalized KnowledgeEvidence and existing TestKnowledgeCard summaries.
-
-Draft feedback response shape:
-
-```json
-{
-  "agent_name": "KnowledgeFeedbackAgent",
-  "prompt_version": "knowledge_feedback:v1",
-  "skill_version": "knowledge-feedback-skill:v1",
-  "knowledge_feedback": [
-    {
-      "feedback_id": "kf-expired-coupon-boundary",
-      "feedback_type": "positive_example",
-      "draft_knowledge_type": "existing_test_case_pattern",
-      "source_entity_type": "TestCase",
-      "source_entity_id": "00000000-0000-0000-0000-000000000901",
-      "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
-      "source_span": "steps[1-4]",
-      "recommendation": "Reuse this reviewed boundary pattern for expired coupon validation.",
-      "confidence": 86,
-      "used_knowledge_evidence_ids": ["ke-expired-coupon-boundary"],
-      "unsupported_claims": [],
-      "review_findings": ["Source TestCase is reviewed and cites evidence"],
-      "prompt_eligible": false,
-      "status": "draft"
-    }
-  ],
-  "unsupported_claims": [],
-  "failure_code": null
-}
-```
-
-Knowledge feedback hard rules:
-
-- KnowledgeFeedbackAgent output is draft feedback only. It must not create,
-  approve, archive, or mutate TestKnowledgeCard rows.
-- `prompt_eligible=false` is mandatory until a future human review workflow
-  explicitly approves prompt eligibility.
-- Every draft feedback item must cite a source entity, same-project Artifact,
-  or normalized KnowledgeEvidence. Free-floating model text is not valid source
-  evidence.
-- Accepted and rejected examples must remain separately labeled. Rejected cases
-  must not become positive knowledge without human review.
-- Failure- and report-derived feedback must cite FailureAnalysis, Report,
-  TestRun/TestResult, or artifact evidence.
-- `confidence` and `review_findings` are review aids only. They must not mark
-  feedback approved, prompt-eligible, or safe for automatic reuse.
-- Insufficient source evidence returns
-  `UNABLE_TO_CREATE_KNOWLEDGE_FEEDBACK` with visible `unsupported_claims` and
-  no silent fallback knowledge.
-- Knowledge feedback responses must preserve `prompt_version`, `skill_version`,
-  input evidence ids, output artifact ids, schema validation status, and
-  failure code on the owning AITask trace.
-- The contract must not mutate ReviewHistory, FailureAnalysis, Report,
-  TestRun, TestCase, GeneratedCaseCandidate, Artifact, or TestKnowledgeCard
-  rows; create TestCase records; approve generated cases; generate reports;
-  run retrieval; index vectors; create embeddings; rerank; run graph jobs;
-  call external providers; invoke MCP runtime; call remote CI providers; add
-  RBAC; create tenants; or change permissions.
-
-### 3.5.2 Knowledge Feedback Review Gate Contract
-
-This section is contract-only. It defines the future review payload semantics
-for KnowledgeFeedbackDraft without adding a feedback review endpoint, frontend
-page, TestKnowledgeCard CRUD, or review runtime.
-
-Allowed review actions:
-
-- `approve_feedback`: human accepts the draft feedback as reviewable knowledge
-  input for a later TestKnowledgeCard workflow.
-- `reject_feedback`: human rejects the draft; it remains auditable and cannot
-  be reused as positive knowledge.
-- `request_revision`: human asks for a revised draft while preserving source
-  evidence, unsupported claims, and reviewer notes.
-- `mark_prompt_eligible`: human explicitly marks already approved feedback as
-  eligible for prompt use, subject to safe-to-show evidence and source
-  citations.
-- `create_knowledge_card_candidate`: optional future handoff payload only; it
-  is not TestKnowledgeCard CRUD in this contract and follows the
-  TestKnowledgeCard handoff contract below.
-
-Review gate payload shape:
-
-```json
-{
-  "feedback_id": "kf-expired-coupon-boundary",
-  "action": "approve_feedback",
-  "reviewer_label": "Default User",
-  "review_comment": "Source case is reviewed and cites stable evidence.",
-  "evidence_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
-  "prompt_eligible": false,
-  "prompt_eligibility_reason": null,
-  "handoff_payload": {
-    "source_feedback_id": "kf-expired-coupon-boundary",
-    "draft_knowledge_type": "existing_test_case_pattern",
-    "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
-    "test_knowledge_card_candidate": {
-      "knowledge_type": "existing_test_case_pattern",
-      "summary": "Expired coupon tests should cover checkout rejection.",
-      "safe_to_show": true,
-      "allowed_for_prompt": false
-    }
-  }
-}
-```
-
-Review gate response shape:
-
-```json
-{
-  "feedback_id": "kf-expired-coupon-boundary",
-  "status": "approved_by_human",
-  "review_action": "approve_feedback",
-  "review_history_id": "00000000-0000-0000-0000-000000000861",
-  "review_artifact_id": "00000000-0000-0000-0000-000000000862",
-  "prompt_eligible": false,
-  "prompt_eligibility_reason": null,
-  "test_knowledge_card_id": null
-}
-```
-
-Review gate hard rules:
-
-- Every accepted, rejected, revised, or prompt-eligibility decision must be a
-  human review action and must append or reference ReviewHistory when a future
-  implementation owns the workflow.
-- `mark_prompt_eligible` requires prior human approval, safe-to-show source
-  evidence, reviewed source citations, and a non-empty
-  `prompt_eligibility_reason`.
-- `prompt_eligible=true` must not be inferred from model confidence,
-  unsupported-claim absence, quality score, schema validity, or the existence
-  of a draft feedback artifact.
-- `create_knowledge_card_candidate` may produce a future handoff payload, but
-  it must not create, approve, archive, delete, or mutate TestKnowledgeCard
-  rows in this contract.
-- Review gate responses must preserve `feedback_id`, action, reviewer label,
-  evidence artifact ids, prompt eligibility decision, ReviewHistory id when
-  present, and review artifact id when present.
-- Rejected feedback and unsupported claims remain auditable and must not be
-  reused as positive knowledge or prompt context.
-- This contract must not mutate historical ReviewHistory, FailureAnalysis,
-  Report, TestRun, TestResult, TestCase, GeneratedCaseCandidate, Artifact, or
-  TestKnowledgeCard rows; call providers; invoke MCP runtime; create vector
-  indexes; create embeddings; rerank; run graph jobs; generate reports; change
-  runner behavior; add RBAC; create tenants; or change permissions.
-
-### 3.5.3 TestKnowledgeCard Handoff Contract
-
-This section is contract-only. It defines the future handoff payload semantics
-for an approved KnowledgeFeedbackDraft and does not add an endpoint, router,
-service, worker, queue, frontend page, migration, or `POST /api/test-knowledge-cards`.
-
-Allowed handoff action:
-
-- `create_knowledge_card_candidate`: human-reviewed action that prepares a
-  `handoff_payload` for a future TestKnowledgeCard workflow. It must return
-  `test_knowledge_card_id: null` in this contract.
-
-Handoff payload shape:
-
-```json
-{
-  "feedback_id": "kf-expired-coupon-boundary",
-  "action": "create_knowledge_card_candidate",
-  "status": "approved_by_human",
-  "review_history_id": "00000000-0000-0000-0000-000000000861",
-  "review_artifact_id": "00000000-0000-0000-0000-000000000862",
-  "handoff_payload": {
-    "source_feedback_id": "kf-expired-coupon-boundary",
-    "source_entity_type": "TestCase",
-    "source_entity_id": "00000000-0000-0000-0000-000000000931",
-    "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
-    "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
-    "source_span": "case.steps[3]-case.expected_results[0]",
-    "candidate_fields": {
-      "knowledge_type": "existing_test_case_pattern",
-      "title": "Expired coupon checkout rejection",
-      "summary": "Reviewed checkout cases should include expired coupon rejection.",
-      "body": "Use a reviewed case source before turning this into reusable knowledge.",
-      "source_type": "reviewed_case",
-      "source_section": "checkout/coupon",
-      "related_requirement_ids": ["00000000-0000-0000-0000-000000000121"],
-      "related_risk_ids": ["00000000-0000-0000-0000-000000000221"],
-      "related_test_case_ids": ["00000000-0000-0000-0000-000000000931"],
-      "tags": ["checkout", "coupon", "regression"],
-      "confidence": 84,
-      "safe_to_show": true,
-      "redaction_applied": false,
-      "allowed_for_prompt": false,
-      "evidence_artifact_ids": ["00000000-0000-0000-0000-000000000862"]
-    },
-    "duplicate_candidates": [
-      {
-        "knowledge_card_id": "00000000-0000-0000-0000-000000000781",
-        "match_reason": "Same coupon boundary condition"
-      }
-    ],
-    "merge_recommendation": "review_required",
-    "unsupported_claims": []
-  },
-  "test_knowledge_card_id": null
-}
-```
-
-TestKnowledgeCard handoff hard rules:
-
-- Handoff input must come from an approved KnowledgeFeedbackDraft and must
-  preserve ReviewHistory id, feedback review artifact id, same-project source
-  artifact ids, source entity reference, source quote/hash, and unsupported
-  claims.
-- `candidate_fields` are a proposed TestKnowledgeCard shape only. They must
-  not create, approve, archive, delete, or mutate TestKnowledgeCard rows.
-- `allowed_for_prompt=false` is mandatory in candidate fields. Human card
-  review must happen later before any TestKnowledgeCard can become prompt
-  eligible.
-- `safe_to_show=true` requires safe-to-show evidence and reviewed source
-  citations. It must not be inferred from model confidence, schema validity,
-  or absence of unsupported claims.
-- Duplicate candidates and merge recommendations are review aids only. They
-  must not automatically merge, archive, replace, or relabel existing cards.
-- Unsafe, missing, cross-project, or unbounded source evidence must reject the
-  handoff or request revision; no fallback knowledge or fabricated citation is
-  allowed.
-- This contract must not add a backend feature API, frontend review page,
-  TestKnowledgeCard CRUD, automatic card creation, automatic prompt
-  eligibility, automatic knowledge ingestion, provider call, MCP runtime,
-  vector index, embedding, reranking, graph job, artifact mutation outside the
-  declared handoff artifact, historical evidence mutation, generated-case
-  auto-approval, TestCase auto-promotion, report generation behavior, runner
-  behavior change, remote CI provider behavior, RBAC, tenants, or permissions.
-
-### 3.5.4 TestKnowledgeCard Candidate Review Contract
-
-This section is contract-only. It defines future candidate review payload
-semantics for TestKnowledgeCard handoff candidates and does not add an endpoint,
-router, service, worker, queue, frontend page, migration,
-`POST /api/test-knowledge-cards`, or `POST /api/test-knowledge-card-candidates`.
-
-Allowed candidate review actions:
-
-- `approve_candidate_for_creation`: human accepts candidate quality and source
-  evidence for a future card-creation workflow. It is not card creation here.
-- `reject_candidate`: human rejects the candidate and keeps rationale
-  auditable.
-- `request_candidate_revision`: human requests better source evidence,
-  safer content, or a corrected mapping.
-- `flag_duplicate`: human routes the candidate to duplicate review.
-- `request_merge_review`: human requests explicit merge review for existing
-  duplicate card candidates.
-- `defer_prompt_eligibility`: human or system records that prompt eligibility
-  remains deferred and `allowed_for_prompt=false`.
-
-Candidate review payload shape:
-
-```json
-{
-  "candidate_review_action": "approve_candidate_for_creation",
-  "candidate_review_decision": "approved_for_future_creation",
-  "reviewer_label": "Default User",
-  "review_comment": "Source evidence is reviewed; prompt eligibility stays deferred.",
-  "source_handoff_artifact_id": "00000000-0000-0000-0000-000000000871",
-  "source_feedback_id": "kf-expired-coupon-boundary",
-  "candidate_card_json": {
-    "knowledge_type": "existing_test_case_pattern",
-    "title": "Expired coupon checkout rejection",
-    "summary": "Reviewed checkout cases should include expired coupon rejection.",
-    "safe_to_show": true,
-    "allowed_for_prompt": false
-  },
-  "evidence_artifact_ids": ["00000000-0000-0000-0000-000000000862"],
-  "duplicate_knowledge_card_ids": ["00000000-0000-0000-0000-000000000781"],
-  "merge_hint": "possible_duplicate",
-  "duplicate_review_required": true,
-  "merge_review_required": false,
-  "prompt_eligibility_decision": "deferred",
-  "unsupported_claims": [],
-  "failure_code": null
-}
-```
-
-Candidate review response shape:
-
-```json
-{
-  "candidate_review_action": "approve_candidate_for_creation",
-  "candidate_review_decision": "approved_for_future_creation",
-  "review_history_id": "00000000-0000-0000-0000-000000000881",
-  "candidate_review_artifact_id": "00000000-0000-0000-0000-000000000882",
-  "test_knowledge_card_id": null,
-  "allowed_for_prompt": false,
-  "prompt_eligibility_decision": "deferred"
-}
-```
-
-TestKnowledgeCard Candidate Review hard rules:
-
-- Candidate review input must come from a TestKnowledgeCard handoff candidate
-  and must preserve source feedback id, handoff artifact id, candidate card
-  JSON, source Artifact ids, source quote/hash, duplicate/merge hints, and
-  unsupported claims.
-- Candidate review actions must be human reviewer actions. Model confidence,
-  schema validity, safe_to_show, or absence of unsupported claims must not
-  approve a candidate.
-- Candidate review may append or reference ReviewHistory and may produce a
-  candidate review artifact, but invalid transitions must not append successful
-  ReviewHistory.
-- `approve_candidate_for_creation` must return `test_knowledge_card_id: null`
-  in this contract. A later scoped workflow must own actual card creation.
-- `defer_prompt_eligibility` is the default; reviewed candidates must keep
-  `allowed_for_prompt=false`.
-- Duplicate and merge actions are review routing only. They must not
-  automatically merge, archive, replace, delete, relabel, or create
-  TestKnowledgeCard rows.
-- This contract must not add a backend feature API, frontend review page,
-  TestKnowledgeCard CRUD, automatic card creation, automatic card approval,
-  automatic prompt eligibility, automatic knowledge ingestion, provider call,
-  MCP runtime, vector index, embedding, reranking, graph job, artifact mutation
-  outside declared candidate review artifacts, historical evidence mutation,
-  generated-case auto-approval, TestCase auto-promotion, runner behavior
-  change, report generation behavior change, remote CI provider behavior,
-  RBAC, tenants, or permissions.
-
-### 3.5.5 Reviewed TestKnowledgeCard Creation Contract
-
-This section is contract-only. It defines future reviewed creation semantics
-for approved candidates and does not add an endpoint, router, service, worker,
-queue, frontend page, migration, broad TestKnowledgeCard CRUD, list/update/
-delete API, or `POST /api/test-knowledge-cards`.
-
-Allowed future creation action:
-
-- `create_reviewed_test_knowledge_card`: future scoped action that may create a
-  TestKnowledgeCard only from an approved candidate review, reviewed source
-  evidence, resolved duplicate/merge preconditions, and `allowed_for_prompt=false`.
-
-Reviewed creation payload shape:
-
-```json
-{
-  "creation_action": "create_reviewed_test_knowledge_card",
-  "approved_candidate_review_action": "approve_candidate_for_creation",
-  "candidate_review_artifact_id": "00000000-0000-0000-0000-000000000882",
-  "source_handoff_artifact_id": "00000000-0000-0000-0000-000000000871",
-  "source_feedback_id": "kf-expired-coupon-boundary",
-  "review_history_ids": [
-    "00000000-0000-0000-0000-000000000861",
-    "00000000-0000-0000-0000-000000000881"
-  ],
-  "candidate_card_json": {
-    "knowledge_type": "existing_test_case_pattern",
-    "title": "Expired coupon checkout rejection",
-    "summary": "Reviewed checkout cases should include expired coupon rejection.",
-    "body": "Use reviewed source evidence before creating reusable knowledge.",
-    "source_type": "reviewed_case",
-    "source_section": "checkout/coupon",
-    "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
-    "related_requirement_ids": ["00000000-0000-0000-0000-000000000121"],
-    "related_risk_ids": ["00000000-0000-0000-0000-000000000221"],
-    "related_test_case_ids": ["00000000-0000-0000-0000-000000000931"],
-    "tags": ["checkout", "coupon", "regression"],
-    "confidence": 84,
-    "safe_to_show": true,
-    "redaction_applied": false,
-    "allowed_for_prompt": false
-  },
-  "source_manifest": {
-    "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
-    "source_hashes": ["sha256:reviewed-case-expired-coupon"],
-    "source_span": "case.steps[3]-case.expected_results[0]"
-  },
-  "duplicate_merge_preconditions": {
-    "duplicate_knowledge_card_ids": [],
-    "merge_hint": null,
-    "resolved": true
-  },
-  "unsupported_claims": [],
-  "prompt_eligibility_decision": "deferred"
-}
-```
-
-Reviewed creation response shape for a future scoped implementation:
-
-```json
-{
-  "creation_action": "create_reviewed_test_knowledge_card",
-  "creation_status": "ready_for_future_creation",
-  "test_knowledge_card_id": null,
-  "creation_artifact_id": "00000000-0000-0000-0000-000000000891",
-  "review_history_id": "00000000-0000-0000-0000-000000000892",
-  "allowed_for_prompt": false,
-  "prompt_eligibility_decision": "deferred"
-}
-```
-
-Reviewed TestKnowledgeCard Creation hard rules:
-
-- Creation input must come from an approved candidate review artifact and must
-  preserve the source handoff artifact, source feedback id, ReviewHistory ids,
-  candidate_card_json, source manifest, duplicate/merge preconditions, and
-  unsupported claims.
-- `create_reviewed_test_knowledge_card` is a future scoped creation action,
-  not broad CRUD. This contract must not add list/update/delete behavior or
-  create rows by itself.
-- Future creation must default `allowed_for_prompt=false`. Prompt eligibility
-  remains deferred until a later explicit prompt-eligibility workflow.
-- Duplicate/merge preconditions must be resolved before creation. Unresolved
-  duplicate or merge conflicts must block creation and must not automatically
-  merge, archive, replace, delete, relabel, or create card rows.
-- Stale, rejected, revision-requested, cross-project, unsafe, unbounded, or
-  unsupported source evidence must reject creation with a failure code and must
-  not create fallback cards.
-- This contract must not add a backend feature API, frontend page, migration,
-  broad TestKnowledgeCard CRUD, automatic card creation from model output,
-  automatic prompt eligibility, automatic knowledge ingestion, provider call,
-  MCP runtime, vector index, embedding, reranking, graph job, artifact mutation
-  outside declared creation artifacts, historical evidence mutation,
-  generated-case auto-approval, TestCase auto-promotion, runner behavior
-  change, report generation behavior change, remote CI provider behavior,
-  RBAC, tenants, or permissions.
-
-### 3.5.6 TestKnowledgeCard Prompt Eligibility Contract
-
-This section is contract-only. It defines future human review semantics for
-TestKnowledgeCard prompt eligibility and does not add an endpoint, router,
-service, worker, queue, frontend page, migration, retrieval runtime change,
-vector index, embedding job, reranking, graph job, or provider call.
-
-Allowed prompt eligibility actions:
-
-- `mark_card_prompt_eligible`: human marks a reviewed TestKnowledgeCard
-  eligible for future prompt context.
-- `deny_card_prompt_eligibility`: human denies eligibility and records why.
-- `request_prompt_eligibility_revision`: human requests redaction, source
-  evidence, or citation fixes before eligibility can be decided.
-- `revoke_card_prompt_eligibility`: human revokes an existing prompt
-  eligibility decision and records why the card must leave future prompt
-  context.
-
-Prompt eligibility payload shape:
-
-```json
-{
-  "prompt_eligibility_action": "mark_card_prompt_eligible",
-  "test_knowledge_card_id": "00000000-0000-0000-0000-000000000901",
-  "reviewer_label": "Default User",
-  "review_comment": "Source evidence and redaction were reviewed.",
-  "prompt_eligibility_reason": "Reviewed checkout coupon rule is safe and reusable.",
-  "creation_artifact_id": "00000000-0000-0000-0000-000000000891",
-  "source_manifest_artifact_id": "00000000-0000-0000-0000-000000000892",
-  "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
-  "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
-  "redaction_report_artifact_id": "00000000-0000-0000-0000-000000000893",
-  "safe_to_show": true,
-  "redaction_applied": false,
-  "unsupported_claims": [],
-  "allowed_for_prompt": true
-}
-```
-
-Prompt eligibility response shape for a future scoped implementation:
-
-```json
-{
-  "prompt_eligibility_action": "mark_card_prompt_eligible",
-  "prompt_eligibility_decision": "approved",
-  "review_history_id": "00000000-0000-0000-0000-000000000894",
-  "prompt_eligibility_artifact_id": "00000000-0000-0000-0000-000000000895",
-  "test_knowledge_card_id": "00000000-0000-0000-0000-000000000901",
-  "allowed_for_prompt": true
-}
-```
-
-TestKnowledgeCard Prompt Eligibility hard rules:
-
-- Prompt eligibility requires a reviewed TestKnowledgeCard record,
-  safe-to-show evidence, reviewed redaction status, same-project source
-  artifacts, source manifest, ReviewHistory ids, and a non-empty prompt
-  eligibility reason.
-- `allowed_for_prompt=true` must come only from `mark_card_prompt_eligible`
-  after human review. It must not be inferred from card creation, model
-  confidence, schema validity, source presence, or `safe_to_show=true`.
-- `deny_card_prompt_eligibility`,
-  `request_prompt_eligibility_revision`, and
-  `revoke_card_prompt_eligibility` must keep or set `allowed_for_prompt=false`
-  and preserve reviewer rationale.
-- Revocation removes the card from future prompt eligibility only; it must not
-  delete the TestKnowledgeCard row, mutate source artifacts, or rewrite
-  historical ReviewHistory.
-- This contract must not change prompt runtime retrieval, deterministic
-  retrieval ranking, vector indexes, embeddings, reranking, graph jobs, MCP
-  runtime, provider calls, broad TestKnowledgeCard CRUD, automatic
-  eligibility, automatic knowledge ingestion, artifact mutation outside
-  declared prompt eligibility artifacts, historical evidence mutation,
-  generated-case auto-approval, runner behavior, report behavior, RBAC,
-  tenants, or permissions.
-
-### 3.5.7 TestKnowledgeCard Retrieval Boundary Contract
-
-This section is contract-only. It defines future read-only selection semantics
-for TestKnowledgeCard prompt-context eligibility and does not add an endpoint,
-router, service, worker, queue, frontend page, migration, prompt runtime
-retrieval implementation, deterministic retrieval behavior change, vector
-index, embedding job, reranking, graph job, MCP runtime, or provider call.
-
-Allowed retrieval-boundary action:
-
-- `select_prompt_eligible_cards`: future scoped selection action that evaluates
-  prompt-eligible TestKnowledgeCard evidence for prompt-context consideration.
-  It records retrieval evidence and exclusion reasons only; it does not run
-  retrieval runtime or assemble prompts.
-
-Retrieval boundary payload shape:
-
-```json
-{
-  "retrieval_boundary_action": "select_prompt_eligible_cards",
-  "project_id": "00000000-0000-0000-0000-000000000101",
-  "prompt_request_id": "local-prompt-request-001",
-  "candidate_test_knowledge_card_ids": [
-    "00000000-0000-0000-0000-000000000901"
-  ],
-  "required_state": "prompt_eligible",
-  "required_allowed_for_prompt": true,
-  "required_safe_to_show": true,
-  "source_manifest_artifact_id": "00000000-0000-0000-0000-000000000892",
-  "prompt_eligibility_artifact_ids": [
-    "00000000-0000-0000-0000-000000000895"
-  ],
-  "creation_artifact_ids": [
-    "00000000-0000-0000-0000-000000000891"
-  ],
-  "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
-  "source_quote_or_hash": "sha256:reviewed-case-expired-coupon",
-  "review_history_ids": [
-    "00000000-0000-0000-0000-000000000894"
-  ],
-  "unsupported_claims": []
-}
-```
-
-Retrieval boundary response shape for a future scoped implementation:
-
-```json
-{
-  "retrieval_boundary_action": "select_prompt_eligible_cards",
-  "selected_test_knowledge_card_ids": [
-    "00000000-0000-0000-0000-000000000901"
-  ],
-  "excluded_cards": [
-    {
-      "test_knowledge_card_id": "00000000-0000-0000-0000-000000000902",
-      "excluded_card_reason": "prompt_eligibility_revoked"
-    }
-  ],
-  "retrieval_evidence_artifact_id": "00000000-0000-0000-0000-000000000896",
-  "selection_reason": "Card is prompt_eligible with reviewed safe source evidence.",
-  "allowed_for_prompt": true,
-  "prompt_eligible": true,
-  "safe_to_show": true
-}
-```
-
-TestKnowledgeCard Retrieval Boundary hard rules:
-
-- `allowed_for_prompt=true` is necessary but not sufficient for selection.
-  The card must also be in a current `prompt_eligible` state, `safe_to_show`
-  must be true, source manifest and same-project source artifacts must remain
-  valid, redaction must be reviewed, and ReviewHistory plus prompt eligibility
-  artifact evidence must be present.
-- `allowed_for_prompt=false`, `prompt_eligibility_denied`,
-  `prompt_eligibility_revision_requested`, `prompt_eligibility_revoked`,
-  stale evidence, cross-project evidence, unsafe evidence, missing source
-  evidence, unbounded evidence, unsupported claims, redaction failure, source
-  manifest mismatch, missing ReviewHistory, or missing prompt eligibility
-  artifact evidence must exclude the card and record `excluded_card_reason`.
-- `select_prompt_eligible_cards` must not create, approve, archive, delete,
-  relabel, merge, or mutate TestKnowledgeCard rows. It must not mutate source
-  artifacts, prompt eligibility artifacts, ReviewHistory, KnowledgeEvidence, or
-  historical evidence.
-- This contract must not add prompt runtime retrieval, deterministic retrieval
-  ranking changes, vector indexes, embeddings, reranking, graph jobs, MCP
-  runtime, provider calls, broad TestKnowledgeCard CRUD, automatic
-  eligibility, automatic knowledge ingestion, artifact mutation outside
-  declared retrieval evidence, historical evidence mutation, generated-case
-  auto-approval, runner behavior, report behavior, RBAC, tenants, or
-  permissions.
-
-### 3.5.8 TestKnowledgeCard Prompt Context Evidence Contract
-
-This section is contract-only. It defines future prompt context evidence
-semantics for selected TestKnowledgeCards and does not add an endpoint, router,
-service, worker, queue, frontend page, migration, prompt assembly
-implementation, prompt runtime execution, provider call, deterministic
-retrieval behavior change, vector index, embedding job, reranking, graph job,
-MCP runtime, broad CRUD, RBAC, tenants, or permissions.
-
-Allowed prompt-context evidence action:
-
-- `build_prompt_context_evidence`: future scoped evidence action that converts
-  retrieval boundary selections into bounded prompt context evidence. It
-  records safe entries, source hashes, context manifest links, PromptVersion /
-  SkillVersion trace, and omission reason values only; it does not assemble a
-  runtime prompt or call a provider.
-
-Prompt context evidence payload shape:
-
-```json
-{
-  "prompt_context_evidence_action": "build_prompt_context_evidence",
-  "project_id": "00000000-0000-0000-0000-000000000101",
-  "prompt_request_id": "local-prompt-request-001",
-  "ai_task_id": "00000000-0000-0000-0000-000000000701",
-  "prompt_version_id": "00000000-0000-0000-0000-000000000711",
-  "skill_version_id": "00000000-0000-0000-0000-000000000712",
-  "retrieval_boundary_artifact_id": "00000000-0000-0000-0000-000000000896",
-  "selected_test_knowledge_card_ids": [
-    "00000000-0000-0000-0000-000000000901"
-  ],
-  "prompt_eligibility_artifact_ids": [
-    "00000000-0000-0000-0000-000000000895"
-  ],
-  "source_manifest_artifact_ids": [
-    "00000000-0000-0000-0000-000000000892"
-  ],
-  "source_artifact_ids": ["00000000-0000-0000-0000-000000000391"],
-  "review_history_ids": [
-    "00000000-0000-0000-0000-000000000894"
-  ],
-  "context_manifest_artifact_id": null,
-  "max_snippet_chars": 600,
-  "safe_to_show": true,
-  "redaction_status": "reviewed"
-}
-```
-
-Prompt context evidence response shape for a future scoped implementation:
-
-```json
-{
-  "prompt_context_evidence_action": "build_prompt_context_evidence",
-  "prompt_context_evidence_artifact_id": "00000000-0000-0000-0000-000000000897",
-  "context_manifest_artifact_id": "00000000-0000-0000-0000-000000000372",
-  "prompt_trace": {
-    "prompt_version_id": "00000000-0000-0000-0000-000000000711",
-    "skill_version_id": "00000000-0000-0000-0000-000000000712"
-  },
-  "context_entries": [
-    {
-      "test_knowledge_card_id": "00000000-0000-0000-0000-000000000901",
-      "knowledge_type": "business_rule",
-      "title": "Expired coupon cannot submit order",
-      "bounded_snippet": "Expired coupons are rejected during checkout.",
-      "source_hash": "sha256:reviewed-case-expired-coupon",
-      "retrieval_boundary_artifact_id": "00000000-0000-0000-0000-000000000896",
-      "prompt_eligibility_artifact_id": "00000000-0000-0000-0000-000000000895",
-      "review_history_id": "00000000-0000-0000-0000-000000000894",
-      "source_trace_label": "reviewed-card:expired-coupon",
-      "selection_reason": "Prompt-eligible reviewed source evidence."
-    }
-  ],
-  "omitted_cards": [
-    {
-      "test_knowledge_card_id": "00000000-0000-0000-0000-000000000902",
-      "omission_reason": "snippet_bounds_unproven"
-    }
-  ]
-}
-```
-
-TestKnowledgeCard Prompt Context Evidence hard rules:
-
-- Prompt context evidence input must come from a retrieval boundary artifact
-  and selected TestKnowledgeCard ids. It must preserve PromptVersion,
-  SkillVersion, prompt request or AITask id when available, source manifests,
-  source artifacts, prompt eligibility artifacts, ReviewHistory, and context
-  manifest links.
-- Text can enter a prompt context entry only when `safe_to_show=true`,
-  redaction is reviewed, source evidence is same-project, retrieval boundary
-  evidence is present, and prompt eligibility artifact evidence is present. A
-  source hash or source quote/hash pointer must be used instead of text when a
-  bounded snippet cannot be proven safe.
-- Omitted selected cards must be represented by omitted-card summaries with an
-  `omission_reason`; omission must not revoke prompt eligibility, mutate card
-  rows, mutate retrieval boundary artifacts, or rewrite ReviewHistory.
-- `build_prompt_context_evidence` must not write a runtime `prompt_input.json`,
-  call providers, run AITasks, change retrieval ranking, create vector indexes,
-  create embeddings, rerank, run graph jobs, invoke MCP runtime, approve cases,
-  or mutate historical evidence.
-- This contract must not add prompt assembly implementation, prompt runtime
-  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
-  eligibility, automatic knowledge ingestion, artifact mutation outside
-  declared prompt context evidence, historical evidence mutation,
-  generated-case auto-approval, runner behavior, report behavior, RBAC,
-  tenants, or permissions.
-
-### 3.5.9 TestKnowledgeCard Prompt Context Consumption Contract
-
-This section is contract-only. It defines future prompt context consumption
-semantics for AI outputs that cite TestKnowledgeCard prompt context evidence
-and does not add an endpoint, router, service, worker, queue, frontend page,
-migration, prompt assembly implementation, prompt runtime execution, provider
-call, deterministic retrieval behavior change, vector index, embedding job,
-reranking, graph job, MCP runtime, broad CRUD, RBAC, tenants, or permissions.
-
-Allowed prompt-context consumption action:
-
-- `consume_prompt_context_evidence`: future scoped citation action that records
-  which prompt context evidence entries a future agent consumed, how output
-  citations point back to source hashes/context entries, and whether
-  `used_knowledge=true` is valid. It does not assemble a runtime prompt, run an
-  AITask, call a provider, or generate model citations.
-
-Prompt context consumption payload shape:
-
-```json
-{
-  prompt_context_consumption_action: consume_prompt_context_evidence,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  prompt_request_id: local-prompt-request-001,
-  ai_task_id: 00000000-0000-0000-0000-000000000701,
-  agent_step: case_generation,
-  intended_output_artifact_type: case_generation_output,
-  prompt_version_id: 00000000-0000-0000-0000-000000000711,
-  skill_version_id: 00000000-0000-0000-0000-000000000712,
-  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  consumed_context_entry_ids: [ctx-entry-expired-coupon],
-  consumed_test_knowledge_card_ids: [
-    00000000-0000-0000-0000-000000000901
-  ],
-  consumed_source_hashes: [sha256:reviewed-case-expired-coupon],
-  review_history_ids: [
-    00000000-0000-0000-0000-000000000894
-  ]
-}
-```
-
-Prompt context consumption response shape for a future scoped implementation:
-
-```json
-{
-  prompt_context_consumption_action: consume_prompt_context_evidence,
-  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
-  used_knowledge: true,
-  prompt_trace: {
-    prompt_version_id: 00000000-0000-0000-0000-000000000711,
-    skill_version_id: 00000000-0000-0000-0000-000000000712
-  },
-  citations: [
-    {
-      citation_id: knowledge-citation-expired-coupon,
-      test_knowledge_card_id: 00000000-0000-0000-0000-000000000901,
-      prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-      context_entry_id: ctx-entry-expired-coupon,
-      source_hash: sha256:reviewed-case-expired-coupon,
-      source_artifact_id: 00000000-0000-0000-0000-000000000391,
-      source_section: checkout/coupon/reviewed-case,
-      review_history_id: 00000000-0000-0000-0000-000000000894,
-      citation_status: valid
-    }
-  ],
-  skipped_evidence: [
-    {
-      context_entry_id: ctx-entry-unsafe-note,
-      skip_reason: safe_to_show_false
-    }
-  ]
-}
-```
-
-TestKnowledgeCard Prompt Context Consumption hard rules:
-
-- Prompt context consumption input must reference a prompt context evidence
-  artifact, context manifest, consumed context entries, consumed
-  TestKnowledgeCard ids, source hashes, PromptVersion, SkillVersion,
-  ReviewHistory, and intended output artifact type.
-- `used_knowledge=false` remains required when no valid prompt context evidence
-  is consumed. `used_knowledge=true` is valid only when at least one output
-  citation points to consumed prompt context evidence, a consumed source hash or
-  source quote/hash pointer, a same-project source artifact, PromptVersion,
-  SkillVersion, and ReviewHistory trace.
-- Output citations must reference prompt context evidence artifact id,
-  context entry id, TestKnowledgeCard id, source hash or source quote/hash
-  pointer, source artifact id, source section, and citation status. Unsupported
-  claims must remain marked as unsupported instead of being treated as
-  knowledge-backed facts.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, or evidence-mismatched input must
-  produce skipped evidence summaries, `used_knowledge=false`, or a failure code
-  without mutating historical evidence.
-- `consume_prompt_context_evidence` must not write runtime `prompt_input.json`,
-  assemble prompts, call providers, run AITasks, change retrieval ranking,
-  create vector indexes, create embeddings, rerank, run graph jobs, invoke MCP
-  runtime, approve cases, or mutate prompt context evidence artifacts.
-- This contract must not add prompt assembly implementation, prompt runtime
-  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
-  eligibility, automatic knowledge ingestion, artifact mutation outside
-  declared prompt context consumption, historical evidence mutation,
-  generated-case auto-approval, runner behavior, report behavior, RBAC,
-  tenants, or permissions.
-
-### 3.5.10 TestKnowledgeCard Prompt Context Audit Summary Contract
-
-This section is contract-only. It defines future read-only audit summary
-semantics for prompt context consumption evidence and does not add an endpoint,
-router, service, worker, queue, frontend page, report generation behavior,
-migration, prompt assembly implementation, prompt runtime execution, provider
-call, deterministic retrieval behavior change, vector index, embedding job,
-reranking, graph job, MCP runtime, broad CRUD, RBAC, tenants, or permissions.
-
-Allowed prompt-context audit summary action:
-
-- `summarize_prompt_context_consumption`: future scoped summary action that
-  records usage status, cited entries, skipped entries, unsupported claims, and
-  failure reasons from prompt context consumption evidence. It does not render
-  a UI, generate reports, assemble a runtime prompt, run an AITask, call a
-  provider, or generate model citations.
-
-Prompt context audit summary payload shape:
-
-```json
-{
-  prompt_context_audit_summary_action: summarize_prompt_context_consumption,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  prompt_request_id: local-prompt-request-001,
-  ai_task_id: 00000000-0000-0000-0000-000000000701,
-  agent_step: case_generation,
-  intended_output_artifact_type: case_generation_output,
-  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
-  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  used_knowledge: true,
-  output_citation_ids: [knowledge-citation-expired-coupon],
-  skipped_evidence_ids: [ctx-entry-unsafe-note],
-  unsupported_claim_count: 1,
-  prompt_version_id: 00000000-0000-0000-0000-000000000711,
-  skill_version_id: 00000000-0000-0000-0000-000000000712,
-  review_history_ids: [
-    00000000-0000-0000-0000-000000000894
-  ]
-}
-```
-
-Prompt context audit summary response shape for a future scoped implementation:
-
-```json
-{
-  prompt_context_audit_summary_action: summarize_prompt_context_consumption,
-  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
-  usage_status: knowledge_used,
-  used_knowledge: true,
-  prompt_trace: {
-    prompt_version_id: 00000000-0000-0000-0000-000000000711,
-    skill_version_id: 00000000-0000-0000-0000-000000000712
-  },
-  cited_entries: [
-    {
-      citation_id: knowledge-citation-expired-coupon,
-      test_knowledge_card_id: 00000000-0000-0000-0000-000000000901,
-      context_entry_id: ctx-entry-expired-coupon,
-      source_hash: sha256:reviewed-case-expired-coupon,
-      citation_status: valid
-    }
-  ],
-  skipped_entries: [
-    {
-      context_entry_id: ctx-entry-unsafe-note,
-      skip_reason: safe_to_show_false
-    }
-  ],
-  unsupported_claims_summary: [
-    {
-      claim_id: claim-without-source,
-      reason: missing_consumed_citation
-    }
-  ],
-  review_flags: []
-}
-```
-
-TestKnowledgeCard Prompt Context Audit Summary hard rules:
-
-- Audit summary input must reference prompt context consumption artifact,
-  prompt context evidence artifact, context manifest, `used_knowledge` decision,
-  output citations, skipped evidence, unsupported claims, PromptVersion,
-  SkillVersion, source hash, and ReviewHistory.
-- Audit summary output must be read-only. It may summarize usage status, cited
-  entries, skipped entries, unsupported claim summaries, failure reasons, and
-  review flags, but it must not invent citations, rewrite `used_knowledge`, or
-  mutate prompt context consumption evidence.
-- `used_knowledge=true` in an audit summary is valid only when the referenced
-  prompt context consumption evidence already recorded valid output citations.
-  When consumption evidence is missing, failed, skipped, unsafe, stale,
-  mismatched, or citation-incomplete, the summary must use a failure flag,
-  skipped entry, or `knowledge_not_used` status.
-- Unsupported claims must remain visible as unsupported claims or review
-  findings. They must not be converted into cited knowledge by this contract.
-- `summarize_prompt_context_consumption` must not write runtime
-  `prompt_input.json`, render frontend pages, generate reports, assemble
-  prompts, call providers, run AITasks, change retrieval ranking, create vector
-  indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime,
-  approve cases, or mutate historical evidence.
-- This contract must not add frontend page, report generation behavior, prompt
-  assembly implementation, prompt runtime execution, provider calls, broad
-  TestKnowledgeCard CRUD, automatic eligibility, automatic knowledge ingestion,
-  artifact mutation outside declared prompt context audit summary, historical
-  evidence mutation, generated-case auto-approval, runner behavior, RBAC,
-  tenants, or permissions.
-
-### 3.5.11 TestKnowledgeCard Prompt Context Audit Review Decision Contract
-
-This section is contract-only. It defines future human review decision
-semantics for prompt context audit summaries and does not add an endpoint,
-router, service, worker, queue, frontend page, report generation behavior,
-migration, prompt assembly implementation, prompt runtime execution, provider
-call, deterministic retrieval behavior change, vector index, embedding job,
-reranking, graph job, MCP runtime, broad CRUD, RBAC, tenants, or permissions.
-
-Allowed prompt-context audit review decision action:
-
-- `review_prompt_context_audit_summary`: future scoped human review action that
-  records whether the audit summary evidence is accepted, needs clarification,
-  or is rejected for missing evidence, unsupported claim, citation mismatch,
-  stale evidence, or cross-project evidence. It does not render a UI, generate
-  reports, assemble a runtime prompt, run an AITask, call a provider, create
-  prompt eligibility, or generate model citations.
-
-Allowed review actions:
-
-- `accepted`
-- `needs_clarification`
-- `rejected_for_missing_evidence`
-- `rejected_for_unsupported_claim`
-- `rejected_for_citation_mismatch`
-- `rejected_for_stale_evidence`
-- `rejected_for_cross_project_evidence`
-
-Prompt context audit review decision payload shape:
-
-```json
-{
-  prompt_context_audit_review_decision_action: review_prompt_context_audit_summary,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  prompt_request_id: local-prompt-request-001,
-  ai_task_id: 00000000-0000-0000-0000-000000000701,
-  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
-  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
-  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  used_knowledge: true,
-  usage_status: knowledge_used,
-  output_citation_ids: [knowledge-citation-expired-coupon],
-  skipped_evidence_ids: [ctx-entry-unsafe-note],
-  unsupported_claim_ids: [claim-without-source],
-  review_flags: [],
-  review_action: accepted,
-  reviewer_label: local-reviewer-001,
-  reviewer_comment: cited evidence matches consumed prompt context,
-  accepted_citation_ids: [knowledge-citation-expired-coupon],
-  questioned_citation_ids: [],
-  rejected_citation_ids: [],
-  follow_up_flags: [],
-  prompt_version_id: 00000000-0000-0000-0000-000000000711,
-  skill_version_id: 00000000-0000-0000-0000-000000000712,
-  review_history_ids: [
-    00000000-0000-0000-0000-000000000894
-  ]
-}
-```
-
-Prompt context audit review decision response shape for a future scoped
-implementation:
-
-```json
-{
-  prompt_context_audit_review_decision_action: review_prompt_context_audit_summary,
-  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
-  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
-  review_action: accepted,
-  reviewer_label: local-reviewer-001,
-  review_history_id: 00000000-0000-0000-0000-000000000895,
-  accepted_citations: [
-    {
-      citation_id: knowledge-citation-expired-coupon,
-      test_knowledge_card_id: 00000000-0000-0000-0000-000000000901,
-      context_entry_id: ctx-entry-expired-coupon,
-      source_hash: sha256:reviewed-case-expired-coupon,
-      citation_status: accepted
-    }
-  ],
-  questioned_citations: [],
-  rejected_citations: [],
-  follow_up_flags: [],
-  requested_clarification: null,
-  prompt_trace: {
-    prompt_version_id: 00000000-0000-0000-0000-000000000711,
-    skill_version_id: 00000000-0000-0000-0000-000000000712
-  },
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  failure_code: null
-}
-```
-
-TestKnowledgeCard Prompt Context Audit Review Decision hard rules:
-
-- Review decision input must reference prompt context audit summary artifact,
-  prompt context consumption artifact, prompt context evidence artifact,
-  context manifest, `used_knowledge` decision, usage status, output citations,
-  skipped evidence, unsupported claims, PromptVersion, SkillVersion, source
-  hash, and ReviewHistory.
-- Review decision output must be human review decision evidence only. It may
-  record review action, reviewer comment, accepted/questioned/rejected
-  citations, follow-up flags, requested clarification, ReviewHistory link,
-  failure reasons, and source hash/context manifest references, but it must
-  not invent citations, rewrite `used_knowledge`, or mutate audit summary
-  evidence.
-- `accepted` validates only the audit summary evidence for the scoped review.
-  It must not create prompt eligibility, approve TestKnowledgeCard content,
-  approve generated cases, alter prompt context consumption evidence, or mark
-  skipped evidence as cited.
-- `needs_clarification` and rejected actions must preserve cited evidence,
-  skipped evidence, unsupported claims, source hashes, PromptVersion,
-  SkillVersion, context manifest links, and ReviewHistory instead of deleting
-  or rewriting them.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, evidence-mismatched, or audit
-  summary-mismatched input must return a failure code and must not append a
-  successful ReviewHistory decision.
-- `review_prompt_context_audit_summary` must not write runtime
-  `prompt_input.json`, render frontend pages, generate reports, assemble
-  prompts, call providers, run AITasks, change retrieval ranking, create vector
-  indexes, create embeddings, rerank, run graph jobs, invoke MCP runtime,
-  approve cases, create prompt eligibility, or mutate historical evidence.
-- This contract must not add frontend page, report generation behavior, prompt
-  assembly implementation, prompt runtime execution, provider calls, broad
-  TestKnowledgeCard CRUD, automatic eligibility, automatic knowledge ingestion,
-  artifact mutation outside declared prompt context audit review decision,
-  historical evidence mutation, generated-case auto-approval, runner behavior,
-  RBAC, tenants, or permissions.
-
-### 3.5.12 TestKnowledgeCard Prompt Context Audit Review Summary Export Contract
-
-This section is contract-only. It defines future summary export semantics for
-prompt context audit review decisions and does not add an endpoint, router,
-service, worker, queue, frontend page, report generation behavior,
-export/download endpoint, migration, prompt assembly implementation, prompt
-runtime execution, provider call, deterministic retrieval behavior change,
-vector index, embedding job, reranking, graph job, MCP runtime, broad CRUD,
-RBAC, tenants, or permissions.
-
-Allowed prompt-context audit review summary export action:
-
-- `export_prompt_context_audit_review_summary`: future scoped summary export
-  action that packages review outcome summaries, accepted citation groups,
-  questioned citation groups, rejected citation groups, unresolved follow-up
-  flags, unsupported claim references, source hashes, context manifest links,
-  PromptVersion/SkillVersion trace, and ReviewHistory links from audit review
-  decision evidence. It does not render a UI, generate reports, expose a
-  download endpoint, assemble a runtime prompt, run an AITask, call a provider,
-  create prompt eligibility, or generate model citations.
-
-Prompt context audit review summary export payload shape:
-
-```json
-{
-  prompt_context_audit_review_summary_export_action: export_prompt_context_audit_review_summary,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  prompt_request_id: local-prompt-request-001,
-  ai_task_id: 00000000-0000-0000-0000-000000000701,
-  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
-  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
-  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
-  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  used_knowledge: true,
-  usage_status: knowledge_used,
-  review_action: accepted,
-  review_outcome_summary: accepted_with_one_citation,
-  accepted_citation_ids: [knowledge-citation-expired-coupon],
-  questioned_citation_ids: [],
-  rejected_citation_ids: [],
-  unresolved_follow_up_flags: [],
-  unsupported_claim_ids: [claim-without-source],
-  prompt_version_id: 00000000-0000-0000-0000-000000000711,
-  skill_version_id: 00000000-0000-0000-0000-000000000712,
-  review_history_ids: [
-    00000000-0000-0000-0000-000000000895
-  ]
-}
-```
-
-Prompt context audit review summary export response shape for a future scoped
-implementation:
-
-```json
-{
-  prompt_context_audit_review_summary_export_action: export_prompt_context_audit_review_summary,
-  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
-  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
-  review_outcome_summary: accepted_with_one_citation,
-  accepted_citation_group: [
-    {
-      citation_id: knowledge-citation-expired-coupon,
-      test_knowledge_card_id: 00000000-0000-0000-0000-000000000901,
-      context_entry_id: ctx-entry-expired-coupon,
-      source_hash: sha256:reviewed-case-expired-coupon,
-      citation_status: accepted
-    }
-  ],
-  questioned_citation_group: [],
-  rejected_citation_group: [],
-  unresolved_follow_up_flags: [],
-  unsupported_claim_references: [
-    {
-      claim_id: claim-without-source,
-      status: unsupported
-    }
-  ],
-  review_history_links: [
-    00000000-0000-0000-0000-000000000895
-  ],
-  prompt_trace: {
-    prompt_version_id: 00000000-0000-0000-0000-000000000711,
-    skill_version_id: 00000000-0000-0000-0000-000000000712
-  },
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  failure_code: null
-}
-```
-
-TestKnowledgeCard Prompt Context Audit Review Summary Export hard rules:
-
-- Summary export input must reference prompt context audit review decision
-  artifact, prompt context audit summary artifact, prompt context consumption
-  artifact, prompt context evidence artifact, context manifest,
-  `used_knowledge` decision, usage status, review action, accepted/questioned/
-  rejected citations, unresolved follow-up flags, unsupported claims,
-  PromptVersion, SkillVersion, source hash, and ReviewHistory.
-- Summary export output must be evidence packaging only. It may record review
-  outcome summary, accepted citation group, questioned citation group, rejected
-  citation group, unresolved follow-up flags, unsupported claim references,
-  reviewer comment summary, ReviewHistory links, failure reasons, and source
-  hash/context manifest references, but it must not invent citations, rewrite
-  `used_knowledge`, or mutate audit review decision evidence.
-- Accepted citation groups validate only the reviewed evidence for the scoped
-  summary export. They must not create prompt eligibility, approve
-  TestKnowledgeCard content, approve generated cases, alter prompt context
-  consumption evidence, or mark skipped evidence as cited.
-- Questioned/rejected citation groups, needs_clarification, unresolved
-  follow-up flags, skipped evidence, and unsupported claims must remain visible
-  instead of being deleted, filtered, or rewritten.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, evidence-mismatched,
-  audit-summary-mismatched, or review-decision-mismatched input must return a
-  failure code and must not append a successful summary export.
-- `export_prompt_context_audit_review_summary` must not write runtime
-  `prompt_input.json`, render frontend pages, generate reports, expose
-  export/download endpoints, assemble prompts, call providers, run AITasks,
-  change retrieval ranking, create vector indexes, create embeddings, rerank,
-  run graph jobs, invoke MCP runtime, approve cases, create prompt eligibility,
-  or mutate historical evidence.
-- This contract must not add frontend page, report generation behavior,
-  export/download endpoint, prompt assembly implementation, prompt runtime
-  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
-  eligibility, automatic knowledge ingestion, artifact mutation outside
-  declared prompt context audit review summary export, historical evidence
-  mutation, generated-case auto-approval, runner behavior, RBAC, tenants, or
-  permissions.
-
-### 3.5.13 TestKnowledgeCard Prompt Context Review Discrepancy Tracking Contract
-
-This section is contract-only. It defines future discrepancy tracking semantics
-for prompt context review evidence and does not add an endpoint, router,
-service, worker, queue, frontend page, report generation behavior,
-export/download endpoint, migration, prompt assembly implementation, prompt
-runtime execution, provider call, deterministic retrieval behavior change,
-vector index, embedding job, reranking, graph job, MCP runtime, broad CRUD,
-RBAC, tenants, or permissions.
-
-Allowed prompt-context review discrepancy action:
-
-- `track_prompt_context_review_discrepancy`: future scoped discrepancy action
-  that records discrepancy type, affected citation ids, evidence gap summary,
-  mismatch reason, reviewer note, severity, resolution status, unresolved
-  follow-up flags, unsupported claim references, source hashes, context
-  manifest links, PromptVersion/SkillVersion trace, and ReviewHistory links
-  from review summary export, audit review decision, audit summary, and prompt
-  context consumption evidence. It does not render a UI, generate reports,
-  expose a download endpoint, assemble a runtime prompt, run an AITask, call a
-  provider, create prompt eligibility, auto-resolve discrepancies, or generate
-  model citations.
-
-Prompt context review discrepancy payload shape:
-
-```json
-{
-  prompt_context_review_discrepancy_action: track_prompt_context_review_discrepancy,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  prompt_request_id: local-prompt-request-001,
-  ai_task_id: 00000000-0000-0000-0000-000000000701,
-  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
-  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
-  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
-  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
-  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  used_knowledge: true,
-  usage_status: knowledge_used,
-  review_action: accepted,
-  review_outcome_summary: accepted_with_one_citation,
-  discrepancy_type: citation_mismatch,
-  affected_citation_ids: [knowledge-citation-expired-coupon],
-  evidence_gap_summary: cited source hash differs from audit summary,
-  mismatch_reason: source_hash_mismatch,
-  reviewer_note: verify cited source before reuse,
-  severity: medium,
-  resolution_status: open,
-  unresolved_follow_up_flags: [verify-source-hash],
-  unsupported_claim_ids: [claim-without-source],
-  prompt_version_id: 00000000-0000-0000-0000-000000000711,
-  skill_version_id: 00000000-0000-0000-0000-000000000712,
-  review_history_ids: [
-    00000000-0000-0000-0000-000000000895
-  ]
-}
-```
-
-Prompt context review discrepancy response shape for a future scoped
-implementation:
-
-```json
-{
-  prompt_context_review_discrepancy_action: track_prompt_context_review_discrepancy,
-  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
-  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
-  discrepancy_type: citation_mismatch,
-  affected_citation_ids: [knowledge-citation-expired-coupon],
-  evidence_gap_summary: cited source hash differs from audit summary,
-  mismatch_reason: source_hash_mismatch,
-  reviewer_note: verify cited source before reuse,
-  severity: medium,
-  resolution_status: open,
-  unresolved_follow_up_flags: [verify-source-hash],
-  unsupported_claim_references: [
-    {
-      claim_id: claim-without-source,
-      status: unsupported
-    }
-  ],
-  review_history_links: [
-    00000000-0000-0000-0000-000000000895
-  ],
-  prompt_trace: {
-    prompt_version_id: 00000000-0000-0000-0000-000000000711,
-    skill_version_id: 00000000-0000-0000-0000-000000000712
-  },
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  failure_code: null
-}
-```
-
-TestKnowledgeCard Prompt Context Review Discrepancy Tracking hard rules:
-
-- Discrepancy input must reference review summary export artifact, audit
-  review decision artifact, audit summary artifact, prompt context consumption
-  artifact, prompt context evidence artifact, context manifest,
-  `used_knowledge` decision, usage status, affected citation ids, unresolved
-  follow-up flags, unsupported claim references, PromptVersion, SkillVersion,
-  source hash, and ReviewHistory.
-- Discrepancy output must be mismatch evidence only. It may record discrepancy
-  type, affected citation ids, evidence gap summary, mismatch reason, reviewer
-  note, severity, resolution status, unresolved follow-up flags, unsupported
-  claim references, ReviewHistory links, failure reasons, and source
-  hash/context manifest references, but it must not invent citations, rewrite
-  `used_knowledge`, auto-resolve discrepancies, or mutate review summary
-  export evidence.
-- Resolution status values `open`, `needs_clarification`, `acknowledged`,
-  `rejected`, and `resolved_by_later_review` are audit labels only. They must
-  not create prompt eligibility, approve TestKnowledgeCard content, approve
-  generated cases, alter prompt context consumption evidence, or mark skipped
-  evidence as cited.
-- Affected citation ids, questioned/rejected citation groups, unresolved
-  follow-up flags, skipped evidence, and unsupported claims must remain visible
-  instead of being deleted, filtered, or rewritten.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, evidence-mismatched,
-  audit-summary-mismatched, review-decision-mismatched, or
-  summary-export-mismatched input must return a failure code and must not
-  append a successful discrepancy record.
-- `track_prompt_context_review_discrepancy` must not write runtime
-  `prompt_input.json`, render frontend pages, generate reports, expose
-  export/download endpoints, assemble prompts, call providers, run AITasks,
-  change retrieval ranking, create vector indexes, create embeddings, rerank,
-  run graph jobs, invoke MCP runtime, approve cases, create prompt eligibility,
-  auto-resolve discrepancies, or mutate historical evidence.
-- This contract must not add frontend page, report generation behavior,
-  export/download endpoint, prompt assembly implementation, prompt runtime
-  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
-  eligibility, automatic knowledge ingestion, artifact mutation outside
-  declared prompt context review discrepancy tracking, historical evidence
-  mutation, generated-case auto-approval, runner behavior, RBAC, tenants, or
-  permissions.
-
-### 3.5.14 TestKnowledgeCard Prompt Context Discrepancy Resolution Review Contract
-
-This section is contract-only. It defines future resolution review semantics
-for prompt context discrepancy records and does not add an endpoint, router,
-service, worker, queue, frontend page, report generation behavior,
-export/download endpoint, migration, prompt assembly implementation, prompt
-runtime execution, provider call, deterministic retrieval behavior change,
-vector index, embedding job, reranking, graph job, MCP runtime, broad CRUD,
-RBAC, tenants, or permissions.
-
-Allowed prompt-context discrepancy resolution review action:
-
-- `review_prompt_context_discrepancy_resolution`: future scoped resolution
-  review action that records resolution action, accepted discrepancy ids,
-  rejected discrepancy ids, acknowledged discrepancy ids, clarification
-  requested fields, reviewer note, resulting resolution status, follow-up
-  flags, source hashes, context manifest links, PromptVersion/SkillVersion
-  trace, and ReviewHistory links from prompt context review discrepancy,
-  review summary export, audit review decision, audit summary, and prompt
-  context consumption evidence. It does not render a UI, generate reports,
-  expose a download endpoint, assemble a runtime prompt, run an AITask, call a
-  provider, create prompt eligibility, auto-resolve discrepancies, or generate
-  model citations.
-
-Prompt context discrepancy resolution review payload shape:
-
-```json
-{
-  prompt_context_discrepancy_resolution_review_action: review_prompt_context_discrepancy_resolution,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  prompt_request_id: local-prompt-request-001,
-  ai_task_id: 00000000-0000-0000-0000-000000000701,
-  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
-  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
-  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
-  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
-  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
-  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  used_knowledge: true,
-  usage_status: knowledge_used,
-  discrepancy_type: citation_mismatch,
-  affected_citation_ids: [knowledge-citation-expired-coupon],
-  evidence_gap_summary: cited source hash differs from audit summary,
-  mismatch_reason: source_hash_mismatch,
-  reviewer_note_from_discrepancy_tracking: verify cited source before reuse,
-  severity: medium,
-  current_resolution_status: open,
-  resolution_action: acknowledge_discrepancy,
-  accepted_discrepancy_ids: [discrepancy-citation-mismatch-001],
-  rejected_discrepancy_ids: [],
-  acknowledged_discrepancy_ids: [discrepancy-citation-mismatch-001],
-  clarification_requested_fields: [],
-  resulting_resolution_status: acknowledged,
-  unresolved_follow_up_flags: [verify-source-hash],
-  unsupported_claim_references: [claim-without-source],
-  prompt_version_id: 00000000-0000-0000-0000-000000000711,
-  skill_version_id: 00000000-0000-0000-0000-000000000712,
-  review_history_ids: [
-    00000000-0000-0000-0000-000000000895
-  ]
-}
-```
-
-Prompt context discrepancy resolution review response shape for a future
-scoped implementation:
-
-```json
-{
-  prompt_context_discrepancy_resolution_review_action: review_prompt_context_discrepancy_resolution,
-  prompt_context_discrepancy_resolution_review_artifact_id: 00000000-0000-0000-0000-000000000903,
-  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
-  resolution_action: acknowledge_discrepancy,
-  accepted_discrepancy_ids: [discrepancy-citation-mismatch-001],
-  rejected_discrepancy_ids: [],
-  acknowledged_discrepancy_ids: [discrepancy-citation-mismatch-001],
-  affected_citation_ids: [knowledge-citation-expired-coupon],
-  evidence_gap_summary: cited source hash differs from audit summary,
-  mismatch_reason: source_hash_mismatch,
-  reviewer_note: discrepancy accepted for later evidence refresh,
-  severity: medium,
-  resulting_resolution_status: acknowledged,
-  review_history_links: [
-    00000000-0000-0000-0000-000000000896
-  ],
-  prompt_trace: {
-    prompt_version_id: 00000000-0000-0000-0000-000000000711,
-    skill_version_id: 00000000-0000-0000-0000-000000000712
-  },
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-TestKnowledgeCard Prompt Context Discrepancy Resolution Review hard rules:
-
-- Resolution review input must reference prompt context review discrepancy
-  artifact, review summary export artifact, audit review decision artifact,
-  audit summary artifact, prompt context consumption artifact, prompt context
-  evidence artifact, context manifest, `used_knowledge` decision, usage
-  status, discrepancy type, affected citation ids, evidence gap summary,
-  mismatch reason, severity, current resolution status, unresolved follow-up
-  flags, unsupported claim references, PromptVersion, SkillVersion, source
-  hash, and ReviewHistory.
-- Resolution review output must be human review evidence only. It may record
-  resolution action, accepted discrepancy ids, rejected discrepancy ids,
-  acknowledged discrepancy ids, clarification requested fields, reviewer note,
-  resulting resolution status, follow-up flags, ReviewHistory links, failure
-  reasons, visible reason, and source hash/context manifest references, but it
-  must not invent citations, rewrite `used_knowledge`, auto-resolve
-  discrepancies, or mutate discrepancy tracking evidence.
-- Resolution action values `acknowledge_discrepancy`,
-  `reject_discrepancy_resolution`, `request_discrepancy_clarification`, and
-  `mark_resolved_by_later_review` are audit labels only. They must not create
-  prompt eligibility, approve TestKnowledgeCard content, approve generated
-  cases, alter prompt context consumption evidence, or mark skipped evidence
-  as cited.
-- Accepted discrepancy ids, rejected discrepancy ids, acknowledged discrepancy
-  ids, affected citation ids, unresolved follow-up flags, skipped evidence,
-  evidence gap summary, mismatch reason, and unsupported claims must remain
-  visible instead of being deleted, filtered, or rewritten.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
-  evidence-mismatched, audit-summary-mismatched, review-decision-mismatched,
-  or summary-export-mismatched input must return a failure code and visible
-  reason and must not append a successful resolution review.
-- `review_prompt_context_discrepancy_resolution` must not write runtime
-  `prompt_input.json`, render frontend pages, generate reports, expose
-  export/download endpoints, assemble prompts, call providers, run AITasks,
-  change retrieval ranking, create vector indexes, create embeddings, rerank,
-  run graph jobs, invoke MCP runtime, approve cases, create prompt eligibility,
-  auto-resolve discrepancies, or mutate historical evidence.
-- This contract must not add frontend page, report generation behavior,
-  export/download endpoint, prompt assembly implementation, prompt runtime
-  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
-  eligibility, automatic knowledge ingestion, artifact mutation outside
-  declared prompt context discrepancy resolution review, historical evidence
-  mutation, generated-case auto-approval, runner behavior, RBAC, tenants, or
-  permissions.
-
-### 3.5.15 TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export Contract
-
-This section is contract-only. It defines future summary export semantics for
-prompt context discrepancy resolution review evidence and does not add an
-endpoint, router, service, worker, queue, frontend page, report generation
-behavior, export/download endpoint, migration, prompt assembly implementation,
-prompt runtime execution, provider call, deterministic retrieval behavior
-change, vector index, embedding job, reranking, graph job, MCP runtime, broad
-CRUD, RBAC, tenants, or permissions.
-
-Allowed prompt-context discrepancy resolution summary export action:
-
-- `export_prompt_context_discrepancy_resolution_summary`: future scoped
-  summary export action that packages resolution outcome summary,
-  accepted discrepancy group, rejected discrepancy group, acknowledged
-  discrepancy group, clarification requested field group, unresolved follow-up
-  flag group, reviewer comment summary, resulting resolution status group,
-  source hashes, context manifest links, PromptVersion/SkillVersion trace, and
-  ReviewHistory links from discrepancy resolution review, prompt context review
-  discrepancy, review summary export, audit review decision, audit summary,
-  and prompt context consumption evidence. It does not render a UI, generate
-  reports, expose a download endpoint, assemble a runtime prompt, run an
-  AITask, call a provider, create prompt eligibility, auto-resolve
-  discrepancies, or generate model citations.
-
-Prompt context discrepancy resolution summary export payload shape:
-
-```json
-{
-  prompt_context_discrepancy_resolution_summary_export_action: export_prompt_context_discrepancy_resolution_summary,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  prompt_request_id: local-prompt-request-001,
-  ai_task_id: 00000000-0000-0000-0000-000000000701,
-  prompt_context_discrepancy_resolution_review_artifact_id: 00000000-0000-0000-0000-000000000903,
-  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
-  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
-  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
-  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
-  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
-  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  used_knowledge: true,
-  usage_status: knowledge_used,
-  resolution_action: acknowledge_discrepancy,
-  resulting_resolution_status: acknowledged,
-  accepted_discrepancy_ids: [],
-  rejected_discrepancy_ids: [],
-  acknowledged_discrepancy_ids: [discrepancy-citation-mismatch-001],
-  clarification_requested_fields: [],
-  affected_citation_ids: [knowledge-citation-expired-coupon],
-  evidence_gap_summary: cited source hash differs from audit summary,
-  mismatch_reason: source_hash_mismatch,
-  reviewer_note: discrepancy accepted for later evidence refresh,
-  unresolved_follow_up_flags: [verify-source-hash],
-  unsupported_claim_references: [claim-without-source],
-  prompt_version_id: 00000000-0000-0000-0000-000000000711,
-  skill_version_id: 00000000-0000-0000-0000-000000000712,
-  review_history_ids: [
-    00000000-0000-0000-0000-000000000895,
-    00000000-0000-0000-0000-000000000896
-  ]
-}
-```
-
-Prompt context discrepancy resolution summary export response shape for a
-future scoped implementation:
-
-```json
-{
-  prompt_context_discrepancy_resolution_summary_export_action: export_prompt_context_discrepancy_resolution_summary,
-  prompt_context_discrepancy_resolution_summary_export_artifact_id: 00000000-0000-0000-0000-000000000904,
-  prompt_context_discrepancy_resolution_review_artifact_id: 00000000-0000-0000-0000-000000000903,
-  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
-  resolution_outcome_summary: acknowledged_discrepancy_with_follow_up,
-  accepted_discrepancy_group: [],
-  rejected_discrepancy_group: [],
-  acknowledged_discrepancy_group: [
-    {
-      discrepancy_id: discrepancy-citation-mismatch-001,
-      affected_citation_ids: [knowledge-citation-expired-coupon]
-    }
-  ],
-  clarification_requested_field_group: [],
-  unresolved_follow_up_flag_group: [verify-source-hash],
-  reviewer_comment_summary: discrepancy accepted for later evidence refresh,
-  resulting_resolution_status_group: [
-    {
-      status: acknowledged,
-      discrepancy_id: discrepancy-citation-mismatch-001
-    }
-  ],
-  review_history_links: [
-    00000000-0000-0000-0000-000000000895,
-    00000000-0000-0000-0000-000000000896
-  ],
-  prompt_trace: {
-    prompt_version_id: 00000000-0000-0000-0000-000000000711,
-    skill_version_id: 00000000-0000-0000-0000-000000000712
-  },
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  source_hashes: [sha256:knowledge-source-hash],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-TestKnowledgeCard Prompt Context Discrepancy Resolution Summary Export hard
-rules:
-
-- Resolution summary export input must reference prompt context discrepancy
-  resolution review artifact, prompt context review discrepancy artifact,
-  review summary export artifact, audit review decision artifact, audit summary
-  artifact, prompt context consumption artifact, prompt context evidence
-  artifact, context manifest, `used_knowledge` decision, usage status,
-  resolution action, resulting resolution status, accepted discrepancy ids,
-  rejected discrepancy ids, acknowledged discrepancy ids, clarification
-  requested fields, affected citation ids, evidence gap summary, mismatch
-  reason, unresolved follow-up flags, unsupported claim references,
-  PromptVersion, SkillVersion, source hash, and ReviewHistory.
-- Resolution summary export output must be evidence packaging only. It may
-  record resolution outcome summary, accepted discrepancy group, rejected
-  discrepancy group, acknowledged discrepancy group, clarification requested
-  field group, unresolved follow-up flag group, reviewer comment summary,
-  resulting resolution status group, ReviewHistory links, failure reasons,
-  visible reason, and source hash/context manifest references, but it must not
-  invent citations, rewrite `used_knowledge`, auto-resolve discrepancies, or
-  mutate resolution review evidence.
-- Resolution outcome groups and resulting resolution status group are audit
-  labels only. They must not create prompt eligibility, approve
-  TestKnowledgeCard content, approve generated cases, alter prompt context
-  consumption evidence, or mark skipped evidence as cited.
-- Accepted discrepancy group, rejected discrepancy group, acknowledged
-  discrepancy group, clarification requested field group, unresolved follow-up
-  flag group, affected citation ids, skipped evidence, evidence gap summary,
-  mismatch reason, and unsupported claims must remain visible instead of being
-  deleted, filtered, or rewritten.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
-  resolution-review-mismatched, evidence-mismatched, audit-summary-mismatched,
-  review-decision-mismatched, or summary-export-mismatched input must return a
-  failure code and visible reason and must not append a successful resolution
-  summary export.
-- `export_prompt_context_discrepancy_resolution_summary` must not write runtime
-  `prompt_input.json`, render frontend pages, generate reports, expose
-  export/download endpoints, assemble prompts, call providers, run AITasks,
-  change retrieval ranking, create vector indexes, create embeddings, rerank,
-  run graph jobs, invoke MCP runtime, approve cases, create prompt eligibility,
-  auto-resolve discrepancies, or mutate historical evidence.
-- This contract must not add frontend page, report generation behavior,
-  export/download endpoint, prompt assembly implementation, prompt runtime
-  execution, provider calls, broad TestKnowledgeCard CRUD, automatic
-  eligibility, automatic knowledge ingestion, artifact mutation outside
-  declared prompt context discrepancy resolution summary export, historical
-  evidence mutation, generated-case auto-approval, runner behavior, RBAC,
-  tenants, or permissions.
-
-### 3.5.16 TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff Contract
-
-This section is contract-only. It defines future audit handoff semantics for
-prompt context discrepancy resolution summary export evidence and does not add
-an endpoint, router, service, worker, queue, frontend page, report generation
-behavior, export/download endpoint, external archive integration, migration,
-prompt assembly implementation, prompt runtime execution, provider call,
-deterministic retrieval behavior change, vector index, embedding job,
-reranking, graph job, MCP runtime, broad CRUD, RBAC, tenants, or permissions.
-
-Allowed prompt-context discrepancy resolution audit handoff action:
-
-- `build_prompt_context_discrepancy_resolution_audit_handoff`: future scoped
-  audit handoff action that packages handoff summary, evidence chain status,
-  included artifact ids, excluded artifact reasons, unresolved follow-up
-  flags, unresolved evidence gaps, unsupported claim references, source
-  hashes, context manifest links, PromptVersion/SkillVersion trace, and
-  ReviewHistory links from discrepancy resolution summary export, discrepancy
-  resolution review, prompt context review discrepancy, review summary export,
-  audit review decision, audit summary, prompt context consumption, and prompt
-  context evidence. It does not render a UI, generate reports, expose a
-  download endpoint, integrate with an external archive, assemble a runtime
-  prompt, run an AITask, call a provider, upload artifacts, create prompt
-  eligibility, auto-resolve discrepancies, or generate model citations.
-
-Prompt context discrepancy resolution audit handoff payload shape:
-
-```json
-{
-  prompt_context_discrepancy_resolution_audit_handoff_action: build_prompt_context_discrepancy_resolution_audit_handoff,
-  project_id: 00000000-0000-0000-0000-000000000101,
-  prompt_request_id: local-prompt-request-001,
-  ai_task_id: 00000000-0000-0000-0000-000000000701,
-  prompt_context_discrepancy_resolution_summary_export_artifact_id: 00000000-0000-0000-0000-000000000904,
-  prompt_context_discrepancy_resolution_review_artifact_id: 00000000-0000-0000-0000-000000000903,
-  prompt_context_review_discrepancy_artifact_id: 00000000-0000-0000-0000-000000000902,
-  prompt_context_audit_review_summary_export_artifact_id: 00000000-0000-0000-0000-000000000901,
-  prompt_context_audit_review_decision_artifact_id: 00000000-0000-0000-0000-000000000900,
-  prompt_context_audit_summary_artifact_id: 00000000-0000-0000-0000-000000000899,
-  prompt_context_consumption_artifact_id: 00000000-0000-0000-0000-000000000898,
-  prompt_context_evidence_artifact_id: 00000000-0000-0000-0000-000000000897,
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  used_knowledge: true,
-  usage_status: knowledge_used,
-  resolution_outcome_summary: acknowledged_discrepancy_with_follow_up,
-  accepted_discrepancy_group: [],
-  rejected_discrepancy_group: [],
-  acknowledged_discrepancy_group: [
-    {
-      discrepancy_id: discrepancy-citation-mismatch-001,
-      affected_citation_ids: [knowledge-citation-expired-coupon]
-    }
-  ],
-  clarification_requested_fields: [],
-  clarification_requested_field_group: [],
-  resulting_resolution_status_group: [
-    {
-      status: acknowledged,
-      discrepancy_id: discrepancy-citation-mismatch-001
-    }
-  ],
-  affected_citation_ids: [knowledge-citation-expired-coupon],
-  evidence_gap_summary: cited source hash differs from audit summary,
-  mismatch_reason: source_hash_mismatch,
-  unresolved_follow_up_flags: [verify-source-hash],
-  unsupported_claim_references: [claim-without-source],
-  source_hashes: [sha256:knowledge-source-hash],
-  prompt_version_id: 00000000-0000-0000-0000-000000000711,
-  skill_version_id: 00000000-0000-0000-0000-000000000712,
-  review_history_ids: [
-    00000000-0000-0000-0000-000000000895,
-    00000000-0000-0000-0000-000000000896
-  ]
-}
-```
-
-Prompt context discrepancy resolution audit handoff response shape for a
-future scoped implementation:
-
-```json
-{
-  prompt_context_discrepancy_resolution_audit_handoff_action: build_prompt_context_discrepancy_resolution_audit_handoff,
-  prompt_context_discrepancy_resolution_audit_handoff_artifact_id: 00000000-0000-0000-0000-000000000905,
-  prompt_context_discrepancy_resolution_summary_export_artifact_id: 00000000-0000-0000-0000-000000000904,
-  handoff_summary: final handoff preserves acknowledged discrepancy and follow-up evidence,
-  evidence_chain_status: complete,
-  included_artifact_ids: [
-    00000000-0000-0000-0000-000000000904,
-    00000000-0000-0000-0000-000000000903,
-    00000000-0000-0000-0000-000000000902
-  ],
-  excluded_artifact_reasons: [],
-  unresolved_follow_up_flags: [verify-source-hash],
-  unresolved_evidence_gaps: [source hash refresh pending],
-  unsupported_claim_references: [claim-without-source],
-  review_history_links: [
-    00000000-0000-0000-0000-000000000895,
-    00000000-0000-0000-0000-000000000896
-  ],
-  prompt_trace: {
-    prompt_version_id: 00000000-0000-0000-0000-000000000711,
-    skill_version_id: 00000000-0000-0000-0000-000000000712
-  },
-  context_manifest_artifact_id: 00000000-0000-0000-0000-000000000372,
-  source_manifest_ids: [knowledge-source-manifest-001],
-  source_hashes: [sha256:knowledge-source-hash],
-  failure_code: null,
-  visible_reason: null
-}
-```
-
-TestKnowledgeCard Prompt Context Discrepancy Resolution Audit Handoff hard
-rules:
-
-- Audit handoff input must reference prompt context discrepancy resolution
-  summary export artifact, prompt context discrepancy resolution review
-  artifact, prompt context review discrepancy artifact, review summary export
-  artifact, audit review decision artifact, audit summary artifact, prompt
-  context consumption artifact, prompt context evidence artifact, context
-  manifest, `used_knowledge` decision, usage status, resolution outcome
-  summary, accepted discrepancy group, rejected discrepancy group,
-  acknowledged discrepancy group, clarification requested fields,
-  clarification requested field group, resulting resolution status group,
-  affected citation ids, evidence gap summary, mismatch reason, unresolved
-  follow-up flags, unsupported claim references, PromptVersion, SkillVersion,
-  source hash, and ReviewHistory.
-- Audit handoff output must be evidence chain packaging only. It may record
-  handoff summary, evidence chain status, included artifact ids, excluded
-  artifact reasons, unresolved evidence gaps, unresolved follow-up flags,
-  ReviewHistory links, failure reasons, visible reason, source hash, source
-  manifest, and context manifest references, but it must not invent citations,
-  rewrite `used_knowledge`, auto-resolve discrepancies, mutate resolution
-  summary export evidence, or upload artifacts.
-- Evidence chain status values are `complete`, `incomplete`, `blocked`, and
-  `failed_validation`. They are audit labels only. They must not create prompt
-  eligibility, approve TestKnowledgeCard content, approve generated cases,
-  alter prompt context consumption evidence, or mark skipped evidence as
-  cited.
-- Included artifact ids, excluded artifact reasons, unresolved evidence gaps,
-  unresolved follow-up flags, affected citation ids, skipped evidence,
-  evidence gap summary, mismatch reason, and unsupported claims must remain
-  visible instead of being deleted, filtered, or rewritten.
-- Missing, stale, unsafe, cross-project, revoked, unsupported, unbounded,
-  citation-mismatched, context-mismatched, prompt-version-mismatched,
-  skill-version-mismatched, redaction-failed, discrepancy-mismatched,
-  resolution-review-mismatched, summary-export-mismatched,
-  evidence-mismatched, audit-summary-mismatched, review-decision-mismatched,
-  or audit-handoff-mismatched input must return a failure code and visible
-  reason and must not append a successful audit handoff.
-- `build_prompt_context_discrepancy_resolution_audit_handoff` must not write
-  runtime `prompt_input.json`, render frontend pages, generate reports, expose
-  export/download endpoints, integrate with an external archive, assemble
-  prompts, call providers, run AITasks, change retrieval ranking, create
-  vector indexes, create embeddings, rerank, run graph jobs, invoke MCP
-  runtime, approve cases, create prompt eligibility, auto-resolve
-  discrepancies, upload artifacts, or mutate historical evidence.
-- This contract must not add frontend page, report generation behavior,
-  export/download endpoint, external archive integration, prompt assembly
-  implementation, prompt runtime execution, provider calls, broad
-  TestKnowledgeCard CRUD, automatic eligibility, automatic knowledge ingestion,
-  artifact mutation outside declared prompt context discrepancy resolution
-  audit handoff, historical evidence mutation, generated-case auto-approval,
-  runner behavior, RBAC, tenants, or permissions.
 
 ### 3.6 Review Candidate Case
 
@@ -4036,9 +1139,112 @@ Contract boundary:
 - AutomationDraft creation, execution, reports, CI/CD quality, RAG runtime, MCP
   runtime, RBAC, tenants, and permissions are outside this API.
 
-## 4. Automation Draft APIs
+## 4. Automation Plan And Draft APIs
 
-### 4.1 Create Automation Draft
+### 4.1 Create Automation Plan
+
+`POST /api/automation/plans`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "test_case_id": "00000000-0000-0000-0000-000000000901",
+  "target_framework": "pytest",
+  "use_knowledge": true,
+  "context_artifact_ids": []
+}
+```
+
+Response 202 returns an AutomationPlan read model:
+
+```json
+{
+  "id": "00000000-0000-0000-0000-000000000a01",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "test_case_id": "00000000-0000-0000-0000-000000000901",
+  "requirement_id": "00000000-0000-0000-0000-000000000401",
+  "requirement_review_id": "00000000-0000-0000-0000-000000000601",
+  "source_candidate_id": "00000000-0000-0000-0000-000000000801",
+  "ai_task_id": "00000000-0000-0000-0000-000000000a02",
+  "knowledge_retrieval_artifact_id": null,
+  "target_framework": "pytest",
+  "title": "pytest automation plan for Expired coupon cannot submit order",
+  "plan": {"source": "reviewed_test_case"},
+  "execution_steps": ["Prepare precondition: User has an expired coupon"],
+  "test_data": {"coupon_state": "expired"},
+  "dependency_notes": "Requires pytest and project-local fixtures.",
+  "risk_notes": "Review selectors, fixtures, and environment data before generating executable code.",
+  "used_context_artifact_ids": [],
+  "status": "plan_generated",
+  "review_comment": null
+}
+```
+
+Rules:
+
+- `test_case_id` must reference an active TestCase with `review_status=approved`
+  or `approved_after_edit` and a non-null `source_candidate_id`.
+- When `use_knowledge=true`, the endpoint may attach deterministic local
+  `knowledge_retrieval` evidence to the AutomationPlan AITask.
+- This endpoint does not create AutomationDraft and does not execute code.
+
+### 4.2 Review Automation Plan
+
+`GET /api/automation/plans/{id}` returns the AutomationPlan read model.
+
+`PATCH /api/automation/plans/{id}` edits reviewable plan fields while status is
+`plan_generated` or `edited`, and returns:
+
+```json
+{
+  "automation_plan_id": "00000000-0000-0000-0000-000000000a01",
+  "status": "edited"
+}
+```
+
+`POST /api/automation/plans/{id}/approve` accepts:
+
+```json
+{
+  "action": "approve",
+  "review_comment": "Plan is feasible"
+}
+```
+
+Response 200:
+
+```json
+{
+  "automation_plan_id": "00000000-0000-0000-0000-000000000a01",
+  "status": "approved"
+}
+```
+
+### 4.3 Generate Draft From Approved Plan
+
+`POST /api/automation/plans/{id}/generate-draft`
+
+Request may be `{}` or include model override fields. Response 202 matches
+AutomationDraft creation:
+
+```json
+{
+  "automation_draft_id": "00000000-0000-0000-0000-000000001001",
+  "ai_task_id": "00000000-0000-0000-0000-000000001002",
+  "status": "draft_generated"
+}
+```
+
+Rules:
+
+- The AutomationPlan must be `approved`.
+- Generated AutomationDraft rows must carry `automation_plan_id`.
+- Generating a draft changes AutomationPlan status to `draft_generated`.
+- The generated AutomationDraft still requires separate approval before TestRun.
+
+### 4.4 Create Automation Draft
 
 `POST /api/automation/drafts`
 
@@ -4049,6 +1255,7 @@ Request:
   "project_id": "00000000-0000-0000-0000-000000000101",
   "test_case_id": "00000000-0000-0000-0000-000000000901",
   "requirement_id": null,
+  "automation_plan_id": null,
   "target_framework": "pytest",
   "prompt_version": "automation_draft_generation:v1",
   "skill_version": "automation-draft-skill:v1",
@@ -4067,13 +1274,15 @@ Response 202:
 }
 ```
 
-### 4.2 Get Automation Draft
+### 4.5 Get Automation Draft
 
 `GET /api/automation/drafts/{id}`
 
-Response 200 returns AutomationDraft read model with `draft_code`, `target_framework`, `suggested_file_path`, `execution_notes`, `risk_notes`, and artifacts.
+Response 200 returns AutomationDraft read model with `automation_plan_id`,
+`draft_code`, `target_framework`, `suggested_file_path`, `execution_notes`,
+`risk_notes`, and artifacts.
 
-### 4.3 Edit Automation Draft
+### 4.6 Edit Automation Draft
 
 `PATCH /api/automation/drafts/{id}`
 
@@ -4098,7 +1307,7 @@ Response 200:
 }
 ```
 
-### 4.4 Approve Automation Draft
+### 4.7 Approve Automation Draft
 
 `POST /api/automation/drafts/{id}/approve`
 
@@ -4120,12 +1329,14 @@ Response 200:
 }
 ```
 
+AutomationPlan uses `plan_generated -> edited -> approved -> draft_generated`.
 AutomationDraft uses `edit -> edited -> approve -> approved`. It does not use `approve_after_edit`.
 
 Review history side effect:
 
-- Successful candidate review, AutomationDraft edit/approval, UnitTestPatch
-  approval/rejection, and QualityGateDecision compute/recompute actions append
+- Successful candidate review, AutomationPlan edit/approval/draft generation,
+  AutomationDraft edit/approval, UnitTestPatch approval/rejection, and
+  QualityGateDecision compute/recompute actions append
   local ReviewHistory records where Slice 21 implements the hook.
 - The history side effect must not change whether the original action is
   allowed. Existing state-machine validation remains authoritative.
@@ -5539,7 +2750,7 @@ Query filters:
 | Name | Required | Notes |
 |---|---:|---|
 | project_id | yes | Limit history to one local project |
-| entity_type | no | GeneratedCaseCandidate, TestCase, AutomationDraft, UnitTestPatch, CICDRun, QualityGateDecision, AutomationRepairTask |
+| entity_type | no | GeneratedCaseCandidate, TestCase, AutomationPlan, AutomationDraft, UnitTestPatch, CICDRun, QualityGateDecision, AutomationRepairTask |
 | entity_id | no | Entity id matching `entity_type` |
 | related_entity_type | no | Optional relation query, for example CICDRun |
 | related_entity_id | no | Related entity id matching `related_entity_type` |

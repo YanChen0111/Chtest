@@ -37,13 +37,20 @@ class RequirementListRead(BaseModel):
     total: int
 
 
+class ClarificationAnswer(BaseModel):
+    question: str = Field(min_length=1)
+    answer: str = Field(min_length=1)
+
+
 class RequirementReviewStartRequest(BaseModel):
     prompt_version: Literal["requirement_review:v1"] = "requirement_review:v1"
     skill_version: Literal["requirement-review-skill:v1"] = "requirement-review-skill:v1"
-    model_provider: Literal["mock"] = "mock"
-    model_name: Literal["mock-requirement-review"] = "mock-requirement-review"
+    model_provider: str | None = None
+    model_name: str | None = None
     use_knowledge: bool = False
     context_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    supplement_text: str | None = None
+    clarification_answers: list[ClarificationAnswer] = Field(default_factory=list)
     mock_mode: Literal["success", "schema_invalid"] = "success"
 
 
@@ -119,3 +126,28 @@ class RiskItemRead(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+
+
+class RequirementDocumentCreate(BaseModel):
+    requirement_review_id: uuid.UUID
+    version: str = Field(default="v1", min_length=1, max_length=40)
+    status: Literal["draft", "confirmed"] = "draft"
+
+
+class RequirementDocumentRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    requirement_id: uuid.UUID
+    requirement_review_id: uuid.UUID
+    document_number: str
+    version: str
+    title: str
+    status: str
+    artifact_id: uuid.UUID
+    download_url: str
+    created_at: datetime
+
+
+class RequirementDocumentListRead(BaseModel):
+    items: list[RequirementDocumentRead]
+    total: int

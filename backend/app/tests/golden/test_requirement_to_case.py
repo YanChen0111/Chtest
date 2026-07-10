@@ -154,6 +154,20 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                     applicable_agents=["CaseGenerationAgent"],
                     content="# Case Generation Skill",
                 ),
+                PromptVersion(
+                    name="automation_draft_generation",
+                    version="v1",
+                    hash="sha256:" + "e" * 64,
+                    agent_name="AutomationDraftAgent",
+                    content="# Automation Draft Prompt",
+                ),
+                SkillVersion(
+                    name="automation-draft-skill",
+                    version="v1",
+                    hash="sha256:" + "f" * 64,
+                    applicable_agents=["AutomationDraftAgent"],
+                    content="# Automation Draft Skill",
+                ),
             ],
         )
         session.commit()

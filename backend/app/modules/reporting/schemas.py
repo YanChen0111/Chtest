@@ -11,8 +11,8 @@ from backend.app.modules.ai_runtime.schemas import ArtifactRead
 class FailureAnalysisCreateRequest(BaseModel):
     prompt_version: str = "failure_analysis:v1"
     skill_version: str = "failure-analysis-skill:v1"
-    model_provider: str = "mock"
-    model_name: str = "mock-failure-analysis"
+    model_provider: str | None = None
+    model_name: str | None = None
 
 
 class FailureAnalysisCreateRead(BaseModel):
