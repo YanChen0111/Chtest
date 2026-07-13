@@ -15,7 +15,7 @@
     <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
 
     <div class="case-review-layout">
-      <a-card class="case-panel" :bordered="false">
+      <a-card class="case-panel generation-entry-panel" :bordered="false">
         <template #title>生成入口</template>
         <form class="case-generation-form" @submit.prevent="submitGeneration">
           <label>
@@ -58,7 +58,9 @@
           </label>
           <p v-if="!hasGenerationSource" class="source-hint">请先完成需求评审，或选择一份正式需求文档。</p>
           <a-alert v-if="!hasGenerationSource" type="warning" content="请先完成需求评审，或选择一份正式需求文档。" show-icon />
-          <a-button html-type="submit" type="primary" :loading="store.loadingGeneration">开始生成候选用例</a-button>
+          <a-button class="generation-submit" html-type="submit" type="primary" :loading="store.loadingGeneration">
+            开始生成候选用例
+          </a-button>
         </form>
 
         <div class="case-generation-summary">
@@ -84,9 +86,10 @@
           <a-list v-if="store.candidates.length > 0" :data="store.candidates" :bordered="false">
             <template #item="{ item }">
               <a-list-item
+                data-test="candidate-list-item"
                 class="candidate-list-item"
                 :class="{ active: item.id === store.selectedCandidateId }"
-                @click="store.selectedCandidateId = item.id"
+                @click="selectCandidate(item.id)"
               >
                 <a-space direction="vertical" size="mini">
                   <strong>{{ item.title }}</strong>
@@ -143,6 +146,46 @@
             </section>
           </div>
 
+          <form class="candidate-edit-form" data-test="candidate-edit-form" @submit.prevent>
+            <h3>评审编辑</h3>
+            <label>
+              <span>标题</span>
+              <a-input data-test="edit-case-title" v-model="editForm.title" />
+            </label>
+            <label>
+              <span>优先级</span>
+              <a-input v-model="editForm.priority" />
+            </label>
+            <label>
+              <span>类型</span>
+              <a-input v-model="editForm.testType" />
+            </label>
+            <label>
+              <span>前置条件</span>
+              <a-textarea v-model="editForm.precondition" :auto-size="{ minRows: 2, maxRows: 4 }" />
+            </label>
+            <label>
+              <span>步骤（每行一条）</span>
+              <a-textarea data-test="edit-case-steps" v-model="editForm.stepsText" :auto-size="{ minRows: 4, maxRows: 8 }" />
+            </label>
+            <label>
+              <span>预期结果（每行一条）</span>
+              <a-textarea
+                data-test="edit-case-expected-results"
+                v-model="editForm.expectedResultsText"
+                :auto-size="{ minRows: 4, maxRows: 8 }"
+              />
+            </label>
+            <label>
+              <span>输入数据 JSON</span>
+              <a-textarea v-model="editForm.inputDataJson" :auto-size="{ minRows: 3, maxRows: 6 }" />
+            </label>
+            <label>
+              <span>标签（逗号分隔）</span>
+              <a-input v-model="editForm.tagsText" />
+            </label>
+          </form>
+
           <a-space class="review-actions" wrap>
             <a-button type="primary" :loading="store.loadingReview" @click="review('approve')">通过</a-button>
             <a-button data-test="approve-after-edit" :loading="store.loadingReview" @click="review('approve_after_edit')">
@@ -152,20 +195,25 @@
             <a-button status="danger" :loading="store.loadingReview" @click="review('reject')">拒绝</a-button>
           </a-space>
 
-          <div v-if="store.lastReview" class="review-result">
-            <span>评审结果：{{ reviewStatusLabel(store.lastReview.status) }}</span>
-            <strong>TestCase：{{ store.lastReview.test_case_id ?? '未创建' }}</strong>
+          <div v-if="currentLastReview" data-test="review-result" class="review-result">
+            <span>评审结果：{{ reviewStatusLabel(currentLastReview.status) }}</span>
+            <strong>TestCase：{{ currentLastReview.test_case_id ?? '未创建' }}</strong>
           </div>
-          <section v-if="store.reviewHistory.length" class="review-history-panel" aria-label="本地评审历史">
+          <section
+            v-if="currentReviewHistory.length"
+            data-test="review-history"
+            class="review-history-panel"
+            aria-label="本地评审历史"
+          >
             <h3>本地评审历史</h3>
-            <div v-for="item in store.reviewHistory" :key="item.id" class="review-history-item">
+            <div v-for="item in currentReviewHistory" :key="item.id" class="review-history-item">
               <strong>{{ actionLabel(item.action) }}</strong>
               <span>{{ item.reviewer }} · {{ statusTransition(item.from_status, item.to_status) }}</span>
               <small>{{ formatDateTime(item.created_at) }} · {{ item.comment || '无评审备注' }} · 证据 {{ item.evidence_artifact_ids.length }}</small>
             </div>
           </section>
           <a-alert
-            v-if="store.lastReview"
+            v-if="currentLastReview"
             class="review-result-alert"
             type="success"
             content="候选用例评审动作已提交"
@@ -180,8 +228,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
-import type { CaseReviewAction } from '../../api/cases';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import type { CaseReviewAction, CaseReviewEditedCase, GeneratedCaseCandidateListItem } from '../../api/cases';
 import { useCasesStore } from '../../stores/cases';
 
 const store = useCasesStore();
@@ -193,12 +241,26 @@ const form = reactive({
 });
 const targetTypesText = ref('functional, ui');
 const contextIdsText = ref('');
+const editForm = reactive({
+  title: '',
+  priority: '',
+  testType: '',
+  precondition: '',
+  stepsText: '',
+  expectedResultsText: '',
+  inputDataJson: '{}',
+  tagsText: 'ai-generated, reviewed',
+});
 
 const selectedRequirementDocument = computed(() =>
   store.requirementDocuments.find((document) => document.artifact_id === form.requirementDocumentArtifactId) ?? null,
 );
 
 const hasGenerationSource = computed(() => Boolean(form.requirementId && form.requirementReviewId));
+const currentLastReview = computed(() =>
+  store.lastReviewCandidateId === store.selectedCandidate?.id ? store.lastReview : null,
+);
+const currentReviewHistory = computed(() => store.reviewHistory);
 
 function commaList(value: string): string[] {
   return value
@@ -207,8 +269,54 @@ function commaList(value: string): string[] {
     .filter(Boolean);
 }
 
+function lineList(value: string): string[] {
+  return value
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function listText(items: string[]): string {
   return items.length > 0 ? items.join(', ') : '无';
+}
+
+function populateEditForm(candidate: GeneratedCaseCandidateListItem | null) {
+  editForm.title = candidate?.title ?? '';
+  editForm.priority = candidate?.priority ?? '';
+  editForm.testType = candidate?.test_type ?? '';
+  editForm.precondition = candidate?.precondition ?? '';
+  editForm.stepsText = candidate?.steps.join('\n') ?? '';
+  editForm.expectedResultsText = candidate?.expected_results.join('\n') ?? '';
+  editForm.inputDataJson = JSON.stringify(candidate?.input_data ?? {}, null, 2);
+  editForm.tagsText = 'ai-generated, reviewed';
+}
+
+function editedCaseFromForm(): CaseReviewEditedCase | null {
+  const title = editForm.title.trim();
+  const steps = lineList(editForm.stepsText);
+  const expectedResults = lineList(editForm.expectedResultsText);
+  if (!title || steps.length === 0 || expectedResults.length === 0) {
+    store.errorMessage = '编辑后的用例必须包含标题、步骤和预期结果';
+    return null;
+  }
+  let inputData: Record<string, unknown>;
+  try {
+    const parsed = JSON.parse(editForm.inputDataJson || '{}') as unknown;
+    inputData = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    store.errorMessage = '输入数据 JSON 格式不正确';
+    return null;
+  }
+  return {
+    title,
+    priority: editForm.priority.trim() || 'P2',
+    test_type: editForm.testType.trim() || 'functional',
+    precondition: editForm.precondition.trim() || null,
+    steps,
+    expected_results: expectedResults,
+    input_data: inputData,
+    tags: commaList(editForm.tagsText),
+  };
 }
 
 function evidenceTitle(evidence: Record<string, unknown>): string {
@@ -272,7 +380,19 @@ function selectRequirementDocument(value: unknown) {
   form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
 }
 
+function selectCandidate(candidateId: string) {
+  void store.selectCandidate(candidateId);
+}
+
 function review(action: CaseReviewAction) {
+  if (action === 'approve_after_edit') {
+    const editedCase = editedCaseFromForm();
+    if (!editedCase) {
+      return;
+    }
+    void store.reviewSelectedCandidate(action, '前端评审编辑后通过', editedCase);
+    return;
+  }
   void store.reviewSelectedCandidate(action, '前端评审动作');
 }
 
@@ -347,6 +467,14 @@ onMounted(async () => {
     form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
   }
 });
+
+watch(
+  () => store.selectedCandidate,
+  (candidate) => {
+    populateEditForm(candidate);
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -380,22 +508,30 @@ onMounted(async () => {
 
 .case-review-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.75fr) minmax(340px, 1fr) minmax(0, 1.3fr);
+  grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.58fr);
   gap: 16px;
+  align-items: start;
 }
 
 .case-panel {
   border-radius: 8px;
 }
 
+.generation-entry-panel {
+  grid-column: 1 / -1;
+}
+
 .case-generation-form {
   display: grid;
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  align-items: end;
   gap: 14px;
 }
 
 .case-generation-form label {
   display: grid;
   gap: 7px;
+  min-width: 0;
   color: #344054;
   font-weight: 700;
 }
@@ -407,6 +543,20 @@ onMounted(async () => {
   border: 1px solid #bbf7d0;
   border-radius: 8px;
   background: #f0fdf4;
+}
+
+.document-source,
+.case-generation-form .source-hint {
+  grid-column: span 2;
+}
+
+.case-generation-form :deep(.arco-alert) {
+  grid-column: span 2;
+}
+
+.generation-submit {
+  min-height: 32px;
+  align-self: end;
 }
 
 .document-source span {
@@ -421,7 +571,7 @@ onMounted(async () => {
 
 .case-generation-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(180px, 0.28fr) minmax(180px, 0.28fr);
   gap: 12px;
   margin-top: 18px;
   padding-top: 16px;
@@ -453,7 +603,7 @@ onMounted(async () => {
 
 .case-metrics-strip {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(90px, 1fr));
   gap: 10px;
   margin-top: 16px;
   padding-top: 16px;
@@ -464,6 +614,11 @@ onMounted(async () => {
   grid-column: 1 / -1;
   color: #475569;
   font-weight: 700;
+}
+
+.candidate-list-panel,
+.candidate-detail-panel {
+  min-width: 0;
 }
 
 .metric-item {
@@ -525,6 +680,35 @@ onMounted(async () => {
   padding-left: 18px;
 }
 
+.candidate-edit-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.candidate-edit-form h3 {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 16px;
+}
+
+.candidate-edit-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #344054;
+  font-weight: 700;
+}
+
+.candidate-edit-form label:nth-of-type(n + 4) {
+  grid-column: 1 / -1;
+}
+
 .review-actions,
 .review-result,
 .review-result-alert {
@@ -570,8 +754,19 @@ onMounted(async () => {
 
 @media (max-width: 1180px) {
   .case-review-layout,
-  .candidate-evidence-grid {
+  .case-generation-form,
+  .candidate-evidence-grid,
+  .candidate-edit-form {
     grid-template-columns: 1fr;
+  }
+
+  .generation-entry-panel,
+  .document-source,
+  .case-generation-form .source-hint,
+  .case-generation-form :deep(.arco-alert),
+  .candidate-edit-form h3,
+  .candidate-edit-form label:nth-of-type(n + 4) {
+    grid-column: auto;
   }
 }
 </style>

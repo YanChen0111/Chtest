@@ -9,6 +9,7 @@ import {
   type CaseGenerationStartRead,
   type CaseMetricsRead,
   type CaseReviewAction,
+  type CaseReviewEditedCase,
   type CaseReviewRead,
   type GeneratedCaseCandidateListItem,
   type TestCaseListItem,
@@ -42,6 +43,7 @@ export const useCasesStore = defineStore('cases', {
       totalCandidates: 0,
       selectedCandidateId: '',
       lastReview: null as CaseReviewRead | null,
+      lastReviewCandidateId: '',
       reviewHistory: [] as ReviewHistoryItem[],
       loadingGeneration: false,
       loadingReview: false,
@@ -132,6 +134,7 @@ export const useCasesStore = defineStore('cases', {
       this.metrics = null;
       this.totalCandidates = 0;
       this.lastReview = null;
+      this.lastReviewCandidateId = '';
       this.reviewHistory = [];
       this.requirementId = data.requirementId;
       this.requirementReviewId = data.requirementReviewId;
@@ -157,6 +160,12 @@ export const useCasesStore = defineStore('cases', {
         this.candidates = candidates.items;
         this.totalCandidates = candidates.total;
         this.selectedCandidateId = this.candidates[0]?.id ?? '';
+        this.lastReview = null;
+        this.lastReviewCandidateId = '';
+        this.reviewHistory = [];
+        if (this.selectedCandidateId) {
+          await this.loadSelectedCandidateReviewHistory(this.selectedCandidateId);
+        }
         this.metrics = await getCaseMetrics(this.generation.case_generation_task_id);
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '候选用例生成失败';
@@ -164,7 +173,21 @@ export const useCasesStore = defineStore('cases', {
         this.loadingGeneration = false;
       }
     },
-    async reviewSelectedCandidate(action: CaseReviewAction, reviewComment: string) {
+    async selectCandidate(candidateId: string) {
+      if (this.selectedCandidateId === candidateId) {
+        return;
+      }
+      this.selectedCandidateId = candidateId;
+      this.lastReview = null;
+      this.lastReviewCandidateId = '';
+      this.reviewHistory = [];
+      await this.loadSelectedCandidateReviewHistory(candidateId);
+    },
+    async reviewSelectedCandidate(
+      action: CaseReviewAction,
+      reviewComment: string,
+      editedCase?: CaseReviewEditedCase,
+    ) {
       const candidate = this.selectedCandidate;
       if (!candidate) {
         this.errorMessage = '请先选择候选用例';
@@ -177,24 +200,14 @@ export const useCasesStore = defineStore('cases', {
           action,
           review_comment: reviewComment,
           edited_case:
-            action === 'approve_after_edit'
-              ? {
-                  title: candidate.title,
-                  priority: candidate.priority,
-                  test_type: candidate.test_type,
-                  precondition: candidate.precondition,
-                  steps: ['补充测试数据准备', ...candidate.steps],
-                  expected_results: candidate.expected_results,
-                  input_data: { review_edit: 'test_data_preparation' },
-                  tags: ['ai-generated', 'reviewed'],
-                }
-              : undefined,
+            action === 'approve_after_edit' ? editedCase ?? caseReviewEditedCaseFromCandidate(candidate) : undefined,
         });
+        this.lastReviewCandidateId = candidate.id;
         this.candidates = this.candidates.map((item) =>
           item.id === candidate.id ? { ...item, status: this.lastReview?.status ?? item.status } : item,
         );
         this.rememberLatestApprovedTestCase(candidate.id, this.lastReview);
-        await this.loadSelectedCandidateReviewHistory();
+        await this.loadSelectedCandidateReviewHistory(candidate.id);
         if (this.generation) {
           this.metrics = await getCaseMetrics(this.generation.case_generation_task_id);
         }
@@ -216,19 +229,34 @@ export const useCasesStore = defineStore('cases', {
       });
       this.selectedTestCaseId = review.test_case_id;
     },
-    async loadSelectedCandidateReviewHistory() {
-      const candidate = this.selectedCandidate;
-      if (!candidate) {
+    async loadSelectedCandidateReviewHistory(candidateId?: string) {
+      const targetCandidateId = candidateId ?? this.selectedCandidate?.id ?? '';
+      if (!targetCandidateId) {
         this.reviewHistory = [];
         return;
       }
       const history = await listReviewHistory({
         projectId: this.projectId,
         entityType: 'GeneratedCaseCandidate',
-        entityId: candidate.id,
+        entityId: targetCandidateId,
         limit: 20,
       });
-      this.reviewHistory = history.items;
+      if (this.selectedCandidateId === targetCandidateId) {
+        this.reviewHistory = history.items;
+      }
     },
   },
 });
+
+function caseReviewEditedCaseFromCandidate(candidate: GeneratedCaseCandidateListItem): CaseReviewEditedCase {
+  return {
+    title: candidate.title,
+    priority: candidate.priority,
+    test_type: candidate.test_type,
+    precondition: candidate.precondition,
+    steps: candidate.steps,
+    expected_results: candidate.expected_results,
+    input_data: candidate.input_data,
+    tags: ['ai-generated', 'reviewed'],
+  };
+}

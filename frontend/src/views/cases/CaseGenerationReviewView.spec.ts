@@ -14,6 +14,7 @@ describe('CaseGenerationReviewView', () => {
   it('starts case generation, lists candidates, and submits a review action', async () => {
     let metricsRequestCount = 0;
     let generationBody: unknown = null;
+    let reviewBody: unknown = null;
     window.localStorage.setItem(
       'chtest.latestRequirementReview',
       JSON.stringify({
@@ -103,6 +104,7 @@ describe('CaseGenerationReviewView', () => {
         );
       }
       if (url.endsWith('/case-review/items/00000000-0000-0000-0000-000000000801/approve') && init?.method === 'POST') {
+        reviewBody = JSON.parse(String(init.body));
         return new Response(
           JSON.stringify({
             candidate_id: '00000000-0000-0000-0000-000000000801',
@@ -113,27 +115,39 @@ describe('CaseGenerationReviewView', () => {
         );
       }
       if (url.includes('/review-history?')) {
+        const hasReviewCall = fetchMock.mock.calls.some(
+          (call) =>
+            String(call[0]).endsWith('/case-review/items/00000000-0000-0000-0000-000000000801/approve') &&
+            call[1]?.method === 'POST',
+        );
+        const items =
+          url.includes('entity_id=00000000-0000-0000-0000-000000000801') && hasReviewCall
+            ? [
+                {
+                  id: '00000000-0000-0000-0000-000000000a01',
+                  project_id: '00000000-0000-0000-0000-000000000101',
+                  entity_type: 'GeneratedCaseCandidate',
+                  entity_id: '00000000-0000-0000-0000-000000000801',
+                  related_entity_type: 'TestCase',
+                  related_entity_id: '00000000-0000-0000-0000-000000000901',
+                  action: 'approve_after_edit',
+                  from_status: 'generated',
+                  to_status: 'approved_after_edit',
+                  reviewer: 'Default User',
+                  comment: '前端评审编辑后通过',
+                  evidence_artifact_ids: [
+                    '00000000-0000-0000-0000-000000000e01',
+                    '00000000-0000-0000-0000-000000000e02',
+                  ],
+                  metadata_json: {},
+                  created_at: '2026-07-01T02:15:00Z',
+                },
+              ]
+            : [];
         return new Response(
           JSON.stringify({
-            total: 1,
-            items: [
-              {
-                id: '00000000-0000-0000-0000-000000000a01',
-                project_id: '00000000-0000-0000-0000-000000000101',
-                entity_type: 'GeneratedCaseCandidate',
-                entity_id: '00000000-0000-0000-0000-000000000801',
-                related_entity_type: 'TestCase',
-                related_entity_id: '00000000-0000-0000-0000-000000000901',
-                action: 'approve_after_edit',
-                from_status: 'generated',
-                to_status: 'approved_after_edit',
-                reviewer: 'Default User',
-                comment: '前端评审动作',
-                evidence_artifact_ids: ['00000000-0000-0000-0000-000000000e01', '00000000-0000-0000-0000-000000000e02'],
-                metadata_json: {},
-                created_at: '2026-07-01T02:15:00Z',
-              },
-            ],
+            total: items.length,
+            items,
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         );
@@ -177,10 +191,27 @@ describe('CaseGenerationReviewView', () => {
     expect(wrapper.text()).toContain('字段完整率');
     expect(wrapper.text()).toContain('100%');
 
+    await wrapper.find('[data-test="edit-case-title"] input').setValue('过期优惠券不可用于结算（已编辑）');
+    await wrapper.find('[data-test="edit-case-steps"] textarea').setValue('准备一张已过期优惠券\n提交结算订单');
+    await wrapper
+      .find('[data-test="edit-case-expected-results"] textarea')
+      .setValue('系统阻止订单提交\n页面提示优惠券已过期');
+
     await wrapper.find('[data-test="approve-after-edit"]').trigger('click');
     await flushPromises();
     await wrapper.vm.$nextTick();
 
+    expect(reviewBody).toEqual(
+      expect.objectContaining({
+        action: 'approve_after_edit',
+        review_comment: '前端评审编辑后通过',
+        edited_case: expect.objectContaining({
+          title: '过期优惠券不可用于结算（已编辑）',
+          steps: ['准备一张已过期优惠券', '提交结算订单'],
+          expected_results: ['系统阻止订单提交', '页面提示优惠券已过期'],
+        }),
+      }),
+    );
     expect(wrapper.text()).toContain('编辑后通过');
     expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000000901');
     expect(wrapper.text()).toContain('采纳率');
@@ -190,7 +221,7 @@ describe('CaseGenerationReviewView', () => {
     expect(wrapper.text()).toContain('本地评审历史');
     expect(wrapper.text()).toContain('Default User');
     expect(wrapper.text()).toContain('已生成 -> 编辑后通过');
-    expect(wrapper.text()).toContain('前端评审动作');
+    expect(wrapper.text()).toContain('前端评审编辑后通过');
     expect(wrapper.text()).toContain('证据 2');
     expect(JSON.parse(window.localStorage.getItem('chtest.latestApprovedTestCase') ?? '{}')).toEqual({
       projectId: '00000000-0000-0000-0000-000000000101',
@@ -204,6 +235,18 @@ describe('CaseGenerationReviewView', () => {
     );
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/review-history?project_id=00000000-0000-0000-0000-000000000101&entity_type=GeneratedCaseCandidate&entity_id=00000000-0000-0000-0000-000000000801&limit=20',
+      expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),
+    );
+
+    await wrapper.findAll('[data-test="candidate-list-item"]')[1].trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('优惠券金额不能超过订单应付金额');
+    expect(wrapper.find('[data-test="review-result"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="review-history"]').exists()).toBe(false);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/review-history?project_id=00000000-0000-0000-0000-000000000101&entity_type=GeneratedCaseCandidate&entity_id=00000000-0000-0000-0000-000000000802&limit=20',
       expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),
     );
   });
