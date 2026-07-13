@@ -255,6 +255,62 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
         assert list(session.scalars(select(CaseModel))) == []
 
 
+def test_case_generation_marks_wrong_domain_mock_output_failed(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    project = client.post("/api/projects", json_body={"name": "Charging System"}).json()
+    requirement = client.post(
+        "/api/requirements",
+        json_body={
+            "project_id": project["id"],
+            "title": "预约充电规则与权限",
+            "content": "用户 App 支持预约充电、重复预约、最多 2 个预约任务、插枪状态和电流条件判断。",
+        },
+    ).json()
+    review_start = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    )
+    assert review_start.status_code == 202
+    review = client.get(f"/api/requirements/{requirement['id']}/review").json()
+
+    response = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": requirement["project_id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    task_response = client.get(f"/api/case-generation/tasks/{body['case_generation_task_id']}")
+    assert task_response.status_code == 200
+    task_body = task_response.json()
+    assert task_body["status"] == "failed"
+    assert task_body["error_code"] == "CASE_GENERATION_DOMAIN_MISMATCH"
+    candidates_response = client.get(f"/api/case-generation/tasks/{body['case_generation_task_id']}/candidates")
+    assert candidates_response.status_code == 200
+    assert candidates_response.json()["total"] == 0
+
+
 def test_start_case_generation_uses_saved_model_connection_when_request_omits_model(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
     monkeypatch: pytest.MonkeyPatch,
@@ -423,8 +479,13 @@ def test_schema_invalid_case_generation_does_not_write_task_or_candidates(
         },
     )
 
-    assert response.status_code == 422
-    assert response.json()["error_code"] == "CASE_GENERATION_SCHEMA_INVALID"
+    assert response.status_code == 202
+    body = response.json()
+    task_response = client.get(f"/api/case-generation/tasks/{body['case_generation_task_id']}")
+    assert task_response.status_code == 200
+    task_body = task_response.json()
+    assert task_body["status"] == "failed"
+    assert task_body["error_code"] == "MOCK_SCHEMA_INVALID"
 
     with SessionLocal() as session:
         ai_task = session.scalar(select(AITask).where(AITask.task_type == "case_generation"))
@@ -435,7 +496,9 @@ def test_schema_invalid_case_generation_does_not_write_task_or_candidates(
         assert llm_log.status == "schema_invalid"
         artifacts = list(session.scalars(select(Artifact).where(Artifact.owner_entity_id == ai_task.id)))
         assert any(artifact.artifact_type == "raw_llm_output" for artifact in artifacts)
-        assert list(session.scalars(select(CaseGenerationTask))) == []
+        generation_task = session.get(CaseGenerationTask, uuid.UUID(body["case_generation_task_id"]))
+        assert generation_task is not None
+        assert generation_task.status == "failed"
         assert list(session.scalars(select(GeneratedCaseCandidate))) == []
         assert list(session.scalars(select(CaseModel))) == []
 

@@ -202,6 +202,15 @@ JMeter TestCommand rules:
 | status | AITaskStatus | yes | created | Task status |
 | generated_count | int | yes | 0 | Candidate count |
 
+Rules:
+
+- CaseGenerationTask is created before candidates are available.
+- Status progresses through `pending` or `running` to `succeeded` or `failed`.
+- Candidates are persisted only after schema validation and domain-alignment
+  checks pass.
+- Wrong-domain output fails the task and records
+  `CASE_GENERATION_DOMAIN_MISMATCH` on the linked AITask.
+
 ## 14. GeneratedCaseCandidate
 
 | Field | Type | Required | Default | Notes |
@@ -940,6 +949,10 @@ Rules:
   `allowed_for_prompt=true`.
 - Rebuild is idempotent: unchanged `content_hash`, `embedding_model`, and
   `embedding_dim` rows remain indexed and count as skipped.
+- TestKnowledgeCard review changes must keep related index metadata in sync.
+  When a card becomes `stale`, `unsafe`, `duplicate`, or `archived`, existing
+  indexes for that card must be marked `stale` and excluded from prompt-ready
+  index coverage until the card is prompt-eligible again.
 - The V1/V2 local contract stores vectors in `embedding_json` for portability.
   A production pgvector optimization may add a native vector column later, but
   must preserve this API-level behavior.

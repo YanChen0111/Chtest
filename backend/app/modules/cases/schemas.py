@@ -42,6 +42,9 @@ class CaseGenerationTaskRead(BaseModel):
     target_test_types: list[str]
     status: str
     generated_count: int
+    ai_task_status: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
     created_at: datetime
     updated_at: datetime
 

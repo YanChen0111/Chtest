@@ -44,6 +44,26 @@ describe('CaseGenerationReviewView', () => {
           { status: 202, headers: { 'Content-Type': 'application/json' } },
         );
       }
+      if (url.endsWith('/case-generation/tasks/00000000-0000-0000-0000-000000000701')) {
+        return new Response(
+          JSON.stringify({
+            id: '00000000-0000-0000-0000-000000000701',
+            project_id: '00000000-0000-0000-0000-000000000101',
+            requirement_id: '00000000-0000-0000-0000-000000000411',
+            requirement_review_id: '00000000-0000-0000-0000-000000000611',
+            ai_task_id: '00000000-0000-0000-0000-000000000702',
+            target_test_types: ['functional', 'ui'],
+            status: 'succeeded',
+            generated_count: 2,
+            ai_task_status: 'succeeded',
+            error_code: null,
+            error_message: null,
+            created_at: '2026-07-01T02:00:00Z',
+            updated_at: '2026-07-01T02:00:01Z',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
       if (url.endsWith('/case-generation/tasks/00000000-0000-0000-0000-000000000701/candidates')) {
         return new Response(
           JSON.stringify({
@@ -302,6 +322,26 @@ describe('CaseGenerationReviewView', () => {
           { status: 202, headers: { 'Content-Type': 'application/json' } },
         );
       }
+      if (url.endsWith('/case-generation/tasks/00000000-0000-0000-0000-000000000701')) {
+        return new Response(
+          JSON.stringify({
+            id: '00000000-0000-0000-0000-000000000701',
+            project_id: '00000000-0000-0000-0000-000000000101',
+            requirement_id: '00000000-0000-0000-0000-000000000421',
+            requirement_review_id: '00000000-0000-0000-0000-000000000621',
+            ai_task_id: '00000000-0000-0000-0000-000000000702',
+            target_test_types: ['functional'],
+            status: 'succeeded',
+            generated_count: 0,
+            ai_task_status: 'succeeded',
+            error_code: null,
+            error_message: null,
+            created_at: '2026-07-01T02:00:00Z',
+            updated_at: '2026-07-01T02:00:01Z',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
       if (url.endsWith('/case-generation/tasks/00000000-0000-0000-0000-000000000701/candidates')) {
         return new Response(JSON.stringify({ total: 0, items: [] }), {
           status: 200,
@@ -405,6 +445,79 @@ describe('CaseGenerationReviewView', () => {
     await flushPromises();
 
     expect(fetchMock).not.toHaveBeenCalledWith('/api/case-generation/tasks', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('surfaces failed generation task errors before loading candidates', async () => {
+    window.localStorage.setItem(
+      'chtest.latestRequirementReview',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        requirementId: '00000000-0000-0000-0000-000000000431',
+        requirementReviewId: '00000000-0000-0000-0000-000000000631',
+      }),
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
+        return new Response(JSON.stringify({ items: [], total: 0 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/case-generation/tasks') && init?.method === 'POST') {
+        return new Response(
+          JSON.stringify({
+            case_generation_task_id: '00000000-0000-0000-0000-000000000731',
+            ai_task_id: '00000000-0000-0000-0000-000000000732',
+            status: 'pending',
+            used_knowledge: false,
+            used_context_artifact_ids: [],
+          }),
+          { status: 202, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/case-generation/tasks/00000000-0000-0000-0000-000000000731')) {
+        return new Response(
+          JSON.stringify({
+            id: '00000000-0000-0000-0000-000000000731',
+            project_id: '00000000-0000-0000-0000-000000000101',
+            requirement_id: '00000000-0000-0000-0000-000000000431',
+            requirement_review_id: '00000000-0000-0000-0000-000000000631',
+            ai_task_id: '00000000-0000-0000-0000-000000000732',
+            target_test_types: ['functional'],
+            status: 'failed',
+            generated_count: 0,
+            ai_task_status: 'failed',
+            error_code: 'CASE_GENERATION_DOMAIN_MISMATCH',
+            error_message: 'Generated cases do not match the requirement domain.',
+            created_at: '2026-07-01T02:00:00Z',
+            updated_at: '2026-07-01T02:02:00Z',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: {
+        plugins: [createPinia(), ArcoVue],
+      },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('CASE_GENERATION_DOMAIN_MISMATCH');
+    expect(wrapper.text()).toContain('Generated cases do not match the requirement domain.');
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/case-generation/tasks/00000000-0000-0000-0000-000000000731/candidates',
+      expect.anything(),
+    );
   });
 
   it('does not submit case generation without a review or document source', async () => {

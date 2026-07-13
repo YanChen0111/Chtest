@@ -52,10 +52,23 @@ export const useExtensionStore = defineStore('extension', {
     latestRetrievals: (state) => state.knowledgeBase?.latest_retrievals ?? [],
     mcpReadyToolCount: (state) => state.toolDefinitions.filter((tool) => tool.is_mcp_ready).length,
     testKnowledgeCardCount: (state) => state.testKnowledgeCards.length,
+    approvedKnowledgeCardCount: (state) => state.testKnowledgeCards.filter((card) => card.status === 'approved').length,
+    pendingKnowledgeCardCount: (state) => state.testKnowledgeCards.filter((card) => card.status === 'extracted').length,
+    promptReadyKnowledgeCardCount: (state) =>
+      state.testKnowledgeCards.filter(
+        (card) => ['approved', 'extracted'].includes(card.status) && card.safe_to_show && card.allowed_for_prompt,
+      ).length,
     knowledgeCoverageRatio: (state) => Number(state.testKnowledgeGraph?.coverage.knowledge_coverage_ratio ?? 0),
     coveredKnowledgeCardCount: (state) => Number(state.testKnowledgeGraph?.coverage.covered_knowledge_card_count ?? 0),
     vectorIndexCoverageRatio: (state) => Number(state.testKnowledgeGraph?.coverage.vector_index_coverage_ratio ?? 0),
     indexedKnowledgeCardCount: (state) => Number(state.testKnowledgeIndex?.indexed_count ?? 0),
+    knowledgeIndexGapCount: (state) => {
+      const promptReadyCount = state.testKnowledgeCards.filter(
+        (card) => ['approved', 'extracted'].includes(card.status) && card.safe_to_show && card.allowed_for_prompt,
+      ).length;
+      const indexedCount = Number(state.testKnowledgeIndex?.indexed_count ?? 0);
+      return Math.max(0, promptReadyCount - indexedCount);
+    },
   },
   actions: {
     async loadExtensionSurface() {

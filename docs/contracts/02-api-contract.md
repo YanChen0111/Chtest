@@ -735,6 +735,17 @@ Response 200:
 }
 ```
 
+Rules:
+
+- `total` counts persisted index rows, including stale rows kept for local
+  evidence and diagnostics.
+- `indexed_count` counts only rows with `status=indexed` whose
+  TestKnowledgeCard is currently prompt-safe: `status in (approved, extracted)`,
+  `safe_to_show=true`, and `allowed_for_prompt=true`.
+- Review actions that make a card stale, unsafe, duplicate, or archived must
+  remove that card from prompt-ready index coverage without deleting local
+  evidence rows.
+
 ### 2.14.4 Get Test Knowledge Graph
 
 `GET /api/projects/{project_id}/test-knowledge/graph`
@@ -1022,6 +1033,47 @@ Response 202:
   "used_context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
 }
 ```
+
+- The response means the generation task has been accepted. Clients must read
+  the task status before assuming candidates exist.
+- Case generation may fail asynchronously. Recoverable model/provider failures
+  and quality-gate failures are exposed by the task read model.
+- If generated candidates do not match the source requirement domain, the task
+  must fail with `CASE_GENERATION_DOMAIN_MISMATCH` and must not persist
+  candidates.
+
+### 3.4.1 Read Case Generation Task
+
+`GET /api/case-generation/tasks/{id}`
+
+Response 200:
+
+```json
+{
+  "id": "00000000-0000-0000-0000-000000000701",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "requirement_id": "00000000-0000-0000-0000-000000000401",
+  "requirement_review_id": "00000000-0000-0000-0000-000000000601",
+  "ai_task_id": "00000000-0000-0000-0000-000000000702",
+  "target_test_types": ["functional", "ui"],
+  "status": "succeeded",
+  "generated_count": 5,
+  "ai_task_status": "succeeded",
+  "error_code": null,
+  "error_message": null,
+  "created_at": "2026-07-09T10:00:00Z",
+  "updated_at": "2026-07-09T10:00:12Z"
+}
+```
+
+Rules:
+
+- `status` is one of `pending`, `running`, `succeeded`, `failed`, or
+  `cancelled`.
+- `error_code` and `error_message` are nullable and populated for failed tasks
+  when the underlying AITask records a recoverable error.
+- Clients should poll this endpoint and only call the candidates endpoint after
+  `status=succeeded`.
 
 ### 3.5 List Candidate Cases
 

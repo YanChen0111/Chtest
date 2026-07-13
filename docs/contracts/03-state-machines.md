@@ -42,6 +42,28 @@ Deterministic retrieval 规则：
   reranking, external provider, MCP runtime, RBAC, tenant, or permission
   behavior.
 
+## 2A. CaseGenerationTask 状态机
+
+```text
+pending -> running -> succeeded
+pending -> running -> failed
+pending/running -> cancelled
+```
+
+| 当前状态 | 动作 | 目标状态 | 触发者 |
+|---|---|---|---|
+| pending | worker_start | running | Background task |
+| running | candidates_persisted | succeeded | Background task |
+| running | model_or_schema_error | failed | Background task |
+| running | domain_mismatch | failed | Background task |
+| pending/running | cancel | cancelled | User/API |
+
+规则：
+
+- `POST /api/case-generation/tasks` 创建 `pending` 任务；候选用例不保证立即存在。
+- 客户端必须读取任务状态，只有 `succeeded` 后才能把候选列表视为完整结果。
+- schema invalid、provider error、wrong-domain output 均进入 `failed`，不得写入候选用例。
+
 ## 3. GeneratedCaseCandidate 状态机
 
 ```text

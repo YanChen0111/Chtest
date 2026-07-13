@@ -9795,3 +9795,106 @@ Next recommended task:
 - Keep V2 acceptance local-dev based. A separate focused follow-up can make the
   Playwright/Newman/JMeter runner tests Windows-compatible before treating the
   broader backend execution suite as a local acceptance gate.
+
+## 2026-07-13 Case Generation Flow UX Review
+
+Current task:
+- User asked to preserve the senior-test-engineer feedback for the reservation
+  charging scenario and inspect the complete Chtest requirement-review to
+  case-generation flow.
+
+Observed flow:
+- RequirementReview on `预约充电规则与权限` succeeded with score `58` and useful
+  findings around 24-hour semantics, max-2 reservation counting, conflict
+  policy, modify/delete behavior, plug state, current/limit/fallback rules,
+  role permissions, and Bluetooth/cloud/Wi-Fi/4G delivery paths.
+- Requirement document generation succeeded:
+  `RD-CHTEST-DEMO-PROJ-20260713-0001`.
+- The case generation page correctly carried the generated document,
+  requirement id, and review id into the generation entry.
+- Real-model CaseGeneration task `d7a9c64a-accb-4c4e-a1f2-fa26f6975c3b`
+  failed after about two minutes with
+  `OPENAI_PROVIDER_ERROR: OpenAI Responses request failed with HTTP 524`.
+  During this wait, the UI showed only a loading button and did not surface
+  task id, progress, timeout, retry, or the final recoverable error.
+- Mock-model CaseGeneration task `cb482c97-9419-4063-870a-b9a05acffce1`
+  succeeded and produced 5 candidates, proving the structural flow works.
+  However, the generated candidates were coupon-checkout cases despite the
+  reservation charging input, so mock output cannot validate domain quality.
+- Candidate review actions work: one wrong-domain candidate was rejected, and
+  another was edited into a reservation charging case with `approve_after_edit`,
+  creating TestCase `a7718b22-b3eb-4408-8676-7d207e5bd319`.
+
+Preserved senior testing feedback:
+- Treat RequirementReview as the first quality gate, not as a direct green
+  light for final case generation.
+- High-risk ambiguities must be resolved or explicitly marked before final
+  test cases are accepted: time window semantics, repeat template vs instance,
+  max-2 counting dimension, conflict strategy, modify/delete effective scope,
+  plug state behavior, current condition/fallback priority, role permissions,
+  and multi-channel consistency.
+- The case generation surface needs a coverage matrix that maps candidate
+  cases back to these risk dimensions.
+- The flow needs visible asynchronous task state, retry/cancel, and model error
+  evidence before it can feel like a final-version daily testing tool.
+
+Next recommended task:
+- Implement the case generation optimization in small steps:
+  async task visibility first, then requirement-clarification/quality gate,
+  then risk-dimension coverage matrix and domain-alignment checks.
+
+## 2026-07-13 Case Generation P0/P1 Optimization
+
+Current task:
+- User asked to complete P0/P1 optimizations from the case generation flow
+  review.
+
+Completed:
+- CaseGeneration task creation is now observable through
+  `GET /api/case-generation/tasks/{id}` with task status, linked AITask status,
+  error code, and error message.
+- `POST /api/case-generation/tasks` creates a pending task and schedules the
+  generation run through FastAPI background tasks instead of making the UI wait
+  for the full model call before it can see a task id.
+- Wrong-domain model output is blocked by a domain-alignment gate. The
+  reservation-charging input with fixed coupon mock output now fails with
+  `CASE_GENERATION_DOMAIN_MISMATCH` and writes no candidates.
+- Frontend case generation now polls the task read endpoint, displays
+  CaseGenerationTask/AITask ids, AI status, and visible failure details, then
+  loads candidates only after `status=succeeded`.
+- Frontend candidate review page now includes a lightweight testing-dimension
+  coverage matrix for main flow, negative path, boundary, state, permission,
+  channel, device/current conditions, and risk references.
+- Knowledge-card review now keeps vector-index coverage honest: when a card is
+  archived, unsafe, stale, or duplicate, existing embedding indexes are marked
+  `stale` and excluded from prompt-ready index coverage.
+- API, data model, and state-machine contracts were updated for asynchronous
+  CaseGeneration task behavior and prompt-ready knowledge index coverage.
+
+Verification:
+- Backend focused suite: `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_case_generation.py -q`
+  - Result: `6 passed`.
+- Backend related suite: `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_test_knowledge_cards.py -q`
+  - Result: `25 passed`.
+- Frontend related suite: `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/cases/CaseGenerationReviewView.spec.ts src/views/requirements/RequirementReviewView.spec.ts`
+  - Result: `6 passed`.
+- Backend acceptance suite: `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_knowledge_cards.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_model_connection_config.py backend/app/tests/api/test_extension_surface.py -q`
+  - Result: `44 passed in 2.92s`.
+- Frontend acceptance suite: `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/settings/ProjectSettingsView.spec.ts src/views/extension/KnowledgeBaseView.spec.ts src/views/requirements/RequirementReviewView.spec.ts src/views/cases/CaseGenerationReviewView.spec.ts`
+  - Result: `11 passed`.
+- Frontend build passed with the existing Vite chunk-size warning.
+- `git diff --check`
+  - Result: no output.
+
+Remaining risks:
+- There is no cancel endpoint yet; cancelled status is documented for the state
+  machine but not implemented as a user action.
+- The coverage matrix is heuristic and keyword-based. A later quality pass
+  should persist explicit `coverage_dimensions` from CaseGenerationAgent output.
+- Domain-alignment uses lightweight keyword/alias overlap. It catches the
+  observed wrong-domain mock output but is not a semantic classifier.
+
+Next recommended task:
+- Add a requirement clarification/decision-table gate before final case
+  generation, then extend CaseGenerationAgent output with persisted coverage
+  dimensions instead of deriving coverage heuristically in the frontend.

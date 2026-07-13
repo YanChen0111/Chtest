@@ -1,33 +1,48 @@
 # Next AI Task
 
 This file is the short operational handoff for the next Chtest AI coding
-session. The current focus is no longer a narrow AI Workbench empty-state slice;
-the platform has moved into V2 acceptance stabilization.
+session. The current focus is V2 acceptance stabilization through the local
+dev/browser workflow. Docker runtime work remains intentionally skipped by the
+user because the local Docker Desktop/WSL engine cannot be repaired in this
+session.
 
 ## Current Slice
 
-V2 acceptance stabilization: verify that the local-first AI testing workbench
-can run the main reviewer workflow with model configuration, RAG knowledge
-cards, local vector index coverage, case generation, automation planning, and
-execution evidence surfaces.
+V2 acceptance stabilization: make the local-first AI testing workbench feel
+acceptance-ready for the main reviewer workflow from requirement review to case
+generation, knowledge grounding, automation planning, automation draft review,
+and local execution evidence surfaces.
 
 ## Current Task
 
-Continue V2 acceptance stabilization without Docker runtime work. The user
-explicitly asked to skip Docker because the local engine cannot be repaired in
-this session.
+Case generation P0/P1 optimization is complete.
 
-Current local follow-up:
+Completed P0/P1 behaviors:
 
-1. keep the already-passing local dev/browser workflow as the acceptance path;
-2. harden only concrete local evidence risks found during acceptance;
-3. do not spend more time on Docker Desktop, WSL, or container runtime recovery;
-4. preserve Docker Compose config as a known-valid but externally blocked path.
+1. Case generation is observable as an asynchronous task instead of a hidden
+   long-running request.
+2. The frontend shows CaseGenerationTask/AITask ids, status, and recoverable
+   failure details before attempting to load candidates.
+3. Wrong-domain output is blocked with `CASE_GENERATION_DOMAIN_MISMATCH` and
+   cannot persist candidates.
+4. The candidate review page separates generation entry, candidate list,
+   selected candidate detail, edit form, review result, and review history so
+   switching candidates does not show a previous candidate's review result.
+5. Requirement document selection is explicit and does not auto-select the
+   first document without saved context.
+6. The case review surface includes a lightweight testing-dimension coverage
+   matrix for main flow, negative path, boundary, state, permission, channel,
+   device/current conditions, and risk references.
+7. Knowledge-card review now keeps vector-index coverage honest: cards that
+   become stale, unsafe, duplicate, or archived mark existing indexes stale and
+   are excluded from prompt-ready index coverage.
 
 ## Product Value Answer
 
-The user needs to know whether the current platform can be accepted as a
-runnable testing workbench, not just a collection of implemented slices.
+The user can now see whether case generation is running, failed, or complete;
+avoid accepting wrong-domain generated cases; review each candidate without
+state leaking from the previous candidate; and understand basic test-dimension
+coverage before promoting generated cases.
 
 ## Must Read
 
@@ -36,32 +51,40 @@ runnable testing workbench, not just a collection of implemented slices.
 3. `docs/implementation/04-ai-vibecoding-governance.md`
 4. `docs/contracts/01-data-model-contract.md`
 5. `docs/contracts/02-api-contract.md`
-6. `memory/08-session-handoff.md`
-7. `memory/07-dev-log.md`
+6. `docs/contracts/03-state-machines.md`
+7. `memory/08-session-handoff.md`
+8. `memory/07-dev-log.md`
 
 ## Do Not Read Unless Needed
 
-- Broad roadmap, migration, enterprise collaboration, marketplace, distributed
-  execution, cloud storage, cloud CI/provider integration, RBAC, tenants,
-  permissions, or unrelated deleted golden-chain files unless a concrete
-  verification failure requires them.
+- Docker Desktop, WSL, container runtime recovery, broad roadmap, migration,
+  enterprise collaboration, marketplace, distributed execution, cloud storage,
+  cloud CI/provider integration, RBAC, tenants, permissions, or unrelated
+  deleted golden-chain files unless a concrete verification failure requires
+  them.
 
 ## Expected Files
 
-Default write boundary:
+Default write boundary for the next local evidence risk:
 
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-backend/alembic/*
-backend/app/modules/*
-backend/app/tests/*
-frontend/src/api/*
-frontend/src/stores/*
-frontend/src/views/*
-frontend/vite.config.ts
-deploy/docker-compose.yml
+backend/app/modules/cases/*
+backend/app/modules/knowledge/*
+backend/app/tests/api/test_case_generation.py
+backend/app/tests/api/test_test_knowledge_cards.py
+frontend/src/api/cases.ts
+frontend/src/stores/cases.ts
+frontend/src/stores/extension.ts
+frontend/src/views/cases/CaseGenerationReviewView.vue
+frontend/src/views/cases/CaseGenerationReviewView.spec.ts
+frontend/src/views/extension/KnowledgeBaseView.vue
+frontend/src/views/extension/KnowledgeBaseView.spec.ts
+docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
+docs/contracts/03-state-machines.md
 ```
 
 Only edit files that are directly required to fix a verification blocker. Do
@@ -72,11 +95,7 @@ not revert unrelated dirty-worktree changes.
 Use focused verification first:
 
 ```bash
-backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_automation_plan.py -q
-```
-
-```bash
-npm --prefix frontend run test -- --run src/views/automation/AutomationDraftReviewView.spec.ts
+backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_test_knowledge_cards.py -q
 ```
 
 ```bash
@@ -84,11 +103,11 @@ backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_knowl
 ```
 
 ```bash
-npm --prefix frontend run test -- --run src/views/settings/ProjectSettingsView.spec.ts src/views/extension/KnowledgeBaseView.spec.ts src/views/requirements/RequirementReviewView.spec.ts src/views/cases/CaseGenerationReviewView.spec.ts
+D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/settings/ProjectSettingsView.spec.ts src/views/extension/KnowledgeBaseView.spec.ts src/views/requirements/RequirementReviewView.spec.ts src/views/cases/CaseGenerationReviewView.spec.ts
 ```
 
 ```bash
-npm --prefix frontend run build
+D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run build
 git diff --check
 ```
 
@@ -97,33 +116,23 @@ Docker Desktop Linux Engine is repaired outside this repo.
 
 ## Acceptance
 
-- Local code acceptance is complete: backend tests, frontend tests/build,
-  migration, real-model RequirementReview, RAG evidence flow, AutomationPlan,
-  and AutomationDraft smoke all pass.
-- Browser acceptance against the local dev stack is complete after fixing the
-  Vite `/api` proxy target. With `VITE_API_BASE_URL=http://127.0.0.1:8010/api`,
-  the RAG page renders `测试知识卡3`, `知识覆盖率67%`, `Vector Index3`, and
-  `Vector Coverage100%`.
-- Docker Compose syntax and image configuration are verified.
-- Docker runtime acceptance is skipped by current user direction. Docker
-  Desktop currently returns HTTP 500 from both `desktop-linux` and `default`
-  engine API contexts.
-- AutomationDraft approval now has a local quality gate: placeholder-only
-  drafts such as `assert True` cannot be approved and the UI surfaces the
-  quality-gate failure.
-- AutomationDraft read models now expose a computed `quality_gate`, and
-  fake/stub/demo adapter references in draft code block approval so demo
-  evidence cannot be mistaken for a real regression pass.
+- Backend focused case-generation suite passes.
+- Backend related acceptance suite passes.
+- Frontend settings, knowledge, requirement review, and case generation suite
+  passes.
+- Frontend build passes with only the existing Vite chunk-size warning.
+- `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-fix(automation): block demo adapter draft approval
+fix(cases): harden generation review workflow
 ```
 
 ## Next Task
 
-Continue non-Docker V2 acceptance stabilization. Prefer the next smallest local
-evidence risk: replace demo-only AutomationDraft evidence with project-local
-fixtures, selectors, or API hooks for a real target app when one is available,
-then rerun the focused verification commands above.
+Continue non-Docker V2 acceptance stabilization with the next smallest local
+evidence risk: add a requirement clarification/decision-table gate before final
+case generation, then persist explicit `coverage_dimensions` from the
+CaseGenerationAgent output instead of deriving coverage heuristically in the
+frontend.

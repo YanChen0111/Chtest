@@ -66,8 +66,32 @@
           <a-statistic title="候选总数" :value="store.totalCandidates" />
           <div class="generation-status">
             <span>当前任务</span>
-            <strong>{{ store.generation?.status ?? '未生成' }}</strong>
+            <strong>{{ generationStatusLabel }}</strong>
           </div>
+        </div>
+
+        <div v-if="store.generation || store.generationTask" class="generation-task-panel">
+          <div>
+            <span>CaseGenerationTask</span>
+            <strong>{{ store.generationTask?.id ?? store.generation?.case_generation_task_id }}</strong>
+          </div>
+          <div>
+            <span>AITask</span>
+            <strong>{{ store.generationTask?.ai_task_id ?? store.generation?.ai_task_id }}</strong>
+          </div>
+          <div>
+            <span>AI 状态</span>
+            <strong>{{ store.generationTask?.ai_task_status ?? store.generation?.status }}</strong>
+          </div>
+          <a-alert
+            v-if="store.generationTask?.error_message"
+            type="error"
+            :content="store.generationTask.error_message"
+            show-icon
+          />
+          <p v-if="store.generationTask?.error_code" class="generation-error-line">
+            {{ store.generationTask.error_code }} · {{ store.generationTask.error_message ?? '任务失败' }}
+          </p>
         </div>
 
         <div v-if="store.metrics" class="case-metrics-strip" aria-label="批次指标">
@@ -75,6 +99,24 @@
           <div v-for="metric in metricItems" :key="metric.label" class="metric-item">
             <span>{{ metric.label }}</span>
             <strong>{{ metric.value }}</strong>
+          </div>
+        </div>
+
+        <div v-if="store.candidates.length > 0" class="coverage-matrix" aria-label="测试覆盖矩阵">
+          <div class="coverage-matrix-heading">
+            <strong>测试维度覆盖</strong>
+            <span>{{ coveredDimensionCount }}/{{ coverageDimensions.length }}</span>
+          </div>
+          <div class="coverage-grid">
+            <div
+              v-for="dimension in coverageDimensions"
+              :key="dimension.key"
+              class="coverage-cell"
+              :class="{ covered: dimension.covered }"
+            >
+              <strong>{{ dimension.label }}</strong>
+              <span>{{ dimension.covered ? '已覆盖' : dimension.hint }}</span>
+            </div>
           </div>
         </div>
       </a-card>
@@ -260,6 +302,29 @@ const currentLastReview = computed(() =>
   store.lastReviewCandidateId === store.selectedCandidate?.id ? store.lastReview : null,
 );
 const currentReviewHistory = computed(() => store.reviewHistory);
+const generationStatusLabel = computed(
+  () => store.generationTask?.status ?? store.generation?.status ?? '未生成',
+);
+const coverageDimensions = computed(() => buildCoverageDimensions(store.candidates));
+const coveredDimensionCount = computed(() => coverageDimensions.value.filter((dimension) => dimension.covered).length);
+
+interface CoverageDimension {
+  readonly key: string;
+  readonly label: string;
+  readonly hint: string;
+  readonly covered: boolean;
+}
+
+const coverageDimensionRules = [
+  { key: 'positive', label: '主流程', hint: '缺少成功路径', keywords: ['成功', '有效', '正常', '可用', '启动', '创建'] },
+  { key: 'negative', label: '异常/负向', hint: '缺少失败与拦截', keywords: ['失败', '不可', '拒绝', '错误', '阻止', '无效'] },
+  { key: 'boundary', label: '边界值', hint: '缺少数量/时间边界', keywords: ['边界', '最大', '最小', '超过', '等于', '24', '2 个', '2个', '限制', 'limit'] },
+  { key: 'state', label: '状态转换', hint: '缺少执行状态变化', keywords: ['状态', '开始', '结束', '执行', '等待', '删除', '修改', '暂停'] },
+  { key: 'permission', label: '权限', hint: '缺少角色权限覆盖', keywords: ['权限', '电工', '分享', '角色', '越权'] },
+  { key: 'channel', label: '下发链路', hint: '缺少网络/通道覆盖', keywords: ['蓝牙', '云端', 'wi-fi', 'wifi', '4g', '下发', '离线'] },
+  { key: 'condition', label: '设备/电流条件', hint: '缺少插枪/电流覆盖', keywords: ['电流', 'fallback', '插枪', '充电枪', '限流'] },
+  { key: 'risk', label: '风险引用', hint: '缺少风险引用', keywords: [] },
+] as const;
 
 function commaList(value: string): string[] {
   return value
@@ -273,6 +338,34 @@ function lineList(value: string): string[] {
     .split(/\r?\n/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function buildCoverageDimensions(candidates: GeneratedCaseCandidateListItem[]): CoverageDimension[] {
+  const corpus = candidates.map(candidateSearchText).join('\n').toLowerCase();
+  return coverageDimensionRules.map((rule) => {
+    const covered =
+      rule.key === 'risk'
+        ? candidates.some((candidate) => candidate.risk_refs.length > 0)
+        : rule.keywords.some((keyword) => corpus.includes(keyword.toLowerCase()));
+    return {
+      key: rule.key,
+      label: rule.label,
+      hint: rule.hint,
+      covered,
+    };
+  });
+}
+
+function candidateSearchText(candidate: GeneratedCaseCandidateListItem): string {
+  return [
+    candidate.title,
+    candidate.precondition ?? '',
+    candidate.steps.join(' '),
+    candidate.expected_results.join(' '),
+    candidate.requirement_refs.join(' '),
+    candidate.risk_refs.join(' '),
+    candidate.ai_reason,
+  ].join(' ');
 }
 
 function listText(items: string[]): string {
@@ -630,6 +723,46 @@ watch(
   font-size: 20px;
 }
 
+.generation-task-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.generation-task-panel > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.generation-task-panel span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.generation-task-panel strong {
+  overflow-wrap: anywhere;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.generation-task-panel .arco-alert {
+  grid-column: 1 / -1;
+}
+
+.generation-error-line {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #b91c1c;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .case-metrics-strip {
   display: grid;
   grid-template-columns: repeat(7, minmax(90px, 1fr));
@@ -668,6 +801,48 @@ watch(
 .metric-item strong {
   color: #0f172a;
   font-size: 18px;
+}
+
+.coverage-matrix {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5eaf2;
+}
+
+.coverage-matrix-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #475569;
+}
+
+.coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.coverage-cell {
+  display: grid;
+  gap: 4px;
+  min-height: 62px;
+  padding: 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  background: #fff7ed;
+}
+
+.coverage-cell.covered {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.coverage-cell span {
+  color: #64748b;
+  font-size: 12px;
 }
 
 .candidate-list-item {
@@ -784,6 +959,8 @@ watch(
 @media (max-width: 1180px) {
   .case-review-layout,
   .case-generation-form,
+  .generation-task-panel,
+  .coverage-grid,
   .candidate-evidence-grid,
   .candidate-edit-form {
     grid-template-columns: 1fr;

@@ -211,9 +211,34 @@ def review_test_knowledge_card(
         card.allowed_for_prompt = False
         if status == "unsafe":
             card.safe_to_show = False
+    sync_embedding_indexes_for_card_review(session, card)
     session.commit()
     session.refresh(card)
     return card
+
+
+def sync_embedding_indexes_for_card_review(session: Session, card: TestKnowledgeCard) -> None:
+    indexes = list(
+        session.scalars(
+            select(TestKnowledgeEmbeddingIndex).where(
+                TestKnowledgeEmbeddingIndex.project_id == card.project_id,
+                TestKnowledgeEmbeddingIndex.knowledge_card_id == card.id,
+            ),
+        ),
+    )
+    prompt_eligible = card.status in PROMPT_ELIGIBLE_STATUSES and card.safe_to_show and card.allowed_for_prompt
+    for index_row in indexes:
+        metadata = dict(index_row.metadata_json or {})
+        metadata["card_status"] = card.status
+        metadata["safe_to_show"] = card.safe_to_show
+        metadata["allowed_for_prompt"] = card.allowed_for_prompt
+        if prompt_eligible:
+            index_row.status = "indexed"
+            metadata.pop("stale_reason", None)
+        else:
+            index_row.status = "stale"
+            metadata["stale_reason"] = "knowledge_card_no_longer_prompt_eligible"
+        index_row.metadata_json = metadata
 
 
 def rebuild_test_knowledge_index(
@@ -321,10 +346,24 @@ def list_test_knowledge_index(session: Session, project_id: uuid.UUID) -> dict[s
             ),
         ),
     )
+    prompt_eligible_card_ids = set(
+        session.scalars(
+            select(TestKnowledgeCard.id).where(
+                TestKnowledgeCard.project_id == project_id,
+                TestKnowledgeCard.status.in_(PROMPT_ELIGIBLE_STATUSES),
+                TestKnowledgeCard.safe_to_show.is_(True),
+                TestKnowledgeCard.allowed_for_prompt.is_(True),
+            ),
+        ),
+    )
     return {
         "items": [embedding_index_to_dict(item) for item in items],
         "total": len(items),
-        "indexed_count": sum(1 for item in items if item.status == "indexed"),
+        "indexed_count": sum(
+            1
+            for item in items
+            if item.status == "indexed" and item.knowledge_card_id in prompt_eligible_card_ids
+        ),
         "embedding_models": sorted({item.embedding_model for item in items}),
     }
 
@@ -582,6 +621,11 @@ def build_test_knowledge_graph(session: Session, project_id: uuid.UUID) -> dict[
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     card_node_ids: dict[str, str] = {}
+    prompt_eligible_card_ids = {
+        str(card.id)
+        for card in cards
+        if card.status in PROMPT_ELIGIBLE_STATUSES and card.safe_to_show and card.allowed_for_prompt
+    }
     covered_card_ids: set[str] = set()
     candidates_with_evidence: set[str] = set()
     indexed_card_ids: set[str] = set()
@@ -603,7 +647,9 @@ def build_test_knowledge_graph(session: Session, project_id: uuid.UUID) -> dict[
 
     for index_row in indexes:
         node_id = f"embedding_index:{index_row.id}"
-        indexed_card_ids.add(str(index_row.knowledge_card_id))
+        knowledge_card_id = str(index_row.knowledge_card_id)
+        if index_row.status == "indexed" and knowledge_card_id in prompt_eligible_card_ids:
+            indexed_card_ids.add(knowledge_card_id)
         nodes.append(
             {
                 "id": node_id,
@@ -678,11 +724,7 @@ def build_test_knowledge_graph(session: Session, project_id: uuid.UUID) -> dict[
             )
 
     approved_card_count = sum(1 for card in cards if card.status == "approved")
-    prompt_eligible_card_count = sum(
-        1
-        for card in cards
-        if card.status in PROMPT_ELIGIBLE_STATUSES and card.safe_to_show and card.allowed_for_prompt
-    )
+    prompt_eligible_card_count = len(prompt_eligible_card_ids)
     denominator = approved_card_count or len(cards)
     coverage_ratio = round(len(covered_card_ids) / denominator, 4) if denominator else 0
     vector_denominator = prompt_eligible_card_count or len(cards)

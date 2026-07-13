@@ -22,6 +22,22 @@ export interface CaseGenerationStartRead {
   readonly used_context_artifact_ids: string[];
 }
 
+export interface CaseGenerationTaskRead {
+  readonly id: string;
+  readonly project_id: string;
+  readonly requirement_id: string;
+  readonly requirement_review_id: string | null;
+  readonly ai_task_id: string;
+  readonly target_test_types: string[];
+  readonly status: string;
+  readonly generated_count: number;
+  readonly ai_task_status: string | null;
+  readonly error_code: string | null;
+  readonly error_message: string | null;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
 export interface GeneratedCaseCandidateListItem {
   readonly id: string;
   readonly title: string;
@@ -109,6 +125,10 @@ export interface CaseReviewRead {
 
 export async function startCaseGeneration(data: CaseGenerationStartRequest): Promise<CaseGenerationStartRead> {
   return apiClient.postJson<CaseGenerationStartRead, CaseGenerationStartRequest>('/case-generation/tasks', data);
+}
+
+export async function getCaseGenerationTask(generationTaskId: string): Promise<CaseGenerationTaskRead> {
+  return apiClient.getJson<CaseGenerationTaskRead>(`/case-generation/tasks/${generationTaskId}`);
 }
 
 export async function listCaseCandidates(generationTaskId: string): Promise<GeneratedCaseCandidateListRead> {

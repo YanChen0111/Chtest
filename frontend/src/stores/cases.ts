@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia';
 
 import {
+  getCaseGenerationTask,
   getCaseMetrics,
   listCaseCandidates,
   listTestCases,
   reviewCaseCandidate,
   startCaseGeneration,
   type CaseGenerationStartRead,
+  type CaseGenerationTaskRead,
   type CaseMetricsRead,
   type CaseReviewAction,
   type CaseReviewEditedCase,
@@ -35,6 +37,7 @@ export const useCasesStore = defineStore('cases', {
       selectedRequirementDocumentNumber: latestDocument?.documentNumber ?? '',
       requirementDocuments: [] as RequirementDocumentRead[],
       generation: null as CaseGenerationStartRead | null,
+      generationTask: null as CaseGenerationTaskRead | null,
       candidates: [] as GeneratedCaseCandidateListItem[],
       metrics: null as CaseMetricsRead | null,
       testCases: [] as TestCaseListItem[],
@@ -158,6 +161,7 @@ export const useCasesStore = defineStore('cases', {
       this.candidates = [];
       this.metrics = null;
       this.totalCandidates = 0;
+      this.generationTask = null;
       this.lastReview = null;
       this.lastReviewCandidateId = '';
       this.reviewHistory = [];
@@ -181,6 +185,15 @@ export const useCasesStore = defineStore('cases', {
           use_knowledge: false,
           context_artifact_ids: data.contextArtifactIds,
         });
+        this.generationTask = await this.waitForGenerationTask(this.generation.case_generation_task_id);
+        if (this.generationTask.status !== 'succeeded') {
+          const fallbackMessage = `用例生成任务未成功完成：${this.generationTask.status}`;
+          const errorMessage = this.generationTask.error_message ?? fallbackMessage;
+          this.errorMessage = this.generationTask.error_code
+            ? `${this.generationTask.error_code}: ${errorMessage}`
+            : errorMessage;
+          return;
+        }
         const candidates = await listCaseCandidates(this.generation.case_generation_task_id);
         this.candidates = candidates.items;
         this.totalCandidates = candidates.total;
@@ -197,6 +210,17 @@ export const useCasesStore = defineStore('cases', {
       } finally {
         this.loadingGeneration = false;
       }
+    },
+    async waitForGenerationTask(generationTaskId: string) {
+      const finalStatuses = new Set(['succeeded', 'failed', 'cancelled']);
+      let latest = await getCaseGenerationTask(generationTaskId);
+      this.generationTask = latest;
+      for (let attempt = 0; attempt < 60 && !finalStatuses.has(latest.status); attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        latest = await getCaseGenerationTask(generationTaskId);
+        this.generationTask = latest;
+      }
+      return latest;
     },
     async selectCandidate(candidateId: string) {
       if (this.selectedCandidateId === candidateId) {

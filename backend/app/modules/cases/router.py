@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.router import get_artifact_store
@@ -11,6 +11,7 @@ from backend.app.modules.cases import service
 from backend.app.modules.cases.schemas import (
     CaseGenerationStartRead,
     CaseGenerationStartRequest,
+    CaseGenerationTaskRead,
     CaseMetricsRead,
     CaseReviewRead,
     CaseReviewRequest,
@@ -62,6 +63,7 @@ def bad_request(error_code: str, message: str) -> HTTPException:
 )
 def start_case_generation(
     data: CaseGenerationStartRequest,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     store: LocalArtifactStore = Depends(get_artifact_store),
 ) -> CaseGenerationStartRead:
@@ -79,19 +81,40 @@ def start_case_generation(
         raise not_found("PROMPT_OR_SKILL_NOT_FOUND", "Prompt or skill version not found.") from exc
     except service.ContextArtifactNotFoundError as exc:
         raise not_found("CONTEXT_ARTIFACT_NOT_FOUND", "Context artifact not found in this project.") from exc
-    except service.CaseGenerationSchemaInvalidError as exc:
-        raise schema_invalid() from exc
+    background_tasks.add_task(run_case_generation_background, session.get_bind(), generation_task.id, str(store.root))
 
     return CaseGenerationStartRead(
         case_generation_task_id=generation_task.id,
         ai_task_id=ai_task.id,
         status="pending",
-        used_knowledge=bool(ai_task.output_json.get("used_knowledge", False)),
+        used_knowledge=bool(ai_task.input_json.get("knowledge_retrieval", {}).get("used_knowledge", False)),
         used_context_artifact_ids=[
             uuid.UUID(str(context_id))
-            for context_id in ai_task.output_json.get("used_context_artifact_ids", ai_task.context_artifact_ids)
+            for context_id in ai_task.input_json.get("knowledge_retrieval", {}).get(
+                "used_context_artifact_ids",
+                ai_task.context_artifact_ids,
+            )
         ],
     )
+
+def run_case_generation_background(bind: object, generation_task_id: uuid.UUID, artifact_root: str) -> None:
+    session_factory = sessionmaker(bind, expire_on_commit=False, future=True)
+    with session_factory() as session:
+        service.run_case_generation_task(session, LocalArtifactStore(root=artifact_root), generation_task_id)
+
+
+@router.get(
+    "/case-generation/tasks/{generation_task_id}",
+    response_model=CaseGenerationTaskRead,
+)
+def read_case_generation_task(
+    generation_task_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> CaseGenerationTaskRead:
+    try:
+        return service.read_case_generation_task(session, generation_task_id)
+    except service.CaseGenerationTaskNotFoundError as exc:
+        raise not_found("CASE_GENERATION_TASK_NOT_FOUND", "Case generation task not found.") from exc
 
 
 @router.get(

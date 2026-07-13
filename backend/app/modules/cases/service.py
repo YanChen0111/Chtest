@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import re
 import uuid
+from collections import Counter
 
 from sqlalchemy import String, cast, or_, select
 from sqlalchemy.orm import Session
@@ -12,6 +14,7 @@ from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
 from backend.app.modules.cases.schemas import (
     CaseGenerationStartRequest,
+    CaseGenerationTaskRead,
     CaseMetricsRead,
     CaseReviewRequest,
     GeneratedCaseCandidateListItemRead,
@@ -60,6 +63,10 @@ class CaseGenerationSchemaInvalidError(Exception):
 
 
 class CaseGenerationTaskNotFoundError(Exception):
+    pass
+
+
+class CaseGenerationDomainMismatchError(Exception):
     pass
 
 
@@ -174,22 +181,88 @@ def start_case_generation(
     session.commit()
     session.refresh(ai_task)
 
+    generation_task = CaseGenerationTask(
+        project_id=data.project_id,
+        requirement_id=requirement.id,
+        requirement_review_id=review.id if review is not None else None,
+        ai_task_id=ai_task.id,
+        target_test_types=data.target_test_types,
+        status="pending",
+        generated_count=0,
+    )
+    session.add(generation_task)
+    session.commit()
+    session.refresh(generation_task)
+    return generation_task, ai_task
+
+
+def run_case_generation_task(session: Session, store: LocalArtifactStore, generation_task_id: uuid.UUID) -> None:
+    generation_task = session.get(CaseGenerationTask, generation_task_id)
+    if generation_task is None:
+        raise CaseGenerationTaskNotFoundError
+    ai_task = session.get(AITask, generation_task.ai_task_id)
+    if ai_task is None:
+        generation_task.status = "failed"
+        session.add(generation_task)
+        session.commit()
+        return
+
+    generation_task.status = "running"
+    session.add(generation_task)
+    session.commit()
+
     queue = FakeAIQueue()
     job = enqueue_ai_task(session, queue, ai_task.id)
     run_ai_task(session, store, job)
     session.refresh(ai_task)
+    session.refresh(generation_task)
 
     if ai_task.status != "succeeded":
-        raise CaseGenerationSchemaInvalidError
+        generation_task.status = "failed"
+        session.add(generation_task)
+        session.commit()
+        return
 
     try:
         validate_case_generation_output(ai_task.output_json)
+        validate_case_generation_domain_alignment(session, generation_task, ai_task.output_json)
     except CaseGenerationSchemaInvalidError:
         mark_case_generation_schema_invalid(session, ai_task)
-        raise
+        generation_task.status = "failed"
+        session.add(generation_task)
+        session.commit()
+        return
+    except CaseGenerationDomainMismatchError:
+        mark_case_generation_domain_mismatch(session, ai_task)
+        generation_task.status = "failed"
+        session.add(generation_task)
+        session.commit()
+        return
 
-    generation_task = persist_case_generation_task(session, requirement, review, ai_task, data, ai_task.output_json)
-    return generation_task, ai_task
+    persist_case_generation_candidates(session, generation_task, ai_task.output_json)
+
+
+def read_case_generation_task(session: Session, generation_task_id: uuid.UUID) -> CaseGenerationTaskRead:
+    generation_task = session.get(CaseGenerationTask, generation_task_id)
+    if generation_task is None:
+        raise CaseGenerationTaskNotFoundError
+    ai_task = session.get(AITask, generation_task.ai_task_id)
+    error_json = ai_task.error_json if ai_task is not None and isinstance(ai_task.error_json, dict) else {}
+    return CaseGenerationTaskRead(
+        id=generation_task.id,
+        project_id=generation_task.project_id,
+        requirement_id=generation_task.requirement_id,
+        requirement_review_id=generation_task.requirement_review_id,
+        ai_task_id=generation_task.ai_task_id,
+        target_test_types=generation_task.target_test_types,
+        status=generation_task.status,
+        generated_count=generation_task.generated_count,
+        ai_task_status=ai_task.status if ai_task is not None else None,
+        error_code=str(error_json.get("error_code")) if error_json.get("error_code") else None,
+        error_message=str(error_json.get("message")) if error_json.get("message") else None,
+        created_at=generation_task.created_at,
+        updated_at=generation_task.updated_at,
+    )
 
 
 def list_candidates(session: Session, generation_task_id: uuid.UUID) -> list[GeneratedCaseCandidateListItemRead]:
@@ -572,30 +645,129 @@ def mark_case_generation_schema_invalid(session: Session, ai_task: AITask) -> No
     session.commit()
 
 
-def persist_case_generation_task(
+def mark_case_generation_domain_mismatch(session: Session, ai_task: AITask) -> None:
+    error_json = {
+        "error_code": "CASE_GENERATION_DOMAIN_MISMATCH",
+        "message": "Generated cases do not match the requirement domain.",
+        "recoverable": True,
+    }
+    ai_task.status = "failed"
+    ai_task.error_json = error_json
+    ai_task.finished_at = ai_runtime_service.utc_now()
+    llm_log = session.scalar(select(LLMCallLog).where(LLMCallLog.ai_task_id == ai_task.id))
+    if llm_log is not None:
+        llm_log.status = "domain_mismatch"
+        llm_log.error_json = error_json
+        session.add(llm_log)
+    session.add(ai_task)
+    session.commit()
+
+
+COMMON_DOMAIN_TERMS = {
+    "用户",
+    "系统",
+    "平台",
+    "功能",
+    "支持",
+    "规则",
+    "任务",
+    "影响",
+    "条件",
+    "状态",
+    "信息",
+    "配置",
+    "当前",
+    "后续",
+    "不同",
+    "是否",
+    "进入",
+    "执行",
+    "决定",
+    "修改",
+    "删除",
+    "创建",
+    "查看",
+    "提交",
+    "失败",
+    "成功",
+    "提示",
+    "local",
+    "test",
+    "case",
+}
+
+DOMAIN_TERM_ALIASES = {
+    "coupon": {"优惠券"},
+    "coupons": {"优惠券"},
+    "checkout": {"结算"},
+    "points": {"积分"},
+    "expired": {"过期"},
+}
+
+
+def validate_case_generation_domain_alignment(
     session: Session,
-    requirement: Requirement,
-    review: RequirementReview | None,
-    ai_task: AITask,
-    data: CaseGenerationStartRequest,
+    generation_task: CaseGenerationTask,
+    output: dict,
+) -> None:
+    requirement = session.get(Requirement, generation_task.requirement_id)
+    if requirement is None:
+        return
+    document_content = ""
+    input_json = generation_task.ai_task.input_json if generation_task.ai_task is not None else {}
+    requirement_document = input_json.get("requirement_document") if isinstance(input_json, dict) else None
+    if isinstance(requirement_document, dict) and isinstance(requirement_document.get("content"), str):
+        document_content = str(requirement_document["content"])
+    domain_terms = extract_domain_terms(f"{requirement.title}\n{requirement.content}\n{document_content}")
+    if not domain_terms:
+        return
+    cases = output.get("cases", [])
+    aligned_count = sum(1 for case in cases if case_domain_aligned(case, domain_terms))
+    if aligned_count == 0:
+        raise CaseGenerationDomainMismatchError
+
+
+def extract_domain_terms(text: str) -> set[str]:
+    normalized = text.lower()
+    terms: Counter[str] = Counter()
+    for word in re.findall(r"[a-zA-Z][a-zA-Z0-9_-]{2,}", normalized):
+        if word not in COMMON_DOMAIN_TERMS:
+            terms[word] += 1
+            for alias in DOMAIN_TERM_ALIASES.get(word, set()):
+                terms[alias] += 1
+    for chunk in re.findall(r"[\u4e00-\u9fff]{2,}", normalized):
+        for size in (2, 3, 4):
+            for index in range(0, max(len(chunk) - size + 1, 0)):
+                term = chunk[index : index + size]
+                if term not in COMMON_DOMAIN_TERMS:
+                    terms[term] += 1
+    return {term for term, _count in terms.most_common(30)}
+
+
+def case_domain_aligned(case: dict, domain_terms: set[str]) -> bool:
+    candidate_text = " ".join(
+        [
+            str(case.get("title", "")),
+            str(case.get("precondition", "")),
+            " ".join(str(item) for item in case.get("steps", [])),
+            " ".join(str(item) for item in case.get("expected_results", [])),
+            " ".join(str(item) for item in case.get("requirement_refs", [])),
+            str(case.get("ai_reason", "")),
+        ],
+    ).lower()
+    return any(term in candidate_text for term in domain_terms)
+
+
+def persist_case_generation_candidates(
+    session: Session,
+    generation_task: CaseGenerationTask,
     output: dict,
 ) -> CaseGenerationTask:
-    generation_task = CaseGenerationTask(
-        project_id=data.project_id,
-        requirement_id=requirement.id,
-        requirement_review_id=review.id if review is not None else None,
-        ai_task_id=ai_task.id,
-        target_test_types=data.target_test_types,
-        status="succeeded",
-        generated_count=len(output["cases"]),
-    )
-    session.add(generation_task)
-    session.flush()
     for case in output["cases"]:
         session.add(
             GeneratedCaseCandidate(
                 generation_task_id=generation_task.id,
-                project_id=data.project_id,
+                project_id=generation_task.project_id,
                 title=case["title"],
                 priority=case.get("priority", "P2"),
                 test_type=case.get("test_type", "functional"),
@@ -610,6 +782,9 @@ def persist_case_generation_task(
                 ai_reason=case["ai_reason"],
             ),
         )
+    generation_task.status = "succeeded"
+    generation_task.generated_count = len(output["cases"])
+    session.add(generation_task)
     session.commit()
     session.refresh(generation_task)
     return generation_task

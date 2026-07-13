@@ -52,6 +52,14 @@
         <span>Vector Coverage</span>
         <strong>{{ Math.round(store.vectorIndexCoverageRatio * 100) }}%</strong>
       </a-card>
+      <a-card class="settings-panel" :bordered="false">
+        <span>Prompt Ready</span>
+        <strong>{{ store.promptReadyKnowledgeCardCount }}</strong>
+      </a-card>
+      <a-card class="settings-panel" :bordered="false">
+        <span>Index Gap</span>
+        <strong>{{ store.knowledgeIndexGapCount }}</strong>
+      </a-card>
     </div>
 
     <a-spin :loading="store.loading" class="settings-spin">
@@ -176,13 +184,26 @@
             <a-tag color="blue">{{ store.testKnowledgeCardCount }} 张</a-tag>
             <a-button
               data-test="rebuild-knowledge-index"
-              :disabled="store.testKnowledgeCardCount === 0"
+              :disabled="store.promptReadyKnowledgeCardCount === 0"
               :loading="store.loadingMutation"
               @click="store.rebuildKnowledgeIndex()"
             >
               Rebuild Vector Index
             </a-button>
           </a-space>
+          <div class="knowledge-readiness-strip" data-test="knowledge-readiness-strip">
+            <span>Approved <strong>{{ store.approvedKnowledgeCardCount }}</strong></span>
+            <span>Needs Review <strong>{{ store.pendingKnowledgeCardCount }}</strong></span>
+            <span>Prompt Ready <strong>{{ store.promptReadyKnowledgeCardCount }}</strong></span>
+            <span>Index Gap <strong>{{ store.knowledgeIndexGapCount }}</strong></span>
+          </div>
+          <div
+            v-if="store.knowledgeIndexGapCount > 0"
+            class="knowledge-index-gap-alert"
+            role="status"
+          >
+            Prompt-ready knowledge cards missing index: {{ store.knowledgeIndexGapCount }}
+          </div>
           <div v-if="store.latestKnowledgeExtraction" class="knowledge-extraction-result">
             新增 {{ store.latestKnowledgeExtraction.created_count }}，跳过 {{ store.latestKnowledgeExtraction.skipped_count }}
           </div>
@@ -537,10 +558,43 @@ onMounted(() => {
 }
 
 .knowledge-extraction-result,
+.knowledge-index-gap-alert,
 .knowledge-card-search,
 .knowledge-card-retrieval,
 .test-knowledge-card-list {
   margin-top: 12px;
+}
+
+.knowledge-readiness-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.knowledge-readiness-strip span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #dbe6f3;
+  border-radius: 6px;
+  background: #f8fbff;
+  color: #344054;
+}
+
+.knowledge-readiness-strip strong {
+  color: #1677ff;
+}
+
+.knowledge-index-gap-alert {
+  padding: 8px 10px;
+  border: 1px solid #f2c037;
+  border-radius: 6px;
+  background: #fff8e6;
+  color: #8a5a00;
 }
 
 .knowledge-card-search {

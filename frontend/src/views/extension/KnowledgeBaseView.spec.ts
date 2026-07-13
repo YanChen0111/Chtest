@@ -233,6 +233,11 @@ describe('KnowledgeBaseView', () => {
     expect(wrapper.text()).toContain('Expired coupon validation blocks checkout.');
     expect(wrapper.text()).toContain('Vector Index');
     expect(wrapper.text()).toContain('Vector Coverage');
+    const readinessText = wrapper.find('[data-test="knowledge-readiness-strip"]').text().replace(/\s+/g, ' ');
+    expect(readinessText).toContain('Approved 0');
+    expect(readinessText).toContain('Needs Review 1');
+    expect(readinessText).toContain('Prompt Ready 1');
+    expect(readinessText).toContain('Index Gap 0');
     expect(wrapper.text()).toContain('no_external_vector_runtime');
     expect(wrapper.text()).not.toContain('Provider 配置');
     expect(wrapper.text()).not.toContain('向量检索');
@@ -322,6 +327,11 @@ describe('KnowledgeBaseView', () => {
     expect(wrapper.text()).toContain('暂无 deterministic retrieval evidence');
     expect(wrapper.text()).toContain('ContextArtifact');
     expect(wrapper.text()).toContain('MCP-ready');
+    const readinessText = wrapper.find('[data-test="knowledge-readiness-strip"]').text().replace(/\s+/g, ' ');
+    expect(readinessText).toContain('Approved 0');
+    expect(readinessText).toContain('Needs Review 0');
+    expect(readinessText).toContain('Prompt Ready 0');
+    expect(readinessText).toContain('Index Gap 0');
     expect(wrapper.text()).not.toContain('向量检索');
   });
 
@@ -662,6 +672,7 @@ describe('KnowledgeBaseView', () => {
       }),
     );
     expect(wrapper.text()).toContain('BoundaryCondition: expired coupon checkout');
+    expect(wrapper.text()).toContain('Prompt-ready knowledge cards missing index: 1');
     expect(wrapper.text()).toContain('新增 1，跳过 0');
 
     await wrapper.find('[data-test="approve-knowledge-card"]').trigger('click');
@@ -688,6 +699,7 @@ describe('KnowledgeBaseView', () => {
       }),
     );
     expect(wrapper.text()).toContain('Vector Index');
+    expect(wrapper.text()).not.toContain('Prompt-ready knowledge cards missing index: 1');
 
     await wrapper.find('[data-test="knowledge-card-retrieval-form"]').trigger('submit');
     await flushPromises();

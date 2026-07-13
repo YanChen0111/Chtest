@@ -17,7 +17,10 @@ from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask
 from backend.app.modules.ai_runtime.router import get_artifact_store
-from backend.app.modules.knowledge.models import TestKnowledgeCard as TestKnowledgeCardModel
+from backend.app.modules.knowledge.models import (
+    TestKnowledgeCard as TestKnowledgeCardModel,
+    TestKnowledgeEmbeddingIndex,
+)
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 
@@ -280,7 +283,7 @@ def test_extract_all_test_knowledge_cards_from_prompt_eligible_context(
 def test_rebuild_test_knowledge_embedding_index_and_hybrid_retrieval(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:
-    client, _SessionLocal = api_client
+    client, SessionLocal = api_client
     project_id, artifact_id, _requirement_id = create_project_context_and_requirement(client)
     extract_response = client.post(
         "/api/test-knowledge/cards/extract",
@@ -332,6 +335,34 @@ def test_rebuild_test_knowledge_embedding_index_and_hybrid_retrieval(
     assert graph["coverage"]["vector_index_coverage_ratio"] == 1
     assert any(node["node_type"] == "embedding_index" for node in graph["nodes"])
     assert any(edge["edge_type"] == "indexes_knowledge_card" for edge in graph["edges"])
+
+    first_card_id = extract_response.json()["items"][0]["id"]
+    archive_response = client.patch(
+        f"/api/test-knowledge/cards/{first_card_id}",
+        {"project_id": project_id, "status": "archived"},
+    )
+    assert archive_response.status_code == 200
+    assert archive_response.json()["allowed_for_prompt"] is False
+
+    with SessionLocal() as session:
+        archived_index = session.scalar(
+            select(TestKnowledgeEmbeddingIndex).where(
+                TestKnowledgeEmbeddingIndex.knowledge_card_id == uuid.UUID(first_card_id),
+            ),
+        )
+        assert archived_index is not None
+        assert archived_index.status == "stale"
+        assert archived_index.metadata_json["stale_reason"] == "knowledge_card_no_longer_prompt_eligible"
+
+    stale_index_response = client.get(f"/api/projects/{project_id}/test-knowledge/index")
+    assert stale_index_response.status_code == 200
+    assert stale_index_response.json()["indexed_count"] == created_count - 1
+
+    stale_graph_response = client.get(f"/api/projects/{project_id}/test-knowledge/graph")
+    assert stale_graph_response.status_code == 200
+    stale_graph = stale_graph_response.json()
+    assert stale_graph["coverage"]["embedding_index_count"] == created_count
+    assert stale_graph["coverage"]["embedding_indexed_card_count"] == created_count - 1
 
 
 def test_case_generation_uses_test_knowledge_evidence(

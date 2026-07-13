@@ -4013,3 +4013,70 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
   by `subprocess` (`WinError 193`). This is outside the frontend integration
   change and should be handled as a separate Windows runner-test compatibility
   follow-up.
+
+## 2026-07-13 Case Generation Flow UX Review
+
+### Completed
+
+- Preserved senior-test-engineer feedback for the reservation charging
+  scenario.
+- Inspected the complete Chtest flow from RequirementReview to formal
+  requirement document, CaseGeneration, candidate review, and TestCase library
+  promotion.
+- Confirmed RequirementReview produced useful ambiguity/risk findings for the
+  reservation charging requirement.
+- Confirmed formal requirement document creation and generation-source handoff
+  work structurally.
+- Confirmed candidate review actions and `approve_after_edit` TestCase
+  promotion work structurally.
+
+### Observations
+
+- Real-model CaseGeneration failed with recoverable HTTP 524 after a long
+  wait, while the UI only showed loading and did not surface task progress or
+  failure evidence.
+- Mock-model CaseGeneration succeeded structurally but generated coupon cases
+  for the reservation charging input, so mock output must not be used as
+  domain-quality evidence.
+- The next product risk is not whether the endpoints exist; it is whether a
+  test engineer can see generation progress, understand failures, and verify
+  risk-dimension coverage before approving cases.
+
+## 2026-07-13 Case Generation P0/P1 Optimization
+
+### Completed
+
+- Implemented visible CaseGeneration task lifecycle for the requirement-to-case
+  flow. Case generation now creates a pending task, runs in a background task,
+  and exposes task status through `GET /api/case-generation/tasks/{id}`.
+- Added failed-task error visibility with `error_code` and `error_message` so
+  provider failures, schema failures, and quality gates can be shown in the UI.
+- Added a domain-alignment gate that fails wrong-domain output with
+  `CASE_GENERATION_DOMAIN_MISMATCH` and prevents candidate persistence.
+- Updated the case generation review page to poll task status before loading
+  candidates and to show CaseGenerationTask/AITask ids, AI status, error code,
+  and error message.
+- Added a lightweight test-dimension coverage matrix for generated candidates
+  covering main flow, negative path, boundary, state, permission, channel,
+  device/current condition, and risk references.
+- Kept prompt-ready knowledge index coverage honest by marking indexes stale
+  when reviewed knowledge cards are no longer prompt-eligible.
+- Updated API/data/state contracts for asynchronous CaseGeneration tasks and
+  knowledge index coverage semantics.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_case_generation.py -q`
+  - Result: `6 passed`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_test_knowledge_cards.py -q`
+  - Result: `25 passed`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_knowledge_cards.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_model_connection_config.py backend/app/tests/api/test_extension_surface.py -q`
+  - Result: `44 passed`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/cases/CaseGenerationReviewView.spec.ts src/views/requirements/RequirementReviewView.spec.ts`
+  - Result: `6 passed`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/settings/ProjectSettingsView.spec.ts src/views/extension/KnowledgeBaseView.spec.ts src/views/requirements/RequirementReviewView.spec.ts src/views/cases/CaseGenerationReviewView.spec.ts`
+  - Result: `11 passed`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run build`
+  - Result: passed with existing Vite chunk-size warning.
+- `git diff --check`
+  - Result: no output.
