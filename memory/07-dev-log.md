@@ -4116,3 +4116,30 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
   - Result: passed with existing Vite chunk-size warning.
 - `git diff --check`
   - Result: no output.
+
+## 2026-07-13 Automation Reviewer Asset Selection UX
+
+### Completed
+
+- Replaced AutomationDraft TestCase/TestCommand UUID inputs with searchable,
+  business-labeled asset selectors.
+- Filtered API/Newman and JMeter commands by compatible active command type.
+- Added explicit case-selection, plan-approval, draft-review, and
+  execution-evidence stages with responsive layout.
+- Removed the fake default TestCase id and disabled generation until explicit
+  selection or restored reviewed-case context.
+
+### Verification
+
+- Focused AutomationDraft spec: `5 passed`.
+- Related frontend workflow suite: `6 files passed, 11 tests passed`.
+- Frontend build passed with the existing Vite chunk-size warning.
+- Browser selection smoke passed against 5 real TestCases.
+
+### Blocker
+
+- Full browser plan generation is blocked by an unversioned local database,
+  missing current GeneratedCaseCandidate columns, and PromptVersion registry
+  content drift. A copied-database Alembic upgrade starts at the first migration
+  and fails because tables already exist. No migration was applied to the
+  original database.

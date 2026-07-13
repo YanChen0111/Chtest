@@ -12,6 +12,99 @@ describe('AutomationDraftReviewView', () => {
     vi.unstubAllGlobals();
   });
 
+  it('loads reviewer assets and exposes the four-stage workflow', async () => {
+    const latestTestCaseId = '00000000-0000-0000-0000-000000000955';
+    const newmanCommandId = '00000000-0000-0000-0000-000000000321';
+    window.localStorage.setItem(
+      'chtest.latestApprovedTestCase',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        testCaseId: latestTestCaseId,
+      }),
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/test-cases?project_id=')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: latestTestCaseId,
+                project_id: '00000000-0000-0000-0000-000000000101',
+                module_id: null,
+                source_candidate_id: null,
+                title: '订单金额优惠规则',
+                priority: 'P0',
+                test_type: 'functional',
+                precondition: null,
+                steps: ['提交订单'],
+                expected_results: ['金额正确'],
+                input_data: {},
+                tags: ['reviewed'],
+                source_type: 'ai',
+                review_status: 'approved',
+                status: 'active',
+              },
+            ],
+            total: 1,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/settings')) {
+        return new Response(
+          JSON.stringify({
+            project: {
+              id: '00000000-0000-0000-0000-000000000101',
+              name: 'Chtest',
+              default_language: 'zh-CN',
+              default_test_type: 'functional',
+            },
+            modules: [],
+            repositories: [],
+            environments: [],
+            test_commands: [
+              {
+                id: newmanCommandId,
+                name: '订单 API 回归',
+                command: 'newman run orders.json',
+                working_directory: '.',
+                command_type: 'newman',
+                timeout_seconds: 60,
+                parse_junit: true,
+                parse_coverage: false,
+                status: 'active',
+              },
+            ],
+            tool_definitions: [],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pinia = createPinia();
+    const wrapper = mount(AutomationDraftReviewView, {
+      global: {
+        plugins: [pinia, ArcoVue],
+      },
+    });
+    const store = useAutomationStore();
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(store.testCases).toEqual([expect.objectContaining({ id: latestTestCaseId, title: '订单金额优惠规则' })]);
+    expect(store.testCommands).toEqual([
+      expect.objectContaining({ id: newmanCommandId, name: '订单 API 回归', command_type: 'newman' }),
+    ]);
+    expect(wrapper.find('[data-test="automation-test-case-select"]').exists()).toBe(true);
+    expect(wrapper.findAll('[data-test^="automation-workflow-step-"]')).toHaveLength(4);
+    expect(wrapper.text()).toContain('选择用例');
+    expect(wrapper.text()).toContain('执行取证');
+  });
+
   it('creates an approved automation plan before generating and approving a draft', async () => {
     const latestTestCaseId = '00000000-0000-0000-0000-000000000955';
     const planId = '00000000-0000-0000-0000-000000000p01'.replace('p', 'a');
@@ -548,10 +641,42 @@ describe('AutomationDraftReviewView', () => {
       runtime_artifact_id: null,
       promoted_artifact_id: null,
     };
+    store.testCommands = [
+      {
+        id: '00000000-0000-0000-0000-000000000321',
+        name: '订单 API 回归',
+        command: 'newman run collections/coupon.postman_collection.json',
+        working_directory: '.',
+        command_type: 'newman',
+        timeout_seconds: 60,
+        parse_junit: true,
+        parse_coverage: false,
+        status: 'active',
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000331',
+        name: '订单性能冒烟',
+        command: 'jmeter -n -t plans/coupon.jmx',
+        working_directory: '.',
+        command_type: 'jmeter',
+        timeout_seconds: 60,
+        parse_junit: false,
+        parse_coverage: false,
+        status: 'active',
+      },
+    ];
     await wrapper.vm.$nextTick();
 
     await wrapper.find('[data-test="automation-execution-type-api"]').trigger('click');
-    await wrapper.find('[data-test="automation-test-command-id"] input').setValue('00000000-0000-0000-0000-000000000321');
+    const apiCommandSelect = wrapper.find('[data-test="automation-test-command-select"]');
+    await apiCommandSelect.trigger('click');
+    await wrapper.vm.$nextTick();
+    const apiCommandOption = document.querySelector<HTMLElement>(
+      '[data-test="automation-test-command-option-00000000-0000-0000-0000-000000000321"]',
+    );
+    expect(apiCommandOption).not.toBeNull();
+    apiCommandOption?.click();
+    await wrapper.vm.$nextTick();
     await wrapper.find('.automation-execution-form').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();
@@ -567,7 +692,15 @@ describe('AutomationDraftReviewView', () => {
     expect(wrapper.text()).toContain('newman_json');
 
     await wrapper.find('[data-test="automation-execution-type-jmeter"]').trigger('click');
-    await wrapper.find('[data-test="automation-test-command-id"] input').setValue('00000000-0000-0000-0000-000000000331');
+    const jmeterCommandSelect = wrapper.find('[data-test="automation-test-command-select"]');
+    await jmeterCommandSelect.trigger('click');
+    await wrapper.vm.$nextTick();
+    const jmeterCommandOption = document.querySelector<HTMLElement>(
+      '[data-test="automation-test-command-option-00000000-0000-0000-0000-000000000331"]',
+    );
+    expect(jmeterCommandOption).not.toBeNull();
+    jmeterCommandOption?.click();
+    await wrapper.vm.$nextTick();
     await wrapper.find('.automation-execution-form').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();

@@ -15,7 +15,8 @@ and local execution evidence surfaces.
 
 ## Current Task
 
-Case generation P0/P1 optimization is complete.
+Case generation P0/P1 optimization and the AutomationDraft reviewer-input UX
+optimization are complete.
 
 Completed P0/P1 behaviors:
 
@@ -43,8 +44,16 @@ Completed P0/P1 behaviors:
 9. Prompt, Skill, mock provider, API contract, data-model contract, and golden
    fixture expectations now require coverage dimensions for generated cases.
 10. Knowledge-card review now keeps vector-index coverage honest: cards that
-   become stale, unsafe, duplicate, or archived mark existing indexes stale and
-   are excluded from prompt-ready index coverage.
+    become stale, unsafe, duplicate, or archived mark existing indexes stale and
+    are excluded from prompt-ready index coverage.
+11. The AutomationDraft page loads active reviewed TestCases and project
+    TestCommands instead of requiring testers to paste UUIDs.
+12. TestCase choices show title, priority, test type, and a short id; API/Newman
+    and JMeter execution choices only show compatible active TestCommands.
+13. The AutomationDraft reviewer flow exposes four visible stages: select case,
+    approve plan, review draft, and collect execution evidence.
+14. The generate action stays disabled until a TestCase is selected, and missing
+    compatible TestCommands produce a configuration-oriented hint.
 
 ## Product Value Answer
 
@@ -52,7 +61,9 @@ The user can now see whether case generation is running, failed, or complete;
 avoid accepting wrong-domain generated cases; review each candidate without
 state leaking from the previous candidate; confirm the requirement/design matrix
 before generation; and understand persisted test-dimension coverage before
-promoting generated cases.
+promoting generated cases. The automation reviewer can also select named assets,
+see the current workflow stage, and avoid launching API/JMeter with the wrong
+TestCommand type.
 
 ## Must Read
 
@@ -88,6 +99,9 @@ backend/app/tests/api/test_test_knowledge_cards.py
 frontend/src/api/cases.ts
 frontend/src/stores/cases.ts
 frontend/src/stores/extension.ts
+frontend/src/stores/automation.ts
+frontend/src/views/automation/AutomationDraftReviewView.vue
+frontend/src/views/automation/AutomationDraftReviewView.spec.ts
 frontend/src/views/cases/CaseGenerationReviewView.vue
 frontend/src/views/cases/CaseGenerationReviewView.spec.ts
 frontend/src/views/extension/KnowledgeBaseView.vue
@@ -122,6 +136,10 @@ D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test
 ```
 
 ```bash
+D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/automation/AutomationDraftReviewView.spec.ts src/layouts/WorkbenchLayout.spec.ts src/views/execution/PytestExecutionView.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts
+```
+
+```bash
 D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run build
 git diff --check
 ```
@@ -135,20 +153,23 @@ Docker Desktop Linux Engine is repaired outside this repo.
 - Backend related acceptance suite passes.
 - Frontend settings, knowledge, requirement review, and case generation suite
   passes.
+- Automation reviewer, layout, and related execution suite passes.
 - Frontend build passes with only the existing Vite chunk-size warning.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-fix(cases): harden generation review workflow
+fix(frontend): simplify automation reviewer inputs
 ```
 
 ## Next Task
 
-Continue non-Docker V2 acceptance stabilization with the next smallest local
-evidence risk: browser-smoke the reviewer workflow from requirement review to
-case generation to automation draft review/execution selection, especially the
-Playwright/API/JMeter automation execution choices that are intentionally
-handled as automation-draft execution types. Docker/compose runtime repair
-remains out of scope until the local engine is fixed outside this repo.
+Repair the local acceptance database baseline on a copy of the current database
+before continuing the browser reviewer smoke. The current database has no
+Alembic version record, is missing current GeneratedCaseCandidate columns, and
+contains PromptVersion rows whose content conflicts with the current registry
+files. Define a safe, tested upgrade/diagnostic path; do not silently overwrite
+prompt registry truth or mutate the only local database copy. Docker/compose
+runtime repair remains out of scope until the local engine is fixed outside this
+repo.

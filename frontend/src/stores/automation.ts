@@ -14,18 +14,21 @@ import {
   type AutomationPlanRead,
   type AutomationPlanReviewRead,
 } from '../api/automation';
+import { listTestCases, type TestCaseListItem } from '../api/cases';
+import { getProjectSettings, type ProjectTestCommand } from '../api/projects';
 import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
 import { getLatestApprovedTestCaseContext } from './workflowContext';
 
 const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
-const DEFAULT_TEST_CASE_ID = '00000000-0000-0000-0000-000000000901';
 
 export const useAutomationStore = defineStore('automation', {
   state: () => {
     const latestCase = getLatestApprovedTestCaseContext();
     return {
       projectId: latestCase?.projectId ?? DEFAULT_PROJECT_ID,
-      testCaseId: latestCase?.testCaseId ?? DEFAULT_TEST_CASE_ID,
+      testCaseId: latestCase?.testCaseId ?? '',
+      testCases: [] as TestCaseListItem[],
+      testCommands: [] as ProjectTestCommand[],
       plan: null as AutomationPlanRead | null,
       lastPlanReview: null as AutomationPlanReviewRead | null,
       planReviewHistory: [] as ReviewHistoryItem[],
@@ -34,7 +37,9 @@ export const useAutomationStore = defineStore('automation', {
       lastReview: null as AutomationDraftReviewRead | null,
       reviewHistory: [] as ReviewHistoryItem[],
       loading: false,
+      loadingAssets: false,
       errorMessage: '',
+      assetErrorMessage: '',
     };
   },
   actions: {
@@ -46,6 +51,22 @@ export const useAutomationStore = defineStore('automation', {
       this.projectId = latestCase.projectId;
       this.testCaseId = latestCase.testCaseId;
       return true;
+    },
+    async loadReviewerAssets() {
+      this.loadingAssets = true;
+      this.assetErrorMessage = '';
+      try {
+        const [testCaseLibrary, projectSettings] = await Promise.all([
+          listTestCases(this.projectId),
+          getProjectSettings(this.projectId),
+        ]);
+        this.testCases = testCaseLibrary.items.filter((item) => item.status === 'active');
+        this.testCommands = projectSettings.test_commands.filter((item) => item.status === 'active');
+      } catch (error) {
+        this.assetErrorMessage = error instanceof Error ? error.message : '评审资产加载失败';
+      } finally {
+        this.loadingAssets = false;
+      }
     },
     async createPlan(data: { testCaseId: string; targetFramework: string; useKnowledge: boolean }) {
       this.loading = true;

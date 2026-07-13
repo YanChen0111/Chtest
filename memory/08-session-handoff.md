@@ -9949,3 +9949,50 @@ Next recommended task:
 - Add a requirement clarification/decision-table gate before final case
   generation, then extend CaseGenerationAgent output with persisted coverage
   dimensions instead of deriving coverage heuristically in the frontend.
+
+## 2026-07-13 Automation Reviewer Asset Selection UX
+
+Current task:
+- Optimize the AutomationDraft review layout and interactions for test engineers
+  while browser-smoking the current requirement-to-automation workflow.
+
+Completed:
+- Replaced raw TestCase UUID entry with a searchable active-TestCase selector
+  showing title, priority, test type, review status, and short id.
+- Replaced raw API/JMeter TestCommand UUID entry with compatible active-command
+  selectors. Newman only lists `command_type=newman`; JMeter only lists
+  `command_type=jmeter`.
+- Removed the fake default TestCase id. A saved reviewed-case context is still
+  restored, otherwise the generate action remains disabled until explicit
+  selection.
+- Added a four-stage workflow status strip for case selection, plan approval,
+  draft review, and execution evidence.
+- Added responsive 4/2/1-column stage layouts and explicit missing-command
+  guidance.
+
+Verification:
+- Automation reviewer focused spec: `5 passed`.
+- Automation reviewer, layout, and related execution suite: `6 files passed, 11
+  tests passed`.
+- Frontend build passed with the existing Vite chunk-size warning.
+- Browser verified that the selector renders 5 real reviewed cases, selecting a
+  case advances stage 1 to its business title, and enables plan generation.
+- `git diff --check`: no output.
+
+Browser blocker evidence:
+- The pre-existing backend on `127.0.0.1:8000` is stale and does not expose
+  `/api/automation/plans`.
+- Current source on a separate port initially failed local bootstrap because the
+  database PromptVersion content conflicts with current registry files.
+- Skipping bootstrap for diagnosis allowed reads, but plan creation failed
+  because the local database lacks
+  `generated_case_candidates.source_knowledge_evidence_json` and other current
+  schema fields.
+- Migrating a copied database failed at the first migration because the database
+  has application tables but no Alembic version record (`workspaces already
+  exists`). The original database was not migrated.
+
+Next recommended task:
+- Build and verify a safe diagnostic/upgrade path for the unversioned local
+  database and prompt-registry drift using a database copy, then resume the
+  browser workflow from plan generation through execution selection.

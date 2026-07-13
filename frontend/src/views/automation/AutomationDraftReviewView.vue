@@ -12,16 +12,50 @@
       </a-space>
     </div>
 
+    <ol class="workflow-progress" aria-label="自动化评审流程">
+      <li
+        v-for="(step, index) in workflowSteps"
+        :key="step.key"
+        :class="{ active: step.state === 'active', completed: step.state === 'completed' }"
+        :data-test="`automation-workflow-step-${step.key}`"
+      >
+        <span class="workflow-progress__index">{{ index + 1 }}</span>
+        <div>
+          <strong>{{ step.label }}</strong>
+          <small>{{ step.detail }}</small>
+        </div>
+      </li>
+    </ol>
+
     <a-alert v-if="store.errorMessage" type="error" show-icon>{{ store.errorMessage }}</a-alert>
+    <a-alert v-if="store.assetErrorMessage" type="warning" show-icon>{{ store.assetErrorMessage }}</a-alert>
 
     <div class="automation-draft-layout">
       <a-card class="draft-panel" :bordered="false">
         <template #title>草稿入口</template>
         <form class="draft-form" @submit.prevent="submitPlan">
           <label>
-            <span>TestCase ID</span>
-            <a-input data-test="automation-test-case-id" v-model="form.testCaseId" />
+            <span>已评审用例</span>
+            <a-select
+              v-model="form.testCaseId"
+              data-test="automation-test-case-select"
+              allow-search
+              allow-clear
+              :loading="store.loadingAssets"
+              placeholder="按标题或优先级选择用例"
+            >
+              <a-option v-for="testCase in store.testCases" :key="testCase.id" :value="testCase.id" :label="testCase.title">
+                <div class="asset-option">
+                  <strong>{{ testCase.title }}</strong>
+                  <span>{{ testCase.priority }} · {{ testCase.test_type }} · {{ shortId(testCase.id) }}</span>
+                </div>
+              </a-option>
+            </a-select>
           </label>
+          <div v-if="selectedTestCase" class="selected-asset-summary" data-test="selected-test-case-summary">
+            <strong>{{ selectedTestCase.title }}</strong>
+            <span>{{ selectedTestCase.priority }} · {{ selectedTestCase.test_type }} · {{ selectedTestCase.review_status }}</span>
+          </div>
           <label>
             <span>目标框架</span>
             <a-select v-model="form.targetFramework">
@@ -30,7 +64,15 @@
             </a-select>
           </label>
           <a-checkbox v-model="form.useKnowledge">结合 RAG 知识库</a-checkbox>
-          <a-button data-test="generate-plan" html-type="submit" type="primary" :loading="store.loading">生成自动化方案</a-button>
+          <a-button
+            data-test="generate-plan"
+            html-type="submit"
+            type="primary"
+            :disabled="!form.testCaseId"
+            :loading="store.loading"
+          >
+            生成自动化方案
+          </a-button>
         </form>
 
         <section v-if="store.plan" class="automation-plan-panel">
@@ -181,8 +223,29 @@
                   <a-input :model-value="store.draft.id" readonly />
                 </label>
                 <label v-else>
-                  <span>TestCommand ID</span>
-                  <a-input data-test="automation-test-command-id" v-model="executionForm.testCommandId" />
+                  <span>测试命令</span>
+                  <a-select
+                    v-model="executionForm.testCommandId"
+                    data-test="automation-test-command-select"
+                    allow-search
+                    allow-clear
+                    :disabled="availableTestCommands.length === 0"
+                    :loading="store.loadingAssets"
+                    :placeholder="availableTestCommands.length ? '选择已配置命令' : '项目中没有匹配命令'"
+                  >
+                    <a-option
+                      v-for="command in availableTestCommands"
+                      :key="command.id"
+                      :value="command.id"
+                      :label="command.name"
+                      :data-test="`automation-test-command-option-${command.id}`"
+                    >
+                      <div class="asset-option">
+                        <strong>{{ command.name }}</strong>
+                        <span>{{ command.command_type }} · {{ command.command }}</span>
+                      </div>
+                    </a-option>
+                  </a-select>
                 </label>
                 <a-space class="execution-actions" wrap>
                   <a-button
@@ -298,6 +361,7 @@ interface AutomationExecutionTypeOption {
   readonly sourceMode: ExecutionSourceMode;
   readonly runnerMode: string;
   readonly requiredDraftFramework?: string;
+  readonly requiredCommandType?: string;
   readonly startLabel: string;
   readonly reason: string;
   readonly artifactTypes: readonly string[];
@@ -343,6 +407,7 @@ const executionTypeOptions: readonly AutomationExecutionTypeOption[] = [
     sourceLabel: '使用 TestCommand 执行 API 自动化',
     sourceMode: 'test_command',
     runnerMode: 'newman_local',
+    requiredCommandType: 'newman',
     startLabel: '启动 API 执行',
     reason: 'automation draft api execution',
     artifactTypes: ['stdout', 'stderr', 'newman_json', 'parsed_output', 'junit'],
@@ -355,6 +420,7 @@ const executionTypeOptions: readonly AutomationExecutionTypeOption[] = [
     sourceLabel: '使用 TestCommand 执行 JMeter 自动化',
     sourceMode: 'test_command',
     runnerMode: 'jmeter_local',
+    requiredCommandType: 'jmeter',
     startLabel: '启动 JMeter',
     reason: 'automation draft jmeter execution',
     artifactTypes: ['stdout', 'stderr', 'jmeter_jtl', 'parsed_output'],
@@ -373,6 +439,7 @@ const executionForm = reactive({
 });
 
 const canApprovePlan = computed(() => ['plan_generated', 'edited'].includes(store.plan?.status ?? ''));
+const selectedTestCase = computed(() => store.testCases.find((item) => item.id === form.testCaseId) ?? null);
 const draftQualityGate = computed(
   () =>
     store.draft?.quality_gate ?? {
@@ -390,6 +457,47 @@ const canApproveDraft = computed(
 const selectedExecutionType = computed<AutomationExecutionTypeOption>(
   () => executionTypeOptions.find((option) => option.value === executionForm.executionType) ?? executionTypeOptions[0]!,
 );
+const availableTestCommands = computed(() => {
+  const commandType = selectedExecutionType.value.requiredCommandType;
+  if (!commandType) {
+    return [];
+  }
+  return store.testCommands.filter((command) => command.command_type === commandType);
+});
+const workflowSteps = computed(() => {
+  const hasTestCase = Boolean(form.testCaseId);
+  const hasPlan = Boolean(store.plan);
+  const planCompleted = ['approved', 'draft_generated'].includes(store.plan?.status ?? '');
+  const hasDraft = Boolean(store.draft);
+  const draftCompleted = ['approved', 'execution_pending', 'executed', 'promoted'].includes(store.draft?.status ?? '');
+  const hasRun = Boolean(executionStore.run);
+  return [
+    {
+      key: 'case',
+      label: '选择用例',
+      detail: selectedTestCase.value?.title ?? (hasTestCase ? shortId(form.testCaseId) : '等待选择'),
+      state: hasTestCase ? 'completed' : 'active',
+    },
+    {
+      key: 'plan',
+      label: '审批方案',
+      detail: hasPlan ? statusLabel(store.plan?.status ?? null) : '尚未生成',
+      state: planCompleted ? 'completed' : hasTestCase ? 'active' : 'pending',
+    },
+    {
+      key: 'draft',
+      label: '评审草稿',
+      detail: hasDraft ? statusLabel(store.draft?.status ?? null) : '等待方案批准',
+      state: draftCompleted ? 'completed' : planCompleted ? 'active' : 'pending',
+    },
+    {
+      key: 'evidence',
+      label: '执行取证',
+      detail: hasRun ? executionRunStatusLabel(executionStore.run?.status ?? '') : '等待草稿批准',
+      state: hasRun ? 'completed' : draftCompleted ? 'active' : 'pending',
+    },
+  ] as const;
+});
 const executionStartHint = computed(() => {
   if (!store.draft) {
     return '请先生成自动化草稿。';
@@ -405,7 +513,9 @@ const executionStartHint = computed(() => {
     return '';
   }
   if (!executionForm.testCommandId.trim()) {
-    return 'API / JMeter 执行需要填写已配置的 TestCommand ID。';
+    return availableTestCommands.value.length
+      ? '请选择一个与当前执行类型匹配的测试命令。'
+      : '项目中没有可用于当前执行类型的测试命令，请先在设置中配置。';
   }
   return '';
 });
@@ -483,6 +593,7 @@ function approveDraft() {
 
 function selectExecutionType(type: AutomationExecutionType) {
   executionForm.executionType = type;
+  executionForm.testCommandId = '';
   executionStore.run = null;
   executionStore.errorMessage = '';
 }
@@ -576,10 +687,15 @@ function formatDateTime(value: string): string {
   }).format(new Date(value));
 }
 
-onMounted(() => {
+function shortId(value: string): string {
+  return value.length > 8 ? `${value.slice(0, 8)}…` : value;
+}
+
+onMounted(async () => {
   if (store.loadLatestApprovedTestCaseContext()) {
     form.testCaseId = store.testCaseId;
   }
+  await store.loadReviewerAssets();
 });
 </script>
 
@@ -618,6 +734,66 @@ onMounted(() => {
   gap: 16px;
 }
 
+.workflow-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+  list-style: none;
+}
+
+.workflow-progress li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-right: 1px solid #e5eaf2;
+  color: #64748b;
+}
+
+.workflow-progress li:last-child {
+  border-right: 0;
+}
+
+.workflow-progress li.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.workflow-progress li.completed {
+  color: #166534;
+}
+
+.workflow-progress__index {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-weight: 800;
+}
+
+.workflow-progress strong,
+.workflow-progress small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-progress small {
+  margin-top: 3px;
+  color: inherit;
+  opacity: 0.78;
+}
+
 .draft-panel {
   border-radius: 8px;
 }
@@ -632,6 +808,38 @@ onMounted(() => {
   gap: 7px;
   color: #344054;
   font-weight: 700;
+}
+
+.asset-option {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.asset-option strong,
+.asset-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-option span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.selected-asset-summary {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-left: 3px solid #2563eb;
+  background: #f8fafc;
+}
+
+.selected-asset-summary span {
+  color: #64748b;
+  font-size: 12px;
 }
 
 .automation-plan-panel {
@@ -842,6 +1050,34 @@ onMounted(() => {
   .execution-type-control,
   .automation-execution-form {
     grid-template-columns: 1fr;
+  }
+
+  .workflow-progress {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workflow-progress li:nth-child(2) {
+    border-right: 0;
+  }
+
+  .workflow-progress li:nth-child(-n + 2) {
+    border-bottom: 1px solid #e5eaf2;
+  }
+}
+
+@media (max-width: 560px) {
+  .workflow-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-progress li,
+  .workflow-progress li:nth-child(2) {
+    border-right: 0;
+    border-bottom: 1px solid #e5eaf2;
+  }
+
+  .workflow-progress li:last-child {
+    border-bottom: 0;
   }
 }
 </style>
