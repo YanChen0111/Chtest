@@ -9753,3 +9753,45 @@ Next recommended task:
 - Continue non-Docker V2 acceptance only if a real target app integration path
   is available; otherwise keep the acceptance path local-dev based and avoid
   treating demo adapter execution as product regression evidence.
+
+## 2026-07-13 AutomationDraft Embedded Execution Types
+
+Current task:
+- User asked to put Playwright, JMeter, and API execution into the automation
+  draft workflow because they are automation types.
+
+Completed:
+- Added an embedded execution panel to the AutomationDraft review page with
+  pytest, Playwright, API/Newman, and JMeter type selection.
+- pytest and Playwright execution starts from approved AutomationDraft records;
+  API/Newman and JMeter execution starts from an explicit TestCommand ID to
+  preserve the current backend execution contract.
+- Execution evidence now renders on the draft page: run context, runtime
+  manifest, metrics, artifacts, and result rows.
+- Restricted automation plan target framework selection to currently supported
+  draft generation paths: pytest and Playwright.
+- Removed standalone Playwright/API/JMeter links from the primary workbench
+  sidebar while preserving route compatibility.
+
+Verification:
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_automation_plan.py -q`
+  - Result: `16 passed in 1.91s`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/automation/AutomationDraftReviewView.spec.ts`
+  - Result: `4 passed`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/automation/AutomationDraftReviewView.spec.ts src/layouts/WorkbenchLayout.spec.ts src/views/execution/PytestExecutionView.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts`
+  - Result: `10 passed`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run build`
+  - Result: passed with the existing Vite chunk-size warning.
+
+Remaining risks:
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/api/test_playwright_minimal_loop.py backend/app/tests/api/test_newman_execution.py backend/app/tests/api/test_jmeter_execution.py -q`
+  currently reports `35 passed, 6 failed` on this Windows machine. The failures
+  are `WinError 193` from launching fake `npx`, `newman`, or `jmeter` scripts
+  directly via `subprocess`, not from the frontend embedding change.
+- Docker runtime acceptance remains skipped by user direction until Docker
+  Desktop/WSL is repaired outside this repo.
+
+Next recommended task:
+- Keep V2 acceptance local-dev based. A separate focused follow-up can make the
+  Playwright/Newman/JMeter runner tests Windows-compatible before treating the
+  broader backend execution suite as a local acceptance gate.

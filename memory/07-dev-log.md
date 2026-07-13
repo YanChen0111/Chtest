@@ -3982,3 +3982,34 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Continue non-Docker V2 acceptance with real project-local fixtures,
   selectors, or API hooks when a target app integration path is available.
+
+## 2026-07-13 AutomationDraft Embedded Execution Types
+
+### Completed
+
+- Embedded pytest, Playwright, API/Newman, and JMeter execution entry points in
+  the AutomationDraft review page so execution evidence is part of the
+  automation draft workflow instead of scattered sidebar pages.
+- Kept backend safety semantics: pytest and Playwright execute from approved
+  AutomationDraft records, while API/Newman and JMeter use configured
+  TestCommand records.
+- Removed standalone Playwright/API/JMeter execution links from the primary
+  workbench navigation while preserving their routes for deep links.
+- Added frontend coverage for starting pytest from an approved draft and
+  starting API/Newman and JMeter runs from embedded TestCommand execution
+  types.
+
+### Verification
+
+- AutomationDraft focused backend suite: `16 passed`.
+- AutomationDraft frontend spec: `4 passed`.
+- Related frontend execution/navigation suite: `10 passed`.
+- Frontend build: passed with existing Vite chunk-size warning.
+
+### Remaining Risk
+
+- The broader backend execution runner suite still fails on this Windows
+  machine when fake `npx`, `newman`, or `jmeter` scripts are launched directly
+  by `subprocess` (`WinError 193`). This is outside the frontend integration
+  change and should be handled as a separate Windows runner-test compatibility
+  follow-up.

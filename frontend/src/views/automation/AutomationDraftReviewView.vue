@@ -4,11 +4,11 @@
       <div>
         <p class="eyebrow">AutomationDraft 评审</p>
         <h2 id="automation-draft-title">自动化草稿</h2>
-        <p>从已评审用例生成可审查的自动化草稿，只做编辑和审批，不在此页面执行代码。</p>
+        <p>从已评审用例生成可审查的自动化草稿，审批后在同一页面按自动化类型启动执行并查看证据。</p>
       </div>
       <a-space>
         <a-tag color="blue">模拟 AutomationDraftAgent</a-tag>
-        <a-tag color="green">审批后进入待执行状态</a-tag>
+        <a-tag color="green">草稿评审 + 执行证据</a-tag>
       </a-space>
     </div>
 
@@ -24,7 +24,10 @@
           </label>
           <label>
             <span>目标框架</span>
-            <a-input v-model="form.targetFramework" />
+            <a-select v-model="form.targetFramework">
+              <a-option value="pytest">pytest</a-option>
+              <a-option value="playwright">Playwright</a-option>
+            </a-select>
           </label>
           <a-checkbox v-model="form.useKnowledge">结合 RAG 知识库</a-checkbox>
           <a-button data-test="generate-plan" html-type="submit" type="primary" :loading="store.loading">生成自动化方案</a-button>
@@ -144,6 +147,116 @@
                 <small>{{ formatDateTime(item.created_at) }} · {{ item.comment || '无评审备注' }} · 证据 {{ item.evidence_artifact_ids.length }}</small>
               </div>
             </section>
+
+            <section class="automation-execution-panel" data-test="automation-execution-panel">
+              <div class="section-heading">
+                <h3>自动化执行</h3>
+                <span>{{ selectedExecutionType.sourceLabel }}</span>
+              </div>
+
+              <div class="execution-type-control" role="group" aria-label="自动化执行类型">
+                <button
+                  v-for="option in executionTypeOptions"
+                  :key="option.value"
+                  type="button"
+                  class="execution-type-option"
+                  :class="{ active: option.value === executionForm.executionType }"
+                  :data-test="`automation-execution-type-${option.value}`"
+                  @click="selectExecutionType(option.value)"
+                >
+                  <strong>{{ option.label }}</strong>
+                  <span>{{ option.runnerLabel }}</span>
+                </button>
+              </div>
+
+              <a-alert v-if="executionStore.errorMessage" type="error" :content="executionStore.errorMessage" show-icon />
+
+              <form class="automation-execution-form" @submit.prevent="startAutomationExecution">
+                <label>
+                  <span>项目 ID</span>
+                  <a-input :model-value="store.projectId" readonly />
+                </label>
+                <label v-if="selectedExecutionType.sourceMode === 'automation_draft'">
+                  <span>AutomationDraft ID</span>
+                  <a-input :model-value="store.draft.id" readonly />
+                </label>
+                <label v-else>
+                  <span>TestCommand ID</span>
+                  <a-input data-test="automation-test-command-id" v-model="executionForm.testCommandId" />
+                </label>
+                <a-space class="execution-actions" wrap>
+                  <a-button
+                    data-test="start-automation-execution"
+                    html-type="submit"
+                    type="primary"
+                    :disabled="!canStartAutomationExecution"
+                    :loading="executionStore.loading"
+                  >
+                    {{ selectedExecutionType.startLabel }}
+                  </a-button>
+                  <a-button
+                    data-test="refresh-automation-execution"
+                    :disabled="!executionStore.run"
+                    :loading="executionStore.loading"
+                    @click="refreshAutomationExecution"
+                  >
+                    刷新结果
+                  </a-button>
+                </a-space>
+                <p v-if="executionStartHint" class="execution-start-hint">{{ executionStartHint }}</p>
+              </form>
+
+              <a-spin :loading="executionStore.loading">
+                <template v-if="executionStore.run">
+                  <a-descriptions class="execution-run-context" :column="2" bordered size="small">
+                    <a-descriptions-item label="运行名称" :span="2">
+                      {{ executionStore.run.name }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="状态">
+                      {{ executionRunStatusLabel(executionStore.run.status) }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="退出码">
+                      {{ executionStore.run.exit_code ?? '运行中' }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="耗时">{{ executionDurationLabel }}</a-descriptions-item>
+                    <a-descriptions-item label="运行器">{{ executionStore.run.runner_mode }}</a-descriptions-item>
+                    <a-descriptions-item label="来源">
+                      {{ executionStore.run.automation_draft_id ? 'AutomationDraft' : 'TestCommand' }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="网络">
+                      {{ executionStore.run.network_enabled ? '开启' : '关闭' }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="命令" :span="2">{{ executionStore.run.command }}</a-descriptions-item>
+                    <a-descriptions-item label="工作目录" :span="2">
+                      {{ executionStore.run.working_directory }}
+                    </a-descriptions-item>
+                  </a-descriptions>
+
+                  <ExecutionRunManifestPanel
+                    :run="executionStore.run"
+                    :rows="executionManifestRows"
+                    title-id="automation-run-manifest-title"
+                  />
+
+                  <ExecutionMetricsPanel :items="executionMetricItems" />
+
+                  <ExecutionArtifactTable
+                    title="执行工件"
+                    title-id="automation-execution-artifacts-title"
+                    :artifacts="executionArtifacts"
+                  />
+
+                  <ExecutionResultTable
+                    title="执行结果"
+                    title-id="automation-execution-results-title"
+                    :columns="executionResultColumns"
+                    :rows="executionResultRows"
+                  />
+                </template>
+
+                <a-empty v-else description="启动后展示自动化执行证据" />
+              </a-spin>
+            </section>
           </template>
 
           <a-empty v-else description="生成后展示自动化草稿" />
@@ -157,13 +270,106 @@
 import { computed, onMounted, reactive } from 'vue';
 
 import { useAutomationStore } from '../../stores/automation';
+import { useExecutionStore } from '../../stores/execution';
+import ExecutionArtifactTable from '../execution/ExecutionArtifactTable.vue';
+import ExecutionMetricsPanel from '../execution/ExecutionMetricsPanel.vue';
+import ExecutionResultTable from '../execution/ExecutionResultTable.vue';
+import ExecutionRunManifestPanel from '../execution/ExecutionRunManifestPanel.vue';
+import { executionRunDurationLabel, executionRunStatusLabel } from '../execution/executionDisplay';
+import {
+  jmeterOutputArtifacts,
+  newmanOutputArtifacts,
+  playwrightOutputArtifacts,
+  pytestOutputArtifacts,
+} from '../execution/executionOutputArtifacts';
+import { buildExecutionRunManifestRows, type ExecutionRunManifestOutputArtifact } from '../execution/executionRunManifest';
 
 const store = useAutomationStore();
+const executionStore = useExecutionStore();
+
+type AutomationExecutionType = 'pytest' | 'playwright' | 'api' | 'jmeter';
+type ExecutionSourceMode = 'automation_draft' | 'test_command';
+
+interface AutomationExecutionTypeOption {
+  readonly value: AutomationExecutionType;
+  readonly label: string;
+  readonly runnerLabel: string;
+  readonly sourceLabel: string;
+  readonly sourceMode: ExecutionSourceMode;
+  readonly runnerMode: string;
+  readonly requiredDraftFramework?: string;
+  readonly startLabel: string;
+  readonly reason: string;
+  readonly artifactTypes: readonly string[];
+  readonly outputArtifacts: readonly ExecutionRunManifestOutputArtifact[];
+}
+
+interface ExecutionMetricItem {
+  readonly label: string;
+  readonly value: string | number;
+}
+
+const executionTypeOptions: readonly AutomationExecutionTypeOption[] = [
+  {
+    value: 'pytest',
+    label: 'pytest',
+    runnerLabel: '本地子进程',
+    sourceLabel: '从已批准 AutomationDraft 执行',
+    sourceMode: 'automation_draft',
+    runnerMode: 'local_subprocess',
+    requiredDraftFramework: 'pytest',
+    startLabel: '启动 pytest',
+    reason: 'automation draft pytest execution',
+    artifactTypes: ['stdout', 'stderr', 'parsed_output', 'junit', 'coverage'],
+    outputArtifacts: pytestOutputArtifacts,
+  },
+  {
+    value: 'playwright',
+    label: 'Playwright',
+    runnerLabel: '浏览器自动化',
+    sourceLabel: '从已批准 Playwright 草稿执行',
+    sourceMode: 'automation_draft',
+    runnerMode: 'playwright_local',
+    requiredDraftFramework: 'playwright',
+    startLabel: '启动 Playwright',
+    reason: 'automation draft playwright execution',
+    artifactTypes: ['stdout', 'stderr', 'parsed_output', 'junit', 'playwright_trace', 'screenshot'],
+    outputArtifacts: playwrightOutputArtifacts,
+  },
+  {
+    value: 'api',
+    label: 'API / Newman',
+    runnerLabel: '接口集合',
+    sourceLabel: '使用 TestCommand 执行 API 自动化',
+    sourceMode: 'test_command',
+    runnerMode: 'newman_local',
+    startLabel: '启动 API 执行',
+    reason: 'automation draft api execution',
+    artifactTypes: ['stdout', 'stderr', 'newman_json', 'parsed_output', 'junit'],
+    outputArtifacts: newmanOutputArtifacts,
+  },
+  {
+    value: 'jmeter',
+    label: 'JMeter',
+    runnerLabel: '接口/性能脚本',
+    sourceLabel: '使用 TestCommand 执行 JMeter 自动化',
+    sourceMode: 'test_command',
+    runnerMode: 'jmeter_local',
+    startLabel: '启动 JMeter',
+    reason: 'automation draft jmeter execution',
+    artifactTypes: ['stdout', 'stderr', 'jmeter_jtl', 'parsed_output'],
+    outputArtifacts: jmeterOutputArtifacts,
+  },
+];
 
 const form = reactive({
   testCaseId: store.testCaseId,
   targetFramework: 'pytest',
   useKnowledge: true,
+});
+const executionForm = reactive({
+  executionType: 'pytest' as AutomationExecutionType,
+  testCommandId: '',
 });
 
 const canApprovePlan = computed(() => ['plan_generated', 'edited'].includes(store.plan?.status ?? ''));
@@ -181,6 +387,72 @@ const evidenceWarnings = computed(() => draftQualityGate.value.evidence_warnings
 const canApproveDraft = computed(
   () => ['draft_generated', 'edited'].includes(store.draft?.status ?? '') && approvalBlockingReasons.value.length === 0,
 );
+const selectedExecutionType = computed<AutomationExecutionTypeOption>(
+  () => executionTypeOptions.find((option) => option.value === executionForm.executionType) ?? executionTypeOptions[0]!,
+);
+const executionStartHint = computed(() => {
+  if (!store.draft) {
+    return '请先生成自动化草稿。';
+  }
+  const option = selectedExecutionType.value;
+  if (option.sourceMode === 'automation_draft') {
+    if (store.draft.status !== 'approved') {
+      return 'AutomationDraft 需要先批准，才能执行草稿代码。';
+    }
+    if (option.requiredDraftFramework && store.draft.target_framework !== option.requiredDraftFramework) {
+      return `当前草稿框架是 ${store.draft.target_framework}，请选择匹配的执行类型。`;
+    }
+    return '';
+  }
+  if (!executionForm.testCommandId.trim()) {
+    return 'API / JMeter 执行需要填写已配置的 TestCommand ID。';
+  }
+  return '';
+});
+const canStartAutomationExecution = computed(() => !executionStartHint.value);
+const executionDurationLabel = computed(() => executionRunDurationLabel(executionStore.run?.duration_ms ?? null));
+const executionManifestRows = computed(() =>
+  buildExecutionRunManifestRows(executionStore.run, selectedExecutionType.value.outputArtifacts),
+);
+const executionArtifacts = computed(() => {
+  const allowedTypes = new Set(selectedExecutionType.value.artifactTypes);
+  return (executionStore.run?.artifacts ?? []).filter((artifact) => allowedTypes.has(artifact.artifact_type));
+});
+const executionMetricItems = computed(() => metricItemsForExecutionType(executionForm.executionType));
+const executionResultColumns = computed(() => {
+  if (executionForm.executionType === 'jmeter') {
+    return [
+      { title: 'Sampler', dataIndex: 'test_name' },
+      { title: '状态', dataIndex: 'status_label' },
+      { title: '耗时', dataIndex: 'duration_label' },
+      { title: '失败信息', dataIndex: 'failure_message' },
+    ];
+  }
+  if (executionForm.executionType === 'api') {
+    return [
+      { title: '断言', dataIndex: 'test_name' },
+      { title: '状态', dataIndex: 'status' },
+      { title: '失败信息', dataIndex: 'failure_message' },
+    ];
+  }
+  return [
+    { title: '测试', dataIndex: 'test_name' },
+    { title: '状态', dataIndex: 'status' },
+    { title: '耗时', dataIndex: 'duration_ms' },
+    { title: '失败信息', dataIndex: 'failure_message' },
+  ];
+});
+const executionResultRows = computed(() => {
+  if (executionForm.executionType !== 'jmeter') {
+    return executionStore.run?.test_results ?? [];
+  }
+  return (executionStore.run?.test_results ?? []).map((result) => ({
+    ...result,
+    status_label: executionRunStatusLabel(result.status),
+    duration_label: result.duration_ms === null ? '未记录' : `${result.duration_ms} ms`,
+    failure_message: result.failure_message ?? '无',
+  }));
+});
 
 function submitPlan() {
   void store.createPlan({
@@ -207,6 +479,67 @@ function approveDraft() {
     return;
   }
   void store.approveCurrentDraft('前端批准草稿');
+}
+
+function selectExecutionType(type: AutomationExecutionType) {
+  executionForm.executionType = type;
+  executionStore.run = null;
+  executionStore.errorMessage = '';
+}
+
+function startAutomationExecution() {
+  if (!store.draft || !canStartAutomationExecution.value) {
+    return;
+  }
+  const option = selectedExecutionType.value;
+  executionStore.projectId = store.projectId;
+  executionStore.sourceMode = option.sourceMode;
+  executionStore.automationDraftId = store.draft.id;
+  executionStore.testCommandId = executionForm.testCommandId.trim();
+  void executionStore.startRun({
+    runnerMode: option.runnerMode,
+    reason: option.reason,
+  });
+}
+
+function refreshAutomationExecution() {
+  void executionStore.refreshRun();
+}
+
+function metricItemsForExecutionType(type: AutomationExecutionType): ExecutionMetricItem[] {
+  const parsed = executionStore.run?.parsed_result ?? {};
+  if (type === 'api') {
+    return [
+      { label: '总断言', value: parsed.total ?? 0 },
+      { label: '通过', value: parsed.passed ?? 0 },
+      { label: '失败', value: parsed.failed ?? 0 },
+      { label: '跳过', value: parsed.skipped ?? 0 },
+      { label: '请求数', value: parsed.request_count ?? 0 },
+      { label: '断言数', value: parsed.assertion_count ?? 0 },
+    ];
+  }
+  if (type === 'jmeter') {
+    return [
+      { label: '总样本', value: parsed.total ?? 0 },
+      { label: '通过', value: parsed.passed ?? 0 },
+      { label: '失败', value: parsed.failed ?? 0 },
+      { label: '错误', value: parsed.error ?? 0 },
+      { label: 'Sampler 数', value: parsed.sampler_count ?? 0 },
+      { label: '断言数', value: parsed.assertion_count ?? 0 },
+      { label: '平均延迟', value: formatMs(parsed.average_latency_ms) },
+    ];
+  }
+  return [
+    { label: '总数', value: parsed.total ?? 0 },
+    { label: '通过', value: parsed.passed ?? 0 },
+    { label: '失败', value: parsed.failed ?? 0 },
+    { label: '跳过', value: parsed.skipped ?? 0 },
+    { label: '错误', value: parsed.error ?? 0 },
+  ];
+}
+
+function formatMs(value: number | string | undefined): string | number {
+  return typeof value === 'number' ? `${value} ms` : (value ?? 0);
 }
 
 function actionLabel(action: string): string {
@@ -416,8 +749,98 @@ onMounted(() => {
   color: #64748b;
 }
 
+.automation-execution-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e5eaf2;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.section-heading span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.execution-type-control {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.execution-type-option {
+  display: grid;
+  gap: 4px;
+  min-height: 62px;
+  padding: 10px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+}
+
+.execution-type-option.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.execution-type-option span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.automation-execution-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) max-content;
+  align-items: end;
+  gap: 12px;
+}
+
+.automation-execution-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #344054;
+  font-weight: 700;
+}
+
+.execution-actions {
+  align-self: end;
+}
+
+.execution-start-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #b45309;
+  font-weight: 700;
+}
+
+.execution-run-context {
+  margin-top: 4px;
+}
+
 @media (max-width: 980px) {
   .automation-draft-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .execution-type-control,
+  .automation-execution-form {
     grid-template-columns: 1fr;
   }
 }

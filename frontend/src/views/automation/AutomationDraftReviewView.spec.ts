@@ -18,6 +18,7 @@ describe('AutomationDraftReviewView', () => {
     const draftId = '00000000-0000-0000-0000-000000001001';
     const aiTaskId = '00000000-0000-0000-0000-000000001002';
     let planBody: unknown = null;
+    let executionBody: unknown = null;
 
     window.localStorage.setItem(
       'chtest.latestApprovedTestCase',
@@ -206,6 +207,79 @@ describe('AutomationDraftReviewView', () => {
           headers: { 'Content-Type': 'application/json' },
         });
       }
+      if (url.endsWith('/test-runs') && init?.method === 'POST') {
+        executionBody = JSON.parse(String(init.body));
+        return new Response(
+          JSON.stringify({
+            id: '00000000-0000-0000-0000-000000001301',
+            project_id: '00000000-0000-0000-0000-000000000101',
+            automation_draft_id: draftId,
+            test_command_id: null,
+            tool_invocation_id: null,
+            name: 'pytest approved draft: pytest draft for expired coupon',
+            command: 'pytest tests/test_expired_coupon.py -q',
+            working_directory: '/tmp/chtest-test-run',
+            runner_mode: 'local_subprocess',
+            run_workspace: '/tmp/chtest-test-run',
+            repository_readonly: true,
+            network_enabled: false,
+            runtime_artifact_ids: ['00000000-0000-0000-0000-000000001601'],
+            dependency_snapshot_artifact_id: null,
+            environment_snapshot_artifact_id: null,
+            status: 'passed',
+            exit_code: 0,
+            duration_ms: 880,
+            parsed_result: {
+              total: 1,
+              passed: 1,
+              failed: 0,
+              skipped: 0,
+              error: 0,
+            },
+            test_results: [
+              {
+                id: '00000000-0000-0000-0000-000000001501',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                test_run_id: '00000000-0000-0000-0000-000000001301',
+                test_name: 'generated::test_expired_coupon',
+                test_file: 'tests/test_expired_coupon.py',
+                status: 'passed',
+                duration_ms: 12,
+                failure_message: null,
+                failure_artifact_ids: [],
+                metadata: { source: 'pytest_runner' },
+              },
+            ],
+            artifacts: [
+              {
+                id: '00000000-0000-0000-0000-000000001601',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                owner_entity_type: 'TestRun',
+                owner_entity_id: '00000000-0000-0000-0000-000000001301',
+                artifact_type: 'runtime_manifest',
+                file_path: 'test-runs/00000000-0000-0000-0000-000000001301/runtime_manifest.json',
+                mime_type: 'application/json',
+                size_bytes: 2,
+                sha256: 'sha256:runtime',
+                metadata_json: { created_by_component: 'PytestRunner' },
+              },
+              {
+                id: '00000000-0000-0000-0000-000000001602',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                owner_entity_type: 'TestRun',
+                owner_entity_id: '00000000-0000-0000-0000-000000001301',
+                artifact_type: 'stdout',
+                file_path: 'test-runs/00000000-0000-0000-0000-000000001301/stdout.log',
+                mime_type: 'text/plain',
+                size_bytes: 20,
+                sha256: 'sha256:stdout',
+                metadata_json: { created_by_component: 'PytestRunner' },
+              },
+            ],
+          }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
       return new Response('not found', { status: 404 });
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -253,8 +327,9 @@ describe('AutomationDraftReviewView', () => {
     expect(wrapper.text()).toContain('def test_expired_coupon');
     expect(wrapper.text()).toContain('Quality gate');
     expect(wrapper.text()).toContain('fake, stub, placeholder, or assert True-only drafts cannot be approved.');
-    expect(wrapper.text()).not.toContain('执行草稿');
-    expect(wrapper.text()).not.toContain('运行测试');
+    expect(wrapper.text()).toContain('自动化执行');
+    expect(wrapper.text()).toContain('API / Newman');
+    expect(wrapper.text()).toContain('JMeter');
 
     await wrapper.find('[data-test="edit-draft"]').trigger('click');
     await flushPromises();
@@ -274,6 +349,23 @@ describe('AutomationDraftReviewView', () => {
       `/api/review-history?project_id=00000000-0000-0000-0000-000000000101&entity_type=AutomationDraft&entity_id=${draftId}&limit=20`,
       expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),
     );
+
+    await wrapper.find('.automation-execution-form').trigger('submit');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(executionBody).toEqual(
+      expect.objectContaining({
+        project_id: '00000000-0000-0000-0000-000000000101',
+        automation_draft_id: draftId,
+        test_command_id: null,
+        runner_mode: 'local_subprocess',
+      }),
+    );
+    expect(wrapper.text()).toContain('pytest approved draft: pytest draft for expired coupon');
+    expect(wrapper.text()).toContain('pytest tests/test_expired_coupon.py -q');
+    expect(wrapper.text()).toContain('generated::test_expired_coupon');
+    expect(wrapper.text()).toContain('stdout');
   });
 
   it('shows the quality gate error when placeholder draft approval is rejected', async () => {
@@ -334,6 +426,161 @@ describe('AutomationDraftReviewView', () => {
     expect(wrapper.text()).toContain('Automation draft must contain non-placeholder executable test code before approval.');
     expect(wrapper.text()).toContain('AUTOMATION_DRAFT_QUALITY_GATE_FAILED');
     expect(store.draft.status).toBe('draft_generated');
+  });
+
+  it('starts API and JMeter automation from embedded TestCommand execution types', async () => {
+    const draftId = '00000000-0000-0000-0000-000000001401';
+    const executionBodies: unknown[] = [];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/test-runs') && init?.method === 'POST') {
+        const body = JSON.parse(String(init.body)) as { runner_mode: string; test_command_id: string | null };
+        executionBodies.push(body);
+        const isJMeter = body.runner_mode === 'jmeter_local';
+        return new Response(
+          JSON.stringify({
+            id: isJMeter ? '00000000-0000-0000-0000-000000001402' : '00000000-0000-0000-0000-000000001401',
+            project_id: '00000000-0000-0000-0000-000000000101',
+            automation_draft_id: null,
+            test_command_id: body.test_command_id,
+            tool_invocation_id: null,
+            name: isJMeter ? 'jmeter coupon smoke' : 'newman coupon api',
+            command: isJMeter
+              ? 'jmeter -n -t plans/coupon.jmx -l results.jtl'
+              : 'npx newman run collections/coupon.postman_collection.json',
+            working_directory: isJMeter ? '/tmp/chtest-jmeter-run' : '/tmp/chtest-newman-run',
+            runner_mode: body.runner_mode,
+            run_workspace: isJMeter ? '/tmp/chtest-jmeter-run' : '/tmp/chtest-newman-run',
+            repository_readonly: true,
+            network_enabled: false,
+            runtime_artifact_ids: [],
+            dependency_snapshot_artifact_id: null,
+            environment_snapshot_artifact_id: null,
+            status: 'passed',
+            exit_code: 0,
+            duration_ms: isJMeter ? 1300 : 900,
+            parsed_result: isJMeter
+              ? {
+                  total: 1,
+                  passed: 1,
+                  failed: 0,
+                  skipped: 0,
+                  error: 0,
+                  sampler_count: 1,
+                  assertion_count: 1,
+                  average_latency_ms: 82,
+                }
+              : {
+                  total: 1,
+                  passed: 1,
+                  failed: 0,
+                  skipped: 0,
+                  error: 0,
+                  request_count: 1,
+                  assertion_count: 1,
+                  collection_name: 'coupon-api',
+                },
+            test_results: [
+              {
+                id: isJMeter ? '00000000-0000-0000-0000-000000001512' : '00000000-0000-0000-0000-000000001511',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                test_run_id: isJMeter
+                  ? '00000000-0000-0000-0000-000000001402'
+                  : '00000000-0000-0000-0000-000000001401',
+                test_name: isJMeter ? 'jmeter/POST /coupons' : 'newman/POST /coupons validates response',
+                test_file: null,
+                status: 'passed',
+                duration_ms: isJMeter ? 82 : 35,
+                failure_message: null,
+                failure_artifact_ids: [],
+                metadata: { source: isJMeter ? 'jmeter_runner' : 'newman_runner' },
+              },
+            ],
+            artifacts: [
+              {
+                id: isJMeter ? '00000000-0000-0000-0000-000000001612' : '00000000-0000-0000-0000-000000001611',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                owner_entity_type: 'TestRun',
+                owner_entity_id: isJMeter
+                  ? '00000000-0000-0000-0000-000000001402'
+                  : '00000000-0000-0000-0000-000000001401',
+                artifact_type: isJMeter ? 'jmeter_jtl' : 'newman_json',
+                file_path: isJMeter ? 'test-runs/jmeter/results.jtl' : 'test-runs/newman/newman-report.json',
+                mime_type: isJMeter ? 'text/csv' : 'application/json',
+                size_bytes: 12,
+                sha256: isJMeter ? 'sha256:jmeter' : 'sha256:newman',
+                metadata_json: { created_by_component: isJMeter ? 'JMeterRunner' : 'NewmanRunner' },
+              },
+            ],
+          }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pinia = createPinia();
+    const wrapper = mount(AutomationDraftReviewView, {
+      global: {
+        plugins: [pinia, ArcoVue],
+      },
+    });
+    const store = useAutomationStore();
+    store.draft = {
+      id: draftId,
+      project_id: '00000000-0000-0000-0000-000000000101',
+      test_case_id: '00000000-0000-0000-0000-000000000955',
+      requirement_id: null,
+      ai_task_id: '00000000-0000-0000-0000-000000001402',
+      automation_plan_id: null,
+      target_framework: 'pytest',
+      title: 'approved pytest draft',
+      draft_code: 'def test_coupon_api():\n    assert True\n',
+      draft_language: 'python',
+      suggested_file_path: 'tests/test_coupon_api.py',
+      execution_notes: 'Approved draft.',
+      risk_notes: null,
+      execution_strategy: 'artifact_runtime_copy',
+      approval_required: true,
+      status: 'approved',
+      review_comment: null,
+      runtime_artifact_id: null,
+      promoted_artifact_id: null,
+    };
+    await wrapper.vm.$nextTick();
+
+    await wrapper.find('[data-test="automation-execution-type-api"]').trigger('click');
+    await wrapper.find('[data-test="automation-test-command-id"] input').setValue('00000000-0000-0000-0000-000000000321');
+    await wrapper.find('.automation-execution-form').trigger('submit');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(executionBodies[0]).toEqual(
+      expect.objectContaining({
+        automation_draft_id: null,
+        test_command_id: '00000000-0000-0000-0000-000000000321',
+        runner_mode: 'newman_local',
+      }),
+    );
+    expect(wrapper.text()).toContain('newman coupon api');
+    expect(wrapper.text()).toContain('newman_json');
+
+    await wrapper.find('[data-test="automation-execution-type-jmeter"]').trigger('click');
+    await wrapper.find('[data-test="automation-test-command-id"] input').setValue('00000000-0000-0000-0000-000000000331');
+    await wrapper.find('.automation-execution-form').trigger('submit');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(executionBodies[1]).toEqual(
+      expect.objectContaining({
+        automation_draft_id: null,
+        test_command_id: '00000000-0000-0000-0000-000000000331',
+        runner_mode: 'jmeter_local',
+      }),
+    );
+    expect(wrapper.text()).toContain('jmeter coupon smoke');
+    expect(wrapper.text()).toContain('jmeter_jtl');
   });
 
   it('blocks approving drafts that still reference fake adapters', async () => {
