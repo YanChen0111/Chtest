@@ -253,6 +253,17 @@ describe('CaseGenerationReviewView', () => {
 
   it('uses a generated requirement document as the case generation source', async () => {
     let generationBody: unknown = null;
+    window.localStorage.setItem(
+      'chtest.latestRequirementDocument',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        requirementId: '00000000-0000-0000-0000-000000000421',
+        requirementReviewId: '00000000-0000-0000-0000-000000000621',
+        requirementDocumentArtifactId: '00000000-0000-0000-0000-000000000d01',
+        documentNumber: 'RD-CHECKOUT-SYSTEM-20260709-0001',
+        downloadUrl: '/api/artifacts/00000000-0000-0000-0000-000000000d01/download',
+      }),
+    );
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
@@ -345,6 +356,55 @@ describe('CaseGenerationReviewView', () => {
         requirement_document_artifact_id: '00000000-0000-0000-0000-000000000d01',
       }),
     );
+  });
+
+  it('does not auto-select the first requirement document without saved context', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
+        return new Response(
+          JSON.stringify({
+            total: 1,
+            items: [
+              {
+                id: '00000000-0000-0000-0000-000000000d02',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                requirement_id: '00000000-0000-0000-0000-000000000422',
+                requirement_review_id: '00000000-0000-0000-0000-000000000622',
+                document_number: 'RD-CHECKOUT-SYSTEM-20260709-0002',
+                version: 'v1',
+                title: 'Coupon stacking rule',
+                status: 'confirmed',
+                artifact_id: '00000000-0000-0000-0000-000000000d02',
+                download_url: '/api/artifacts/00000000-0000-0000-0000-000000000d02/download',
+                created_at: '2026-07-09T11:00:00Z',
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: {
+        plugins: [createPinia(), ArcoVue],
+      },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(
+      wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000d02/download"]').exists(),
+    ).toBe(false);
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(fetchMock).not.toHaveBeenCalledWith('/api/case-generation/tasks', expect.objectContaining({ method: 'POST' }));
   });
 
   it('does not submit case generation without a review or document source', async () => {

@@ -86,14 +86,25 @@ export const useCasesStore = defineStore('cases', {
       try {
         const documents = await listRequirementDocuments(this.projectId);
         this.requirementDocuments = documents.items;
-        if (!this.requirementDocumentArtifactId && this.requirementDocuments.length > 0) {
-          this.selectRequirementDocument(this.requirementDocuments[0].artifact_id);
-        }
+        this.reconcileRequirementDocumentSelection();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '需求文档加载失败';
       } finally {
         this.loadingGeneration = false;
       }
+    },
+    reconcileRequirementDocumentSelection() {
+      if (!this.requirementDocumentArtifactId) {
+        return;
+      }
+      const document = this.requirementDocuments.find(
+        (item) => item.artifact_id === this.requirementDocumentArtifactId,
+      );
+      if (document) {
+        this.selectRequirementDocument(document.artifact_id);
+        return;
+      }
+      this.clearRequirementDocumentSelection();
     },
     selectRequirementDocument(artifactId: string) {
       const document = this.requirementDocuments.find((item) => item.artifact_id === artifactId);
@@ -105,6 +116,20 @@ export const useCasesStore = defineStore('cases', {
       this.requirementReviewId = document.requirement_review_id;
       this.requirementDocumentArtifactId = document.artifact_id;
       this.selectedRequirementDocumentNumber = document.document_number;
+      return true;
+    },
+    clearRequirementDocumentSelection() {
+      this.requirementDocumentArtifactId = '';
+      this.selectedRequirementDocumentNumber = '';
+      const latestContext = getLatestRequirementReviewContext();
+      if (!latestContext) {
+        this.requirementId = '';
+        this.requirementReviewId = '';
+        return false;
+      }
+      this.projectId = latestContext.projectId;
+      this.requirementId = latestContext.requirementId;
+      this.requirementReviewId = latestContext.requirementReviewId;
       return true;
     },
     async loadTestCases() {

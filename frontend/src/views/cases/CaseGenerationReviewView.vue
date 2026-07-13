@@ -18,7 +18,7 @@
       <a-card class="case-panel generation-entry-panel" :bordered="false">
         <template #title>生成入口</template>
         <form class="case-generation-form" @submit.prevent="submitGeneration">
-          <label>
+          <label class="document-selector">
             <span>需求文档</span>
             <a-select
               v-model="form.requirementDocumentArtifactId"
@@ -40,24 +40,23 @@
             <span>{{ selectedRequirementDocument.title }} · {{ selectedRequirementDocument.status }}</span>
             <a :href="selectedRequirementDocument.download_url">下载 Markdown</a>
           </div>
-          <label>
+          <label class="advanced-source-id">
             <span>需求 ID（高级）</span>
             <a-input v-model="form.requirementId" />
           </label>
-          <label>
+          <label class="advanced-source-id">
             <span>评审 ID（高级）</span>
             <a-input v-model="form.requirementReviewId" />
           </label>
-          <label>
+          <label class="target-types-field">
             <span>目标测试类型</span>
             <a-input v-model="targetTypesText" />
           </label>
-          <label>
+          <label class="context-field">
             <span>ContextArtifact ID 列表</span>
             <a-input v-model="contextIdsText" placeholder="多个 ID 用逗号分隔" />
           </label>
           <p v-if="!hasGenerationSource" class="source-hint">请先完成需求评审，或选择一份正式需求文档。</p>
-          <a-alert v-if="!hasGenerationSource" type="warning" content="请先完成需求评审，或选择一份正式需求文档。" show-icon />
           <a-button class="generation-submit" html-type="submit" type="primary" :loading="store.loadingGeneration">
             开始生成候选用例
           </a-button>
@@ -369,7 +368,11 @@ function syncLatestRequirementReviewContext() {
 }
 
 function selectRequirementDocument(value: unknown) {
-  if (typeof value !== 'string') {
+  if (typeof value !== 'string' || !value) {
+    store.clearRequirementDocumentSelection();
+    form.requirementId = store.requirementId;
+    form.requirementReviewId = store.requirementReviewId;
+    form.requirementDocumentArtifactId = '';
     return;
   }
   if (!store.selectRequirementDocument(value)) {
@@ -461,11 +464,9 @@ function formatDateTime(value: string): string {
 onMounted(async () => {
   syncLatestRequirementReviewContext();
   await store.loadRequirementDocuments();
-  if (store.requirementDocumentArtifactId) {
-    form.requirementId = store.requirementId;
-    form.requirementReviewId = store.requirementReviewId;
-    form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
-  }
+  form.requirementId = store.requirementId;
+  form.requirementReviewId = store.requirementReviewId;
+  form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
 });
 
 watch(
@@ -523,7 +524,7 @@ watch(
 
 .case-generation-form {
   display: grid;
-  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  grid-template-columns: minmax(320px, 1.9fr) minmax(150px, 0.85fr) minmax(190px, 1fr) max-content;
   align-items: end;
   gap: 14px;
 }
@@ -536,9 +537,28 @@ watch(
   font-weight: 700;
 }
 
+.document-selector {
+  order: 1;
+}
+
+.target-types-field {
+  order: 2;
+}
+
+.context-field {
+  order: 3;
+}
+
+.generation-submit {
+  order: 4;
+}
+
 .document-source {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  order: 5;
   padding: 10px 12px;
   border: 1px solid #bbf7d0;
   border-radius: 8px;
@@ -547,16 +567,25 @@ watch(
 
 .document-source,
 .case-generation-form .source-hint {
-  grid-column: span 2;
-}
-
-.case-generation-form :deep(.arco-alert) {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
 .generation-submit {
   min-height: 32px;
   align-self: end;
+}
+
+.advanced-source-id {
+  grid-column: span 2;
+  order: 6;
+}
+
+.case-generation-form .source-hint {
+  order: 7;
+}
+
+.document-source strong {
+  overflow-wrap: anywhere;
 }
 
 .document-source span {
@@ -762,8 +791,8 @@ watch(
 
   .generation-entry-panel,
   .document-source,
+  .advanced-source-id,
   .case-generation-form .source-hint,
-  .case-generation-form :deep(.arco-alert),
   .candidate-edit-form h3,
   .candidate-edit-form label:nth-of-type(n + 4) {
     grid-column: auto;
