@@ -124,6 +124,7 @@ class GeneratedCaseCandidate(TimestampMixin, Base):
     requirement_refs_json: Mapped[list[Any]] = json_list_column()
     risk_refs_json: Mapped[list[Any]] = json_list_column()
     source_knowledge_evidence_json: Mapped[list[Any]] = json_list_column()
+    coverage_dimensions_json: Mapped[list[Any]] = json_list_column()
     ai_reason: Mapped[str] = mapped_column(Text, nullable=False)
     duplicate_of_case_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True),

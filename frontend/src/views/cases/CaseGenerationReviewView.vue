@@ -42,11 +42,11 @@
           </div>
           <label class="advanced-source-id">
             <span>需求 ID（高级）</span>
-            <a-input v-model="form.requirementId" />
+            <a-input data-test="requirement-id-input" v-model="form.requirementId" />
           </label>
           <label class="advanced-source-id">
             <span>评审 ID（高级）</span>
-            <a-input v-model="form.requirementReviewId" />
+            <a-input data-test="requirement-review-id-input" v-model="form.requirementReviewId" />
           </label>
           <label class="target-types-field">
             <span>目标测试类型</span>
@@ -57,7 +57,28 @@
             <a-input v-model="contextIdsText" placeholder="多个 ID 用逗号分隔" />
           </label>
           <p v-if="!hasGenerationSource" class="source-hint">请先完成需求评审，或选择一份正式需求文档。</p>
-          <a-button class="generation-submit" html-type="submit" type="primary" :loading="store.loadingGeneration">
+          <div class="decision-table-gate" data-test="decision-table-gate">
+            <strong>生成前决策表确认</strong>
+            <a-checkbox v-model="decisionTableGate.sourceConfirmed" data-test="decision-source-confirmed">
+              需求文档或评审结论已确认
+            </a-checkbox>
+            <a-checkbox v-model="decisionTableGate.riskDimensionsConfirmed" data-test="decision-risk-confirmed">
+              时间窗口、重复、最多 2 个、冲突、修改/删除、插枪、电流、权限、链路已进入设计范围
+            </a-checkbox>
+            <a-checkbox v-model="decisionTableGate.reviewReady" data-test="decision-review-ready">
+              生成结果将按覆盖矩阵逐条评审后再入库
+            </a-checkbox>
+          </div>
+          <p v-if="hasGenerationSource && !decisionTableReady" class="source-hint">
+            请先确认生成前决策表，避免直接把未澄清需求送入最终用例生成。
+          </p>
+          <a-button
+            class="generation-submit"
+            html-type="submit"
+            type="primary"
+            :disabled="!decisionTableReady"
+            :loading="store.loadingGeneration"
+          >
             开始生成候选用例
           </a-button>
         </form>
@@ -187,6 +208,15 @@
             </section>
           </div>
 
+          <section v-if="(store.selectedCandidate.coverage_dimensions ?? []).length" class="candidate-coverage-panel">
+            <h3>覆盖维度</h3>
+            <ol>
+              <li v-for="dimension in store.selectedCandidate.coverage_dimensions ?? []" :key="dimension.key">
+                {{ dimension.label }}：{{ dimension.evidence || dimension.source || '已覆盖' }}
+              </li>
+            </ol>
+          </section>
+
           <form class="candidate-edit-form" data-test="candidate-edit-form" @submit.prevent>
             <h3>评审编辑</h3>
             <label>
@@ -292,6 +322,11 @@ const editForm = reactive({
   inputDataJson: '{}',
   tagsText: 'ai-generated, reviewed',
 });
+const decisionTableGate = reactive({
+  sourceConfirmed: false,
+  riskDimensionsConfirmed: false,
+  reviewReady: false,
+});
 
 const selectedRequirementDocument = computed(() =>
   store.requirementDocuments.find((document) => document.artifact_id === form.requirementDocumentArtifactId) ?? null,
@@ -304,6 +339,12 @@ const currentLastReview = computed(() =>
 const currentReviewHistory = computed(() => store.reviewHistory);
 const generationStatusLabel = computed(
   () => store.generationTask?.status ?? store.generation?.status ?? '未生成',
+);
+const decisionTableReady = computed(
+  () => decisionTableGate.sourceConfirmed && decisionTableGate.riskDimensionsConfirmed && decisionTableGate.reviewReady,
+);
+const generationSourceKey = computed(
+  () => `${form.requirementId}|${form.requirementReviewId}|${form.requirementDocumentArtifactId}`,
 );
 const coverageDimensions = computed(() => buildCoverageDimensions(store.candidates));
 const coveredDimensionCount = computed(() => coverageDimensions.value.filter((dimension) => dimension.covered).length);
@@ -341,31 +382,29 @@ function lineList(value: string): string[] {
 }
 
 function buildCoverageDimensions(candidates: GeneratedCaseCandidateListItem[]): CoverageDimension[] {
-  const corpus = candidates.map(candidateSearchText).join('\n').toLowerCase();
+  const coveredKeys = new Map<string, string>();
+  for (const candidate of candidates) {
+    for (const dimension of candidate.coverage_dimensions ?? []) {
+      if (!coveredKeys.has(dimension.key)) {
+        coveredKeys.set(dimension.key, dimension.evidence ?? dimension.source ?? '');
+      }
+    }
+  }
   return coverageDimensionRules.map((rule) => {
-    const covered =
-      rule.key === 'risk'
-        ? candidates.some((candidate) => candidate.risk_refs.length > 0)
-        : rule.keywords.some((keyword) => corpus.includes(keyword.toLowerCase()));
+    const covered = coveredKeys.has(rule.key);
     return {
       key: rule.key,
       label: rule.label,
-      hint: rule.hint,
+      hint: coveredKeys.get(rule.key) || rule.hint,
       covered,
     };
   });
 }
 
-function candidateSearchText(candidate: GeneratedCaseCandidateListItem): string {
-  return [
-    candidate.title,
-    candidate.precondition ?? '',
-    candidate.steps.join(' '),
-    candidate.expected_results.join(' '),
-    candidate.requirement_refs.join(' '),
-    candidate.risk_refs.join(' '),
-    candidate.ai_reason,
-  ].join(' ');
+function resetDecisionTableGate() {
+  decisionTableGate.sourceConfirmed = false;
+  decisionTableGate.riskDimensionsConfirmed = false;
+  decisionTableGate.reviewReady = false;
 }
 
 function listText(items: string[]): string {
@@ -442,12 +481,17 @@ function submitGeneration() {
     store.errorMessage = '请先选择已评审需求或正式需求文档';
     return;
   }
+  if (!decisionTableReady.value) {
+    store.errorMessage = '请先确认生成前决策表。';
+    return;
+  }
   void store.generateCandidates({
     requirementId: form.requirementId,
     requirementReviewId: form.requirementReviewId,
     requirementDocumentArtifactId: form.requirementDocumentArtifactId,
     targetTestTypes: commaList(targetTypesText.value),
     contextArtifactIds: commaList(contextIdsText.value),
+    decisionTableAcknowledged: decisionTableReady.value,
   });
 }
 
@@ -569,6 +613,8 @@ watch(
   },
   { immediate: true },
 );
+
+watch(generationSourceKey, resetDecisionTableGate);
 </script>
 
 <style scoped>
@@ -659,6 +705,7 @@ watch(
 }
 
 .document-source,
+.decision-table-gate,
 .case-generation-form .source-hint {
   grid-column: 1 / -1;
 }
@@ -683,6 +730,22 @@ watch(
 
 .document-source span {
   color: #64748b;
+}
+
+.decision-table-gate {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.55fr) repeat(3, minmax(180px, 1fr));
+  gap: 10px;
+  order: 5;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.decision-table-gate strong {
+  color: #0f172a;
 }
 
 .source-hint {
@@ -884,6 +947,31 @@ watch(
   padding-left: 18px;
 }
 
+.candidate-coverage-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.candidate-coverage-panel h3,
+.candidate-coverage-panel ol {
+  margin: 0;
+}
+
+.candidate-coverage-panel ol {
+  display: grid;
+  gap: 8px;
+  padding-left: 18px;
+}
+
+.candidate-coverage-panel li {
+  color: #344054;
+}
+
 .candidate-edit-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -959,6 +1047,7 @@ watch(
 @media (max-width: 1180px) {
   .case-review-layout,
   .case-generation-form,
+  .decision-table-gate,
   .generation-task-panel,
   .coverage-grid,
   .candidate-evidence-grid,

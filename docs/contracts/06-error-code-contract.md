@@ -39,6 +39,7 @@ Common error response:
 | TEST_KNOWLEDGE_CARD_NOT_FOUND | 404 | TestKnowledgeCard does not exist | Reviewing an unknown or cross-project knowledge card |
 | TEST_KNOWLEDGE_CARD_INVALID_STATUS | 400 | TestKnowledgeCard review status is invalid | Reviewing a card with unsupported status |
 | REQUIREMENT_DOCUMENT_NOT_FOUND | 404 | Requirement document artifact does not exist or does not match the requirement/project | Case generation references an unknown or mismatched requirement document |
+| CASE_GENERATION_DECISION_TABLE_REQUIRED | 400 | Case generation requires confirmed pre-generation decision table | Starting case generation without `decision_table_acknowledged=true` |
 | REPOSITORY_PATH_NOT_ALLOWED | 422 | Repository path is outside allowlist | Creating/updating Repository |
 | REPORT_INSUFFICIENT_EVIDENCE | 409 | Report cannot make conclusion with available evidence | ReportAgent lacks required artifacts |
 | INVALID_CI_IMPORT_PAYLOAD | 400 | CI import payload is malformed or unsupported | Missing required fields, invalid conclusion, invalid changed file |

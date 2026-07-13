@@ -187,6 +187,7 @@ def create_candidate(client: ASGIClient, SessionLocal: sessionmaker[Session]) ->
             "model_provider": "mock",
             "model_name": "mock-case-generator",
             "use_knowledge": False,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
         },
     ).json()

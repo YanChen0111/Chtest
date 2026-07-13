@@ -155,6 +155,7 @@ export const useCasesStore = defineStore('cases', {
       targetTestTypes: string[];
       contextArtifactIds: string[];
       requirementDocumentArtifactId?: string;
+      decisionTableAcknowledged?: boolean;
     }) {
       this.loadingGeneration = true;
       this.errorMessage = '';
@@ -184,6 +185,7 @@ export const useCasesStore = defineStore('cases', {
           skill_version: 'test-case-generation-skill:v1',
           use_knowledge: false,
           context_artifact_ids: data.contextArtifactIds,
+          decision_table_acknowledged: Boolean(data.decisionTableAcknowledged),
         });
         this.generationTask = await this.waitForGenerationTask(this.generation.case_generation_task_id);
         if (this.generationTask.status !== 'succeeded') {

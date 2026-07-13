@@ -229,10 +229,22 @@ Rules:
 | requirement_refs_json | jsonb | yes | [] | Requirement references |
 | risk_refs_json | jsonb | yes | [] | Risk references |
 | source_knowledge_evidence_json | jsonb | yes | [] | TestKnowledgeCard evidence snippets used for this candidate |
+| coverage_dimensions_json | jsonb | yes | [] | Coverage dimensions from CaseGenerationAgent output |
 | ai_reason | text | yes | none | AI generation reason |
 | duplicate_of_case_id | uuid | no | null | Potential duplicate case |
 | status | CandidateStatus | yes | generated | Candidate status |
 | review_comment | text | no | null | Human review comment |
+
+Rules:
+
+- `coverage_dimensions_json` stores reviewable testing-dimension evidence for
+  `positive`, `negative`, `boundary`, `state`, `permission`, `channel`,
+  `condition`, and `risk`.
+- New CaseGenerationAgent outputs must provide at least one legal coverage
+  dimension per candidate. Missing, empty, or unknown coverage dimensions fail
+  schema validation and must not persist candidates.
+- Frontends must display persisted coverage dimensions from this field instead
+  of recomputing coverage from candidate title or text heuristics.
 
 ## 15. TestCase
 

@@ -12,6 +12,7 @@ export interface CaseGenerationStartRequest {
   readonly model_name?: string | null;
   readonly use_knowledge: boolean;
   readonly context_artifact_ids: string[];
+  readonly decision_table_acknowledged?: boolean;
 }
 
 export interface CaseGenerationStartRead {
@@ -50,8 +51,16 @@ export interface GeneratedCaseCandidateListItem {
   readonly requirement_refs: string[];
   readonly risk_refs: string[];
   readonly source_knowledge_evidence: Record<string, unknown>[];
+  readonly coverage_dimensions: CaseCoverageDimension[];
   readonly ai_reason: string;
   readonly status: string;
+}
+
+export interface CaseCoverageDimension {
+  readonly key: string;
+  readonly label: string;
+  readonly evidence?: string;
+  readonly source?: string;
 }
 
 export interface GeneratedCaseCandidateListRead {

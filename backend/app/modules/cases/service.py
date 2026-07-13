@@ -70,6 +70,39 @@ class CaseGenerationDomainMismatchError(Exception):
     pass
 
 
+class CaseGenerationDecisionTableRequiredError(Exception):
+    pass
+
+
+CASE_COVERAGE_DIMENSION_LABELS = {
+    "positive": "主流程",
+    "negative": "异常/负向",
+    "boundary": "边界值",
+    "state": "状态转换",
+    "permission": "权限",
+    "channel": "下发链路",
+    "condition": "设备/电流条件",
+    "risk": "风险引用",
+}
+
+CASE_COVERAGE_DIMENSION_ALIASES = {
+    "happy_path": "positive",
+    "main_flow": "positive",
+    "success": "positive",
+    "exception": "negative",
+    "error": "negative",
+    "invalid": "negative",
+    "limit": "boundary",
+    "time_window": "boundary",
+    "state_transition": "state",
+    "lifecycle": "state",
+    "role": "permission",
+    "network": "channel",
+    "delivery": "channel",
+    "device": "condition",
+    "current": "condition",
+}
+
 class CaseCandidateNotFoundError(Exception):
     pass
 
@@ -118,6 +151,9 @@ def start_case_generation(
             raise RequirementDocumentNotFoundError from exc
         requirement_document_text = store.read_bytes(requirement_document.file_path).decode("utf-8", errors="replace")
 
+    if not data.decision_table_acknowledged:
+        raise CaseGenerationDecisionTableRequiredError
+
     prompt = get_prompt_version_by_ref(session, data.prompt_version)
     skill = get_skill_version_by_ref(session, data.skill_version)
     context = context_manifest(session, data.project_id, data.context_artifact_ids)
@@ -164,6 +200,11 @@ def start_case_generation(
             "requirement_review": review_summary(review) if review is not None else None,
             "risk_items": [risk_summary(risk) for risk in risk_items],
             "target_test_types": data.target_test_types,
+            "decision_table_acknowledged": data.decision_table_acknowledged,
+            "decision_table_dimensions": [
+                {"key": key, "label": label}
+                for key, label in CASE_COVERAGE_DIMENSION_LABELS.items()
+            ],
             "use_knowledge": data.use_knowledge,
             "knowledge_evidence": knowledge_evidence,
             "knowledge_retrieval": {
@@ -289,6 +330,7 @@ def list_candidates(session: Session, generation_task_id: uuid.UUID) -> list[Gen
             requirement_refs=candidate.requirement_refs_json,
             risk_refs=candidate.risk_refs_json,
             source_knowledge_evidence=candidate.source_knowledge_evidence_json,
+            coverage_dimensions=candidate.coverage_dimensions_json,
             ai_reason=candidate.ai_reason,
             status=candidate.status,
         )
@@ -623,6 +665,16 @@ def validate_case_generation_output(output: dict) -> None:
             raise CaseGenerationSchemaInvalidError
         if "source_knowledge_evidence" in case and not isinstance(case["source_knowledge_evidence"], list):
             raise CaseGenerationSchemaInvalidError
+        coverage_dimensions = case.get("coverage_dimensions")
+        if not isinstance(coverage_dimensions, list) or not coverage_dimensions:
+            raise CaseGenerationSchemaInvalidError
+        for dimension in coverage_dimensions:
+            if not isinstance(dimension, dict):
+                raise CaseGenerationSchemaInvalidError
+            raw_key = str(dimension.get("key") or dimension.get("dimension") or dimension.get("name") or "")
+            evidence = str(dimension.get("evidence") or dimension.get("reason") or dimension.get("note") or "")
+            if normalize_coverage_dimension_key(raw_key) is None or not evidence.strip():
+                raise CaseGenerationSchemaInvalidError
         if "input_data" in case and not isinstance(case["input_data"], dict):
             raise CaseGenerationSchemaInvalidError
 
@@ -758,6 +810,45 @@ def case_domain_aligned(case: dict, domain_terms: set[str]) -> bool:
     return any(term in candidate_text for term in domain_terms)
 
 
+def case_coverage_dimensions(case: dict) -> list[dict[str, str]]:
+    return normalize_case_coverage_dimensions(case.get("coverage_dimensions"))
+
+
+def normalize_case_coverage_dimensions(value: object) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    dimensions: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in value:
+        if isinstance(item, str):
+            raw_key = item
+            evidence = ""
+        elif isinstance(item, dict):
+            raw_key = str(item.get("key") or item.get("dimension") or item.get("name") or "")
+            evidence = str(item.get("evidence") or item.get("reason") or item.get("note") or "")
+        else:
+            continue
+        key = normalize_coverage_dimension_key(raw_key)
+        if key is None or key in seen:
+            continue
+        seen.add(key)
+        dimensions.append(
+            {
+                "key": key,
+                "label": CASE_COVERAGE_DIMENSION_LABELS[key],
+                "evidence": evidence,
+                "source": "model",
+            },
+        )
+    return dimensions
+
+
+def normalize_coverage_dimension_key(value: str) -> str | None:
+    key = value.strip().lower().replace(" ", "_").replace("-", "_")
+    key = CASE_COVERAGE_DIMENSION_ALIASES.get(key, key)
+    return key if key in CASE_COVERAGE_DIMENSION_LABELS else None
+
+
 def persist_case_generation_candidates(
     session: Session,
     generation_task: CaseGenerationTask,
@@ -779,6 +870,7 @@ def persist_case_generation_candidates(
                 requirement_refs_json=case["requirement_refs"],
                 risk_refs_json=case.get("risk_refs", []),
                 source_knowledge_evidence_json=case.get("source_knowledge_evidence", []),
+                coverage_dimensions_json=case_coverage_dimensions(case),
                 ai_reason=case["ai_reason"],
             ),
         )

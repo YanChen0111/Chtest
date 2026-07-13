@@ -255,6 +255,8 @@ class OpenAIResponsesProvider:
                 "title string, priority P0|P1|P2|P3, test_type functional|api|ui|performance|security|compatibility|regression|unit, "
                 "precondition string, steps non-empty string array, expected_results non-empty string array, "
                 "requirement_refs non-empty string array, risk_refs array, input_data object, tags array, ai_reason string, "
+                "coverage_dimensions array of objects with key one of positive|negative|boundary|state|permission|channel|condition|risk "
+                "and evidence explaining which requirement or risk the case covers, "
                 "source_knowledge_evidence array copied from relevant input_json.knowledge_evidence items when available; "
                 "also include used_knowledge boolean and used_context_artifact_ids array of strings. "
                 "If input_json.requirement_document is present, treat that requirement document as the primary reviewed source."

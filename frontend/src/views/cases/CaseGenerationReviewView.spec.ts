@@ -1,9 +1,26 @@
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import CaseGenerationReviewView from './CaseGenerationReviewView.vue';
+
+async function confirmDecisionTable(wrapper: VueWrapper): Promise<void> {
+  for (const selector of [
+    '[data-test="decision-source-confirmed"]',
+    '[data-test="decision-risk-confirmed"]',
+    '[data-test="decision-review-ready"]',
+  ]) {
+    const input = wrapper.find(`${selector} input[type="checkbox"]`);
+    if (input.exists()) {
+      await input.setValue(true);
+    } else {
+      await wrapper.find(selector).trigger('click');
+    }
+  }
+  await flushPromises();
+  await wrapper.vm.$nextTick();
+}
 
 describe('CaseGenerationReviewView', () => {
   afterEach(() => {
@@ -82,6 +99,20 @@ describe('CaseGenerationReviewView', () => {
                 risk_refs: [],
                 ai_reason: '覆盖有效期边界',
                 status: 'generated',
+                coverage_dimensions: [
+                  {
+                    key: 'negative',
+                    label: '异常/负向',
+                    evidence: 'Expired coupon is blocked during checkout.',
+                    source: 'model',
+                  },
+                  {
+                    key: 'boundary',
+                    label: '边界值',
+                    evidence: 'Expiration date boundary is covered.',
+                    source: 'model',
+                  },
+                ],
               },
               {
                 id: '00000000-0000-0000-0000-000000000802',
@@ -96,6 +127,14 @@ describe('CaseGenerationReviewView', () => {
                 risk_refs: [],
                 ai_reason: '覆盖金额边界',
                 status: 'generated',
+                coverage_dimensions: [
+                  {
+                    key: 'boundary',
+                    label: '边界值',
+                    evidence: 'Coupon amount boundary is covered.',
+                    source: 'model',
+                  },
+                ],
               },
             ],
           }),
@@ -188,6 +227,7 @@ describe('CaseGenerationReviewView', () => {
     expect(wrapper.text()).toContain('用例生成评审');
     expect(wrapper.text()).toContain('开始生成候选用例');
 
+    await confirmDecisionTable(wrapper);
     await wrapper.find('form').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();
@@ -198,12 +238,15 @@ describe('CaseGenerationReviewView', () => {
         requirement_id: '00000000-0000-0000-0000-000000000411',
         requirement_review_id: '00000000-0000-0000-0000-000000000611',
         requirement_document_artifact_id: null,
+        decision_table_acknowledged: true,
       }),
     );
     expect(wrapper.text()).toContain('候选用例');
     expect(wrapper.text()).toContain('过期优惠券不可用于结算');
     expect(wrapper.text()).toContain('优惠券金额不能超过订单应付金额');
     expect(wrapper.text()).toContain('覆盖有效期边界');
+    expect(wrapper.text()).toContain('覆盖维度');
+    expect(wrapper.text()).toContain('Expiration date boundary is covered.');
     expect(wrapper.text()).toContain('进入结算页');
     expect(wrapper.text()).toContain('页面提示优惠券已过期');
     expect(wrapper.text()).toContain('批次指标');
@@ -263,6 +306,7 @@ describe('CaseGenerationReviewView', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain('优惠券金额不能超过订单应付金额');
+    expect(wrapper.text()).toContain('Coupon amount boundary is covered.');
     expect(wrapper.find('[data-test="review-result"]').exists()).toBe(false);
     expect(wrapper.find('[data-test="review-history"]').exists()).toBe(false);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -384,6 +428,7 @@ describe('CaseGenerationReviewView', () => {
     expect(wrapper.text()).toContain('RD-CHECKOUT-SYSTEM-20260709-0001');
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000d01/download"]').exists()).toBe(true);
 
+    await confirmDecisionTable(wrapper);
     await wrapper.find('form').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();
@@ -394,6 +439,7 @@ describe('CaseGenerationReviewView', () => {
         requirement_id: '00000000-0000-0000-0000-000000000421',
         requirement_review_id: '00000000-0000-0000-0000-000000000621',
         requirement_document_artifact_id: '00000000-0000-0000-0000-000000000d01',
+        decision_table_acknowledged: true,
       }),
     );
   });
@@ -444,6 +490,49 @@ describe('CaseGenerationReviewView', () => {
     await wrapper.find('form').trigger('submit');
     await flushPromises();
 
+    expect(fetchMock).not.toHaveBeenCalledWith('/api/case-generation/tasks', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('resets the decision table acknowledgement when the generation source changes', async () => {
+    window.localStorage.setItem(
+      'chtest.latestRequirementReview',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        requirementId: '00000000-0000-0000-0000-000000000411',
+        requirementReviewId: '00000000-0000-0000-0000-000000000611',
+      }),
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
+        return new Response(JSON.stringify({ items: [], total: 0 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: {
+        plugins: [createPinia(), ArcoVue],
+      },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await confirmDecisionTable(wrapper);
+    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined();
+
+    await wrapper.find('[data-test="requirement-id-input"] input').setValue('00000000-0000-0000-0000-000000000412');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.text()).toContain('请先确认生成前决策表，避免直接把未澄清需求送入最终用例生成。');
     expect(fetchMock).not.toHaveBeenCalledWith('/api/case-generation/tasks', expect.objectContaining({ method: 'POST' }));
   });
 
@@ -508,6 +597,7 @@ describe('CaseGenerationReviewView', () => {
 
     await flushPromises();
     await wrapper.vm.$nextTick();
+    await confirmDecisionTable(wrapper);
     await wrapper.find('form').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();

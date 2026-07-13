@@ -81,6 +81,11 @@ def start_case_generation(
         raise not_found("PROMPT_OR_SKILL_NOT_FOUND", "Prompt or skill version not found.") from exc
     except service.ContextArtifactNotFoundError as exc:
         raise not_found("CONTEXT_ARTIFACT_NOT_FOUND", "Context artifact not found in this project.") from exc
+    except service.CaseGenerationDecisionTableRequiredError as exc:
+        raise bad_request(
+            "CASE_GENERATION_DECISION_TABLE_REQUIRED",
+            "Case generation requires pre-generation decision table acknowledgement.",
+        ) from exc
     background_tasks.add_task(run_case_generation_background, session.get_bind(), generation_task.id, str(store.root))
 
     return CaseGenerationStartRead(

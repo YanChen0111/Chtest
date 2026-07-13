@@ -221,6 +221,7 @@ def create_approved_test_case(client: ASGIClient, SessionLocal: sessionmaker[Ses
             "model_provider": "mock",
             "model_name": "mock-case-generator",
             "use_knowledge": False,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
         },
     ).json()

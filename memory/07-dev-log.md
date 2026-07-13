@@ -1,5 +1,41 @@
 # Development Log
 
+## 2026-07-13 Case Generation Decision Gate And Coverage Dimensions
+
+### Completed
+
+- Completed the P0/P1 case-generation review hardening requested for chtest.
+- Added a required decision-table acknowledgement gate before final case
+  generation and enforced it in the backend with
+  `CASE_GENERATION_DECISION_TABLE_REQUIRED`.
+- Added persisted `coverage_dimensions_json` on GeneratedCaseCandidate and
+  removed frontend text heuristics from the coverage matrix.
+- Tightened CaseGenerationAgent schema validation so candidates without legal
+  coverage dimensions and evidence fail without persisting candidates.
+- Reset the frontend decision-table acknowledgement when the requirement source
+  changes.
+- Synced Prompt/Skill files, fixture seeds, contracts, mock provider, OpenAI
+  provider instructions, golden fixture, tests, and `NEXT_AI_TASK.md`.
+- Docker/compose runtime work remains skipped per user instruction.
+
+### Verification
+
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_automation_plan.py backend/app/tests/api/test_test_knowledge_cards.py -q`
+  - Result: `20 passed in 3.05s`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_knowledge_cards.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_model_connection_config.py backend/app/tests/api/test_extension_surface.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_automation_plan.py backend/app/tests/db/test_case_generation_models.py -q`
+  - Result: `57 passed in 5.19s`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/settings/ProjectSettingsView.spec.ts src/views/extension/KnowledgeBaseView.spec.ts src/views/requirements/RequirementReviewView.spec.ts src/views/cases/CaseGenerationReviewView.spec.ts src/views/automation/AutomationDraftReviewView.spec.ts`
+  - Result: `5` files passed, `16` tests passed.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run build`
+  - Result: passed with existing Vite large chunk warning.
+- `git diff --check`
+  - Result: no output.
+
+### Next Step
+
+- Browser-smoke the non-Docker reviewer workflow and automation-draft execution
+  type selection for Playwright/API/JMeter.
+
 ## 2026-07-08 Slice 46 Completion Gate
 
 ### Completed

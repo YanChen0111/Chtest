@@ -1,5 +1,56 @@
 # Session Handoff
 
+## 2026-07-13 Case Generation Decision Gate And Coverage Dimensions
+
+Current Task:
+- User-requested P0/P1 completion for the chtest case-generation review flow;
+  Docker/runtime repair remains intentionally skipped.
+
+Completed:
+- Added a pre-generation decision-table acknowledgement gate to the case
+  generation page and API. Missing or false acknowledgement now returns
+  `400 CASE_GENERATION_DECISION_TABLE_REQUIRED` without creating AITask or
+  CaseGenerationTask rows.
+- Added source-change reset for the decision-table gate so switching requirement
+  document or advanced requirement/review IDs requires fresh acknowledgement.
+- Added `coverage_dimensions_json` to GeneratedCaseCandidate with migration
+  `20260713_0010_case_candidate_coverage_dimensions.py`.
+- CaseGenerationAgent output must now include legal, non-empty
+  `coverage_dimensions` with evidence for every candidate. Missing, empty,
+  unknown-key, or evidence-less coverage dimensions fail schema validation and
+  do not persist candidates.
+- Removed frontend text heuristics for coverage. The case-generation review
+  coverage matrix and candidate detail now display persisted backend coverage
+  evidence only.
+- Updated mock provider and OpenAI provider task instructions to request
+  coverage dimensions; synced Prompt/Skill files, fixture seed copies, data/API
+  contracts, state-machine rules, error-code contract, and golden fixture.
+- Confirmed the AutomationDraft review page already exposes Playwright, API,
+  and JMeter as automation-draft execution types; Docker execution remains out
+  of scope for this session.
+
+Verification:
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_automation_plan.py backend/app/tests/api/test_test_knowledge_cards.py -q`
+  - Result: `20 passed in 3.05s`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_knowledge_cards.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_model_connection_config.py backend/app/tests/api/test_extension_surface.py backend/app/tests/api/test_case_review.py backend/app/tests/api/test_automation_plan.py backend/app/tests/db/test_case_generation_models.py -q`
+  - Result: `57 passed in 5.19s`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/settings/ProjectSettingsView.spec.ts src/views/extension/KnowledgeBaseView.spec.ts src/views/requirements/RequirementReviewView.spec.ts src/views/cases/CaseGenerationReviewView.spec.ts src/views/automation/AutomationDraftReviewView.spec.ts`
+  - Result: `5` files passed, `16` tests passed.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run build`
+  - Result: passed with existing Vite large chunk warning.
+- `git diff --check`
+  - Result: no output.
+
+Risks / Remaining:
+- Browser-smoke the end-to-end reviewer workflow after this commit/push:
+  requirement review -> case generation -> automation plan/draft -> execution
+  type selection for Playwright/API/JMeter. Docker/compose runtime verification
+  remains skipped until Docker Desktop/WSL is repaired outside the repo.
+
+Next recommended Task:
+- Run local browser acceptance over the non-Docker workflow and capture any
+  remaining UI/UX blockers for automation-draft execution selection.
+
 ## 2026-07-09 Requirement Clarification And Document Flow
 
 Current Task:

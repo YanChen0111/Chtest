@@ -30,6 +30,9 @@ The Mock Provider lets Slice development validate AI workflows without a real LL
 ## 4. Behavior Rules
 
 - Mock outputs must pass the same schema validators as real provider outputs.
+- `mock-case-generator` candidates must include explicit
+  `coverage_dimensions` using the CaseGenerationAgent keys so frontend coverage
+  displays are driven by persisted evidence, not text heuristics.
 - Mock outputs must create AITask artifacts the same way real provider outputs do.
 - Mock outputs must echo `used_context_artifact_ids` when context is provided.
 - Mock outputs must create `context_manifest.json` when context is provided.

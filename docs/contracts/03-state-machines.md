@@ -61,8 +61,13 @@ pending/running -> cancelled
 规则：
 
 - `POST /api/case-generation/tasks` 创建 `pending` 任务；候选用例不保证立即存在。
+- `decision_table_acknowledged` 缺失或为 false 时必须同步拒绝请求，返回
+  `CASE_GENERATION_DECISION_TABLE_REQUIRED`，且不得创建 AITask 或
+  CaseGenerationTask。
 - 客户端必须读取任务状态，只有 `succeeded` 后才能把候选列表视为完整结果。
 - schema invalid、provider error、wrong-domain output 均进入 `failed`，不得写入候选用例。
+- 每条候选用例必须包含合法、非空的 `coverage_dimensions`；缺失、空数组、未知 key
+  或缺少 evidence 均属于 schema invalid。
 
 ## 3. GeneratedCaseCandidate 状态机
 

@@ -81,6 +81,9 @@
       "steps": ["登录用户账号", "创建包含可用商品的订单", "进入结算页", "选择可用优惠券", "提交订单"],
       "expected_results": ["订单提交成功", "最终支付金额等于订单应付金额减优惠券金额"],
       "requirement_refs": ["用户在提交订单时，可以选择一张可用优惠券"],
+      "coverage_dimensions": [
+        {"key": "positive", "evidence": "可用优惠券主流程提交成功"}
+      ],
       "ai_reason": "覆盖优惠券主流程"
     },
     {
@@ -91,6 +94,9 @@
       "steps": ["进入结算页", "选择优惠券", "选择积分抵扣", "提交订单"],
       "expected_results": ["系统阻止同时使用", "页面提示优惠券不可与积分同时使用"],
       "requirement_refs": ["优惠券不可与积分同时使用"],
+      "coverage_dimensions": [
+        {"key": "negative", "evidence": "互斥规则阻止同时使用"}
+      ],
       "ai_reason": "覆盖互斥规则"
     },
     {
@@ -101,6 +107,10 @@
       "steps": ["进入结算页", "查看优惠券列表", "尝试选择已过期优惠券", "提交订单"],
       "expected_results": ["已过期优惠券不可选或提交失败", "页面提示优惠券已过期"],
       "requirement_refs": ["过期优惠券不可使用"],
+      "coverage_dimensions": [
+        {"key": "negative", "evidence": "过期优惠券被阻止使用"},
+        {"key": "boundary", "evidence": "优惠券有效期边界"}
+      ],
       "ai_reason": "覆盖有效期边界"
     },
     {
@@ -111,6 +121,9 @@
       "steps": ["进入结算页", "选择金额大于订单应付金额的优惠券", "提交订单"],
       "expected_results": ["系统按规则阻断或限制抵扣", "最终支付金额不会为负数"],
       "requirement_refs": ["优惠券金额不能超过订单应付金额"],
+      "coverage_dimensions": [
+        {"key": "boundary", "evidence": "优惠券金额超过应付金额的金额边界"}
+      ],
       "ai_reason": "覆盖金额边界"
     },
     {
@@ -121,6 +134,9 @@
       "steps": ["进入结算页", "选择优惠券", "提交订单", "查看订单确认页"],
       "expected_results": ["订单确认页展示优惠后的最终支付金额", "金额与结算页一致"],
       "requirement_refs": ["系统需要展示优惠后的最终支付金额"],
+      "coverage_dimensions": [
+        {"key": "positive", "evidence": "成功提交后展示最终金额"}
+      ],
       "ai_reason": "覆盖 UI 展示一致性"
     }
   ]
@@ -144,6 +160,6 @@
 - RequirementReview 六维评分存在。
 - RiskItem 至少 2 条。
 - GeneratedCaseCandidate 至少 5 条。
-- 每条候选用例都有 steps、expected_results、requirement_refs、ai_reason。
+- 每条候选用例都有 steps、expected_results、requirement_refs、coverage_dimensions、ai_reason。
 - 评审后至少 4 条进入 TestCase 或优化流程。
 - 批次指标能计算 generated_count、approved_count、edited_count、optimization_count、acceptance_rate。

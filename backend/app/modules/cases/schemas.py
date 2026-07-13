@@ -20,6 +20,7 @@ class CaseGenerationStartRequest(BaseModel):
     model_name: str | None = None
     use_knowledge: bool = False
     context_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    decision_table_acknowledged: bool = False
     mock_mode: Literal["success", "schema_invalid"] = "success"
 
 
@@ -67,6 +68,7 @@ class GeneratedCaseCandidateRead(BaseModel):
     requirement_refs_json: list[Any]
     risk_refs_json: list[Any]
     source_knowledge_evidence_json: list[Any]
+    coverage_dimensions_json: list[Any]
     ai_reason: str
     duplicate_of_case_id: uuid.UUID | None
     status: str
@@ -87,6 +89,7 @@ class GeneratedCaseCandidateListItemRead(BaseModel):
     requirement_refs: list[Any]
     risk_refs: list[Any]
     source_knowledge_evidence: list[Any] = Field(default_factory=list)
+    coverage_dimensions: list[Any] = Field(default_factory=list)
     ai_reason: str
     status: str
 

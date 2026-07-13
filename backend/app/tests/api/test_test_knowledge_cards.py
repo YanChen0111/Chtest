@@ -390,6 +390,7 @@ def test_case_generation_uses_test_knowledge_evidence(
             "model_provider": "mock",
             "model_name": "mock-case-generator",
             "use_knowledge": True,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
         },
     )

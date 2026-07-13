@@ -128,6 +128,12 @@ class MockLLMProvider:
                         "expected_results": ["订单提交成功", "最终支付金额等于订单应付金额减优惠券金额"],
                         "requirement_refs": ["用户在提交订单时，可以选择一张可用优惠券"],
                         "source_knowledge_evidence": case_evidence,
+                        "coverage_dimensions": [
+                            {
+                                "key": "positive",
+                                "evidence": "Valid coupon can be applied and order submission succeeds.",
+                            },
+                        ],
                         "ai_reason": "覆盖优惠券主流程",
                     },
                     {
@@ -139,6 +145,12 @@ class MockLLMProvider:
                         "expected_results": ["系统阻止同时使用", "页面提示优惠券不可与积分同时使用"],
                         "requirement_refs": ["优惠券不可与积分同时使用"],
                         "source_knowledge_evidence": case_evidence,
+                        "coverage_dimensions": [
+                            {
+                                "key": "negative",
+                                "evidence": "Mutually exclusive coupon and points selection is blocked.",
+                            },
+                        ],
                         "ai_reason": "覆盖互斥规则",
                     },
                     {
@@ -150,6 +162,16 @@ class MockLLMProvider:
                         "expected_results": ["已过期优惠券不可选或提交失败", "页面提示优惠券已过期"],
                         "requirement_refs": ["过期优惠券不可使用"],
                         "source_knowledge_evidence": case_evidence,
+                        "coverage_dimensions": [
+                            {
+                                "key": "negative",
+                                "evidence": "Expired coupon selection is rejected.",
+                            },
+                            {
+                                "key": "boundary",
+                                "evidence": "Coupon expiration date is the validity boundary.",
+                            },
+                        ],
                         "ai_reason": "覆盖有效期边界",
                     },
                     {
@@ -161,6 +183,12 @@ class MockLLMProvider:
                         "expected_results": ["系统按规则阻断或限制抵扣", "最终支付金额不会为负数"],
                         "requirement_refs": ["优惠券金额不能超过订单应付金额"],
                         "source_knowledge_evidence": case_evidence,
+                        "coverage_dimensions": [
+                            {
+                                "key": "boundary",
+                                "evidence": "Coupon amount greater than payable amount is a monetary boundary.",
+                            },
+                        ],
                         "ai_reason": "覆盖金额边界",
                     },
                     {
@@ -172,6 +200,12 @@ class MockLLMProvider:
                         "expected_results": ["订单确认页展示优惠后的最终支付金额", "金额与结算页一致"],
                         "requirement_refs": ["系统需要展示优惠后的最终支付金额"],
                         "source_knowledge_evidence": case_evidence,
+                        "coverage_dimensions": [
+                            {
+                                "key": "positive",
+                                "evidence": "Discounted amount display follows the successful checkout flow.",
+                            },
+                        ],
                         "ai_reason": "覆盖 UI 展示一致性",
                     },
                 ],

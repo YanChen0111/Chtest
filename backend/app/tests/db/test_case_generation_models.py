@@ -21,6 +21,14 @@ AI_RUNTIME_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/202606
 PROMPT_SKILL_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260629_0003_prompt_skill_registry.py"
 REQUIREMENT_REVIEW_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260629_0004_requirement_review.py"
 MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260629_0005_case_generation.py"
+REVIEW_HISTORY_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260701_0006_review_history.py"
+AUTOMATION_DRAFT_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260709_0006a_automation_drafts.py"
+AUTOMATION_PLAN_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260709_0007_automation_plan.py"
+TEST_KNOWLEDGE_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260709_0008_test_knowledge_cards.py"
+EMBEDDING_INDEX_MIGRATION_PATH = Path(__file__).parents[3] / "alembic/versions/20260710_0009_test_knowledge_embedding_index.py"
+COVERAGE_DIMENSIONS_MIGRATION_PATH = (
+    Path(__file__).parents[3] / "alembic/versions/20260713_0010_case_candidate_coverage_dimensions.py"
+)
 
 
 def load_migration(module_name: str, path: Path):
@@ -40,6 +48,12 @@ def test_case_generation_migration_creates_contract_tables() -> None:
         load_migration("prompt_skill_migration", PROMPT_SKILL_MIGRATION_PATH),
         load_migration("requirement_review_migration", REQUIREMENT_REVIEW_MIGRATION_PATH),
         load_migration("case_generation_migration", MIGRATION_PATH),
+        load_migration("review_history_migration", REVIEW_HISTORY_MIGRATION_PATH),
+        load_migration("automation_draft_migration", AUTOMATION_DRAFT_MIGRATION_PATH),
+        load_migration("automation_plan_migration", AUTOMATION_PLAN_MIGRATION_PATH),
+        load_migration("test_knowledge_migration", TEST_KNOWLEDGE_MIGRATION_PATH),
+        load_migration("embedding_index_migration", EMBEDDING_INDEX_MIGRATION_PATH),
+        load_migration("coverage_dimensions_migration", COVERAGE_DIMENSIONS_MIGRATION_PATH),
     ]
 
     with engine.begin() as connection:
@@ -91,6 +105,8 @@ def test_case_generation_migration_creates_contract_tables() -> None:
         "tags",
         "requirement_refs_json",
         "risk_refs_json",
+        "source_knowledge_evidence_json",
+        "coverage_dimensions_json",
         "ai_reason",
         "duplicate_of_case_id",
         "status",
@@ -187,6 +203,13 @@ def test_generated_candidate_and_test_case_persist_defaults_and_relationships() 
             tags=["coupon", "checkout"],
             requirement_refs_json=[str(requirement.id)],
             risk_refs_json=[],
+            coverage_dimensions_json=[
+                {
+                    "key": "boundary",
+                    "label": "Boundary",
+                    "evidence": "Expired coupon is a boundary state.",
+                },
+            ],
             ai_reason="Covers expiration boundary.",
         )
         test_case = CaseModel(
@@ -209,6 +232,7 @@ def test_generated_candidate_and_test_case_persist_defaults_and_relationships() 
         assert candidate.precondition is None
         assert candidate.status == "generated"
         assert candidate.review_comment is None
+        assert candidate.coverage_dimensions_json[0]["key"] == "boundary"
         assert candidate.generation_task is generation_task
         assert test_case.source_candidate is candidate
         assert test_case.priority == "P2"
@@ -251,6 +275,7 @@ def test_case_generation_json_and_list_fields_track_in_place_updates() -> None:
         candidate.tags.append("pricing")
         candidate.requirement_refs_json.append(str(requirement.id))
         candidate.risk_refs_json.append("risk-1")
+        candidate.coverage_dimensions_json.append({"key": "risk", "label": "Risk"})
         test_case.steps_json.append("Select coupon")
         test_case.expected_results_json.append("Discount is applied")
         test_case.input_data_json["coupon_state"] = "valid"
@@ -272,6 +297,7 @@ def test_case_generation_json_and_list_fields_track_in_place_updates() -> None:
         assert refreshed_candidate.tags == ["pricing"]
         assert refreshed_candidate.requirement_refs_json == [str(requirement.id)]
         assert refreshed_candidate.risk_refs_json == ["risk-1"]
+        assert refreshed_candidate.coverage_dimensions_json == [{"key": "risk", "label": "Risk"}]
         assert refreshed_test_case.steps_json == ["Select coupon"]
         assert refreshed_test_case.expected_results_json == ["Discount is applied"]
         assert refreshed_test_case.input_data_json == {"coupon_state": "valid"}

@@ -1013,6 +1013,7 @@ Request:
   "model_provider": "mock",
   "model_name": "mock-case-generator",
   "use_knowledge": false,
+  "decision_table_acknowledged": true,
   "context_artifact_ids": ["00000000-0000-0000-0000-000000000371"]
 }
 ```
@@ -1021,6 +1022,10 @@ Request:
 same-project `requirement_md` Artifact generated for the same Requirement, and
 the CaseGenerationAgent input must include a `requirement_document` object with
 artifact id, document number, version, title, content, and sha256.
+`decision_table_acknowledged` must be `true`. It records that the reviewer has
+confirmed the pre-generation clarification/decision-table checklist before
+final candidate generation. The CaseGenerationAgent input must persist that
+boolean plus the decision-table dimension list as prompt evidence.
 
 Response 202:
 
@@ -1041,6 +1046,9 @@ Response 202:
 - If generated candidates do not match the source requirement domain, the task
   must fail with `CASE_GENERATION_DOMAIN_MISMATCH` and must not persist
   candidates.
+- If `decision_table_acknowledged` is missing or false, the API must synchronously
+  reject the request with `400 CASE_GENERATION_DECISION_TABLE_REQUIRED` and must
+  not create an AITask or CaseGenerationTask.
 
 ### 3.4.1 Read Case Generation Task
 
@@ -1102,6 +1110,20 @@ Response 200:
           "matched_terms": ["expired", "coupon", "checkout"]
         }
       ],
+      "coverage_dimensions": [
+        {
+          "key": "negative",
+          "label": "异常/负向",
+          "evidence": "Expired coupon selection is blocked before checkout submit.",
+          "source": "model"
+        },
+        {
+          "key": "boundary",
+          "label": "边界值",
+          "evidence": "Coupon expiration date is the boundary condition.",
+          "source": "model"
+        }
+      ],
       "ai_reason": "Covers coupon expiration boundary",
       "status": "generated"
     }
@@ -1109,6 +1131,14 @@ Response 200:
   "total": 1
 }
 ```
+
+Rules:
+
+- `coverage_dimensions` is read from persisted `GeneratedCaseCandidate`
+  coverage evidence. Clients must not infer these dimensions from display text.
+- Every generated candidate must include at least one legal coverage dimension.
+  Missing, empty, unknown, or evidence-less coverage dimensions fail schema
+  validation and must not persist candidates.
 
 ### 3.6 Review Candidate Case
 

@@ -231,6 +231,16 @@ Describe required output fields.
       "input_data": {"coupon_status": "expired"},
       "requirement_refs": ["过期优惠券不可使用"],
       "risk_refs": ["RISK-001"],
+      "coverage_dimensions": [
+        {
+          "key": "boundary",
+          "evidence": "Expired coupon is the date-validity boundary."
+        },
+        {
+          "key": "negative",
+          "evidence": "Checkout submit must be blocked."
+        }
+      ],
       "source_knowledge_evidence": [
         {
           "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
@@ -333,7 +343,7 @@ must not mark the draft approved.
 | 输出 | 门禁 |
 |---|---|
 | RequirementReview | 必须包含六维评分和至少一个测试设计建议 |
-| GeneratedCaseCandidate | 必须有步骤、预期、需求引用、AI 理由 |
+| GeneratedCaseCandidate | 必须有步骤、预期、需求引用、合法且带 evidence 的覆盖维度、AI 理由 |
 | AutomationPlan | 必须标明 source、target_framework、execution_steps、risk_notes |
 | AutomationDraft | 必须标明 target_framework、suggested_file_path、draft_code |
 | UnitTestPatch | 必须通过 PatchScopeGate，不能修改业务源码 |

@@ -212,6 +212,7 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
             "model_provider": "mock",
             "model_name": "mock-case-generator",
             "use_knowledge": False,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
         },
     )
@@ -238,6 +239,8 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
     assert first_candidate["steps"]
     assert first_candidate["expected_results"]
     assert first_candidate["requirement_refs"]
+    assert first_candidate["coverage_dimensions"]
+    assert any(dimension["key"] == "positive" for dimension in first_candidate["coverage_dimensions"])
     assert first_candidate["ai_reason"]
     assert first_candidate["status"] == "generated"
 
@@ -251,6 +254,8 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
         assert ai_task is not None
         assert ai_task.task_type == "case_generation"
         assert ai_task.status == "succeeded"
+        assert ai_task.input_json["decision_table_acknowledged"] is True
+        assert any(dimension["key"] == "boundary" for dimension in ai_task.input_json["decision_table_dimensions"])
         assert session.scalar(select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id))
         assert list(session.scalars(select(CaseModel))) == []
 
@@ -295,6 +300,7 @@ def test_case_generation_marks_wrong_domain_mock_output_failed(
             "model_provider": "mock",
             "model_name": "mock-case-generator",
             "use_knowledge": False,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
         },
     )
@@ -331,6 +337,7 @@ def test_start_case_generation_uses_saved_model_connection_when_request_omits_mo
         observed_task_ids.append(ai_task.id)
         assert ai_task.model_provider == "OpenAI Compatible"
         assert ai_task.model_name == "gpt-live-cases"
+        assert ai_task.input_json["decision_table_acknowledged"] is True
         ai_task.status = "succeeded"
         ai_task.output_json = {
             "cases": [
@@ -345,6 +352,12 @@ def test_start_case_generation_uses_saved_model_connection_when_request_omits_mo
                     "risk_refs": [],
                     "input_data": {},
                     "tags": ["coupon"],
+                    "coverage_dimensions": [
+                        {
+                            "key": "positive",
+                            "evidence": "Valid coupon can be applied during checkout.",
+                        },
+                    ],
                     "ai_reason": "Covers the primary configured-model generation path.",
                 },
             ],
@@ -366,12 +379,24 @@ def test_start_case_generation_uses_saved_model_connection_when_request_omits_mo
             "prompt_version": "case_generation:v1",
             "skill_version": "test-case-generation-skill:v1",
             "use_knowledge": False,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
         },
     )
 
     assert response.status_code == 202
     body = response.json()
+    candidates_response = client.get(f"/api/case-generation/tasks/{body['case_generation_task_id']}/candidates")
+    assert candidates_response.status_code == 200
+    candidates = candidates_response.json()
+    assert candidates["items"][0]["coverage_dimensions"] == [
+        {
+            "key": "positive",
+            "label": "主流程",
+            "evidence": "Valid coupon can be applied during checkout.",
+            "source": "model",
+        },
+    ]
     assert observed_task_ids == [uuid.UUID(body["ai_task_id"])]
     with SessionLocal() as session:
         ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
@@ -381,6 +406,9 @@ def test_start_case_generation_uses_saved_model_connection_when_request_omits_mo
         generation_task = session.get(CaseGenerationTask, uuid.UUID(body["case_generation_task_id"]))
         assert generation_task is not None
         assert generation_task.generated_count == 1
+        candidate = session.scalar(select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id))
+        assert candidate is not None
+        assert candidate.coverage_dimensions_json[0]["source"] == "model"
 
 
 def test_start_case_generation_can_use_requirement_document_artifact(
@@ -419,6 +447,12 @@ def test_start_case_generation_can_use_requirement_document_artifact(
                     "risk_refs": [],
                     "input_data": {},
                     "tags": ["requirement-document"],
+                    "coverage_dimensions": [
+                        {
+                            "key": "positive",
+                            "evidence": "Requirement document is used as the case source.",
+                        },
+                    ],
                     "ai_reason": "Uses the generated requirement specification as source of truth.",
                 },
             ],
@@ -443,12 +477,14 @@ def test_start_case_generation_can_use_requirement_document_artifact(
             "model_provider": "mock",
             "model_name": "mock-case-generator",
             "use_knowledge": False,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
         },
     )
 
     assert response.status_code == 202
     assert observed_inputs
+    assert observed_inputs[0]["decision_table_acknowledged"] is True
     requirement_document = observed_inputs[0]["requirement_document"]
     assert requirement_document["artifact_id"] == document["artifact_id"]
     assert requirement_document["document_number"] == document["document_number"]
@@ -474,6 +510,7 @@ def test_schema_invalid_case_generation_does_not_write_task_or_candidates(
             "model_provider": "mock",
             "model_name": "mock-case-generator",
             "use_knowledge": False,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
             "mock_mode": "schema_invalid",
         },
@@ -501,6 +538,98 @@ def test_schema_invalid_case_generation_does_not_write_task_or_candidates(
         assert generation_task.status == "failed"
         assert list(session.scalars(select(GeneratedCaseCandidate))) == []
         assert list(session.scalars(select(CaseModel))) == []
+
+
+def test_case_generation_requires_decision_table_acknowledgement(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    requirement, review = create_reviewed_requirement(client, SessionLocal)
+
+    response = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": requirement["project_id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "CASE_GENERATION_DECISION_TABLE_REQUIRED"
+    with SessionLocal() as session:
+        assert list(session.scalars(select(AITask).where(AITask.task_type == "case_generation"))) == []
+        assert list(session.scalars(select(CaseGenerationTask))) == []
+        assert list(session.scalars(select(GeneratedCaseCandidate))) == []
+
+
+def test_case_generation_rejects_invalid_coverage_dimensions(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, SessionLocal = api_client
+    requirement, review = create_reviewed_requirement(client, SessionLocal)
+
+    def fake_run_ai_task(session: Session, _store: LocalArtifactStore, job: Any) -> None:
+        ai_task = session.get(AITask, job.ai_task_id)
+        assert ai_task is not None
+        ai_task.status = "succeeded"
+        ai_task.output_json = {
+            "cases": [
+                {
+                    "title": "Model-backed checkout coupon case with invalid coverage",
+                    "priority": "P1",
+                    "test_type": "functional",
+                    "precondition": "A valid coupon exists.",
+                    "steps": ["Open checkout", "Apply coupon", "Submit order"],
+                    "expected_results": ["Order is submitted with the discounted amount."],
+                    "requirement_refs": [str(requirement["id"])],
+                    "risk_refs": [],
+                    "input_data": {},
+                    "tags": ["coupon"],
+                    "coverage_dimensions": [{"key": "unknown", "evidence": "Not an allowed coverage key."}],
+                    "ai_reason": "Covers a schema-invalid coverage dimension path.",
+                },
+            ],
+            "used_knowledge": False,
+            "used_context_artifact_ids": [],
+        }
+        session.add(ai_task)
+        session.commit()
+
+    monkeypatch.setattr("backend.app.modules.cases.service.run_ai_task", fake_run_ai_task)
+
+    response = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": requirement["project_id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "decision_table_acknowledged": True,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    task_body = client.get(f"/api/case-generation/tasks/{body['case_generation_task_id']}").json()
+    assert task_body["status"] == "failed"
+    assert task_body["error_code"] == "CASE_GENERATION_SCHEMA_INVALID"
+    with SessionLocal() as session:
+        assert list(session.scalars(select(GeneratedCaseCandidate))) == []
 
 
 def test_unknown_generation_task_candidates_returns_contract_error(api_client: tuple[ASGIClient, sessionmaker[Session]]) -> None:

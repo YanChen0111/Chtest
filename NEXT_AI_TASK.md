@@ -33,7 +33,16 @@ Completed P0/P1 behaviors:
 6. The case review surface includes a lightweight testing-dimension coverage
    matrix for main flow, negative path, boundary, state, permission, channel,
    device/current conditions, and risk references.
-7. Knowledge-card review now keeps vector-index coverage honest: cards that
+7. A pre-generation decision-table gate records reviewer acknowledgement before
+   final candidate generation and persists the acknowledged dimension list into
+   CaseGenerationAgent prompt input evidence.
+8. GeneratedCaseCandidate now persists explicit `coverage_dimensions` from the
+   CaseGenerationAgent output; missing or invalid coverage dimensions fail
+   schema validation, and the frontend displays persisted dimensions instead of
+   deriving them from text heuristics.
+9. Prompt, Skill, mock provider, API contract, data-model contract, and golden
+   fixture expectations now require coverage dimensions for generated cases.
+10. Knowledge-card review now keeps vector-index coverage honest: cards that
    become stale, unsafe, duplicate, or archived mark existing indexes stale and
    are excluded from prompt-ready index coverage.
 
@@ -41,8 +50,9 @@ Completed P0/P1 behaviors:
 
 The user can now see whether case generation is running, failed, or complete;
 avoid accepting wrong-domain generated cases; review each candidate without
-state leaking from the previous candidate; and understand basic test-dimension
-coverage before promoting generated cases.
+state leaking from the previous candidate; confirm the requirement/design matrix
+before generation; and understand persisted test-dimension coverage before
+promoting generated cases.
 
 ## Must Read
 
@@ -85,6 +95,11 @@ frontend/src/views/extension/KnowledgeBaseView.spec.ts
 docs/contracts/01-data-model-contract.md
 docs/contracts/02-api-contract.md
 docs/contracts/03-state-machines.md
+docs/contracts/05-prompt-skill-contract.md
+docs/contracts/08-mock-provider-contract.md
+docs/fixtures/01-golden-requirement-to-case.md
+prompts/case_generation/v1.md
+skills/test-case-generation-skill/v1.md
 ```
 
 Only edit files that are directly required to fix a verification blocker. Do
@@ -132,7 +147,8 @@ fix(cases): harden generation review workflow
 ## Next Task
 
 Continue non-Docker V2 acceptance stabilization with the next smallest local
-evidence risk: add a requirement clarification/decision-table gate before final
-case generation, then persist explicit `coverage_dimensions` from the
-CaseGenerationAgent output instead of deriving coverage heuristically in the
-frontend.
+evidence risk: browser-smoke the reviewer workflow from requirement review to
+case generation to automation draft review/execution selection, especially the
+Playwright/API/JMeter automation execution choices that are intentionally
+handled as automation-draft execution types. Docker/compose runtime repair
+remains out of scope until the local engine is fixed outside this repo.
