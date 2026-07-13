@@ -100,6 +100,13 @@ class AutomationDraftReviewRead(BaseModel):
     status: str
 
 
+class AutomationDraftQualityGateRead(BaseModel):
+    status: str = "ready_for_approval"
+    execution_evidence_level: str = "reviewed_candidate"
+    approval_blocking_reasons: list[str] = Field(default_factory=list)
+    evidence_warnings: list[str] = Field(default_factory=list)
+
+
 class AutomationDraftRead(BaseModel):
     id: uuid.UUID
     project_id: uuid.UUID
@@ -120,3 +127,6 @@ class AutomationDraftRead(BaseModel):
     review_comment: str | None
     runtime_artifact_id: uuid.UUID | None
     promoted_artifact_id: uuid.UUID | None
+    quality_gate: AutomationDraftQualityGateRead = Field(
+        default_factory=AutomationDraftQualityGateRead,
+    )

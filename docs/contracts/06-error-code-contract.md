@@ -23,6 +23,7 @@ Common error response:
 | AUTOMATION_PLAN_INVALID_ACTION | 400 | AutomationPlan transition is invalid | Approving an already finalized plan or unsupported action |
 | AUTOMATION_PLAN_NOT_APPROVED | 409 | AutomationPlan is not approved | Generating AutomationDraft from unapproved plan |
 | AUTOMATION_PLAN_SOURCE_NOT_APPROVED | 409 | AutomationPlan source TestCase is not approved or not generated from candidate review | Creating plan from manual/unsourced/unapproved TestCase |
+| AUTOMATION_DRAFT_QUALITY_GATE_FAILED | 400 | AutomationDraft approval quality gate failed | Approving placeholder-only code, fake/stub/demo adapter evidence, invalid paths, or missing test definitions |
 | DRAFT_NOT_APPROVED | 409 | AutomationDraft is not approved | Creating TestRun from unapproved draft |
 | PATCH_SCOPE_REJECTED | 422 | UnitTestPatch modifies forbidden paths | PatchScopeGate rejects patch |
 | TOOL_NOT_ALLOWED | 403 | Tool is not registered or disabled | ToolDefinition missing/disabled |

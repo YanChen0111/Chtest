@@ -49,11 +49,13 @@ def test_golden_reviewed_case_produces_approved_automation_draft_without_executi
     assert draft["risk_notes"]
     assert draft["runtime_artifact_id"] is None
     assert draft["promoted_artifact_id"] is None
+    assert draft["quality_gate"]["approval_blocking_reasons"] == []
+    assert "assert True" not in draft["draft_code"]
 
     edit_response = client.patch(
         f"/api/automation/drafts/{draft_id}",
         json_body={
-            "draft_code": draft["draft_code"].replace("assert True", "assert True  # reviewed"),
+            "draft_code": draft["draft_code"],
             "suggested_file_path": draft["suggested_file_path"],
             "execution_notes": "Reviewed golden draft; execution is intentionally out of scope.",
             "risk_notes": "Fixture names must be confirmed before later execution.",

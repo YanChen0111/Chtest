@@ -335,4 +335,64 @@ describe('AutomationDraftReviewView', () => {
     expect(wrapper.text()).toContain('AUTOMATION_DRAFT_QUALITY_GATE_FAILED');
     expect(store.draft.status).toBe('draft_generated');
   });
+
+  it('blocks approving drafts that still reference fake adapters', async () => {
+    const draftId = '00000000-0000-0000-0000-000000001201';
+    const fetchMock = vi.fn(async () => new Response('not found', { status: 404 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pinia = createPinia();
+    const wrapper = mount(AutomationDraftReviewView, {
+      global: {
+        plugins: [pinia, ArcoVue],
+      },
+    });
+    const store = useAutomationStore();
+    store.draft = {
+      id: draftId,
+      project_id: '00000000-0000-0000-0000-000000000101',
+      test_case_id: '00000000-0000-0000-0000-000000000955',
+      requirement_id: null,
+      ai_task_id: '00000000-0000-0000-0000-000000001202',
+      automation_plan_id: null,
+      target_framework: 'pytest',
+      title: 'fake adapter demo draft',
+      draft_code:
+        'class FakeChargerAppAdapter:\n    pass\n\ndef test_block_master_icon():\n    app = FakeChargerAppAdapter()\n    assert app is not None\n',
+      draft_language: 'python',
+      suggested_file_path: 'tests/test_block_master_icon.py',
+      execution_notes: 'Demo execution with fake adapter.',
+      risk_notes: 'Uses FakeChargerAppAdapter.',
+      execution_strategy: 'artifact_runtime_copy',
+      approval_required: true,
+      status: 'draft_generated',
+      review_comment: null,
+      runtime_artifact_id: null,
+      promoted_artifact_id: null,
+      quality_gate: {
+        status: 'blocked',
+        execution_evidence_level: 'blocked',
+        approval_blocking_reasons: [
+          'Draft code references fake/stub/demo adapters and cannot be approved as real regression evidence.',
+        ],
+        evidence_warnings: [
+          'Draft references fake/stub/demo adapters; replace them with project-local fixtures, selectors, or API hooks.',
+        ],
+      },
+    };
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('Quality gate: blocked');
+    expect(wrapper.text()).toContain('Evidence level: blocked');
+    expect(wrapper.text()).toContain('cannot be approved as real regression evidence');
+    expect(wrapper.find('[data-test="approve-draft"]').attributes('disabled')).toBeDefined();
+
+    await wrapper.find('[data-test="approve-draft"]').trigger('click');
+    await flushPromises();
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      `/api/automation/drafts/${draftId}/approve`,
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
 });

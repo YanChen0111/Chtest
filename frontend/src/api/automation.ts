@@ -56,6 +56,13 @@ export interface AutomationDraftCreateRead {
   readonly status: string;
 }
 
+export interface AutomationDraftQualityGateRead {
+  readonly status: string;
+  readonly execution_evidence_level: string;
+  readonly approval_blocking_reasons: string[];
+  readonly evidence_warnings: string[];
+}
+
 export interface AutomationDraftRead {
   readonly id: string;
   readonly project_id: string;
@@ -76,6 +83,7 @@ export interface AutomationDraftRead {
   readonly review_comment: string | null;
   readonly runtime_artifact_id: string | null;
   readonly promoted_artifact_id: string | null;
+  readonly quality_gate?: AutomationDraftQualityGateRead;
 }
 
 export interface AutomationDraftEditRequest {

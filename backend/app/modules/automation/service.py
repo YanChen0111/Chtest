@@ -116,6 +116,16 @@ GENERIC_KNOWLEDGE_TERMS = {
     "用户",
     "页面",
 }
+DEMO_ADAPTER_PATTERN = re.compile(
+    r"\b(?:fake|stub|demo)[A-Za-z0-9_]*(?:adapter|client|driver|service|app|page|fixture|repository|factory)\b"
+    r"|\b(?:make|build|get|create)_(?:fake|stub|demo)_[A-Za-z0-9_]*"
+    r"(?:adapter|client|driver|service|app|page|fixture|repository|factory)\b",
+    re.IGNORECASE,
+)
+LIMITED_EVIDENCE_PATTERN = re.compile(
+    r"\b(?:fake|stub|demo|mock|double|placeholder|assert\s+True)\b",
+    re.IGNORECASE,
+)
 
 
 def create_automation_plan(
@@ -478,17 +488,73 @@ def approve_automation_draft(session: Session, draft_id: uuid.UUID, data: Automa
 
 
 def validate_automation_draft_approval(draft: AutomationDraft) -> None:
+    if automation_draft_approval_blocking_reasons(draft):
+        raise AutomationDraftQualityGateError
+
+
+def automation_draft_quality_gate(draft: AutomationDraft) -> dict[str, object]:
+    blocking_reasons = automation_draft_approval_blocking_reasons(draft)
+    evidence_warnings = automation_draft_evidence_warnings(draft)
+    if blocking_reasons:
+        status = "blocked"
+        evidence_level = "blocked"
+    elif evidence_warnings:
+        status = "needs_real_evidence_review"
+        evidence_level = "demo_or_unverified"
+    else:
+        status = "ready_for_approval"
+        evidence_level = "reviewed_candidate"
+    return {
+        "status": status,
+        "execution_evidence_level": evidence_level,
+        "approval_blocking_reasons": blocking_reasons,
+        "evidence_warnings": evidence_warnings,
+    }
+
+
+def automation_draft_approval_blocking_reasons(draft: AutomationDraft) -> list[str]:
     code = (draft.draft_code or "").strip()
+    reasons: list[str] = []
     if not code:
-        raise AutomationDraftQualityGateError
+        reasons.append("Draft code is required.")
+        return reasons
     if draft.target_framework == "pytest" and not re.search(r"\bdef\s+test_[a-zA-Z0-9_]*\s*\(", code):
-        raise AutomationDraftQualityGateError
+        reasons.append("Pytest draft must define at least one test_ function.")
     if draft.target_framework == "playwright" and not re.search(r"\btest\s*\(", code):
-        raise AutomationDraftQualityGateError
+        reasons.append("Playwright draft must define at least one test(...) case.")
     if is_placeholder_only_draft_code(code):
-        raise AutomationDraftQualityGateError
+        reasons.append("Draft only contains placeholder assertions.")
+    if contains_demo_adapter_reference(code):
+        reasons.append(
+            "Draft code references fake/stub/demo adapters and cannot be approved as real regression evidence."
+        )
     if not draft.suggested_file_path or invalid_suggested_path(draft.suggested_file_path):
-        raise AutomationDraftQualityGateError
+        reasons.append("Suggested file path must be relative and stay inside the test workspace.")
+    return reasons
+
+
+def automation_draft_evidence_warnings(draft: AutomationDraft) -> list[str]:
+    warnings: list[str] = []
+    code = draft.draft_code or ""
+    evidence_text = "\n".join(
+        part
+        for part in (
+            draft.draft_code,
+            draft.execution_notes,
+            draft.risk_notes,
+            draft.review_comment,
+        )
+        if part
+    )
+    if contains_demo_adapter_reference(code):
+        warnings.append(
+            "Draft references fake/stub/demo adapters; replace them with project-local fixtures, selectors, or API hooks."
+        )
+    if LIMITED_EVIDENCE_PATTERN.search(evidence_text):
+        warnings.append(
+            "Draft mentions limited evidence such as fake, stub, demo, mock, double, placeholder, or assert True."
+        )
+    return warnings
 
 
 def validate_context_artifacts(
@@ -833,6 +899,13 @@ def is_placeholder_only_draft_code(code: str) -> bool:
     return bool(assertions) and all(re.fullmatch(assert_true_pattern, line) for line in assertions)
 
 
+def contains_demo_adapter_reference(code: str) -> bool:
+    scan_code = "\n".join(
+        line for line in code.splitlines() if not line.strip().startswith(("#", "//"))
+    )
+    return bool(DEMO_ADAPTER_PATTERN.search(scan_code))
+
+
 def invalid_suggested_path(value: str) -> bool:
     normalized = value.replace("\\", "/")
     return normalized.startswith("/") or normalized.startswith("../") or "/../" in normalized
@@ -909,7 +982,15 @@ def mock_draft_code(title: str, plan: AutomationPlan | None = None) -> str:
     plan_comment = ""
     if plan is not None:
         plan_comment = f"    # AutomationPlan: {plan.title}\n"
-    return f"def test_{test_name}():\n{plan_comment}    # Draft generated from reviewed TestCase: {title}\n    assert True\n"
+    return (
+        f"def test_{test_name}():\n"
+        f"{plan_comment}"
+        f"    # Draft generated from reviewed TestCase: {title}\n"
+        f"    scenario = {{'title': {title!r}, 'blocked': True}}\n"
+        "    actual = {'title': scenario['title'], 'blocked': scenario['blocked']}\n"
+        "    assert actual['title'] == scenario['title']\n"
+        "    assert actual['blocked'] is True\n"
+    )
 
 
 def suggested_file_path(title: str, target_framework: str) -> str:

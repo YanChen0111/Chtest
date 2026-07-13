@@ -1270,7 +1270,7 @@ Response 202:
 {
   "automation_draft_id": "00000000-0000-0000-0000-000000001001",
   "ai_task_id": "00000000-0000-0000-0000-000000001002",
-  "status": "pending"
+  "status": "draft_generated"
 }
 ```
 
@@ -1280,7 +1280,27 @@ Response 202:
 
 Response 200 returns AutomationDraft read model with `automation_plan_id`,
 `draft_code`, `target_framework`, `suggested_file_path`, `execution_notes`,
-`risk_notes`, and artifacts.
+`risk_notes`, artifacts, and a computed read-only `quality_gate`:
+
+```json
+{
+  "quality_gate": {
+    "status": "blocked",
+    "execution_evidence_level": "blocked",
+    "approval_blocking_reasons": [
+      "Draft code references fake/stub/demo adapters and cannot be approved as real regression evidence."
+    ],
+    "evidence_warnings": [
+      "Draft references fake/stub/demo adapters; replace them with project-local fixtures, selectors, or API hooks."
+    ]
+  }
+}
+```
+
+`quality_gate.status` is `blocked` when approval must fail,
+`needs_real_evidence_review` when the draft is approvable but contains limited
+evidence wording such as mock/demo/double notes, and `ready_for_approval` when
+no blocker or warning is present.
 
 ### 4.6 Edit Automation Draft
 
@@ -1328,6 +1348,12 @@ Response 200:
   "status": "approved"
 }
 ```
+
+Approval must fail with `400 AUTOMATION_DRAFT_QUALITY_GATE_FAILED` when the
+computed `quality_gate.approval_blocking_reasons` is non-empty. Blocking
+conditions include missing code, missing framework-specific test definitions,
+placeholder-only assertions such as `assert True`, fake/stub/demo adapter
+references in draft code, and suggested paths outside the test workspace.
 
 AutomationPlan uses `plan_generated -> edited -> approved -> draft_generated`.
 AutomationDraft uses `edit -> edited -> approve -> approved`. It does not use `approve_after_edit`.

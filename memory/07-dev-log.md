@@ -3956,3 +3956,29 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Verification:
   - Frontend focused suite: `5 passed`.
   - Frontend build: passed with the existing Vite chunk-size warning.
+
+## 2026-07-13 AutomationDraft Evidence Quality Gate
+
+### Completed
+
+- Added computed AutomationDraft `quality_gate` read data for approval blockers
+  and evidence warnings.
+- Blocked approval for fake/stub/demo adapter-style draft code so demo evidence
+  cannot be mistaken for a real regression pass.
+- Updated the AutomationDraft review page to render blockers/warnings and
+  disable approval when blockers exist.
+- Synced AutomationDraft data/API/error-code contracts and golden test coverage.
+
+### Verification
+
+- Automation focused backend + golden suite: `17 passed`.
+- AutomationDraft frontend spec: `3 passed`.
+- Related backend acceptance suite: `43 passed`.
+- Related frontend acceptance suite: `9 passed`.
+- Frontend build: passed with existing Vite chunk-size warning.
+- `git diff --check`: no output.
+
+### Next Step
+
+- Continue non-Docker V2 acceptance with real project-local fixtures,
+  selectors, or API hooks when a target app integration path is available.

@@ -98,8 +98,20 @@
               <pre>{{ store.draft.draft_code }}</pre>
             </section>
 
-            <div class="draft-quality-gate" data-test="draft-quality-gate" role="note">
-              <strong>Quality gate</strong>
+            <div
+              class="draft-quality-gate"
+              :class="{ 'draft-quality-gate--blocked': approvalBlockingReasons.length > 0 }"
+              data-test="draft-quality-gate"
+              role="note"
+            >
+              <strong>Quality gate: {{ draftQualityGate.status }}</strong>
+              <small>Evidence level: {{ draftQualityGate.execution_evidence_level }}</small>
+              <ul v-if="approvalBlockingReasons.length" data-test="draft-quality-blockers">
+                <li v-for="reason in approvalBlockingReasons" :key="reason">{{ reason }}</li>
+              </ul>
+              <ul v-if="evidenceWarnings.length" data-test="draft-quality-warnings">
+                <li v-for="warning in evidenceWarnings" :key="warning">{{ warning }}</li>
+              </ul>
               <span>
                 fake, stub, placeholder, or assert True-only drafts cannot be approved. Replace them with real selectors,
                 steps, and assertions before approval.
@@ -108,7 +120,15 @@
 
             <a-space class="draft-actions" wrap>
               <a-button data-test="edit-draft" :loading="store.loading" @click="editDraft">保存评审编辑</a-button>
-              <a-button data-test="approve-draft" type="primary" :loading="store.loading" @click="approveDraft">批准草稿</a-button>
+              <a-button
+                data-test="approve-draft"
+                type="primary"
+                :disabled="!canApproveDraft"
+                :loading="store.loading"
+                @click="approveDraft"
+              >
+                批准草稿
+              </a-button>
             </a-space>
 
             <div v-if="store.lastReview" class="draft-result">
@@ -147,6 +167,20 @@ const form = reactive({
 });
 
 const canApprovePlan = computed(() => ['plan_generated', 'edited'].includes(store.plan?.status ?? ''));
+const draftQualityGate = computed(
+  () =>
+    store.draft?.quality_gate ?? {
+      status: 'unknown',
+      execution_evidence_level: 'review_required',
+      approval_blocking_reasons: [],
+      evidence_warnings: [],
+    },
+);
+const approvalBlockingReasons = computed(() => draftQualityGate.value.approval_blocking_reasons ?? []);
+const evidenceWarnings = computed(() => draftQualityGate.value.evidence_warnings ?? []);
+const canApproveDraft = computed(
+  () => ['draft_generated', 'edited'].includes(store.draft?.status ?? '') && approvalBlockingReasons.value.length === 0,
+);
 
 function submitPlan() {
   void store.createPlan({
@@ -169,6 +203,9 @@ function editDraft() {
 }
 
 function approveDraft() {
+  if (!canApproveDraft.value) {
+    return;
+  }
   void store.approveCurrentDraft('前端批准草稿');
 }
 
@@ -307,7 +344,30 @@ onMounted(() => {
 }
 
 .draft-quality-gate {
+  display: grid;
+  gap: 6px;
   margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #facc15;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #713f12;
+}
+
+.draft-quality-gate--blocked {
+  border-color: #fca5a5;
+  background: #fff1f2;
+  color: #7f1d1d;
+}
+
+.draft-quality-gate ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.draft-quality-gate small {
+  color: inherit;
+  opacity: 0.78;
 }
 
 .draft-result {

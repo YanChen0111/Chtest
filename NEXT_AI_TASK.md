@@ -111,16 +111,19 @@ Docker Desktop Linux Engine is repaired outside this repo.
 - AutomationDraft approval now has a local quality gate: placeholder-only
   drafts such as `assert True` cannot be approved and the UI surfaces the
   quality-gate failure.
+- AutomationDraft read models now expose a computed `quality_gate`, and
+  fake/stub/demo adapter references in draft code block approval so demo
+  evidence cannot be mistaken for a real regression pass.
 
 ## Commit Message
 
 ```text
-TBD after acceptance stabilization scope is clean
+fix(automation): block demo adapter draft approval
 ```
 
 ## Next Task
 
 Continue non-Docker V2 acceptance stabilization. Prefer the next smallest local
-evidence risk, such as making fake/stub automation adapter evidence impossible
-to mistake for a real product regression pass, then run the focused verification
-commands above.
+evidence risk: replace demo-only AutomationDraft evidence with project-local
+fixtures, selectors, or API hooks for a real target app when one is available,
+then rerun the focused verification commands above.

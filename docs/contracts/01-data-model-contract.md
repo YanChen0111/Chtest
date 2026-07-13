@@ -300,6 +300,12 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | runtime_artifact_id | uuid | no | null | Artifact for approved temporary runtime file |
 | promoted_artifact_id | uuid | no | null | Promoted artifact |
 
+AutomationDraft read APIs may include a computed, read-only `quality_gate`
+object. It is not a persisted database column. The gate exposes
+`status`, `execution_evidence_level`, `approval_blocking_reasons`, and
+`evidence_warnings` so reviewers can distinguish real regression candidates
+from placeholder or fake/stub/demo adapter evidence before approval.
+
 V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed artifact runtime directory before execution. It is not written directly into the target business repository.
 
 V2 Newman rule: Newman API execution uses configured TestCommand records with

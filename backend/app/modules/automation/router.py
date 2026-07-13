@@ -316,4 +316,5 @@ def automation_draft_read(draft) -> AutomationDraftRead:
         review_comment=draft.review_comment,
         runtime_artifact_id=draft.runtime_artifact_id,
         promoted_artifact_id=draft.promoted_artifact_id,
+        quality_gate=service.automation_draft_quality_gate(draft),
     )

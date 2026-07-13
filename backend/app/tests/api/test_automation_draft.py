@@ -17,6 +17,7 @@ from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask
 from backend.app.modules.ai_runtime.router import get_artifact_store
+from backend.app.modules.automation import service as automation_service
 from backend.app.modules.automation.models import AutomationDraft
 from backend.app.modules.automation.schemas import AutomationDraftRead
 from backend.app.modules.cases.models import TestCase as CaseModel
@@ -33,6 +34,25 @@ class ASGIResponse:
 
     def json(self) -> Any:
         return json.loads(self.body.decode("utf-8"))
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "app = FakeChargerAppAdapter()",
+        "adapter = fakeAdapter()",
+        "client = stubClient()",
+        "factory = FakeClientFactory()",
+        "client = make_fake_client()",
+        "client = get_demo_client()",
+    ],
+)
+def test_demo_adapter_detector_matches_common_generated_names(code: str) -> None:
+    assert automation_service.contains_demo_adapter_reference(code)
+
+
+def test_demo_adapter_detector_ignores_comment_only_reference() -> None:
+    assert not automation_service.contains_demo_adapter_reference("# Do not use FakeClientAdapter here.")
 
 
 class ASGIClient:
@@ -226,11 +246,11 @@ def test_automation_draft_read_schema_uses_contract_field_names() -> None:
         automation_plan_id=None,
         target_framework="pytest",
         title="pytest draft for expired coupon",
-        draft_code="def test_expired_coupon():\n    assert True\n",
+        draft_code="def test_expired_coupon():\n    result = {'blocked': True}\n    assert result['blocked'] is True\n",
         draft_language="python",
         suggested_file_path="tests/test_coupon_checkout.py",
         execution_notes="Run with pytest after approval.",
-        risk_notes="Uses mock fixture names.",
+        risk_notes="Fixture names require local confirmation.",
         execution_strategy="artifact_runtime_copy",
         approval_required=True,
         status="draft_generated",
@@ -246,6 +266,8 @@ def test_automation_draft_read_schema_uses_contract_field_names() -> None:
     assert body["automation_plan_id"] is None
     assert body["execution_strategy"] == "artifact_runtime_copy"
     assert body["approval_required"] is True
+    assert body["quality_gate"]["status"] == "ready_for_approval"
+    assert body["quality_gate"]["approval_blocking_reasons"] == []
 
 
 def test_create_automation_draft_from_reviewed_test_case(
@@ -338,6 +360,7 @@ def test_get_edit_and_approve_automation_draft(api_client: tuple[ASGIClient, ses
     assert body["id"] == str(draft_id)
     assert body["status"] == "draft_generated"
     assert body["draft_code"].startswith("def test_expired_coupon")
+    assert body["quality_gate"]["approval_blocking_reasons"] == []
 
     edit_response = client.patch(
         f"/api/automation/drafts/{draft_id}",
@@ -351,6 +374,12 @@ def test_get_edit_and_approve_automation_draft(api_client: tuple[ASGIClient, ses
     )
     assert edit_response.status_code == 200
     assert edit_response.json()["status"] == "edited"
+
+    reviewed_get_response = client.get(f"/api/automation/drafts/{draft_id}")
+    assert reviewed_get_response.status_code == 200
+    reviewed_body = reviewed_get_response.json()
+    assert reviewed_body["quality_gate"]["status"] == "ready_for_approval"
+    assert reviewed_body["quality_gate"]["approval_blocking_reasons"] == []
 
     approve_response = client.post(
         f"/api/automation/drafts/{draft_id}/approve",
@@ -405,6 +434,57 @@ def test_automation_draft_approval_rejects_placeholder_review_edit(
     approve_response = client.post(
         f"/api/automation/drafts/{draft_id}/approve",
         json_body={"action": "approve", "review_comment": "Approve placeholder."},
+    )
+
+    assert approve_response.status_code == 400
+    assert approve_response.json()["error_code"] == "AUTOMATION_DRAFT_QUALITY_GATE_FAILED"
+
+    with SessionLocal() as session:
+        draft = session.get(AutomationDraft, draft_id)
+        assert draft is not None
+        assert draft.status == "edited"
+
+
+def test_automation_draft_approval_rejects_fake_adapter_demo_code(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    draft_id = create_draft_via_api(client, SessionLocal)
+
+    edit_response = client.patch(
+        f"/api/automation/drafts/{draft_id}",
+        json_body={
+            "draft_code": "\n".join(
+                [
+                    "class FakeChargerAppAdapter:",
+                    "    def is_block_master_visible(self):",
+                    "        return False",
+                    "",
+                    "def test_block_master_icon_is_hidden():",
+                    "    app = FakeChargerAppAdapter()",
+                    "    assert app.is_block_master_visible() is False",
+                    "",
+                ],
+            ),
+            "suggested_file_path": "tests/test_block_master_icon.py",
+            "execution_notes": "Demo execution with a fake adapter.",
+            "risk_notes": "Uses FakeChargerAppAdapter, so it is not real product regression evidence.",
+            "review_comment": "Keep as demo only.",
+        },
+    )
+    assert edit_response.status_code == 200
+
+    get_response = client.get(f"/api/automation/drafts/{draft_id}")
+    assert get_response.status_code == 200
+    quality_gate = get_response.json()["quality_gate"]
+    assert quality_gate["status"] == "blocked"
+    assert quality_gate["execution_evidence_level"] == "blocked"
+    assert any("fake/stub/demo adapters" in reason for reason in quality_gate["approval_blocking_reasons"])
+    assert any("fake/stub/demo adapters" in warning for warning in quality_gate["evidence_warnings"])
+
+    approve_response = client.post(
+        f"/api/automation/drafts/{draft_id}/approve",
+        json_body={"action": "approve", "review_comment": "Approve fake adapter demo."},
     )
 
     assert approve_response.status_code == 400

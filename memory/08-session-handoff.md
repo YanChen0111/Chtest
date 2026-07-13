@@ -9706,3 +9706,50 @@ Next recommended task:
   risk is making fake/stub automation adapter evidence impossible to mistake
   for a real product regression pass, then rerun the focused automation tests
   and frontend build.
+
+## 2026-07-13 AutomationDraft Demo Adapter Quality Gate
+
+Current task:
+- Continue non-Docker V2 acceptance stabilization and complete the current
+  AutomationDraft review surface toward final-version evidence semantics.
+
+Completed:
+- Added a computed `quality_gate` to AutomationDraft read responses with
+  `status`, `execution_evidence_level`, `approval_blocking_reasons`, and
+  `evidence_warnings`.
+- Approval now blocks draft code that references fake/stub/demo adapter-style
+  evidence such as `FakeChargerAppAdapter`, `fakeAdapter`, `stubClient`,
+  `FakeClientFactory`, `make_fake_client`, or `get_demo_client`.
+- Placeholder-only drafts remain blocked, including `assert True # reviewed`.
+- AutomationDraft review UI now renders the computed gate status, blockers,
+  warnings, and disables approval when blockers are present.
+- Synced data/API/error-code contracts for `quality_gate` and
+  `AUTOMATION_DRAFT_QUALITY_GATE_FAILED`.
+- Updated golden automation draft approval coverage so it no longer reviews
+  placeholder-only `assert True` code.
+
+Verification:
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_automation_draft.py backend/app/tests/api/test_automation_plan.py backend/app/tests/golden/test_automation_draft_golden.py -q`
+  - Result: `17 passed in 2.10s`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/automation/AutomationDraftReviewView.spec.ts`
+  - Result: `3 passed`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_knowledge_cards.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_model_connection_config.py backend/app/tests/api/test_extension_surface.py -q`
+  - Result: `43 passed in 2.96s`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/settings/ProjectSettingsView.spec.ts src/views/extension/KnowledgeBaseView.spec.ts src/views/requirements/RequirementReviewView.spec.ts src/views/cases/CaseGenerationReviewView.spec.ts`
+  - Result: `9 passed`.
+- `D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run build`
+  - Result: passed with the existing Vite chunk-size warning.
+- `git diff --check`
+  - Result: no output.
+
+Remaining risks:
+- Drafts with mock/double wording in notes remain approvable with warnings when
+  code does not reference fake/stub/demo adapters. Real product regression
+  evidence still requires project-local fixtures, selectors, or API hooks.
+- Docker runtime acceptance remains skipped by user direction until Docker
+  Desktop/WSL is repaired outside this repo.
+
+Next recommended task:
+- Continue non-Docker V2 acceptance only if a real target app integration path
+  is available; otherwise keep the acceptance path local-dev based and avoid
+  treating demo adapter execution as product regression evidence.
