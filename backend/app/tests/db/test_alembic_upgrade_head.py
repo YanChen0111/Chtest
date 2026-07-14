@@ -43,7 +43,44 @@ def test_alembic_upgrade_head_from_empty_sqlite_database(tmp_path: Path) -> None
             "last_verified_at",
         } <= candidate_columns
         revision = connection.execute(text("select version_num from alembic_version")).scalar_one()
-        assert revision == "20260714_0012"
+        assert revision == "20260714_0013"
+
+
+def test_postgres_hybrid_migration_generates_optional_capability_sql(capsys) -> None:
+    backend_dir = Path(__file__).parents[3]
+    config = Config(str(backend_dir / "alembic.ini"))
+    config.set_main_option("sqlalchemy.url", "postgresql+psycopg://user:pass@localhost/chtest")
+
+    command.upgrade(config, "head", sql=True)
+
+    sql = capsys.readouterr().out
+    assert "ix_test_knowledge_cards_postgres_fts" in sql
+    assert "to_tsvector" in sql
+    assert "CREATE EXTENSION IF NOT EXISTS vector" in sql
+    assert "embedding_vector vector" in sql
+    assert "ix_test_knowledge_embedding_vector_hnsw_64" in sql
+
+    command.downgrade(config, "20260714_0013:20260714_0012", sql=True)
+    downgrade_sql = capsys.readouterr().out
+    assert "DROP INDEX IF EXISTS ix_test_knowledge_cards_postgres_fts" in downgrade_sql
+    assert "DROP COLUMN IF EXISTS embedding_vector" in downgrade_sql
+    assert "DROP EXTENSION" not in downgrade_sql
+
+
+def test_sqlite_postgres_hybrid_migration_is_noop(tmp_path: Path) -> None:
+    backend_dir = Path(__file__).parents[3]
+    db_path = tmp_path / "postgres-hybrid-sqlite.db"
+    config = Config(str(backend_dir / "alembic.ini"))
+    config.set_main_option("sqlalchemy.url", f"sqlite+pysqlite:///{db_path.as_posix()}")
+
+    command.upgrade(config, "20260714_0012")
+    command.upgrade(config, "head")
+    engine = create_engine(f"sqlite+pysqlite:///{db_path.as_posix()}", future=True)
+    with engine.connect() as connection:
+        assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260714_0013"
+        columns = {item["name"] for item in inspect(connection).get_columns("test_knowledge_embedding_index")}
+        assert "embedding_vector" not in columns
+    engine.dispose()
 
 
 def test_knowledge_ingestion_migration_preserves_existing_cards_and_round_trips(tmp_path: Path) -> None:

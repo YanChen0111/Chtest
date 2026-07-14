@@ -956,6 +956,14 @@ is recorded in the run; it must use `vector_score=null`/`rerank_score=null`
 instead of fabricating zero-cost semantic evidence. Successful empty results
 still persist a completed run and `knowledge_retrieval` Artifact.
 
+When `KnowledgeAdapterConfig.provider_type=postgres_hybrid`, PostgreSQL
+full-text is the minimum capability. pgvector is optional: without the
+extension, native column, fresh vector row, or usable vector operator, the run
+records `retrieval_mode=keyword`, `degraded=true`, and a stable fallback reason
+while preserving the same run/evidence response contract. SQLite uses this
+provider configuration only as a deterministic capability fallback and never
+claims native vector support.
+
 ### 2.14.8 List And Read KnowledgeRetrievalRuns
 
 ```text

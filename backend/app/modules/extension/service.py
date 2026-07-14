@@ -26,8 +26,35 @@ from backend.app.modules.extension.schemas import (
 from backend.app.modules.projects.models import Project
 
 
-ALLOWED_PROVIDER_TYPES = {"none", "stub", "deterministic_local"}
-ALLOWED_STATUSES = {"not_configured", "disabled", "configured_stub"}
+ALLOWED_PROVIDER_TYPES = {"none", "stub", "deterministic_local", "postgres_hybrid"}
+ALLOWED_STATUSES = {
+    "not_configured",
+    "disabled",
+    "configured_stub",
+    "configured",
+    "indexing",
+    "ready",
+    "degraded",
+    "failed",
+}
+POSTGRES_HYBRID_CONFIG_KEYS = {
+    "embedding_dim",
+    "embedding_model",
+    "hnsw_ef_search",
+    "min_vector_similarity",
+    "text_search_config",
+}
+POSTGRES_HYBRID_SAFETY_KEYS = {"same_project_only", "require_allowed_for_prompt"}
+SECRET_OR_REMOTE_KEYS = {
+    "api_key",
+    "access_token",
+    "token",
+    "secret",
+    "password",
+    "remote_url",
+    "server_url",
+    "vector_db_url",
+}
 RUNTIME_CONFIG_KEYS = {
     "api_key",
     "access_token",
@@ -244,8 +271,62 @@ def ensure_stub_only(data: KnowledgeAdapterUpdate) -> None:
     if data.provider_type not in ALLOWED_PROVIDER_TYPES or data.status not in ALLOWED_STATUSES:
         raise KnowledgeAdapterRuntimeNotAllowedError
 
+    if data.provider_type == "postgres_hybrid":
+        if data.status not in {"configured", "indexing", "ready", "degraded", "failed", "disabled"}:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if not set(data.config).issubset(POSTGRES_HYBRID_CONFIG_KEYS):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if not set(data.safety_policy).issubset(POSTGRES_HYBRID_SAFETY_KEYS):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if contains_forbidden_key(data.config, SECRET_OR_REMOTE_KEYS) or contains_forbidden_key(
+            data.safety_policy,
+            SECRET_OR_REMOTE_KEYS,
+        ):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if str(data.config.get("text_search_config", "simple")) != "simple":
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        raw_embedding_dim = data.config.get("embedding_dim", 64)
+        if isinstance(raw_embedding_dim, bool):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        try:
+            embedding_dim = int(raw_embedding_dim)
+        except (TypeError, ValueError) as exc:
+            raise KnowledgeAdapterRuntimeNotAllowedError from exc
+        if embedding_dim != raw_embedding_dim or not 16 <= embedding_dim <= 512:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        embedding_model = data.config.get("embedding_model", "deterministic-hashing-v1")
+        if not isinstance(embedding_model, str) or not 1 <= len(embedding_model) <= 120:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        raw_ef_search = data.config.get("hnsw_ef_search", 40)
+        raw_min_similarity = data.config.get("min_vector_similarity", 0.05)
+        if isinstance(raw_ef_search, bool) or isinstance(raw_min_similarity, bool):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        try:
+            ef_search = int(raw_ef_search)
+            min_similarity = float(raw_min_similarity)
+        except (TypeError, ValueError) as exc:
+            raise KnowledgeAdapterRuntimeNotAllowedError from exc
+        if ef_search != raw_ef_search or not 1 <= ef_search <= 1000:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if not 0.0 <= min_similarity <= 1.0:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        return
+
+    if data.status not in {"not_configured", "disabled", "configured_stub"}:
+        raise KnowledgeAdapterRuntimeNotAllowedError
+
     if contains_runtime_key(data.config) or contains_runtime_key(data.safety_policy):
         raise KnowledgeAdapterRuntimeNotAllowedError
+
+
+def contains_forbidden_key(value: Any, forbidden_keys: set[str]) -> bool:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if str(key).lower() in forbidden_keys or contains_forbidden_key(child, forbidden_keys):
+                return True
+    if isinstance(value, list):
+        return any(contains_forbidden_key(item, forbidden_keys) for item in value)
+    return False
 
 
 def contains_runtime_key(value: Any) -> bool:
@@ -527,7 +608,13 @@ def to_read(config: KnowledgeAdapterConfig, *, used_knowledge: bool = False) -> 
         adapter_name=config.adapter_name,
         status=config.status,
         provider_type=config.provider_type,
-        retrieval_mode="deterministic_local" if config.provider_type == "deterministic_local" else None,
+        retrieval_mode=(
+            "deterministic_local"
+            if config.provider_type == "deterministic_local"
+            else "hybrid"
+            if config.provider_type == "postgres_hybrid"
+            else None
+        ),
         config=config.config_json,
         safety_policy=config.safety_policy_json,
         last_checked_at=config.last_checked_at,

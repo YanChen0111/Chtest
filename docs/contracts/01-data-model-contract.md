@@ -1028,6 +1028,11 @@ Final vector rules:
 - PostgreSQL deployments should use the native `embedding_vector` column and an
   HNSW or IVFFlat index selected by measured corpus/recall needs. SQLite tests
   may continue using deterministic `embedding_json` fallback.
+- The optional PostgreSQL capability migration must always create the safe
+  full-text surface, but must not fail the Alembic head when the `vector`
+  extension is unavailable or the database user cannot create it. The native
+  column/index are nullable capabilities and are never required by the core
+  ORM mapping.
 - Native and fallback storage must produce the same KnowledgeEvidence fields;
   callers cannot depend on pgvector-specific operators or Qdrant payload shape.
 - Index freshness is compared against card content hash, source version,

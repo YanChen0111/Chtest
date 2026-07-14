@@ -554,6 +554,9 @@ Final retrieval evidence adds these required fields:
 
 - `knowledge_retrieval_run_id`, adapter/provider/config version, retrieval mode,
   filters, latency, candidate count, evidence count, and degraded/fallback state.
+- PostgreSQL hybrid runs record capability state for full-text, vector
+  extension, native vector column, and vector index. Missing pgvector capability
+  is evidence of a keyword fallback, not a zero vector score or failed run.
 - Each result includes persisted KnowledgeEvidence id, TestKnowledgeCard id,
   source Artifact id and locator, metadata/keyword/vector/rerank/final scores,
   matched terms, retrieval reason, and safety snapshots.

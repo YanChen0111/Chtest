@@ -10203,3 +10203,45 @@ Next recommended task:
 - Continue Slice 47 Task 47.5: add PostgreSQL full-text + pgvector behind the
   stable KnowledgeAdapter/evidence contracts with deterministic fallback and
   temporary-database verification only.
+
+## 2026-07-14 Slice 47 PostgreSQL Hybrid Adapter (Blocked)
+
+Current task:
+- Task 47.5 remains in progress. Offline/provider-neutral implementation is
+  complete enough for review, but real PostgreSQL/pgvector acceptance is blocked.
+
+Implemented:
+- Added Python `pgvector` dependency and optional Alembic revision
+  `20260714_0013`. SQLite is a no-op; PostgreSQL emits a prompt-safe full-text
+  GIN index and conditionally creates vector extension, native vector column,
+  and default-dimension HNSW expression index without dropping the shared
+  extension on downgrade.
+- Added isolated PostgreSQL capability detection, native embedding sync, bound
+  full-text/vector SQL, HNSW-compatible vector candidate CTE, embedding
+  model/dimension/content freshness gates, safe local adapter configuration,
+  provider-neutral score conversion, and deterministic keyword fallback.
+- PostgreSQL provider fallback records actual keyword mode, capability snapshot,
+  stable reason, and `vector_score=null`; sensitive queries remain redacted and
+  do not execute vector search.
+
+Verification:
+- Focused Task 47.4 + 47.5 API/golden/DB/dialect suite: `74 passed`.
+- Complete backend before the final SQL-shape review: `406 passed, 13 failed`;
+  all 13 are the previously recorded Windows fake-runner and stale golden
+  acknowledgement failures.
+- PostgreSQL offline upgrade/downgrade SQL, SQLite 0013 no-op, SQL binding,
+  capability failure, native normalization, dimension mismatch, and fallback
+  tests pass.
+- `compileall` and `git diff --check` pass.
+
+Blocking environment evidence:
+- No PostgreSQL binaries/service/listener or test URL is available.
+- Docker client exists, but the desktop-linux engine returns HTTP 500.
+- Real online migration, extension privilege behavior, `<=>` execution, HNSW
+  plan use, and recall comparison cannot be claimed until a dedicated empty
+  PostgreSQL test database and pgvector-enabled peer are provided.
+
+Next action:
+- Resume Task 47.5 with dedicated PostgreSQL test URLs. Run online Alembic and
+  full-text fallback smoke first, then pgvector native ordering/plan/recall
+  smoke. Do not advance to Task 47.6 before this acceptance gap closes.

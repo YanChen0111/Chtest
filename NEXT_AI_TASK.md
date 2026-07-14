@@ -31,6 +31,33 @@ Required output:
    rerankers, graph, feedback, frontend redesign, RBAC, tenants, or cloud
    services in this task.
 
+## Verified Progress
+
+- Added optional Alembic `20260714_0013`: PostgreSQL full-text GIN is always
+  emitted; pgvector extension/native column/HNSW setup is capability-gated and
+  does not block SQLite or PostgreSQL without extension privileges.
+- Added safe `postgres_hybrid` configuration, capability snapshots, native
+  embedding synchronization, full-text/vector candidate SQL, provider-neutral
+  score normalization, dimension/freshness checks, and deterministic keyword
+  fallback with `vector_score=null`.
+- Added PostgreSQL dialect/offline DDL tests, fake capability/native-result
+  tests, SQLite no-op migration/fallback tests, and existing consumer regressions.
+
+## Blocking Acceptance Gap
+
+Task 47.5 is not complete because no PostgreSQL test server is available:
+
+- no `psql`, `postgres`, `pg_ctl`, `initdb`, Windows PostgreSQL service, port
+  5432 listener, or PostgreSQL test URL exists;
+- Docker Desktop's Linux engine returns HTTP 500 for `docker info`;
+- therefore online migration, real full-text behavior, pgvector extension
+  availability/permissions, native `<=>` execution, HNSW query plans, and
+  native-vs-fallback recall cannot be verified.
+
+Resume with a dedicated empty PostgreSQL test database URL (and a second
+database or schema with pgvector enabled). Do not use the local acceptance
+SQLite database for this verification.
+
 ## Product Value Answer
 
 Local-first PostgreSQL users gain semantic and full-text recall without losing

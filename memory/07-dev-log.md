@@ -4195,3 +4195,28 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 47.5: PostgreSQL full-text + pgvector KnowledgeAdapter with deterministic
   fallback, no Qdrant/orchestration/frontend expansion.
+
+## 2026-07-14 PostgreSQL Hybrid Adapter Offline Implementation
+
+### Implemented
+
+- Added capability-gated PostgreSQL full-text/pgvector migration and Python
+  adapter without mapping the optional native column into the core ORM.
+- Added HNSW-compatible vector candidate SQL, dimension/model/freshness gates,
+  native embedding synchronization, safe config validation, provider-neutral
+  evidence normalization, and explicit SQLite/pgvector-unavailable fallback.
+- Added pgvector Python dependency and PostgreSQL dialect/offline DDL tests.
+
+### Verification
+
+- Focused 47.4/47.5 retrieval, consumer, golden, migration, and SQL suite:
+  `74 passed`.
+- Full backend checkpoint: `406 passed, 13 failed`, with only known unrelated
+  Windows runner and stale golden fixture failures.
+- `compileall` and `git diff --check`: passed.
+
+### Blocker
+
+- No local PostgreSQL server/test URL exists, and Docker Desktop's engine
+  returns HTTP 500. Real online PostgreSQL/pgvector migration, query, HNSW plan,
+  and recall smoke cannot be performed. Task 47.5 remains in progress.

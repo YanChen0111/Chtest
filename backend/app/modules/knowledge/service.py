@@ -6,7 +6,7 @@ import math
 import re
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
@@ -18,6 +18,8 @@ from backend.app.modules.ai_runtime import service as ai_runtime_service
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
+from backend.app.modules.extension.models import KnowledgeAdapterConfig
+from backend.app.modules.knowledge import postgres_adapter
 from backend.app.modules.knowledge.models import (
     KnowledgeEvidence,
     KnowledgeIngestionRun,
@@ -165,6 +167,8 @@ class KnowledgeMatchResult:
     actual_mode: str
     degraded: bool
     fallback_reason: str | None
+    provider_type: str = "deterministic_local"
+    capability_snapshot: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -1013,6 +1017,11 @@ def rebuild_test_knowledge_index(
         indexed_count += 1
         items.append(index_row)
 
+    session.flush()
+    postgres_adapter.sync_native_embeddings(
+        session,
+        [(item.id, list(item.embedding_json)) for item in items],
+    )
     session.commit()
     for item in items:
         session.refresh(item)
@@ -1062,6 +1071,208 @@ def list_test_knowledge_index(session: Session, project_id: uuid.UUID) -> dict[s
     }
 
 
+def active_knowledge_adapter_config(
+    session: Session,
+    project_id: uuid.UUID,
+    adapter_name: str,
+) -> KnowledgeAdapterConfig | None:
+    return session.scalar(
+        select(KnowledgeAdapterConfig).where(
+            KnowledgeAdapterConfig.project_id == project_id,
+            KnowledgeAdapterConfig.adapter_name == adapter_name,
+        ),
+    )
+
+
+def match_configured_knowledge_cards(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    adapter_name: str,
+    query_text: str,
+    limit: int,
+    approved_only: bool,
+    filters: dict[str, Any],
+    retrieval_mode: str,
+) -> KnowledgeMatchResult:
+    config = active_knowledge_adapter_config(session, project_id, adapter_name)
+    use_postgres = (
+        config is not None
+        and config.provider_type == "postgres_hybrid"
+        and config.status in {"configured", "indexing", "ready", "degraded"}
+    )
+    if use_postgres and not normalize_terms(query_text):
+        capabilities = postgres_adapter.detect_capabilities(session)
+        return KnowledgeMatchResult(
+            candidate_count=0,
+            items=[],
+            vector_available=False,
+            actual_mode="keyword" if retrieval_mode in {"hybrid", "vector"} else retrieval_mode,
+            degraded=retrieval_mode in {"hybrid", "vector"},
+            fallback_reason=(
+                "query_redacted_or_empty" if retrieval_mode in {"hybrid", "vector"} else None
+            ),
+            provider_type="postgres_hybrid",
+            capability_snapshot={
+                "provider_type": "postgres_hybrid",
+                "config": dict(config.config_json),
+                "capabilities": capabilities.snapshot(),
+            },
+        )
+    if not use_postgres:
+        result = match_test_knowledge_cards(
+            session,
+            project_id=project_id,
+            query_text=query_text,
+            limit=limit,
+            approved_only=approved_only,
+            filters=filters,
+            retrieval_mode=retrieval_mode,
+        )
+        return result
+
+    capabilities = postgres_adapter.detect_capabilities(session)
+    adapter_snapshot = {
+        "provider_type": "postgres_hybrid",
+        "config": dict(config.config_json),
+        "capabilities": capabilities.snapshot(),
+    }
+    if not capabilities.postgresql or not capabilities.full_text:
+        fallback = match_test_knowledge_cards(
+            session,
+            project_id=project_id,
+            query_text=query_text,
+            limit=limit,
+            approved_only=approved_only,
+            filters=filters,
+            retrieval_mode="keyword" if retrieval_mode in {"hybrid", "vector"} else retrieval_mode,
+        )
+        return KnowledgeMatchResult(
+            candidate_count=fallback.candidate_count,
+            items=fallback.items,
+            vector_available=False,
+            actual_mode=fallback.actual_mode,
+            degraded=retrieval_mode in {"hybrid", "vector"},
+            fallback_reason="postgresql_unavailable",
+            provider_type="postgres_hybrid",
+            capability_snapshot=adapter_snapshot,
+        )
+
+    embedding_dim = int(config.config_json.get("embedding_dim", DEFAULT_EMBEDDING_DIM))
+    embedding_model = str(config.config_json.get("embedding_model", DEFAULT_EMBEDDING_MODEL))
+    query_vector = (
+        deterministic_embedding(query_text, embedding_dim)
+        if retrieval_mode in {"hybrid", "vector"} and capabilities.vector_search
+        else None
+    )
+    try:
+        with session.begin_nested():
+            native_matches = postgres_adapter.search_postgres_knowledge(
+                session,
+                project_id=project_id,
+                query_text=query_text,
+                query_vector=query_vector,
+                embedding_model=embedding_model,
+                hnsw_ef_search=int(config.config_json.get("hnsw_ef_search", 40)),
+                statuses={"approved"} if approved_only else PROMPT_ELIGIBLE_STATUSES,
+                filters=filters,
+                limit=limit,
+                min_vector_similarity=float(config.config_json.get("min_vector_similarity", MIN_VECTOR_SIMILARITY)),
+            )
+    except Exception as exc:
+        fallback = match_test_knowledge_cards(
+            session,
+            project_id=project_id,
+            query_text=query_text,
+            limit=limit,
+            approved_only=approved_only,
+            filters=filters,
+            retrieval_mode="keyword" if retrieval_mode in {"hybrid", "vector"} else retrieval_mode,
+        )
+        return KnowledgeMatchResult(
+            candidate_count=fallback.candidate_count,
+            items=fallback.items,
+            vector_available=False,
+            actual_mode=fallback.actual_mode,
+            degraded=True,
+            fallback_reason="postgresql_search_failed",
+            provider_type="postgres_hybrid",
+            capability_snapshot={**adapter_snapshot, "search_error": type(exc).__name__},
+        )
+
+    cards = {
+        card.id: card
+        for card in session.scalars(
+            select(TestKnowledgeCard).where(
+                TestKnowledgeCard.project_id == project_id,
+                TestKnowledgeCard.id.in_([item.knowledge_card_id for item in native_matches]),
+            ),
+        )
+    }
+    evidence: list[dict[str, Any]] = []
+    vector_match_count = 0
+    for native in native_matches:
+        card = cards.get(native.knowledge_card_id)
+        if card is None:
+            continue
+        if native.content_hash and native.embedding_dim is not None:
+            current_hash = hashlib.sha256(embedding_text_for_card(card).encode("utf-8")).hexdigest()
+            if current_hash != native.content_hash or native.embedding_dim != embedding_dim:
+                continue
+        matched_terms = [
+            term for term in normalize_terms(query_text)
+            if term in set(normalize_terms(search_text_for_card(card)))
+        ]
+        item = evidence_for_card(
+            card,
+            matched_terms=matched_terms,
+            query_term_count=len(normalize_terms(query_text)),
+            metadata_score=(
+                1.0
+                if any(
+                    filters.get(key)
+                    for key in {"module_keys", "knowledge_types", "risk_types", "api_endpoints"}
+                )
+                else 0.0
+            ),
+            retrieval_reason=(
+                "postgres_hybrid_keyword_vector"
+                if native.vector_score is not None
+                else "postgres_full_text"
+            ),
+            semantic_score=native.vector_score,
+            embedding_model=native.embedding_model or embedding_model,
+        )
+        item["keyword_score"] = round(max(0.0, min(native.keyword_score, 1.0)), 6)
+        if native.vector_score is not None:
+            vector_match_count += 1
+        finalize_match_scores(item)
+        evidence.append(item)
+    evidence.sort(
+        key=lambda item: (
+            STATUS_PRIORITY.get(str(item.get("status")), 99),
+            -float(item["final_score"]),
+            str(item["title"]).lower(),
+            str(item["knowledge_card_id"]),
+        ),
+    )
+    vector_used = query_vector is not None and vector_match_count > 0
+    return KnowledgeMatchResult(
+        candidate_count=len(evidence),
+        items=evidence[:limit],
+        vector_available=vector_used,
+        actual_mode="hybrid" if vector_used else "keyword",
+        degraded=retrieval_mode in {"hybrid", "vector"} and not vector_used,
+        fallback_reason=(
+            "pgvector_unavailable"
+            if retrieval_mode in {"hybrid", "vector"} and not vector_used
+            else None
+        ),
+        provider_type="postgres_hybrid",
+        capability_snapshot=adapter_snapshot,
+    )
+
+
 def create_knowledge_retrieval_run(
     session: Session,
     store: LocalArtifactStore,
@@ -1083,6 +1294,14 @@ def create_knowledge_retrieval_run(
     )
     filters = data.filters.model_dump(mode="json")
     validate_retrieval_input(data.query_text, filters)
+    adapter_config = active_knowledge_adapter_config(session, data.project_id, data.adapter_name)
+    configured_provider = (
+        "postgres_hybrid"
+        if adapter_config is not None
+        and adapter_config.provider_type == "postgres_hybrid"
+        and adapter_config.status in {"configured", "indexing", "ready", "degraded"}
+        else "deterministic_local"
+    )
     started_at = datetime.now(UTC)
     query_text_redacted = redact_retrieval_query(data.query_text)
     run = KnowledgeRetrievalRun(
@@ -1091,13 +1310,14 @@ def create_knowledge_retrieval_run(
         consumer_entity_type=data.consumer_entity_type,
         consumer_entity_id=data.consumer_entity_id,
         adapter_name=data.adapter_name,
-        provider_type="deterministic_local",
+        provider_type=configured_provider,
         requested_retrieval_mode=data.retrieval_mode,
         retrieval_mode=data.retrieval_mode,
         adapter_config_snapshot_json={
             "approved_only": data.approved_only,
             "limit": data.limit,
-            "scoring_version": "deterministic-normalized-v1",
+            "scoring_version": "provider-neutral-normalized-v1",
+            "provider_config": dict(adapter_config.config_json) if adapter_config is not None else {},
         },
         query_text_hash="sha256:" + hashlib.sha256(data.query_text.encode("utf-8")).hexdigest(),
         query_text_redacted=query_text_redacted,
@@ -1110,9 +1330,10 @@ def create_knowledge_retrieval_run(
     session.refresh(run)
     started_clock = time.perf_counter()
     try:
-        matches = match_test_knowledge_cards(
+        matches = match_configured_knowledge_cards(
             session,
             project_id=data.project_id,
+            adapter_name=data.adapter_name,
             query_text=(data.query_text if query_text_redacted != "[redacted]" else ""),
             limit=data.limit,
             approved_only=data.approved_only,
@@ -1120,6 +1341,7 @@ def create_knowledge_retrieval_run(
             retrieval_mode=data.retrieval_mode,
         )
         run.status = "normalizing"
+        run.provider_type = matches.provider_type
         run.retrieval_mode = matches.actual_mode
         run.candidate_count = matches.candidate_count
         run.degraded = matches.degraded
@@ -1129,6 +1351,7 @@ def create_knowledge_retrieval_run(
             "vector_available": matches.vector_available,
             "requested_retrieval_mode": data.retrieval_mode,
             "actual_retrieval_mode": matches.actual_mode,
+            **matches.capability_snapshot,
         }
         session.commit()
         session.refresh(run)

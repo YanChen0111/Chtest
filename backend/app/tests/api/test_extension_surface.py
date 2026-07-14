@@ -198,6 +198,57 @@ def test_update_knowledge_adapter_rejects_runtime_provider_config(
         assert session.query(KnowledgeAdapterConfig).count() == 0
 
 
+def test_update_postgres_hybrid_adapter_accepts_only_local_safe_config(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project = create_project(SessionLocal)
+    path = f"/api/projects/{project.id}/knowledge-adapter"
+
+    accepted = client.put(
+        path,
+        json_body={
+            "status": "ready",
+            "provider_type": "postgres_hybrid",
+            "config": {
+                "embedding_model": "deterministic-hashing-v1",
+                "embedding_dim": 64,
+                "text_search_config": "simple",
+                "hnsw_ef_search": 80,
+                "min_vector_similarity": 0.05,
+            },
+            "safety_policy": {
+                "same_project_only": True,
+                "require_allowed_for_prompt": True,
+            },
+        },
+    )
+    rejected = client.put(
+        path,
+        json_body={
+            "status": "ready",
+            "provider_type": "postgres_hybrid",
+            "config": {"api_key": "secret", "embedding_dim": 64},
+        },
+    )
+    invalid_dimension = client.put(
+        path,
+        json_body={
+            "status": "ready",
+            "provider_type": "postgres_hybrid",
+            "config": {"embedding_dim": "not-a-number"},
+        },
+    )
+
+    assert accepted.status_code == 200
+    assert accepted.json()["retrieval_mode"] == "hybrid"
+    assert accepted.json()["provider_type"] == "postgres_hybrid"
+    assert rejected.status_code == 422
+    assert rejected.json()["error_code"] == "KNOWLEDGE_ADAPTER_RUNTIME_NOT_ALLOWED"
+    assert invalid_dimension.status_code == 422
+    assert invalid_dimension.json()["error_code"] == "KNOWLEDGE_ADAPTER_RUNTIME_NOT_ALLOWED"
+
+
 def test_get_knowledge_base_lists_context_artifacts_and_usage(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:

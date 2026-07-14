@@ -900,6 +900,190 @@ def test_retrieval_run_records_real_vector_scores_and_stable_paging(
     assert second_page["items"][0]["id"] != first_page["items"][0]["id"]
 
 
+def test_postgres_hybrid_adapter_degrades_to_keyword_on_sqlite(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    project_id, _artifact_id, _requirement_id, _cards = create_approved_test_knowledge(client)
+    rebuild = client.post(
+        "/api/test-knowledge/index/rebuild",
+        {"project_id": project_id, "embedding_dim": 64},
+    )
+    assert rebuild.status_code == 201
+    configure = client.request(
+        "PUT",
+        f"/api/projects/{project_id}/knowledge-adapter",
+        {
+            "adapter_name": "default",
+            "status": "ready",
+            "provider_type": "postgres_hybrid",
+            "config": {
+                "embedding_model": "deterministic-hashing-v1",
+                "embedding_dim": 64,
+                "text_search_config": "simple",
+                "min_vector_similarity": 0.05,
+            },
+            "safety_policy": {
+                "same_project_only": True,
+                "require_allowed_for_prompt": True,
+            },
+        },
+    )
+    assert configure.status_code == 200
+
+    response = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": project_id,
+            "query_text": "expired coupon checkout",
+            "retrieval_mode": "hybrid",
+            "approved_only": True,
+            "limit": 5,
+        },
+    )
+
+    assert response.status_code == 201
+    run = response.json()
+    assert run["provider_type"] == "postgres_hybrid"
+    assert run["requested_retrieval_mode"] == "hybrid"
+    assert run["retrieval_mode"] == "keyword"
+    assert run["degraded"] is True
+    assert run["fallback_reason"] == "postgresql_unavailable"
+    assert run["adapter_config_snapshot"]["capabilities"]["postgresql"] is False
+    assert run["items"]
+    assert all(item["vector_score"] is None for item in run["items"])
+
+    secret_query = "password=postgres-secret-value"
+    redacted = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": project_id,
+            "query_text": secret_query,
+            "retrieval_mode": "hybrid",
+            "approved_only": True,
+            "limit": 5,
+        },
+    ).json()
+    assert redacted["query_text_redacted"] == "[redacted]"
+    assert redacted["items"] == []
+    assert redacted["fallback_reason"] == "query_redacted_or_empty"
+    assert secret_query not in json.dumps(redacted)
+
+
+def test_postgres_hybrid_native_result_normalizes_to_provider_neutral_evidence(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, SessionLocal = api_client
+    project_id, _artifact_id, _requirement_id, _cards = create_approved_test_knowledge(client)
+    assert client.post(
+        "/api/test-knowledge/index/rebuild",
+        {"project_id": project_id, "embedding_dim": 64},
+    ).status_code == 201
+    assert client.request(
+        "PUT",
+        f"/api/projects/{project_id}/knowledge-adapter",
+        {
+            "status": "ready",
+            "provider_type": "postgres_hybrid",
+            "config": {
+                "embedding_model": "deterministic-hashing-v1",
+                "embedding_dim": 64,
+            },
+        },
+    ).status_code == 200
+
+    capabilities = knowledge_service.postgres_adapter.PostgresKnowledgeCapabilities(
+        postgresql=True,
+        full_text=True,
+        full_text_index=True,
+        vector_extension=True,
+        vector_column=True,
+        vector_index=True,
+    )
+    monkeypatch.setattr(
+        knowledge_service.postgres_adapter,
+        "detect_capabilities",
+        lambda _session: capabilities,
+    )
+
+    with SessionLocal() as session:
+        card = session.scalar(
+            select(TestKnowledgeCardModel).where(
+                TestKnowledgeCardModel.project_id == uuid.UUID(project_id),
+                TestKnowledgeCardModel.status == "approved",
+            ),
+        )
+        assert card is not None
+        index_row = session.scalar(
+            select(TestKnowledgeEmbeddingIndex).where(
+                TestKnowledgeEmbeddingIndex.knowledge_card_id == card.id,
+            ),
+        )
+        assert index_row is not None
+        monkeypatch.setattr(
+            knowledge_service.postgres_adapter,
+            "search_postgres_knowledge",
+            lambda *_args, **_kwargs: [
+                knowledge_service.postgres_adapter.PostgresKnowledgeMatch(
+                    knowledge_card_id=card.id,
+                    keyword_score=0.6,
+                    vector_score=0.8,
+                    embedding_model=index_row.embedding_model,
+                    embedding_dim=index_row.embedding_dim,
+                    content_hash=index_row.content_hash,
+                ),
+            ],
+        )
+
+        result = knowledge_service.match_configured_knowledge_cards(
+            session,
+            project_id=uuid.UUID(project_id),
+            adapter_name="default",
+            query_text="expired coupon checkout",
+            limit=5,
+            approved_only=True,
+            filters={},
+            retrieval_mode="hybrid",
+        )
+        monkeypatch.setattr(
+            knowledge_service.postgres_adapter,
+            "search_postgres_knowledge",
+            lambda *_args, **_kwargs: [
+                knowledge_service.postgres_adapter.PostgresKnowledgeMatch(
+                    knowledge_card_id=card.id,
+                    keyword_score=0.6,
+                    vector_score=0.8,
+                    embedding_model=index_row.embedding_model,
+                    embedding_dim=32,
+                    content_hash=index_row.content_hash,
+                ),
+            ],
+        )
+        mismatched = knowledge_service.match_configured_knowledge_cards(
+            session,
+            project_id=uuid.UUID(project_id),
+            adapter_name="default",
+            query_text="expired coupon checkout",
+            limit=5,
+            approved_only=True,
+            filters={},
+            retrieval_mode="hybrid",
+        )
+
+    assert result.provider_type == "postgres_hybrid"
+    assert result.actual_mode == "hybrid"
+    assert result.degraded is False
+    assert result.vector_available is True
+    assert result.items[0]["keyword_score"] == 0.6
+    assert result.items[0]["vector_score"] == 0.8
+    assert result.items[0]["final_score"] == 0.7
+    assert "embedding_vector" not in result.items[0]
+    assert mismatched.items == []
+    assert mismatched.vector_available is False
+    assert mismatched.fallback_reason == "pgvector_unavailable"
+
+
 def test_unsafe_card_revokes_retrieval_evidence_display_and_download(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:
