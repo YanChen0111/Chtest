@@ -520,27 +520,20 @@ def test_requirement_review_attaches_deterministic_retrieval_evidence(
         assert evidence_artifact.metadata_json["retrieval_mode"] == "deterministic_local"
         assert evidence_artifact.metadata_json["used_context_artifact_ids"] == [context_id]
         assert evidence_artifact.metadata_json["result_count"] == 1
-        assert evidence_artifact.metadata_json["results"][0]["context_artifact_id"] == context_id
-        assert evidence_artifact.metadata_json["results"][0]["title"] == "coupon-api-notes.md"
-        assert "coupon" in evidence_artifact.metadata_json["results"][0]["matched_terms"]
-        assert "Coupon API Notes" in evidence_artifact.metadata_json["results"][0]["snippet"]
+        assert "results" not in evidence_artifact.metadata_json
+        assert evidence_artifact.metadata_json["query_text_hash"].startswith("sha256:")
 
         assert client.artifact_root is not None
         evidence = json.loads((client.artifact_root / evidence_artifact.file_path).read_text())
         assert evidence["retrieval_mode"] == "deterministic_local"
-        assert evidence["query_text"] == requirement["content"]
-        assert "coupon" in evidence["query_terms"]
-        assert evidence["used_knowledge"] is True
+        assert evidence["query_text_hash"].startswith("sha256:")
+        assert evidence["query_text_redacted"] == requirement["content"]
         assert evidence["used_context_artifact_ids"] == [context_id]
-        assert evidence["results"][0]["context_artifact_id"] == context_id
-        assert evidence["results"][0]["title"] == "coupon-api-notes.md"
-        assert evidence["results"][0]["source_ref"] == "manual:coupon-api-notes.md"
-        assert evidence["results"][0]["score"] >= 1
-        assert "coupon" in evidence["results"][0]["matched_terms"]
-        assert "Coupon API Notes" in evidence["results"][0]["snippet"]
-        assert evidence["results"][0]["sha256"].startswith("sha256:")
-        assert evidence["results"][0]["allowed_for_prompt"] is True
-        assert evidence["results"][0]["redaction_applied"] is False
+        assert evidence["result_refs"][0]["context_artifact_id"] == context_id
+        assert evidence["result_refs"][0]["score"] >= 1
+        assert evidence["result_refs"][0]["matched_term_count"] > 0
+        assert "Coupon API Notes" not in json.dumps(evidence)
+        assert "Expired coupon checkout" not in json.dumps(evidence)
 
 
 def test_requirement_review_uses_approved_test_knowledge_cards_without_legacy_adapter(
@@ -599,9 +592,142 @@ def test_requirement_review_uses_approved_test_knowledge_cards_without_legacy_ad
         assert retrieval["results"][0]["knowledge_card_id"] == extracted_card["id"]
         evidence_artifact = session.get(Artifact, uuid.UUID(ai_task.output_json["retrieval_evidence_artifact_id"]))
         assert evidence_artifact is not None
-        assert evidence_artifact.metadata_json["created_by_component"] == "TestKnowledgeHybridRetriever"
-        assert evidence_artifact.metadata_json["retrieval_mode"] == "test_knowledge_hybrid"
-        assert evidence_artifact.metadata_json["results"][0]["knowledge_card_id"] == extracted_card["id"]
+        assert evidence_artifact.owner_entity_type == "KnowledgeRetrievalRun"
+        assert evidence_artifact.owner_entity_id == uuid.UUID(retrieval["knowledge_retrieval_run_id"])
+        assert evidence_artifact.metadata_json["created_by_component"] == "KnowledgeRetrievalService"
+        assert evidence_artifact.metadata_json["retrieval_mode"] == "keyword"
+        assert "results" not in evidence_artifact.metadata_json
+
+
+def test_requirement_review_does_not_bypass_unsafe_card_through_legacy_adapter(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    context_id = create_context_artifact(
+        client,
+        requirement["project_id"],
+        content="# Coupon Boundary\nExpired coupons cannot be used during checkout.",
+    )
+    configure_deterministic_adapter(SessionLocal, requirement["project_id"])
+    extracted_card = client.post(
+        "/api/test-knowledge/cards/extract",
+        json_body={
+            "project_id": requirement["project_id"],
+            "source_artifact_id": context_id,
+        },
+    ).json()["items"][0]
+    approve = client.request(
+        "PATCH",
+        f"/api/test-knowledge/cards/{extracted_card['id']}",
+        json_body={"project_id": requirement["project_id"], "status": "approved"},
+    )
+    assert approve.status_code == 200
+    unsafe = client.request(
+        "PATCH",
+        f"/api/test-knowledge/cards/{extracted_card['id']}",
+        json_body={
+            "project_id": requirement["project_id"],
+            "status": "unsafe",
+            "review_comment": "The governed card content is no longer safe.",
+        },
+    )
+    assert unsafe.status_code == 200
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": True,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    assert response.json()["used_knowledge"] is False
+    assert response.json()["used_context_artifact_ids"] == []
+    with SessionLocal() as session:
+        source_artifact = session.get(Artifact, uuid.UUID(context_id))
+        assert source_artifact is not None
+        assert source_artifact.metadata_json["safe_to_show"] is True
+        assert source_artifact.metadata_json["allowed_for_prompt"] is True
+
+
+def test_requirement_review_mixed_retrieval_writes_reference_manifest(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    requirement = create_requirement(client)
+    governed_context_id = create_context_artifact(
+        client,
+        requirement["project_id"],
+        title="governed-coupon-rule.md",
+        content="# Coupon Rule\nExpired coupons cannot be used during checkout.",
+    )
+    adapter_context_id = create_context_artifact(
+        client,
+        requirement["project_id"],
+        title="checkout-observability.md",
+        content="# Checkout Coupon Logs\nCoupon checkout rejection logs include the validation reason.",
+    )
+    configure_deterministic_adapter(SessionLocal, requirement["project_id"])
+    extracted = client.post(
+        "/api/test-knowledge/cards/extract",
+        json_body={
+            "project_id": requirement["project_id"],
+            "source_artifact_id": governed_context_id,
+        },
+    ).json()["items"]
+    for card in extracted:
+        approval = client.request(
+            "PATCH",
+            f"/api/test-knowledge/cards/{card['id']}",
+            json_body={"project_id": requirement["project_id"], "status": "approved"},
+        )
+        assert approval.status_code == 200
+
+    response = client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": True,
+            "context_artifact_ids": [],
+        },
+    )
+    assert response.status_code == 202
+    assert set(response.json()["used_context_artifact_ids"]) == {
+        governed_context_id,
+        adapter_context_id,
+    }
+
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(response.json()["ai_task_id"]))
+        assert ai_task is not None
+        manifest = session.get(Artifact, uuid.UUID(ai_task.output_json["retrieval_evidence_artifact_id"]))
+        assert manifest is not None
+        assert manifest.owner_entity_type == "AITask"
+        assert manifest.metadata_json["created_by_component"] == "KnowledgeRetrievalReferenceManifest"
+        canonical_ids = manifest.metadata_json["canonical_artifact_ids"]
+        assert len(canonical_ids) == 1
+        canonical = session.get(Artifact, uuid.UUID(canonical_ids[0]))
+        assert canonical is not None
+        assert canonical.owner_entity_type == "KnowledgeRetrievalRun"
+        assert client.artifact_root is not None
+        payload = json.loads((client.artifact_root / manifest.file_path).read_text(encoding="utf-8"))
+        assert payload["result_refs"][0]["context_artifact_id"] == adapter_context_id
+        assert payload["knowledge_evidence_refs"]
+        assert payload["canonical_artifact_ids"] == canonical_ids
+        assert '"snippet"' not in json.dumps(payload)
+        assert "governed-coupon-rule.md" not in json.dumps(payload)
+        assert "Coupon checkout rejection logs" not in json.dumps(payload)
 
 
 def test_requirement_review_merges_explicit_and_retrieved_context_ids(

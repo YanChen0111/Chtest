@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import re
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -15,10 +16,12 @@ from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime import service as ai_runtime_service
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
-from backend.app.modules.ai_runtime.models import Artifact
-from backend.app.modules.cases.models import GeneratedCaseCandidate, TestCase
+from backend.app.modules.ai_runtime.models import AITask, Artifact
+from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
 from backend.app.modules.knowledge.models import (
+    KnowledgeEvidence,
     KnowledgeIngestionRun,
+    KnowledgeRetrievalRun,
     TestKnowledgeCard,
     TestKnowledgeEmbeddingIndex,
 )
@@ -26,6 +29,10 @@ from backend.app.modules.knowledge.schemas import (
     KnowledgeIngestionArtifactRead,
     KnowledgeIngestionRunCreateRequest,
     KnowledgeIngestionRunRead,
+    KnowledgeEvidenceRead,
+    KnowledgeRetrievalArtifactRead,
+    KnowledgeRetrievalRunCreateRequest,
+    KnowledgeRetrievalRunRead,
     TestKnowledgeCardRead,
 )
 from backend.app.modules.projects.models import Project
@@ -59,6 +66,9 @@ INGESTION_EVIDENCE_FILES = {
     "knowledge_safety_result": "safety-result.json",
     "error_json": "error.json",
 }
+RETRIEVAL_QUERY_SECRET_PATTERN = re.compile(
+    r"(?i)\b(password|token|secret|api[_-]?key|authorization|cookie)\s*[:=]",
+)
 ALLOWED_CARD_TRANSITIONS = {
     "extracted": {"approved", "stale", "unsafe", "duplicate", "archived"},
     "approved": {"stale", "unsafe", "duplicate", "archived"},
@@ -86,6 +96,18 @@ class KnowledgeIngestionConfigNotAllowedError(Exception):
 
 
 class KnowledgeIngestionRunNotFoundError(Exception):
+    pass
+
+
+class KnowledgeRetrievalRunNotFoundError(Exception):
+    pass
+
+
+class KnowledgeRetrievalConsumerNotAllowedError(Exception):
+    pass
+
+
+class KnowledgeRetrievalInputNotAllowedError(Exception):
     pass
 
 
@@ -131,6 +153,23 @@ class KnowledgeIndexRebuildResult:
 @dataclass(frozen=True)
 class KnowledgeIngestionRunPage:
     items: list[KnowledgeIngestionRun]
+    total: int
+    next_cursor: str | None
+
+
+@dataclass(frozen=True)
+class KnowledgeMatchResult:
+    candidate_count: int
+    items: list[dict[str, Any]]
+    vector_available: bool
+    actual_mode: str
+    degraded: bool
+    fallback_reason: str | None
+
+
+@dataclass(frozen=True)
+class KnowledgeRetrievalRunPage:
+    items: list[KnowledgeRetrievalRun]
     total: int
     next_cursor: str | None
 
@@ -790,6 +829,7 @@ def review_test_knowledge_card(
     elif status == "unsafe":
         card.allowed_for_prompt = False
         card.safe_to_show = False
+        revoke_retrieval_artifact_access_for_card(session, card)
     sync_embedding_indexes_for_card_review(session, card)
     append_review_history(
         session,
@@ -832,6 +872,43 @@ def complete_ingestion_run_after_review(
     if remaining_extracted == 0:
         run.status = "completed"
         run.completed_at = reviewed_at
+
+
+def revoke_retrieval_artifact_access_for_card(
+    session: Session,
+    card: TestKnowledgeCard,
+) -> None:
+    canonical_artifact_ids = set(
+        session.scalars(
+            select(KnowledgeRetrievalRun.evidence_artifact_id)
+            .join(KnowledgeEvidence, KnowledgeEvidence.retrieval_run_id == KnowledgeRetrievalRun.id)
+            .where(
+                KnowledgeEvidence.project_id == card.project_id,
+                KnowledgeEvidence.knowledge_card_id == card.id,
+                KnowledgeRetrievalRun.evidence_artifact_id.is_not(None),
+            ),
+        ),
+    )
+    artifacts = list(
+        session.scalars(
+            select(Artifact).where(
+                Artifact.project_id == card.project_id,
+                Artifact.artifact_type == "knowledge_retrieval",
+            ),
+        ),
+    )
+    for artifact in artifacts:
+        legacy_match = any(
+            isinstance(result, dict)
+            and str(result.get("knowledge_card_id", "")) == str(card.id)
+            for result in (artifact.metadata_json or {}).get("results", [])
+        )
+        if artifact.id not in canonical_artifact_ids and not legacy_match:
+            continue
+        metadata = dict(artifact.metadata_json or {})
+        metadata["safe_to_show"] = False
+        metadata["access_revoked_reason"] = "knowledge_card_marked_unsafe"
+        artifact.metadata_json = metadata
 
 
 def sync_embedding_indexes_for_card_review(session: Session, card: TestKnowledgeCard) -> None:
@@ -985,6 +1062,833 @@ def list_test_knowledge_index(session: Session, project_id: uuid.UUID) -> dict[s
     }
 
 
+def create_knowledge_retrieval_run(
+    session: Session,
+    store: LocalArtifactStore,
+    data: KnowledgeRetrievalRunCreateRequest,
+    *,
+    ai_task_id: uuid.UUID | None = None,
+) -> KnowledgeRetrievalRun:
+    if session.get(Project, data.project_id) is None:
+        raise ProjectNotFoundError
+    if ai_task_id is not None:
+        ai_task = session.get(AITask, ai_task_id)
+        if ai_task is None or ai_task.project_id != data.project_id:
+            raise KnowledgeRetrievalConsumerNotAllowedError
+    validate_retrieval_consumer(
+        session,
+        project_id=data.project_id,
+        consumer_entity_type=data.consumer_entity_type,
+        consumer_entity_id=data.consumer_entity_id,
+    )
+    filters = data.filters.model_dump(mode="json")
+    validate_retrieval_input(data.query_text, filters)
+    started_at = datetime.now(UTC)
+    query_text_redacted = redact_retrieval_query(data.query_text)
+    run = KnowledgeRetrievalRun(
+        project_id=data.project_id,
+        ai_task_id=ai_task_id,
+        consumer_entity_type=data.consumer_entity_type,
+        consumer_entity_id=data.consumer_entity_id,
+        adapter_name=data.adapter_name,
+        provider_type="deterministic_local",
+        requested_retrieval_mode=data.retrieval_mode,
+        retrieval_mode=data.retrieval_mode,
+        adapter_config_snapshot_json={
+            "approved_only": data.approved_only,
+            "limit": data.limit,
+            "scoring_version": "deterministic-normalized-v1",
+        },
+        query_text_hash="sha256:" + hashlib.sha256(data.query_text.encode("utf-8")).hexdigest(),
+        query_text_redacted=query_text_redacted,
+        filters_json=filters,
+        status="retrieving",
+        started_at=started_at,
+    )
+    session.add(run)
+    session.commit()
+    session.refresh(run)
+    started_clock = time.perf_counter()
+    try:
+        matches = match_test_knowledge_cards(
+            session,
+            project_id=data.project_id,
+            query_text=(data.query_text if query_text_redacted != "[redacted]" else ""),
+            limit=data.limit,
+            approved_only=data.approved_only,
+            filters=filters,
+            retrieval_mode=data.retrieval_mode,
+        )
+        run.status = "normalizing"
+        run.retrieval_mode = matches.actual_mode
+        run.candidate_count = matches.candidate_count
+        run.degraded = matches.degraded
+        run.fallback_reason = matches.fallback_reason
+        run.adapter_config_snapshot_json = {
+            **run.adapter_config_snapshot_json,
+            "vector_available": matches.vector_available,
+            "requested_retrieval_mode": data.retrieval_mode,
+            "actual_retrieval_mode": matches.actual_mode,
+        }
+        session.commit()
+        session.refresh(run)
+
+        evidence_rows = persist_knowledge_evidence_rows(session, run, matches.items)
+        evidence_payload = [knowledge_evidence_to_payload(session, row) for row in evidence_rows]
+        artifact = write_retrieval_artifact(
+            session,
+            store,
+            run,
+            results=evidence_payload,
+        )
+        run.evidence_count = len(evidence_rows)
+        run.evidence_artifact_id = artifact.id
+        run.latency_ms = max(0, round((time.perf_counter() - started_clock) * 1000))
+        run.status = "completed"
+        run.completed_at = datetime.now(UTC)
+        session.commit()
+        session.refresh(run)
+        return run
+    except Exception:
+        session.rollback()
+        mark_retrieval_run_failed(session, run.id)
+        raise
+
+
+def retrieve_and_persist_test_knowledge_evidence(
+    session: Session,
+    store: LocalArtifactStore,
+    *,
+    project_id: uuid.UUID,
+    query_text: str,
+    limit: int = 5,
+    approved_only: bool = True,
+    consumer_entity_type: str | None = None,
+    consumer_entity_id: uuid.UUID | None = None,
+    ai_task_id: uuid.UUID | None = None,
+) -> tuple[KnowledgeRetrievalRun, list[dict[str, Any]]]:
+    run = create_knowledge_retrieval_run(
+        session,
+        store,
+        KnowledgeRetrievalRunCreateRequest(
+            project_id=project_id,
+            query_text=query_text,
+            consumer_entity_type=consumer_entity_type,
+            consumer_entity_id=consumer_entity_id,
+            retrieval_mode="hybrid",
+            approved_only=approved_only,
+            limit=limit,
+        ),
+        ai_task_id=ai_task_id,
+    )
+    run_read = knowledge_retrieval_run_to_read(session, run)
+    return run, [knowledge_evidence_to_legacy(item) for item in run_read.items]
+
+
+def link_retrieval_run_to_ai_task(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    retrieval_payload: dict[str, Any] | None,
+    ai_task_id: uuid.UUID,
+) -> None:
+    if not retrieval_payload:
+        return
+    raw_run_id = retrieval_payload.get("created_knowledge_retrieval_run_id") or retrieval_payload.get(
+        "knowledge_retrieval_run_id",
+    )
+    if not raw_run_id:
+        return
+    try:
+        run_id = uuid.UUID(str(raw_run_id))
+    except ValueError:
+        return
+    run = session.get(KnowledgeRetrievalRun, run_id)
+    if run is not None and run.project_id == project_id:
+        run.ai_task_id = ai_task_id
+
+
+def validate_retrieval_consumer(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    consumer_entity_type: str | None,
+    consumer_entity_id: uuid.UUID | None,
+) -> None:
+    if consumer_entity_type is None and consumer_entity_id is None:
+        return
+    if consumer_entity_type is None or consumer_entity_id is None:
+        raise KnowledgeRetrievalConsumerNotAllowedError
+    if consumer_entity_type == "Requirement":
+        from backend.app.modules.requirements.models import Requirement
+
+        entity = session.get(Requirement, consumer_entity_id)
+    elif consumer_entity_type == "CaseGenerationTask":
+        entity = session.get(CaseGenerationTask, consumer_entity_id)
+    elif consumer_entity_type == "TestCase":
+        entity = session.get(TestCase, consumer_entity_id)
+    elif consumer_entity_type == "AutomationPlan":
+        from backend.app.modules.automation.models import AutomationPlan
+
+        entity = session.get(AutomationPlan, consumer_entity_id)
+    elif consumer_entity_type == "AITask":
+        entity = session.get(AITask, consumer_entity_id)
+    else:
+        raise KnowledgeRetrievalConsumerNotAllowedError
+    if entity is None or entity.project_id != project_id:
+        raise KnowledgeRetrievalConsumerNotAllowedError
+
+
+def validate_retrieval_input(query_text: str, filters: dict[str, Any]) -> None:
+    serialized_filters = json.dumps(filters, ensure_ascii=False, sort_keys=True)
+    if (
+        config_snapshot_contains_secret(filters)
+        or ai_runtime_service.has_high_risk_secret(serialized_filters)
+        or "://" in serialized_filters
+        or re.search(r"(?i)\b[A-Z]:[\\/]", serialized_filters)
+    ):
+        raise KnowledgeRetrievalInputNotAllowedError
+    if len(query_text.encode("utf-8")) > 8_000:
+        raise KnowledgeRetrievalInputNotAllowedError
+
+
+def redact_retrieval_query(query_text: str) -> str:
+    if RETRIEVAL_QUERY_SECRET_PATTERN.search(query_text) or ai_runtime_service.has_high_risk_secret(query_text):
+        return "[redacted]"
+    return query_text[:500]
+
+
+def persist_knowledge_evidence_rows(
+    session: Session,
+    run: KnowledgeRetrievalRun,
+    matches: list[dict[str, Any]],
+) -> list[KnowledgeEvidence]:
+    rows: list[KnowledgeEvidence] = []
+    for match in matches:
+        card = session.get(TestKnowledgeCard, uuid.UUID(str(match["knowledge_card_id"])))
+        if (
+            card is None
+            or card.project_id != run.project_id
+            or str(card.source_artifact_id) != str(match["source_artifact_id"])
+        ):
+            raise KnowledgeRetrievalInputNotAllowedError
+        source_artifact = session.get(Artifact, card.source_artifact_id)
+        if source_artifact is None or source_artifact.project_id != run.project_id:
+            raise KnowledgeRetrievalInputNotAllowedError
+        row = KnowledgeEvidence(
+            project_id=run.project_id,
+            retrieval_run_id=run.id,
+            knowledge_card_id=card.id,
+            source_artifact_id=card.source_artifact_id,
+            snippet=card.content[:320],
+            source_locator_json=dict(card.source_locator_json or {}),
+            metadata_score=float(match["metadata_score"]),
+            keyword_score=float(match["keyword_score"]),
+            vector_score=(
+                float(match["vector_score"])
+                if match.get("vector_score") is not None
+                else None
+            ),
+            rerank_score=None,
+            final_score=float(match["final_score"]),
+            matched_terms_json=list(match.get("matched_terms", []))[:50],
+            retrieval_reason=str(match["retrieval_reason"])[:500],
+            card_status_snapshot=card.status,
+            safe_to_show=card.safe_to_show,
+            allowed_for_prompt=card.allowed_for_prompt,
+        )
+        session.add(row)
+        rows.append(row)
+    session.flush()
+    return rows
+
+
+def write_retrieval_artifact(
+    session: Session,
+    store: LocalArtifactStore,
+    run: KnowledgeRetrievalRun,
+    *,
+    results: list[dict[str, Any]],
+) -> Artifact:
+    payload = {
+        "knowledge_retrieval_run_id": str(run.id),
+        "project_id": str(run.project_id),
+        "adapter_name": run.adapter_name,
+        "provider_type": run.provider_type,
+        "requested_retrieval_mode": run.requested_retrieval_mode,
+        "retrieval_mode": run.retrieval_mode,
+        "adapter_config_snapshot": run.adapter_config_snapshot_json,
+        "query_text_hash": run.query_text_hash,
+        "query_text_redacted": run.query_text_redacted,
+        "filters": run.filters_json,
+        "candidate_count": run.candidate_count,
+        "evidence_count": len(results),
+        "degraded": run.degraded,
+        "fallback_reason": run.fallback_reason,
+        "results": results,
+    }
+    content = (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n").encode("utf-8")
+    file_path = f"projects/{run.project_id}/knowledge-retrieval-runs/{run.id}/retrieval.json"
+    write_result = store.write_bytes(file_path, content)
+    artifact = Artifact(
+        project_id=run.project_id,
+        owner_entity_type="KnowledgeRetrievalRun",
+        owner_entity_id=run.id,
+        artifact_type="knowledge_retrieval",
+        file_path=write_result.file_path,
+        mime_type="application/json",
+        size_bytes=write_result.size_bytes,
+        sha256=write_result.sha256,
+        metadata_json={
+            "created_by_component": "KnowledgeRetrievalService",
+            "source_entity_type": "KnowledgeRetrievalRun",
+            "source_entity_id": str(run.id),
+            "query_text_hash": run.query_text_hash,
+            "provider_type": run.provider_type,
+            "retrieval_mode": run.retrieval_mode,
+            "candidate_count": run.candidate_count,
+            "evidence_count": len(results),
+            "degraded": run.degraded,
+            "safe_to_show": True,
+            "redaction_applied": run.query_text_redacted == "[redacted]",
+            "description": "Normalized knowledge retrieval evidence",
+        },
+    )
+    session.add(artifact)
+    session.flush()
+    return artifact
+
+
+def mark_retrieval_run_failed(session: Session, run_id: uuid.UUID) -> None:
+    run = session.get(KnowledgeRetrievalRun, run_id)
+    if run is None:
+        return
+    run.status = "failed"
+    run.error_code = "KNOWLEDGE_RETRIEVAL_FAILED"
+    run.error_message = "Knowledge retrieval failed before normalized evidence was completed."
+    run.completed_at = datetime.now(UTC)
+    session.commit()
+
+
+def get_knowledge_retrieval_run(session: Session, run_id: uuid.UUID) -> KnowledgeRetrievalRun:
+    run = session.get(KnowledgeRetrievalRun, run_id)
+    if run is None:
+        raise KnowledgeRetrievalRunNotFoundError
+    return run
+
+
+def list_knowledge_retrieval_runs(
+    session: Session,
+    project_id: uuid.UUID,
+    *,
+    status: str | None = None,
+    provider_type: str | None = None,
+    consumer_entity_type: str | None = None,
+    consumer_entity_id: uuid.UUID | None = None,
+    limit: int = 50,
+    cursor: uuid.UUID | None = None,
+) -> KnowledgeRetrievalRunPage:
+    if session.get(Project, project_id) is None:
+        raise ProjectNotFoundError
+    filters = [KnowledgeRetrievalRun.project_id == project_id]
+    if status:
+        filters.append(KnowledgeRetrievalRun.status == status)
+    if provider_type:
+        filters.append(KnowledgeRetrievalRun.provider_type == provider_type)
+    if consumer_entity_type:
+        filters.append(KnowledgeRetrievalRun.consumer_entity_type == consumer_entity_type)
+    if consumer_entity_id:
+        filters.append(KnowledgeRetrievalRun.consumer_entity_id == consumer_entity_id)
+    total = session.scalar(select(func.count(KnowledgeRetrievalRun.id)).where(*filters)) or 0
+    page_filters = list(filters)
+    if cursor is not None:
+        cursor_run = session.get(KnowledgeRetrievalRun, cursor)
+        if (
+            cursor_run is None
+            or cursor_run.project_id != project_id
+            or (status is not None and cursor_run.status != status)
+            or (provider_type is not None and cursor_run.provider_type != provider_type)
+            or (
+                consumer_entity_type is not None
+                and cursor_run.consumer_entity_type != consumer_entity_type
+            )
+            or (
+                consumer_entity_id is not None
+                and cursor_run.consumer_entity_id != consumer_entity_id
+            )
+        ):
+            raise KnowledgeRetrievalRunNotFoundError
+        cursor_created_at = (
+            select(KnowledgeRetrievalRun.created_at)
+            .where(KnowledgeRetrievalRun.id == cursor)
+            .scalar_subquery()
+        )
+        page_filters.append(
+            or_(
+                KnowledgeRetrievalRun.created_at < cursor_created_at,
+                and_(
+                    KnowledgeRetrievalRun.created_at == cursor_created_at,
+                    KnowledgeRetrievalRun.id < cursor_run.id,
+                ),
+            ),
+        )
+    rows = list(
+        session.scalars(
+            select(KnowledgeRetrievalRun).where(*page_filters).order_by(
+                KnowledgeRetrievalRun.created_at.desc(),
+                KnowledgeRetrievalRun.id.desc(),
+            ).limit(limit + 1),
+        ),
+    )
+    has_more = len(rows) > limit
+    items = rows[:limit]
+    return KnowledgeRetrievalRunPage(
+        items=items,
+        total=total,
+        next_cursor=str(items[-1].id) if has_more and items else None,
+    )
+
+
+def knowledge_retrieval_run_to_read(
+    session: Session,
+    run: KnowledgeRetrievalRun,
+) -> KnowledgeRetrievalRunRead:
+    return knowledge_retrieval_runs_to_read(session, [run])[0]
+
+
+def knowledge_retrieval_runs_to_read(
+    session: Session,
+    runs: list[KnowledgeRetrievalRun],
+) -> list[KnowledgeRetrievalRunRead]:
+    if not runs:
+        return []
+    run_ids = [run.id for run in runs]
+    evidence_by_run: dict[uuid.UUID, list[KnowledgeEvidence]] = {run_id: [] for run_id in run_ids}
+    evidence_rows = list(
+        session.scalars(
+            select(KnowledgeEvidence)
+            .where(KnowledgeEvidence.retrieval_run_id.in_(run_ids))
+            .order_by(
+                KnowledgeEvidence.retrieval_run_id.asc(),
+                KnowledgeEvidence.final_score.desc(),
+                KnowledgeEvidence.knowledge_card_id.asc(),
+            ),
+        ),
+    )
+    for row in evidence_rows:
+        evidence_by_run[row.retrieval_run_id].append(row)
+    card_ids = {row.knowledge_card_id for row in evidence_rows}
+    cards_by_id = {
+        card.id: card
+        for card in session.scalars(select(TestKnowledgeCard).where(TestKnowledgeCard.id.in_(card_ids)))
+    } if card_ids else {}
+    evidence_artifact_ids = {
+        run.evidence_artifact_id
+        for run in runs
+        if run.evidence_artifact_id is not None
+    }
+    artifacts_by_owner_and_id = {
+        (artifact.owner_entity_id, artifact.id): artifact
+        for artifact in session.scalars(
+            select(Artifact).where(
+                Artifact.id.in_(evidence_artifact_ids),
+                Artifact.owner_entity_type == "KnowledgeRetrievalRun",
+                Artifact.owner_entity_id.in_(run_ids),
+                Artifact.project_id.in_({run.project_id for run in runs}),
+            ),
+        )
+    } if evidence_artifact_ids else {}
+    return [
+        _knowledge_retrieval_run_read(
+            run,
+            evidence_rows=evidence_by_run[run.id],
+            cards_by_id=cards_by_id,
+            artifacts_by_owner_and_id=artifacts_by_owner_and_id,
+        )
+        for run in runs
+    ]
+
+
+def _knowledge_retrieval_run_read(
+    run: KnowledgeRetrievalRun,
+    *,
+    evidence_rows: list[KnowledgeEvidence],
+    cards_by_id: dict[uuid.UUID, TestKnowledgeCard],
+    artifacts_by_owner_and_id: dict[tuple[uuid.UUID, uuid.UUID], Artifact],
+) -> KnowledgeRetrievalRunRead:
+    artifact = (
+        artifacts_by_owner_and_id.get((run.id, run.evidence_artifact_id))
+        if run.evidence_artifact_id is not None
+        else None
+    )
+    evidence_artifact_read = None
+    artifact_currently_safe = all(
+        row.safe_to_show
+        and (card := cards_by_id.get(row.knowledge_card_id)) is not None
+        and card.safe_to_show
+        for row in evidence_rows
+    )
+    if (
+        artifact is not None
+        and artifact.metadata_json.get("safe_to_show") is True
+        and artifact_currently_safe
+    ):
+        evidence_artifact_read = KnowledgeRetrievalArtifactRead(
+            id=artifact.id,
+            artifact_type=artifact.artifact_type,
+            mime_type=artifact.mime_type,
+            size_bytes=artifact.size_bytes,
+            sha256=artifact.sha256,
+            safe_to_show=True,
+            download_url=f"/api/artifacts/{artifact.id}/download",
+        )
+    return KnowledgeRetrievalRunRead(
+        id=run.id,
+        project_id=run.project_id,
+        ai_task_id=run.ai_task_id,
+        consumer_entity_type=run.consumer_entity_type,
+        consumer_entity_id=run.consumer_entity_id,
+        adapter_name=run.adapter_name,
+        provider_type=run.provider_type,
+        requested_retrieval_mode=run.requested_retrieval_mode,
+        retrieval_mode=run.retrieval_mode,
+        adapter_config_snapshot=run.adapter_config_snapshot_json,
+        query_text_hash=run.query_text_hash,
+        query_text_redacted=run.query_text_redacted,
+        filters=run.filters_json,
+        status=run.status,
+        candidate_count=run.candidate_count,
+        evidence_count=run.evidence_count,
+        latency_ms=run.latency_ms,
+        degraded=run.degraded,
+        fallback_reason=run.fallback_reason,
+        error_code=run.error_code,
+        error_message=run.error_message,
+        evidence_artifact_id=run.evidence_artifact_id,
+        evidence_artifact=evidence_artifact_read,
+        items=[_knowledge_evidence_read(row, cards_by_id.get(row.knowledge_card_id)) for row in evidence_rows],
+        started_at=run.started_at,
+        completed_at=run.completed_at,
+        created_at=run.created_at,
+        updated_at=run.updated_at,
+    )
+
+
+def knowledge_evidence_to_read(session: Session, row: KnowledgeEvidence) -> KnowledgeEvidenceRead:
+    return _knowledge_evidence_read(row, session.get(TestKnowledgeCard, row.knowledge_card_id))
+
+
+def _knowledge_evidence_read(
+    row: KnowledgeEvidence,
+    card: TestKnowledgeCard | None,
+) -> KnowledgeEvidenceRead:
+    currently_safe = row.safe_to_show and card is not None and card.safe_to_show
+    currently_prompt_eligible = (
+        row.card_status_snapshot == "approved"
+        and row.safe_to_show
+        and row.allowed_for_prompt
+        and card is not None
+        and card.status == "approved"
+        and card.safe_to_show
+        and card.allowed_for_prompt
+    )
+    return KnowledgeEvidenceRead(
+        id=row.id,
+        project_id=row.project_id,
+        retrieval_run_id=row.retrieval_run_id,
+        knowledge_card_id=row.knowledge_card_id,
+        source_artifact_id=row.source_artifact_id,
+        knowledge_type=card.knowledge_type if currently_safe and card is not None else "restricted",
+        title=card.title if currently_safe and card is not None else "Restricted knowledge evidence",
+        snippet=row.snippet if currently_safe else "[redacted]",
+        source_locator=row.source_locator_json,
+        metadata_score=row.metadata_score,
+        keyword_score=row.keyword_score,
+        vector_score=row.vector_score,
+        rerank_score=row.rerank_score,
+        final_score=row.final_score,
+        matched_terms=[str(item) for item in row.matched_terms_json],
+        retrieval_reason=row.retrieval_reason,
+        card_status_snapshot=row.card_status_snapshot,
+        current_card_status=card.status if card is not None else "missing",
+        safe_to_show=currently_safe,
+        allowed_for_prompt=(
+            row.allowed_for_prompt
+            and card is not None
+            and card.safe_to_show
+            and card.allowed_for_prompt
+        ),
+        currently_prompt_eligible=currently_prompt_eligible,
+    )
+
+
+def knowledge_evidence_to_payload(session: Session, row: KnowledgeEvidence) -> dict[str, Any]:
+    return knowledge_evidence_to_read(session, row).model_dump(mode="json")
+
+
+def knowledge_evidence_to_legacy(item: KnowledgeEvidenceRead) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "evidence_id": str(item.id),
+        "knowledge_evidence_id": str(item.id),
+        "knowledge_retrieval_run_id": str(item.retrieval_run_id),
+        "knowledge_card_id": str(item.knowledge_card_id),
+        "source_artifact_id": str(item.source_artifact_id),
+        "knowledge_type": item.knowledge_type,
+        "title": item.title,
+        "snippet": item.snippet,
+        "source_locator": item.source_locator,
+        "score": max(1, round(item.final_score * 10)) if item.final_score > 0 else 0,
+        "metadata_score": item.metadata_score,
+        "keyword_score": item.keyword_score,
+        "vector_score": item.vector_score,
+        "final_score": item.final_score,
+        "matched_terms": item.matched_terms,
+        "retrieval_reason": item.retrieval_reason,
+        "safe_to_show": item.safe_to_show,
+        "allowed_for_prompt": item.allowed_for_prompt,
+        "status": item.card_status_snapshot,
+        "current_card_status": item.current_card_status,
+        "currently_prompt_eligible": item.currently_prompt_eligible,
+    }
+    if item.vector_score is not None:
+        payload["semantic_score"] = item.vector_score
+        payload["embedding_model"] = DEFAULT_EMBEDDING_MODEL
+    return payload
+
+
+def resolve_knowledge_evidence_artifact_refs(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    items: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    refs: list[dict[str, str]] = []
+    seen_evidence_ids: set[uuid.UUID] = set()
+    for item in items:
+        if not item.get("knowledge_card_id"):
+            continue
+        raw_evidence_id = item.get("knowledge_evidence_id") or item.get("evidence_id")
+        raw_run_id = item.get("knowledge_retrieval_run_id")
+        if not raw_evidence_id or not raw_run_id:
+            raise KnowledgeRetrievalInputNotAllowedError
+        try:
+            evidence_id = uuid.UUID(str(raw_evidence_id))
+            run_id = uuid.UUID(str(raw_run_id))
+        except ValueError as exc:
+            raise KnowledgeRetrievalInputNotAllowedError from exc
+        if evidence_id in seen_evidence_ids:
+            continue
+        row = session.get(KnowledgeEvidence, evidence_id)
+        run = session.get(KnowledgeRetrievalRun, run_id)
+        artifact = session.get(Artifact, run.evidence_artifact_id) if run is not None else None
+        if (
+            row is None
+            or row.project_id != project_id
+            or row.retrieval_run_id != run_id
+            or str(row.knowledge_card_id) != str(item.get("knowledge_card_id"))
+            or run is None
+            or run.project_id != project_id
+            or run.status != "completed"
+            or artifact is None
+            or artifact.project_id != project_id
+            or artifact.owner_entity_type != "KnowledgeRetrievalRun"
+            or artifact.owner_entity_id != run.id
+            or artifact.metadata_json.get("safe_to_show") is not True
+        ):
+            raise KnowledgeRetrievalInputNotAllowedError
+        refs.append(
+            {
+                "knowledge_evidence_id": str(row.id),
+                "knowledge_retrieval_run_id": str(run.id),
+                "knowledge_card_id": str(row.knowledge_card_id),
+                "canonical_artifact_id": str(artifact.id),
+            },
+        )
+        seen_evidence_ids.add(evidence_id)
+    return refs
+
+
+def verified_prompt_evidence_refs(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    retrieval_run_id: uuid.UUID,
+    evidence_ids: list[uuid.UUID],
+) -> list[dict[str, Any]]:
+    if not evidence_ids:
+        return []
+    run = session.get(KnowledgeRetrievalRun, retrieval_run_id)
+    if (
+        run is None
+        or run.project_id != project_id
+        or run.status != "completed"
+        or run.evidence_artifact_id is None
+    ):
+        raise KnowledgeRetrievalInputNotAllowedError
+    artifact = session.get(Artifact, run.evidence_artifact_id)
+    if (
+        artifact is None
+        or artifact.project_id != project_id
+        or artifact.owner_entity_type != "KnowledgeRetrievalRun"
+        or artifact.owner_entity_id != run.id
+        or artifact.metadata_json.get("safe_to_show") is not True
+    ):
+        raise KnowledgeRetrievalInputNotAllowedError
+    rows = list(
+        session.scalars(
+            select(KnowledgeEvidence)
+            .join(TestKnowledgeCard, TestKnowledgeCard.id == KnowledgeEvidence.knowledge_card_id)
+            .where(
+                KnowledgeEvidence.id.in_(evidence_ids),
+                KnowledgeEvidence.project_id == project_id,
+                KnowledgeEvidence.retrieval_run_id == retrieval_run_id,
+                KnowledgeEvidence.card_status_snapshot == "approved",
+                KnowledgeEvidence.safe_to_show.is_(True),
+                KnowledgeEvidence.allowed_for_prompt.is_(True),
+                TestKnowledgeCard.project_id == project_id,
+                TestKnowledgeCard.status == "approved",
+                TestKnowledgeCard.safe_to_show.is_(True),
+                TestKnowledgeCard.allowed_for_prompt.is_(True),
+            ),
+        ),
+    )
+    rows_by_id = {row.id: row for row in rows}
+    if set(rows_by_id) != set(evidence_ids):
+        raise KnowledgeRetrievalInputNotAllowedError
+    return [
+        knowledge_evidence_to_legacy(knowledge_evidence_to_read(session, rows_by_id[evidence_id]))
+        for evidence_id in evidence_ids
+    ]
+
+
+def revalidate_prompt_evidence_items(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    grouped_ids: dict[uuid.UUID, list[uuid.UUID]] = {}
+    for item in items:
+        raw_run_id = item.get("knowledge_retrieval_run_id")
+        raw_evidence_id = item.get("knowledge_evidence_id") or item.get("evidence_id")
+        if not raw_run_id or not raw_evidence_id:
+            continue
+        try:
+            run_id = uuid.UUID(str(raw_run_id))
+            evidence_id = uuid.UUID(str(raw_evidence_id))
+        except ValueError:
+            continue
+        grouped_ids.setdefault(run_id, [])
+        if evidence_id not in grouped_ids[run_id]:
+            grouped_ids[run_id].append(evidence_id)
+    verified: list[dict[str, Any]] = []
+    for run_id, evidence_ids in grouped_ids.items():
+        try:
+            verified.extend(
+                verified_prompt_evidence_refs(
+                    session,
+                    project_id=project_id,
+                    retrieval_run_id=run_id,
+                    evidence_ids=evidence_ids,
+                ),
+            )
+        except KnowledgeRetrievalInputNotAllowedError:
+            continue
+    return verified
+
+
+def sanitize_evidence_items_for_display(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    items: list[Any],
+) -> list[Any]:
+    allowed_fields = {
+        "evidence_id",
+        "knowledge_evidence_id",
+        "knowledge_retrieval_run_id",
+        "knowledge_card_id",
+        "context_artifact_id",
+        "source_artifact_id",
+        "knowledge_type",
+        "title",
+        "snippet",
+        "source_locator",
+        "source_ref",
+        "sha256",
+        "score",
+        "metadata_score",
+        "keyword_score",
+        "vector_score",
+        "semantic_score",
+        "rerank_score",
+        "final_score",
+        "matched_terms",
+        "retrieval_reason",
+        "safe_to_show",
+        "allowed_for_prompt",
+        "status",
+        "card_status_snapshot",
+        "current_card_status",
+        "currently_prompt_eligible",
+        "embedding_model",
+        "redaction_applied",
+    }
+    sanitized: list[Any] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        copy = {key: value for key, value in item.items() if key in allowed_fields}
+        raw_card_id = copy.get("knowledge_card_id")
+        card = None
+        if raw_card_id:
+            try:
+                card = session.get(TestKnowledgeCard, uuid.UUID(str(raw_card_id)))
+            except ValueError:
+                card = None
+        if raw_card_id and card is not None and card.project_id == project_id:
+            copy["current_card_status"] = card.status
+            copy["currently_prompt_eligible"] = (
+                card.status == "approved"
+                and card.safe_to_show
+                and card.allowed_for_prompt
+                and bool(copy.get("safe_to_show", False))
+                and bool(copy.get("allowed_for_prompt", False))
+            )
+            currently_safe = card.safe_to_show
+        else:
+            raw_artifact_id = copy.get("context_artifact_id") or copy.get("source_artifact_id")
+            source_artifact = None
+            if raw_artifact_id:
+                try:
+                    source_artifact = session.get(Artifact, uuid.UUID(str(raw_artifact_id)))
+                except ValueError:
+                    source_artifact = None
+            currently_safe = (
+                source_artifact is not None
+                and source_artifact.project_id == project_id
+                and source_artifact.metadata_json.get("safe_to_show") is True
+            )
+            copy["currently_prompt_eligible"] = (
+                currently_safe
+                and source_artifact is not None
+                and source_artifact.metadata_json.get("allowed_for_prompt") is True
+            )
+        if not currently_safe:
+            copy["title"] = "Restricted knowledge evidence"
+            copy["snippet"] = "[redacted]"
+            copy["source_locator"] = {}
+            copy["matched_terms"] = []
+            copy["retrieval_reason"] = "restricted_evidence"
+            copy["safe_to_show"] = False
+            copy["allowed_for_prompt"] = False
+            copy["currently_prompt_eligible"] = False
+            copy.pop("source_ref", None)
+            copy.pop("sha256", None)
+        sanitized.append(copy)
+    return sanitized
+
+
 def retrieve_test_knowledge_evidence(
     session: Session,
     *,
@@ -992,37 +1896,84 @@ def retrieve_test_knowledge_evidence(
     query_text: str,
     limit: int = 5,
     approved_only: bool = False,
+    filters: dict[str, Any] | None = None,
+    retrieval_mode: str = "hybrid",
 ) -> list[dict[str, Any]]:
+    return match_test_knowledge_cards(
+        session,
+        project_id=project_id,
+        query_text=query_text,
+        limit=limit,
+        approved_only=approved_only,
+        filters=filters or {},
+        retrieval_mode=retrieval_mode,
+    ).items
+
+
+def match_test_knowledge_cards(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    query_text: str,
+    limit: int,
+    approved_only: bool,
+    filters: dict[str, Any],
+    retrieval_mode: str,
+) -> KnowledgeMatchResult:
     if session.get(Project, project_id) is None:
         raise ProjectNotFoundError
-    query_terms = normalize_terms(query_text)
+    query_terms = list(dict.fromkeys(normalize_terms(query_text)))
     if not query_terms:
-        return []
-    statuses = {"approved"} if approved_only else PROMPT_ELIGIBLE_STATUSES
-    cards = list(
-        session.scalars(
-            select(TestKnowledgeCard).where(
-                TestKnowledgeCard.project_id == project_id,
-                TestKnowledgeCard.status.in_(statuses),
-                TestKnowledgeCard.safe_to_show.is_(True),
-                TestKnowledgeCard.allowed_for_prompt.is_(True),
-            ),
-        ),
-    )
-    evidence_by_card_id: dict[str, dict[str, Any]] = {}
-    for card in cards:
-        searchable_text = search_text_for_card(card)
-        card_terms = set(normalize_terms(searchable_text))
-        matched_terms = [term for term in query_terms if term in card_terms]
-        if not matched_terms:
-            continue
-        evidence_by_card_id[str(card.id)] = evidence_for_card(
-            card,
-            score=len(matched_terms),
-            matched_terms=matched_terms,
-            retrieval_reason="deterministic_keyword_overlap",
+        return KnowledgeMatchResult(
+            candidate_count=0,
+            items=[],
+            vector_available=False,
+            actual_mode="keyword" if retrieval_mode in {"hybrid", "vector"} else retrieval_mode,
+            degraded=retrieval_mode in {"hybrid", "vector"},
+            fallback_reason="vector_index_unavailable" if retrieval_mode in {"hybrid", "vector"} else None,
         )
+    statuses = {"approved"} if approved_only else PROMPT_ELIGIBLE_STATUSES
+    card_query = select(TestKnowledgeCard).where(
+        TestKnowledgeCard.project_id == project_id,
+        TestKnowledgeCard.status.in_(statuses),
+        TestKnowledgeCard.safe_to_show.is_(True),
+        TestKnowledgeCard.allowed_for_prompt.is_(True),
+    )
+    filter_columns = {
+        "module_keys": TestKnowledgeCard.module_key,
+        "knowledge_types": TestKnowledgeCard.knowledge_type,
+        "risk_types": TestKnowledgeCard.risk_type,
+        "api_endpoints": TestKnowledgeCard.api_endpoint,
+    }
+    for key, column in filter_columns.items():
+        values = filters.get(key) or []
+        if values:
+            card_query = card_query.where(column.in_(values))
+    cards = list(session.scalars(card_query))
+    metadata_filter_active = any(filters.get(key) for key in filter_columns)
+    evidence_by_card_id: dict[str, dict[str, Any]] = {}
+    if retrieval_mode in {"metadata", "keyword", "vector", "hybrid"}:
+        for card in cards:
+            searchable_text = search_text_for_card(card)
+            card_terms = set(normalize_terms(searchable_text))
+            matched_terms = [term for term in query_terms if term in card_terms]
+            if not matched_terms and retrieval_mode != "metadata":
+                continue
+            if retrieval_mode == "metadata" and not metadata_filter_active:
+                continue
+            evidence_by_card_id[str(card.id)] = evidence_for_card(
+                card,
+                matched_terms=matched_terms,
+                query_term_count=len(query_terms),
+                metadata_score=1.0 if metadata_filter_active else 0.0,
+                retrieval_reason=(
+                    "deterministic_metadata_filter"
+                    if retrieval_mode == "metadata"
+                    else "deterministic_keyword_overlap"
+                ),
+            )
 
+    cards_by_id = {card.id: card for card in cards}
     indexed_by_card_id = {
         item.knowledge_card_id: item
         for item in session.scalars(
@@ -1032,8 +1983,15 @@ def retrieve_test_knowledge_evidence(
                 TestKnowledgeEmbeddingIndex.embedding_model == DEFAULT_EMBEDDING_MODEL,
             ),
         )
+        if item.knowledge_card_id in cards_by_id
+        and item.content_hash
+        == hashlib.sha256(embedding_text_for_card(cards_by_id[item.knowledge_card_id]).encode("utf-8")).hexdigest()
     }
-    if indexed_by_card_id:
+    vector_requested = retrieval_mode in {"vector", "hybrid"}
+    vector_available = vector_requested and bool(indexed_by_card_id)
+    if retrieval_mode == "vector" and vector_available:
+        evidence_by_card_id = {}
+    if vector_available:
         query_vectors_by_dim: dict[int, list[float]] = {}
         for card in cards:
             index_row = indexed_by_card_id.get(card.id)
@@ -1049,33 +2007,48 @@ def retrieve_test_knowledge_evidence(
             if semantic_score < MIN_VECTOR_SIMILARITY:
                 continue
             card_id = str(card.id)
-            vector_score = max(1, round(semantic_score * 10))
             existing_evidence = evidence_by_card_id.get(card_id)
             if existing_evidence is None:
                 evidence_by_card_id[card_id] = evidence_for_card(
                     card,
-                    score=vector_score,
                     matched_terms=[],
+                    query_term_count=len(query_terms),
+                    metadata_score=1.0 if metadata_filter_active else 0.0,
                     retrieval_reason="deterministic_vector_similarity",
                     semantic_score=semantic_score,
                     embedding_model=index_row.embedding_model,
                 )
             else:
-                existing_evidence["score"] = int(existing_evidence["score"]) + vector_score
-                existing_evidence["semantic_score"] = round(semantic_score, 4)
+                existing_evidence["vector_score"] = round(max(0.0, min(semantic_score, 1.0)), 6)
+                existing_evidence["semantic_score"] = existing_evidence["vector_score"]
                 existing_evidence["embedding_model"] = index_row.embedding_model
                 existing_evidence["retrieval_reason"] = "deterministic_hybrid_keyword_vector"
+                finalize_match_scores(existing_evidence)
 
     evidence = list(evidence_by_card_id.values())
     evidence.sort(
         key=lambda item: (
             STATUS_PRIORITY.get(str(item.get("status")), 99),
-            -int(item["score"]),
+            -float(item["final_score"]),
             str(item["title"]).lower(),
             str(item["knowledge_card_id"]),
         ),
     )
-    return evidence[:limit]
+    actual_mode = retrieval_mode
+    degraded = False
+    fallback_reason = None
+    if vector_requested and not vector_available:
+        actual_mode = "keyword"
+        degraded = True
+        fallback_reason = "vector_index_unavailable"
+    return KnowledgeMatchResult(
+        candidate_count=len(evidence),
+        items=evidence[:limit],
+        vector_available=vector_available,
+        actual_mode=actual_mode,
+        degraded=degraded,
+        fallback_reason=fallback_reason,
+    )
 
 
 def list_extractable_context_artifact_ids(session: Session, project_id: uuid.UUID) -> list[uuid.UUID]:
@@ -1118,8 +2091,9 @@ def embedding_index_to_dict(index_row: TestKnowledgeEmbeddingIndex) -> dict[str,
 def evidence_for_card(
     card: TestKnowledgeCard,
     *,
-    score: int,
     matched_terms: list[str],
+    query_term_count: int,
+    metadata_score: float,
     retrieval_reason: str,
     semantic_score: float | None = None,
     embedding_model: str | None = None,
@@ -1131,18 +2105,44 @@ def evidence_for_card(
         "knowledge_type": card.knowledge_type,
         "title": card.title,
         "snippet": card.content[:320],
-        "score": score,
+        "source_locator": dict(card.source_locator_json or {}),
+        "metadata_score": round(max(0.0, min(metadata_score, 1.0)), 6),
+        "keyword_score": round(len(set(matched_terms)) / max(1, query_term_count), 6),
+        "vector_score": (
+            round(max(0.0, min(semantic_score, 1.0)), 6)
+            if semantic_score is not None
+            else None
+        ),
+        "rerank_score": None,
         "matched_terms": matched_terms,
         "retrieval_reason": retrieval_reason,
+        "card_status_snapshot": card.status,
         "safe_to_show": card.safe_to_show,
         "allowed_for_prompt": card.allowed_for_prompt,
         "status": card.status,
     }
-    if semantic_score is not None:
-        evidence["semantic_score"] = round(semantic_score, 4)
+    finalize_match_scores(evidence)
+    if evidence["vector_score"] is not None:
+        evidence["semantic_score"] = evidence["vector_score"]
     if embedding_model is not None:
         evidence["embedding_model"] = embedding_model
     return evidence
+
+
+def finalize_match_scores(evidence: dict[str, Any]) -> None:
+    components = [
+        float(value)
+        for value in (
+            evidence.get("metadata_score"),
+            evidence.get("keyword_score"),
+            evidence.get("vector_score"),
+            evidence.get("rerank_score"),
+        )
+        if value is not None and float(value) > 0
+    ]
+    final_score = sum(components) / len(components) if components else 0.0
+    evidence["final_score"] = round(max(0.0, min(final_score, 1.0)), 6)
+    evidence["score"] = max(1, round(evidence["final_score"] * 10)) if final_score > 0 else 0
 
 
 def search_text_for_card(card: TestKnowledgeCard) -> str:

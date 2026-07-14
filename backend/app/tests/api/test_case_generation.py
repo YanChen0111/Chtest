@@ -632,6 +632,75 @@ def test_case_generation_rejects_invalid_coverage_dimensions(
         assert list(session.scalars(select(GeneratedCaseCandidate))) == []
 
 
+def test_case_generation_rejects_model_fabricated_knowledge_evidence(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, SessionLocal = api_client
+    requirement, review = create_reviewed_requirement(client, SessionLocal)
+
+    def fake_run_ai_task(session: Session, _store: LocalArtifactStore, job: Any) -> None:
+        ai_task = session.get(AITask, job.ai_task_id)
+        assert ai_task is not None
+        ai_task.status = "succeeded"
+        ai_task.output_json = {
+            "cases": [
+                {
+                    "title": "Checkout coupon case with fabricated evidence",
+                    "priority": "P1",
+                    "test_type": "functional",
+                    "precondition": "A coupon exists.",
+                    "steps": ["Open checkout", "Apply coupon"],
+                    "expected_results": ["Checkout validates the coupon."],
+                    "requirement_refs": [str(requirement["id"])],
+                    "risk_refs": [],
+                    "source_knowledge_evidence": [
+                        {
+                            "evidence_id": str(uuid.uuid4()),
+                            "knowledge_card_id": str(uuid.uuid4()),
+                            "snippet": "Fabricated provider evidence.",
+                            "score": 999,
+                        },
+                    ],
+                    "coverage_dimensions": [
+                        {"key": "positive", "evidence": "Coupon checkout path."},
+                    ],
+                    "ai_reason": "Exercises the checkout requirement.",
+                },
+            ],
+            "used_knowledge": True,
+            "used_context_artifact_ids": [],
+        }
+        session.add(ai_task)
+        session.commit()
+
+    monkeypatch.setattr("backend.app.modules.cases.service.run_ai_task", fake_run_ai_task)
+
+    response = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": requirement["project_id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "decision_table_acknowledged": True,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    task_body = client.get(f"/api/case-generation/tasks/{response.json()['case_generation_task_id']}").json()
+    assert task_body["status"] == "failed"
+    assert task_body["error_code"] == "CASE_GENERATION_SCHEMA_INVALID"
+    with SessionLocal() as session:
+        assert list(session.scalars(select(GeneratedCaseCandidate))) == []
+
+
 def test_unknown_generation_task_candidates_returns_contract_error(api_client: tuple[ASGIClient, sessionmaker[Session]]) -> None:
     client, _ = api_client
 

@@ -18,11 +18,17 @@ from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.ai_runtime.router import get_artifact_store
+from backend.app.modules.automation import service as automation_service
+from backend.app.modules.cases.models import GeneratedCaseCandidate
 from backend.app.modules.knowledge.models import (
+    KnowledgeEvidence,
     KnowledgeIngestionRun,
+    KnowledgeRetrievalRun,
     TestKnowledgeCard as TestKnowledgeCardModel,
     TestKnowledgeEmbeddingIndex,
 )
+from backend.app.modules.knowledge import service as knowledge_service
+from backend.app.modules.knowledge.schemas import KnowledgeRetrievalRunCreateRequest
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.review_history.models import ReviewHistory
@@ -40,6 +46,7 @@ class ASGIResponse:
 class ASGIClient:
     def __init__(self, asgi_app: Any) -> None:
         self.asgi_app = asgi_app
+        self.artifact_root: Path | None = None
 
     def get(self, path: str) -> ASGIResponse:
         return self.request("GET", path)
@@ -119,7 +126,10 @@ def api_client(tmp_path: Path) -> Iterator[tuple[ASGIClient, sessionmaker[Sessio
     app.dependency_overrides[get_session] = override_get_session
     app.dependency_overrides[get_artifact_store] = override_get_artifact_store
 
-    yield ASGIClient(app), SessionLocal
+    client = ASGIClient(app)
+    client.artifact_root = artifact_root
+
+    yield client, SessionLocal
 
     app.dependency_overrides.clear()
 
@@ -410,12 +420,43 @@ def test_case_generation_uses_test_knowledge_evidence(
     assert first_candidate["source_knowledge_evidence"]
     assert first_candidate["source_knowledge_evidence"][0]["source_artifact_id"] == artifact_id
     assert first_candidate["source_knowledge_evidence"][0]["knowledge_card_id"]
+    target_card_id = first_candidate["source_knowledge_evidence"][0]["knowledge_card_id"]
 
     with SessionLocal() as session:
         ai_task = session.get(AITask, uuid.UUID(generation["ai_task_id"]))
         assert ai_task is not None
         assert ai_task.input_json["knowledge_evidence"]
         assert ai_task.output_json["used_knowledge"] is True
+        candidate = session.get(GeneratedCaseCandidate, uuid.UUID(first_candidate["id"]))
+        assert candidate is not None
+        legacy_items = [dict(item) for item in candidate.source_knowledge_evidence_json]
+        legacy_items[0]["raw_payload"] = "provider-secret-payload"
+        legacy_items[0]["matched_terms"] = ["provider-secret-term"]
+        candidate.source_knowledge_evidence_json = [*legacy_items, "untrusted-legacy-value"]
+        session.commit()
+
+    unsafe_response = client.patch(
+        f"/api/test-knowledge/cards/{target_card_id}",
+        {
+            "project_id": project_id,
+            "status": "unsafe",
+            "review_comment": "Evidence source was revoked after candidate generation.",
+        },
+    )
+    assert unsafe_response.status_code == 200
+    restricted_candidates = client.get(
+        f"/api/case-generation/tasks/{generation['case_generation_task_id']}/candidates",
+    ).json()
+    restricted_evidence = next(
+        item
+        for item in restricted_candidates["items"][0]["source_knowledge_evidence"]
+        if item.get("knowledge_card_id") == target_card_id
+    )
+    assert restricted_evidence["snippet"] == "[redacted]"
+    assert restricted_evidence["matched_terms"] == []
+    assert restricted_evidence["currently_prompt_eligible"] is False
+    assert "raw_payload" not in restricted_evidence
+    assert all(isinstance(item, dict) for item in restricted_candidates["items"][0]["source_knowledge_evidence"])
 
     graph_response = client.get(f"/api/projects/{project_id}/test-knowledge/graph")
     assert graph_response.status_code == 200
@@ -722,3 +763,456 @@ def test_card_review_records_rationale_and_duplicate_provenance(
         duplicate_history = next(item for item in history if item.action == "duplicate")
         assert duplicate_history.related_entity_id == uuid.UUID(extracted[0]["id"])
         assert duplicate_history.comment == "Same rule as the approved canonical card."
+
+
+def create_approved_test_knowledge(
+    client: ASGIClient,
+) -> tuple[str, str, str, list[dict[str, Any]]]:
+    project_id, artifact_id, requirement_id = create_project_context_and_requirement(client)
+    extracted = client.post(
+        "/api/test-knowledge/cards/extract",
+        {"project_id": project_id, "source_artifact_id": artifact_id},
+    ).json()["items"]
+    approve_cards(client, project_id, extracted)
+    return project_id, artifact_id, requirement_id, extracted
+
+
+def test_retrieval_run_persists_keyword_fallback_and_owned_evidence(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project_id, artifact_id, requirement_id, _cards = create_approved_test_knowledge(client)
+
+    response = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": project_id,
+            "query_text": "expired coupon checkout",
+            "filters": {"knowledge_types": ["BoundaryCondition", "BusinessRule", "APIContract"]},
+            "consumer_entity_type": "Requirement",
+            "consumer_entity_id": requirement_id,
+            "retrieval_mode": "hybrid",
+            "approved_only": True,
+            "limit": 5,
+        },
+    )
+
+    assert response.status_code == 201
+    run = response.json()
+    assert run["status"] == "completed"
+    assert run["requested_retrieval_mode"] == "hybrid"
+    assert run["retrieval_mode"] == "keyword"
+    assert run["degraded"] is True
+    assert run["fallback_reason"] == "vector_index_unavailable"
+    assert run["candidate_count"] >= run["evidence_count"] >= 1
+    assert run["latency_ms"] >= 0
+    assert run["query_text_hash"].startswith("sha256:")
+    assert run["query_text_redacted"] == "expired coupon checkout"
+    assert run["evidence_artifact"]["download_url"].startswith("/api/artifacts/")
+    first = run["items"][0]
+    assert first["source_artifact_id"] == artifact_id
+    assert first["source_locator"]
+    assert first["card_status_snapshot"] == "approved"
+    assert first["keyword_score"] > 0
+    assert first["vector_score"] is None
+    assert first["rerank_score"] is None
+    assert 0 < first["final_score"] <= 1
+
+    detail = client.get(f"/api/knowledge/retrieval-runs/{run['id']}")
+    assert detail.status_code == 200
+    assert detail.json()["items"] == run["items"]
+    listing = client.get(
+        f"/api/projects/{project_id}/knowledge/retrieval-runs"
+        f"?provider_type=deterministic_local&consumer_entity_type=Requirement"
+        f"&consumer_entity_id={requirement_id}&limit=1",
+    )
+    assert listing.status_code == 200
+    assert listing.json()["total"] == 1
+
+    with SessionLocal() as session:
+        persisted_run = session.get(KnowledgeRetrievalRun, uuid.UUID(run["id"]))
+        assert persisted_run is not None
+        assert persisted_run.evidence_count == len(run["items"])
+        evidence_rows = list(
+            session.scalars(
+                select(KnowledgeEvidence).where(KnowledgeEvidence.retrieval_run_id == persisted_run.id),
+            ),
+        )
+        assert len(evidence_rows) == persisted_run.evidence_count
+        source_card = session.get(TestKnowledgeCardModel, evidence_rows[0].knowledge_card_id)
+        assert source_card is not None
+        assert evidence_rows[0].source_artifact_id == source_card.source_artifact_id
+        assert evidence_rows[0].source_locator_json == source_card.source_locator_json
+        evidence_artifact = session.get(Artifact, persisted_run.evidence_artifact_id)
+        assert evidence_artifact is not None
+        assert evidence_artifact.project_id == persisted_run.project_id
+        assert evidence_artifact.owner_entity_type == "KnowledgeRetrievalRun"
+        assert evidence_artifact.owner_entity_id == persisted_run.id
+        assert "results" not in evidence_artifact.metadata_json
+        assert "expired coupon checkout" not in json.dumps(evidence_artifact.metadata_json)
+        persisted_run.evidence_artifact_id = uuid.UUID(artifact_id)
+        session.commit()
+
+    polluted = client.get(f"/api/knowledge/retrieval-runs/{run['id']}").json()
+    assert polluted["evidence_artifact"] is None
+
+
+def test_retrieval_run_records_real_vector_scores_and_stable_paging(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    project_id, _artifact_id, _requirement_id, cards = create_approved_test_knowledge(client)
+    rebuild = client.post(
+        "/api/test-knowledge/index/rebuild",
+        {"project_id": project_id, "embedding_dim": 64},
+    )
+    assert rebuild.status_code == 201
+    payload = {
+        "project_id": project_id,
+        "query_text": "coupon checkout validation expired amount",
+        "filters": {},
+        "retrieval_mode": "hybrid",
+        "approved_only": True,
+        "limit": 1,
+    }
+
+    first = client.post("/api/knowledge/retrieval-runs", payload).json()
+    second = client.post("/api/knowledge/retrieval-runs", payload).json()
+
+    assert first["id"] != second["id"]
+    assert first["retrieval_mode"] == "hybrid"
+    assert first["degraded"] is False
+    assert first["candidate_count"] > first["evidence_count"] == 1
+    assert first["items"][0]["vector_score"] is not None
+    assert 0 <= first["items"][0]["vector_score"] <= 1
+    assert first["items"][0]["final_score"] == second["items"][0]["final_score"]
+    assert first["items"][0]["knowledge_card_id"] == second["items"][0]["knowledge_card_id"]
+    assert first["items"][0]["knowledge_card_id"] in {item["id"] for item in cards}
+
+    first_page = client.get(f"/api/projects/{project_id}/knowledge/retrieval-runs?limit=1").json()
+    assert first_page["total"] == 2
+    assert first_page["next_cursor"]
+    second_page = client.get(
+        f"/api/projects/{project_id}/knowledge/retrieval-runs"
+        f"?limit=1&cursor={first_page['next_cursor']}",
+    ).json()
+    assert second_page["total"] == 2
+    assert second_page["items"][0]["id"] != first_page["items"][0]["id"]
+
+
+def test_unsafe_card_revokes_retrieval_evidence_display_and_download(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project_id, _artifact_id, _requirement_id, _cards = create_approved_test_knowledge(client)
+    run_response = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": project_id,
+            "query_text": "expired coupon checkout",
+            "retrieval_mode": "keyword",
+            "approved_only": True,
+            "limit": 5,
+        },
+    )
+    assert run_response.status_code == 201
+    run = run_response.json()
+    assert run["items"]
+    target_card_id = run["items"][0]["knowledge_card_id"]
+    artifact_id = run["evidence_artifact"]["id"]
+    with SessionLocal() as session:
+        legacy_artifact = Artifact(
+            project_id=uuid.UUID(project_id),
+            owner_entity_type="AITask",
+            owner_entity_id=uuid.uuid4(),
+            artifact_type="knowledge_retrieval",
+            file_path=f"projects/{project_id}/ai-tasks/legacy/knowledge_retrieval.json",
+            mime_type="application/json",
+            size_bytes=2,
+            sha256="0" * 64,
+            metadata_json={
+                "safe_to_show": True,
+                "results": [{"knowledge_card_id": target_card_id, "snippet": "legacy secret"}],
+            },
+        )
+        session.add(legacy_artifact)
+        session.commit()
+        legacy_artifact_id = str(legacy_artifact.id)
+
+    unsafe_response = client.patch(
+        f"/api/test-knowledge/cards/{target_card_id}",
+        {
+            "project_id": project_id,
+            "status": "unsafe",
+            "review_comment": "Source safety was revoked after review.",
+        },
+    )
+    assert unsafe_response.status_code == 200
+
+    detail = client.get(f"/api/knowledge/retrieval-runs/{run['id']}")
+    assert detail.status_code == 200
+    restricted = next(item for item in detail.json()["items"] if item["knowledge_card_id"] == target_card_id)
+    assert restricted["safe_to_show"] is False
+    assert restricted["snippet"] == "[redacted]"
+    assert restricted["title"] == "Restricted knowledge evidence"
+    assert restricted["current_card_status"] == "unsafe"
+    assert restricted["currently_prompt_eligible"] is False
+    assert detail.json()["evidence_artifact"] is None
+
+    download = client.get(f"/api/artifacts/{artifact_id}/download")
+    assert download.status_code == 403
+    assert download.json()["error_code"] == "ARTIFACT_DOWNLOAD_NOT_ALLOWED"
+    legacy_download = client.get(f"/api/artifacts/{legacy_artifact_id}/download")
+    assert legacy_download.status_code == 403
+    assert legacy_download.json()["error_code"] == "ARTIFACT_DOWNLOAD_NOT_ALLOWED"
+
+
+@pytest.mark.parametrize("status", ["stale", "archived"])
+def test_retrieval_evidence_reports_current_non_prompt_lifecycle(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    status: str,
+) -> None:
+    client, _SessionLocal = api_client
+    project_id, _artifact_id, _requirement_id, _cards = create_approved_test_knowledge(client)
+    run = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": project_id,
+            "query_text": "expired coupon checkout",
+            "retrieval_mode": "keyword",
+            "approved_only": True,
+            "limit": 5,
+        },
+    ).json()
+    target = run["items"][0]
+
+    review = client.patch(
+        f"/api/test-knowledge/cards/{target['knowledge_card_id']}",
+        {
+            "project_id": project_id,
+            "status": status,
+            "review_comment": f"Card moved to {status} after retrieval.",
+        },
+    )
+    assert review.status_code == 200
+
+    detail = client.get(f"/api/knowledge/retrieval-runs/{run['id']}").json()
+    evidence = next(item for item in detail["items"] if item["id"] == target["id"])
+    assert evidence["card_status_snapshot"] == "approved"
+    assert evidence["current_card_status"] == status
+    assert evidence["safe_to_show"] is True
+    assert evidence["allowed_for_prompt"] is True
+    assert evidence["currently_prompt_eligible"] is False
+
+
+def test_automation_reference_manifest_preserves_multiple_retrieval_runs(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project_id, artifact_id, _requirement_id, _cards = create_approved_test_knowledge(client)
+    request_payload = {
+        "project_id": project_id,
+        "query_text": "expired coupon checkout",
+        "retrieval_mode": "keyword",
+        "approved_only": True,
+        "limit": 1,
+    }
+    first_run = client.post("/api/knowledge/retrieval-runs", request_payload).json()
+    second_run = client.post("/api/knowledge/retrieval-runs", request_payload).json()
+    results = []
+    for run in (first_run, second_run):
+        item = dict(run["items"][0])
+        item["evidence_id"] = item["id"]
+        item["knowledge_evidence_id"] = item["id"]
+        item["knowledge_retrieval_run_id"] = run["id"]
+        results.append(item)
+
+    with SessionLocal() as session:
+        ai_task = AITask(
+            project_id=uuid.UUID(project_id),
+            agent_name="AutomationPlanAgent",
+            task_type="automation_plan_generation",
+            prompt_version_id=uuid.uuid4(),
+            skill_version_id=uuid.uuid4(),
+            status="succeeded",
+        )
+        session.add(ai_task)
+        session.flush()
+        assert client.artifact_root is not None
+        manifest = automation_service.attach_plan_retrieval_evidence_artifact(
+            session,
+            LocalArtifactStore(client.artifact_root),
+            ai_task,
+            {
+                "retrieval_mode": "test_knowledge_hybrid",
+                "query_text": "expired coupon checkout",
+                "used_context_artifact_ids": [artifact_id],
+                "results": results,
+            },
+            [uuid.UUID(artifact_id)],
+        )
+        session.commit()
+
+        assert manifest.owner_entity_type == "AITask"
+        assert manifest.metadata_json["created_by_component"] == "KnowledgeRetrievalReferenceManifest"
+        assert len(manifest.metadata_json["canonical_artifact_ids"]) == 2
+        payload = json.loads((client.artifact_root / manifest.file_path).read_text(encoding="utf-8"))
+        assert len(payload["knowledge_evidence_refs"]) == 2
+        assert len(payload["canonical_artifact_ids"]) == 2
+        assert '"snippet"' not in json.dumps(payload)
+        assert ai_task.output_json["knowledge_retrieval_run_ids"] == [
+            first_run["id"],
+            second_run["id"],
+        ]
+
+
+def test_empty_retrieval_run_persists_redacted_artifact_without_fake_scores(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project = client.post("/api/projects", {"name": "Empty Knowledge Project"}).json()
+    secret_query = "password=not-obvious-value"
+
+    response = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": project["id"],
+            "query_text": secret_query,
+            "filters": {},
+            "retrieval_mode": "hybrid",
+            "approved_only": True,
+            "limit": 5,
+        },
+    )
+
+    assert response.status_code == 201
+    run = response.json()
+    assert run["status"] == "completed"
+    assert run["candidate_count"] == 0
+    assert run["evidence_count"] == 0
+    assert run["items"] == []
+    assert run["query_text_redacted"] == "[redacted]"
+    assert secret_query not in json.dumps(run)
+    assert run["evidence_artifact"]
+
+    with SessionLocal() as session:
+        persisted_run = session.get(KnowledgeRetrievalRun, uuid.UUID(run["id"]))
+        assert persisted_run is not None
+        artifact = session.get(Artifact, persisted_run.evidence_artifact_id)
+        assert artifact is not None
+        assert client.artifact_root is not None
+        artifact_payload = (client.artifact_root / artifact.file_path).read_text(encoding="utf-8")
+        assert secret_query not in artifact_payload
+        assert json.loads(artifact_payload)["results"] == []
+
+
+def test_retrieval_run_rejects_cross_project_consumer_and_unsafe_filters(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    _project_id, _artifact_id, requirement_id, _cards = create_approved_test_knowledge(client)
+    other_project = client.post("/api/projects", {"name": "Other Retrieval Project"}).json()
+
+    cross_project = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": other_project["id"],
+            "query_text": "coupon checkout",
+            "consumer_entity_type": "Requirement",
+            "consumer_entity_id": requirement_id,
+        },
+    )
+    unsafe_filter = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": other_project["id"],
+            "query_text": "coupon checkout",
+            "filters": {"api_endpoints": ["https://customer.example/private"]},
+        },
+    )
+
+    assert cross_project.status_code == 400
+    assert cross_project.json()["error_code"] == "KNOWLEDGE_RETRIEVAL_CONSUMER_NOT_ALLOWED"
+    assert unsafe_filter.status_code == 400
+    assert unsafe_filter.json()["error_code"] == "KNOWLEDGE_RETRIEVAL_INPUT_NOT_ALLOWED"
+    with SessionLocal() as session:
+        assert list(
+            session.scalars(
+                select(KnowledgeRetrievalRun).where(
+                    KnowledgeRetrievalRun.project_id == uuid.UUID(other_project["id"]),
+                ),
+            ),
+        ) == []
+
+
+def test_retrieval_run_rejects_cross_project_ai_task_correlation(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    tmp_path: Path,
+) -> None:
+    client, SessionLocal = api_client
+    first_project = client.post("/api/projects", {"name": "First Retrieval Project"}).json()
+    second_project = client.post("/api/projects", {"name": "Second Retrieval Project"}).json()
+
+    with SessionLocal() as session:
+        ai_task = AITask(
+            project_id=uuid.UUID(first_project["id"]),
+            agent_name="RequirementReviewAgent",
+            task_type="requirement_review",
+            prompt_version_id=uuid.uuid4(),
+            skill_version_id=uuid.uuid4(),
+            status="succeeded",
+        )
+        session.add(ai_task)
+        session.commit()
+
+        with pytest.raises(knowledge_service.KnowledgeRetrievalConsumerNotAllowedError):
+            knowledge_service.create_knowledge_retrieval_run(
+                session,
+                LocalArtifactStore(tmp_path / "cross-project-artifacts"),
+                KnowledgeRetrievalRunCreateRequest(
+                    project_id=uuid.UUID(second_project["id"]),
+                    query_text="coupon checkout",
+                ),
+                ai_task_id=ai_task.id,
+            )
+        assert session.scalar(
+            select(KnowledgeRetrievalRun).where(
+                KnowledgeRetrievalRun.project_id == uuid.UUID(second_project["id"]),
+            ),
+        ) is None
+
+
+def test_retrieval_store_failure_leaves_safe_failed_run(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+    tmp_path: Path,
+) -> None:
+    client, SessionLocal = api_client
+    project = client.post("/api/projects", {"name": "Failed Retrieval Project"}).json()
+
+    class FailingArtifactStore(LocalArtifactStore):
+        def write_bytes(self, file_path: str, content: bytes):
+            raise OSError("C:/private/customer/path is unavailable")
+
+    with SessionLocal() as session:
+        with pytest.raises(OSError):
+            knowledge_service.create_knowledge_retrieval_run(
+                session,
+                FailingArtifactStore(tmp_path / "unwritable"),
+                KnowledgeRetrievalRunCreateRequest(
+                    project_id=uuid.UUID(project["id"]),
+                    query_text="private customer token query",
+                    retrieval_mode="hybrid",
+                    approved_only=True,
+                    limit=5,
+                ),
+            )
+        failed_run = session.scalar(
+            select(KnowledgeRetrievalRun).where(
+                KnowledgeRetrievalRun.project_id == uuid.UUID(project["id"]),
+            ),
+        )
+        assert failed_run is not None
+        assert failed_run.status == "failed"
+        assert failed_run.error_code == "KNOWLEDGE_RETRIEVAL_FAILED"
+        assert "C:/private" not in str(failed_run.error_message)
+        assert "token query" not in str(failed_run.error_message)

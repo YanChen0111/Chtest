@@ -29,6 +29,8 @@ def test_alembic_upgrade_head_from_empty_sqlite_database(tmp_path: Path) -> None
             "test_knowledge_cards",
             "test_knowledge_embedding_index",
             "knowledge_ingestion_runs",
+            "knowledge_retrieval_runs",
+            "knowledge_evidence",
         } <= table_names
         candidate_columns = {column["name"] for column in inspector.get_columns("test_knowledge_cards")}
         assert {
@@ -41,7 +43,7 @@ def test_alembic_upgrade_head_from_empty_sqlite_database(tmp_path: Path) -> None
             "last_verified_at",
         } <= candidate_columns
         revision = connection.execute(text("select version_num from alembic_version")).scalar_one()
-        assert revision == "20260714_0011"
+        assert revision == "20260714_0012"
 
 
 def test_knowledge_ingestion_migration_preserves_existing_cards_and_round_trips(tmp_path: Path) -> None:
@@ -93,9 +95,49 @@ def test_knowledge_ingestion_migration_preserves_existing_cards_and_round_trips(
             text("select source_locator_json from test_knowledge_cards where title = 'Existing card'"),
         ).scalar_one()
         assert locator == "{}"
+        retrieval_columns = {
+            column["name"]: column
+            for column in inspector.get_columns("knowledge_evidence")
+        }
+        assert retrieval_columns["vector_score"]["nullable"] is True
+        evidence_unique_names = {
+            item["name"]
+            for item in inspector.get_unique_constraints("knowledge_evidence")
+        }
+        assert "uq_knowledge_evidence_run_card" in evidence_unique_names
+        retrieval_check_names = {
+            item["name"]
+            for item in inspector.get_check_constraints("knowledge_retrieval_runs")
+        }
+        assert "ck_knowledge_retrieval_runs_consumer_pair" in retrieval_check_names
+        retrieval_index_names = {
+            item["name"]
+            for item in inspector.get_indexes("knowledge_retrieval_runs")
+        }
+        assert "ix_knowledge_retrieval_runs_project_consumer" in retrieval_index_names
     engine.dispose()
 
+    command.downgrade(config, "20260714_0011")
+    engine = create_engine(f"sqlite+pysqlite:///{db_path.as_posix()}", future=True)
+    with engine.connect() as connection:
+        inspector = inspect(connection)
+        table_names = set(inspector.get_table_names())
+        assert "knowledge_retrieval_runs" not in table_names
+        assert "knowledge_evidence" not in table_names
+        assert "knowledge_ingestion_runs" in table_names
+        assert "ingestion_run_id" in {
+            column["name"] for column in inspector.get_columns("test_knowledge_cards")
+        }
+    engine.dispose()
+    command.upgrade(config, "head")
+
     command.downgrade(config, "20260713_0010")
+    engine = create_engine(f"sqlite+pysqlite:///{db_path.as_posix()}", future=True)
+    with engine.connect() as connection:
+        table_names = set(inspect(connection).get_table_names())
+        assert "knowledge_retrieval_runs" not in table_names
+        assert "knowledge_evidence" not in table_names
+    engine.dispose()
     command.upgrade(config, "head")
     engine = create_engine(f"sqlite+pysqlite:///{db_path.as_posix()}", future=True)
     with engine.connect() as connection:

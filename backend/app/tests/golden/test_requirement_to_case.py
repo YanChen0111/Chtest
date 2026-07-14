@@ -238,6 +238,7 @@ def test_golden_requirement_flows_to_reviewed_test_cases(
             "model_provider": "mock",
             "model_name": "mock-case-generator",
             "use_knowledge": False,
+            "decision_table_acknowledged": True,
             "context_artifact_ids": [],
         },
     )

@@ -281,19 +281,14 @@ def test_golden_deterministic_retrieval_improves_requirement_review_context(
     assert client.artifact_root is not None
     evidence = json.loads((client.artifact_root / evidence_artifact.file_path).read_text())
     assert evidence["retrieval_mode"] == "deterministic_local"
-    assert evidence["query_text"] == GOLDEN_REQUIREMENT_CONTENT
-    assert evidence["used_knowledge"] is True
+    assert evidence["query_text_hash"].startswith("sha256:")
+    assert evidence["query_text_redacted"] == GOLDEN_REQUIREMENT_CONTENT
     assert evidence["used_context_artifact_ids"] == [context_id]
-    assert {"coupon", "checkout", "api", "expired"}.issubset(set(evidence["query_terms"]))
-    assert evidence["results"][0]["context_artifact_id"] == context_id
-    assert evidence["results"][0]["title"] == "coupon-api-notes.md"
-    assert evidence["results"][0]["source_ref"] == "manual:coupon-api-notes.md"
-    assert evidence["results"][0]["score"] >= 4
-    assert {"coupon", "checkout", "api", "expired"}.issubset(set(evidence["results"][0]["matched_terms"]))
-    assert "Expired coupon validation" in evidence["results"][0]["snippet"]
-    assert evidence["results"][0]["sha256"].startswith("sha256:")
-    assert evidence["results"][0]["allowed_for_prompt"] is True
-    assert evidence["results"][0]["redaction_applied"] is False
+    assert evidence["result_refs"][0]["context_artifact_id"] == context_id
+    assert evidence["result_refs"][0]["score"] >= 4
+    assert evidence["result_refs"][0]["matched_term_count"] >= 4
+    assert "coupon-api-notes.md" not in json.dumps(evidence)
+    assert "Expired coupon validation" not in json.dumps(evidence)
 
     knowledge_response = client.get(f"/api/projects/{project['id']}/knowledge-base")
     assert knowledge_response.status_code == 200
@@ -310,7 +305,7 @@ def test_golden_deterministic_retrieval_improves_requirement_review_context(
     latest = knowledge["latest_retrievals"][0]
     assert latest["ai_task_id"] == review_start_body["ai_task_id"]
     assert latest["retrieval_evidence_artifact_id"] == str(evidence_artifact.id)
-    assert latest["query_terms"] == evidence["query_terms"]
+    assert {"coupon", "checkout", "api", "expired"}.issubset(set(latest["query_terms"]))
     assert latest["used_context_artifact_ids"] == [context_id]
     assert latest["snippet_count"] == 1
     assert latest["results"][0]["context_artifact_id"] == context_id

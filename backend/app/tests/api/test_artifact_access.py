@@ -123,6 +123,7 @@ def create_artifact(
     file_path: str = "projects/demo/test-runs/run-1/stdout.log",
     content: bytes = b"pytest output\n",
     mime_type: str = "text/plain",
+    artifact_type: str = "stdout",
     metadata_json: dict[str, Any] | None = None,
 ) -> uuid.UUID:
     destination = artifact_root / file_path
@@ -134,7 +135,7 @@ def create_artifact(
             project_id=project.id,
             owner_entity_type="TestRun",
             owner_entity_id=uuid.uuid4(),
-            artifact_type="stdout",
+            artifact_type=artifact_type,
             file_path=file_path,
             mime_type=mime_type,
             size_bytes=len(content),
@@ -164,6 +165,32 @@ def test_download_local_artifact_returns_recorded_content_and_headers(
     assert response.body == b"hello artifact\n"
     assert response.headers["content-type"].startswith("text/plain")
     assert 'filename="stdout.log"' in response.headers["content-disposition"]
+
+
+@pytest.mark.parametrize(
+    ("include_safe_gate", "safe_to_show"),
+    [(False, None), (True, None), (True, "false")],
+)
+def test_download_requires_explicit_safe_gate_for_knowledge_retrieval(
+    api_client: tuple[ASGIClient, sessionmaker[Session], Path],
+    include_safe_gate: bool,
+    safe_to_show: Any,
+) -> None:
+    client, SessionLocal, artifact_root = api_client
+    metadata = {"created_by_component": "test"}
+    if include_safe_gate:
+        metadata["safe_to_show"] = safe_to_show
+    artifact_id = create_artifact(
+        SessionLocal,
+        artifact_root,
+        artifact_type="knowledge_retrieval",
+        metadata_json=metadata,
+    )
+
+    response = client.get(f"/api/artifacts/{artifact_id}/download")
+
+    assert response.status_code == 403
+    assert response.json()["error_code"] == "ARTIFACT_DOWNLOAD_NOT_ALLOWED"
 
 
 def test_download_missing_artifact_returns_contract_error(api_client: tuple[ASGIClient, sessionmaker[Session], Path]) -> None:

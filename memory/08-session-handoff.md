@@ -10151,3 +10151,55 @@ Next recommended task:
 - Continue Slice 47 Task 47.4: persist KnowledgeRetrievalRun and normalized
   KnowledgeEvidence, then expose create/list/read retrieval logs without adding
   pgvector, Qdrant, or external provider runtime yet.
+
+## 2026-07-14 Slice 47 Knowledge Retrieval Evidence
+
+Current task:
+- Completed Slice 47 Task 47.4: persist provider-neutral
+  KnowledgeRetrievalRun/KnowledgeEvidence logs and canonical retrieval Artifacts.
+
+Completed:
+- Added Alembic revision `20260714_0012` with retrieval run/evidence tables,
+  score/count/consumer constraints, FKs, indexes, nullable vector score, and an
+  isolated `0012 -> 0011 -> head` migration round trip.
+- Routed deterministic TestKnowledgeCard retrieval through persisted runs and
+  evidence rows with create/list/read APIs, real totals/cursors, query/filter
+  safety, provider/mode snapshots, latency/count/error fields, empty-result
+  Artifacts, and deterministic keyword/vector fallback behavior.
+- Integrated RequirementReview, CaseGeneration, and AutomationPlan with stable
+  evidence ids. Single-run card retrieval uses the canonical run Artifact;
+  mixed ContextArtifact/card or multi-run evidence uses an id-only reference
+  manifest without raw snippets/provider payload copies.
+- Added current lifecycle fields beside evidence snapshots, same-project AITask
+  correlation validation, prompt revalidation, candidate display whitelisting,
+  governed-source exclusion from the legacy raw adapter, unsafe canonical and
+  historical Artifact revocation, and fail-closed download for retrieval
+  Artifacts lacking explicit `safe_to_show=true`.
+- Updated Knowledge Base recent retrieval display to use current-safe AITask
+  structured input while retaining the minimized Artifact file contract.
+
+Verification:
+- Focused retrieval/consumer/golden/DB/artifact suite: `64 passed`.
+- Empty/temp database Alembic tests: included in the focused suite and passed.
+- Complete backend: `398 passed, 13 failed`.
+- Remaining failures are pre-existing/out-of-scope: six Windows fake executable
+  `WinError 193` runner cases and seven golden CaseGeneration fixtures missing
+  `decision_table_acknowledged=true`.
+- `compileall`: passed.
+- Ruff was unavailable in the workspace environment.
+- `git diff --check`: no output.
+
+Migration safety:
+- No upgrade, stamp, bootstrap, or registry write was run against
+  `storage/chtest-dev.db`.
+- Read-only preflight reported source before/after SHA-256
+  `d8fb34dc054cffc69675c92351ebfbdf6620e82dc76b31bcf7ee759f357a7e01`,
+  size `1282048`, identical modified timestamp, and
+  `source_mutation_performed=false`.
+- The local acceptance database remains blocked by its missing Alembic baseline,
+  missing candidate columns, and PromptVersion registry drift.
+
+Next recommended task:
+- Continue Slice 47 Task 47.5: add PostgreSQL full-text + pgvector behind the
+  stable KnowledgeAdapter/evidence contracts with deterministic fallback and
+  temporary-database verification only.

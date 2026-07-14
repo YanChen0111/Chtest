@@ -105,6 +105,17 @@ def artifact_path_unsafe() -> HTTPException:
     )
 
 
+def artifact_download_not_allowed() -> HTTPException:
+    return HTTPException(
+        status_code=403,
+        detail={
+            "error_code": "ARTIFACT_DOWNLOAD_NOT_ALLOWED",
+            "message": "Artifact download is disabled by the current evidence safety state.",
+            "details": {},
+        },
+    )
+
+
 def artifact_not_local() -> HTTPException:
     return HTTPException(
         status_code=422,
@@ -286,6 +297,11 @@ def download_artifact(
     artifact = session.get(Artifact, artifact_id)
     if artifact is None:
         raise artifact_not_found()
+    if artifact.metadata_json.get("safe_to_show") is False or (
+        artifact.artifact_type == "knowledge_retrieval"
+        and artifact.metadata_json.get("safe_to_show") is not True
+    ):
+        raise artifact_download_not_allowed()
     if "://" in artifact.file_path or artifact.file_path.startswith("//"):
         raise artifact_not_local()
 

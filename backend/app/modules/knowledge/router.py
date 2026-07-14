@@ -12,6 +12,9 @@ from backend.app.modules.knowledge.schemas import (
     KnowledgeIngestionRunCreateRequest,
     KnowledgeIngestionRunListRead,
     KnowledgeIngestionRunRead,
+    KnowledgeRetrievalRunCreateRequest,
+    KnowledgeRetrievalRunListRead,
+    KnowledgeRetrievalRunRead,
     TestKnowledgeCardExtractBatchRead,
     TestKnowledgeCardExtractBatchRequest,
     TestKnowledgeCardExtractRead,
@@ -118,6 +121,89 @@ def read_knowledge_ingestion_run(
     except service.KnowledgeIngestionRunNotFoundError as exc:
         raise not_found("KNOWLEDGE_INGESTION_RUN_NOT_FOUND", "Knowledge ingestion run not found.") from exc
     return service.ingestion_run_to_read(session, run)
+
+
+@router.post(
+    "/knowledge/retrieval-runs",
+    response_model=KnowledgeRetrievalRunRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_knowledge_retrieval_run(
+    data: KnowledgeRetrievalRunCreateRequest,
+    session: Session = Depends(get_session),
+    store: LocalArtifactStore = Depends(get_artifact_store),
+) -> KnowledgeRetrievalRunRead:
+    try:
+        run = service.create_knowledge_retrieval_run(session, store, data)
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    except service.KnowledgeRetrievalConsumerNotAllowedError as exc:
+        raise bad_request(
+            "KNOWLEDGE_RETRIEVAL_CONSUMER_NOT_ALLOWED",
+            "Knowledge retrieval consumer must be a persisted entity in the same project.",
+        ) from exc
+    except service.KnowledgeRetrievalInputNotAllowedError as exc:
+        raise bad_request(
+            "KNOWLEDGE_RETRIEVAL_INPUT_NOT_ALLOWED",
+            "Knowledge retrieval query or filters contain unsupported unsafe values.",
+        ) from exc
+    return service.knowledge_retrieval_run_to_read(session, run)
+
+
+@router.get(
+    "/projects/{project_id}/knowledge/retrieval-runs",
+    response_model=KnowledgeRetrievalRunListRead,
+)
+def list_knowledge_retrieval_runs(
+    project_id: uuid.UUID,
+    run_status: str | None = Query(default=None, alias="status", max_length=40),
+    provider_type: str | None = Query(default=None, max_length=80),
+    consumer_entity_type: str | None = Query(default=None, max_length=80),
+    consumer_entity_id: uuid.UUID | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: uuid.UUID | None = Query(default=None),
+    session: Session = Depends(get_session),
+) -> KnowledgeRetrievalRunListRead:
+    if (consumer_entity_type is None) != (consumer_entity_id is None):
+        raise bad_request(
+            "KNOWLEDGE_RETRIEVAL_CONSUMER_FILTER_INVALID",
+            "Consumer type and id filters must be provided together.",
+        )
+    try:
+        page = service.list_knowledge_retrieval_runs(
+            session,
+            project_id,
+            status=run_status,
+            provider_type=provider_type,
+            consumer_entity_type=consumer_entity_type,
+            consumer_entity_id=consumer_entity_id,
+            limit=limit,
+            cursor=cursor,
+        )
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    except service.KnowledgeRetrievalRunNotFoundError as exc:
+        raise bad_request("KNOWLEDGE_RETRIEVAL_CURSOR_INVALID", "Knowledge retrieval cursor is invalid.") from exc
+    return KnowledgeRetrievalRunListRead(
+        items=service.knowledge_retrieval_runs_to_read(session, page.items),
+        total=page.total,
+        next_cursor=page.next_cursor,
+    )
+
+
+@router.get(
+    "/knowledge/retrieval-runs/{run_id}",
+    response_model=KnowledgeRetrievalRunRead,
+)
+def read_knowledge_retrieval_run(
+    run_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> KnowledgeRetrievalRunRead:
+    try:
+        run = service.get_knowledge_retrieval_run(session, run_id)
+    except service.KnowledgeRetrievalRunNotFoundError as exc:
+        raise not_found("KNOWLEDGE_RETRIEVAL_RUN_NOT_FOUND", "Knowledge retrieval run not found.") from exc
+    return service.knowledge_retrieval_run_to_read(session, run)
 
 
 @router.post(
@@ -298,15 +384,30 @@ def review_test_knowledge_card(
 def retrieve_test_knowledge_cards(
     data: TestKnowledgeCardRetrieveRequest,
     session: Session = Depends(get_session),
+    store: LocalArtifactStore = Depends(get_artifact_store),
 ) -> TestKnowledgeCardRetrievalRead:
     try:
-        items = service.retrieve_test_knowledge_evidence(
+        run = service.create_knowledge_retrieval_run(
             session,
-            project_id=data.project_id,
-            query_text=data.query_text,
-            limit=data.limit,
-            approved_only=data.approved_only,
+            store,
+            KnowledgeRetrievalRunCreateRequest(
+                project_id=data.project_id,
+                query_text=data.query_text,
+                retrieval_mode="hybrid",
+                approved_only=data.approved_only,
+                limit=data.limit,
+            ),
         )
+        run_read = service.knowledge_retrieval_run_to_read(session, run)
+        items = [
+            service.knowledge_evidence_to_legacy(item)
+            for item in run_read.items
+        ]
+    except service.KnowledgeRetrievalInputNotAllowedError as exc:
+        raise bad_request(
+            "KNOWLEDGE_RETRIEVAL_INPUT_NOT_ALLOWED",
+            "Knowledge retrieval query or filters contain unsupported unsafe values.",
+        ) from exc
     except service.ProjectNotFoundError as exc:
         raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
     return TestKnowledgeCardRetrievalRead(

@@ -338,8 +338,12 @@ def test_automation_plan_requires_approval_before_draft_and_execution(
     assert plan_body["source_candidate_id"] == context["candidate_id"]
     assert plan_body["used_context_artifact_ids"] == [context_artifact_id]
     assert plan_body["knowledge_retrieval_artifact_id"]
+    assert all(
+        item.get("knowledge_card_id") != knowledge_card_id
+        for item in plan_body["plan"]["knowledge_evidence"]
+    )
     assert any(
-        item["knowledge_card_id"] == knowledge_card_id
+        item.get("context_artifact_id") == context_artifact_id
         for item in plan_body["plan"]["knowledge_evidence"]
     )
     assert "Prepare precondition" in plan_body["execution_steps"][0]
@@ -421,10 +425,17 @@ def test_automation_plan_requires_approval_before_draft_and_execution(
     assert draft.status == "approved"
     assert draft.automation_plan_id == plan.id
     assert retrieval_artifact.artifact_type == "knowledge_retrieval"
+    assert retrieval_artifact.owner_entity_type == "AITask"
+    assert retrieval_artifact.metadata_json["created_by_component"] == "DeterministicKnowledgeAdapter"
+    assert "results" not in retrieval_artifact.metadata_json
     assert (artifact_root / retrieval_artifact.file_path).exists()
     assert plan_task.input_json["knowledge_retrieval"]["used_knowledge"] is True
+    assert all(
+        result.get("knowledge_card_id") != knowledge_card_id
+        for result in plan_task.input_json["knowledge_retrieval"]["results"]
+    )
     assert any(
-        result.get("knowledge_card_id") == knowledge_card_id
+        result.get("context_artifact_id") == context_artifact_id
         for result in plan_task.input_json["knowledge_retrieval"]["results"]
     )
     assert ("AutomationPlan", "approve", "plan_generated", "approved") in history

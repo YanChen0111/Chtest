@@ -1079,9 +1079,13 @@ filter, failure, and evidence set queryable for debugging and quality analysis.
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
 | ai_task_id | uuid | no | null | Optional consuming AITask |
+| consumer_entity_type | varchar(80) | no | null | Optional Requirement, CaseGenerationTask, TestCase, AutomationPlan, or other Chtest consumer type |
+| consumer_entity_id | uuid | no | null | Optional same-project consumer entity id |
 | adapter_name | varchar(120) | yes | default | KnowledgeAdapter snapshot |
 | provider_type | varchar(80) | yes | deterministic_local | Provider snapshot |
-| retrieval_mode | varchar(80) | yes | hybrid | metadata, keyword, vector, hybrid, graph |
+| requested_retrieval_mode | varchar(80) | yes | hybrid | Client/consumer requested mode |
+| retrieval_mode | varchar(80) | yes | hybrid | Actual metadata, keyword, vector, hybrid, or graph mode |
+| adapter_config_snapshot_json | jsonb | yes | {} | Non-secret provider/version/capability snapshot |
 | query_text_hash | varchar(128) | yes | none | Query hash for correlation without exposing unsafe text |
 | query_text_redacted | text | yes | none | Safe bounded query text |
 | filters_json | jsonb | yes | {} | Module, API, type, risk, status filters |
@@ -1089,9 +1093,13 @@ filter, failure, and evidence set queryable for debugging and quality analysis.
 | candidate_count | int | yes | 0 | Pre-normalization matches |
 | evidence_count | int | yes | 0 | Final evidence rows |
 | latency_ms | int | no | null | End-to-end retrieval latency |
+| degraded | bool | yes | false | True when an optional retrieval component was unavailable |
+| fallback_reason | text | no | null | Safe reason for keyword/metadata fallback |
 | error_code | varchar(120) | no | null | Stable failure code |
 | error_message | text | no | null | Safe diagnostic summary |
 | evidence_artifact_id | uuid | no | null | FK normalized retrieval Artifact |
+| started_at | timestamptz | no | null | Retrieval start time |
+| completed_at | timestamptz | no | null | Terminal time |
 
 ## 31.5 KnowledgeEvidence
 
@@ -1109,13 +1117,24 @@ quality analysis.
 | source_locator_json | jsonb | yes | {} | Exact source locator snapshot |
 | metadata_score | float | yes | 0 | Filter contribution |
 | keyword_score | float | yes | 0 | Full-text/keyword contribution |
-| vector_score | float | yes | 0 | Semantic contribution |
+| vector_score | float | no | null | Semantic contribution; null when vector capability was not used |
 | rerank_score | float | no | null | Optional reranker contribution |
 | final_score | float | yes | 0 | Normalized final score |
 | matched_terms_json | jsonb | yes | [] | Exact matched terms/phrases |
 | retrieval_reason | text | yes | none | Human-reviewable reason |
+| card_status_snapshot | varchar(40) | yes | none | Card review status when evidence was produced |
 | safe_to_show | bool | yes | true | Display safety snapshot |
 | allowed_for_prompt | bool | yes | true | Prompt eligibility snapshot |
+
+Each invocation creates a new KnowledgeRetrievalRun. Identical inputs must
+produce deterministic normalized scores/order for the same provider/config
+version, but retrieval logs are not deduplicated. `(retrieval_run_id,
+knowledge_card_id)` is unique.
+
+Retrieval read models additionally derive `current_card_status` and
+`currently_prompt_eligible` from the current TestKnowledgeCard. These are not
+persisted snapshots and must not overwrite `card_status_snapshot` or the stored
+safety/prompt flags.
 
 ## 31.6 TestKnowledgeRelationship
 

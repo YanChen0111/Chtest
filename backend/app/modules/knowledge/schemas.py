@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class KnowledgeIngestionSourceRef(BaseModel):
@@ -72,6 +72,122 @@ class KnowledgeIngestionRunRead(BaseModel):
 
 class KnowledgeIngestionRunListRead(BaseModel):
     items: list[KnowledgeIngestionRunRead] = Field(default_factory=list)
+    total: int
+    next_cursor: str | None = None
+
+
+class KnowledgeRetrievalFilters(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    module_keys: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(
+        default_factory=list,
+        max_length=50,
+    )
+    knowledge_types: list[Annotated[str, Field(min_length=1, max_length=80)]] = Field(
+        default_factory=list,
+        max_length=50,
+    )
+    risk_types: list[Annotated[str, Field(min_length=1, max_length=80)]] = Field(
+        default_factory=list,
+        max_length=50,
+    )
+    api_endpoints: list[Annotated[str, Field(min_length=1, max_length=255)]] = Field(
+        default_factory=list,
+        max_length=50,
+    )
+
+
+class KnowledgeRetrievalRunCreateRequest(BaseModel):
+    project_id: uuid.UUID
+    query_text: str = Field(min_length=1, max_length=2000)
+    filters: KnowledgeRetrievalFilters = Field(default_factory=KnowledgeRetrievalFilters)
+    consumer_entity_type: Literal[
+        "Requirement",
+        "CaseGenerationTask",
+        "TestCase",
+        "AutomationPlan",
+        "AITask",
+    ] | None = None
+    consumer_entity_id: uuid.UUID | None = None
+    adapter_name: str = Field(default="default", min_length=1, max_length=120)
+    retrieval_mode: Literal["metadata", "keyword", "vector", "hybrid"] = "hybrid"
+    approved_only: bool = True
+    limit: int = Field(default=12, ge=1, le=50)
+
+    @model_validator(mode="after")
+    def validate_consumer_pair(self) -> "KnowledgeRetrievalRunCreateRequest":
+        if (self.consumer_entity_type is None) != (self.consumer_entity_id is None):
+            raise ValueError("consumer_entity_type and consumer_entity_id must be provided together")
+        return self
+
+
+class KnowledgeEvidenceRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    retrieval_run_id: uuid.UUID
+    knowledge_card_id: uuid.UUID
+    source_artifact_id: uuid.UUID
+    knowledge_type: str
+    title: str
+    snippet: str
+    source_locator: dict[str, Any]
+    metadata_score: float
+    keyword_score: float
+    vector_score: float | None
+    rerank_score: float | None
+    final_score: float
+    matched_terms: list[str] = Field(default_factory=list)
+    retrieval_reason: str
+    card_status_snapshot: str
+    current_card_status: str
+    safe_to_show: bool
+    allowed_for_prompt: bool
+    currently_prompt_eligible: bool
+
+
+class KnowledgeRetrievalArtifactRead(BaseModel):
+    id: uuid.UUID
+    artifact_type: str
+    mime_type: str
+    size_bytes: int
+    sha256: str
+    safe_to_show: bool
+    download_url: str
+
+
+class KnowledgeRetrievalRunRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    ai_task_id: uuid.UUID | None
+    consumer_entity_type: str | None
+    consumer_entity_id: uuid.UUID | None
+    adapter_name: str
+    provider_type: str
+    requested_retrieval_mode: str
+    retrieval_mode: str
+    adapter_config_snapshot: dict[str, Any]
+    query_text_hash: str
+    query_text_redacted: str
+    filters: dict[str, Any]
+    status: str
+    candidate_count: int
+    evidence_count: int
+    latency_ms: int | None
+    degraded: bool
+    fallback_reason: str | None
+    error_code: str | None
+    error_message: str | None
+    evidence_artifact_id: uuid.UUID | None
+    evidence_artifact: KnowledgeRetrievalArtifactRead | None
+    items: list[KnowledgeEvidenceRead] = Field(default_factory=list)
+    started_at: datetime | None
+    completed_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class KnowledgeRetrievalRunListRead(BaseModel):
+    items: list[KnowledgeRetrievalRunRead] = Field(default_factory=list)
     total: int
     next_cursor: str | None = None
 

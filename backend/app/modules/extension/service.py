@@ -110,7 +110,19 @@ def read_knowledge_adapter(
 def read_knowledge_base(session: Session, project_id: uuid.UUID) -> KnowledgeBaseRead:
     get_project_or_raise(session, project_id)
     retrieval_artifacts = knowledge_retrieval_evidence(session, project_id)
-    latest_retrievals = [to_latest_retrieval_read(artifact) for artifact in retrieval_artifacts]
+    ai_tasks = {
+        item.id: item
+        for item in session.scalars(
+            select(AITask).where(
+                AITask.project_id == project_id,
+                AITask.id.in_([artifact.owner_entity_id for artifact in retrieval_artifacts]),
+            ),
+        )
+    }
+    latest_retrievals = [
+        to_latest_retrieval_read(session, artifact, ai_tasks.get(artifact.owner_entity_id))
+        for artifact in retrieval_artifacts
+    ]
     retrieval_usage = context_artifact_retrieval_usage(retrieval_artifacts)
     return KnowledgeBaseRead(
         project_id=project_id,
@@ -283,6 +295,15 @@ def normalize_terms(text: str) -> list[str]:
 
 
 def list_eligible_context_artifacts(session: Session, project_id: uuid.UUID) -> list[Artifact]:
+    from backend.app.modules.knowledge.models import TestKnowledgeCard
+
+    governed_source_artifact_ids = set(
+        session.scalars(
+            select(TestKnowledgeCard.source_artifact_id).where(
+                TestKnowledgeCard.project_id == project_id,
+            ),
+        ),
+    )
     artifacts = session.scalars(
         select(Artifact)
         .where(
@@ -296,6 +317,7 @@ def list_eligible_context_artifacts(session: Session, project_id: uuid.UUID) -> 
     return [
         artifact
         for artifact in artifacts
+        if artifact.id not in governed_source_artifact_ids
         if bool(artifact.metadata_json.get("safe_to_show", False))
         and bool(artifact.metadata_json.get("allowed_for_prompt", False))
     ]
@@ -413,17 +435,31 @@ def metadata_context_artifact_ids(metadata: dict[str, Any]) -> list[uuid.UUID]:
     return ids
 
 
-def to_latest_retrieval_read(artifact: Artifact) -> KnowledgeBaseLatestRetrievalRead:
+def to_latest_retrieval_read(
+    session: Session,
+    artifact: Artifact,
+    ai_task: AITask | None = None,
+) -> KnowledgeBaseLatestRetrievalRead:
     metadata = artifact.metadata_json
+    retrieval_payload = (
+        ai_task.input_json.get("knowledge_retrieval", {})
+        if ai_task is not None and isinstance(ai_task.input_json, dict)
+        else {}
+    )
+    raw_results = retrieval_payload.get("results", metadata.get("results", []))
     results = [
         result
-        for raw_result in metadata.get("results", [])
-        if (result := to_latest_retrieval_result_read(raw_result)) is not None
+        for raw_result in raw_results
+        if (result := to_latest_retrieval_result_read(session, artifact.project_id, raw_result)) is not None
     ]
     return KnowledgeBaseLatestRetrievalRead(
         ai_task_id=artifact.owner_entity_id,
         retrieval_evidence_artifact_id=artifact.id,
-        query_terms=[str(term) for term in metadata.get("query_terms", [])],
+        query_terms=(
+            [str(term) for term in retrieval_payload.get("query_terms", metadata.get("query_terms", []))]
+            if not bool(metadata.get("redaction_applied", False))
+            else []
+        ),
         used_context_artifact_ids=metadata_context_artifact_ids(metadata),
         snippet_count=len(results),
         created_at=artifact.created_at,
@@ -431,10 +467,24 @@ def to_latest_retrieval_read(artifact: Artifact) -> KnowledgeBaseLatestRetrieval
     )
 
 
-def to_latest_retrieval_result_read(result: dict[str, Any]) -> KnowledgeBaseRetrievalResultRead | None:
+def to_latest_retrieval_result_read(
+    session: Session,
+    project_id: uuid.UUID,
+    result: dict[str, Any],
+) -> KnowledgeBaseRetrievalResultRead | None:
     try:
         context_artifact_id = uuid.UUID(str(result.get("context_artifact_id")))
     except ValueError:
+        return None
+    context_artifact = session.get(Artifact, context_artifact_id)
+    if (
+        context_artifact is None
+        or context_artifact.project_id != project_id
+        or context_artifact.owner_entity_type != "Project"
+        or context_artifact.owner_entity_id != project_id
+        or not bool(context_artifact.metadata_json.get("safe_to_show", False))
+        or not bool(context_artifact.metadata_json.get("allowed_for_prompt", False))
+    ):
         return None
     return KnowledgeBaseRetrievalResultRead(
         context_artifact_id=context_artifact_id,

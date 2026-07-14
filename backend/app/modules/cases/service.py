@@ -158,13 +158,17 @@ def start_case_generation(
     skill = get_skill_version_by_ref(session, data.skill_version)
     context = context_manifest(session, data.project_id, data.context_artifact_ids)
     knowledge_evidence = []
+    retrieval_run = None
     if data.use_knowledge:
-        knowledge_evidence = knowledge_service.retrieve_test_knowledge_evidence(
+        retrieval_run, knowledge_evidence = knowledge_service.retrieve_and_persist_test_knowledge_evidence(
             session,
+            store,
             project_id=data.project_id,
             query_text=requirement.content,
             limit=5,
             approved_only=True,
+            consumer_entity_type="Requirement",
+            consumer_entity_id=requirement.id,
         )
     used_knowledge_source_artifact_ids = sorted(
         {
@@ -206,6 +210,12 @@ def start_case_generation(
                 for key, label in CASE_COVERAGE_DIMENSION_LABELS.items()
             ],
             "use_knowledge": data.use_knowledge,
+            "knowledge_retrieval_run_id": str(retrieval_run.id) if retrieval_run is not None else None,
+            "knowledge_retrieval_artifact_id": (
+                str(retrieval_run.evidence_artifact_id)
+                if retrieval_run is not None and retrieval_run.evidence_artifact_id is not None
+                else None
+            ),
             "knowledge_evidence": knowledge_evidence,
             "knowledge_retrieval": {
                 "used_knowledge": bool(knowledge_evidence),
@@ -219,6 +229,9 @@ def start_case_generation(
         context_artifact_ids=data.context_artifact_ids,
     )
     session.add(ai_task)
+    session.flush()
+    if retrieval_run is not None:
+        retrieval_run.ai_task_id = ai_task.id
     session.commit()
     session.refresh(ai_task)
 
@@ -266,6 +279,7 @@ def run_case_generation_task(session: Session, store: LocalArtifactStore, genera
 
     try:
         validate_case_generation_output(ai_task.output_json)
+        normalize_case_generation_knowledge_evidence(session, generation_task, ai_task.output_json)
         validate_case_generation_domain_alignment(session, generation_task, ai_task.output_json)
     except CaseGenerationSchemaInvalidError:
         mark_case_generation_schema_invalid(session, ai_task)
@@ -329,7 +343,11 @@ def list_candidates(session: Session, generation_task_id: uuid.UUID) -> list[Gen
             input_data=candidate.input_data_json,
             requirement_refs=candidate.requirement_refs_json,
             risk_refs=candidate.risk_refs_json,
-            source_knowledge_evidence=candidate.source_knowledge_evidence_json,
+            source_knowledge_evidence=knowledge_service.sanitize_evidence_items_for_display(
+                session,
+                project_id=candidate.project_id,
+                items=candidate.source_knowledge_evidence_json,
+            ),
             coverage_dimensions=candidate.coverage_dimensions_json,
             ai_reason=candidate.ai_reason,
             status=candidate.status,
@@ -677,6 +695,61 @@ def validate_case_generation_output(output: dict) -> None:
                 raise CaseGenerationSchemaInvalidError
         if "input_data" in case and not isinstance(case["input_data"], dict):
             raise CaseGenerationSchemaInvalidError
+
+
+def normalize_case_generation_knowledge_evidence(
+    session: Session,
+    generation_task: CaseGenerationTask,
+    output: dict,
+) -> None:
+    ai_task = generation_task.ai_task
+    input_json = ai_task.input_json if ai_task is not None and isinstance(ai_task.input_json, dict) else {}
+    raw_run_id = input_json.get("knowledge_retrieval_run_id")
+    retrieval_run_id = uuid.UUID(str(raw_run_id)) if raw_run_id else None
+    for case in output["cases"]:
+        requested_items = case.get("source_knowledge_evidence", [])
+        requested_ids: list[uuid.UUID] = []
+        for item in requested_items:
+            if not isinstance(item, dict):
+                raise CaseGenerationSchemaInvalidError
+            raw_evidence_id = item.get("knowledge_evidence_id") or item.get("evidence_id")
+            if not raw_evidence_id:
+                raise CaseGenerationSchemaInvalidError
+            try:
+                evidence_id = uuid.UUID(str(raw_evidence_id))
+            except ValueError as exc:
+                raise CaseGenerationSchemaInvalidError from exc
+            if evidence_id not in requested_ids:
+                requested_ids.append(evidence_id)
+        if not requested_ids:
+            case["source_knowledge_evidence"] = []
+            continue
+        if retrieval_run_id is None:
+            raise CaseGenerationSchemaInvalidError
+        try:
+            case["source_knowledge_evidence"] = knowledge_service.verified_prompt_evidence_refs(
+                session,
+                project_id=generation_task.project_id,
+                retrieval_run_id=retrieval_run_id,
+                evidence_ids=requested_ids,
+            )
+        except knowledge_service.KnowledgeRetrievalInputNotAllowedError as exc:
+            raise CaseGenerationSchemaInvalidError from exc
+    if ai_task is not None:
+        normalized_output = dict(output)
+        normalized_output["cases"] = [
+            {
+                **case,
+                "source_knowledge_evidence": [
+                    dict(item)
+                    for item in case.get("source_knowledge_evidence", [])
+                ],
+            }
+            for case in output["cases"]
+        ]
+        ai_task.output_json = normalized_output
+        session.add(ai_task)
+        session.flush()
 
 
 def mark_case_generation_schema_invalid(session: Session, ai_task: AITask) -> None:

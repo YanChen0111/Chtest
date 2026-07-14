@@ -522,15 +522,33 @@ Knowledge retrieval artifact content must include:
 Knowledge retrieval artifact rules:
 
 - `artifact_type=knowledge_retrieval`.
-- `owner_entity_type=AITask` and `owner_entity_id=ai_task_id`.
-- `created_by_component` may be `DeterministicKnowledgeAdapter` for requirement
-  review/case generation evidence or `AutomationPlanAgent` for AutomationPlan
-  evidence.
-- `results` must cite persisted ContextArtifact ids; free-floating snippets are
-  not valid evidence.
-- Snippets must be bounded and safe to show.
+- ContextArtifact-only deterministic retrieval may write an AITask-owned
+  reference Artifact with `created_by_component=DeterministicKnowledgeAdapter`.
+  Its file contains only query hash/redaction state, used ContextArtifact ids,
+  and score/count references. It must not duplicate titles, snippets, matched
+  terms, or full result payloads in the file or Artifact metadata.
+- Retrieval containing TestKnowledgeCard evidence must reference the canonical
+  KnowledgeRetrievalRun-owned Artifact. Requirement, case-generation, and
+  automation AITasks must not write a second raw retrieval copy.
+- When one AITask uses ContextArtifact results plus card evidence, or card
+  evidence from more than one retrieval run, it may write one AITask-owned
+  reference manifest. The manifest contains only ContextArtifact result refs,
+  KnowledgeEvidence/run ids, and canonical Artifact ids; it must not copy card
+  or context snippets/provider payloads.
+- Context result references must cite persisted ContextArtifact ids;
+  free-floating snippets are not valid evidence.
 - Secret-like values must be redacted before persistence.
 - Scores must be deterministic for the same input artifacts and query terms.
+
+Final standalone retrieval rules:
+
+- `owner_entity_type=KnowledgeRetrievalRun` and `owner_entity_id=run_id` for the
+  canonical normalized TestKnowledgeCard retrieval Artifact, including runs
+  correlated to an AITask.
+- `KnowledgeRetrievalRun.ai_task_id` or consumer fields provide correlation;
+  Artifact ownership never points to a free-form client id.
+- Completed empty retrieval writes the same normalized artifact shape with
+  `results=[]`, candidate/evidence counts of zero, and no fabricated scores.
 
 Final retrieval evidence adds these required fields:
 
@@ -542,6 +560,9 @@ Final retrieval evidence adds these required fields:
 - Provider-native request/response bodies may be stored only as protected
   diagnostic artifacts when needed. They are never the report or case evidence
   contract and are not displayed unless an explicit safe-to-show gate passes.
+- Marking a source TestKnowledgeCard unsafe revokes download/display access for
+  its canonical retrieval Artifact and any historical AITask-owned raw copy
+  that identifies the card.
 
 ## 6. Evidence Manifest
 

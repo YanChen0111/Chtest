@@ -902,6 +902,8 @@ Request:
     "risk_types": ["state", "channel"],
     "api_endpoints": []
   },
+  "consumer_entity_type": "Requirement",
+  "consumer_entity_id": "00000000-0000-0000-0000-000000000401",
   "retrieval_mode": "hybrid",
   "approved_only": true,
   "limit": 12
@@ -917,6 +919,9 @@ Response `201` or `202` returns:
   "adapter_name": "default",
   "provider_type": "postgres_hybrid",
   "retrieval_mode": "hybrid",
+  "adapter_config_snapshot": {},
+  "degraded": false,
+  "fallback_reason": null,
   "candidate_count": 34,
   "evidence_count": 8,
   "latency_ms": 42,
@@ -935,8 +940,11 @@ Response `201` or `202` returns:
       "final_score": 0.82,
       "matched_terms": ["预约", "电流限制"],
       "retrieval_reason": "模块与风险过滤命中，全文和语义检索共同支持",
+      "card_status_snapshot": "approved",
+      "current_card_status": "approved",
       "safe_to_show": true,
-      "allowed_for_prompt": true
+      "allowed_for_prompt": true,
+      "currently_prompt_eligible": true
     }
   ]
 }
@@ -944,7 +952,9 @@ Response `201` or `202` returns:
 
 Score normalization must be deterministic for a fixed provider/config version.
 Missing optional vector or rerank capability degrades to metadata/full-text and
-is recorded in the run; it must not fabricate zero-cost semantic evidence.
+is recorded in the run; it must use `vector_score=null`/`rerank_score=null`
+instead of fabricating zero-cost semantic evidence. Successful empty results
+still persist a completed run and `knowledge_retrieval` Artifact.
 
 ### 2.14.8 List And Read KnowledgeRetrievalRuns
 
@@ -956,6 +966,18 @@ GET /api/knowledge/retrieval-runs/{run_id}
 These endpoints are the primary retrieval-log query surface. They return safe
 query text, filters, provider/config snapshots, latency, candidate/evidence
 counts, failures, and evidence artifact links.
+
+`card_status_snapshot`, `safe_to_show`, and `allowed_for_prompt` preserve the
+state recorded when evidence was produced. `current_card_status` and
+`currently_prompt_eligible` report current governance state so stale, archived,
+duplicate, unsafe, or missing cards cannot appear currently usable.
+
+Once a ContextArtifact has TestKnowledgeCard rows, final RequirementReview and
+AutomationPlan retrieval excludes that source from the legacy raw
+ContextArtifact adapter and uses the governed card/evidence path. Mixed
+ContextArtifact and card retrieval, or card evidence from multiple runs, uses
+an AITask-owned reference manifest containing only stable ids and canonical
+Artifact references.
 
 ### 2.14.9 Query Test Knowledge Relationships
 

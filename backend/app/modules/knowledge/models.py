@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -171,6 +172,167 @@ class TestKnowledgeCard(TimestampMixin, Base):
         back_populates="knowledge_card",
         cascade="all, delete-orphan",
     )
+
+
+class KnowledgeRetrievalRun(TimestampMixin, Base):
+    __tablename__ = "knowledge_retrieval_runs"
+    __table_args__ = (
+        CheckConstraint("candidate_count >= 0", name="ck_knowledge_retrieval_runs_candidate_count"),
+        CheckConstraint("evidence_count >= 0", name="ck_knowledge_retrieval_runs_evidence_count"),
+        CheckConstraint(
+            "evidence_count <= candidate_count",
+            name="ck_knowledge_retrieval_runs_evidence_not_above_candidates",
+        ),
+        CheckConstraint(
+            "latency_ms IS NULL OR latency_ms >= 0",
+            name="ck_knowledge_retrieval_runs_latency",
+        ),
+        CheckConstraint(
+            "(consumer_entity_type IS NULL) = (consumer_entity_id IS NULL)",
+            name="ck_knowledge_retrieval_runs_consumer_pair",
+        ),
+        Index("ix_knowledge_retrieval_runs_project_created", "project_id", "created_at", "id"),
+        Index(
+            "ix_knowledge_retrieval_runs_project_status",
+            "project_id",
+            "status",
+            "created_at",
+            "id",
+        ),
+        Index(
+            "ix_knowledge_retrieval_runs_project_provider",
+            "project_id",
+            "provider_type",
+            "created_at",
+            "id",
+        ),
+        Index(
+            "ix_knowledge_retrieval_runs_project_consumer",
+            "project_id",
+            "consumer_entity_type",
+            "consumer_entity_id",
+            "created_at",
+            "id",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    ai_task_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("ai_tasks.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    consumer_entity_type: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    consumer_entity_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    adapter_name: Mapped[str] = mapped_column(String(120), nullable=False, default="default")
+    provider_type: Mapped[str] = mapped_column(String(80), nullable=False, default="deterministic_local")
+    requested_retrieval_mode: Mapped[str] = mapped_column(String(80), nullable=False, default="hybrid")
+    retrieval_mode: Mapped[str] = mapped_column(String(80), nullable=False, default="hybrid")
+    adapter_config_snapshot_json: Mapped[dict[str, Any]] = json_dict_column()
+    query_text_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    query_text_redacted: Mapped[str] = mapped_column(Text, nullable=False)
+    filters_json: Mapped[dict[str, Any]] = json_dict_column()
+    status: Mapped[str] = mapped_column(String(40), nullable=False, default="created")
+    candidate_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    evidence_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    degraded: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    fallback_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_artifact_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("artifacts.id", ondelete="RESTRICT"),
+        nullable=True,
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    project: Mapped[Project] = relationship()
+    ai_task: Mapped[AITask | None] = relationship()
+    evidence_artifact: Mapped[Artifact | None] = relationship(foreign_keys=[evidence_artifact_id])
+    evidence_rows: Mapped[list["KnowledgeEvidence"]] = relationship(
+        back_populates="retrieval_run",
+        cascade="all, delete-orphan",
+    )
+
+
+class KnowledgeEvidence(TimestampMixin, Base):
+    __tablename__ = "knowledge_evidence"
+    __table_args__ = (
+        UniqueConstraint(
+            "retrieval_run_id",
+            "knowledge_card_id",
+            name="uq_knowledge_evidence_run_card",
+        ),
+        CheckConstraint(
+            "metadata_score >= 0 AND metadata_score <= 1",
+            name="ck_knowledge_evidence_metadata_score",
+        ),
+        CheckConstraint(
+            "keyword_score >= 0 AND keyword_score <= 1",
+            name="ck_knowledge_evidence_keyword_score",
+        ),
+        CheckConstraint(
+            "vector_score IS NULL OR (vector_score >= 0 AND vector_score <= 1)",
+            name="ck_knowledge_evidence_vector_score",
+        ),
+        CheckConstraint(
+            "rerank_score IS NULL OR (rerank_score >= 0 AND rerank_score <= 1)",
+            name="ck_knowledge_evidence_rerank_score",
+        ),
+        CheckConstraint(
+            "final_score >= 0 AND final_score <= 1",
+            name="ck_knowledge_evidence_final_score",
+        ),
+        Index("ix_knowledge_evidence_run_score", "retrieval_run_id", "final_score"),
+        Index("ix_knowledge_evidence_project_card", "project_id", "knowledge_card_id"),
+        Index("ix_knowledge_evidence_source_artifact", "source_artifact_id"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    retrieval_run_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("knowledge_retrieval_runs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    knowledge_card_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("test_knowledge_cards.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    source_artifact_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("artifacts.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    snippet: Mapped[str] = mapped_column(Text, nullable=False)
+    source_locator_json: Mapped[dict[str, Any]] = json_dict_column()
+    metadata_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    keyword_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    vector_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    rerank_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    final_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    matched_terms_json: Mapped[list[Any]] = json_list_column()
+    retrieval_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    card_status_snapshot: Mapped[str] = mapped_column(String(40), nullable=False)
+    safe_to_show: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    allowed_for_prompt: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    project: Mapped[Project] = relationship()
+    retrieval_run: Mapped[KnowledgeRetrievalRun] = relationship(back_populates="evidence_rows")
+    knowledge_card: Mapped[TestKnowledgeCard] = relationship()
+    source_artifact: Mapped[Artifact] = relationship(foreign_keys=[source_artifact_id])
 
 
 class TestKnowledgeEmbeddingIndex(TimestampMixin, Base):

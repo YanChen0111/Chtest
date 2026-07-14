@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import uuid
@@ -164,6 +165,13 @@ def start_requirement_review(
         context_artifact_ids=context_artifact_ids,
     )
     session.add(ai_task)
+    session.flush()
+    knowledge_service.link_retrieval_run_to_ai_task(
+        session,
+        project_id=requirement.project_id,
+        retrieval_payload=retrieval_payload,
+        ai_task_id=ai_task.id,
+    )
     session.commit()
     session.refresh(ai_task)
 
@@ -203,17 +211,28 @@ def retrieve_requirement_knowledge(
         project_id=requirement.project_id,
         query_text=requirement.content,
     )
-    card_evidence = knowledge_service.retrieve_test_knowledge_evidence(
+    retrieval_run, card_evidence = knowledge_service.retrieve_and_persist_test_knowledge_evidence(
         session,
+        store,
         project_id=requirement.project_id,
         query_text=requirement.content,
         limit=5,
         approved_only=True,
+        consumer_entity_type="Requirement",
+        consumer_entity_id=requirement.id,
     )
     if not adapter_retrieval.used_knowledge and not card_evidence:
         return None, []
 
     adapter_payload = adapter_retrieval.model_dump(mode="json")
+    adapter_payload["created_knowledge_retrieval_run_id"] = str(retrieval_run.id)
+    adapter_payload["knowledge_retrieval_run_id"] = str(retrieval_run.id)
+    adapter_payload["knowledge_retrieval_run_ids"] = [str(retrieval_run.id)] if card_evidence else []
+    adapter_payload["knowledge_retrieval_artifact_id"] = (
+        str(retrieval_run.evidence_artifact_id)
+        if retrieval_run.evidence_artifact_id is not None
+        else None
+    )
     if not card_evidence:
         return adapter_payload, list(adapter_retrieval.used_context_artifact_ids)
 
@@ -237,6 +256,14 @@ def retrieve_requirement_knowledge(
             "query_text": requirement.content,
             "query_terms": knowledge_service.normalize_terms(requirement.content),
             "used_knowledge": True,
+            "created_knowledge_retrieval_run_id": str(retrieval_run.id),
+            "knowledge_retrieval_run_id": str(retrieval_run.id),
+            "knowledge_retrieval_run_ids": [str(retrieval_run.id)],
+            "knowledge_retrieval_artifact_id": (
+                str(retrieval_run.evidence_artifact_id)
+                if retrieval_run.evidence_artifact_id is not None
+                else None
+            ),
             "used_context_artifact_ids": [str(artifact_id) for artifact_id in used_context_artifact_ids],
             "result_sources": [
                 *([] if not adapter_results else ["context_artifact"]),
@@ -498,11 +525,59 @@ def attach_retrieval_evidence_artifact(
     retrieval_results = list(retrieval_payload.get("results", []))
     includes_test_knowledge_cards = any(result.get("knowledge_card_id") for result in retrieval_results)
     retrieval_mode = str(retrieval_payload.get("retrieval_mode", "deterministic_local"))
+    knowledge_evidence_refs = knowledge_service.resolve_knowledge_evidence_artifact_refs(
+        session,
+        project_id=ai_task.project_id,
+        items=retrieval_results,
+    )
+    canonical_artifact_ids = list(
+        dict.fromkeys(item["canonical_artifact_id"] for item in knowledge_evidence_refs),
+    )
+    retrieval_run_ids = list(
+        dict.fromkeys(item["knowledge_retrieval_run_id"] for item in knowledge_evidence_refs),
+    )
+    context_result_refs = [
+        {
+            "context_artifact_id": result.get("context_artifact_id"),
+            "score": result.get("score"),
+            "matched_term_count": len(result.get("matched_terms", [])),
+        }
+        for result in retrieval_results
+        if result.get("context_artifact_id")
+    ]
+    if includes_test_knowledge_cards and not context_result_refs and len(canonical_artifact_ids) == 1:
+        artifact = session.get(Artifact, uuid.UUID(canonical_artifact_ids[0]))
+        if artifact is not None:
+            output_json = dict(ai_task.output_json)
+            output_json["used_knowledge"] = True
+            output_json["used_context_artifact_ids"] = [
+                str(context_id) for context_id in used_context_artifact_ids
+            ]
+            output_json["knowledge_retrieval_run_id"] = retrieval_run_ids[0]
+            output_json["knowledge_retrieval_run_ids"] = retrieval_run_ids
+            output_json["canonical_retrieval_artifact_ids"] = canonical_artifact_ids
+            output_json["retrieval_evidence_artifact_id"] = str(artifact.id)
+            ai_task.output_json = output_json
+            session.add(ai_task)
+            session.commit()
+            session.refresh(ai_task)
+            return artifact
+
+    raw_query = str(retrieval_payload.get("query_text", ""))
+    reference_payload = {
+        "retrieval_mode": retrieval_mode,
+        "query_text_hash": "sha256:" + hashlib.sha256(raw_query.encode("utf-8")).hexdigest(),
+        "query_text_redacted": knowledge_service.redact_retrieval_query(raw_query),
+        "used_context_artifact_ids": retrieved_context_artifact_ids,
+        "result_refs": context_result_refs,
+        "knowledge_evidence_refs": knowledge_evidence_refs,
+        "canonical_artifact_ids": canonical_artifact_ids,
+    }
     payload = ProviderArtifactPayload(
         artifact_type="knowledge_retrieval",
         file_name="knowledge_retrieval.json",
         mime_type="application/json",
-        content=json.dumps(retrieval_payload, ensure_ascii=False, sort_keys=True).encode("utf-8"),
+        content=json.dumps(reference_payload, ensure_ascii=False, sort_keys=True).encode("utf-8"),
     )
     artifact = ai_runtime_service.write_ai_task_artifact(
         session,
@@ -511,31 +586,34 @@ def attach_retrieval_evidence_artifact(
         payload,
         metadata_json={
             "created_by_component": (
-                "TestKnowledgeHybridRetriever"
+                "KnowledgeRetrievalReferenceManifest"
                 if includes_test_knowledge_cards
                 else "DeterministicKnowledgeAdapter"
             ),
             "source_entity_type": "AITask",
             "source_entity_id": str(ai_task.id),
             "safe_to_show": True,
-            "redaction_applied": any(
-                bool(result.get("redaction_applied", False)) for result in retrieval_results
-            ),
+            "redaction_applied": reference_payload["query_text_redacted"] == "[redacted]",
             "description": (
                 "Hybrid TestKnowledgeCard retrieval evidence"
                 if includes_test_knowledge_cards
                 else "Deterministic local knowledge retrieval evidence"
             ),
             "retrieval_mode": retrieval_mode,
-            "query_terms": list(retrieval_payload.get("query_terms", [])),
+            "query_text_hash": reference_payload["query_text_hash"],
             "result_count": len(retrieval_results),
-            "results": retrieval_results,
+            "knowledge_evidence_count": len(knowledge_evidence_refs),
+            "canonical_artifact_ids": canonical_artifact_ids,
             "used_context_artifact_ids": retrieved_context_artifact_ids,
         },
     )
     output_json = dict(ai_task.output_json)
     output_json["used_knowledge"] = True
     output_json["used_context_artifact_ids"] = [str(context_id) for context_id in used_context_artifact_ids]
+    output_json["knowledge_retrieval_run_ids"] = retrieval_run_ids
+    if len(retrieval_run_ids) == 1:
+        output_json["knowledge_retrieval_run_id"] = retrieval_run_ids[0]
+    output_json["canonical_retrieval_artifact_ids"] = canonical_artifact_ids
     output_json["retrieval_evidence_artifact_id"] = str(artifact.id)
     ai_task.output_json = output_json
     session.add(ai_task)

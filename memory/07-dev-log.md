@@ -4163,3 +4163,35 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 ### Next
 
 - Add safe local database preflight before final RAG migrations.
+
+## 2026-07-14 Knowledge Retrieval Run And Evidence Boundary
+
+### Completed
+
+- Added persisted KnowledgeRetrievalRun and normalized KnowledgeEvidence with
+  Alembic `20260714_0012`.
+- Added provider-neutral retrieval-log create/list/read APIs, paging, filters,
+  latency/count/error evidence, and successful empty-result Artifacts.
+- Routed RequirementReview, CaseGeneration, and AutomationPlan knowledge use
+  through canonical evidence ids and safe reference manifests.
+- Closed retrieval trace/safety gaps for unsafe lifecycle changes, historical
+  raw copies, mixed/multi-run evidence, legacy adapter bypass, candidate display
+  payloads, Artifact download gates, and cross-project AITask correlation.
+- Added current card lifecycle/prompt eligibility to retrieval responses while
+  retaining the original evidence snapshots.
+
+### Verification
+
+- Focused Task 47.4 suite: `64 passed`.
+- Full backend: `398 passed, 13 failed`; remaining failures are the known
+  Windows fake-runner `WinError 193` cases and stale golden decision-table
+  acknowledgement fixtures.
+- `compileall`: passed.
+- `git diff --check`: passed.
+- Read-only local DB preflight confirmed the source fingerprint is unchanged and
+  `source_mutation_performed=false`.
+
+### Next
+
+- Task 47.5: PostgreSQL full-text + pgvector KnowledgeAdapter with deterministic
+  fallback, no Qdrant/orchestration/frontend expansion.
