@@ -1,22 +1,35 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import re
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime import service as ai_runtime_service
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.cases.models import GeneratedCaseCandidate, TestCase
-from backend.app.modules.knowledge.models import TestKnowledgeCard, TestKnowledgeEmbeddingIndex
-from backend.app.modules.knowledge.schemas import TestKnowledgeCardRead
+from backend.app.modules.knowledge.models import (
+    KnowledgeIngestionRun,
+    TestKnowledgeCard,
+    TestKnowledgeEmbeddingIndex,
+)
+from backend.app.modules.knowledge.schemas import (
+    KnowledgeIngestionArtifactRead,
+    KnowledgeIngestionRunCreateRequest,
+    KnowledgeIngestionRunRead,
+    TestKnowledgeCardRead,
+)
 from backend.app.modules.projects.models import Project
+from backend.app.modules.review_history.service import append_review_history
 
 
 TERM_PATTERN = re.compile(r"\w+", re.UNICODE)
@@ -29,6 +42,27 @@ DEFAULT_EMBEDDING_PROVIDER = "deterministic_local"
 DEFAULT_EMBEDDING_MODEL = "deterministic-hashing-v1"
 DEFAULT_EMBEDDING_DIM = 64
 MIN_VECTOR_SIMILARITY = 0.05
+SECRET_CONFIG_KEYS = {
+    "api_key",
+    "authorization",
+    "client_secret",
+    "cookie",
+    "credential",
+    "password",
+    "secret",
+    "token",
+}
+INGESTION_EVIDENCE_FILES = {
+    "knowledge_ingestion_manifest": "ingestion-manifest.json",
+    "knowledge_parse_result": "parse-result.json",
+    "knowledge_extraction_result": "extraction-result.json",
+    "knowledge_safety_result": "safety-result.json",
+    "error_json": "error.json",
+}
+ALLOWED_CARD_TRANSITIONS = {
+    "extracted": {"approved", "stale", "unsafe", "duplicate", "archived"},
+    "approved": {"stale", "unsafe", "duplicate", "archived"},
+}
 
 
 class ProjectNotFoundError(Exception):
@@ -43,11 +77,27 @@ class SourceArtifactNotAllowedError(Exception):
     pass
 
 
+class KnowledgeIngestionSourceNotAllowedError(Exception):
+    pass
+
+
+class KnowledgeIngestionConfigNotAllowedError(Exception):
+    pass
+
+
+class KnowledgeIngestionRunNotFoundError(Exception):
+    pass
+
+
 class TestKnowledgeCardNotFoundError(Exception):
     pass
 
 
 class TestKnowledgeCardInvalidStatusError(Exception):
+    pass
+
+
+class TestKnowledgeCardDuplicateTargetError(Exception):
     pass
 
 
@@ -78,12 +128,509 @@ class KnowledgeIndexRebuildResult:
     items: list[TestKnowledgeEmbeddingIndex]
 
 
+@dataclass(frozen=True)
+class KnowledgeIngestionRunPage:
+    items: list[KnowledgeIngestionRun]
+    total: int
+    next_cursor: str | None
+
+
+def create_knowledge_ingestion_run(
+    session: Session,
+    store: LocalArtifactStore,
+    data: KnowledgeIngestionRunCreateRequest,
+) -> KnowledgeIngestionRun:
+    if session.get(Project, data.project_id) is None:
+        raise ProjectNotFoundError
+    serialized_config = json.dumps(data.config_snapshot, ensure_ascii=False, sort_keys=True, default=str)
+    if (
+        len(serialized_config.encode("utf-8")) > 20_000
+        or config_snapshot_contains_secret(data.config_snapshot)
+        or ai_runtime_service.has_high_risk_secret(serialized_config)
+    ):
+        raise KnowledgeIngestionConfigNotAllowedError
+
+    artifacts = resolve_ingestion_source_artifacts(session, data)
+    normalized_refs = [
+        {"artifact_id": str(artifact.id)}
+        for artifact in sorted(artifacts, key=lambda item: str(item.id))
+    ]
+    config_snapshot = {**data.config_snapshot, "extract_cards": data.extract_cards}
+    idempotency_key = ingestion_idempotency_key(
+        project_id=data.project_id,
+        source_type=data.source_type,
+        artifacts=artifacts,
+        parser_name=data.parser_name,
+        parser_version=data.parser_version,
+        config_snapshot=config_snapshot,
+    )
+    if not data.force:
+        existing = session.scalar(
+            select(KnowledgeIngestionRun).where(
+                KnowledgeIngestionRun.project_id == data.project_id,
+                KnowledgeIngestionRun.idempotency_key == idempotency_key,
+            ),
+        )
+        if existing is not None:
+            return existing
+    else:
+        idempotency_key = hashlib.sha256(
+            f"{idempotency_key}:{uuid.uuid4()}".encode("utf-8"),
+        ).hexdigest()
+
+    run = KnowledgeIngestionRun(
+        project_id=data.project_id,
+        idempotency_key=idempotency_key,
+        source_type=data.source_type,
+        source_refs_json=normalized_refs,
+        input_artifact_ids_json=[str(artifact.id) for artifact in artifacts],
+        parser_name=data.parser_name,
+        parser_version=data.parser_version,
+        config_snapshot_json=config_snapshot,
+        status="created",
+    )
+    session.add(run)
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        existing = session.scalar(
+            select(KnowledgeIngestionRun).where(
+                KnowledgeIngestionRun.project_id == data.project_id,
+                KnowledgeIngestionRun.idempotency_key == idempotency_key,
+            ),
+        )
+        if existing is not None and not data.force:
+            return existing
+        raise
+    session.refresh(run)
+
+    evidence_ids: list[str] = []
+    now = datetime.now(UTC)
+    run.started_at = now
+    run.status = "parsing"
+    session.commit()
+    session.refresh(run)
+    try:
+        manifest = {
+            "run_id": str(run.id),
+            "project_id": str(run.project_id),
+            "source_type": run.source_type,
+            "source_refs": normalized_refs,
+            "input_artifact_ids": [str(artifact.id) for artifact in artifacts],
+            "source_sha256s": sorted(artifact.sha256 for artifact in artifacts),
+            "parser_name": run.parser_name,
+            "parser_version": run.parser_version,
+            "config_snapshot": config_snapshot,
+            "idempotency_key": run.idempotency_key,
+        }
+        evidence_ids.append(
+            str(write_ingestion_evidence(session, store, run, "knowledge_ingestion_manifest", manifest).id),
+        )
+
+        parsed_sources = [
+            {
+                "artifact_id": str(artifact.id),
+                "artifact_type": artifact.artifact_type,
+                "sha256": artifact.sha256,
+                "source_ref": artifact.metadata_json.get("source_ref"),
+            }
+            for artifact in artifacts
+        ]
+        run.parsed_count = len(parsed_sources)
+        evidence_ids.append(
+            str(
+                write_ingestion_evidence(
+                    session,
+                    store,
+                    run,
+                    "knowledge_parse_result",
+                    {"parsed_count": run.parsed_count, "sources": parsed_sources, "failed_units": []},
+                ).id,
+            ),
+        )
+
+        run.evidence_artifact_ids_json = evidence_ids
+        if data.extract_cards:
+            run.status = "extracting"
+        session.commit()
+        session.refresh(run)
+
+        cards: list[TestKnowledgeCard] = []
+        skipped_count = 0
+        if data.extract_cards:
+            for artifact in artifacts:
+                result = extract_test_knowledge_cards(
+                    session,
+                    store,
+                    project_id=run.project_id,
+                    source_artifact_id=artifact.id,
+                    ingestion_run_id=run.id,
+                    commit=False,
+                )
+                cards.extend(result.cards)
+                skipped_count += result.skipped_count
+        run.extracted_card_count = len(cards)
+        run.skipped_count = skipped_count
+        evidence_ids.append(
+            str(
+                write_ingestion_evidence(
+                    session,
+                    store,
+                    run,
+                    "knowledge_extraction_result",
+                    {
+                        "created_count": len(cards),
+                        "skipped_count": skipped_count,
+                        "card_ids": [str(card.id) for card in cards],
+                    },
+                ).id,
+            ),
+        )
+        evidence_ids.append(
+            str(
+                write_ingestion_evidence(
+                    session,
+                    store,
+                    run,
+                    "knowledge_safety_result",
+                    {
+                        "checked_source_count": len(artifacts),
+                        "safe_source_count": len(artifacts),
+                        "prompt_eligible_source_count": len(artifacts),
+                        "unsafe_source_count": 0,
+                    },
+                ).id,
+            ),
+        )
+        run.status = "waiting_review" if cards else "completed"
+        run.completed_at = None if cards else datetime.now(UTC)
+        run.evidence_artifact_ids_json = evidence_ids
+        session.commit()
+        session.refresh(run)
+        return run
+    except (OSError, UnicodeError):
+        session.rollback()
+        return mark_ingestion_failed(
+            session,
+            store,
+            run_id=run.id,
+            failed_count=max(1, len(artifacts)),
+            error_code="KNOWLEDGE_INGESTION_LOCAL_ERROR",
+            error_message="Local knowledge ingestion failed while reading or writing evidence.",
+        )
+    except Exception:
+        session.rollback()
+        mark_ingestion_failed(
+            session,
+            store,
+            run_id=run.id,
+            failed_count=max(1, len(artifacts)),
+            error_code="KNOWLEDGE_INGESTION_INTERNAL_ERROR",
+            error_message="Knowledge ingestion failed before completion.",
+        )
+        raise
+
+
+def mark_ingestion_failed(
+    session: Session,
+    store: LocalArtifactStore,
+    *,
+    run_id: uuid.UUID,
+    failed_count: int,
+    error_code: str,
+    error_message: str,
+) -> KnowledgeIngestionRun:
+    failed_run = session.get(KnowledgeIngestionRun, run_id)
+    if failed_run is None:
+        raise KnowledgeIngestionRunNotFoundError
+    failed_run.status = "failed"
+    failed_run.failed_count = failed_count
+    failed_run.error_code = error_code
+    failed_run.error_message = error_message
+    failed_run.completed_at = datetime.now(UTC)
+    session.commit()
+    session.refresh(failed_run)
+    try:
+        error_artifact = write_ingestion_evidence(
+            session,
+            store,
+            failed_run,
+            "error_json",
+            {"error_code": error_code, "message": error_message},
+        )
+    except OSError:
+        session.rollback()
+        return failed_run
+    failed_run.evidence_artifact_ids_json = [
+        *[str(item) for item in failed_run.evidence_artifact_ids_json],
+        str(error_artifact.id),
+    ]
+    session.commit()
+    session.refresh(failed_run)
+    return failed_run
+
+
+def resolve_ingestion_source_artifacts(
+    session: Session,
+    data: KnowledgeIngestionRunCreateRequest,
+) -> list[Artifact]:
+    artifacts_by_id: dict[uuid.UUID, Artifact] = {}
+    for source_ref in data.source_refs:
+        artifact = session.get(Artifact, source_ref.artifact_id)
+        if artifact is None or artifact.project_id != data.project_id:
+            raise KnowledgeIngestionSourceNotAllowedError
+        try:
+            ensure_extractable_context_artifact(artifact)
+        except SourceArtifactNotAllowedError as exc:
+            raise KnowledgeIngestionSourceNotAllowedError from exc
+        artifacts_by_id[artifact.id] = artifact
+    return list(artifacts_by_id.values())
+
+
+def ingestion_idempotency_key(
+    *,
+    project_id: uuid.UUID,
+    source_type: str,
+    artifacts: list[Artifact],
+    parser_name: str,
+    parser_version: str,
+    config_snapshot: dict[str, Any],
+) -> str:
+    payload = {
+        "project_id": str(project_id),
+        "source_type": source_type,
+        "source_artifacts": sorted(
+            ({"artifact_id": str(artifact.id), "sha256": artifact.sha256} for artifact in artifacts),
+            key=lambda item: item["artifact_id"],
+        ),
+        "parser_name": parser_name,
+        "parser_version": parser_version,
+        "config_snapshot": config_snapshot,
+    }
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def config_snapshot_contains_secret(value: Any) -> bool:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            normalized_key = str(key).strip().lower().replace("-", "_")
+            is_reference = normalized_key.endswith(("_ref", "_reference"))
+            if not is_reference and (
+                normalized_key in SECRET_CONFIG_KEYS
+                or normalized_key.endswith(("_password", "_secret", "_token", "_api_key"))
+            ):
+                return True
+            if config_snapshot_contains_secret(item):
+                return True
+        return False
+    if isinstance(value, list):
+        return any(config_snapshot_contains_secret(item) for item in value)
+    if isinstance(value, str):
+        return ai_runtime_service.has_high_risk_secret(value)
+    return False
+
+
+def write_ingestion_evidence(
+    session: Session,
+    store: LocalArtifactStore,
+    run: KnowledgeIngestionRun,
+    artifact_type: str,
+    payload: dict[str, Any],
+) -> Artifact:
+    content = (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n").encode("utf-8")
+    file_name = INGESTION_EVIDENCE_FILES[artifact_type]
+    file_path = f"projects/{run.project_id}/knowledge-ingestion-runs/{run.id}/{file_name}"
+    write_result = store.write_bytes(file_path, content)
+    artifact = Artifact(
+        project_id=run.project_id,
+        owner_entity_type="KnowledgeIngestionRun",
+        owner_entity_id=run.id,
+        artifact_type=artifact_type,
+        file_path=write_result.file_path,
+        mime_type="application/json",
+        size_bytes=write_result.size_bytes,
+        sha256=write_result.sha256,
+        metadata_json={
+            "created_by_component": "KnowledgeIngestionService",
+            "source_entity_type": "KnowledgeIngestionRun",
+            "source_entity_id": str(run.id),
+            "safe_to_show": True,
+            "redaction_applied": False,
+            "description": f"Knowledge ingestion evidence {artifact_type}",
+        },
+    )
+    session.add(artifact)
+    session.flush()
+    return artifact
+
+
+def get_knowledge_ingestion_run(session: Session, run_id: uuid.UUID) -> KnowledgeIngestionRun:
+    run = session.get(KnowledgeIngestionRun, run_id)
+    if run is None:
+        raise KnowledgeIngestionRunNotFoundError
+    return run
+
+
+def list_knowledge_ingestion_runs(
+    session: Session,
+    project_id: uuid.UUID,
+    *,
+    status: str | None = None,
+    source_type: str | None = None,
+    limit: int = 50,
+    cursor: uuid.UUID | None = None,
+) -> KnowledgeIngestionRunPage:
+    if session.get(Project, project_id) is None:
+        raise ProjectNotFoundError
+    filters = [KnowledgeIngestionRun.project_id == project_id]
+    if status:
+        filters.append(KnowledgeIngestionRun.status == status)
+    if source_type:
+        filters.append(KnowledgeIngestionRun.source_type == source_type)
+    total = session.scalar(
+        select(func.count(KnowledgeIngestionRun.id)).where(*filters),
+    ) or 0
+    page_filters = list(filters)
+    if cursor is not None:
+        cursor_run = session.get(KnowledgeIngestionRun, cursor)
+        if cursor_run is None or cursor_run.project_id != project_id:
+            raise KnowledgeIngestionRunNotFoundError
+        cursor_created_at = (
+            select(KnowledgeIngestionRun.created_at)
+            .where(KnowledgeIngestionRun.id == cursor)
+            .scalar_subquery()
+        )
+        page_filters.append(
+            or_(
+                KnowledgeIngestionRun.created_at < cursor_created_at,
+                and_(
+                    KnowledgeIngestionRun.created_at == cursor_created_at,
+                    KnowledgeIngestionRun.id < cursor_run.id,
+                ),
+            ),
+        )
+    rows = list(
+        session.scalars(
+            select(KnowledgeIngestionRun).where(*page_filters).order_by(
+                KnowledgeIngestionRun.created_at.desc(),
+                KnowledgeIngestionRun.id.desc(),
+            ).limit(limit + 1),
+        ),
+    )
+    has_more = len(rows) > limit
+    items = rows[:limit]
+    return KnowledgeIngestionRunPage(
+        items=items,
+        total=total,
+        next_cursor=str(items[-1].id) if has_more and items else None,
+    )
+
+
+def ingestion_run_to_read(session: Session, run: KnowledgeIngestionRun) -> KnowledgeIngestionRunRead:
+    return ingestion_runs_to_read(session, [run])[0]
+
+
+def ingestion_runs_to_read(
+    session: Session,
+    runs: list[KnowledgeIngestionRun],
+) -> list[KnowledgeIngestionRunRead]:
+    if not runs:
+        return []
+    run_ids = [run.id for run in runs]
+    produced_by_run: dict[uuid.UUID, list[uuid.UUID]] = {run_id: [] for run_id in run_ids}
+    for ingestion_run_id, card_id in session.execute(
+        select(TestKnowledgeCard.ingestion_run_id, TestKnowledgeCard.id)
+        .where(TestKnowledgeCard.ingestion_run_id.in_(run_ids))
+        .order_by(TestKnowledgeCard.created_at.asc(), TestKnowledgeCard.id.asc()),
+    ):
+        if ingestion_run_id is not None:
+            produced_by_run[ingestion_run_id].append(card_id)
+
+    all_evidence_ids = {
+        uuid.UUID(str(item))
+        for run in runs
+        for item in run.evidence_artifact_ids_json
+    }
+    project_ids = {run.project_id for run in runs}
+    artifacts_by_owner_and_id = {
+        (artifact.owner_entity_id, artifact.id): artifact
+        for artifact in session.scalars(
+            select(Artifact).where(
+                Artifact.id.in_(all_evidence_ids),
+                Artifact.project_id.in_(project_ids),
+                Artifact.owner_entity_type == "KnowledgeIngestionRun",
+                Artifact.owner_entity_id.in_(run_ids),
+            ),
+        )
+    } if all_evidence_ids else {}
+    return [
+        _ingestion_run_read(
+            run,
+            produced_card_ids=produced_by_run[run.id],
+            artifacts_by_owner_and_id=artifacts_by_owner_and_id,
+        )
+        for run in runs
+    ]
+
+
+def _ingestion_run_read(
+    run: KnowledgeIngestionRun,
+    *,
+    produced_card_ids: list[uuid.UUID],
+    artifacts_by_owner_and_id: dict[tuple[uuid.UUID, uuid.UUID], Artifact],
+) -> KnowledgeIngestionRunRead:
+    evidence_ids = [uuid.UUID(str(item)) for item in run.evidence_artifact_ids_json]
+    evidence_artifacts = [
+        KnowledgeIngestionArtifactRead(
+            id=artifact.id,
+            artifact_type=artifact.artifact_type,
+            mime_type=artifact.mime_type,
+            size_bytes=artifact.size_bytes,
+            sha256=artifact.sha256,
+            safe_to_show=artifact.metadata_json.get("safe_to_show") is True,
+            download_url=f"/api/artifacts/{artifact.id}/download",
+        )
+        for artifact_id in evidence_ids
+        if (artifact := artifacts_by_owner_and_id.get((run.id, artifact_id))) is not None
+    ]
+    return KnowledgeIngestionRunRead(
+        id=run.id,
+        project_id=run.project_id,
+        idempotency_key=run.idempotency_key,
+        source_type=run.source_type,
+        source_refs=run.source_refs_json,
+        input_artifact_ids=[uuid.UUID(str(item)) for item in run.input_artifact_ids_json],
+        parser_name=run.parser_name,
+        parser_version=run.parser_version,
+        config_snapshot=run.config_snapshot_json,
+        status=run.status,
+        parsed_count=run.parsed_count,
+        extracted_card_count=run.extracted_card_count,
+        skipped_count=run.skipped_count,
+        failed_count=run.failed_count,
+        error_code=run.error_code,
+        error_message=run.error_message,
+        evidence_artifact_ids=evidence_ids,
+        evidence_artifacts=evidence_artifacts,
+        produced_card_ids=produced_card_ids,
+        ai_task_id=run.ai_task_id,
+        started_at=run.started_at,
+        completed_at=run.completed_at,
+        created_at=run.created_at,
+        updated_at=run.updated_at,
+    )
+
+
 def extract_test_knowledge_cards(
     session: Session,
     store: LocalArtifactStore,
     *,
     project_id: uuid.UUID,
     source_artifact_id: uuid.UUID,
+    ingestion_run_id: uuid.UUID | None = None,
+    commit: bool = True,
 ) -> KnowledgeExtractionResult:
     if session.get(Project, project_id) is None:
         raise ProjectNotFoundError
@@ -117,6 +664,9 @@ def extract_test_knowledge_cards(
             source_document_version=source_version,
             source_section=f"section:{index}",
             source_quote_hash=quote_hash,
+            source_locator_json={"section": f"section:{index}", "sentence_index": index},
+            source_ref=str(artifact.metadata_json.get("source_ref") or "") or None,
+            ingestion_run_id=ingestion_run_id,
             knowledge_type=knowledge_type,
             title=card_title(sentence, knowledge_type),
             content=sentence,
@@ -134,7 +684,10 @@ def extract_test_knowledge_cards(
         cards.append(card)
         existing_hashes.add(quote_hash)
 
-    session.commit()
+    if commit:
+        session.commit()
+    else:
+        session.flush()
     for card in cards:
         session.refresh(card)
     return KnowledgeExtractionResult(
@@ -195,6 +748,8 @@ def review_test_knowledge_card(
     project_id: uuid.UUID,
     card_id: uuid.UUID,
     status: str,
+    review_comment: str | None = None,
+    duplicate_of_card_id: uuid.UUID | None = None,
 ) -> TestKnowledgeCard:
     if session.get(Project, project_id) is None:
         raise ProjectNotFoundError
@@ -203,18 +758,80 @@ def review_test_knowledge_card(
     card = session.get(TestKnowledgeCard, card_id)
     if card is None or card.project_id != project_id:
         raise TestKnowledgeCardNotFoundError
-    card.status = status
-    if status == "approved":
-        card.safe_to_show = True
-        card.allowed_for_prompt = True
+    if status not in ALLOWED_CARD_TRANSITIONS.get(card.status, set()):
+        raise TestKnowledgeCardInvalidStatusError
+    if status == "approved" and (not card.safe_to_show or not card.allowed_for_prompt):
+        raise TestKnowledgeCardInvalidStatusError
+    from_status = card.status
+    if status == "duplicate":
+        if duplicate_of_card_id is None:
+            raise TestKnowledgeCardDuplicateTargetError
+        duplicate_of = session.get(TestKnowledgeCard, duplicate_of_card_id)
+        if (
+            duplicate_of is None
+            or duplicate_of.project_id != project_id
+            or duplicate_of.id == card.id
+            or duplicate_of.status != "approved"
+            or duplicate_of.duplicate_of_card_id is not None
+        ):
+            raise TestKnowledgeCardDuplicateTargetError
+        card.duplicate_of_card_id = duplicate_of.id
+    elif duplicate_of_card_id is not None:
+        raise TestKnowledgeCardDuplicateTargetError
     else:
+        card.duplicate_of_card_id = None
+
+    reviewed_at = datetime.now(UTC)
+    card.status = status
+    card.reviewed_at = reviewed_at
+    card.review_comment = review_comment
+    if status == "approved":
+        card.last_verified_at = reviewed_at
+    elif status == "unsafe":
         card.allowed_for_prompt = False
-        if status == "unsafe":
-            card.safe_to_show = False
+        card.safe_to_show = False
     sync_embedding_indexes_for_card_review(session, card)
+    append_review_history(
+        session,
+        project_id=card.project_id,
+        entity_type="TestKnowledgeCard",
+        entity_id=card.id,
+        action=status,
+        related_entity_type="TestKnowledgeCard" if status == "duplicate" else None,
+        related_entity_id=card.duplicate_of_card_id,
+        from_status=from_status,
+        to_status=card.status,
+        comment=review_comment,
+        metadata={
+            "safe_to_show": card.safe_to_show,
+            "allowed_for_prompt": card.allowed_for_prompt,
+        },
+    )
+    complete_ingestion_run_after_review(session, card, reviewed_at)
     session.commit()
     session.refresh(card)
     return card
+
+
+def complete_ingestion_run_after_review(
+    session: Session,
+    card: TestKnowledgeCard,
+    reviewed_at: datetime,
+) -> None:
+    if card.ingestion_run_id is None:
+        return
+    run = session.get(KnowledgeIngestionRun, card.ingestion_run_id)
+    if run is None or run.status != "waiting_review":
+        return
+    remaining_extracted = session.scalar(
+        select(func.count(TestKnowledgeCard.id)).where(
+            TestKnowledgeCard.ingestion_run_id == run.id,
+            TestKnowledgeCard.status == "extracted",
+        ),
+    ) or 0
+    if remaining_extracted == 0:
+        run.status = "completed"
+        run.completed_at = reviewed_at
 
 
 def sync_embedding_indexes_for_card_review(session: Session, card: TestKnowledgeCard) -> None:
@@ -844,6 +1461,9 @@ def to_read(card: TestKnowledgeCard) -> TestKnowledgeCardRead:
         source_document_version=card.source_document_version,
         source_section=card.source_section,
         source_quote_hash=card.source_quote_hash,
+        source_locator_json=card.source_locator_json,
+        source_ref=card.source_ref,
+        ingestion_run_id=card.ingestion_run_id,
         knowledge_type=card.knowledge_type,
         title=card.title,
         content=card.content,
@@ -856,5 +1476,9 @@ def to_read(card: TestKnowledgeCard) -> TestKnowledgeCardRead:
         safe_to_show=card.safe_to_show,
         allowed_for_prompt=card.allowed_for_prompt,
         status=card.status,
+        reviewed_at=card.reviewed_at,
+        review_comment=card.review_comment,
+        duplicate_of_card_id=card.duplicate_of_card_id,
+        last_verified_at=card.last_verified_at,
         created_at=card.created_at,
     )

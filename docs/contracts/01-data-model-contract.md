@@ -572,7 +572,7 @@ audit model.
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| entity_type | varchar(80) | yes | none | GeneratedCaseCandidate, TestCase, AutomationDraft, UnitTestPatch, CICDRun, QualityGateDecision, AutomationRepairTask |
+| entity_type | varchar(80) | yes | none | GeneratedCaseCandidate, TestCase, TestKnowledgeCard, AutomationDraft, UnitTestPatch, CICDRun, QualityGateDecision, AutomationRepairTask |
 | entity_id | uuid | yes | none | Reviewed or decision entity id |
 | related_entity_type | varchar(80) | no | null | Optional display/query relation, for example QualityGateDecision -> CICDRun |
 | related_entity_id | uuid | no | null | Optional related entity id |
@@ -612,6 +612,9 @@ ReviewHistory rules:
   `related_entity_type=CICDRun` so the CI/CD quality page can display the event
   from the run. `from_status` and `to_status` describe the
   `CICDRun.quality_gate_status` transition caused by the recompute.
+- TestKnowledgeCard approval, safety, duplicate, staleness, and archive actions
+  append history only after successful transition validation. Duplicate events
+  set the canonical card as the related TestKnowledgeCard.
 - ReviewHistory must not introduce users, roles, permissions, tenants,
   departments, SSO, login/session flows, assignment workflow, notifications,
   team inboxes, PR comments, remote provider governance, or enterprise audit
@@ -1039,6 +1042,7 @@ failures, partial extraction, or which evidence entered the trusted corpus.
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
+| idempotency_key | varchar(128) | yes | none | Server-computed canonical hash of project, source content, parser, and config |
 | source_type | varchar(80) | yes | artifact | requirement, openapi, api_document, test_design, historical_case, failure_analysis, report, artifact |
 | source_refs_json | jsonb | yes | [] | Stable source entity/artifact references |
 | input_artifact_ids_json | jsonb | yes | [] | Imported local Artifact ids |
@@ -1057,8 +1061,14 @@ failures, partial extraction, or which evidence entered the trusted corpus.
 | started_at | timestamptz | no | null | Start time |
 | completed_at | timestamptz | no | null | Terminal time |
 
-Idempotency key: project_id + source_type + source content hash + parser_version
-+ config hash.
+Idempotency key: project_id + source_type + stable source identity + source
+content hash + parser version + config hash. Distinct Artifact ids with identical
+bytes remain distinct ingestion sources for traceability.
+
+Unique constraint: project_id + idempotency_key. `force=true` creates a new
+attempt key while preserving the canonical source/config evidence in the run
+manifest. The key is returned for diagnostics but is always computed by the
+server; clients cannot choose it.
 
 ## 31.4 KnowledgeRetrievalRun
 

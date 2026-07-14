@@ -613,7 +613,9 @@ Request:
 ```json
 {
   "project_id": "00000000-0000-0000-0000-000000000101",
-  "status": "approved"
+  "status": "approved",
+  "review_comment": "Verified against the current source.",
+  "duplicate_of_card_id": null
 }
 ```
 
@@ -624,8 +626,15 @@ Rules:
 
 - `approved` cards remain safe and prompt-eligible.
 - `stale`, `unsafe`, `duplicate`, and `archived` cards are removed from prompt
-  eligibility.
+  eligibility by lifecycle status. `allowed_for_prompt` remains the persisted
+  source-level permission for stale/duplicate/archived cards; lifecycle review
+  does not overwrite source safety evidence.
 - `unsafe` cards must also become unsafe to show.
+- `duplicate` requires a different approved canonical card in the same project;
+  duplicate chains and cycles are rejected.
+- Successful review transitions record `reviewed_at`, rationale, duplicate
+  provenance when applicable, and append ReviewHistory. Invalid transitions do
+  not write review history.
 - CaseGeneration may use only approved cards as knowledge evidence.
 
 ### 2.14.3 Retrieve TestKnowledgeCard Evidence
@@ -823,6 +832,8 @@ Request:
   "source_refs": [{"artifact_id": "00000000-0000-0000-0000-000000000371"}],
   "parser_name": "openapi_builtin",
   "parser_version": "v1",
+  "config_snapshot": {},
+  "force": false,
   "extract_cards": true
 }
 ```
@@ -832,12 +843,25 @@ Local deterministic parsers may finish before the response and return
 `waiting_review`, `completed`, or `partial_failed`; the run id and evidence
 artifacts are still mandatory.
 
+The response includes `idempotency_key`, normalized `source_refs`,
+`input_artifact_ids`, parser/config snapshots, status/count/error/timestamp
+fields, derived `produced_card_ids`, and evidence Artifact rows with local
+`download_url` values. Repeating the same canonical request returns the same run
+without creating cards or artifacts again. `force=true` creates a new attempt;
+it does not overwrite the earlier run or evidence.
+
 Rules:
 
 - Supported source types are requirement, openapi, api_document, test_design,
   historical_case, failure_analysis, report, and artifact.
 - Source refs must resolve to same-project persisted entities or local Artifact
   rows. A client cannot submit an arbitrary local filesystem path or remote URL.
+- The current deterministic implementation accepts prompt-safe same-project
+  ContextArtifact ids. Cross-project, missing, unsafe, path, and URL sources are
+  rejected with `KNOWLEDGE_INGESTION_SOURCE_NOT_ALLOWED` or request validation.
+- `config_snapshot` is bounded non-secret data. Secret-bearing keys or values
+  are rejected with `KNOWLEDGE_INGESTION_CONFIG_NOT_ALLOWED`; secret references
+  may be represented only as non-secret reference values.
 - Repeating the same source hash, parser version, and config hash is idempotent
   unless `force=true`; unchanged sources count as skipped.
 - The run writes `knowledge_ingestion_manifest`, `knowledge_parse_result`,
@@ -855,6 +879,12 @@ POST /api/knowledge/ingestion-runs/{run_id}/cancel
 
 List/detail responses include counts, timestamps, safe error summary, source
 refs, produced card ids, and evidence artifact metadata/download links.
+List responses return the total matching count independently from `limit` and a
+stable `next_cursor` when another page exists. Artifact links are returned only
+when project id, owner type, owner id, and evidence id all match the run.
+Runs with new extracted cards remain `waiting_review` with no `completed_at`.
+After every owned card leaves `extracted` through successful review, the run
+becomes `completed` and records its terminal time.
 
 ### 2.14.7 Create KnowledgeRetrievalRun
 

@@ -6,6 +6,7 @@ import uuid
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import pytest
 from sqlalchemy import create_engine, select
@@ -15,14 +16,16 @@ from sqlalchemy.pool import StaticPool
 from backend.app.main import app
 from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
-from backend.app.modules.ai_runtime.models import AITask
+from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.knowledge.models import (
+    KnowledgeIngestionRun,
     TestKnowledgeCard as TestKnowledgeCardModel,
     TestKnowledgeEmbeddingIndex,
 )
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.review_history.models import ReviewHistory
 
 
 class ASGIResponse:
@@ -51,6 +54,7 @@ class ASGIClient:
         return asyncio.run(self._request(method, path, json_body))
 
     async def _request(self, method: str, path: str, json_body: dict[str, Any] | None) -> ASGIResponse:
+        target = urlsplit(path)
         body = json.dumps(json_body).encode("utf-8") if json_body is not None else b""
         status_code: int | None = None
         body_chunks: list[bytes] = []
@@ -76,9 +80,9 @@ class ASGIClient:
             "http_version": "1.1",
             "method": method,
             "scheme": "http",
-            "path": path,
-            "raw_path": path.encode("utf-8"),
-            "query_string": b"",
+            "path": target.path,
+            "raw_path": target.path.encode("utf-8"),
+            "query_string": target.query.encode("utf-8"),
             "headers": [
                 (b"host", b"testserver"),
                 (b"content-type", b"application/json"),
@@ -342,7 +346,8 @@ def test_rebuild_test_knowledge_embedding_index_and_hybrid_retrieval(
         {"project_id": project_id, "status": "archived"},
     )
     assert archive_response.status_code == 200
-    assert archive_response.json()["allowed_for_prompt"] is False
+    assert archive_response.json()["allowed_for_prompt"] is True
+    assert archive_response.json()["status"] == "archived"
 
     with SessionLocal() as session:
         archived_index = session.scalar(
@@ -420,3 +425,300 @@ def test_case_generation_uses_test_knowledge_evidence(
     assert graph["coverage"]["knowledge_coverage_ratio"] > 0
     assert any(node["node_type"] == "knowledge_card" for node in graph["nodes"])
     assert any(edge["edge_type"] == "uses_knowledge_card" for edge in graph["edges"])
+
+
+def test_create_list_and_read_knowledge_ingestion_run(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project_id, artifact_id, _requirement_id = create_project_context_and_requirement(client)
+
+    response = client.post(
+        "/api/knowledge/ingestion-runs",
+        {
+            "project_id": project_id,
+            "source_type": "artifact",
+            "source_refs": [{"artifact_id": artifact_id}],
+            "parser_name": "deterministic",
+            "parser_version": "v1",
+            "config_snapshot": {"max_cards_per_source": 20},
+            "extract_cards": True,
+        },
+    )
+
+    assert response.status_code == 202
+    run = response.json()
+    assert run["status"] == "waiting_review"
+    assert run["completed_at"] is None
+    assert run["parsed_count"] == 1
+    assert run["extracted_card_count"] >= 2
+    assert run["skipped_count"] == 0
+    assert run["failed_count"] == 0
+    assert run["source_refs"] == [{"artifact_id": artifact_id}]
+    assert run["input_artifact_ids"] == [artifact_id]
+    assert len(run["produced_card_ids"]) == run["extracted_card_count"]
+    assert {item["artifact_type"] for item in run["evidence_artifacts"]} == {
+        "knowledge_ingestion_manifest",
+        "knowledge_parse_result",
+        "knowledge_extraction_result",
+        "knowledge_safety_result",
+    }
+    assert all(item["download_url"].startswith("/api/artifacts/") for item in run["evidence_artifacts"])
+
+    detail_response = client.get(f"/api/knowledge/ingestion-runs/{run['id']}")
+    assert detail_response.status_code == 200
+    assert detail_response.json()["id"] == run["id"]
+
+    list_response = client.get(f"/api/projects/{project_id}/knowledge/ingestion-runs")
+    assert list_response.status_code == 200
+    assert list_response.json()["total"] == 1
+    assert list_response.json()["items"][0]["id"] == run["id"]
+
+    with SessionLocal() as session:
+        cards = list(
+            session.scalars(
+                select(TestKnowledgeCardModel).where(
+                    TestKnowledgeCardModel.ingestion_run_id == uuid.UUID(run["id"]),
+                ),
+            ),
+        )
+        assert len(cards) == run["extracted_card_count"]
+        assert all(card.source_locator_json.get("section") for card in cards)
+        assert all(card.source_ref == "manual:coupon-api-notes.md" for card in cards)
+        evidence = list(
+            session.scalars(
+                select(Artifact).where(
+                    Artifact.owner_entity_type == "KnowledgeIngestionRun",
+                    Artifact.owner_entity_id == uuid.UUID(run["id"]),
+                ),
+            ),
+        )
+        assert len(evidence) == 4
+
+    cards_response = client.get(f"/api/projects/{project_id}/test-knowledge/cards")
+    ingestion_cards = [
+        item
+        for item in cards_response.json()["items"]
+        if item["ingestion_run_id"] == run["id"]
+    ]
+    for card in ingestion_cards:
+        review_response = client.patch(
+            f"/api/test-knowledge/cards/{card['id']}",
+            {
+                "project_id": project_id,
+                "status": "approved",
+                "review_comment": "Verified during ingestion review.",
+            },
+        )
+        assert review_response.status_code == 200
+    completed = client.get(f"/api/knowledge/ingestion-runs/{run['id']}").json()
+    assert completed["status"] == "completed"
+    assert completed["completed_at"]
+
+
+def test_knowledge_ingestion_is_idempotent_unless_forced(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project_id, artifact_id, _requirement_id = create_project_context_and_requirement(client)
+    payload = {
+        "project_id": project_id,
+        "source_type": "artifact",
+        "source_refs": [{"artifact_id": artifact_id}],
+        "parser_name": "deterministic",
+        "parser_version": "v1",
+        "config_snapshot": {},
+        "extract_cards": True,
+    }
+
+    first = client.post("/api/knowledge/ingestion-runs", payload)
+    second = client.post("/api/knowledge/ingestion-runs", payload)
+    forced = client.post("/api/knowledge/ingestion-runs", {**payload, "force": True})
+    forced_again = client.post("/api/knowledge/ingestion-runs", {**payload, "force": True})
+
+    assert first.status_code == 202
+    assert second.status_code == 202
+    assert forced.status_code == 202
+    assert forced_again.status_code == 202
+    assert second.json()["id"] == first.json()["id"]
+    assert forced.json()["id"] != first.json()["id"]
+    assert forced.json()["status"] == "completed"
+    assert forced.json()["extracted_card_count"] == 0
+    assert forced.json()["skipped_count"] == first.json()["extracted_card_count"]
+
+    first_page = client.get(f"/api/projects/{project_id}/knowledge/ingestion-runs?limit=1")
+    assert first_page.status_code == 200
+    assert first_page.json()["total"] == 3
+    assert len(first_page.json()["items"]) == 1
+    assert first_page.json()["next_cursor"]
+    second_page = client.get(
+        f"/api/projects/{project_id}/knowledge/ingestion-runs"
+        f"?limit=1&cursor={first_page.json()['next_cursor']}",
+    )
+    assert second_page.status_code == 200
+    assert second_page.json()["total"] == 3
+    assert second_page.json()["items"][0]["id"] != first_page.json()["items"][0]["id"]
+
+    with SessionLocal() as session:
+        assert len(list(session.scalars(select(KnowledgeIngestionRun)))) == 3
+        assert len(list(session.scalars(select(TestKnowledgeCardModel)))) == first.json()["extracted_card_count"]
+
+
+def test_knowledge_ingestion_keeps_same_content_artifacts_traceable(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    project_id, artifact_id, _requirement_id = create_project_context_and_requirement(client)
+    same_content_artifact = client.post(
+        "/api/context-artifacts",
+        {
+            "project_id": project_id,
+            "title": "coupon-api-notes-copy.md",
+            "artifact_type": "context_markdown",
+            "mime_type": "text/markdown",
+            "content": (
+                "# Coupon API\n"
+                "POST /api/coupons/validate validates checkout coupons.\n"
+                "Expired coupons cannot be used during checkout.\n"
+                "Coupon amount cannot exceed payable order amount."
+            ),
+            "source_ref": "manual:coupon-api-notes-copy.md",
+        },
+    ).json()
+    base_payload = {
+        "project_id": project_id,
+        "source_type": "artifact",
+        "parser_name": "deterministic",
+        "parser_version": "v1",
+        "extract_cards": True,
+    }
+
+    first = client.post(
+        "/api/knowledge/ingestion-runs",
+        {**base_payload, "source_refs": [{"artifact_id": artifact_id}]},
+    ).json()
+    second = client.post(
+        "/api/knowledge/ingestion-runs",
+        {**base_payload, "source_refs": [{"artifact_id": same_content_artifact["id"]}]},
+    ).json()
+
+    assert first["id"] != second["id"]
+    assert first["input_artifact_ids"] == [artifact_id]
+    assert second["input_artifact_ids"] == [same_content_artifact["id"]]
+
+
+def test_knowledge_ingestion_rejects_cross_project_and_arbitrary_sources(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    _project_id, artifact_id, _requirement_id = create_project_context_and_requirement(client)
+    other_project = client.post("/api/projects", {"name": "Other Project"}).json()
+
+    cross_project = client.post(
+        "/api/knowledge/ingestion-runs",
+        {
+            "project_id": other_project["id"],
+            "source_type": "artifact",
+            "source_refs": [{"artifact_id": artifact_id}],
+            "parser_name": "deterministic",
+            "parser_version": "v1",
+            "extract_cards": True,
+        },
+    )
+    arbitrary_path = client.post(
+        "/api/knowledge/ingestion-runs",
+        {
+            "project_id": other_project["id"],
+            "source_type": "artifact",
+            "source_refs": [{"path": "C:/secrets/customer.txt"}],
+            "parser_name": "deterministic",
+            "parser_version": "v1",
+            "extract_cards": True,
+        },
+    )
+    secret_config = client.post(
+        "/api/knowledge/ingestion-runs",
+        {
+            "project_id": other_project["id"],
+            "source_type": "artifact",
+            "source_refs": [{"artifact_id": artifact_id}],
+            "config_snapshot": {"password": "not-obvious-value"},
+        },
+    )
+
+    assert cross_project.status_code == 400
+    assert cross_project.json()["error_code"] == "KNOWLEDGE_INGESTION_SOURCE_NOT_ALLOWED"
+    assert arbitrary_path.status_code == 422
+    assert arbitrary_path.json()["error_code"] == "VALIDATION_ERROR"
+    assert secret_config.status_code == 400
+    assert secret_config.json()["error_code"] == "KNOWLEDGE_INGESTION_CONFIG_NOT_ALLOWED"
+
+
+def test_card_review_records_rationale_and_duplicate_provenance(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project_id, artifact_id, _requirement_id = create_project_context_and_requirement(client)
+    extracted = client.post(
+        "/api/test-knowledge/cards/extract",
+        {"project_id": project_id, "source_artifact_id": artifact_id},
+    ).json()["items"]
+    assert len(extracted) >= 2
+
+    approved = client.patch(
+        f"/api/test-knowledge/cards/{extracted[0]['id']}",
+        {
+            "project_id": project_id,
+            "status": "approved",
+            "review_comment": "Source rule verified against the current requirement.",
+        },
+    )
+    duplicate = client.patch(
+        f"/api/test-knowledge/cards/{extracted[1]['id']}",
+        {
+            "project_id": project_id,
+            "status": "duplicate",
+            "review_comment": "Same rule as the approved canonical card.",
+            "duplicate_of_card_id": extracted[0]["id"],
+        },
+    )
+
+    assert approved.status_code == 200
+    assert approved.json()["reviewed_at"]
+    assert approved.json()["last_verified_at"]
+    assert approved.json()["review_comment"].startswith("Source rule verified")
+    assert duplicate.status_code == 200
+    assert duplicate.json()["duplicate_of_card_id"] == extracted[0]["id"]
+    assert duplicate.json()["allowed_for_prompt"] is True
+    assert duplicate.json()["status"] == "duplicate"
+
+    unsafe = client.patch(
+        f"/api/test-knowledge/cards/{extracted[0]['id']}",
+        {
+            "project_id": project_id,
+            "status": "unsafe",
+            "review_comment": "Source safety was revoked after review.",
+        },
+    )
+    reapprove_unsafe = client.patch(
+        f"/api/test-knowledge/cards/{extracted[0]['id']}",
+        {"project_id": project_id, "status": "approved"},
+    )
+    assert unsafe.status_code == 200
+    assert unsafe.json()["safe_to_show"] is False
+    assert reapprove_unsafe.status_code == 400
+    assert reapprove_unsafe.json()["error_code"] == "TEST_KNOWLEDGE_CARD_INVALID_STATUS"
+
+    with SessionLocal() as session:
+        history = list(
+            session.scalars(
+                select(ReviewHistory)
+                .where(ReviewHistory.entity_type == "TestKnowledgeCard")
+                .order_by(ReviewHistory.created_at.asc(), ReviewHistory.id.asc()),
+            ),
+        )
+        assert {item.action for item in history} == {"approved", "duplicate", "unsafe"}
+        assert len(history) == 3
+        duplicate_history = next(item for item in history if item.action == "duplicate")
+        assert duplicate_history.related_entity_id == uuid.UUID(extracted[0]["id"])
+        assert duplicate_history.comment == "Same rule as the approved canonical card."

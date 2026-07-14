@@ -10,28 +10,30 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.3: add KnowledgeIngestionRun persistence and the contracted
-TestKnowledgeCard provenance/review fields as the first final RAG data/API step.
+Slice 47 Task 47.4: persist KnowledgeRetrievalRun and normalized
+KnowledgeEvidence as the provider-neutral retrieval log and evidence boundary.
 
 Required output:
 
-1. Add KnowledgeIngestionRun model/schema/migration fields from the data
-   contract, including observable counts, safe errors, timestamps, source refs,
-   parser/config snapshots, and evidence artifact ids.
-2. Add TestKnowledgeCard provenance/review fields for source locators,
-   ingestion-run ownership, review rationale, duplicate links, and verification
-   time without weakening prompt eligibility rules.
-3. Implement the smallest create/list/read ingestion API path with same-project
-   persisted source validation and deterministic/idempotent local behavior.
-4. Preserve Artifact evidence and review gates; do not add retrieval, pgvector,
-   Qdrant, external parsers, or frontend redesign in this task.
-5. Verify on empty/test databases only; do not migrate or stamp the blocked
-   local acceptance database.
+1. Add KnowledgeRetrievalRun and KnowledgeEvidence model/schema/migration fields
+   from the data contract, including provider/mode snapshots, safe query/filter
+   evidence, scores, latency, counts, errors, and exact source locators.
+2. Route the existing deterministic TestKnowledgeCard retrieval through a
+   persisted run and normalized evidence rows without changing provider-neutral
+   response ownership.
+3. Implement the smallest create/list/read retrieval-log API with project,
+   status, provider, consumer, limit, and cursor filters.
+4. Persist a `knowledge_retrieval` Artifact for successful empty and non-empty
+   results; never fabricate semantic scores when vector capability is absent.
+5. Do not add pgvector, Qdrant, Haystack, LlamaIndex, online embeddings, graph,
+   feedback, or frontend redesign in this task. Test migrations only on
+   empty/temporary databases.
 
 ## Product Value Answer
 
-The user can inspect every knowledge import as a persisted, traceable run and
-review exactly which source evidence produced each testing knowledge card.
+The user can query retrieval history, diagnose provider/filter/latency behavior,
+and trace every returned snippet to stable Chtest evidence independent of the
+retrieval provider.
 
 ## Must Read
 
@@ -71,13 +73,14 @@ docs/contracts/04-artifact-contract.md
 docs/implementation/slices/slice-47-final-test-knowledge-rag-system.md
 ```
 
-Only edit files directly needed for KnowledgeIngestionRun and enhanced
-TestKnowledgeCard persistence/API behavior. Do not add retrieval/vector/provider
-runtime or mutate the blocked local acceptance database.
+Only edit files directly needed for KnowledgeRetrievalRun and normalized
+KnowledgeEvidence persistence/API behavior. Do not add vector/provider runtime
+or mutate the blocked local acceptance database.
 
 ## Verification Commands
 
-Use focused DB/API ingestion tests and an empty-database Alembic upgrade, then:
+Use focused DB/API retrieval-log tests and an empty-database Alembic upgrade,
+then:
 
 ```bash
 git diff --check
@@ -88,22 +91,23 @@ designed baseline recovery is complete; new migrations run only on test data.
 
 ## Acceptance
 
-- Knowledge ingestion runs persist observable source, parser, status, count,
-  error, timing, and evidence fields.
-- Enhanced cards retain exact source/ingestion/review provenance and preserve
-  approved + safe + prompt-eligible generation rules.
-- Create/list/read behavior is same-project, deterministic, idempotent, and
-  evidence-backed.
+- Retrieval runs persist query/filter/provider/mode/status/count/latency/error
+  fields and one normalized result Artifact.
+- KnowledgeEvidence rows preserve card/source ids, exact locators, bounded safe
+  snippets, component scores, matched terms, and retrieval reasons.
+- Create/list/read behavior is same-project, deterministic, paged, and exposes
+  useful retrieval logs for both empty and non-empty results.
 - Empty/test database migrations pass without touching the local acceptance DB.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(knowledge): add ingestion run model and api
+feat(knowledge): persist retrieval evidence
 ```
 
 ## Next Task
 
-After Task 47.3 is verified and committed, continue Task 47.4 with
-KnowledgeRetrievalRun and normalized KnowledgeEvidence persistence/API behavior.
+After Task 47.4 is verified and committed, continue Task 47.5 with the default
+PostgreSQL full-text + pgvector KnowledgeAdapter behind the stable evidence
+contracts.

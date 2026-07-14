@@ -10089,3 +10089,65 @@ Next recommended task:
   contracted TestKnowledgeCard provenance/review fields with focused DB/API
   ingestion tests. Keep migration acceptance on empty/test databases until the
   copied local baseline recovery is explicitly designed and approved.
+
+## 2026-07-14 Slice 47 Knowledge Ingestion Runs
+
+Current task:
+- Completed Slice 47 Task 47.3: persist observable KnowledgeIngestionRun rows,
+  evidence Artifacts, and TestKnowledgeCard provenance/review fields.
+
+Completed:
+- Added Alembic revision `20260714_0011` after `20260713_0010`; the migration
+  creates KnowledgeIngestionRun and adds card locator, source, run, review,
+  duplicate, and verification fields.
+- Added project-scoped canonical idempotency using stable Artifact id + sha256,
+  parser, source type, and non-secret config. Repeated requests reuse the run;
+  `force=true` preserves the prior run and creates a new attempt.
+- Added create/list/read ingestion APIs with real totals, stable cursor paging,
+  same-project prompt-safe source validation, and batched list serialization.
+- Successful runs write ingestion manifest, parse, extraction, and safety
+  Artifacts owned by KnowledgeIngestionRun. Artifact links require matching
+  project, owner type, owner id, and evidence id.
+- Runs with extracted cards remain `waiting_review` without a terminal time;
+  they become `completed` after all owned cards are reviewed.
+- Card review now records review time, rationale, verification time, canonical
+  duplicate relation, and append-only ReviewHistory. Duplicate chains/cycles,
+  unsafe reapproval, cross-project canonical targets, and invalid transitions
+  are rejected.
+- Source-level `allowed_for_prompt` is preserved for stale/duplicate/archived
+  cards; final eligibility remains approved + safe + allowed.
+- Added a populated `0010 -> 0011 -> 0010 -> 0011` SQLite migration test so
+  existing cards survive upgrade and downgrade diagnostics.
+
+Verification:
+- Ingestion/migration/deterministic retrieval focused suite: `19 passed`.
+- Knowledge consumers and ReviewHistory related API suite: `44 passed`.
+- Complete backend DB suite: `30 passed`.
+- Deterministic retrieval API/golden subset: `7 passed`.
+- `git diff --check`: no output.
+- Full backend run performed during subagent review: `379 passed, 14 failed`.
+  The 14 failures are the previously recorded Windows fake executable
+  `WinError 193` cases and stale golden CaseGeneration fixtures; no failure stack
+  points to the knowledge ingestion implementation.
+
+Migration safety:
+- No migration, stamp, bootstrap, or registry write was run against
+  `storage/chtest-dev.db`.
+- `alembic check` on a fresh temporary head database still reports pre-existing
+  repository-wide migration drift: several older ORM tables have no migrations
+  and older migration indexes are absent from ORM metadata. The new 0011
+  tables/indexes/constraints are not reported as drift.
+
+Remaining risks:
+- Retry/cancel ingestion endpoints remain planned; Task 47.3 intentionally
+  implemented the smallest create/list/read path.
+- Older TestKnowledgeCard fields such as `applicability` still contain pre-47.3
+  ORM/contract type/default drift. This task changed only the contracted
+  provenance/review surface.
+- The blocked local acceptance database still requires an explicitly approved
+  copied-baseline recovery before any migration can run against it.
+
+Next recommended task:
+- Continue Slice 47 Task 47.4: persist KnowledgeRetrievalRun and normalized
+  KnowledgeEvidence, then expose create/list/read retrieval logs without adding
+  pgvector, Qdrant, or external provider runtime yet.

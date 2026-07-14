@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.knowledge import service
 from backend.app.modules.knowledge.schemas import (
+    KnowledgeIngestionRunCreateRequest,
+    KnowledgeIngestionRunListRead,
+    KnowledgeIngestionRunRead,
     TestKnowledgeCardExtractBatchRead,
     TestKnowledgeCardExtractBatchRequest,
     TestKnowledgeCardExtractRead,
@@ -44,6 +47,80 @@ def bad_request(error_code: str, message: str) -> HTTPException:
 
 
 @router.post(
+    "/knowledge/ingestion-runs",
+    response_model=KnowledgeIngestionRunRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def create_knowledge_ingestion_run(
+    data: KnowledgeIngestionRunCreateRequest,
+    session: Session = Depends(get_session),
+    store: LocalArtifactStore = Depends(get_artifact_store),
+) -> KnowledgeIngestionRunRead:
+    try:
+        run = service.create_knowledge_ingestion_run(session, store, data)
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    except service.KnowledgeIngestionSourceNotAllowedError as exc:
+        raise bad_request(
+            "KNOWLEDGE_INGESTION_SOURCE_NOT_ALLOWED",
+            "Knowledge ingestion sources must be prompt-safe persisted artifacts in the same project.",
+        ) from exc
+    except service.KnowledgeIngestionConfigNotAllowedError as exc:
+        raise bad_request(
+            "KNOWLEDGE_INGESTION_CONFIG_NOT_ALLOWED",
+            "Knowledge ingestion config must be bounded and must not contain secrets.",
+        ) from exc
+    return service.ingestion_run_to_read(session, run)
+
+
+@router.get(
+    "/projects/{project_id}/knowledge/ingestion-runs",
+    response_model=KnowledgeIngestionRunListRead,
+)
+def list_knowledge_ingestion_runs(
+    project_id: uuid.UUID,
+    run_status: str | None = Query(default=None, alias="status", max_length=40),
+    source_type: str | None = Query(default=None, max_length=80),
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: uuid.UUID | None = Query(default=None),
+    session: Session = Depends(get_session),
+) -> KnowledgeIngestionRunListRead:
+    try:
+        page = service.list_knowledge_ingestion_runs(
+            session,
+            project_id,
+            status=run_status,
+            source_type=source_type,
+            limit=limit,
+            cursor=cursor,
+        )
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    except service.KnowledgeIngestionRunNotFoundError as exc:
+        raise bad_request("KNOWLEDGE_INGESTION_CURSOR_INVALID", "Knowledge ingestion cursor is invalid.") from exc
+    return KnowledgeIngestionRunListRead(
+        items=service.ingestion_runs_to_read(session, page.items),
+        total=page.total,
+        next_cursor=page.next_cursor,
+    )
+
+
+@router.get(
+    "/knowledge/ingestion-runs/{run_id}",
+    response_model=KnowledgeIngestionRunRead,
+)
+def read_knowledge_ingestion_run(
+    run_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> KnowledgeIngestionRunRead:
+    try:
+        run = service.get_knowledge_ingestion_run(session, run_id)
+    except service.KnowledgeIngestionRunNotFoundError as exc:
+        raise not_found("KNOWLEDGE_INGESTION_RUN_NOT_FOUND", "Knowledge ingestion run not found.") from exc
+    return service.ingestion_run_to_read(session, run)
+
+
+@router.post(
     "/test-knowledge/cards/extract",
     response_model=TestKnowledgeCardExtractRead,
     status_code=status.HTTP_201_CREATED,
@@ -65,7 +142,10 @@ def extract_test_knowledge_cards(
     except service.SourceArtifactNotFoundError as exc:
         raise not_found("ARTIFACT_NOT_FOUND", "Source artifact not found.") from exc
     except service.SourceArtifactNotAllowedError as exc:
-        raise bad_request("TEST_KNOWLEDGE_SOURCE_NOT_ALLOWED", "Source artifact cannot be extracted into knowledge cards.") from exc
+        raise bad_request(
+            "TEST_KNOWLEDGE_SOURCE_NOT_ALLOWED",
+            "Source artifact cannot be extracted into knowledge cards.",
+        ) from exc
     return TestKnowledgeCardExtractRead(
         source_artifact_id=result.source_artifact_id,
         created_count=result.created_count,
@@ -96,7 +176,10 @@ def extract_all_test_knowledge_cards(
     except service.SourceArtifactNotFoundError as exc:
         raise not_found("ARTIFACT_NOT_FOUND", "Source artifact not found.") from exc
     except service.SourceArtifactNotAllowedError as exc:
-        raise bad_request("TEST_KNOWLEDGE_SOURCE_NOT_ALLOWED", "Source artifact cannot be extracted into knowledge cards.") from exc
+        raise bad_request(
+            "TEST_KNOWLEDGE_SOURCE_NOT_ALLOWED",
+            "Source artifact cannot be extracted into knowledge cards.",
+        ) from exc
     return TestKnowledgeCardExtractBatchRead(
         project_id=result.project_id,
         source_artifact_ids=result.source_artifact_ids,
@@ -194,6 +277,8 @@ def review_test_knowledge_card(
             project_id=data.project_id,
             card_id=card_id,
             status=data.status,
+            review_comment=data.review_comment,
+            duplicate_of_card_id=data.duplicate_of_card_id,
         )
     except service.ProjectNotFoundError as exc:
         raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
@@ -201,6 +286,11 @@ def review_test_knowledge_card(
         raise not_found("TEST_KNOWLEDGE_CARD_NOT_FOUND", "Test knowledge card not found.") from exc
     except service.TestKnowledgeCardInvalidStatusError as exc:
         raise bad_request("TEST_KNOWLEDGE_CARD_INVALID_STATUS", "Unsupported test knowledge card status.") from exc
+    except service.TestKnowledgeCardDuplicateTargetError as exc:
+        raise bad_request(
+            "TEST_KNOWLEDGE_CARD_DUPLICATE_TARGET_INVALID",
+            "Duplicate knowledge cards require a different canonical card in the same project.",
+        ) from exc
     return service.to_read(card)
 
 

@@ -47,7 +47,7 @@ Chtest API or ORM contracts.
 |---|---|---|---|
 | 47.1 Promote product/contracts and add full-web review | done | Stable scope and reasons before code | contract keyword/self-check + `git diff --check` |
 | 47.2 Add local DB preflight and safe baseline migration diagnostics | done | Current local data can upgrade without hidden destructive action | 11 focused preflight/migration/registry tests + live read-only/copy diagnostics |
-| 47.3 Add KnowledgeIngestionRun and enhanced TestKnowledgeCard | pending | Observable imports and reviewable knowledge | focused DB/API ingestion tests |
+| 47.3 Add KnowledgeIngestionRun and enhanced TestKnowledgeCard | done | Observable imports and reviewable knowledge | 19 ingestion/migration/retrieval tests + 44 related API tests + 30 DB tests |
 | 47.4 Add KnowledgeRetrievalRun and normalized KnowledgeEvidence | pending | Queryable retrieval logs and stable evidence | retrieval API/golden tests |
 | 47.5 Add PostgreSQL full-text + pgvector KnowledgeAdapter | pending | Local-first semantic recall | PostgreSQL adapter integration/eval smoke; deterministic fallback tests |
 | 47.6 Add optional Qdrant and Haystack/LlamaIndex provider contracts | pending | Scale/provider choice without schema leakage | provider contract tests with fake clients |
