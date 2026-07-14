@@ -47,6 +47,10 @@ Requirement or local code change
 - Prompt, Skill, ToolDefinition, ToolInvocation, and AI quality measurement.
 - KnowledgeAdapter interface for future RAG connection.
 - RAG 知识库 page surface for ContextArtifact management, KnowledgeAdapter configuration state, safety metadata, and evidence usage display.
+- Final Test Knowledge RAG System: evidence-backed knowledge ingestion,
+  structured TestKnowledgeCard review, hybrid retrieval, case-generation
+  evidence, coverage-gap analysis, relationship-graph queries, and reviewed
+  knowledge feedback.
 
 ### Out Of Scope For V1
 
@@ -56,9 +60,46 @@ Requirement or local code change
 - Full performance testing platform parity with JMeter.
 - Full mobile automation platform.
 - Fiddler-level traffic capture and replay.
-- Built-in RAG indexing, vector database, and reranking service.
 - Broad model leaderboard or benchmark platform before the V1 evidence loop works.
 - Unapproved AI code changes to business source files.
+
+### Final RAG Scope Promotion
+
+The Final Test Knowledge RAG System is an approved final-product direction. It
+extends the existing local-first evidence loop; it does not turn Chtest into a
+generic chat knowledge base.
+
+The final knowledge flow is:
+
+```text
+Project sources and reviewed evidence
+  -> KnowledgeIngestionRun
+  -> reviewable TestKnowledgeCard rows
+  -> metadata + full-text + vector retrieval
+  -> normalized KnowledgeEvidence
+  -> evidence-backed CaseGeneration and CoverageGap review
+  -> human approval
+  -> execution and failure evidence
+  -> reviewed KnowledgeFeedback
+```
+
+Design decisions and product reasons:
+
+| Capability | Product decision | Why |
+|---|---|---|
+| Knowledge ingestion | Every import is a persisted run with parser results, counts, failures, and Artifact evidence | Test engineers need resumable imports and exact failure diagnosis instead of an opaque upload button |
+| Structured cards | Documents are normalized into testing-specific, human-reviewable TestKnowledgeCard rows | Raw chunks are difficult to audit and do not express boundaries, risks, exceptions, or test strategy |
+| Safety review | Only approved, safe, prompt-eligible cards can affect final generation | Dirty, stale, duplicate, or secret-bearing knowledge must never silently lower case quality |
+| Hybrid retrieval | PostgreSQL metadata/full-text plus pgvector is the default local-first provider; Qdrant is optional behind KnowledgeAdapter | PostgreSQL keeps operational cost low and preserves joins/evidence locality; Qdrant remains available when corpus scale or vector operations justify a separate engine |
+| Provider isolation | Haystack, LlamaIndex, Qdrant, or later providers map into Chtest KnowledgeEvidence | Provider replacement must not change Chtest cases, reports, review history, or evidence contracts |
+| Evidence-backed cases | Every generated case cites knowledge, requirements, risks, generation reason, gaps, and automation readiness | A reviewer must understand why a case exists and whether its expected result is verifiable |
+| Review and coverage agents | Focused agents check domain alignment, duplication, executability, verifiability, and coverage gaps before human review | Human time should be spent on product judgment, not mechanical completeness checks |
+| Relationship graph | Chtest persists typed relationships between requirements, modules, APIs, risks, cases, runs, failures, and knowledge | Impact analysis and regression recommendation require relationships that flat vector similarity cannot prove |
+| Feedback loop | Accepted/rejected reviews and failure evidence create proposed knowledge that requires review | Chtest should learn from project use without allowing automatic feedback to poison trusted knowledge |
+
+The final implementation remains local-first, single-user, review-gated, and
+evidence-backed. Provider runtimes are optional capabilities, not availability
+requirements for core project, case, execution, or report workflows.
 
 ## 4. Mainline And Support Workflow
 

@@ -4,12 +4,13 @@ Date: 2026-07-01
 
 ## Purpose
 
-This document records the final-version direction for Chtest's knowledge-driven
-case generation and review system.
+This document records the promoted final-version direction for Chtest's
+knowledge-driven case generation and review system.
 
-It is a future implementation strategy, not authorization to add a RAG runtime
-to the current V2 slice. Current V2 work must still follow `NEXT_AI_TASK.md`
-and the slice/task boundary in `docs/implementation/10-v2-scope-options.md`.
+As of 2026-07-14, the user explicitly promoted this direction into the product
+scope. Implementation is authorized only through the review-gated tasks in
+`docs/implementation/slices/slice-47-final-test-knowledge-rag-system.md`; this
+does not authorize uncontrolled provider integration or schema leakage.
 
 The final product goal is not a generic chat knowledge base. The goal is:
 
@@ -31,6 +32,10 @@ Current implemented foundation:
 - Slice 19 added deterministic local ContextArtifact retrieval evidence without
   vector databases, embeddings, reranking, background indexing, or external
   RAG providers.
+- Later acceptance work added deterministic TestKnowledgeCard extraction and
+  review, portable deterministic embedding-index rows, keyword/vector score
+  composition, approved-card CaseGeneration evidence, and a derived knowledge
+  coverage graph.
 - Slices 24-28 improved evidence readability across local artifacts, reports,
   imported CI references, AI task artifacts, and quality gates.
 - Slice 29 is the active execution-run-manifest path and remains separate from
@@ -38,11 +43,18 @@ Current implemented foundation:
 
 Current gap:
 
-- Chtest can attach local ContextArtifact evidence to AI tasks, but it does not
-  yet maintain a rich testing knowledge model.
-- Case generation can use context, but the final version should prove why each
-  generated case exists, which knowledge supported it, which risks it covers,
-  and which gaps remain.
+- Imports do not have a first-class run, parser diagnostics, partial-failure
+  state, retry/cancel, or ingestion evidence manifest.
+- Existing vector retrieval uses deterministic JSON embeddings rather than
+  PostgreSQL full-text + pgvector, and there is no provider-neutral persisted
+  KnowledgeRetrievalRun/KnowledgeEvidence log.
+- Generated cases cite card snippets and coverage dimensions but do not yet
+  persist all covered requirement/risk ids, case type, coverage gaps, or
+  structured automation readiness.
+- The derived graph is a useful foundation but does not yet store typed
+  Requirement/Module/API/Risk/TestRun/Failure relationships.
+- Accepted/rejected reviews, failures, and reports do not yet create a reviewed
+  knowledge feedback queue.
 
 ## Final Architecture
 
@@ -69,6 +81,34 @@ The three RAG layers are complementary:
 | Structured Test Knowledge RAG | Turn documents into testing knowledge cards | High immediate gain for case quality | Medium |
 | Hybrid Retrieval RAG | Improve recall over larger corpora | Better matching across wording differences | Medium-high |
 | Test Relationship Graph RAG | Reason over requirement, module, API, risk, defect, and case relationships | Highest coverage and impact-analysis value | High |
+
+## Official Technology Direction Validation
+
+- [pgvector](https://github.com/pgvector/pgvector) stores vectors with other
+  PostgreSQL data and supports exact/approximate nearest-neighbor search,
+  multiple distance functions, HNSW, and IVFFlat. This supports Chtest's
+  local-first default because knowledge, review, relationship, and vector data
+  can share transactions, joins, backup, and operations.
+- [Qdrant](https://qdrant.tech/documentation/) supports vector/semantic search,
+  filtering, hybrid queries, dense/sparse/multi-vector embeddings, indexing,
+  and quantization. Its current documentation also exposes Qdrant Edge as an
+  embedded/offline option; Chtest still treats Qdrant as an optional adapter so
+  the core product is not tied to a Qdrant collection schema or service mode.
+- [Haystack](https://docs.haystack.deepset.ai/docs/intro) is a modular framework
+  built from components, pipelines, document stores, agents, tools, and
+  integrations. Chtest may use these behind KnowledgeAdapter, but Chtest owns
+  lifecycle, evidence, review, and case contracts.
+- [LlamaIndex RAG](https://developers.llamaindex.ai/python/framework/understanding/rag/)
+  separates loading, indexing, storing, querying, and evaluation and models
+  Documents/Nodes with metadata. Chtest maps these stages into ingestion runs,
+  cards, retrieval runs, evidence, and eval gates rather than exposing provider
+  Documents/Nodes in public schemas.
+
+Technology selection is capability-driven and reversible. The local-first
+default is PostgreSQL full-text plus pgvector. Qdrant is selected only with
+measured corpus/latency/operation evidence. Haystack or LlamaIndex is selected
+only when its connectors/pipelines reduce implementation cost without weakening
+Chtest traceability.
 
 ## Layer 1: Structured Test Knowledge RAG
 

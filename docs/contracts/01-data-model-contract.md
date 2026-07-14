@@ -2,7 +2,9 @@
 
 ## 1. Purpose
 
-This document is the field-level data model contract for Chtest V1. ORM models, Pydantic schemas, API handlers, fixtures, and reports must follow this contract.
+This document is the field-level data model contract for Chtest V1 and promoted
+final-product slices. ORM models, Pydantic schemas, API handlers, fixtures, and
+reports must follow this contract.
 
 V1 uses PostgreSQL. All tables include these base fields unless explicitly stated otherwise:
 
@@ -45,11 +47,15 @@ V1 is single-user, but owner fields are kept for later extension.
 | PromptStatus | draft, active, deprecated |
 | SkillStatus | draft, active, deprecated |
 | ToolDefinitionStatus | active, disabled, archived |
-| KnowledgeAdapterStatus | not_configured, disabled, configured_stub |
+| KnowledgeAdapterStatus | not_configured, disabled, configured_stub, configured, indexing, ready, degraded, failed |
+| KnowledgeIngestionRunStatus | created, parsing, extracting, waiting_review, completed, partial_failed, failed, cancelled |
+| KnowledgeRetrievalRunStatus | created, retrieving, normalizing, completed, failed, cancelled |
 | TestKnowledgeCardStatus | extracted, approved, stale, unsafe, duplicate, archived |
 | TestKnowledgeEmbeddingIndexStatus | indexed, stale, failed |
+| KnowledgeFeedbackStatus | proposed, waiting_review, approved, rejected, applied, failed |
+| KnowledgeRelationshipStatus | active, stale, archived |
 | FailureClassification | product_defect, test_script_issue, environment_issue, test_data_issue, dependency_issue, flaky_test, insufficient_evidence |
-| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationPlan, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation |
+| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationPlan, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation, KnowledgeIngestionRun, KnowledgeRetrievalRun, KnowledgeFeedbackEvent |
 | LLMCallStatus | started, succeeded, failed, timeout, schema_invalid |
 | AutomationRepairStatus | created, running, candidate_generated, waiting_review, approved, rejected, failed |
 | ReviewHistoryAction | open_review, approve, approve_after_edit, reject, edit, generate_draft, request_optimization, compute_quality_gate, recompute_quality_gate |
@@ -230,6 +236,13 @@ Rules:
 | risk_refs_json | jsonb | yes | [] | Risk references |
 | source_knowledge_evidence_json | jsonb | yes | [] | TestKnowledgeCard evidence snippets used for this candidate |
 | coverage_dimensions_json | jsonb | yes | [] | Coverage dimensions from CaseGenerationAgent output |
+| covered_requirement_ids_json | jsonb | yes | [] | Requirement ids explicitly covered by the case |
+| covered_risk_ids_json | jsonb | yes | [] | Risk or RiskPoint ids explicitly covered by the case |
+| case_type | varchar(80) | yes | functional | Main flow, negative, boundary, state, permission, channel, compatibility, security, performance, or regression classification |
+| generation_reason | text | yes | none | Evidence-backed reason this distinct case is needed |
+| coverage_gap_notes | text | no | null | Known uncovered dimensions or unresolved ambiguity |
+| automation_readiness_json | jsonb | yes | {} | Framework suitability, blockers, required fixtures/selectors/hooks, and confidence |
+| quality_assessment_json | jsonb | yes | {} | CaseReviewAgent and CoverageGapAgent findings |
 | ai_reason | text | yes | none | AI generation reason |
 | duplicate_of_case_id | uuid | no | null | Potential duplicate case |
 | status | CandidateStatus | yes | generated | Candidate status |
@@ -245,6 +258,10 @@ Rules:
   schema validation and must not persist candidates.
 - Frontends must display persisted coverage dimensions from this field instead
   of recomputing coverage from candidate title or text heuristics.
+- Final CaseGeneration output must persist covered requirement/risk ids,
+  `case_type`, `generation_reason`, `coverage_gap_notes`, and
+  `automation_readiness_json`. A case without evidence or a verifiable expected
+  result must be blocked or explicitly marked `needs_optimization`.
 
 ## 15. TestCase
 
@@ -857,7 +874,7 @@ configuration state only; it does not perform retrieval.
 | project_id | uuid | yes | none | FK Project |
 | adapter_name | varchar(120) | yes | default | Name inside project |
 | status | KnowledgeAdapterStatus | yes | not_configured | Empty adapter state |
-| provider_type | varchar(80) | yes | none | none, stub, deterministic_local |
+| provider_type | varchar(80) | yes | none | none, stub, deterministic_local, postgres_hybrid, qdrant, haystack, llamaindex |
 | config_json | jsonb | yes | {} | Non-secret display/config state |
 | safety_policy_json | jsonb | yes | {} | Prompt eligibility and safety notes |
 | last_checked_at | timestamptz | no | null | Last local validation time |
@@ -894,6 +911,21 @@ V2 deterministic KnowledgeAdapter rules:
   tenant, permission, marketplace, cloud sync, release, or remote CI/CD
   behavior.
 
+Final Test Knowledge RAG promotion rules:
+
+- Final RAG slices may use `status=configured/indexing/ready/degraded/failed`
+  and real provider adapters.
+- `postgres_hybrid` is the default local-first provider: PostgreSQL metadata
+  filters and full-text search are combined with pgvector similarity when the
+  extension is available.
+- `qdrant` is an optional scale adapter. Haystack and LlamaIndex are optional
+  orchestration/provider adapters. Provider request/response schemas must not
+  leak into Chtest ORM, API, prompt, case, report, or evidence models.
+- Secrets remain external secret references. `config_json` stores non-secret
+  provider configuration and capability state only.
+- Adapter failures must set `degraded` or `failed`, create diagnostic evidence,
+  and leave core non-RAG workflows available.
+
 ## 31.1 TestKnowledgeCard
 
 TestKnowledgeCard stores deterministic, prompt-safe testing knowledge extracted
@@ -907,7 +939,10 @@ index, embedding, or external RAG document.
 | source_document_version | varchar(80) | yes | v1 | Extracted source version label |
 | source_section | varchar(160) | no | null | Source section or line range label |
 | source_quote_hash | varchar(128) | yes | none | Deterministic quote hash for de-duplication |
-| knowledge_type | varchar(60) | yes | BusinessRule | APIContract, BoundaryCondition, ExceptionScenario, RiskPoint, BusinessRule, TestStrategyNote |
+| source_locator_json | jsonb | yes | {} | Page, paragraph, JSON pointer, OpenAPI operation, line, or record locator |
+| source_ref | text | no | null | Stable human-readable source reference |
+| ingestion_run_id | uuid | no | null | FK KnowledgeIngestionRun |
+| knowledge_type | varchar(60) | yes | BusinessRule | RequirementPoint, BusinessRule, APIContract, BoundaryCondition, ExceptionScenario, RiskPoint, BugPattern, ExistingTestCasePattern, AntiPattern, TestStrategyNote |
 | title | varchar(255) | yes | none | Human-readable evidence title |
 | content | text | yes | none | Bounded safe snippet |
 | module_key | varchar(120) | no | null | Optional module hint |
@@ -919,6 +954,10 @@ index, embedding, or external RAG document.
 | safe_to_show | bool | yes | true | Must be safe for UI display |
 | allowed_for_prompt | bool | yes | true | Prompt eligibility copied from source safety |
 | status | TestKnowledgeCardStatus | yes | extracted | Card lifecycle status |
+| reviewed_at | timestamptz | no | null | Latest human review time |
+| review_comment | text | no | null | Latest review rationale |
+| duplicate_of_card_id | uuid | no | null | Canonical duplicate card when status=duplicate |
+| last_verified_at | timestamptz | no | null | Latest source/meaning verification |
 
 Rules:
 
@@ -932,6 +971,14 @@ Rules:
 - TestKnowledgeCard extraction must not create vector indexes, embeddings,
   chunking jobs, reranking jobs, external provider calls, MCP runtime calls,
   RBAC, tenants, or permissions behavior.
+- Final ingestion may create cards from requirements, OpenAPI/API documents,
+  test designs, historical cases, FailureAnalysis, and Reports. Each card must
+  retain an exact source locator or hash and its owning ingestion run.
+- Only `approved + safe_to_show + allowed_for_prompt` cards may contribute to
+  final CaseGeneration evidence. Preview search may include extracted cards but
+  must label them unapproved.
+- Feedback-created cards always start as `extracted`; feedback confidence never
+  bypasses human review.
 
 ## 31.2 TestKnowledgeEmbeddingIndex
 
@@ -950,6 +997,7 @@ changing API behavior.
 | embedding_dim | int | yes | 64 | Vector dimension |
 | content_hash | varchar(128) | yes | none | Hash of indexed card text |
 | embedding_json | jsonb | yes | [] | Portable vector values |
+| embedding_vector | vector | no | null | Native pgvector value in PostgreSQL deployments |
 | status | TestKnowledgeEmbeddingIndexStatus | yes | indexed | Index lifecycle status |
 | metadata_json | jsonb | yes | {} | Source/card metadata snapshot |
 
@@ -971,6 +1019,133 @@ Rules:
 - Index rebuild and retrieval must not call online embedding providers,
   external vector databases, rerankers, MCP runtime calls, RBAC, tenants, or
   permissions behavior.
+
+Final vector rules:
+
+- PostgreSQL deployments should use the native `embedding_vector` column and an
+  HNSW or IVFFlat index selected by measured corpus/recall needs. SQLite tests
+  may continue using deterministic `embedding_json` fallback.
+- Native and fallback storage must produce the same KnowledgeEvidence fields;
+  callers cannot depend on pgvector-specific operators or Qdrant payload shape.
+- Index freshness is compared against card content hash, source version,
+  embedding provider/model, and adapter configuration version.
+
+## 31.3 KnowledgeIngestionRun
+
+KnowledgeIngestionRun is the observable and retryable boundary for importing
+project knowledge. It exists because a file upload alone cannot explain parser
+failures, partial extraction, or which evidence entered the trusted corpus.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| source_type | varchar(80) | yes | artifact | requirement, openapi, api_document, test_design, historical_case, failure_analysis, report, artifact |
+| source_refs_json | jsonb | yes | [] | Stable source entity/artifact references |
+| input_artifact_ids_json | jsonb | yes | [] | Imported local Artifact ids |
+| parser_name | varchar(120) | yes | deterministic | Parser/provider snapshot |
+| parser_version | varchar(80) | yes | v1 | Parser version snapshot |
+| config_snapshot_json | jsonb | yes | {} | Non-secret ingestion settings |
+| status | KnowledgeIngestionRunStatus | yes | created | Run lifecycle |
+| parsed_count | int | yes | 0 | Successfully parsed source units |
+| extracted_card_count | int | yes | 0 | New cards created |
+| skipped_count | int | yes | 0 | Idempotent/duplicate skips |
+| failed_count | int | yes | 0 | Source units that failed |
+| error_code | varchar(120) | no | null | Stable failure code |
+| error_message | text | no | null | Safe diagnostic summary |
+| evidence_artifact_ids_json | jsonb | yes | [] | Manifest, parse, extraction, safety, and error artifacts |
+| ai_task_id | uuid | no | null | Optional KnowledgeIngestionAgent AITask |
+| started_at | timestamptz | no | null | Start time |
+| completed_at | timestamptz | no | null | Terminal time |
+
+Idempotency key: project_id + source_type + source content hash + parser_version
++ config hash.
+
+## 31.4 KnowledgeRetrievalRun
+
+KnowledgeRetrievalRun makes every search query, provider choice, latency,
+filter, failure, and evidence set queryable for debugging and quality analysis.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| ai_task_id | uuid | no | null | Optional consuming AITask |
+| adapter_name | varchar(120) | yes | default | KnowledgeAdapter snapshot |
+| provider_type | varchar(80) | yes | deterministic_local | Provider snapshot |
+| retrieval_mode | varchar(80) | yes | hybrid | metadata, keyword, vector, hybrid, graph |
+| query_text_hash | varchar(128) | yes | none | Query hash for correlation without exposing unsafe text |
+| query_text_redacted | text | yes | none | Safe bounded query text |
+| filters_json | jsonb | yes | {} | Module, API, type, risk, status filters |
+| status | KnowledgeRetrievalRunStatus | yes | created | Run lifecycle |
+| candidate_count | int | yes | 0 | Pre-normalization matches |
+| evidence_count | int | yes | 0 | Final evidence rows |
+| latency_ms | int | no | null | End-to-end retrieval latency |
+| error_code | varchar(120) | no | null | Stable failure code |
+| error_message | text | no | null | Safe diagnostic summary |
+| evidence_artifact_id | uuid | no | null | FK normalized retrieval Artifact |
+
+## 31.5 KnowledgeEvidence
+
+KnowledgeEvidence is the provider-neutral persisted evidence returned by every
+retrieval path and referenced by generated cases, reports, graph edges, and
+quality analysis.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| retrieval_run_id | uuid | yes | none | FK KnowledgeRetrievalRun |
+| knowledge_card_id | uuid | yes | none | FK TestKnowledgeCard |
+| source_artifact_id | uuid | yes | none | FK Artifact |
+| snippet | text | yes | none | Bounded safe evidence text |
+| source_locator_json | jsonb | yes | {} | Exact source locator snapshot |
+| metadata_score | float | yes | 0 | Filter contribution |
+| keyword_score | float | yes | 0 | Full-text/keyword contribution |
+| vector_score | float | yes | 0 | Semantic contribution |
+| rerank_score | float | no | null | Optional reranker contribution |
+| final_score | float | yes | 0 | Normalized final score |
+| matched_terms_json | jsonb | yes | [] | Exact matched terms/phrases |
+| retrieval_reason | text | yes | none | Human-reviewable reason |
+| safe_to_show | bool | yes | true | Display safety snapshot |
+| allowed_for_prompt | bool | yes | true | Prompt eligibility snapshot |
+
+## 31.6 TestKnowledgeRelationship
+
+TestKnowledgeRelationship stores typed, auditable graph edges without requiring
+a graph database. PostgreSQL remains the system of record; graph providers may
+accelerate queries behind KnowledgeAdapter later.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| source_entity_type | varchar(80) | yes | none | Requirement, Module, API, RiskPoint, TestCase, TestRun, FailureAnalysis, Artifact, TestKnowledgeCard |
+| source_entity_id | uuid | yes | none | Source entity id |
+| target_entity_type | varchar(80) | yes | none | Target type |
+| target_entity_id | uuid | yes | none | Target entity id |
+| relationship_type | varchar(120) | yes | none | requires, belongs_to, exposes, covers, validates, failed_as, derived_from, similar_to |
+| evidence_artifact_ids_json | jsonb | yes | [] | Supporting local evidence |
+| confidence | int | yes | 100 | 0-100, reviewed edges default 100 |
+| status | KnowledgeRelationshipStatus | yes | active | Edge lifecycle |
+| metadata_json | jsonb | yes | {} | Non-secret derivation metadata |
+
+Unique active edge: project + source type/id + target type/id + relationship
+type.
+
+## 31.7 KnowledgeFeedbackEvent
+
+KnowledgeFeedbackEvent records proposed learning from reviewed cases, rejected
+candidates, comments, failures, and reports. It is separate from
+TestKnowledgeCard so automatic feedback cannot mutate trusted knowledge.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| source_entity_type | varchar(80) | yes | none | TestCase, GeneratedCaseCandidate, ReviewHistory, FailureAnalysis, Report |
+| source_entity_id | uuid | yes | none | Source entity id |
+| proposed_knowledge_type | varchar(80) | yes | none | ExistingTestCasePattern, AntiPattern, TestStrategyNote, BugPattern |
+| proposed_content_json | jsonb | yes | {} | Reviewable proposed card content |
+| status | KnowledgeFeedbackStatus | yes | proposed | Feedback lifecycle |
+| evidence_artifact_ids_json | jsonb | yes | [] | Source evidence references |
+| resulting_card_id | uuid | no | null | Created TestKnowledgeCard after approval |
+| review_comment | text | no | null | Reviewer rationale |
 
 ## 32. ToolInvocation
 
@@ -1070,17 +1245,22 @@ Workspace -> Project
 Project -> Module / Repository / Environment / TestCommand
 Project -> Artifact (ContextArtifact)
 Project -> KnowledgeAdapterConfig
+Project -> KnowledgeIngestionRun -> TestKnowledgeCard
+Project -> KnowledgeRetrievalRun -> KnowledgeEvidence -> TestKnowledgeCard
 Project -> TestKnowledgeCard -> TestKnowledgeEmbeddingIndex
 Project -> Requirement -> RequirementReview -> RiskItem
 Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase -> AutomationPlan -> AutomationDraft -> TestRun -> TestResult -> Report
 ContextArtifact -> TestKnowledgeCard -> TestKnowledgeEmbeddingIndex
 TestKnowledgeCard -> GeneratedCaseCandidate.source_knowledge_evidence_json
+Project -> TestKnowledgeRelationship -> Requirement/Module/API/RiskPoint/TestCase/TestRun/FailureAnalysis/TestKnowledgeCard
+Project -> KnowledgeFeedbackEvent -> TestKnowledgeCard
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
 TestRun/TestResult -> FailureAnalysis -> AutomationRepairTask -> Report
 Repository -> CICDRun -> CICDChangedFile -> UnitTestPatch -> TestRun -> QualityGateDecision -> Report
 Project -> ReviewHistory -> GeneratedCaseCandidate/TestCase/AutomationPlan/AutomationDraft/UnitTestPatch/CICDRun/QualityGateDecision
 AITask -> LLMCallLog
 AITask -> Artifact / ContextArtifact references
+AITask -> KnowledgeRetrievalRun -> KnowledgeEvidence
 AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric
 ToolDefinition -> ToolInvocation -> Artifact
 Report -> Artifact

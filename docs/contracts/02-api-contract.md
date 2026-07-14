@@ -2,7 +2,9 @@
 
 ## 1. Purpose
 
-This document defines the Chtest V1 API contract. FastAPI routers, Pydantic schemas, frontend API clients, fixtures, and acceptance tests must follow this contract.
+This document defines the Chtest V1 API contract and promoted final-product API
+surfaces. FastAPI routers, Pydantic schemas, frontend API clients, fixtures, and
+acceptance tests must follow this contract.
 
 Common rules:
 
@@ -36,6 +38,22 @@ Extension surface rules:
   vector database runtime dependencies, online embedding provider calls,
   reranking services, external KnowledgeAdapter calls, MCP server/client
   runtime calls, RBAC, tenants, or permissions.
+
+Final Test Knowledge RAG rules:
+
+- Final RAG endpoints expose Chtest-owned KnowledgeIngestionRun,
+  KnowledgeRetrievalRun, TestKnowledgeCard, KnowledgeEvidence,
+  TestKnowledgeRelationship, and KnowledgeFeedbackEvent schemas.
+- `postgres_hybrid`, Qdrant, Haystack, and LlamaIndex provider payloads are
+  private adapter details and must be normalized before they reach API clients.
+- Every ingestion and retrieval request returns a Chtest run id. Failures return
+  stable error codes and remain queryable through run detail/list APIs.
+- Every KnowledgeEvidence item includes exact card/source ids, source locator,
+  component scores, final score, retrieval reason, and safety snapshots.
+- Trace APIs correlate Requirement, AITask, KnowledgeIngestionRun,
+  KnowledgeRetrievalRun, GeneratedCaseCandidate, ReviewHistory, TestCase,
+  AutomationDraft, TestRun, FailureAnalysis, Report, and Artifact ids without
+  copying raw secret-bearing payloads into the response.
 
 Deterministic retrieval rules:
 
@@ -791,6 +809,165 @@ Rules:
   must remain deterministic and auditable: vector index coverage is derived
   from persisted TestKnowledgeEmbeddingIndex rows, while case coverage is
   derived from persisted candidate evidence references.
+
+### 2.14.5 Create KnowledgeIngestionRun
+
+`POST /api/knowledge/ingestion-runs`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "source_type": "openapi",
+  "source_refs": [{"artifact_id": "00000000-0000-0000-0000-000000000371"}],
+  "parser_name": "openapi_builtin",
+  "parser_version": "v1",
+  "extract_cards": true
+}
+```
+
+Response `202` returns the persisted run with status `created` or `parsing`.
+Local deterministic parsers may finish before the response and return
+`waiting_review`, `completed`, or `partial_failed`; the run id and evidence
+artifacts are still mandatory.
+
+Rules:
+
+- Supported source types are requirement, openapi, api_document, test_design,
+  historical_case, failure_analysis, report, and artifact.
+- Source refs must resolve to same-project persisted entities or local Artifact
+  rows. A client cannot submit an arbitrary local filesystem path or remote URL.
+- Repeating the same source hash, parser version, and config hash is idempotent
+  unless `force=true`; unchanged sources count as skipped.
+- The run writes `knowledge_ingestion_manifest`, `knowledge_parse_result`,
+  `knowledge_extraction_result`, `knowledge_safety_result`, and `error_json`
+  artifacts as applicable.
+
+### 2.14.6 List And Read KnowledgeIngestionRuns
+
+```text
+GET /api/projects/{project_id}/knowledge/ingestion-runs?status=&source_type=&limit=&cursor=
+GET /api/knowledge/ingestion-runs/{run_id}
+POST /api/knowledge/ingestion-runs/{run_id}/retry
+POST /api/knowledge/ingestion-runs/{run_id}/cancel
+```
+
+List/detail responses include counts, timestamps, safe error summary, source
+refs, produced card ids, and evidence artifact metadata/download links.
+
+### 2.14.7 Create KnowledgeRetrievalRun
+
+`POST /api/knowledge/retrieval-runs`
+
+Request:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "query_text": "预约充电电流限制和蓝牙离线异常",
+  "filters": {
+    "module_keys": ["charging"],
+    "knowledge_types": ["BusinessRule", "BoundaryCondition", "RiskPoint"],
+    "risk_types": ["state", "channel"],
+    "api_endpoints": []
+  },
+  "retrieval_mode": "hybrid",
+  "approved_only": true,
+  "limit": 12
+}
+```
+
+Response `201` or `202` returns:
+
+```json
+{
+  "id": "00000000-0000-0000-0000-000000000a01",
+  "status": "completed",
+  "adapter_name": "default",
+  "provider_type": "postgres_hybrid",
+  "retrieval_mode": "hybrid",
+  "candidate_count": 34,
+  "evidence_count": 8,
+  "latency_ms": 42,
+  "evidence_artifact_id": "00000000-0000-0000-0000-000000000e01",
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000k01",
+      "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "source_locator": {"section": "4.2", "paragraph": 3},
+      "snippet": "预约开始前设备必须满足电流限制。",
+      "metadata_score": 1.0,
+      "keyword_score": 0.74,
+      "vector_score": 0.86,
+      "rerank_score": null,
+      "final_score": 0.82,
+      "matched_terms": ["预约", "电流限制"],
+      "retrieval_reason": "模块与风险过滤命中，全文和语义检索共同支持",
+      "safe_to_show": true,
+      "allowed_for_prompt": true
+    }
+  ]
+}
+```
+
+Score normalization must be deterministic for a fixed provider/config version.
+Missing optional vector or rerank capability degrades to metadata/full-text and
+is recorded in the run; it must not fabricate zero-cost semantic evidence.
+
+### 2.14.8 List And Read KnowledgeRetrievalRuns
+
+```text
+GET /api/projects/{project_id}/knowledge/retrieval-runs?status=&provider_type=&consumer_entity_type=&consumer_entity_id=&limit=&cursor=
+GET /api/knowledge/retrieval-runs/{run_id}
+```
+
+These endpoints are the primary retrieval-log query surface. They return safe
+query text, filters, provider/config snapshots, latency, candidate/evidence
+counts, failures, and evidence artifact links.
+
+### 2.14.9 Query Test Knowledge Relationships
+
+`POST /api/projects/{project_id}/test-knowledge/graph/query`
+
+Supported initial queries:
+
+```text
+requirement_impact
+risk_coverage_gaps
+historical_failure_regression
+api_constraint_coverage
+candidate_duplicate_evidence
+```
+
+Responses return typed nodes/edges, supporting evidence ids, uncovered targets,
+and a traversal summary. PostgreSQL relationship rows are authoritative; an
+external graph provider may accelerate traversal but cannot invent edges
+without persisted evidence.
+
+### 2.14.10 Knowledge Feedback
+
+```text
+POST /api/knowledge/feedback-events
+GET /api/projects/{project_id}/knowledge/feedback-events?status=&source_entity_type=&limit=&cursor=
+POST /api/knowledge/feedback-events/{event_id}/review
+```
+
+Accepted cases propose ExistingTestCasePattern, rejected candidates propose
+AntiPattern, review comments propose TestStrategyNote, and FailureAnalysis
+proposes BugPattern. Review approval creates an `extracted` TestKnowledgeCard;
+card approval remains a separate human action.
+
+### 2.14.11 Unified Evidence Trace
+
+`GET /api/projects/{project_id}/evidence-trace?entity_type={type}&entity_id={id}`
+
+Response groups correlation records into source, AI/retrieval, review,
+execution, failure, report, and feedback stages. Each stage includes entity id,
+status, timestamp, safe summary, and local Artifact references. The endpoint
+does not inline raw prompts, provider payloads, stdout/stderr, or secret-bearing
+content.
 
 ### 2.15 List MCP-ready ToolDefinitions
 

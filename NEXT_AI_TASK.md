@@ -15,55 +15,33 @@ and local execution evidence surfaces.
 
 ## Current Task
 
-Case generation P0/P1 optimization and the AutomationDraft reviewer-input UX
-optimization are complete.
+Slice 47 Task 47.1: promote the Final Test Knowledge RAG System into product and
+contract scope, preserve the complete web-experience review, and define the
+implementation/acceptance task sequence with a design reason for each major
+capability.
 
-Completed P0/P1 behaviors:
+Required output:
 
-1. Case generation is observable as an asynchronous task instead of a hidden
-   long-running request.
-2. The frontend shows CaseGenerationTask/AITask ids, status, and recoverable
-   failure details before attempting to load candidates.
-3. Wrong-domain output is blocked with `CASE_GENERATION_DOMAIN_MISMATCH` and
-   cannot persist candidates.
-4. The candidate review page separates generation entry, candidate list,
-   selected candidate detail, edit form, review result, and review history so
-   switching candidates does not show a previous candidate's review result.
-5. Requirement document selection is explicit and does not auto-select the
-   first document without saved context.
-6. The case review surface includes a lightweight testing-dimension coverage
-   matrix for main flow, negative path, boundary, state, permission, channel,
-   device/current conditions, and risk references.
-7. A pre-generation decision-table gate records reviewer acknowledgement before
-   final candidate generation and persists the acknowledged dimension list into
-   CaseGenerationAgent prompt input evidence.
-8. GeneratedCaseCandidate now persists explicit `coverage_dimensions` from the
-   CaseGenerationAgent output; missing or invalid coverage dimensions fail
-   schema validation, and the frontend displays persisted dimensions instead of
-   deriving them from text heuristics.
-9. Prompt, Skill, mock provider, API contract, data-model contract, and golden
-   fixture expectations now require coverage dimensions for generated cases.
-10. Knowledge-card review now keeps vector-index coverage honest: cards that
-    become stale, unsafe, duplicate, or archived mark existing indexes stale and
-    are excluded from prompt-ready index coverage.
-11. The AutomationDraft page loads active reviewed TestCases and project
-    TestCommands instead of requiring testers to paste UUIDs.
-12. TestCase choices show title, priority, test type, and a short id; API/Newman
-    and JMeter execution choices only show compatible active TestCommands.
-13. The AutomationDraft reviewer flow exposes four visible stages: select case,
-    approve plan, review draft, and collect execution evidence.
-14. The generate action stays disabled until a TestCase is selected, and missing
-    compatible TestCommands produce a configuration-oriented hint.
+1. Product scope explicitly includes ingestion, structured cards, reviewed
+   safety flow, hybrid retrieval, evidence-backed cases, coverage agents,
+   relationship graph, feedback, and provider isolation.
+2. Data/API/state/artifact contracts define observable ingestion and retrieval
+   runs, normalized KnowledgeEvidence, relationships, feedback, trace APIs, and
+   final CaseGeneration fields.
+3. The final strategy validates pgvector, Qdrant, Haystack, and LlamaIndex
+   against official documentation while preserving KnowledgeAdapter ownership.
+4. A Slice 47 task plan explains why every capability exists and orders code
+   work behind the local database preflight blocker.
+5. The full web review records page-by-page efficiency, quality, log, trace, and
+   visual findings.
 
 ## Product Value Answer
 
-The user can now see whether case generation is running, failed, or complete;
-avoid accepting wrong-domain generated cases; review each candidate without
-state leaking from the previous candidate; confirm the requirement/design matrix
-before generation; and understand persisted test-dimension coverage before
-promoting generated cases. The automation reviewer can also select named assets,
-see the current workflow stage, and avoid launching API/JMeter with the wrong
-TestCommand type.
+The user can evaluate and implement the final RAG system against one stable
+Chtest-owned evidence model, understand why each major function exists, and
+avoid coupling case generation or review to a specific vector/agent provider.
+The web review also makes test-efficiency, quality, log-query, and evidence-trace
+gaps explicit before frontend redesign.
 
 ## Must Read
 
@@ -92,28 +70,14 @@ Default write boundary for the next local evidence risk:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-backend/app/modules/cases/*
-backend/app/modules/knowledge/*
-backend/app/tests/api/test_case_generation.py
-backend/app/tests/api/test_test_knowledge_cards.py
-frontend/src/api/cases.ts
-frontend/src/stores/cases.ts
-frontend/src/stores/extension.ts
-frontend/src/stores/automation.ts
-frontend/src/views/automation/AutomationDraftReviewView.vue
-frontend/src/views/automation/AutomationDraftReviewView.spec.ts
-frontend/src/views/cases/CaseGenerationReviewView.vue
-frontend/src/views/cases/CaseGenerationReviewView.spec.ts
-frontend/src/views/extension/KnowledgeBaseView.vue
-frontend/src/views/extension/KnowledgeBaseView.spec.ts
+docs/product/01-positioning-and-scope.md
 docs/contracts/01-data-model-contract.md
 docs/contracts/02-api-contract.md
 docs/contracts/03-state-machines.md
-docs/contracts/05-prompt-skill-contract.md
-docs/contracts/08-mock-provider-contract.md
-docs/fixtures/01-golden-requirement-to-case.md
-prompts/case_generation/v1.md
-skills/test-case-generation-skill/v1.md
+docs/contracts/04-artifact-contract.md
+docs/implementation/11-final-rag-agent-strategy.md
+docs/implementation/slices/slice-47-final-test-knowledge-rag-system.md
+docs/reviews/2026-07-14-full-web-test-experience-review.md
 ```
 
 Only edit files that are directly required to fix a verification blocker. Do
@@ -121,26 +85,10 @@ not revert unrelated dirty-worktree changes.
 
 ## Verification Commands
 
-Use focused verification first:
+Use the documentation scope check:
 
 ```bash
-backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_test_knowledge_cards.py -q
-```
-
-```bash
-backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_knowledge_cards.py backend/app/tests/api/test_case_generation.py backend/app/tests/api/test_requirement_review.py backend/app/tests/api/test_model_connection_config.py backend/app/tests/api/test_extension_surface.py -q
-```
-
-```bash
-D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/settings/ProjectSettingsView.spec.ts src/views/extension/KnowledgeBaseView.spec.ts src/views/requirements/RequirementReviewView.spec.ts src/views/cases/CaseGenerationReviewView.spec.ts
-```
-
-```bash
-D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run test -- --run src/views/automation/AutomationDraftReviewView.spec.ts src/layouts/WorkbenchLayout.spec.ts src/views/execution/PytestExecutionView.spec.ts src/views/execution/PlaywrightExecutionView.spec.ts src/views/execution/NewmanExecutionView.spec.ts src/views/execution/JMeterExecutionView.spec.ts
-```
-
-```bash
-D:\Downloads\Chtest-env\node-v24.18.0-win-x64\npm.cmd --prefix frontend run build
+rg -n "Final Test Knowledge RAG|KnowledgeIngestionRun|KnowledgeRetrievalRun|KnowledgeEvidence|postgres_hybrid|KnowledgeFeedback|evidence-trace|why|Why" docs/product/01-positioning-and-scope.md docs/contracts/01-data-model-contract.md docs/contracts/02-api-contract.md docs/contracts/03-state-machines.md docs/contracts/04-artifact-contract.md docs/implementation/11-final-rag-agent-strategy.md docs/implementation/slices/slice-47-final-test-knowledge-rag-system.md docs/reviews/2026-07-14-full-web-test-experience-review.md NEXT_AI_TASK.md
 git diff --check
 ```
 
@@ -149,27 +97,27 @@ Docker Desktop Linux Engine is repaired outside this repo.
 
 ## Acceptance
 
-- Backend focused case-generation suite passes.
-- Backend related acceptance suite passes.
-- Frontend settings, knowledge, requirement review, and case generation suite
-  passes.
-- Automation reviewer, layout, and related execution suite passes.
-- Frontend build passes with only the existing Vite chunk-size warning.
+- Product/contracts no longer classify final RAG as an unpromoted future-only
+  runtime.
+- Every major final RAG capability has an explicit design reason, stable Chtest
+  owner, evidence boundary, state, API, and planned verification.
+- The review covers every current route and prioritizes efficiency, quality,
+  logs, traceability, and visual hierarchy.
+- Provider schemas remain behind KnowledgeAdapter.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-fix(frontend): simplify automation reviewer inputs
+docs(rag): promote final test knowledge system
 ```
 
 ## Next Task
 
-Repair the local acceptance database baseline on a copy of the current database
-before continuing the browser reviewer smoke. The current database has no
-Alembic version record, is missing current GeneratedCaseCandidate columns, and
-contains PromptVersion rows whose content conflicts with the current registry
-files. Define a safe, tested upgrade/diagnostic path; do not silently overwrite
-prompt registry truth or mutate the only local database copy. Docker/compose
+After Task 47.1 is committed, continue Task 47.2: repair the local acceptance
+database baseline on a copy of the current database and add a safe preflight.
+The database has no Alembic version record, is missing current candidate columns,
+and contains PromptVersion content drift. Do not add final RAG tables or mutate
+the only local database copy until the preflight is verified. Docker/compose
 runtime repair remains out of scope until the local engine is fixed outside this
 repo.

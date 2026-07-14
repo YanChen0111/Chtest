@@ -319,6 +319,13 @@ external RAG document.
 | error_json | application/json | 错误详情 |
 | requirement_md | text/markdown | 需求内容 |
 | candidates_json | application/json | 候选用例 |
+| knowledge_ingestion_manifest | application/json | 知识导入来源、解析器、配置 hash 和幂等信息 |
+| knowledge_parse_result | application/json | 知识源解析结果、段落/操作定位和失败单元 |
+| knowledge_extraction_result | application/json | TestKnowledgeCard 抽取、跳过和重复统计 |
+| knowledge_safety_result | application/json | 脱敏、展示安全和提示词资格检查 |
+| knowledge_retrieval | application/json | 统一 KnowledgeEvidence、过滤器、分数组件和 provider 快照 |
+| knowledge_graph_snapshot | application/json | 有证据支持的关系节点、边和覆盖缺口快照 |
+| knowledge_feedback | application/json | 知识反馈提案、来源证据和审核结果 |
 | automation_draft_code | text/plain | 自动化草稿代码 |
 | runtime_manifest | application/json | TestRun 实际运行文件清单 |
 | dependency_snapshot | application/json | 依赖和 runner 版本快照 |
@@ -525,6 +532,17 @@ Knowledge retrieval artifact rules:
 - Secret-like values must be redacted before persistence.
 - Scores must be deterministic for the same input artifacts and query terms.
 
+Final retrieval evidence adds these required fields:
+
+- `knowledge_retrieval_run_id`, adapter/provider/config version, retrieval mode,
+  filters, latency, candidate count, evidence count, and degraded/fallback state.
+- Each result includes persisted KnowledgeEvidence id, TestKnowledgeCard id,
+  source Artifact id and locator, metadata/keyword/vector/rerank/final scores,
+  matched terms, retrieval reason, and safety snapshots.
+- Provider-native request/response bodies may be stored only as protected
+  diagnostic artifacts when needed. They are never the report or case evidence
+  contract and are not displayed unless an explicit safe-to-show gate passes.
+
 ## 6. Evidence Manifest
 
 报告必须生成 evidence_manifest.json：
@@ -603,6 +621,21 @@ Extension Surface artifact rules:
   external provider response artifacts.
 - Slice 19 still must not create vector index, embedding, chunk, reranking, MCP
   transport, or external provider response artifacts.
+
+Final Test Knowledge RAG promotion rules supersede the V1/Slice 19 runtime
+restrictions only for explicitly promoted final RAG slices:
+
+- Every KnowledgeIngestionRun creates an ingestion manifest and one or more
+  parse/extraction/safety/error artifacts. Counts without artifacts are not
+  accepted as import evidence.
+- Every KnowledgeRetrievalRun creates `knowledge_retrieval` evidence, including
+  valid empty results. CaseGeneration references the retrieval run and evidence
+  ids instead of copying provider payloads.
+- Relationship graph and feedback outputs are snapshots/evidence; authoritative
+  typed relationships and review state remain in Chtest tables.
+- Artifact retention preserves the original source, failed attempts, review
+  decisions, provider/config snapshots, and resulting cards so regressions can
+  be traced after prompts, models, adapters, or indexes change.
 
 ## 8. 保留与清理
 

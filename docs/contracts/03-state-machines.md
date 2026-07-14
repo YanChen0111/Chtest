@@ -304,6 +304,70 @@ extracted/approved/stale/unsafe/duplicate -> archived
 - 用例生成引用知识卡证据时，不改变知识卡状态；证据引用写入
   GeneratedCaseCandidate。
 
+Final RAG promotion rules:
+
+- `approved -> stale/unsafe/duplicate/archived` is allowed when source drift,
+  security review, deduplication, or archival provides review evidence.
+- `stale/unsafe/duplicate -> extracted` requires an explicit remediation action
+  and returns the card to human review; it never returns directly to approved.
+- Every status transition appends ReviewHistory and synchronizes retrieval/index
+  eligibility without deleting historical evidence.
+
+## 7.3 KnowledgeIngestionRun 状态机
+
+```text
+created -> parsing -> extracting -> waiting_review -> completed
+created/parsing/extracting -> partial_failed
+created/parsing/extracting -> failed
+created/parsing/extracting/waiting_review -> cancelled
+partial_failed/failed -> parsing
+```
+
+Rules:
+
+- A run exists before parsing starts, so UI and logs can expose progress and
+  failures immediately.
+- `partial_failed` preserves successful cards and identifies failed source units;
+  it cannot be presented as fully completed.
+- `waiting_review` means extracted cards exist but are not trusted for final case
+  generation until card review succeeds.
+- Retry creates new attempt evidence on the same run or a linked retry run; it
+  must not overwrite the previous failure artifact.
+
+## 7.4 KnowledgeRetrievalRun 状态机
+
+```text
+created -> retrieving -> normalizing -> completed
+created/retrieving/normalizing -> failed
+created/retrieving/normalizing -> cancelled
+```
+
+Rules:
+
+- `completed` requires a normalized retrieval artifact, including the valid
+  empty-result case. An empty result is not a failure.
+- Provider timeout, schema mismatch, unsafe evidence, or normalization error
+  produces `failed` with error evidence; it must not silently fall back unless
+  the run records the fallback provider/mode and degraded reason.
+- Only evidence backed by approved, safe, prompt-eligible cards may be attached
+  to CaseGeneration prompt input.
+
+## 7.5 KnowledgeFeedbackEvent 状态机
+
+```text
+proposed -> waiting_review -> approved -> applied
+proposed/waiting_review -> rejected
+approved -> failed
+```
+
+Rules:
+
+- Automatic feedback stops at `proposed` or `waiting_review`.
+- `applied` creates a new `extracted` TestKnowledgeCard and evidence relationship;
+  it does not create an approved card.
+- Rejection remains queryable as AntiPattern/feedback quality evidence and does
+  not delete the source review, failure, or report.
+
 ## 8. TestRun 状态机
 
 ```text

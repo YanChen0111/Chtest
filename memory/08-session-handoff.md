@@ -9996,3 +9996,47 @@ Next recommended task:
 - Build and verify a safe diagnostic/upgrade path for the unversioned local
   database and prompt-registry drift using a database copy, then resume the
   browser workflow from plan generation through execution selection.
+
+## 2026-07-14 Final RAG Scope Promotion And Full Web Review
+
+Current task:
+- User explicitly promoted the final Test Knowledge RAG strategy and requested
+  a full-route test-engineer UX review focused on efficiency, quality, logs,
+  and traceability.
+
+Completed:
+- Reviewed all current frontend routes, including hidden Playwright/Newman/JMeter
+  execution routes, using live DOM/layout inspection and representative visual
+  screenshots.
+- Recorded page-by-page P0/P1 changes in
+  `docs/reviews/2026-07-14-full-web-test-experience-review.md`.
+- Promoted ingestion, structured cards, reviewed safety, hybrid retrieval,
+  evidence-backed cases, quality agents, relationship graph, feedback, and
+  provider isolation into product scope.
+- Added final data/API/state/artifact contracts for KnowledgeIngestionRun,
+  KnowledgeRetrievalRun, KnowledgeEvidence, relationships, feedback, unified
+  trace, and enhanced GeneratedCaseCandidate fields.
+- Added Slice 47 with a design reason and verification target for every major
+  capability.
+- Validated the official direction: pgvector supports vector search inside
+  PostgreSQL; Qdrant supports filtering/hybrid/vector search and now also has an
+  Edge mode; Haystack provides modular components/pipelines; LlamaIndex defines
+  loading/indexing/storing/querying/evaluation stages. All remain behind
+  KnowledgeAdapter.
+
+Key review risks:
+- No unified run history, global search, or end-to-end evidence trace.
+- Multiple pages still require raw ids and cannot resume prior work efficiently.
+- Generic backend errors do not explain schema/registry/provider/runtime state.
+- The RAG page mixes distinct workflows and has a metric-grid layout defect that
+  creates an excessively long first load.
+- AI Workbench contains useful logs and artifacts but other pages cannot open
+  them through a shared correlation path.
+
+Verification:
+- Final RAG contract keyword/self-check passed.
+- `git diff --check` passed.
+
+Next recommended task:
+- Continue Slice 47 Task 47.2: implement safe local database preflight and copied-
+  database migration diagnostics before adding final RAG tables.

@@ -4143,3 +4143,23 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
   content drift. A copied-database Alembic upgrade starts at the first migration
   and fails because tables already exist. No migration was applied to the
   original database.
+
+## 2026-07-14 Final RAG Scope Promotion And Full Web Review
+
+### Completed
+
+- Reviewed all current web routes for test efficiency, quality, logs,
+  traceability, and visual hierarchy.
+- Promoted Final Test Knowledge RAG into product scope.
+- Added final data/API/state/artifact contracts and Slice 47 task plan.
+- Preserved KnowledgeAdapter as the boundary for pgvector/PostgreSQL, Qdrant,
+  Haystack, and LlamaIndex implementations.
+
+### Verification
+
+- Contract keyword/self-check passed.
+- `git diff --check`: no output.
+
+### Next
+
+- Add safe local database preflight before final RAG migrations.
