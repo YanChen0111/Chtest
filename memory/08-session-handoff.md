@@ -10040,3 +10040,52 @@ Verification:
 Next recommended task:
 - Continue Slice 47 Task 47.2: implement safe local database preflight and copied-
   database migration diagnostics before adding final RAG tables.
+
+## 2026-07-14 Slice 47 Local Database Preflight
+
+Current task:
+- Completed Slice 47 Task 47.2: add a safe local acceptance database preflight
+  and copied-database diagnostic path before any final RAG migration.
+
+Completed:
+- Added `python -m backend.app.db_preflight` with human-readable and JSON output.
+- The source SQLite database is opened read-only with `query_only`; the command
+  never imports the application bootstrap or calls `create_all`.
+- Preflight detects a missing Alembic version record, a revision mismatch,
+  missing current GeneratedCaseCandidate evidence/coverage columns, missing
+  built-in prompts, and PromptVersion hash/content drift.
+- `--copy-to` refuses the source path and existing targets, creates a consistent
+  SQLite backup, inspects the copy, and suggests only `alembic current` while
+  the baseline is unknown.
+- Synced the existing empty-database migration test to the actual current head,
+  `20260713_0010`; no migration file or runtime database was changed.
+
+Live diagnostic evidence:
+- Source: `D:\Desktop\chenyan\Chtest-docs-preflight-vibecoding-fixes\storage\chtest-dev.db`.
+- Diagnostic copy:
+  `C:\Users\Administrator\AppData\Local\Temp\chtest-task-47-2-diagnostic-copy.db`.
+- Source before/after SHA-256:
+  `d8fb34dc054cffc69675c92351ebfbdf6620e82dc76b31bcf7ee759f357a7e01`;
+  unchanged, `source_mutation_performed=false`.
+- Copy before/after `alembic current` SHA-256:
+  `c6cf4abe1982bcfe795b1f8f5bfd132cd33e2431b3d679f452a7b43565ca5a3d`;
+  unchanged by the diagnostic command.
+- Live blockers: no `alembic_version` table; missing
+  `source_knowledge_evidence_json` and `coverage_dimensions_json`; content drift
+  in four built-in PromptVersion rows; one built-in PromptVersion row missing.
+- `alembic current` on the copy exited successfully and returned no revision.
+  No `upgrade`, `stamp`, schema DDL, or registry write was run.
+
+Verification:
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/db/test_local_db_preflight.py backend/app/tests/db/test_alembic_upgrade_head.py backend/app/tests/prompt_skill/test_registry_loader.py -q`
+  - Result: `11 passed`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/db backend/app/tests/prompt_skill/test_registry_loader.py -q`
+  - Result: `36 passed`.
+- Source and copy fingerprint checks passed as recorded above.
+- `git diff --check`: no output.
+
+Next recommended task:
+- Continue Slice 47 Task 47.3: add KnowledgeIngestionRun persistence and the
+  contracted TestKnowledgeCard provenance/review fields with focused DB/API
+  ingestion tests. Keep migration acceptance on empty/test databases until the
+  copied local baseline recovery is explicitly designed and approved.

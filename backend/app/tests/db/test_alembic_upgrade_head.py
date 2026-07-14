@@ -30,4 +30,4 @@ def test_alembic_upgrade_head_from_empty_sqlite_database(tmp_path: Path) -> None
             "test_knowledge_embedding_index",
         } <= table_names
         revision = connection.execute(text("select version_num from alembic_version")).scalar_one()
-        assert revision == "20260710_0009"
+        assert revision == "20260713_0010"

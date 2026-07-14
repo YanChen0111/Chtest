@@ -46,7 +46,7 @@ Chtest API or ORM contracts.
 | Task | Status | Value | Verification |
 |---|---|---|---|
 | 47.1 Promote product/contracts and add full-web review | done | Stable scope and reasons before code | contract keyword/self-check + `git diff --check` |
-| 47.2 Add local DB preflight and safe baseline migration diagnostics | pending | Current local data can upgrade without hidden destructive action | migration/preflight tests on copied fixtures |
+| 47.2 Add local DB preflight and safe baseline migration diagnostics | done | Current local data can upgrade without hidden destructive action | 11 focused preflight/migration/registry tests + live read-only/copy diagnostics |
 | 47.3 Add KnowledgeIngestionRun and enhanced TestKnowledgeCard | pending | Observable imports and reviewable knowledge | focused DB/API ingestion tests |
 | 47.4 Add KnowledgeRetrievalRun and normalized KnowledgeEvidence | pending | Queryable retrieval logs and stable evidence | retrieval API/golden tests |
 | 47.5 Add PostgreSQL full-text + pgvector KnowledgeAdapter | pending | Local-first semantic recall | PostgreSQL adapter integration/eval smoke; deterministic fallback tests |
@@ -76,6 +76,19 @@ backend/app/tests/api/test_local_bootstrap.py
 backend/alembic/* only when the diagnostic contract proves the baseline
 docs/contracts/* when implementation evidence refines the upgrade contract
 ```
+
+Task 47.2 command:
+
+```powershell
+backend\.venv\Scripts\python.exe -m backend.app.db_preflight --database-path storage/chtest-dev.db --json
+```
+
+The command opens the source with SQLite read-only/query-only settings, reports
+the current Alembic heads, required GeneratedCaseCandidate columns, and built-in
+PromptVersion drift, and records source fingerprints before and after the run.
+`--copy-to <new-path>` creates a consistent SQLite backup at an explicit path,
+refuses overwrite, inspects only that copy, and recommends `alembic current`
+instead of an upgrade when the baseline is unknown.
 
 ## Non-Goals
 
