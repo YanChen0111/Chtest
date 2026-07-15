@@ -4291,6 +4291,27 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 47.8: CaseReviewAgent and CoverageGapAgent quality gates.
 
+## 2026-07-15 Case Quality Agents
+
+### Implemented
+
+- Added dependency-free deterministic `CaseReviewAgent` and `CoverageGapAgent`
+  evaluators plus automation readiness assessment.
+- Candidate persistence now writes provider-neutral quality findings,
+  coverage-gap summaries, evidence ids, automation framework, blockers, and
+  confidence without copying provider payloads.
+
+### Verification
+
+- Quality agent and CaseGeneration suite: `12 passed`.
+- Full golden collection still contains the pre-existing missing-fixture and
+  stale decision-table acknowledgement failures; no new failure is attributed
+  to the quality agent change.
+
+### Next
+
+- Task 47.9: typed relationships and graph queries.
+
 ## 2026-07-15 Optional Provider Contracts
 
 ### Implemented

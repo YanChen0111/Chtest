@@ -10337,3 +10337,16 @@ Verification:
 - CaseGeneration and Alembic suite: `13 passed`.
 - Existing optional-provider/PostgreSQL focused suite remains `46 passed`.
 - Source acceptance database remains untouched.
+
+## 2026-07-15 Slice 47.8 Case Quality Agents
+
+Task 47.8 is complete; the next task is Task 47.9 typed relationships and graph
+queries.
+
+- Added deterministic local CaseReviewAgent and CoverageGapAgent functions and
+  automation readiness assessment.
+- Candidate persistence writes quality findings and blockers using only
+  provider-neutral evidence ids and coverage dimensions.
+- Focused quality/CaseGeneration verification: `12 passed`.
+- The broader golden collection retains known missing-fixture and stale
+  acknowledgement failures unrelated to this change.

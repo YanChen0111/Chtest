@@ -244,8 +244,8 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
     assert first_candidate["covered_requirement_ids"]
     assert first_candidate["case_type"] == "functional"
     assert first_candidate["generation_reason"] == first_candidate["ai_reason"]
-    assert first_candidate["automation_readiness"] == {}
-    assert first_candidate["quality_assessment"] == {}
+    assert first_candidate["automation_readiness"]["status"] == "ready_for_review"
+    assert first_candidate["quality_assessment"]["agent"] == "CaseReviewAgent"
     assert first_candidate["ai_reason"]
     assert first_candidate["status"] == "generated"
 

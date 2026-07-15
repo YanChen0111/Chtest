@@ -10,15 +10,15 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.8: add CaseReviewAgent and CoverageGapAgent quality gates.
+Slice 47 Task 47.9: add typed relationships and graph queries.
 
 Required output:
 
-1. Define deterministic review and coverage quality findings for generated
-   candidates using persisted evidence and coverage dimensions.
-2. Keep findings reviewable, provider-neutral, and separate from approval state.
-3. Add focused agent mock/eval tests without introducing external model/runtime
-   dependencies.
+1. Add typed TestKnowledge relationships for impact, risk coverage, historical
+   regression, and candidate duplicate evidence queries.
+2. Keep graph results derived from persisted PostgreSQL relationships and
+   provider-neutral evidence ids.
+3. Add deterministic relationship API/golden tests without a graph database.
 
 ## Previous Tasks Verified
 
@@ -50,6 +50,10 @@ Required output:
   notes, automation readiness, and quality assessment. Existing model output
   remains backward compatible through deterministic defaults. CaseGeneration
   and migration verification is `13 passed`.
+- Added deterministic `CaseReviewAgent` and `CoverageGapAgent` quality
+  functions plus automation readiness assessment. Candidate persistence now
+  writes provider-neutral findings and blockers. Focused quality/CaseGeneration
+  verification is `12 passed`.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -67,8 +71,8 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers get deterministic quality findings that identify missing
-evidence, coverage gaps, and automation blockers before approving a case.
+Test engineers can trace impact and coverage gaps through typed relationships
+without a separate graph runtime.
 
 ## Must Read
 
@@ -113,7 +117,7 @@ Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run focused CaseReview/CoverageGap agent mock/eval tests, then:
+Run focused relationship API/golden tests, then:
 
 ```powershell
 git diff --check
@@ -124,9 +128,9 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Findings are deterministic for the same candidate/evidence snapshot.
+- Relationship rows are typed, same-project, and evidence-backed.
+- Graph queries are deterministic and do not invent edges.
 - Review and approval state gates remain unchanged.
-- Provider-neutral evidence links remain queryable from quality findings.
 - Prompt eligibility and freshness still exclude stale, unsafe, duplicate,
   archived, missing, or cross-project cards.
 - `git diff --check` passes.
@@ -134,10 +138,10 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 ## Commit Message
 
 ```text
-feat(cases): add case quality agents
+feat(knowledge): add typed relationships
 ```
 
 ## Next Task
 
-After Task 47.8 is verified and committed, continue Task 47.9 with typed
-relationships and graph queries.
+After Task 47.9 is verified and committed, continue Task 47.10 with the
+reviewed feedback loop.

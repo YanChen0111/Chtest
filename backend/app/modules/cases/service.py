@@ -12,6 +12,7 @@ from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.model_config import resolve_model_identity
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
+from backend.app.modules.cases.quality_agents import evaluate_case_quality_bundle
 from backend.app.modules.cases.schemas import (
     CaseGenerationStartRequest,
     CaseGenerationTaskRead,
@@ -957,6 +958,7 @@ def persist_case_generation_candidates(
     output: dict,
 ) -> CaseGenerationTask:
     for case in output["cases"]:
+        quality_assessment, automation_readiness = evaluate_case_quality_bundle(case)
         session.add(
             GeneratedCaseCandidate(
                 generation_task_id=generation_task.id,
@@ -978,8 +980,8 @@ def persist_case_generation_candidates(
                 case_type=case.get("case_type", case.get("test_type", "functional")),
                 generation_reason=case.get("generation_reason", case["ai_reason"]),
                 coverage_gap_notes=case.get("coverage_gap_notes"),
-                automation_readiness_json=case.get("automation_readiness", {}),
-                quality_assessment_json=case.get("quality_assessment", {}),
+                automation_readiness_json=automation_readiness,
+                quality_assessment_json=quality_assessment,
                 ai_reason=case["ai_reason"],
             ),
         )
