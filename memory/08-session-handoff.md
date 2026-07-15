@@ -10245,3 +10245,34 @@ Next action:
 - Resume Task 47.5 with dedicated PostgreSQL test URLs. Run online Alembic and
   full-text fallback smoke first, then pgvector native ordering/plan/recall
   smoke. Do not advance to Task 47.6 before this acceptance gap closes.
+
+## 2026-07-15 PostgreSQL Hybrid Candidate Review Fix
+
+Current task:
+- Task 47.5 remains blocked only on real PostgreSQL/pgvector integration.
+
+Completed after offline implementation review:
+- Split native retrieval into materialized full-text candidates and an
+  HNSW-ordered vector pool, then applied similarity filtering outside the
+  ordered pool before provider-neutral merging.
+- Matched vector casts and filters to configured dimensions, preserved the
+  default 64-dimension HNSW expression, and excluded text candidates from
+  vector-only mode.
+- Made capability probe/index state explicit and distinguished an unavailable
+  pgvector capability from a usable capability with no matching fresh vector.
+- Added SQL-shape, vector-only, capability failure, fake-native normalization,
+  dimension mismatch, and provider leakage assertions.
+
+Verification:
+- Focused Task 47.4/47.5 API/golden/DB/dialect suite: `76 passed`.
+- Complete backend: `410 passed, 13 failed`; the remaining failures are the
+  unchanged Windows fake executable and stale golden acknowledgement cases.
+- `compileall` and `git diff --check`: passed.
+- Read-only source preflight: SHA-256
+  `d8fb34dc054cffc69675c92351ebfbdf6620e82dc76b31bcf7ee759f357a7e01`,
+  `source_mutation_performed=false`.
+
+Blocker:
+- No PostgreSQL server/test URL or pgvector-enabled peer exists, and Docker
+  Desktop still returns HTTP 500. Online migration, real `<=>`, HNSW plan, and
+  recall acceptance remain unverified. Do not advance to Task 47.6.

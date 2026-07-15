@@ -1137,6 +1137,26 @@ def match_configured_knowledge_cards(
         "config": dict(config.config_json),
         "capabilities": capabilities.snapshot(),
     }
+    if retrieval_mode == "metadata":
+        fallback = match_test_knowledge_cards(
+            session,
+            project_id=project_id,
+            query_text=query_text,
+            limit=limit,
+            approved_only=approved_only,
+            filters=filters,
+            retrieval_mode="metadata",
+        )
+        return KnowledgeMatchResult(
+            candidate_count=fallback.candidate_count,
+            items=fallback.items,
+            vector_available=False,
+            actual_mode="metadata",
+            degraded=False,
+            fallback_reason=None,
+            provider_type="postgres_hybrid",
+            capability_snapshot=adapter_snapshot,
+        )
     if not capabilities.postgresql or not capabilities.full_text:
         fallback = match_test_knowledge_cards(
             session,
@@ -1173,7 +1193,8 @@ def match_configured_knowledge_cards(
                 query_text=query_text,
                 query_vector=query_vector,
                 embedding_model=embedding_model,
-                hnsw_ef_search=int(config.config_json.get("hnsw_ef_search", 40)),
+                hnsw_ef_search=max(1, min(1000, int(config.config_json.get("hnsw_ef_search", 40)))),
+                include_keyword=retrieval_mode != "vector",
                 statuses={"approved"} if approved_only else PROMPT_ELIGIBLE_STATUSES,
                 filters=filters,
                 limit=limit,
@@ -1236,7 +1257,9 @@ def match_configured_knowledge_cards(
                 else 0.0
             ),
             retrieval_reason=(
-                "postgres_hybrid_keyword_vector"
+                "postgres_vector_similarity"
+                if retrieval_mode == "vector" and native.vector_score is not None
+                else "postgres_hybrid_keyword_vector"
                 if native.vector_score is not None
                 else "postgres_full_text"
             ),
@@ -1261,10 +1284,14 @@ def match_configured_knowledge_cards(
         candidate_count=len(evidence),
         items=evidence[:limit],
         vector_available=vector_used,
-        actual_mode="hybrid" if vector_used else "keyword",
+        actual_mode=retrieval_mode if vector_used else "keyword",
         degraded=retrieval_mode in {"hybrid", "vector"} and not vector_used,
         fallback_reason=(
-            "pgvector_unavailable"
+            (
+                "vector_candidate_unavailable"
+                if capabilities.vector_search
+                else "pgvector_unavailable"
+            )
             if retrieval_mode in {"hybrid", "vector"} and not vector_used
             else None
         ),

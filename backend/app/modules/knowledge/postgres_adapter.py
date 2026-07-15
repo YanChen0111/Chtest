@@ -114,6 +114,7 @@ def search_postgres_knowledge(
     query_vector: list[float] | None,
     embedding_model: str,
     hnsw_ef_search: int,
+    include_keyword: bool,
     statuses: set[str],
     filters: dict[str, Any],
     limit: int,
@@ -133,6 +134,7 @@ def search_postgres_knowledge(
         query_text=query_text,
         query_vector=query_vector,
         embedding_model=embedding_model,
+        include_keyword=include_keyword,
         statuses=statuses,
         filters=filters,
         limit=limit,
@@ -159,6 +161,7 @@ def build_search_statement(
     query_text: str,
     query_vector: list[float] | None,
     embedding_model: str,
+    include_keyword: bool,
     statuses: set[str],
     filters: dict[str, Any],
     limit: int,
@@ -206,18 +209,9 @@ def build_search_statement(
             f"i.embedding_vector::{vector_type} <=> "
             f"CAST(:query_vector AS {vector_type})"
         )
-        vector_score = (
-            "LEAST(1.0, GREATEST(0.0, "
-            f"1.0 - ({vector_distance})))"
-        )
-        bind_params.append(bindparam("query_vector", type_=VECTOR()))
-        values["query_vector"] = query_vector
-        values["embedding_model"] = embedding_model
-        values["embedding_dim"] = embedding_dim
-        values["max_vector_distance"] = 1.0 - min_vector_similarity
-        statement = text(
+        text_candidates = (
             f"""
-            WITH text_candidates AS MATERIALIZED (
+            text_candidates AS MATERIALIZED (
                 SELECT
                     c.id AS knowledge_card_id,
                     {keyword_score} AS keyword_score
@@ -227,11 +221,29 @@ def build_search_statement(
                       websearch_to_tsquery('simple'::regconfig, :query_text)
                 ORDER BY keyword_score DESC, c.id ASC
                 LIMIT :limit
-            ),
-            vector_candidates AS MATERIALIZED (
+            )
+            """
+            if include_keyword
+            else """
+            text_candidates AS MATERIALIZED (
+                SELECT NULL::uuid AS knowledge_card_id,
+                       0.0::double precision AS keyword_score
+                WHERE false
+            )
+            """
+        )
+        bind_params.append(bindparam("query_vector", type_=VECTOR()))
+        values["query_vector"] = query_vector
+        values["embedding_model"] = embedding_model
+        values["embedding_dim"] = embedding_dim
+        values["max_vector_distance"] = 1.0 - min_vector_similarity
+        statement = text(
+            f"""
+            WITH {text_candidates},
+            vector_pool AS MATERIALIZED (
                 SELECT
                     i.knowledge_card_id,
-                    {vector_score} AS vector_score,
+                    {vector_distance} AS vector_distance,
                     i.embedding_model,
                     i.embedding_dim,
                     i.content_hash
@@ -244,9 +256,18 @@ def build_search_statement(
                   AND i.embedding_model = :embedding_model
                   AND i.embedding_dim = :embedding_dim
                   AND i.embedding_vector IS NOT NULL
-                  AND {vector_distance} <= :max_vector_distance
                 ORDER BY {vector_distance} ASC
                 LIMIT :limit
+            ),
+            vector_candidates AS MATERIALIZED (
+                SELECT
+                    knowledge_card_id,
+                    LEAST(1.0, GREATEST(0.0, 1.0 - vector_distance)) AS vector_score,
+                    embedding_model,
+                    embedding_dim,
+                    content_hash
+                FROM vector_pool
+                WHERE vector_distance <= :max_vector_distance
             ),
             candidate_ids AS (
                 SELECT knowledge_card_id FROM text_candidates

@@ -42,6 +42,10 @@ Required output:
   fallback with `vector_score=null`.
 - Added PostgreSQL dialect/offline DDL tests, fake capability/native-result
   tests, SQLite no-op migration/fallback tests, and existing consumer regressions.
+- Post-implementation review split full-text and vector candidate CTEs, applies
+  dimension-matched casts/filters, keeps the similarity threshold outside the
+  HNSW-ordered pool, and prevents vector-only mode from admitting text-only
+  candidates. Focused Task 47.4/47.5 verification is now `76 passed`.
 
 ## Blocking Acceptance Gap
 

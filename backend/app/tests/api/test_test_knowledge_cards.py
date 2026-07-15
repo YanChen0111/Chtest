@@ -1081,7 +1081,7 @@ def test_postgres_hybrid_native_result_normalizes_to_provider_neutral_evidence(
     assert "embedding_vector" not in result.items[0]
     assert mismatched.items == []
     assert mismatched.vector_available is False
-    assert mismatched.fallback_reason == "pgvector_unavailable"
+    assert mismatched.fallback_reason == "vector_candidate_unavailable"
 
 
 def test_unsafe_card_revokes_retrieval_evidence_display_and_download(

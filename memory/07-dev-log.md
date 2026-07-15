@@ -4220,3 +4220,24 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - No local PostgreSQL server/test URL exists, and Docker Desktop's engine
   returns HTTP 500. Real online PostgreSQL/pgvector migration, query, HNSW plan,
   and recall smoke cannot be performed. Task 47.5 remains in progress.
+
+## 2026-07-15 PostgreSQL Candidate Query Review
+
+### Completed
+
+- Corrected native vector retrieval to use a dimension-matched, HNSW-orderable
+  candidate pool before threshold filtering and full-text merging.
+- Kept vector-only retrieval free of text-only candidates and improved fallback
+  reasons for missing native capability versus missing fresh candidates.
+- Added fake-native provider-neutral evidence and PostgreSQL SQL-shape coverage.
+
+### Verification
+
+- Focused Task 47.4/47.5 suite: `76 passed`.
+- Full backend: `410 passed, 13 known unrelated failures`.
+- `compileall`, `git diff --check`, and read-only DB fingerprint checks passed.
+
+### Blocker
+
+- Task 47.5 still requires dedicated PostgreSQL test URLs for online migration,
+  full-text, pgvector ordering, HNSW plan, and recall acceptance.
