@@ -1040,11 +1040,24 @@ card approval remains a separate human action.
 
 `GET /api/projects/{project_id}/evidence-trace?entity_type={type}&entity_id={id}`
 
+The same endpoint supports bounded global search with `q` and `limit` when the
+entity pair is omitted. `entity_type` and `entity_id` must be supplied
+together, and supported trace roots include `KnowledgeIngestionRun`,
+`KnowledgeRetrievalRun`, `KnowledgeEvidence`, `TestKnowledgeCard`,
+`KnowledgeFeedbackEvent`, and `GeneratedCaseCandidate`. A search response uses
+the same stage/node shape and never searches or returns raw provider payloads,
+prompts, or unsafe artifact content.
+
 Response groups correlation records into source, AI/retrieval, review,
 execution, failure, report, and feedback stages. Each stage includes entity id,
 status, timestamp, safe summary, and local Artifact references. The endpoint
 does not inline raw prompts, provider payloads, stdout/stderr, or secret-bearing
 content.
+
+Each node may additionally expose `provider_type`, requested/effective
+retrieval mode, `degraded`, `fallback_reason`, `latency_ms`, normalized evidence
+ids, source locator, and safe artifact refs. Search is project-scoped and
+bounded (`limit` 1-100); no-result search returns an empty stage list.
 
 ### 2.15 List MCP-ready ToolDefinitions
 

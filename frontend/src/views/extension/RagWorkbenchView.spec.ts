@@ -1,14 +1,15 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import ArcoVue from '@arco-design/web-vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter } from 'vue-router';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import RagWorkbenchView from './RagWorkbenchView.vue';
+import * as extensionApi from '../../api/extension';
 import { useExtensionStore } from '../../stores/extension';
 
 describe('RagWorkbenchView', () => {
-  it('surfaces tester-first health, gaps, coverage, and retrieval actions', () => {
+  it('surfaces tester-first health, gaps, coverage, and trace search actions', async () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const store = useExtensionStore();
@@ -70,6 +71,12 @@ describe('RagWorkbenchView', () => {
       coverage: { knowledge_coverage_ratio: 0.5 },
     };
 
+    const traceSpy = vi.spyOn(extensionApi, 'searchEvidenceTrace').mockResolvedValue({
+      project_id: store.projectId,
+      query: 'expired',
+      stages: [{ name: 'evidence', items: [{ stage: 'evidence', entity_type: 'KnowledgeEvidence', entity_id: 'evidence-1', status: 'eligible', timestamp: '2026-07-15T10:00:00Z', summary: 'expired coupon rule', artifact_refs: [], evidence_ids: ['evidence-1'], source_locator: { section: '1' }, provider_type: 'postgres_hybrid', retrieval_mode: 'keyword', latency_ms: 12 }] }],
+      total: 1,
+    });
     const wrapper = mount(RagWorkbenchView, { global: { plugins: [pinia, ArcoVue, router] } });
 
     expect(wrapper.text()).toContain('Knowledge Workbench');
@@ -79,8 +86,19 @@ describe('RagWorkbenchView', () => {
     expect(wrapper.text()).toContain('postgres_hybrid');
     expect(wrapper.text()).toContain('degraded');
     expect(wrapper.text()).toContain('keyword fallback');
-    expect(wrapper.text()).toContain('not recorded');
+    expect(wrapper.text()).toContain('Global evidence trace');
     expect(wrapper.text()).toContain('expired');
     expect(wrapper.text()).toContain('50%');
+    await wrapper.find('input[placeholder="Search card, retrieval, feedback, or case evidence"]').setValue('expired');
+    const searchButton = wrapper.findAll('button').find((button) => button.text().includes('Search trace'));
+    expect(searchButton).toBeDefined();
+    await searchButton!.trigger('click');
+    await flushPromises();
+    expect(traceSpy).toHaveBeenCalledWith(store.projectId, { q: 'expired', limit: 50 });
+    expect(wrapper.text()).toContain('expired coupon rule');
+    expect(wrapper.text()).toContain('12 ms');
+    await wrapper.find('.trace-row').trigger('click');
+    expect(wrapper.find('.trace-row').exists()).toBe(true);
+    traceSpy.mockRestore();
   });
 });

@@ -10,17 +10,16 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.12: add unified trace and global evidence search.
+Slice 47 Task 47.13: refactor all pages around recent runs and named selectors.
 
 Required output:
 
-1. Make retrieval, ingestion, feedback, and case-generation evidence searchable
-   from one trace-oriented surface.
-2. Preserve provider, mode, fallback, latency, evidence, and source-locator
-   context while navigating from a log row to its originating artifact/card.
-3. Add focused API/frontend tests, production build verification, and browser
-   smoke without changing backend contracts unless a missing trace contract is
-   proven by tests.
+1. Use recent runs, named selectors, and resume actions consistently across
+   knowledge, case, execution, reporting, and automation pages.
+2. Keep loading, empty, failure, and stale-data states actionable without
+   forcing testers to rediscover project context.
+3. Add per-page focused tests and responsive browser smoke without broad visual
+   refactors or backend contract changes.
 
 ## Previous Tasks Verified
 
@@ -70,6 +69,13 @@ Required output:
 - Frontend verification: `25 test files / 50 tests passed`; production build
   passed with the existing chunk-size warning; desktop and 390px mobile browser
   smoke confirmed reachable controls and no visible overlap.
+- Added the contract-backed `GET /api/projects/{project_id}/evidence-trace`
+  endpoint with bounded `q` search, project isolation, safe artifact refs, and
+  retrieval diagnostics. The focused knowledge API suite is `27 passed`.
+- Added global evidence trace search and a details drawer to the workbench,
+  preserving source locators, evidence ids, provider/mode, fallback, latency,
+  and safe artifact links. Full frontend verification remains `25 files / 50
+  tests` after the trace integration; desktop and 390px mobile smoke passed.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -140,20 +146,19 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Global evidence search covers retrieval runs, ingestion artifacts, feedback,
-  cards, and generated-case trace links.
-- Search results preserve provider, mode, fallback, latency, evidence, and
-  source-locator context.
-- Empty, loading, error, and no-result states remain actionable and responsive.
+- Knowledge, case, execution, reporting, and automation pages expose recent-run
+  resume actions with stable named selectors.
+- Empty, loading, failure, and stale-data states remain actionable and
+  responsive.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(knowledge): add unified trace search
+feat(frontend): unify recent run navigation
 ```
 
 ## Next Task
 
-After Task 47.11 is verified and committed, continue Task 47.12 with unified
-trace and global evidence search.
+After Task 47.12 is verified and committed, continue Task 47.13 with recent-run
+navigation and named selectors across the remaining pages.

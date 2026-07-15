@@ -58,6 +58,46 @@ export interface KnowledgeBaseRead {
   readonly non_goals: string[];
 }
 
+export interface EvidenceTraceArtifactRefRead {
+  readonly id: string;
+  readonly artifact_type: string;
+  readonly mime_type: string;
+  readonly safe_to_show: boolean;
+  readonly download_url: string;
+}
+
+export interface EvidenceTraceNodeRead {
+  readonly stage: string;
+  readonly entity_type: string;
+  readonly entity_id: string;
+  readonly status: string;
+  readonly timestamp: string;
+  readonly summary: string;
+  readonly artifact_refs: EvidenceTraceArtifactRefRead[];
+  readonly evidence_ids: string[];
+  readonly source_locator: Record<string, unknown>;
+  readonly provider_type?: string | null;
+  readonly requested_retrieval_mode?: string | null;
+  readonly retrieval_mode?: string | null;
+  readonly degraded?: boolean | null;
+  readonly fallback_reason?: string | null;
+  readonly latency_ms?: number | null;
+}
+
+export interface EvidenceTraceStageRead {
+  readonly name: string;
+  readonly items: EvidenceTraceNodeRead[];
+}
+
+export interface EvidenceTraceRead {
+  readonly project_id: string;
+  readonly entity_type?: string | null;
+  readonly entity_id?: string | null;
+  readonly query?: string | null;
+  readonly stages: EvidenceTraceStageRead[];
+  readonly total: number;
+}
+
 export interface TestKnowledgeCardRead {
   readonly id: string;
   readonly project_id: string;
@@ -273,6 +313,18 @@ export interface ToolDefinitionListRead {
 
 export async function getKnowledgeBase(projectId: string): Promise<KnowledgeBaseRead> {
   return apiClient.getJson<KnowledgeBaseRead>(`/projects/${projectId}/knowledge-base`);
+}
+
+export async function searchEvidenceTrace(
+  projectId: string,
+  params: { q?: string; entity_type?: string; entity_id?: string; limit?: number } = {},
+): Promise<EvidenceTraceRead> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') query.set(key, String(value));
+  }
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return apiClient.getJson<EvidenceTraceRead>(`/projects/${projectId}/evidence-trace${suffix}`);
 }
 
 export async function listTestKnowledgeCards(projectId: string): Promise<TestKnowledgeCardListRead> {

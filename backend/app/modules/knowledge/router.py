@@ -12,6 +12,7 @@ from backend.app.modules.knowledge.schemas import (
     KnowledgeIngestionRunCreateRequest,
     KnowledgeIngestionRunListRead,
     KnowledgeIngestionRunRead,
+    EvidenceTraceRead,
     KnowledgeRetrievalRunCreateRequest,
     KnowledgeRetrievalRunListRead,
     KnowledgeRetrievalRunRead,
@@ -50,6 +51,34 @@ def bad_request(error_code: str, message: str) -> HTTPException:
         status_code=status.HTTP_400_BAD_REQUEST,
         detail={"error_code": error_code, "message": message, "details": {}},
     )
+
+
+@router.get("/projects/{project_id}/evidence-trace", response_model=EvidenceTraceRead)
+def search_evidence_trace(
+    project_id: uuid.UUID,
+    entity_type: str | None = Query(default=None, max_length=80),
+    entity_id: uuid.UUID | None = Query(default=None),
+    q: str | None = Query(default=None, max_length=2000),
+    limit: int = Query(default=50, ge=1, le=100),
+    session: Session = Depends(get_session),
+) -> EvidenceTraceRead:
+    try:
+        return service.search_evidence_trace(
+            session,
+            project_id,
+            query=q,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            limit=limit,
+        )
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    except service.EvidenceTraceEntityNotFoundError as exc:
+        raise not_found("EVIDENCE_TRACE_ENTITY_NOT_FOUND", "Evidence trace entity not found.") from exc
+    except service.EvidenceTraceEntityTypeNotAllowedError as exc:
+        raise bad_request("EVIDENCE_TRACE_ENTITY_TYPE_NOT_ALLOWED", "Evidence trace entity type is not supported.") from exc
+    except service.EvidenceTraceQueryInvalidError as exc:
+        raise bad_request("EVIDENCE_TRACE_QUERY_INVALID", "Evidence trace entity filters must be supplied as a pair.") from exc
 
 
 @router.post(

@@ -196,6 +196,67 @@ def approve_cards(client: ASGIClient, project_id: str, cards: list[dict[str, Any
         assert response.json()["status"] == "approved"
 
 
+def test_evidence_trace_keeps_retrieval_diagnostics_and_supports_global_search(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    project_id, artifact_id, _requirement_id = create_project_context_and_requirement(client)
+    extracted = client.post(
+        "/api/test-knowledge/cards/extract",
+        {"project_id": project_id, "source_artifact_id": artifact_id},
+    )
+    assert extracted.status_code == 201
+    extracted_items = extracted.json()["items"]
+    card_id = extracted_items[0]["id"]
+    approve_cards(client, project_id, extracted_items)
+    retrieval = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": project_id,
+            "query_text": "expired coupon",
+            "retrieval_mode": "hybrid",
+            "limit": 3,
+        },
+    )
+    assert retrieval.status_code == 201
+    run = retrieval.json()
+    trace = client.get(f"/api/projects/{project_id}/evidence-trace?entity_type=KnowledgeRetrievalRun&entity_id={run['id']}")
+    assert trace.status_code == 200
+    body = trace.json()
+    nodes = [item for stage in body["stages"] for item in stage["items"]]
+    run_node = next(item for item in nodes if item["entity_type"] == "KnowledgeRetrievalRun")
+    assert run_node["provider_type"]
+    assert run_node["requested_retrieval_mode"] == "hybrid"
+    assert run_node["retrieval_mode"] == "keyword"
+    assert run_node["fallback_reason"]
+    assert "latency_ms" in run_node
+    assert run_node["evidence_ids"]
+    evidence_node = next(item for item in nodes if item["entity_type"] == "KnowledgeEvidence")
+    assert evidence_node["source_locator"]
+    assert evidence_node["artifact_refs"]
+
+    global_search = client.get(f"/api/projects/{project_id}/evidence-trace?q=Coupon&limit=10")
+    assert global_search.status_code == 200
+    assert any(
+        item["entity_id"] == card_id
+        for stage in global_search.json()["stages"]
+        for item in stage["items"]
+    )
+
+
+def test_evidence_trace_rejects_cross_project_and_invalid_entity_type(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    project_id, _artifact_id, _requirement_id = create_project_context_and_requirement(client)
+    unknown = client.get(
+        f"/api/projects/{project_id}/evidence-trace?entity_type=Unknown&entity_id={uuid.uuid4()}"
+    )
+    assert unknown.status_code == 400
+    missing = client.get(
+        f"/api/projects/{project_id}/evidence-trace?entity_type=TestKnowledgeCard&entity_id={uuid.uuid4()}"
+    )
+    assert missing.status_code == 404
 def test_extract_test_knowledge_cards_from_context_artifact(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:

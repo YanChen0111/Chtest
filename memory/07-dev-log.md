@@ -4391,3 +4391,24 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Production build passed; Vite emitted only the existing chunk-size warning.
 - Browser smoke passed on desktop and a `390x844` mobile viewport with no
   visible overlap or unreachable workbench controls.
+
+## 2026-07-15 Unified Evidence Trace Search
+
+### Implemented
+
+- Added the contract-backed project-scoped evidence trace endpoint with bounded
+  global `q` search and entity-root tracing for ingestion, retrieval, evidence,
+  cards, feedback, and generated case candidates.
+- Safe artifact references, source locators, normalized evidence ids, provider
+  mode, fallback, degraded state, and latency are preserved without exposing raw
+  prompts, provider payloads, or unsafe artifacts.
+- Added workbench global trace search, stage filtering, responsive result rows,
+  and a details drawer before navigating to the originating record.
+
+### Verification
+
+- Focused backend knowledge API suite: `27 passed`.
+- Frontend suite: `25 test files / 50 tests passed`; production build passed
+  with the known chunk-size warning.
+- Browser smoke passed on desktop and `390x844` mobile; trace search controls
+  remained reachable and the responsive layout avoided overlap.

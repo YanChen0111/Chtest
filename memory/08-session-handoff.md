@@ -10385,3 +10385,20 @@ global evidence search.
   passed with the known chunk-size warning; desktop and `390x844` mobile smoke
   passed.
 - Source `storage/chtest-dev.db` remains read-only and unchanged.
+
+## 2026-07-15 Slice 47.12 Unified Evidence Trace
+
+Task 47.12 is complete and committed; next is Task 47.13 recent-run navigation
+and named selectors across the remaining pages.
+
+- Added `GET /api/projects/{project_id}/evidence-trace` with bounded global
+  search and entity trace roots for ingestion, retrieval/evidence, cards,
+  feedback, and generated cases.
+- Trace nodes preserve provider/requested/effective mode, fallback, degraded
+  state, latency, evidence ids, source locators, and safe artifact refs while
+  filtering unsafe content and enforcing project scope.
+- Added workbench global trace search, stage filtering, responsive result rows,
+  and a details drawer for source inspection before navigation.
+- Verification: backend focused knowledge API `27 passed`; frontend `25 test
+  files / 50 tests passed`; build passed with existing chunk-size warning;
+  desktop and `390x844` browser smoke passed.

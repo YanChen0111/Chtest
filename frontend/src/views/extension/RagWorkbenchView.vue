@@ -52,6 +52,41 @@
       </a-card>
     </div>
 
+    <a-card class="rag-panel trace-panel" :bordered="false">
+      <template #title>Global evidence trace</template>
+      <div class="trace-toolbar">
+        <a-input v-model="traceQuery" allow-clear placeholder="Search card, retrieval, feedback, or case evidence" @press-enter="searchTrace" />
+        <a-select v-model="traceStage" :options="[{ label: 'All stages', value: 'all' }, ...traceStages.map((stage) => ({ label: stage, value: stage }))]" />
+        <a-button type="primary" :loading="traceLoading" @click="searchTrace">Search trace</a-button>
+      </div>
+      <a-alert v-if="traceError" type="error" show-icon :content="traceError" />
+      <a-empty v-if="!traceLoading && traceQuery && !visibleTraceNodes.length" description="No evidence trace matches" />
+      <div v-else class="trace-list" aria-label="Evidence trace results">
+        <button v-for="node in visibleTraceNodes" :key="`${node.entity_type}-${node.entity_id}-${node.stage}`" class="trace-row" @click="selectTrace(node)">
+          <span class="trace-stage">{{ node.stage }}</span>
+          <span class="trace-main"><strong>{{ node.summary }}</strong><small>{{ node.entity_type }} · {{ node.status }} · {{ node.timestamp }}</small></span>
+          <span class="trace-diagnostics">{{ node.provider_type || 'local' }} / {{ node.retrieval_mode || 'n/a' }} · {{ node.latency_ms == null ? 'latency n/a' : `${node.latency_ms} ms` }}</span>
+          <span class="trace-arrow" aria-hidden="true">-&gt;</span>
+        </button>
+      </div>
+    </a-card>
+
+    <a-drawer v-model:visible="traceDrawerVisible" title="Evidence trace details" :width="420">
+      <template v-if="selectedTrace">
+        <dl class="trace-details">
+          <div><dt>Entity</dt><dd>{{ selectedTrace.entity_type }} / {{ selectedTrace.entity_id }}</dd></div>
+          <div><dt>Status</dt><dd>{{ selectedTrace.status }}</dd></div>
+          <div><dt>Provider / mode</dt><dd>{{ selectedTrace.provider_type || 'local' }} / {{ selectedTrace.retrieval_mode || 'n/a' }}</dd></div>
+          <div><dt>Fallback</dt><dd>{{ selectedTrace.fallback_reason || 'none' }}</dd></div>
+          <div><dt>Latency</dt><dd>{{ selectedTrace.latency_ms == null ? 'not recorded' : `${selectedTrace.latency_ms} ms` }}</dd></div>
+          <div><dt>Evidence ids</dt><dd>{{ selectedTrace.evidence_ids.join(', ') || 'none' }}</dd></div>
+          <div><dt>Source locator</dt><dd><code>{{ JSON.stringify(selectedTrace.source_locator) }}</code></dd></div>
+          <div><dt>Safe artifacts</dt><dd>{{ selectedTrace.artifact_refs.map((artifact) => artifact.id).join(', ') || 'none' }}</dd></div>
+        </dl>
+        <a-button type="primary" @click="navigateTrace(selectedTrace)">Open originating record</a-button>
+      </template>
+    </a-drawer>
+
     <a-card class="rag-panel rag-table-panel" :bordered="false">
       <template #title>
         <div class="panel-title-row"><span>Recent retrievals</span><a-button size="small" @click="go('knowledge-base')">View all logs</a-button></div>
@@ -96,11 +131,19 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
+import { searchEvidenceTrace, type EvidenceTraceNodeRead } from '../../api/extension';
 import { useExtensionStore } from '../../stores/extension';
 
 const router = useRouter();
 const store = useExtensionStore();
 const query = ref('');
+const traceQuery = ref('');
+const traceStage = ref('all');
+const traceLoading = ref(false);
+const traceError = ref('');
+const traceNodes = ref<EvidenceTraceNodeRead[]>([]);
+const selectedTrace = ref<EvidenceTraceNodeRead | null>(null);
+const traceDrawerVisible = ref(false);
 
 const adapter = computed(() => store.knowledgeBase?.knowledge_adapter ?? {
   provider_type: 'none', status: 'not_configured', retrieval_mode: undefined, last_checked_at: null, used_knowledge: false,
@@ -134,9 +177,36 @@ const actions = [
   { icon: '#', title: 'Inspect case rationale', description: 'See evidence behind generated cases', route: 'case-generation-review' },
 ];
 
+const visibleTraceNodes = computed(() => traceNodes.value.filter((node) => traceStage.value === 'all' || node.stage === traceStage.value));
+const traceStages = computed(() => [...new Set(traceNodes.value.map((node) => node.stage))]);
+
 function go(routeName: string) { router.push({ name: routeName }); }
 function refresh() { return store.loadExtensionSurface(); }
 function statusColor(status: string) { return status === 'ready' ? 'green' : ['degraded', 'failed'].includes(status) ? 'orange' : 'gray'; }
+async function searchTrace() {
+  const text = traceQuery.value.trim();
+  if (!text) return;
+  traceLoading.value = true;
+  traceError.value = '';
+  try {
+    const result = await searchEvidenceTrace(store.projectId, { q: text, limit: 50 });
+    traceNodes.value = result.stages.flatMap((stage) => stage.items);
+  } catch (error) {
+    traceError.value = error instanceof Error ? error.message : 'Trace search failed';
+    traceNodes.value = [];
+  } finally {
+    traceLoading.value = false;
+  }
+}
+function selectTrace(node: EvidenceTraceNodeRead) {
+  selectedTrace.value = node;
+  traceDrawerVisible.value = true;
+}
+function navigateTrace(node: EvidenceTraceNodeRead) {
+  const routeName = node.entity_type === 'GeneratedCaseCandidate' ? 'case-generation-review' : 'knowledge-base';
+  router.push({ name: routeName, query: { entityType: node.entity_type, entityId: node.entity_id } });
+  traceDrawerVisible.value = false;
+}
 
 onMounted(() => { if (!store.knowledgeBase) void store.loadExtensionSurface(); });
 </script>
@@ -158,8 +228,10 @@ onMounted(() => { if (!store.knowledgeBase) void store.loadExtensionSurface(); }
 .action-list { display: grid; gap: 8px; }.action-row { display: grid; grid-template-columns: 28px 1fr 24px; align-items: center; gap: 10px; width: 100%; padding: 12px; border: 1px solid #e3e9f2; border-radius: 6px; background: #fbfdff; text-align: left; cursor: pointer; }.action-row:hover { border-color: #7aa7e8; background: #f5f9ff; }.action-icon { color: #2563eb; font-size: 18px; }.action-row strong, .action-row small { display: block; }.action-row small { margin-top: 3px; color: #718096; }.action-arrow { color: #2563eb; text-align: right; }
 .provider-summary, .panel-title-row, .table-toolbar, .coverage-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }.provider-summary strong { display: block; margin-top: 4px; color: #14213a; }.provider-details { display: grid; gap: 10px; margin: 18px 0; }.provider-details div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #eef2f7; padding-bottom: 8px; }.provider-details dt { color: #718096; }.provider-details dd { margin: 0; color: #1f2937; text-align: right; }.muted-label { color: #718096; font-size: 12px; }
 .table-toolbar { margin-bottom: 12px; }.table-toolbar .arco-input-wrapper { max-width: 320px; }
+.trace-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) 180px auto; gap: 10px; margin-bottom: 12px; }.trace-list { display: grid; gap: 6px; }.trace-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 220px 24px; gap: 12px; align-items: center; width: 100%; padding: 11px 12px; border: 1px solid #e3e9f2; border-radius: 6px; background: #fbfdff; text-align: left; cursor: pointer; }.trace-row:hover { border-color: #7aa7e8; background: #f5f9ff; }.trace-stage, .trace-diagnostics, .trace-main small { color: #718096; font-size: 12px; }.trace-main strong, .trace-main small { display: block; }.trace-main small { margin-top: 3px; }.trace-arrow { color: #2563eb; text-align: right; }
+.trace-details { display: grid; gap: 12px; margin: 0 0 18px; }.trace-details div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; border-bottom: 1px solid #eef2f7; padding-bottom: 9px; }.trace-details dt { color: #718096; }.trace-details dd { min-width: 0; margin: 0; color: #1f2937; overflow-wrap: anywhere; }.trace-details code { white-space: pre-wrap; }
 .retrieval-rows { display: grid; gap: 6px; margin-top: 12px; }.retrieval-row { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 9px 10px; border: 1px solid #edf1f6; border-radius: 6px; color: #344054; }.retrieval-row span, .retrieval-row small { color: #718096; font-size: 12px; }
 .coverage-ring { display: grid; width: 128px; height: 128px; flex: 0 0 128px; place-content: center; border-radius: 50%; background: conic-gradient(#2563eb var(--coverage), #e8eef7 0); text-align: center; }.coverage-ring::before { content: ''; position: absolute; width: 96px; height: 96px; border-radius: 50%; background: #fff; }.coverage-ring strong, .coverage-ring span { position: relative; z-index: 1; }.coverage-ring strong { font-size: 26px; color: #14213a; }.coverage-ring span { width: 76px; color: #718096; font-size: 11px; }.coverage-copy { max-width: 620px; }.coverage-copy h3 { margin: 0; color: #14213a; }.coverage-copy p { margin: 8px 0 14px; color: #68778d; line-height: 1.6; }
-@media (max-width: 900px) { .rag-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }.rag-grid { grid-template-columns: 1fr; } }
-@media (max-width: 600px) { .rag-hero, .coverage-row { flex-direction: column; }.rag-hero h2 { font-size: 24px; }.rag-kpis { grid-template-columns: 1fr 1fr; }.rag-hero-actions { width: 100%; }.rag-hero-actions .arco-btn { flex: 1; }.coverage-ring { align-self: center; } }
+@media (max-width: 900px) { .rag-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }.rag-grid { grid-template-columns: 1fr; }.trace-row { grid-template-columns: 100px minmax(0, 1fr) 24px; }.trace-diagnostics { display: none; } }
+@media (max-width: 600px) { .rag-hero, .coverage-row { flex-direction: column; }.rag-hero h2 { font-size: 24px; }.rag-kpis { grid-template-columns: 1fr 1fr; }.rag-hero-actions { width: 100%; }.rag-hero-actions .arco-btn { flex: 1; }.coverage-ring { align-self: center; }.trace-toolbar { grid-template-columns: 1fr; }.trace-row { grid-template-columns: 76px minmax(0, 1fr) 24px; padding: 10px 8px; }.trace-main strong { overflow-wrap: anywhere; } }
 </style>

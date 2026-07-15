@@ -35,6 +35,10 @@ from backend.app.modules.knowledge.schemas import (
     KnowledgeIngestionRunCreateRequest,
     KnowledgeIngestionRunRead,
     KnowledgeEvidenceRead,
+    EvidenceTraceArtifactRefRead,
+    EvidenceTraceNodeRead,
+    EvidenceTraceRead,
+    EvidenceTraceStageRead,
     KnowledgeRetrievalArtifactRead,
     KnowledgeRetrievalRunCreateRequest,
     KnowledgeRetrievalRunRead,
@@ -82,6 +86,28 @@ ALLOWED_CARD_TRANSITIONS = {
 
 
 class ProjectNotFoundError(Exception):
+    pass
+
+
+TRACE_ENTITY_TYPES = {
+    "KnowledgeIngestionRun",
+    "KnowledgeRetrievalRun",
+    "KnowledgeEvidence",
+    "TestKnowledgeCard",
+    "KnowledgeFeedbackEvent",
+    "GeneratedCaseCandidate",
+}
+
+
+class EvidenceTraceEntityNotFoundError(Exception):
+    pass
+
+
+class EvidenceTraceEntityTypeNotAllowedError(Exception):
+    pass
+
+
+class EvidenceTraceQueryInvalidError(Exception):
     pass
 
 
@@ -1817,6 +1843,192 @@ def knowledge_retrieval_runs_to_read(
         )
         for run in runs
     ]
+
+
+def _trace_artifact_refs(session: Session, project_id: uuid.UUID, artifact_ids: list[Any]) -> list[EvidenceTraceArtifactRefRead]:
+    ids = []
+    for value in artifact_ids:
+        try:
+            ids.append(uuid.UUID(str(value)))
+        except (TypeError, ValueError):
+            continue
+    if not ids:
+        return []
+    artifacts = session.scalars(
+        select(Artifact).where(Artifact.project_id == project_id, Artifact.id.in_(ids)),
+    )
+    refs = []
+    for artifact in artifacts:
+        if artifact.metadata_json.get("safe_to_show") is not True:
+            continue
+        refs.append(
+            EvidenceTraceArtifactRefRead(
+                id=artifact.id,
+                artifact_type=artifact.artifact_type,
+                mime_type=artifact.mime_type,
+                safe_to_show=True,
+                download_url=f"/api/artifacts/{artifact.id}/download",
+            ),
+        )
+    return refs
+
+
+def _trace_uuid_values(values: list[Any]) -> list[uuid.UUID]:
+    result: list[uuid.UUID] = []
+    for value in values:
+        try:
+            result.append(uuid.UUID(str(value)))
+        except (TypeError, ValueError):
+            continue
+    return result
+
+
+def _trace_node(
+    *,
+    stage: str,
+    entity_type: str,
+    entity_id: uuid.UUID,
+    status: str,
+    timestamp: datetime,
+    summary: str,
+    artifact_refs: list[EvidenceTraceArtifactRefRead] | None = None,
+    evidence_ids: list[uuid.UUID] | None = None,
+    source_locator: dict[str, Any] | None = None,
+    provider_type: str | None = None,
+    requested_retrieval_mode: str | None = None,
+    retrieval_mode: str | None = None,
+    degraded: bool | None = None,
+    fallback_reason: str | None = None,
+    latency_ms: int | None = None,
+) -> EvidenceTraceNodeRead:
+    return EvidenceTraceNodeRead(
+        stage=stage,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        status=status,
+        timestamp=timestamp,
+        summary=summary[:500],
+        artifact_refs=artifact_refs or [],
+        evidence_ids=evidence_ids or [],
+        source_locator=source_locator or {},
+        provider_type=provider_type,
+        requested_retrieval_mode=requested_retrieval_mode,
+        retrieval_mode=retrieval_mode,
+        degraded=degraded,
+        fallback_reason=fallback_reason,
+        latency_ms=latency_ms,
+    )
+
+
+def _trace_retrieval_nodes(session: Session, project_id: uuid.UUID, run: KnowledgeRetrievalRun) -> list[EvidenceTraceNodeRead]:
+    rows = list(session.scalars(select(KnowledgeEvidence).where(KnowledgeEvidence.retrieval_run_id == run.id)))
+    artifact_ids = [run.evidence_artifact_id] if run.evidence_artifact_id else []
+    return [
+        _trace_node(
+            stage="ai_retrieval",
+            entity_type="KnowledgeRetrievalRun",
+            entity_id=run.id,
+            status=run.status,
+            timestamp=run.created_at,
+            summary=f"{run.provider_type} {run.retrieval_mode} retrieval with {run.evidence_count} evidence item(s)",
+            artifact_refs=_trace_artifact_refs(session, project_id, artifact_ids),
+            evidence_ids=[row.id for row in rows],
+            provider_type=run.provider_type,
+            requested_retrieval_mode=run.requested_retrieval_mode,
+            retrieval_mode=run.retrieval_mode,
+            degraded=run.degraded,
+            fallback_reason=run.fallback_reason,
+            latency_ms=run.latency_ms,
+        ),
+        *[
+            _trace_node(
+                stage="evidence",
+                entity_type="KnowledgeEvidence",
+                entity_id=row.id,
+                status="eligible" if row.allowed_for_prompt else "restricted",
+                timestamp=row.created_at,
+                summary=row.retrieval_reason,
+                artifact_refs=_trace_artifact_refs(session, project_id, [row.source_artifact_id]),
+                evidence_ids=[row.id],
+                source_locator=row.source_locator_json,
+            )
+            for row in rows
+        ],
+    ]
+
+
+def _trace_entity_nodes(session: Session, project_id: uuid.UUID, entity_type: str, entity_id: uuid.UUID) -> list[EvidenceTraceNodeRead]:
+    if entity_type not in TRACE_ENTITY_TYPES:
+        raise EvidenceTraceEntityTypeNotAllowedError
+    if entity_type == "KnowledgeIngestionRun":
+        entity = session.get(KnowledgeIngestionRun, entity_id)
+        if entity is None or entity.project_id != project_id:
+            raise EvidenceTraceEntityNotFoundError
+        return [_trace_node(stage="source", entity_type=entity_type, entity_id=entity.id, status=entity.status, timestamp=entity.created_at, summary=f"{entity.source_type} ingestion: {entity.extracted_card_count} card(s)", artifact_refs=_trace_artifact_refs(session, project_id, [*entity.input_artifact_ids_json, *entity.evidence_artifact_ids_json]))]
+    if entity_type == "KnowledgeRetrievalRun":
+        entity = session.get(KnowledgeRetrievalRun, entity_id)
+        if entity is None or entity.project_id != project_id:
+            raise EvidenceTraceEntityNotFoundError
+        return _trace_retrieval_nodes(session, project_id, entity)
+    if entity_type == "KnowledgeEvidence":
+        entity = session.get(KnowledgeEvidence, entity_id)
+        if entity is None or entity.project_id != project_id:
+            raise EvidenceTraceEntityNotFoundError
+        run = session.get(KnowledgeRetrievalRun, entity.retrieval_run_id)
+        if run is None:
+            raise EvidenceTraceEntityNotFoundError
+        return _trace_retrieval_nodes(session, project_id, run)
+    if entity_type == "TestKnowledgeCard":
+        entity = session.get(TestKnowledgeCard, entity_id)
+        if entity is None or entity.project_id != project_id:
+            raise EvidenceTraceEntityNotFoundError
+        rows = list(session.scalars(select(KnowledgeEvidence).where(KnowledgeEvidence.knowledge_card_id == entity.id)))
+        nodes = [_trace_node(stage="source", entity_type=entity_type, entity_id=entity.id, status=entity.status, timestamp=entity.created_at, summary=entity.title, artifact_refs=_trace_artifact_refs(session, project_id, [entity.source_artifact_id]), source_locator=entity.source_locator_json)]
+        for run_id in dict.fromkeys(row.retrieval_run_id for row in rows):
+            run = session.get(KnowledgeRetrievalRun, run_id)
+            if run is not None and run.project_id == project_id:
+                nodes.extend(_trace_retrieval_nodes(session, project_id, run))
+        return nodes
+    if entity_type == "KnowledgeFeedbackEvent":
+        entity = session.get(KnowledgeFeedbackEvent, entity_id)
+        if entity is None or entity.project_id != project_id:
+            raise EvidenceTraceEntityNotFoundError
+        content = entity.proposed_content_json or {}
+        return [_trace_node(stage="feedback", entity_type=entity_type, entity_id=entity.id, status=entity.status, timestamp=entity.created_at, summary=f"{entity.proposed_knowledge_type} feedback from {entity.source_entity_type}", artifact_refs=_trace_artifact_refs(session, project_id, entity.evidence_artifact_ids_json), source_locator=content.get("source_locator") if isinstance(content.get("source_locator"), dict) else {})]
+    entity = session.get(GeneratedCaseCandidate, entity_id)
+    if entity is None or entity.project_id != project_id:
+        raise EvidenceTraceEntityNotFoundError
+    refs = entity.source_knowledge_evidence_json or []
+    return [_trace_node(stage="case_generation", entity_type=entity_type, entity_id=entity.id, status=entity.status, timestamp=entity.created_at, summary=entity.title, artifact_refs=_trace_artifact_refs(session, project_id, [item.get("source_artifact_id") for item in refs if isinstance(item, dict)]), evidence_ids=_trace_uuid_values([item.get("knowledge_evidence_id") for item in refs if isinstance(item, dict)]), source_locator={"generation_task_id": str(entity.generation_task_id)})]
+
+
+def search_evidence_trace(session: Session, project_id: uuid.UUID, *, query: str | None, entity_type: str | None, entity_id: uuid.UUID | None, limit: int = 50) -> EvidenceTraceRead:
+    if session.get(Project, project_id) is None:
+        raise ProjectNotFoundError
+    if entity_type is not None and entity_type not in TRACE_ENTITY_TYPES:
+        raise EvidenceTraceEntityTypeNotAllowedError
+    if (entity_type is not None) != (entity_id is not None):
+        raise EvidenceTraceQueryInvalidError
+    if entity_id is not None and entity_type is not None:
+        nodes = _trace_entity_nodes(session, project_id, entity_type, entity_id)
+    else:
+        text = (query or "").strip()
+        if not text:
+            return EvidenceTraceRead(project_id=project_id, query=query, stages=[], total=0)
+        pattern = f"%{text[:120]}%"
+        nodes = []
+        for card in session.scalars(select(TestKnowledgeCard).where(TestKnowledgeCard.project_id == project_id, or_(TestKnowledgeCard.title.ilike(pattern), TestKnowledgeCard.content.ilike(pattern))).limit(limit)):
+            nodes.extend(_trace_entity_nodes(session, project_id, "TestKnowledgeCard", card.id))
+        for run in session.scalars(select(KnowledgeRetrievalRun).where(KnowledgeRetrievalRun.project_id == project_id, or_(KnowledgeRetrievalRun.query_text_redacted.ilike(pattern), KnowledgeRetrievalRun.provider_type.ilike(pattern), KnowledgeRetrievalRun.fallback_reason.ilike(pattern))).limit(limit)):
+            nodes.extend(_trace_entity_nodes(session, project_id, "KnowledgeRetrievalRun", run.id))
+        for feedback in session.scalars(select(KnowledgeFeedbackEvent).where(KnowledgeFeedbackEvent.project_id == project_id, KnowledgeFeedbackEvent.proposed_knowledge_type.ilike(pattern)).limit(limit)):
+            nodes.extend(_trace_entity_nodes(session, project_id, "KnowledgeFeedbackEvent", feedback.id))
+        nodes = nodes[:limit]
+    grouped: dict[str, list[EvidenceTraceNodeRead]] = {}
+    for node in nodes:
+        grouped.setdefault(node.stage, []).append(node)
+    stages = [EvidenceTraceStageRead(name=name, items=items) for name, items in grouped.items()]
+    return EvidenceTraceRead(project_id=project_id, entity_type=entity_type, entity_id=entity_id, query=query, stages=stages, total=len(nodes))
 
 
 def _knowledge_retrieval_run_read(

@@ -192,6 +192,46 @@ class KnowledgeRetrievalRunListRead(BaseModel):
     next_cursor: str | None = None
 
 
+class EvidenceTraceArtifactRefRead(BaseModel):
+    id: uuid.UUID
+    artifact_type: str
+    mime_type: str
+    safe_to_show: bool
+    download_url: str
+
+
+class EvidenceTraceNodeRead(BaseModel):
+    stage: str
+    entity_type: str
+    entity_id: uuid.UUID
+    status: str
+    timestamp: datetime
+    summary: str
+    artifact_refs: list[EvidenceTraceArtifactRefRead] = Field(default_factory=list)
+    evidence_ids: list[uuid.UUID] = Field(default_factory=list)
+    source_locator: dict[str, Any] = Field(default_factory=dict)
+    provider_type: str | None = None
+    requested_retrieval_mode: str | None = None
+    retrieval_mode: str | None = None
+    degraded: bool | None = None
+    fallback_reason: str | None = None
+    latency_ms: int | None = None
+
+
+class EvidenceTraceStageRead(BaseModel):
+    name: str
+    items: list[EvidenceTraceNodeRead] = Field(default_factory=list)
+
+
+class EvidenceTraceRead(BaseModel):
+    project_id: uuid.UUID
+    entity_type: str | None = None
+    entity_id: uuid.UUID | None = None
+    query: str | None = None
+    stages: list[EvidenceTraceStageRead] = Field(default_factory=list)
+    total: int
+
+
 class TestKnowledgeCardExtractRequest(BaseModel):
     project_id: uuid.UUID
     source_artifact_id: uuid.UUID
