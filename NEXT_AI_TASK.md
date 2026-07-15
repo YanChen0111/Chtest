@@ -10,28 +10,24 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.5: add the default PostgreSQL full-text + pgvector
-KnowledgeAdapter behind the provider-neutral retrieval/evidence contracts.
+Slice 47 Task 47.6: add optional Qdrant and Haystack/LlamaIndex provider
+contracts behind the provider-neutral KnowledgeAdapter boundary using fake
+clients only.
 
 Required output:
 
-1. Add PostgreSQL-native full-text and pgvector storage/query support for
-   prompt-eligible TestKnowledgeCard rows while preserving SQLite deterministic
-   fallback behavior.
-2. Keep KnowledgeRetrievalRun, KnowledgeEvidence, Artifact ownership, scores,
-   safety snapshots, current lifecycle fields, and API responses independent of
-   PostgreSQL/pgvector operator or payload shape.
-3. Add capability detection and deterministic degraded fallback when pgvector
-   or PostgreSQL-native vector search is unavailable; never fabricate a vector
-   score.
-4. Add focused PostgreSQL adapter SQL/DDL tests and provider-neutral retrieval
-   tests. Use temporary/empty databases only; do not touch the blocked local
-   acceptance database.
-5. Do not add Qdrant, Haystack, LlamaIndex, online embedding providers,
-   rerankers, graph, feedback, frontend redesign, RBAC, tenants, or cloud
-   services in this task.
+1. Define optional `qdrant`, `haystack`, and `llamaindex` provider configuration
+   and capability contracts without adding a required runtime dependency.
+2. Normalize fake provider matches into the existing KnowledgeRetrievalRun,
+   KnowledgeEvidence, Artifact, score, safety, lifecycle, and fallback shapes.
+3. Keep provider documents, payloads, node ids, collection schemas, and raw
+   scores out of public API, ORM, prompt, case, report, and evidence contracts.
+4. Add deterministic degraded/failed behavior and stable diagnostic snapshots
+   for unavailable or failing optional providers.
+5. Add focused provider contract tests with fake clients only. Do not start or
+   install Qdrant, Haystack, LlamaIndex, online embeddings, or cloud services.
 
-## Verified Progress
+## Previous Task Verified
 
 - Added optional Alembic `20260714_0013`: PostgreSQL full-text GIN is always
   emitted; pgvector extension/native column/HNSW setup is capability-gated and
@@ -46,27 +42,31 @@ Required output:
   dimension-matched casts/filters, keeps the similarity threshold outside the
   HNSW-ordered pool, and prevents vector-only mode from admitting text-only
   candidates. Focused Task 47.4/47.5 verification is now `76 passed`.
+- Online acceptance completed on isolated PostgreSQL 16.14 databases at
+  `127.0.0.1:55432`: the plain database upgraded to head with GIN full-text
+  only, while the pgvector database upgraded to head with native vector storage
+  and the HNSW index. The application adapter returned a real hybrid match with
+  `vector_score=1.0`; the limited database correctly reported no vector
+  capability and never fabricated a vector score.
 
-## Blocking Acceptance Gap
+## Task 47.5 Acceptance Evidence
 
-Task 47.5 is not complete because no PostgreSQL test server is available:
+The temporary PostgreSQL acceptance environment is outside the repository and
+uses empty test databases only:
 
-- no `psql`, `postgres`, `pg_ctl`, `initdb`, Windows PostgreSQL service, port
-  5432 listener, or PostgreSQL test URL exists;
-- Docker Desktop's Linux engine returns HTTP 500 for `docker info`;
-- therefore online migration, real full-text behavior, pgvector extension
-  availability/permissions, native `<=>` execution, HNSW query plans, and
-  native-vs-fallback recall cannot be verified.
+- `chtest_plain_test` is owned by a limited role and has no pgvector extension;
+- `chtest_vector_test` has pgvector `0.8.3`, native `embedding_vector`, and
+  `ix_test_knowledge_embedding_vector_hnsw_64`;
+- online migration, extension privilege behavior, native `<=>`, HNSW index
+  planning, and native/fallback capability behavior were verified;
+- the blocked `storage/chtest-dev.db` was not used for migration or smoke data.
 
-Resume with a dedicated empty PostgreSQL test database URL (and a second
-database or schema with pgvector enabled). Do not use the local acceptance
-SQLite database for this verification.
+Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Local-first PostgreSQL users gain semantic and full-text recall without losing
-the stable logs, evidence trace, review gates, or deterministic fallback that
-test engineers depend on for diagnosis and audit.
+Test engineers can choose a scale or orchestration provider without changing
+the evidence, trace, safety, and review contracts used by the rest of Chtest.
 
 ## Must Read
 
@@ -83,9 +83,9 @@ test engineers depend on for diagnosis and audit.
 
 ## Do Not Read Unless Needed
 
-- Docker Desktop/WSL repair, Qdrant, Haystack, LlamaIndex, graph/feedback,
-  enterprise collaboration, marketplace, cloud CI, RBAC, tenants, permissions,
-  unrelated frontend pages, or broad roadmap documents.
+- Docker Desktop/WSL repair, provider runtime installation/deployment guides,
+  graph/feedback, enterprise collaboration, marketplace, cloud CI, RBAC,
+  tenants, permissions, unrelated frontend pages, or broad roadmap documents.
 
 ## Expected Files
 
@@ -111,8 +111,8 @@ Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run focused PostgreSQL adapter/DDL tests, SQLite deterministic fallback tests,
-and provider-neutral retrieval API tests, then:
+Run focused optional-provider fake-client contract tests and provider-neutral
+retrieval API tests, then:
 
 ```powershell
 git diff --check
@@ -123,24 +123,22 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- PostgreSQL uses native full-text plus pgvector when capability is available.
-- SQLite and PostgreSQL-without-pgvector degrade deterministically and record
-  the actual mode/fallback reason with `vector_score=null`.
-- Native and fallback paths persist the same provider-neutral run/evidence and
-  Artifact contracts.
-- Index freshness and prompt eligibility exclude stale, unsafe, duplicate,
+- Optional provider payloads never leak into public/core contracts.
+- Fake Qdrant/Haystack/LlamaIndex matches persist the same provider-neutral
+  run/evidence and Artifact shapes as PostgreSQL and deterministic fallback.
+- Unavailable/failing optional providers record actual degraded/failed state,
+  stable reasons, and no fabricated scores.
+- Prompt eligibility and freshness still exclude stale, unsafe, duplicate,
   archived, missing, or cross-project cards.
-- Temporary-database migration/DDL tests pass without changing the local
-  acceptance database.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(knowledge): add postgres hybrid adapter
+feat(knowledge): add optional provider contracts
 ```
 
 ## Next Task
 
-After Task 47.5 is verified and committed, continue Task 47.6 with optional
-Qdrant and Haystack/LlamaIndex provider contracts using fake clients only.
+After Task 47.6 is verified and committed, continue Task 47.7 with
+evidence-backed CaseGeneration fields.

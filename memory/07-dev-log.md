@@ -4241,3 +4241,31 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 47.5 still requires dedicated PostgreSQL test URLs for online migration,
   full-text, pgvector ordering, HNSW plan, and recall acceptance.
+
+## 2026-07-15 PostgreSQL Hybrid Online Acceptance
+
+### Completed
+
+- Created an isolated PostgreSQL 16.14 + pgvector 0.8.3 environment outside
+  the repository and ran the temporary server under `NetworkService`.
+- Ran Alembic online to head `20260714_0013` against both an unprivileged
+  no-vector database and a pgvector-enabled database.
+- Verified GIN full-text-only capability and deterministic no-vector fallback
+  in the plain database.
+- Verified native `vector(64)` storage, the default HNSW index, native `<=>`
+  ordering, and an application adapter hybrid result with `vector_score=1.0`
+  in the vector database.
+- Confirmed the source acceptance SQLite database was not used or mutated.
+
+### Verification
+
+- Focused Task 47.4/47.5 suite: `76 passed`.
+- Online migration: both temporary databases reached `20260714_0013`.
+- Adapter capability probe: plain `{vector_extension: false}` and vector
+  `{vector_extension: true, vector_column: true, vector_index: true}`.
+- `compileall` and `git diff --check`: passed before this handoff update.
+
+### Next
+
+- Task 47.6: optional Qdrant and Haystack/LlamaIndex provider contracts using
+  fake clients only.

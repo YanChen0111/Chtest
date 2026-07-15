@@ -49,7 +49,7 @@ Chtest API or ORM contracts.
 | 47.2 Add local DB preflight and safe baseline migration diagnostics | done | Current local data can upgrade without hidden destructive action | 11 focused preflight/migration/registry tests + live read-only/copy diagnostics |
 | 47.3 Add KnowledgeIngestionRun and enhanced TestKnowledgeCard | done | Observable imports and reviewable knowledge | 19 ingestion/migration/retrieval tests + 44 related API tests + 30 DB tests |
 | 47.4 Add KnowledgeRetrievalRun and normalized KnowledgeEvidence | done | Queryable retrieval logs and stable evidence | 64 focused API/golden/DB tests + 398 full-backend passes |
-| 47.5 Add PostgreSQL full-text + pgvector KnowledgeAdapter | in progress (offline verified; PostgreSQL integration blocked) | Local-first semantic recall | PostgreSQL adapter integration/eval smoke; deterministic fallback tests |
+| 47.5 Add PostgreSQL full-text + pgvector KnowledgeAdapter | done | Local-first semantic recall | Isolated PostgreSQL/pgvector online smoke + deterministic fallback tests |
 | 47.6 Add optional Qdrant and Haystack/LlamaIndex provider contracts | pending | Scale/provider choice without schema leakage | provider contract tests with fake clients |
 | 47.7 Add evidence-backed CaseGeneration fields | pending | Every case explains why it exists | case generation contract/golden tests |
 | 47.8 Add CaseReviewAgent and CoverageGapAgent | pending | Automatic domain/evidence/coverage quality gate | agent mock/eval tests |

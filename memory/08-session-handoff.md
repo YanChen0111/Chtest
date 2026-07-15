@@ -10276,3 +10276,23 @@ Blocker:
 - No PostgreSQL server/test URL or pgvector-enabled peer exists, and Docker
   Desktop still returns HTTP 500. Online migration, real `<=>`, HNSW plan, and
   recall acceptance remain unverified. Do not advance to Task 47.6.
+
+## 2026-07-15 PostgreSQL Hybrid Online Acceptance
+
+Task 47.5 is complete; the next task is Slice 47 Task 47.6.
+
+- Created an isolated PostgreSQL 16.14 + pgvector 0.8.3 environment outside
+  the repository and ran it under the Windows `NetworkService` account.
+- Upgraded both empty `chtest_plain_test` and `chtest_vector_test` databases
+  online to Alembic head `20260714_0013`.
+- Plain database: GIN full-text index present, pgvector extension/column/index
+  absent; the limited role cannot create the extension and the adapter reports
+  deterministic keyword-only capability.
+- Vector database: pgvector extension, native `embedding_vector vector`, and
+  the default 64-dimensional HNSW index present. A real adapter query returned
+  a provider-neutral match with keyword score `0.033333335` and vector score
+  `1.0`; native `<=>` and an HNSW index scan were also verified.
+- The blocked `storage/chtest-dev.db` fingerprint remains unchanged and was
+  never used for migration or smoke data.
+
+Docker Desktop/WSL remains unavailable, but it no longer blocks Task 47.5.
