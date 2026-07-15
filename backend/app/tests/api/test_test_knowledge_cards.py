@@ -19,7 +19,7 @@ from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.automation import service as automation_service
-from backend.app.modules.cases.models import GeneratedCaseCandidate
+from backend.app.modules.cases.models import GeneratedCaseCandidate, TestCase as CaseModel
 from backend.app.modules.knowledge.models import (
     KnowledgeEvidence,
     KnowledgeIngestionRun,
@@ -1036,6 +1036,54 @@ def test_typed_knowledge_relationship_is_persisted_and_visible_in_graph(
     graph = client.get(f"/api/projects/{project_id}/test-knowledge/graph")
     assert graph.status_code == 200
     assert any(edge["edge_type"] == "covers" for edge in graph.json()["edges"])
+
+
+def test_reviewed_feedback_creates_extracted_card_but_not_approved_card(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    project_id, artifact_id, _requirement_id, _cards = create_approved_test_knowledge(client)
+    with SessionLocal() as session:
+        test_case = CaseModel(
+            project_id=uuid.UUID(project_id),
+            title="Reviewed checkout case",
+            steps_json=["Open checkout"],
+            expected_results_json=["Checkout opens"],
+            input_data_json={},
+            tags=[],
+            review_status="approved",
+        )
+        session.add(test_case)
+        session.commit()
+        session.refresh(test_case)
+        source_id = str(test_case.id)
+    created = client.post(
+        "/api/knowledge/feedback-events",
+        {
+            "project_id": project_id,
+            "source_entity_type": "TestCase",
+            "source_entity_id": source_id,
+            "proposed_knowledge_type": "ExistingTestCasePattern",
+            "proposed_content": {
+                "source_artifact_id": artifact_id,
+                "title": "Checkout requires an active session",
+                "content": "Checkout requests require an active user session.",
+                "source_locator": {"section": "feedback"},
+            },
+        },
+    )
+    assert created.status_code == 201
+    reviewed = client.post(
+        f"/api/knowledge/feedback-events/{created.json()['id']}/review",
+        {"status": "approved", "review_comment": "Useful reusable pattern."},
+    )
+    assert reviewed.status_code == 200
+    body = reviewed.json()
+    assert body["status"] == "applied"
+    assert body["resulting_card_id"]
+    cards = client.get(f"/api/projects/{project_id}/test-knowledge/cards").json()["items"]
+    feedback_card = next(card for card in cards if card["id"] == body["resulting_card_id"])
+    assert feedback_card["status"] == "extracted"
 
 
 def test_postgres_hybrid_native_result_normalizes_to_provider_neutral_evidence(

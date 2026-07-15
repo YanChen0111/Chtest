@@ -10,15 +10,16 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.10: add the reviewed knowledge feedback loop.
+Slice 47 Task 47.11: build the final RAG workbench frontend.
 
 Required output:
 
-1. Persist proposed knowledge feedback from reviewed cases, rejected
-   candidates, review comments, failures, and reports.
-2. Require feedback review before creating an extracted TestKnowledgeCard;
-   card approval remains a separate review action.
-3. Add focused feedback state/API tests without automatic learning.
+1. Build efficient ingestion, card review, retrieval logs, graph, feedback, and
+   provider configuration views around the existing backend contracts.
+2. Optimize tester throughput with dense tables, filters, recent runs, clear
+   status, evidence links, and trace-friendly navigation.
+3. Add focused frontend tests, production build verification, and browser smoke
+   across desktop/mobile without changing backend contracts.
 
 ## Previous Tasks Verified
 
@@ -57,6 +58,9 @@ Required output:
 - Added Alembic `20260715_0015`, typed same-project knowledge relationships,
   creation API validation, and persisted relationship edges in the graph
   response. Migration/API verification is `28 passed`.
+- Added Alembic `20260715_0016` and reviewed feedback APIs. Approval creates an
+  extracted card only; card approval remains separate. Migration/API
+  verification is `29 passed`.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -74,8 +78,8 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Accepted and rejected work can propose reusable knowledge without allowing
-automatic feedback to bypass human review.
+Test engineers can ingest, review, retrieve, diagnose, trace, and improve
+knowledge from one efficient operational surface.
 
 ## Must Read
 
@@ -104,12 +108,8 @@ Default write boundary:
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-backend/pyproject.toml
-backend/app/modules/knowledge/**
-backend/app/modules/extension/** only for KnowledgeAdapter capability wiring
-backend/app/tests/**knowledge**
-backend/app/tests/db/**
-backend/alembic/versions/**
+frontend/src/** knowledge workbench routes/components/services only
+frontend/tests/** knowledge workbench only
 docs/contracts/01-data-model-contract.md
 docs/contracts/02-api-contract.md
 docs/contracts/04-artifact-contract.md
@@ -120,7 +120,7 @@ Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run focused feedback state/API tests, then:
+Run focused frontend tests and build, then browser smoke on desktop/mobile:
 
 ```powershell
 git diff --check
@@ -131,9 +131,9 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Feedback proposals remain separate from trusted knowledge cards.
-- Approval creates only an extracted card; card approval remains separate.
-- Rejected feedback never mutates approved knowledge.
+- Every RAG workflow is reachable and scannable from the workbench.
+- Retrieval logs expose provider, mode, fallback, latency, evidence, and trace.
+- Responsive layouts avoid overlap and preserve efficient controls.
 - Prompt eligibility and freshness still exclude stale, unsafe, duplicate,
   archived, missing, or cross-project cards.
 - `git diff --check` passes.
@@ -141,10 +141,10 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 ## Commit Message
 
 ```text
-feat(knowledge): add reviewed feedback loop
+feat(frontend): build final rag workbench
 ```
 
 ## Next Task
 
-After Task 47.10 is verified and committed, continue Task 47.11 with the final
-RAG workbench frontend.
+After Task 47.11 is verified and committed, continue Task 47.12 with unified
+trace and global evidence search.

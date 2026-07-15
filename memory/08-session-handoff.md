@@ -10360,3 +10360,13 @@ Task 47.9 is complete; the next task is Task 47.10 reviewed feedback.
 - Persisted relationship edges are included in the existing deterministic graph
   response; no graph database is required.
 - Migration/API verification: `28 passed`.
+
+## 2026-07-15 Slice 47.10 Reviewed Feedback
+
+Task 47.10 is complete; next is Task 47.11 final RAG workbench frontend.
+
+- Added migration `20260715_0016`, feedback proposal/review APIs, same-project
+  source validation, and secret-safe content validation.
+- Approved feedback creates an `extracted` card only; rejected feedback creates
+  no card and approved-card trust remains separately reviewed.
+- Migration/API verification: `29 passed`.

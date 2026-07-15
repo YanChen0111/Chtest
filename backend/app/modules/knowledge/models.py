@@ -294,6 +294,31 @@ class TestKnowledgeRelationship(TimestampMixin, Base):
     project: Mapped[Project] = relationship()
 
 
+class KnowledgeFeedbackEvent(TimestampMixin, Base):
+    __tablename__ = "knowledge_feedback_events"
+    __table_args__ = (
+        Index("ix_knowledge_feedback_project_status", "project_id", "status", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    source_entity_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    source_entity_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    proposed_knowledge_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    proposed_content_json: Mapped[dict[str, Any]] = json_dict_column()
+    status: Mapped[str] = mapped_column(String(40), nullable=False, default="proposed")
+    evidence_artifact_ids_json: Mapped[list[Any]] = json_list_column()
+    resulting_card_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("test_knowledge_cards.id", ondelete="SET NULL"), nullable=True
+    )
+    review_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    project: Mapped[Project] = relationship()
+    resulting_card: Mapped[TestKnowledgeCard | None] = relationship(foreign_keys=[resulting_card_id])
+
+
 class KnowledgeEvidence(TimestampMixin, Base):
     __tablename__ = "knowledge_evidence"
     __table_args__ = (

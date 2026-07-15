@@ -30,8 +30,9 @@ def test_alembic_upgrade_head_from_empty_sqlite_database(tmp_path: Path) -> None
             "test_knowledge_embedding_index",
             "knowledge_ingestion_runs",
                 "knowledge_retrieval_runs",
-                "knowledge_evidence",
-                "test_knowledge_relationships",
+                    "knowledge_evidence",
+                    "test_knowledge_relationships",
+                    "knowledge_feedback_events",
         } <= table_names
         candidate_columns = {column["name"] for column in inspector.get_columns("test_knowledge_cards")}
         assert {
@@ -44,7 +45,7 @@ def test_alembic_upgrade_head_from_empty_sqlite_database(tmp_path: Path) -> None
             "last_verified_at",
         } <= candidate_columns
         revision = connection.execute(text("select version_num from alembic_version")).scalar_one()
-        assert revision == "20260715_0015"
+        assert revision == "20260715_0016"
         generated_candidate_columns = {
             column["name"] for column in inspector.get_columns("generated_case_candidates")
         }
@@ -90,7 +91,7 @@ def test_sqlite_postgres_hybrid_migration_is_noop(tmp_path: Path) -> None:
     command.upgrade(config, "head")
     engine = create_engine(f"sqlite+pysqlite:///{db_path.as_posix()}", future=True)
     with engine.connect() as connection:
-        assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260715_0015"
+        assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260715_0016"
         columns = {item["name"] for item in inspect(connection).get_columns("test_knowledge_embedding_index")}
         assert "embedding_vector" not in columns
     engine.dispose()

@@ -22,6 +22,7 @@ from backend.app.modules.extension.models import KnowledgeAdapterConfig
 from backend.app.modules.knowledge import postgres_adapter
 from backend.app.modules.knowledge.optional_providers import OPTIONAL_PROVIDER_TYPES, search_optional_provider
 from backend.app.modules.knowledge.models import (
+    KnowledgeFeedbackEvent,
     KnowledgeEvidence,
     KnowledgeIngestionRun,
     KnowledgeRetrievalRun,
@@ -2767,6 +2768,105 @@ def relationship_entity_belongs_to_project(
         return False
     entity = session.get(model, entity_id)
     return entity is not None and entity.project_id == project_id
+
+
+FEEDBACK_SOURCE_TYPES = {"TestCase", "GeneratedCaseCandidate", "ReviewHistory", "FailureAnalysis", "Report"}
+FEEDBACK_REVIEW_STATUSES = {"approved", "rejected"}
+
+
+def create_knowledge_feedback_event(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    source_entity_type: str,
+    source_entity_id: uuid.UUID,
+    proposed_knowledge_type: str,
+    proposed_content: dict[str, Any],
+    evidence_artifact_ids: list[uuid.UUID],
+) -> KnowledgeFeedbackEvent:
+    if source_entity_type not in FEEDBACK_SOURCE_TYPES:
+        raise KnowledgeRetrievalInputNotAllowedError
+    if not relationship_entity_belongs_to_project(session, project_id, source_entity_type, source_entity_id):
+        raise KnowledgeRetrievalInputNotAllowedError
+    if config_snapshot_contains_secret(proposed_content):
+        raise KnowledgeRetrievalInputNotAllowedError
+    event = KnowledgeFeedbackEvent(
+        project_id=project_id,
+        source_entity_type=source_entity_type,
+        source_entity_id=source_entity_id,
+        proposed_knowledge_type=proposed_knowledge_type,
+        proposed_content_json=dict(proposed_content),
+        evidence_artifact_ids_json=[str(item) for item in evidence_artifact_ids],
+        status="proposed",
+    )
+    session.add(event)
+    session.commit()
+    session.refresh(event)
+    return event
+
+
+def review_knowledge_feedback_event(
+    session: Session,
+    *,
+    event_id: uuid.UUID,
+    status: str,
+    review_comment: str | None,
+) -> KnowledgeFeedbackEvent:
+    if status not in FEEDBACK_REVIEW_STATUSES:
+        raise KnowledgeRetrievalInputNotAllowedError
+    event = session.get(KnowledgeFeedbackEvent, event_id)
+    if event is None:
+        raise KnowledgeRetrievalRunNotFoundError
+    if event.status not in {"proposed", "waiting_review"}:
+        raise KnowledgeRetrievalInputNotAllowedError
+    event.review_comment = review_comment
+    if status == "rejected":
+        event.status = "rejected"
+        session.commit()
+        session.refresh(event)
+        return event
+    content = dict(event.proposed_content_json or {})
+    source_artifact_id = content.get("source_artifact_id")
+    try:
+        source_artifact_uuid = uuid.UUID(str(source_artifact_id))
+    except (TypeError, ValueError) as exc:
+        raise KnowledgeRetrievalInputNotAllowedError from exc
+    source_artifact = session.get(Artifact, source_artifact_uuid)
+    if source_artifact is None or source_artifact.project_id != event.project_id:
+        raise KnowledgeRetrievalInputNotAllowedError
+    if not bool(source_artifact.metadata_json.get("safe_to_show")) or not bool(
+        source_artifact.metadata_json.get("allowed_for_prompt"),
+    ):
+        raise KnowledgeRetrievalInputNotAllowedError
+    title = str(content.get("title") or "").strip()
+    card_content = str(content.get("content") or "").strip()
+    if not title or not card_content:
+        raise KnowledgeRetrievalInputNotAllowedError
+    quote_hash = hashlib.sha256(card_content.encode("utf-8")).hexdigest()
+    card = TestKnowledgeCard(
+        project_id=event.project_id,
+        source_artifact_id=source_artifact_uuid,
+        source_document_version=str(content.get("source_document_version") or "feedback-v1"),
+        source_section=str(content.get("source_section") or "feedback"),
+        source_quote_hash=quote_hash,
+        source_locator_json=dict(content.get("source_locator") or {"source": "feedback"}),
+        source_ref=str(content.get("source_ref") or "feedback"),
+        knowledge_type=event.proposed_knowledge_type,
+        title=title,
+        content=card_content,
+        applicability="case_generation",
+        confidence=max(0, min(100, int(content.get("confidence", 50)))),
+        safe_to_show=True,
+        allowed_for_prompt=True,
+        status="extracted",
+    )
+    session.add(card)
+    session.flush()
+    event.resulting_card_id = card.id
+    event.status = "applied"
+    session.commit()
+    session.refresh(event)
+    return event
 
 
 def ensure_extractable_context_artifact(artifact: Artifact) -> None:

@@ -4333,6 +4333,24 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 47.10: reviewed knowledge feedback loop.
 
+## 2026-07-15 Reviewed Knowledge Feedback
+
+### Implemented
+
+- Added Alembic `20260715_0016` and KnowledgeFeedbackEvent persistence.
+- Added proposal and review APIs with same-project source validation and secret
+  rejection.
+- Approved feedback creates only an `extracted` TestKnowledgeCard; trusted card
+  approval remains a separate human action. Rejected feedback creates no card.
+
+### Verification
+
+- Feedback/knowledge migration API suite: `29 passed`.
+
+### Next
+
+- Task 47.11: final RAG workbench frontend.
+
 ## 2026-07-15 Optional Provider Contracts
 
 ### Implemented

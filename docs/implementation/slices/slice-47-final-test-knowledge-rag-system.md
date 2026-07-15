@@ -54,7 +54,7 @@ Chtest API or ORM contracts.
 | 47.7 Add evidence-backed CaseGeneration fields | done | Every case explains why it exists | case generation contract/golden tests |
 | 47.8 Add CaseReviewAgent and CoverageGapAgent | done | Automatic domain/evidence/coverage quality gate | agent mock/eval tests |
 | 47.9 Add typed relationships and graph queries | done | Impact, gaps, and regression recommendation | relationship API/golden tests |
-| 47.10 Add reviewed feedback loop | pending | Accepted/rejected/failure knowledge improves the project | feedback state/API tests |
+| 47.10 Add reviewed feedback loop | done | Accepted/rejected/failure knowledge improves the project | feedback state/API tests |
 | 47.11 Build final RAG workbench | pending | Efficient ingestion, review, retrieval, graph, feedback, provider UX | focused frontend tests + build + browser smoke |
 | 47.12 Add unified trace and global evidence search | pending | Logs and evidence are discoverable across pages | trace API/frontend tests + browser smoke |
 | 47.13 Refactor all pages around recent runs and named selectors | pending | Daily test throughput and workflow resumption | per-page focused tests + responsive browser smoke |

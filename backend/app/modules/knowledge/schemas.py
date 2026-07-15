@@ -314,3 +314,17 @@ class TestKnowledgeRelationshipCreateRequest(BaseModel):
     evidence_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
     confidence: int = Field(default=100, ge=0, le=100)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class KnowledgeFeedbackCreateRequest(BaseModel):
+    project_id: uuid.UUID
+    source_entity_type: str = Field(min_length=1, max_length=80)
+    source_entity_id: uuid.UUID
+    proposed_knowledge_type: str = Field(min_length=1, max_length=80)
+    proposed_content: dict[str, Any] = Field(default_factory=dict)
+    evidence_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class KnowledgeFeedbackReviewRequest(BaseModel):
+    status: str
+    review_comment: str | None = Field(default=None, max_length=2000)

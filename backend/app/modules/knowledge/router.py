@@ -26,6 +26,8 @@ from backend.app.modules.knowledge.schemas import (
     TestKnowledgeCardRetrieveRequest,
     TestKnowledgeGraphRead,
     TestKnowledgeRelationshipCreateRequest,
+    KnowledgeFeedbackCreateRequest,
+    KnowledgeFeedbackReviewRequest,
     TestKnowledgeIndexRead,
     TestKnowledgeIndexRebuildRead,
     TestKnowledgeIndexRebuildRequest,
@@ -345,6 +347,63 @@ def create_test_knowledge_relationship(
         "confidence": relationship.confidence,
         "status": relationship.status,
         "metadata": relationship.metadata_json,
+    }
+
+
+@router.post("/knowledge/feedback-events", status_code=status.HTTP_201_CREATED)
+def create_knowledge_feedback_event(
+    data: KnowledgeFeedbackCreateRequest,
+    session: Session = Depends(get_session),
+) -> dict:
+    try:
+        event = service.create_knowledge_feedback_event(
+            session,
+            project_id=data.project_id,
+            source_entity_type=data.source_entity_type,
+            source_entity_id=data.source_entity_id,
+            proposed_knowledge_type=data.proposed_knowledge_type,
+            proposed_content=data.proposed_content,
+            evidence_artifact_ids=data.evidence_artifact_ids,
+        )
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    except service.KnowledgeRetrievalInputNotAllowedError as exc:
+        raise bad_request("KNOWLEDGE_FEEDBACK_NOT_ALLOWED", "Feedback source or content is not allowed.") from exc
+    return feedback_event_to_dict(event)
+
+
+@router.post("/knowledge/feedback-events/{event_id}/review")
+def review_knowledge_feedback_event(
+    event_id: uuid.UUID,
+    data: KnowledgeFeedbackReviewRequest,
+    session: Session = Depends(get_session),
+) -> dict:
+    try:
+        event = service.review_knowledge_feedback_event(
+            session,
+            event_id=event_id,
+            status=data.status,
+            review_comment=data.review_comment,
+        )
+    except service.KnowledgeRetrievalRunNotFoundError as exc:
+        raise not_found("KNOWLEDGE_FEEDBACK_NOT_FOUND", "Knowledge feedback event not found.") from exc
+    except service.KnowledgeRetrievalInputNotAllowedError as exc:
+        raise bad_request("KNOWLEDGE_FEEDBACK_REVIEW_NOT_ALLOWED", "Feedback review is not allowed.") from exc
+    return feedback_event_to_dict(event)
+
+
+def feedback_event_to_dict(event) -> dict:
+    return {
+        "id": str(event.id),
+        "project_id": str(event.project_id),
+        "source_entity_type": event.source_entity_type,
+        "source_entity_id": str(event.source_entity_id),
+        "proposed_knowledge_type": event.proposed_knowledge_type,
+        "proposed_content": event.proposed_content_json,
+        "status": event.status,
+        "evidence_artifact_ids": event.evidence_artifact_ids_json,
+        "resulting_card_id": str(event.resulting_card_id) if event.resulting_card_id else None,
+        "review_comment": event.review_comment,
     }
 
 
