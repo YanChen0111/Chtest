@@ -302,3 +302,15 @@ class TestKnowledgeGraphRead(BaseModel):
     nodes: list[dict[str, Any]] = Field(default_factory=list)
     edges: list[dict[str, Any]] = Field(default_factory=list)
     coverage: dict[str, Any] = Field(default_factory=dict)
+
+
+class TestKnowledgeRelationshipCreateRequest(BaseModel):
+    project_id: uuid.UUID
+    source_entity_type: str = Field(min_length=1, max_length=80)
+    source_entity_id: uuid.UUID
+    target_entity_type: str = Field(min_length=1, max_length=80)
+    target_entity_id: uuid.UUID
+    relationship_type: str = Field(min_length=1, max_length=120)
+    evidence_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    confidence: int = Field(default=100, ge=0, le=100)
+    metadata: dict[str, Any] = Field(default_factory=dict)

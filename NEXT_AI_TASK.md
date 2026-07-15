@@ -10,15 +10,15 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.9: add typed relationships and graph queries.
+Slice 47 Task 47.10: add the reviewed knowledge feedback loop.
 
 Required output:
 
-1. Add typed TestKnowledge relationships for impact, risk coverage, historical
-   regression, and candidate duplicate evidence queries.
-2. Keep graph results derived from persisted PostgreSQL relationships and
-   provider-neutral evidence ids.
-3. Add deterministic relationship API/golden tests without a graph database.
+1. Persist proposed knowledge feedback from reviewed cases, rejected
+   candidates, review comments, failures, and reports.
+2. Require feedback review before creating an extracted TestKnowledgeCard;
+   card approval remains a separate review action.
+3. Add focused feedback state/API tests without automatic learning.
 
 ## Previous Tasks Verified
 
@@ -54,6 +54,9 @@ Required output:
   functions plus automation readiness assessment. Candidate persistence now
   writes provider-neutral findings and blockers. Focused quality/CaseGeneration
   verification is `12 passed`.
+- Added Alembic `20260715_0015`, typed same-project knowledge relationships,
+  creation API validation, and persisted relationship edges in the graph
+  response. Migration/API verification is `28 passed`.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -71,8 +74,8 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can trace impact and coverage gaps through typed relationships
-without a separate graph runtime.
+Accepted and rejected work can propose reusable knowledge without allowing
+automatic feedback to bypass human review.
 
 ## Must Read
 
@@ -117,7 +120,7 @@ Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run focused relationship API/golden tests, then:
+Run focused feedback state/API tests, then:
 
 ```powershell
 git diff --check
@@ -128,9 +131,9 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Relationship rows are typed, same-project, and evidence-backed.
-- Graph queries are deterministic and do not invent edges.
-- Review and approval state gates remain unchanged.
+- Feedback proposals remain separate from trusted knowledge cards.
+- Approval creates only an extracted card; card approval remains separate.
+- Rejected feedback never mutates approved knowledge.
 - Prompt eligibility and freshness still exclude stale, unsafe, duplicate,
   archived, missing, or cross-project cards.
 - `git diff --check` passes.
@@ -138,10 +141,10 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 ## Commit Message
 
 ```text
-feat(knowledge): add typed relationships
+feat(knowledge): add reviewed feedback loop
 ```
 
 ## Next Task
 
-After Task 47.9 is verified and committed, continue Task 47.10 with the
-reviewed feedback loop.
+After Task 47.10 is verified and committed, continue Task 47.11 with the final
+RAG workbench frontend.

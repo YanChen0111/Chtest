@@ -27,6 +27,7 @@ from backend.app.modules.knowledge.models import (
     KnowledgeRetrievalRun,
     TestKnowledgeCard,
     TestKnowledgeEmbeddingIndex,
+    TestKnowledgeRelationship,
 )
 from backend.app.modules.knowledge.schemas import (
     KnowledgeIngestionArtifactRead,
@@ -38,7 +39,8 @@ from backend.app.modules.knowledge.schemas import (
     KnowledgeRetrievalRunRead,
     TestKnowledgeCardRead,
 )
-from backend.app.modules.projects.models import Project
+from backend.app.modules.projects.models import Module, Project
+from backend.app.modules.requirements.models import Requirement, RiskItem
 from backend.app.modules.review_history.service import append_review_history
 
 
@@ -2542,6 +2544,16 @@ def build_test_knowledge_graph(session: Session, project_id: uuid.UUID) -> dict[
             .order_by(TestKnowledgeEmbeddingIndex.created_at.asc(), TestKnowledgeEmbeddingIndex.id.asc()),
         ),
     )
+    relationships = list(
+        session.scalars(
+            select(TestKnowledgeRelationship)
+            .where(
+                TestKnowledgeRelationship.project_id == project_id,
+                TestKnowledgeRelationship.status == "active",
+            )
+            .order_by(TestKnowledgeRelationship.created_at.asc(), TestKnowledgeRelationship.id.asc()),
+        ),
+    )
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     card_node_ids: dict[str, str] = {}
@@ -2553,6 +2565,19 @@ def build_test_knowledge_graph(session: Session, project_id: uuid.UUID) -> dict[
     covered_card_ids: set[str] = set()
     candidates_with_evidence: set[str] = set()
     indexed_card_ids: set[str] = set()
+
+    for relationship in relationships:
+        source = f"{relationship.source_entity_type.lower()}:{relationship.source_entity_id}"
+        target = f"{relationship.target_entity_type.lower()}:{relationship.target_entity_id}"
+        edges.append(
+            {
+                "source": source,
+                "target": target,
+                "edge_type": relationship.relationship_type,
+                "weight": relationship.confidence / 100,
+                "relationship_id": str(relationship.id),
+            },
+        )
 
     for card in cards:
         node_id = f"knowledge_card:{card.id}"
@@ -2670,6 +2695,78 @@ def build_test_knowledge_graph(session: Session, project_id: uuid.UUID) -> dict[
             "vector_index_coverage_ratio": vector_coverage_ratio,
         },
     }
+
+
+def upsert_test_knowledge_relationship(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    source_entity_type: str,
+    source_entity_id: uuid.UUID,
+    target_entity_type: str,
+    target_entity_id: uuid.UUID,
+    relationship_type: str,
+    evidence_artifact_ids: list[uuid.UUID],
+    confidence: int,
+    metadata: dict[str, Any],
+) -> TestKnowledgeRelationship:
+    if session.get(Project, project_id) is None:
+        raise ProjectNotFoundError
+    if source_entity_id == target_entity_id:
+        raise KnowledgeRetrievalInputNotAllowedError
+    if not relationship_entity_belongs_to_project(session, project_id, source_entity_type, source_entity_id):
+        raise KnowledgeRetrievalInputNotAllowedError
+    if not relationship_entity_belongs_to_project(session, project_id, target_entity_type, target_entity_id):
+        raise KnowledgeRetrievalInputNotAllowedError
+    relationship = session.scalar(
+        select(TestKnowledgeRelationship).where(
+            TestKnowledgeRelationship.project_id == project_id,
+            TestKnowledgeRelationship.source_entity_type == source_entity_type,
+            TestKnowledgeRelationship.source_entity_id == source_entity_id,
+            TestKnowledgeRelationship.target_entity_type == target_entity_type,
+            TestKnowledgeRelationship.target_entity_id == target_entity_id,
+            TestKnowledgeRelationship.relationship_type == relationship_type,
+        ),
+    )
+    if relationship is None:
+        relationship = TestKnowledgeRelationship(
+            project_id=project_id,
+            source_entity_type=source_entity_type,
+            source_entity_id=source_entity_id,
+            target_entity_type=target_entity_type,
+            target_entity_id=target_entity_id,
+            relationship_type=relationship_type,
+        )
+        session.add(relationship)
+    relationship.evidence_artifact_ids_json = [str(item) for item in evidence_artifact_ids]
+    relationship.confidence = confidence
+    relationship.metadata_json = dict(metadata)
+    relationship.status = "active"
+    session.commit()
+    session.refresh(relationship)
+    return relationship
+
+
+def relationship_entity_belongs_to_project(
+    session: Session,
+    project_id: uuid.UUID,
+    entity_type: str,
+    entity_id: uuid.UUID,
+) -> bool:
+    model_by_type = {
+        "Artifact": Artifact,
+        "GeneratedCaseCandidate": GeneratedCaseCandidate,
+        "Module": Module,
+        "Requirement": Requirement,
+        "RiskPoint": RiskItem,
+        "TestCase": TestCase,
+        "TestKnowledgeCard": TestKnowledgeCard,
+    }
+    model = model_by_type.get(entity_type)
+    if model is None:
+        return False
+    entity = session.get(model, entity_id)
+    return entity is not None and entity.project_id == project_id
 
 
 def ensure_extractable_context_artifact(artifact: Artifact) -> None:

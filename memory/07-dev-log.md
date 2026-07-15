@@ -4312,6 +4312,27 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 47.9: typed relationships and graph queries.
 
+## 2026-07-15 Typed Knowledge Relationships
+
+### Implemented
+
+- Added Alembic `20260715_0015` and `TestKnowledgeRelationship` with typed
+  source/target entities, evidence artifact ids, confidence, status, metadata,
+  and unique edge identity.
+- Added same-project entity validation and an idempotent relationship creation
+  endpoint.
+- Existing graph output now includes persisted relationship edges beside the
+  deterministic derived coverage graph.
+
+### Verification
+
+- Knowledge migration/API suite: `28 passed`.
+- No graph database or external runtime was added.
+
+### Next
+
+- Task 47.10: reviewed knowledge feedback loop.
+
 ## 2026-07-15 Optional Provider Contracts
 
 ### Implemented

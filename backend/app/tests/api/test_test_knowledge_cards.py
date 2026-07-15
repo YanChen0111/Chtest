@@ -1009,6 +1009,35 @@ def test_optional_provider_without_client_degrades_to_keyword_without_vector_sco
     assert all(item["vector_score"] is None for item in run["items"])
 
 
+def test_typed_knowledge_relationship_is_persisted_and_visible_in_graph(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    project_id, _artifact_id, requirement_id, cards = create_approved_test_knowledge(client)
+    card_id = cards[0]["id"]
+    response = client.post(
+        f"/api/projects/{project_id}/test-knowledge/relationships",
+        {
+            "project_id": project_id,
+            "source_entity_type": "Requirement",
+            "source_entity_id": requirement_id,
+            "target_entity_type": "TestKnowledgeCard",
+            "target_entity_id": card_id,
+            "relationship_type": "covers",
+            "confidence": 90,
+            "metadata": {"derived_by": "test"},
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["relationship_type"] == "covers"
+    assert "source_entity_id" in body
+    graph = client.get(f"/api/projects/{project_id}/test-knowledge/graph")
+    assert graph.status_code == 200
+    assert any(edge["edge_type"] == "covers" for edge in graph.json()["edges"])
+
+
 def test_postgres_hybrid_native_result_normalizes_to_provider_neutral_evidence(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
     monkeypatch: pytest.MonkeyPatch,

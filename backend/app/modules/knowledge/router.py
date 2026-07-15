@@ -25,6 +25,7 @@ from backend.app.modules.knowledge.schemas import (
     TestKnowledgeCardRetrievalRead,
     TestKnowledgeCardRetrieveRequest,
     TestKnowledgeGraphRead,
+    TestKnowledgeRelationshipCreateRequest,
     TestKnowledgeIndexRead,
     TestKnowledgeIndexRebuildRead,
     TestKnowledgeIndexRebuildRequest,
@@ -302,6 +303,49 @@ def get_test_knowledge_graph(
         edges=graph["edges"],
         coverage=graph["coverage"],
     )
+
+
+@router.post("/projects/{project_id}/test-knowledge/relationships", status_code=status.HTTP_201_CREATED)
+def create_test_knowledge_relationship(
+    project_id: uuid.UUID,
+    data: TestKnowledgeRelationshipCreateRequest,
+    session: Session = Depends(get_session),
+) -> dict:
+    if project_id != data.project_id:
+        raise bad_request("TEST_KNOWLEDGE_PROJECT_MISMATCH", "Relationship project does not match the path.")
+    try:
+        relationship = service.upsert_test_knowledge_relationship(
+            session,
+            project_id=project_id,
+            source_entity_type=data.source_entity_type,
+            source_entity_id=data.source_entity_id,
+            target_entity_type=data.target_entity_type,
+            target_entity_id=data.target_entity_id,
+            relationship_type=data.relationship_type,
+            evidence_artifact_ids=data.evidence_artifact_ids,
+            confidence=data.confidence,
+            metadata=data.metadata,
+        )
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    except service.KnowledgeRetrievalInputNotAllowedError as exc:
+        raise bad_request(
+            "TEST_KNOWLEDGE_RELATIONSHIP_INVALID",
+            "Relationship entities must exist in the same project.",
+        ) from exc
+    return {
+        "id": str(relationship.id),
+        "project_id": str(relationship.project_id),
+        "source_entity_type": relationship.source_entity_type,
+        "source_entity_id": str(relationship.source_entity_id),
+        "target_entity_type": relationship.target_entity_type,
+        "target_entity_id": str(relationship.target_entity_id),
+        "relationship_type": relationship.relationship_type,
+        "evidence_artifact_ids": relationship.evidence_artifact_ids_json,
+        "confidence": relationship.confidence,
+        "status": relationship.status,
+        "metadata": relationship.metadata_json,
+    }
 
 
 @router.get("/projects/{project_id}/test-knowledge/index", response_model=TestKnowledgeIndexRead)

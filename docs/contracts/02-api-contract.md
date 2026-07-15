@@ -780,6 +780,11 @@ Rules:
 
 `GET /api/projects/{project_id}/test-knowledge/graph`
 
+`POST /api/projects/{project_id}/test-knowledge/relationships` creates or
+updates one active typed edge. Both entities must already exist in the same
+project; unknown types, missing entities, cross-project ids, and self-edges are
+rejected.
+
 Response 200:
 
 ```json

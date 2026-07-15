@@ -262,6 +262,38 @@ class KnowledgeRetrievalRun(TimestampMixin, Base):
     )
 
 
+class TestKnowledgeRelationship(TimestampMixin, Base):
+    __tablename__ = "test_knowledge_relationships"
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id",
+            "source_entity_type",
+            "source_entity_id",
+            "target_entity_type",
+            "target_entity_id",
+            "relationship_type",
+            name="uq_test_knowledge_relationship_edge",
+        ),
+        Index("ix_test_knowledge_relationship_project_type", "project_id", "relationship_type"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    source_entity_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    source_entity_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    target_entity_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    target_entity_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    relationship_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    evidence_artifact_ids_json: Mapped[list[Any]] = json_list_column()
+    confidence: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
+    status: Mapped[str] = mapped_column(String(40), nullable=False, default="active")
+    metadata_json: Mapped[dict[str, Any]] = json_dict_column()
+
+    project: Mapped[Project] = relationship()
+
+
 class KnowledgeEvidence(TimestampMixin, Base):
     __tablename__ = "knowledge_evidence"
     __table_args__ = (

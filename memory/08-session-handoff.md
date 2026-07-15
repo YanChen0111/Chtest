@@ -10350,3 +10350,13 @@ queries.
 - Focused quality/CaseGeneration verification: `12 passed`.
 - The broader golden collection retains known missing-fixture and stale
   acknowledgement failures unrelated to this change.
+
+## 2026-07-15 Slice 47.9 Typed Relationships
+
+Task 47.9 is complete; the next task is Task 47.10 reviewed feedback.
+
+- Added migration `20260715_0015`, ORM model, same-project validation, and a
+  relationship creation endpoint.
+- Persisted relationship edges are included in the existing deterministic graph
+  response; no graph database is required.
+- Migration/API verification: `28 passed`.
