@@ -1,5 +1,5 @@
 <template>
-  <section class="test-case-library-page" aria-labelledby="test-case-library-title">
+  <section class="test-case-library-page" aria-labelledby="test-case-library-title" data-test="test-case-library-page">
     <div class="test-case-library-heading">
       <div>
         <p class="eyebrow">测试用例库</p>
@@ -12,7 +12,8 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert v-if="store.errorMessage" data-test="test-case-library-error" type="error" :content="store.errorMessage" show-icon />
+    <a-button v-if="store.errorMessage" data-test="retry-test-case-library" size="small" @click="store.loadTestCases()">Retry loading</a-button>
 
     <div class="library-summary">
       <a-statistic title="已评审用例" :value="store.totalTestCases" />
@@ -25,10 +26,11 @@
     <div class="library-layout">
       <a-card class="library-panel case-list-panel" :bordered="false">
         <template #title>用例列表</template>
-        <a-spin :loading="store.loadingGeneration">
+        <a-spin data-test="test-case-library-loading" :loading="store.loadingGeneration">
           <a-list v-if="filteredTestCases.length > 0" :data="filteredTestCases" :bordered="false">
             <template #item="{ item }">
               <a-list-item
+                data-test="recent-test-case-row"
                 class="test-case-list-item"
                 :class="{ active: item.id === selectedCase?.id }"
                 @click="store.selectedTestCaseId = item.id"
@@ -41,6 +43,7 @@
                     <a-tag>{{ reviewStatusLabel(item.review_status) }}</a-tag>
                     <a-tag>{{ caseStatusLabel(item.status) }}</a-tag>
                   </a-space>
+                  <a-button data-test="resume-test-case" size="mini" @click.stop="store.selectedTestCaseId = item.id">Resume</a-button>
                 </a-space>
               </a-list-item>
             </template>

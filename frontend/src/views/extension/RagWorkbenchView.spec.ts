@@ -89,6 +89,9 @@ describe('RagWorkbenchView', () => {
     expect(wrapper.text()).toContain('Global evidence trace');
     expect(wrapper.text()).toContain('expired');
     expect(wrapper.text()).toContain('50%');
+    expect(wrapper.find('[data-test="knowledge-workbench-page"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="recent-retrieval-runs"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="resume-retrieval-run"]').exists()).toBe(true);
     await wrapper.find('input[placeholder="Search card, retrieval, feedback, or case evidence"]').setValue('expired');
     const searchButton = wrapper.findAll('button').find((button) => button.text().includes('Search trace'));
     expect(searchButton).toBeDefined();
@@ -99,6 +102,7 @@ describe('RagWorkbenchView', () => {
     expect(wrapper.text()).toContain('12 ms');
     await wrapper.find('.trace-row').trigger('click');
     expect(wrapper.find('.trace-row').exists()).toBe(true);
+    expect(wrapper.find('[data-test="evidence-trace-row"]').exists()).toBe(true);
     traceSpy.mockRestore();
   });
 });

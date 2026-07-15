@@ -1,5 +1,5 @@
 <template>
-  <section class="cicd-page" aria-labelledby="cicd-title">
+  <section class="cicd-page" data-test="cicd-quality-workbench" aria-labelledby="cicd-title">
     <div class="cicd-heading">
       <div>
         <p class="eyebrow">本地 CI/CD 质量</p>
@@ -12,7 +12,19 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert
+      v-if="store.errorMessage"
+      data-test="cicd-error-state"
+      :type="store.runs.length ? 'warning' : 'error'"
+      :content="store.runs.length ? `${store.errorMessage}。正在保留上次加载的运行列表。` : store.errorMessage"
+      show-icon
+    >
+      <template #action>
+        <a-button size="small" data-test="retry-cicd-runs" :loading="store.loading" @click="refreshRecentRuns">
+          重试加载
+        </a-button>
+      </template>
+    </a-alert>
 
     <div class="cicd-layout">
       <a-card class="cicd-panel" :bordered="false">
@@ -276,8 +288,46 @@
         </a-card>
 
         <a-card class="cicd-panel" :bordered="false">
-          <template #title>最近 CI/CD 运行</template>
-          <a-table :columns="runColumns" :data="runRows" :pagination="false" row-key="id" size="small" />
+          <template #title>
+            <div class="recent-runs-title">
+              <span>最近 CI/CD 运行</span>
+              <a-button
+                size="small"
+                data-test="refresh-cicd-runs"
+                :loading="store.loading"
+                @click="refreshRecentRuns"
+              >
+                刷新
+              </a-button>
+            </div>
+          </template>
+          <a-spin :loading="store.loading && !store.runs.length">
+            <a-table
+              v-if="runRows.length"
+              data-test="cicd-recent-runs-list"
+              :columns="runColumns"
+              :data="runRows"
+              :pagination="false"
+              row-key="id"
+              size="small"
+            >
+              <template #action="{ record }">
+                <a-button
+                  size="small"
+                  :type="store.run?.id === record.id ? 'primary' : 'secondary'"
+                  :data-test="`resume-cicd-run-${record.id}`"
+                  @click="resumeCicdRun(record)"
+                >
+                  {{ store.run?.id === record.id ? '当前运行' : '继续处理' }}
+                </a-button>
+              </template>
+            </a-table>
+            <a-empty
+              v-else-if="!store.loading"
+              data-test="cicd-recent-runs-empty-state"
+              description="暂无 CI/CD 运行，可从左侧本地 diff 创建"
+            />
+          </a-spin>
         </a-card>
       </div>
     </div>
@@ -285,10 +335,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
 import { useCICDStore } from '../../stores/cicd';
-import type { CICDImportEvidenceContentRead } from '../../api/cicd';
+import type { CICDImportEvidenceContentRead, CICDRunRead } from '../../api/cicd';
 
 const store = useCICDStore();
 
@@ -312,6 +362,7 @@ const runColumns = [
   { title: '风险', dataIndex: 'riskLabel' },
   { title: '基准', dataIndex: 'base_ref' },
   { title: '当前', dataIndex: 'head_ref' },
+  { title: '操作', slotName: 'action', width: 112 },
 ];
 
 const changedFileRows = computed(() =>
@@ -372,6 +423,29 @@ const blockingReasonRows = computed(() => (store.qualityGate?.blocking_reasons ?
 
 function createRun() {
   void store.createRun();
+}
+
+async function refreshRecentRuns() {
+  store.errorMessage = '';
+  try {
+    await store.refreshRuns();
+  } catch (error) {
+    store.errorMessage = error instanceof Error ? error.message : '最近 CI/CD 运行加载失败';
+  }
+}
+
+function resumeCicdRun(run: CICDRunRead) {
+  store.run = run;
+  store.unitTestPatch = null;
+  store.patchReviewStatus = '';
+  store.newTestRun = null;
+  store.regressionPlan = null;
+  store.regressionRun = null;
+  store.qualityGate = null;
+  store.qualityReport = null;
+  store.patchReviewHistory = [];
+  store.gateReviewHistory = [];
+  store.errorMessage = '';
 }
 
 function analyzeRun() {
@@ -579,6 +653,12 @@ function generateQualityReport() {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
+
+onMounted(() => {
+  if (!store.runs.length) {
+    void refreshRecentRuns();
+  }
+});
 </script>
 
 <style scoped>

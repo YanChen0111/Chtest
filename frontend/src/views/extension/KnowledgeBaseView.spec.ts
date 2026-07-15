@@ -223,6 +223,10 @@ describe('KnowledgeBaseView', () => {
     expect(wrapper.text()).toContain('允许');
     expect(wrapper.text()).toContain('检索证据');
     expect(wrapper.text()).toContain('2026-06-30T10:30:00Z');
+    expect(wrapper.find('[data-test="knowledge-base-page"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="recent-knowledge-retrieval-row"]').exists()).toBe(true);
+    await wrapper.find('[data-test="resume-knowledge-retrieval"]').trigger('click');
+    expect((wrapper.find('[data-test="retrieval-query"] textarea').element as HTMLTextAreaElement).value).toBe('coupon expired');
     expect(wrapper.text()).toContain('pytest_runner');
     expect(wrapper.text()).toContain('MCP-ready');
     expect(wrapper.text()).toContain('最近检索证据');

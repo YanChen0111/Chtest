@@ -1,5 +1,5 @@
 <template>
-  <section class="execution-page" aria-labelledby="execution-title">
+  <section class="execution-page" data-test="execution-page-pytest" aria-labelledby="execution-title">
     <div class="execution-heading">
       <div>
         <p class="eyebrow">pytest 执行证据</p>
@@ -12,15 +12,15 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert v-if="store.errorMessage" data-test="execution-error-state" type="error" :content="store.errorMessage" show-icon />
 
     <div class="execution-layout">
       <a-card class="execution-panel" :bordered="false">
         <template #title>执行入口</template>
-        <form class="execution-form" @submit.prevent="startRun">
+        <form class="execution-form" data-test="execution-form-pytest" @submit.prevent="startRun">
           <label>
             <span>项目 ID</span>
-            <a-input v-model="store.projectId" />
+            <a-input v-model="store.projectId" data-test="execution-project-id" />
           </label>
           <label>
             <span>执行来源</span>
@@ -31,11 +31,11 @@
           </label>
           <label v-if="store.sourceMode === 'automation_draft'">
             <span>AutomationDraft ID</span>
-            <a-input v-model="store.automationDraftId" />
+            <a-input v-model="store.automationDraftId" data-test="execution-source-id" />
           </label>
           <label v-else>
             <span>TestCommand ID</span>
-            <a-input v-model="store.testCommandId" />
+            <a-input v-model="store.testCommandId" data-test="execution-source-id" />
           </label>
           <a-space wrap>
             <a-button data-test="start-run" html-type="submit" type="primary" :loading="store.loading">
@@ -46,12 +46,14 @@
             </a-button>
           </a-space>
         </form>
+        <ExecutionRecentRuns />
       </a-card>
 
       <a-card class="execution-panel execution-result-panel" :bordered="false">
         <template #title>运行证据</template>
-        <a-spin :loading="store.loading">
+        <a-spin :loading="store.loading" :data-test="store.loading ? 'execution-loading-state' : 'execution-ready-state'">
           <template v-if="store.run">
+            <div data-test="execution-run-detail">
             <a-descriptions :column="2" bordered size="small">
               <a-descriptions-item label="状态">{{ executionRunStatusLabel(store.run.status) }}</a-descriptions-item>
               <a-descriptions-item label="退出码">{{ store.run.exit_code ?? '运行中' }}</a-descriptions-item>
@@ -75,9 +77,10 @@
               :columns="resultColumns"
               :rows="store.run.test_results"
             />
+            </div>
           </template>
 
-          <a-empty v-else description="启动后展示 pytest 执行证据" />
+          <a-empty v-else data-test="execution-empty-state" description="启动后展示 pytest 执行证据" />
         </a-spin>
       </a-card>
     </div>
@@ -92,6 +95,7 @@ import ExecutionArtifactTable from './ExecutionArtifactTable.vue';
 import ExecutionMetricsPanel from './ExecutionMetricsPanel.vue';
 import ExecutionResultTable from './ExecutionResultTable.vue';
 import ExecutionRunManifestPanel from './ExecutionRunManifestPanel.vue';
+import ExecutionRecentRuns from './ExecutionRecentRuns.vue';
 import { executionRunDurationLabel, executionRunStatusLabel } from './executionDisplay';
 import { pytestOutputArtifacts } from './executionOutputArtifacts';
 import { buildExecutionRunManifestRows } from './executionRunManifest';

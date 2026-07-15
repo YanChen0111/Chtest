@@ -1,5 +1,5 @@
 <template>
-  <section class="automation-draft-page" aria-labelledby="automation-draft-title">
+  <section class="automation-draft-page" data-test="automation-draft-workbench" aria-labelledby="automation-draft-title">
     <div class="automation-draft-heading">
       <div>
         <p class="eyebrow">AutomationDraft 评审</p>
@@ -27,8 +27,12 @@
       </li>
     </ol>
 
-    <a-alert v-if="store.errorMessage" type="error" show-icon>{{ store.errorMessage }}</a-alert>
-    <a-alert v-if="store.assetErrorMessage" type="warning" show-icon>{{ store.assetErrorMessage }}</a-alert>
+    <a-alert v-if="store.errorMessage" data-test="automation-error-state" type="error" show-icon>{{ store.errorMessage }}</a-alert>
+    <a-alert v-if="store.assetErrorMessage" data-test="automation-stale-assets-state" type="warning" show-icon>
+      {{ store.assetErrorMessage }}。已保留当前选择，可重试加载评审资产。
+    </a-alert>
+
+    <ExecutionRecentRuns />
 
     <div class="automation-draft-layout">
       <a-card class="draft-panel" :bordered="false">
@@ -211,7 +215,13 @@
                 </button>
               </div>
 
-              <a-alert v-if="executionStore.errorMessage" type="error" :content="executionStore.errorMessage" show-icon />
+              <a-alert
+                v-if="executionStore.errorMessage"
+                data-test="automation-execution-error-state"
+                type="error"
+                :content="executionStore.errorMessage"
+                show-icon
+              />
 
               <form class="automation-execution-form" @submit.prevent="startAutomationExecution">
                 <label>
@@ -317,7 +327,7 @@
                   />
                 </template>
 
-                <a-empty v-else description="启动后展示自动化执行证据" />
+                <a-empty v-else data-test="automation-execution-empty-state" description="启动后展示自动化执行证据" />
               </a-spin>
             </section>
           </template>
@@ -337,6 +347,7 @@ import { useExecutionStore } from '../../stores/execution';
 import ExecutionArtifactTable from '../execution/ExecutionArtifactTable.vue';
 import ExecutionMetricsPanel from '../execution/ExecutionMetricsPanel.vue';
 import ExecutionResultTable from '../execution/ExecutionResultTable.vue';
+import ExecutionRecentRuns from '../execution/ExecutionRecentRuns.vue';
 import ExecutionRunManifestPanel from '../execution/ExecutionRunManifestPanel.vue';
 import { executionRunDurationLabel, executionRunStatusLabel } from '../execution/executionDisplay';
 import {

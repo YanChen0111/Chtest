@@ -1,7 +1,8 @@
 <template>
-  <section class="execution-result-table-section" :aria-labelledby="titleId">
+  <section class="execution-result-table-section" data-test="execution-results" :aria-labelledby="titleId">
     <h3 :id="titleId">{{ title }}</h3>
     <a-table
+      data-test="execution-result-table"
       :columns="tableColumns"
       :data="tableRows"
       :pagination="false"

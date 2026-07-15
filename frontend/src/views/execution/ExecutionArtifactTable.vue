@@ -1,7 +1,8 @@
 <template>
-  <section class="execution-artifact-section" :aria-labelledby="titleId">
+  <section class="execution-artifact-section" data-test="execution-artifacts" :aria-labelledby="titleId">
     <h3 :id="titleId">{{ title }}</h3>
     <a-table
+      data-test="execution-artifact-table"
       :columns="artifactColumns"
       :data="tableRows"
       :pagination="false"

@@ -253,6 +253,10 @@ describe('CaseGenerationReviewView', () => {
     expect(wrapper.text()).toContain('生成总数');
     expect(wrapper.text()).toContain('字段完整率');
     expect(wrapper.text()).toContain('100%');
+    expect(wrapper.find('[data-test="case-generation-review-page"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="recent-generation-run"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="resume-generation-review"]').exists()).toBe(true);
+    await wrapper.find('[data-test="resume-generation-review"]').trigger('click');
 
     await wrapper.find('[data-test="edit-case-title"] input').setValue('过期优惠券不可用于结算（已编辑）');
     await wrapper.find('[data-test="edit-case-steps"] textarea').setValue('准备一张已过期优惠券\n提交结算订单');

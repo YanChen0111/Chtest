@@ -4,6 +4,8 @@ import { createPinia } from 'pinia';
 import { describe, expect, it, vi } from 'vitest';
 
 import ReportFailureAnalysisView from './ReportFailureAnalysisView.vue';
+import { useExecutionStore } from '../../stores/execution';
+import { useReportingStore } from '../../stores/reporting';
 
 function failureAnalysisBody() {
   return {
@@ -93,6 +95,49 @@ function reportBody() {
 }
 
 describe('ReportFailureAnalysisView', () => {
+  it('offers a named resume action for recent test runs', async () => {
+    const pinia = createPinia();
+    const executionStore = useExecutionStore(pinia);
+    executionStore.recentRunsHydrated = true;
+    executionStore.recentRuns = [
+      {
+        id: '00000000-0000-0000-0000-000000001399',
+        project_id: '00000000-0000-0000-0000-000000000101',
+        automation_draft_id: null,
+        test_command_id: '00000000-0000-0000-0000-000000000302',
+        tool_invocation_id: null,
+        name: 'pytest coupon regression',
+        command: 'pytest tests/test_coupon.py',
+        working_directory: '.',
+        runner_mode: 'local_subprocess',
+        run_workspace: null,
+        repository_readonly: true,
+        network_enabled: false,
+        runtime_artifact_ids: [],
+        dependency_snapshot_artifact_id: null,
+        environment_snapshot_artifact_id: null,
+        status: 'failed',
+        exit_code: 1,
+        duration_ms: 1200,
+        parsed_result: {},
+        test_results: [],
+        artifacts: [],
+      },
+    ];
+    const wrapper = mount(ReportFailureAnalysisView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+
+    expect(wrapper.find('[data-test="reporting-recent-runs-list"]').exists()).toBe(true);
+    await wrapper.find('[data-test="resume-reporting-run-00000000-0000-0000-0000-000000001399"]').trigger('click');
+    await wrapper.vm.$nextTick();
+
+    expect(useReportingStore(pinia).testRunId).toBe('00000000-0000-0000-0000-000000001399');
+    expect((wrapper.find('[data-test="reporting-test-run-id"] input').element as HTMLInputElement).value).toBe(
+      '00000000-0000-0000-0000-000000001399',
+    );
+  });
+
   it('starts failure analysis and report generation with evidence first details', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

@@ -1,5 +1,5 @@
 <template>
-  <section class="reporting-page" aria-labelledby="reporting-title">
+  <section class="reporting-page" data-test="reporting-workbench" aria-labelledby="reporting-title">
     <div class="reporting-heading">
       <div>
         <p class="eyebrow">报告 / 失败分析</p>
@@ -12,7 +12,13 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert
+      v-if="store.errorMessage"
+      data-test="reporting-error-state"
+      type="error"
+      :content="store.errorMessage"
+      show-icon
+    />
 
     <div class="reporting-layout">
       <a-card class="reporting-panel" :bordered="false">
@@ -20,11 +26,11 @@
         <form class="reporting-form" @submit.prevent>
           <label>
             <span>项目 ID</span>
-            <a-input v-model="store.projectId" />
+            <a-input v-model="store.projectId" data-test="reporting-project-id" />
           </label>
           <label>
             <span>TestRun ID</span>
-            <a-input v-model="store.testRunId" />
+            <a-input v-model="store.testRunId" data-test="reporting-test-run-id" />
           </label>
           <a-space wrap>
             <a-button
@@ -44,6 +50,39 @@
             </a-button>
           </a-space>
         </form>
+
+        <section class="recent-reporting-runs" data-test="reporting-recent-runs" aria-labelledby="reporting-recent-title">
+          <div class="recent-heading">
+            <div>
+              <p class="eyebrow">会话连续性</p>
+              <h3 id="reporting-recent-title">最近 TestRun</h3>
+            </div>
+            <a-tag v-if="staleRecentRunCount" color="orange" data-test="reporting-recent-runs-stale-state">
+              {{ staleRecentRunCount }} 条待刷新
+            </a-tag>
+          </div>
+          <div v-if="executionStore.recentRuns.length" class="recent-run-list" data-test="reporting-recent-runs-list">
+            <article v-for="run in executionStore.recentRuns" :key="run.id" class="recent-run-row">
+              <div>
+                <strong>{{ run.name }}</strong>
+                <span>{{ run.status }} · {{ shortId(run.id) }}</span>
+              </div>
+              <a-button
+                size="small"
+                :type="store.testRunId === run.id ? 'primary' : 'secondary'"
+                :data-test="`resume-reporting-run-${run.id}`"
+                @click="resumeReportingRun(run.id)"
+              >
+                {{ store.testRunId === run.id ? '当前运行' : '继续分析' }}
+              </a-button>
+            </article>
+          </div>
+          <a-empty
+            v-else
+            data-test="reporting-recent-runs-empty-state"
+            description="暂无最近运行，请先在执行页启动测试"
+          />
+        </section>
       </a-card>
 
       <div class="reporting-detail">
@@ -77,7 +116,7 @@
               </template>
             </a-table>
           </template>
-          <a-empty v-else description="生成执行报告后展示证据清单" />
+          <a-empty v-else data-test="reporting-evidence-empty-state" description="生成执行报告后展示证据清单" />
         </a-card>
 
         <a-card class="reporting-panel" :bordered="false">
@@ -97,7 +136,7 @@
               <span v-for="action in suggestedActions" :key="action">{{ action }}</span>
             </div>
           </template>
-          <a-empty v-else description="生成失败分析后展示分类、置信度和建议动作" />
+          <a-empty v-else data-test="reporting-analysis-empty-state" description="生成失败分析后展示分类、置信度和建议动作" />
         </a-card>
 
         <a-card class="reporting-panel" :bordered="false">
@@ -122,7 +161,7 @@
               </template>
             </a-table>
           </template>
-          <a-empty v-else description="生成执行报告后展示结论、指标和报告工件" />
+          <a-empty v-else data-test="reporting-report-empty-state" description="生成执行报告后展示结论、指标和报告工件" />
         </a-card>
       </div>
     </div>
@@ -130,12 +169,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
 import { artifactDownloadUrl } from '../../api/execution';
 import { useReportingStore } from '../../stores/reporting';
+import { useExecutionStore } from '../../stores/execution';
 
 const store = useReportingStore();
+const executionStore = useExecutionStore();
+
+const staleRecentRunCount = computed(() =>
+  executionStore.recentRuns.filter((run) => ['pending', 'running', 'execution_pending'].includes(run.status)).length,
+);
 
 const evidenceColumns = [
   { title: '证据', dataIndex: 'label' },
@@ -208,6 +253,19 @@ function startFailureAnalysis() {
 function startReport() {
   void store.startReport();
 }
+
+function resumeReportingRun(runId: string) {
+  store.testRunId = runId;
+  store.failureAnalysis = null;
+  store.report = null;
+  store.errorMessage = '';
+}
+
+function shortId(value: string): string {
+  return value.length > 8 ? `${value.slice(0, 8)}...` : value;
+}
+
+onMounted(() => executionStore.hydrateRecentRuns());
 </script>
 
 <style scoped>
@@ -257,6 +315,56 @@ function startReport() {
 .reporting-form {
   display: grid;
   gap: 14px;
+}
+
+.recent-reporting-runs {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e6eb;
+}
+
+.recent-heading,
+.recent-run-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recent-heading h3,
+.recent-heading p {
+  margin: 0;
+}
+
+.recent-run-list {
+  display: grid;
+  gap: 8px;
+}
+
+.recent-run-row {
+  padding: 10px 12px;
+  border: 1px solid #e5e6eb;
+  border-radius: 6px;
+}
+
+.recent-run-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.recent-run-row strong,
+.recent-run-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-run-row span {
+  color: #86909c;
+  font-size: 12px;
 }
 
 .reporting-form label {
@@ -334,6 +442,17 @@ function startReport() {
   .manifest-strip,
   .metric-grid.compact {
     grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .reporting-heading,
+  .recent-heading {
+    align-items: flex-start;
+  }
+
+  .reporting-heading {
+    flex-direction: column;
   }
 }
 </style>

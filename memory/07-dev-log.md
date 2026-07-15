@@ -4412,3 +4412,21 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
   with the known chunk-size warning.
 - Browser smoke passed on desktop and `390x844` mobile; trace search controls
   remained reachable and the responsive layout avoided overlap.
+
+## 2026-07-15 Recent Run Navigation And Selectors
+
+### Implemented
+
+- Added a shared recent execution-run panel with local session persistence,
+  refresh-before-resume behavior, stale indicators, and bounded history.
+- Added resume actions and stable selectors across knowledge, case generation,
+  case library, four execution surfaces, reporting, automation, and CI/CD.
+- Error retries preserve useful prior data; resume actions clear downstream
+  state that belongs to a different selected run.
+
+### Verification
+
+- Frontend suite: `26 test files / 53 tests passed`.
+- Production build passed with the existing chunk-size warning.
+- Desktop and `390x844` browser smoke across the affected workflows found no
+  horizontal overflow and confirmed reachable recent-run/empty-state controls.

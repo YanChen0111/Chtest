@@ -1,5 +1,5 @@
 <template>
-  <section class="rag-workbench" aria-labelledby="rag-workbench-title">
+  <section class="rag-workbench" aria-labelledby="rag-workbench-title" data-test="knowledge-workbench-page">
     <header class="rag-hero">
       <div>
         <p class="eyebrow">Evidence operations</p>
@@ -7,12 +7,12 @@
         <p class="rag-subtitle">Review prompt-safe knowledge, inspect retrieval quality, and trace every result back to evidence.</p>
       </div>
       <div class="rag-hero-actions">
-        <a-button type="primary" @click="go('knowledge-base')">Open knowledge base</a-button>
-        <a-button @click="refresh" :loading="store.loading">Refresh data</a-button>
+        <a-button data-test="open-knowledge-base" type="primary" @click="go('knowledge-base')">Open knowledge base</a-button>
+        <a-button data-test="refresh-knowledge-workbench" @click="refresh" :loading="store.loading">Refresh data</a-button>
       </div>
     </header>
 
-    <a-alert v-if="store.errorMessage" type="error" show-icon :content="store.errorMessage" />
+    <a-alert v-if="store.errorMessage" data-test="knowledge-workbench-error" type="error" show-icon :content="store.errorMessage" />
 
     <div class="rag-kpis" aria-label="Knowledge health metrics">
       <article v-for="metric in metrics" :key="metric.label" class="rag-kpi">
@@ -52,17 +52,17 @@
       </a-card>
     </div>
 
-    <a-card class="rag-panel trace-panel" :bordered="false">
+    <a-card class="rag-panel trace-panel" :bordered="false" data-test="evidence-trace-panel">
       <template #title>Global evidence trace</template>
       <div class="trace-toolbar">
         <a-input v-model="traceQuery" allow-clear placeholder="Search card, retrieval, feedback, or case evidence" @press-enter="searchTrace" />
         <a-select v-model="traceStage" :options="[{ label: 'All stages', value: 'all' }, ...traceStages.map((stage) => ({ label: stage, value: stage }))]" />
         <a-button type="primary" :loading="traceLoading" @click="searchTrace">Search trace</a-button>
       </div>
-      <a-alert v-if="traceError" type="error" show-icon :content="traceError" />
-      <a-empty v-if="!traceLoading && traceQuery && !visibleTraceNodes.length" description="No evidence trace matches" />
-      <div v-else class="trace-list" aria-label="Evidence trace results">
-        <button v-for="node in visibleTraceNodes" :key="`${node.entity_type}-${node.entity_id}-${node.stage}`" class="trace-row" @click="selectTrace(node)">
+      <a-alert v-if="traceError" data-test="evidence-trace-error" type="error" show-icon :content="traceError" />
+      <a-empty v-if="!traceLoading && traceQuery && !visibleTraceNodes.length" data-test="evidence-trace-empty" description="No evidence trace matches" />
+      <div v-else class="trace-list" aria-label="Evidence trace results" data-test="evidence-trace-results">
+        <button v-for="node in visibleTraceNodes" :key="`${node.entity_type}-${node.entity_id}-${node.stage}`" class="trace-row" data-test="evidence-trace-row" @click="selectTrace(node)">
           <span class="trace-stage">{{ node.stage }}</span>
           <span class="trace-main"><strong>{{ node.summary }}</strong><small>{{ node.entity_type }} · {{ node.status }} · {{ node.timestamp }}</small></span>
           <span class="trace-diagnostics">{{ node.provider_type || 'local' }} / {{ node.retrieval_mode || 'n/a' }} · {{ node.latency_ms == null ? 'latency n/a' : `${node.latency_ms} ms` }}</span>
@@ -87,7 +87,7 @@
       </template>
     </a-drawer>
 
-    <a-card class="rag-panel rag-table-panel" :bordered="false">
+    <a-card class="rag-panel rag-table-panel" :bordered="false" data-test="recent-retrieval-runs">
       <template #title>
         <div class="panel-title-row"><span>Recent retrievals</span><a-button size="small" @click="go('knowledge-base')">View all logs</a-button></div>
       </template>
@@ -95,7 +95,7 @@
         <a-input v-model="query" allow-clear placeholder="Filter by query terms" />
         <a-tag color="blue">{{ filteredRetrievals.length }} runs</a-tag>
       </div>
-      <a-table :data="filteredRetrievals" :pagination="false" :scroll="{ x: 1120 }" row-key="retrieval_evidence_artifact_id" size="small">
+      <a-table data-test="recent-retrieval-table" :data="filteredRetrievals" :pagination="false" :scroll="{ x: 1120 }" row-key="retrieval_evidence_artifact_id" size="small">
         <template #columns>
           <a-table-column title="Query" data-index="query" />
           <a-table-column title="Provider" data-index="provider" :width="140" />
@@ -105,14 +105,14 @@
           <a-table-column title="Evidence" data-index="snippet_count" :width="110" />
           <a-table-column title="Created" data-index="created_at" :width="210" />
           <a-table-column title="Trace" :width="110">
-            <template #cell="{ record }"><a-button size="mini" @click="go('knowledge-base')">{{ record.retrieval_evidence_artifact_id.slice(0, 8) }}</a-button></template>
+            <template #cell="{ record }"><a-button data-test="resume-retrieval-run" size="mini" @click="resumeRetrieval(record.query)">{{ record.retrieval_evidence_artifact_id.slice(0, 8) }}</a-button></template>
           </a-table-column>
         </template>
         <template #empty><a-empty description="No retrieval runs yet" /></template>
       </a-table>
       <div v-if="filteredRetrievals.length" class="retrieval-rows" aria-label="Retrieval log summary">
         <div v-for="row in filteredRetrievals" :key="`summary-${row.retrieval_evidence_artifact_id}`" class="retrieval-row">
-          <strong>{{ row.query }}</strong><span>{{ row.provider }} / {{ row.mode }} / {{ row.fallback }}</span><small>{{ row.snippet_count }} evidence · {{ row.latency }} · {{ row.created_at }}</small>
+          <strong>{{ row.query }}</strong><span>{{ row.provider }} / {{ row.mode }} / {{ row.fallback }}</span><small>{{ row.snippet_count }} evidence · {{ row.latency }} · {{ row.created_at }}</small><a-button data-test="resume-retrieval-run" size="mini" @click="resumeRetrieval(row.query)">Resume</a-button>
         </div>
       </div>
     </a-card>
@@ -181,6 +181,10 @@ const visibleTraceNodes = computed(() => traceNodes.value.filter((node) => trace
 const traceStages = computed(() => [...new Set(traceNodes.value.map((node) => node.stage))]);
 
 function go(routeName: string) { router.push({ name: routeName }); }
+function resumeRetrieval(retrievalQuery: string) {
+  window.sessionStorage.setItem('chtest:knowledge-retrieval-query', retrievalQuery);
+  router.push({ name: 'knowledge-base' });
+}
 function refresh() { return store.loadExtensionSurface(); }
 function statusColor(status: string) { return status === 'ready' ? 'green' : ['degraded', 'failed'].includes(status) ? 'orange' : 'gray'; }
 async function searchTrace() {
@@ -230,8 +234,8 @@ onMounted(() => { if (!store.knowledgeBase) void store.loadExtensionSurface(); }
 .table-toolbar { margin-bottom: 12px; }.table-toolbar .arco-input-wrapper { max-width: 320px; }
 .trace-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) 180px auto; gap: 10px; margin-bottom: 12px; }.trace-list { display: grid; gap: 6px; }.trace-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 220px 24px; gap: 12px; align-items: center; width: 100%; padding: 11px 12px; border: 1px solid #e3e9f2; border-radius: 6px; background: #fbfdff; text-align: left; cursor: pointer; }.trace-row:hover { border-color: #7aa7e8; background: #f5f9ff; }.trace-stage, .trace-diagnostics, .trace-main small { color: #718096; font-size: 12px; }.trace-main strong, .trace-main small { display: block; }.trace-main small { margin-top: 3px; }.trace-arrow { color: #2563eb; text-align: right; }
 .trace-details { display: grid; gap: 12px; margin: 0 0 18px; }.trace-details div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; border-bottom: 1px solid #eef2f7; padding-bottom: 9px; }.trace-details dt { color: #718096; }.trace-details dd { min-width: 0; margin: 0; color: #1f2937; overflow-wrap: anywhere; }.trace-details code { white-space: pre-wrap; }
-.retrieval-rows { display: grid; gap: 6px; margin-top: 12px; }.retrieval-row { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 9px 10px; border: 1px solid #edf1f6; border-radius: 6px; color: #344054; }.retrieval-row span, .retrieval-row small { color: #718096; font-size: 12px; }
+.retrieval-rows { display: grid; gap: 6px; margin-top: 12px; }.retrieval-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 12px; align-items: center; padding: 9px 10px; border: 1px solid #edf1f6; border-radius: 6px; color: #344054; }.retrieval-row span, .retrieval-row small { color: #718096; font-size: 12px; }
 .coverage-ring { display: grid; width: 128px; height: 128px; flex: 0 0 128px; place-content: center; border-radius: 50%; background: conic-gradient(#2563eb var(--coverage), #e8eef7 0); text-align: center; }.coverage-ring::before { content: ''; position: absolute; width: 96px; height: 96px; border-radius: 50%; background: #fff; }.coverage-ring strong, .coverage-ring span { position: relative; z-index: 1; }.coverage-ring strong { font-size: 26px; color: #14213a; }.coverage-ring span { width: 76px; color: #718096; font-size: 11px; }.coverage-copy { max-width: 620px; }.coverage-copy h3 { margin: 0; color: #14213a; }.coverage-copy p { margin: 8px 0 14px; color: #68778d; line-height: 1.6; }
 @media (max-width: 900px) { .rag-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }.rag-grid { grid-template-columns: 1fr; }.trace-row { grid-template-columns: 100px minmax(0, 1fr) 24px; }.trace-diagnostics { display: none; } }
-@media (max-width: 600px) { .rag-hero, .coverage-row { flex-direction: column; }.rag-hero h2 { font-size: 24px; }.rag-kpis { grid-template-columns: 1fr 1fr; }.rag-hero-actions { width: 100%; }.rag-hero-actions .arco-btn { flex: 1; }.coverage-ring { align-self: center; }.trace-toolbar { grid-template-columns: 1fr; }.trace-row { grid-template-columns: 76px minmax(0, 1fr) 24px; padding: 10px 8px; }.trace-main strong { overflow-wrap: anywhere; } }
+@media (max-width: 600px) { .rag-hero, .coverage-row { flex-direction: column; }.rag-hero h2 { font-size: 24px; }.rag-kpis { grid-template-columns: 1fr 1fr; }.rag-hero-actions { width: 100%; }.rag-hero-actions .arco-btn { flex: 1; }.coverage-ring { align-self: center; }.trace-toolbar { grid-template-columns: 1fr; }.trace-row { grid-template-columns: 76px minmax(0, 1fr) 24px; padding: 10px 8px; }.trace-main strong { overflow-wrap: anywhere; }.retrieval-row { grid-template-columns: minmax(0, 1fr) auto; }.retrieval-row span, .retrieval-row small { grid-column: 1 / -1; } }
 </style>

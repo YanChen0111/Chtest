@@ -74,6 +74,11 @@ describe('TestCaseLibraryView', () => {
     expect(wrapper.text()).toContain('页面提示优惠券已过期');
     expect(wrapper.text()).toContain('编辑后通过');
     expect(wrapper.text()).toContain('coupon, boundary');
+    expect(wrapper.find('[data-test="test-case-library-page"]').exists()).toBe(true);
+    expect(wrapper.findAll('[data-test="recent-test-case-row"]')).toHaveLength(2);
+    await wrapper.findAll('[data-test="resume-test-case"]')[1].trigger('click');
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain('最终支付金额已抵扣');
     expect(wrapper.text()).not.toContain('生成自动化草稿');
     expect(wrapper.text()).not.toContain('执行用例');
     expect(fetchMock).toHaveBeenCalledWith(

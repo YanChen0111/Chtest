@@ -100,6 +100,8 @@ describe('AutomationDraftReviewView', () => {
       expect.objectContaining({ id: newmanCommandId, name: '订单 API 回归', command_type: 'newman' }),
     ]);
     expect(wrapper.find('[data-test="automation-test-case-select"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="automation-draft-workbench"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="automation-execution-empty-state"]').exists()).toBe(false);
     expect(wrapper.findAll('[data-test^="automation-workflow-step-"]')).toHaveLength(4);
     expect(wrapper.text()).toContain('选择用例');
     expect(wrapper.text()).toContain('执行取证');

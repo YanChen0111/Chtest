@@ -1,5 +1,5 @@
 <template>
-  <section class="knowledge-base-page" aria-labelledby="knowledge-base-title">
+  <section class="knowledge-base-page" aria-labelledby="knowledge-base-title" data-test="knowledge-base-page">
     <div class="settings-heading">
       <div>
         <p class="eyebrow">扩展表面</p>
@@ -13,7 +13,8 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert v-if="store.errorMessage" data-test="knowledge-base-error" type="error" :content="store.errorMessage" show-icon />
+    <a-button v-if="store.errorMessage" data-test="retry-knowledge-base" size="small" @click="store.loadExtensionSurface()">Retry loading</a-button>
 
     <div class="knowledge-metrics">
       <a-card class="settings-panel" :bordered="false">
@@ -308,10 +309,17 @@
           <a-empty v-if="!store.loading && contextRows.length === 0" description="暂无 ContextArtifact" />
         </a-card>
 
-        <a-card class="settings-panel retrieval-panel" :bordered="false">
+        <a-card class="settings-panel retrieval-panel" :bordered="false" data-test="recent-knowledge-retrievals">
           <template #title>最近检索证据</template>
+          <a-alert
+            v-if="hasStaleRetrievals"
+            data-test="stale-retrieval-warning"
+            type="warning"
+            show-icon
+            content="Recent retrieval evidence is older than 24 hours. Refresh before using it for a new review."
+          />
           <div v-if="latestRetrievalRows.length > 0" class="retrieval-list">
-            <article v-for="retrieval in latestRetrievalRows" :key="retrieval.retrieval_evidence_artifact_id" class="retrieval-item">
+            <article v-for="retrieval in latestRetrievalRows" :key="retrieval.retrieval_evidence_artifact_id" class="retrieval-item" data-test="recent-knowledge-retrieval-row">
               <div class="retrieval-item__header">
                 <div>
                   <span class="muted-label">AI 任务</span>
@@ -323,6 +331,7 @@
                 <span>命中词</span>
                 <a-tag v-for="term in retrieval.query_terms" :key="term" color="green">{{ term }}</a-tag>
               </div>
+              <a-button data-test="resume-knowledge-retrieval" size="small" @click="resumeRetrieval(retrieval.query_terms)">Reuse query</a-button>
               <div class="retrieval-results">
                 <div v-for="result in retrieval.results" :key="result.context_artifact_id" class="retrieval-result">
                   <div class="retrieval-result__meta">
@@ -435,6 +444,11 @@ const latestRetrievalRows = computed(() =>
   })),
 );
 
+const hasStaleRetrievals = computed(() => latestRetrievalRows.value.some((retrieval) => {
+  if (!retrieval.created_at) return false;
+  return Date.now() - new Date(retrieval.created_at).getTime() > 24 * 60 * 60 * 1000;
+}));
+
 const promptEligibleContextArtifactIds = computed(() =>
   contextRows.value.filter((artifact) => artifact.allowed_for_prompt).map((artifact) => artifact.id),
 );
@@ -504,6 +518,10 @@ function submitRetrievalTest() {
   void store.runRetrievalTest(retrievalQuery.value);
 }
 
+function resumeRetrieval(queryTerms: string[]) {
+  retrievalQuery.value = queryTerms.join(' ');
+}
+
 function extractKnowledgeCards() {
   if (promptEligibleContextArtifactIds.value.length === 0) {
     return;
@@ -520,6 +538,11 @@ function reviewKnowledgeCard(cardId: string, status: string) {
 }
 
 onMounted(() => {
+  const resumedQuery = window.sessionStorage.getItem('chtest:knowledge-retrieval-query');
+  if (resumedQuery) {
+    retrievalQuery.value = resumedQuery;
+    window.sessionStorage.removeItem('chtest:knowledge-retrieval-query');
+  }
   void store.loadExtensionSurface();
 });
 </script>

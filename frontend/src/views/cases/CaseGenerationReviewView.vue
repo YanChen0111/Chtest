@@ -1,5 +1,5 @@
 <template>
-  <section class="case-review-page" aria-labelledby="case-review-title">
+  <section class="case-review-page" aria-labelledby="case-review-title" data-test="case-generation-review-page">
     <div class="case-review-heading">
       <div>
         <p class="eyebrow">用例评审</p>
@@ -12,7 +12,7 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert v-if="store.errorMessage" data-test="case-generation-error" type="error" :content="store.errorMessage" show-icon />
 
     <div class="case-review-layout">
       <a-card class="case-panel generation-entry-panel" :bordered="false">
@@ -73,6 +73,7 @@
             请先确认生成前决策表，避免直接把未澄清需求送入最终用例生成。
           </p>
           <a-button
+            data-test="start-case-generation"
             class="generation-submit"
             html-type="submit"
             type="primary"
@@ -91,7 +92,7 @@
           </div>
         </div>
 
-        <div v-if="store.generation || store.generationTask" class="generation-task-panel">
+        <div v-if="store.generation || store.generationTask" class="generation-task-panel" data-test="recent-generation-run">
           <div>
             <span>CaseGenerationTask</span>
             <strong>{{ store.generationTask?.id ?? store.generation?.case_generation_task_id }}</strong>
@@ -113,6 +114,21 @@
           <p v-if="store.generationTask?.error_code" class="generation-error-line">
             {{ store.generationTask.error_code }} · {{ store.generationTask.error_message ?? '任务失败' }}
           </p>
+          <a-alert
+            v-if="isGenerationTaskStale"
+            data-test="stale-generation-warning"
+            type="warning"
+            show-icon
+            content="This generation run is older than 24 hours. Confirm the requirement context before continuing review."
+          />
+          <a-button
+            v-if="store.candidates.length"
+            data-test="resume-generation-review"
+            size="small"
+            @click="resumeGenerationReview"
+          >
+            Resume review
+          </a-button>
         </div>
 
         <div v-if="store.metrics" class="case-metrics-strip" aria-label="批次指标">
@@ -340,6 +356,10 @@ const currentReviewHistory = computed(() => store.reviewHistory);
 const generationStatusLabel = computed(
   () => store.generationTask?.status ?? store.generation?.status ?? '未生成',
 );
+const isGenerationTaskStale = computed(() => {
+  const updatedAt = store.generationTask?.updated_at;
+  return Boolean(updatedAt && Date.now() - new Date(updatedAt).getTime() > 24 * 60 * 60 * 1000);
+});
 const decisionTableReady = computed(
   () => decisionTableGate.sourceConfirmed && decisionTableGate.riskDimensionsConfirmed && decisionTableGate.reviewReady,
 );
@@ -522,6 +542,11 @@ function selectRequirementDocument(value: unknown) {
 
 function selectCandidate(candidateId: string) {
   void store.selectCandidate(candidateId);
+}
+
+function resumeGenerationReview() {
+  const candidateId = store.selectedCandidateId || store.candidates[0]?.id;
+  if (candidateId) void store.selectCandidate(candidateId);
 }
 
 function review(action: CaseReviewAction) {

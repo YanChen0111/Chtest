@@ -10402,3 +10402,19 @@ and named selectors across the remaining pages.
 - Verification: backend focused knowledge API `27 passed`; frontend `25 test
   files / 50 tests passed`; build passed with existing chunk-size warning;
   desktop and `390x844` browser smoke passed.
+
+## 2026-07-15 Slice 47.13 Recent Run Navigation
+
+Task 47.13 is complete and committed; next is Task 47.14 final eval and
+acceptance.
+
+- Added bounded recent execution history and resume actions shared by pytest,
+  Playwright, Newman, JMeter, automation, and reporting.
+- Added explicit recent/resume/retry/stale/empty selectors and state handling
+  across knowledge, case review/library, execution, reporting, automation, and
+  CI/CD surfaces.
+- Resume actions refresh current evidence or clear downstream state that no
+  longer belongs to the selected run.
+- Verification: frontend `26 test files / 53 tests passed`; production build
+  passed with the known chunk-size warning; desktop and `390x844` multi-page
+  smoke passed without horizontal overflow.

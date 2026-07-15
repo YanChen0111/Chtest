@@ -1,5 +1,5 @@
 <template>
-  <section class="run-manifest-section" :aria-labelledby="titleId">
+  <section class="run-manifest-section" data-test="execution-run-manifest" :aria-labelledby="titleId">
     <div class="section-heading">
       <h3 :id="titleId">执行运行清单</h3>
     </div>
@@ -18,6 +18,7 @@
     <a-table
       class="run-manifest-table"
       :columns="manifestColumns"
+      data-test="execution-run-manifest-table"
       :data="tableRows"
       :pagination="false"
       row-key="key"

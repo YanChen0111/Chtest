@@ -10,16 +10,16 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.13: refactor all pages around recent runs and named selectors.
+Slice 47 Task 47.14: run the final eval and acceptance.
 
 Required output:
 
-1. Use recent runs, named selectors, and resume actions consistently across
-   knowledge, case, execution, reporting, and automation pages.
-2. Keep loading, empty, failure, and stale-data states actionable without
-   forcing testers to rediscover project context.
-3. Add per-page focused tests and responsive browser smoke without broad visual
-   refactors or backend contract changes.
+1. Run the complete Slice 47 focused backend/frontend suites and the final RAG
+   eval fixture against provider-neutral evidence contracts.
+2. Verify provider fallback, evidence precision/recall, trace safety, case
+   rationale completeness, reviewed feedback, and responsive tester workflows.
+3. Record accepted metrics, known unrelated baseline failures, and any genuine
+   blocker without changing product behavior merely to make evaluation pass.
 
 ## Previous Tasks Verified
 
@@ -76,6 +76,13 @@ Required output:
   preserving source locators, evidence ids, provider/mode, fallback, latency,
   and safe artifact links. Full frontend verification remains `25 files / 50
   tests` after the trace integration; desktop and 390px mobile smoke passed.
+- Added consistent recent-run resume actions, named `data-test` selectors,
+  loading/empty/error/stale states, and safe downstream-state clearing across
+  knowledge, case review/library, pytest/Playwright/Newman/JMeter execution,
+  reporting, automation, and CI/CD pages.
+- Frontend verification after the multi-page refactor: `26 test files / 53
+  tests passed`; production build passed with the existing chunk-size warning;
+  desktop and `390x844` multi-page smoke found no horizontal overflow.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -146,19 +153,20 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Knowledge, case, execution, reporting, and automation pages expose recent-run
-  resume actions with stable named selectors.
-- Empty, loading, failure, and stale-data states remain actionable and
-  responsive.
+- Final RAG eval proves required-card recall and provider-neutral evidence
+  precision without unsafe or cross-project leakage.
+- Provider fallback, trace safety, case rationale, reviewed feedback, and the
+  tester-facing resume workflows have passing evidence.
+- Known unrelated baseline failures are separated from Slice 47 regressions.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(frontend): unify recent run navigation
+test(knowledge): complete final rag acceptance
 ```
 
 ## Next Task
 
-After Task 47.12 is verified and committed, continue Task 47.13 with recent-run
-navigation and named selectors across the remaining pages.
+After Task 47.14 is verified and committed, close Slice 47 or record the first
+genuine acceptance blocker with exact reproduction evidence.
