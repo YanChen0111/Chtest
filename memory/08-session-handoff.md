@@ -10320,3 +10320,20 @@ Verification:
   migration suite: `46 passed`.
 - Temporary PostgreSQL service was stopped and its service/ACL cleanup was
   completed after Task 47.5 acceptance.
+
+## 2026-07-15 Slice 47.7 Evidence-Backed CaseGeneration
+
+Task 47.7 is complete; the next task is Task 47.8 CaseReviewAgent and
+CoverageGapAgent quality gates.
+
+- Added migration `20260715_0014` and matching ORM/API fields for explicit
+  covered requirement/risk ids, case type, generation reason, coverage gap
+  notes, automation readiness, and quality assessment.
+- Extended output validation, persistence, candidate listing, and completeness
+  checks while preserving deterministic defaults for older model fixtures.
+- Updated the GeneratedCaseCandidate contract and migration assertions.
+
+Verification:
+- CaseGeneration and Alembic suite: `13 passed`.
+- Existing optional-provider/PostgreSQL focused suite remains `46 passed`.
+- Source acceptance database remains untouched.

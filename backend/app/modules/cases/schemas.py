@@ -69,6 +69,13 @@ class GeneratedCaseCandidateRead(BaseModel):
     risk_refs_json: list[Any]
     source_knowledge_evidence_json: list[Any]
     coverage_dimensions_json: list[Any]
+    covered_requirement_ids_json: list[Any]
+    covered_risk_ids_json: list[Any]
+    case_type: str
+    generation_reason: str
+    coverage_gap_notes: str | None
+    automation_readiness_json: dict[str, Any]
+    quality_assessment_json: dict[str, Any]
     ai_reason: str
     duplicate_of_case_id: uuid.UUID | None
     status: str
@@ -90,6 +97,13 @@ class GeneratedCaseCandidateListItemRead(BaseModel):
     risk_refs: list[Any]
     source_knowledge_evidence: list[Any] = Field(default_factory=list)
     coverage_dimensions: list[Any] = Field(default_factory=list)
+    covered_requirement_ids: list[Any] = Field(default_factory=list)
+    covered_risk_ids: list[Any] = Field(default_factory=list)
+    case_type: str = "functional"
+    generation_reason: str = ""
+    coverage_gap_notes: str | None = None
+    automation_readiness: dict[str, Any] = Field(default_factory=dict)
+    quality_assessment: dict[str, Any] = Field(default_factory=dict)
     ai_reason: str
     status: str
 

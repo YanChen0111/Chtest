@@ -43,7 +43,19 @@ def test_alembic_upgrade_head_from_empty_sqlite_database(tmp_path: Path) -> None
             "last_verified_at",
         } <= candidate_columns
         revision = connection.execute(text("select version_num from alembic_version")).scalar_one()
-        assert revision == "20260714_0013"
+        assert revision == "20260715_0014"
+        generated_candidate_columns = {
+            column["name"] for column in inspector.get_columns("generated_case_candidates")
+        }
+        assert {
+            "covered_requirement_ids_json",
+            "covered_risk_ids_json",
+            "case_type",
+            "generation_reason",
+            "coverage_gap_notes",
+            "automation_readiness_json",
+            "quality_assessment_json",
+        } <= generated_candidate_columns
 
 
 def test_postgres_hybrid_migration_generates_optional_capability_sql(capsys) -> None:
@@ -77,7 +89,7 @@ def test_sqlite_postgres_hybrid_migration_is_noop(tmp_path: Path) -> None:
     command.upgrade(config, "head")
     engine = create_engine(f"sqlite+pysqlite:///{db_path.as_posix()}", future=True)
     with engine.connect() as connection:
-        assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260714_0013"
+        assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260715_0014"
         columns = {item["name"] for item in inspect(connection).get_columns("test_knowledge_embedding_index")}
         assert "embedding_vector" not in columns
     engine.dispose()

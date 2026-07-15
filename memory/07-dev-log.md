@@ -4270,6 +4270,27 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 47.6: optional Qdrant and Haystack/LlamaIndex provider contracts using
   fake clients only.
 
+## 2026-07-15 Evidence-Backed CaseGeneration Fields
+
+### Implemented
+
+- Added Alembic `20260715_0014` for explicit requirement/risk coverage ids,
+  case type, generation reason, coverage gap notes, automation readiness, and
+  quality assessment on `GeneratedCaseCandidate`.
+- Extended CaseGeneration validation, persistence, and candidate list output.
+  Legacy model responses receive deterministic defaults (`ai_reason`,
+  `test_type`, and requirement/risk refs) so existing fixtures remain valid.
+- Updated the data contract to make the evidence-backed fields explicit.
+
+### Verification
+
+- CaseGeneration and migration suite: `13 passed`.
+- `compileall` and `git diff --check`: passed before final commit check.
+
+### Next
+
+- Task 47.8: CaseReviewAgent and CoverageGapAgent quality gates.
+
 ## 2026-07-15 Optional Provider Contracts
 
 ### Implemented

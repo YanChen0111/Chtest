@@ -125,6 +125,13 @@ class GeneratedCaseCandidate(TimestampMixin, Base):
     risk_refs_json: Mapped[list[Any]] = json_list_column()
     source_knowledge_evidence_json: Mapped[list[Any]] = json_list_column()
     coverage_dimensions_json: Mapped[list[Any]] = json_list_column()
+    covered_requirement_ids_json: Mapped[list[Any]] = json_list_column()
+    covered_risk_ids_json: Mapped[list[Any]] = json_list_column()
+    case_type: Mapped[str] = mapped_column(String(80), nullable=False, default="functional")
+    generation_reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    coverage_gap_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    automation_readiness_json: Mapped[dict[str, Any]] = json_dict_column()
+    quality_assessment_json: Mapped[dict[str, Any]] = json_dict_column()
     ai_reason: Mapped[str] = mapped_column(Text, nullable=False)
     duplicate_of_case_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True),

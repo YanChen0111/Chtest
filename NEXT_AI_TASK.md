@@ -10,17 +10,15 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.7: add evidence-backed CaseGeneration fields so every
-generated case explains why it exists.
+Slice 47 Task 47.8: add CaseReviewAgent and CoverageGapAgent quality gates.
 
 Required output:
 
-1. Add the contract-required evidence/reason fields to GeneratedCaseCandidate
-   and its API/persistence path.
-2. Keep source card, retrieval run, evidence, and artifact links stable and
-   provider-neutral when cases are generated.
-3. Add focused CaseGeneration contract and golden tests, preserving review
-   gates and existing candidate lifecycle behavior.
+1. Define deterministic review and coverage quality findings for generated
+   candidates using persisted evidence and coverage dimensions.
+2. Keep findings reviewable, provider-neutral, and separate from approval state.
+3. Add focused agent mock/eval tests without introducing external model/runtime
+   dependencies.
 
 ## Previous Tasks Verified
 
@@ -47,6 +45,11 @@ Required output:
   contracts, safe configuration validation, provider-visible routing, and
   deterministic no-client/failure/invalid-candidate fallback. Focused suite is
   `46 passed`.
+- Added Alembic `20260715_0014` and evidence-backed GeneratedCaseCandidate
+  fields for covered requirement/risk ids, case type, generation reason, gap
+  notes, automation readiness, and quality assessment. Existing model output
+  remains backward compatible through deterministic defaults. CaseGeneration
+  and migration verification is `13 passed`.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -64,9 +67,8 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Every generated case must carry enough evidence and rationale for a test
-engineer to review its origin, coverage intent, and safety without reopening a
-provider-specific payload.
+Test engineers get deterministic quality findings that identify missing
+evidence, coverage gaps, and automation blockers before approving a case.
 
 ## Must Read
 
@@ -111,7 +113,7 @@ Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run focused CaseGeneration contract/golden tests, then:
+Run focused CaseReview/CoverageGap agent mock/eval tests, then:
 
 ```powershell
 git diff --check
@@ -122,9 +124,9 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Generated case candidates expose source/evidence rationale with stable ids.
+- Findings are deterministic for the same candidate/evidence snapshot.
 - Review and approval state gates remain unchanged.
-- Provider-neutral evidence links remain queryable from case generation logs.
+- Provider-neutral evidence links remain queryable from quality findings.
 - Prompt eligibility and freshness still exclude stale, unsafe, duplicate,
   archived, missing, or cross-project cards.
 - `git diff --check` passes.
@@ -132,10 +134,10 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 ## Commit Message
 
 ```text
-feat(cases): add evidence-backed generation fields
+feat(cases): add case quality agents
 ```
 
 ## Next Task
 
-After Task 47.7 is verified and committed, continue Task 47.8 with CaseReview
-and CoverageGap quality agents.
+After Task 47.8 is verified and committed, continue Task 47.9 with typed
+relationships and graph queries.

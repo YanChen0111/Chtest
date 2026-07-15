@@ -349,6 +349,13 @@ def list_candidates(session: Session, generation_task_id: uuid.UUID) -> list[Gen
                 items=candidate.source_knowledge_evidence_json,
             ),
             coverage_dimensions=candidate.coverage_dimensions_json,
+            covered_requirement_ids=candidate.covered_requirement_ids_json,
+            covered_risk_ids=candidate.covered_risk_ids_json,
+            case_type=candidate.case_type,
+            generation_reason=candidate.generation_reason,
+            coverage_gap_notes=candidate.coverage_gap_notes,
+            automation_readiness=candidate.automation_readiness_json,
+            quality_assessment=candidate.quality_assessment_json,
             ai_reason=candidate.ai_reason,
             status=candidate.status,
         )
@@ -514,6 +521,8 @@ def candidate_fields_complete(candidate: GeneratedCaseCandidate) -> bool:
             bool(candidate.steps_json),
             bool(candidate.expected_results_json),
             bool(candidate.requirement_refs_json),
+            bool(candidate.case_type),
+            bool(candidate.generation_reason),
             bool(candidate.ai_reason),
         ],
     )
@@ -695,6 +704,26 @@ def validate_case_generation_output(output: dict) -> None:
                 raise CaseGenerationSchemaInvalidError
         if "input_data" in case and not isinstance(case["input_data"], dict):
             raise CaseGenerationSchemaInvalidError
+        if "covered_requirement_ids" in case and not isinstance(case["covered_requirement_ids"], list):
+            raise CaseGenerationSchemaInvalidError
+        if "covered_risk_ids" in case and not isinstance(case["covered_risk_ids"], list):
+            raise CaseGenerationSchemaInvalidError
+        if "case_type" in case and (
+            not isinstance(case["case_type"], str) or not case["case_type"].strip()
+        ):
+            raise CaseGenerationSchemaInvalidError
+        if "generation_reason" in case and (
+            not isinstance(case["generation_reason"], str) or not case["generation_reason"].strip()
+        ):
+            raise CaseGenerationSchemaInvalidError
+        if "coverage_gap_notes" in case and case["coverage_gap_notes"] is not None and not isinstance(
+            case["coverage_gap_notes"],
+            str,
+        ):
+            raise CaseGenerationSchemaInvalidError
+        for key in ("automation_readiness", "quality_assessment"):
+            if key in case and not isinstance(case[key], dict):
+                raise CaseGenerationSchemaInvalidError
 
 
 def normalize_case_generation_knowledge_evidence(
@@ -944,6 +973,13 @@ def persist_case_generation_candidates(
                 risk_refs_json=case.get("risk_refs", []),
                 source_knowledge_evidence_json=case.get("source_knowledge_evidence", []),
                 coverage_dimensions_json=case_coverage_dimensions(case),
+                covered_requirement_ids_json=case.get("covered_requirement_ids", case["requirement_refs"]),
+                covered_risk_ids_json=case.get("covered_risk_ids", case.get("risk_refs", [])),
+                case_type=case.get("case_type", case.get("test_type", "functional")),
+                generation_reason=case.get("generation_reason", case["ai_reason"]),
+                coverage_gap_notes=case.get("coverage_gap_notes"),
+                automation_readiness_json=case.get("automation_readiness", {}),
+                quality_assessment_json=case.get("quality_assessment", {}),
                 ai_reason=case["ai_reason"],
             ),
         )

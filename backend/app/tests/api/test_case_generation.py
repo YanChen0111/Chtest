@@ -241,6 +241,11 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
     assert first_candidate["requirement_refs"]
     assert first_candidate["coverage_dimensions"]
     assert any(dimension["key"] == "positive" for dimension in first_candidate["coverage_dimensions"])
+    assert first_candidate["covered_requirement_ids"]
+    assert first_candidate["case_type"] == "functional"
+    assert first_candidate["generation_reason"] == first_candidate["ai_reason"]
+    assert first_candidate["automation_readiness"] == {}
+    assert first_candidate["quality_assessment"] == {}
     assert first_candidate["ai_reason"]
     assert first_candidate["status"] == "generated"
 
@@ -409,6 +414,9 @@ def test_start_case_generation_uses_saved_model_connection_when_request_omits_mo
         candidate = session.scalar(select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id))
         assert candidate is not None
         assert candidate.coverage_dimensions_json[0]["source"] == "model"
+        assert candidate.covered_requirement_ids_json == [str(requirement["id"])]
+        assert candidate.case_type == "functional"
+        assert candidate.generation_reason == candidate.ai_reason
 
 
 def test_start_case_generation_can_use_requirement_document_artifact(
