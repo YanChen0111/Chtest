@@ -19,6 +19,7 @@ export const useWorkbenchStore = defineStore('workbench', {
       { label: '报告中心', routeName: 'report-center', status: '就绪' },
       { label: '提示词 / 技能中心', routeName: 'prompt-skill-center', status: '就绪' },
       { label: 'RAG 知识库', routeName: 'knowledge-base', status: '就绪' },
+      { label: 'Knowledge Workbench', routeName: 'knowledge-workbench', status: '就绪' },
       { label: '设置', routeName: 'project-settings', status: '就绪' },
     ] satisfies NavigationItem[],
   }),

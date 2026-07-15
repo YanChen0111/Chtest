@@ -55,7 +55,7 @@ Chtest API or ORM contracts.
 | 47.8 Add CaseReviewAgent and CoverageGapAgent | done | Automatic domain/evidence/coverage quality gate | agent mock/eval tests |
 | 47.9 Add typed relationships and graph queries | done | Impact, gaps, and regression recommendation | relationship API/golden tests |
 | 47.10 Add reviewed feedback loop | done | Accepted/rejected/failure knowledge improves the project | feedback state/API tests |
-| 47.11 Build final RAG workbench | pending | Efficient ingestion, review, retrieval, graph, feedback, provider UX | focused frontend tests + build + browser smoke |
+| 47.11 Build final RAG workbench | done | Efficient ingestion, review, retrieval, graph, feedback, provider UX | 50 frontend tests + production build + desktop/mobile browser smoke |
 | 47.12 Add unified trace and global evidence search | pending | Logs and evidence are discoverable across pages | trace API/frontend tests + browser smoke |
 | 47.13 Refactor all pages around recent runs and named selectors | pending | Daily test throughput and workflow resumption | per-page focused tests + responsive browser smoke |
 | 47.14 Final eval and acceptance | pending | Prove quality gains and provider fallback | full focused suites + RAG eval fixture + `git diff --check` |

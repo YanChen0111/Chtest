@@ -4371,3 +4371,23 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Focused provider/extension/retrieval/PostgreSQL suite: `46 passed`.
 - `compileall` and `git diff --check`: passed.
+
+## 2026-07-15 Final RAG Workbench Frontend
+
+### Implemented
+
+- Added `/extension/knowledge-workbench` as a tester-first operational surface
+  for ingestion/review entry points, retrieval logs, graph coverage, feedback,
+  and provider health.
+- Added dense KPI/next-action sections, provider degraded-state visibility,
+  retrieval filtering, evidence/trace context, and responsive desktop/mobile
+  layouts.
+- Preserved HTTP status codes in API error messages so diagnostics retain the
+  original failure code.
+
+### Verification
+
+- Frontend suite: `25 test files / 50 tests passed`.
+- Production build passed; Vite emitted only the existing chunk-size warning.
+- Browser smoke passed on desktop and a `390x844` mobile viewport with no
+  visible overlap or unreachable workbench controls.

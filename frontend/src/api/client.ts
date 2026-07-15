@@ -99,7 +99,7 @@ export class ApiClient {
             : '';
       const errorCode = typeof record?.error_code === 'string' ? record.error_code : '';
       if (payloadMessage) {
-        message = payloadMessage;
+        message = `${message} (${payloadMessage})`;
       }
       if (errorCode) {
         message = `${message}（${errorCode}）`;
@@ -108,7 +108,7 @@ export class ApiClient {
       try {
         const text = (await response.clone().text()).trim();
         if (text) {
-          message = text.slice(0, 300);
+          message = `${message} (${text.slice(0, 300)})`;
         }
       } catch {
         // Keep the status-only fallback.

@@ -10,16 +10,17 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.11: build the final RAG workbench frontend.
+Slice 47 Task 47.12: add unified trace and global evidence search.
 
 Required output:
 
-1. Build efficient ingestion, card review, retrieval logs, graph, feedback, and
-   provider configuration views around the existing backend contracts.
-2. Optimize tester throughput with dense tables, filters, recent runs, clear
-   status, evidence links, and trace-friendly navigation.
-3. Add focused frontend tests, production build verification, and browser smoke
-   across desktop/mobile without changing backend contracts.
+1. Make retrieval, ingestion, feedback, and case-generation evidence searchable
+   from one trace-oriented surface.
+2. Preserve provider, mode, fallback, latency, evidence, and source-locator
+   context while navigating from a log row to its originating artifact/card.
+3. Add focused API/frontend tests, production build verification, and browser
+   smoke without changing backend contracts unless a missing trace contract is
+   proven by tests.
 
 ## Previous Tasks Verified
 
@@ -61,6 +62,14 @@ Required output:
 - Added Alembic `20260715_0016` and reviewed feedback APIs. Approval creates an
   extracted card only; card approval remains separate. Migration/API
   verification is `29 passed`.
+- Built the final RAG workbench at `/extension/knowledge-workbench` with KPI
+  cards, next-action links, provider health/degraded state, retrieval log
+  filters, evidence/trace columns, coverage summary, and responsive layouts.
+- Added focused `RagWorkbenchView` coverage and preserved HTTP status codes in
+  API errors so tester-facing diagnostics retain failures such as `502`.
+- Frontend verification: `25 test files / 50 tests passed`; production build
+  passed with the existing chunk-size warning; desktop and 390px mobile browser
+  smoke confirmed reachable controls and no visible overlap.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -131,17 +140,17 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Every RAG workflow is reachable and scannable from the workbench.
-- Retrieval logs expose provider, mode, fallback, latency, evidence, and trace.
-- Responsive layouts avoid overlap and preserve efficient controls.
-- Prompt eligibility and freshness still exclude stale, unsafe, duplicate,
-  archived, missing, or cross-project cards.
+- Global evidence search covers retrieval runs, ingestion artifacts, feedback,
+  cards, and generated-case trace links.
+- Search results preserve provider, mode, fallback, latency, evidence, and
+  source-locator context.
+- Empty, loading, error, and no-result states remain actionable and responsive.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(frontend): build final rag workbench
+feat(knowledge): add unified trace search
 ```
 
 ## Next Task

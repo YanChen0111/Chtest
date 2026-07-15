@@ -10370,3 +10370,18 @@ Task 47.10 is complete; next is Task 47.11 final RAG workbench frontend.
 - Approved feedback creates an `extracted` card only; rejected feedback creates
   no card and approved-card trust remains separately reviewed.
 - Migration/API verification: `29 passed`.
+
+## 2026-07-15 Slice 47.11 Final RAG Workbench
+
+Task 47.11 is complete and committed; next is Task 47.12 unified trace and
+global evidence search.
+
+- Added the tester-first `/extension/knowledge-workbench` route and navigation
+  item with KPI cards, next actions, provider health, retrieval filters,
+  evidence/trace columns, and coverage/graph summary.
+- Added focused component coverage and preserved HTTP status codes in
+  `frontend/src/api/client.ts` for actionable diagnostics.
+- Frontend verification: `25 test files / 50 tests passed`; production build
+  passed with the known chunk-size warning; desktop and `390x844` mobile smoke
+  passed.
+- Source `storage/chtest-dev.db` remains read-only and unchanged.
