@@ -4430,3 +4430,24 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Production build passed with the existing chunk-size warning.
 - Desktop and `390x844` browser smoke across the affected workflows found no
   horizontal overflow and confirmed reachable recent-run/empty-state controls.
+
+## 2026-07-15 Slice 47 Final Acceptance
+
+### Implemented
+
+- Added a provider-neutral final RAG eval fixture with two required items, one
+  distractor, one unsafe same-project item, and one cross-project item.
+- The fixture records deterministic recall, precision, safety exclusion, and
+  optional-provider fallback visibility without provider-native payloads.
+
+### Verification
+
+- Final focused backend acceptance: `69 passed`.
+- Frontend acceptance: `26 test files / 53 tests passed`; production build and
+  desktop/`390x844` browser smoke passed.
+- Fixture metrics: recall `1.0`, precision `1.0`, unsafe/cross-project
+  exclusion `1.0`; `provider_unavailable` fallback is degraded and visible.
+- Source DB hash remains
+  `d8fb34dc054cffc69675c92351ebfbdf6620e82dc76b31bcf7ee759f357a7e01`.
+- Slice 47 is complete. Known Windows runner and stale pre-Slice-47 golden
+  failures remain unrelated baseline issues.

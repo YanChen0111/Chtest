@@ -10418,3 +10418,17 @@ acceptance.
 - Verification: frontend `26 test files / 53 tests passed`; production build
   passed with the known chunk-size warning; desktop and `390x844` multi-page
   smoke passed without horizontal overflow.
+
+## 2026-07-15 Slice 47.14 Final Acceptance
+
+Slice 47 is complete; no Slice 47 implementation task remains.
+
+- Added final provider-neutral RAG eval fixture and isolated golden test.
+- Final focused backend acceptance: `69 passed`; frontend: `26 files / 53
+  tests`; build and responsive multi-page smoke passed.
+- Fixed-fixture metrics: recall `1.0`, precision `1.0`, unsafe/cross-project
+  exclusion `1.0`; optional provider fallback is visible and degraded.
+- Source DB remains unchanged at SHA256
+  `d8fb34dc054cffc69675c92351ebfbdf6620e82dc76b31bcf7ee759f357a7e01`.
+- Known unrelated full-suite baseline failures are Windows fake runner
+  `WinError 193` and stale golden inputs missing the decision-table gate.

@@ -6,20 +6,17 @@ Docker Desktop/WSL engine is unavailable.
 
 ## Current Slice
 
-Slice 47: Final Test Knowledge RAG System.
+Slice 47: Final Test Knowledge RAG System is complete.
 
 ## Current Task
 
-Slice 47 Task 47.14: run the final eval and acceptance.
+No active Slice 47 implementation task. Final acceptance is complete.
 
-Required output:
+Required output before further implementation:
 
-1. Run the complete Slice 47 focused backend/frontend suites and the final RAG
-   eval fixture against provider-neutral evidence contracts.
-2. Verify provider fallback, evidence precision/recall, trace safety, case
-   rationale completeness, reviewed feedback, and responsive tester workflows.
-3. Record accepted metrics, known unrelated baseline failures, and any genuine
-   blocker without changing product behavior merely to make evaluation pass.
+1. Select the next product slice or explicitly scoped bug from the product
+   priority; do not infer a broad roadmap expansion from Slice 47 completion.
+2. Preserve the final acceptance evidence and the read-only source database.
 
 ## Previous Tasks Verified
 
@@ -83,6 +80,12 @@ Required output:
 - Frontend verification after the multi-page refactor: `26 test files / 53
   tests passed`; production build passed with the existing chunk-size warning;
   desktop and `390x844` multi-page smoke found no horizontal overflow.
+- Added the final provider-neutral RAG eval fixture with two required cards, a
+  distractor, an unsafe same-project card, and a cross-project card. Fixture
+  metrics are recall `1.0`, precision `1.0`, and exclusion `1.0`; optional
+  provider unavailability remains visible as degraded fallback.
+- Final focused backend acceptance is `69 passed`; frontend remains `26 files /
+  53 tests`; source DB SHA256 remains unchanged.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -153,20 +156,16 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Final RAG eval proves required-card recall and provider-neutral evidence
-  precision without unsafe or cross-project leakage.
-- Provider fallback, trace safety, case rationale, reviewed feedback, and the
-  tester-facing resume workflows have passing evidence.
-- Known unrelated baseline failures are separated from Slice 47 regressions.
+- Slice 47 final acceptance is recorded in the slice document and memory.
+- No Slice 47 implementation work remains.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-test(knowledge): complete final rag acceptance
+No commit is pending for Slice 47 after the final acceptance commit.
 ```
 
 ## Next Task
 
-After Task 47.14 is verified and committed, close Slice 47 or record the first
-genuine acceptance blocker with exact reproduction evidence.
+Choose the next explicitly scoped product task before further implementation.

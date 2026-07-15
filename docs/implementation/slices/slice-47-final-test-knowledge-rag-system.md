@@ -58,7 +58,7 @@ Chtest API or ORM contracts.
 | 47.11 Build final RAG workbench | done | Efficient ingestion, review, retrieval, graph, feedback, provider UX | 50 frontend tests + production build + desktop/mobile browser smoke |
 | 47.12 Add unified trace and global evidence search | done | Logs and evidence are discoverable across pages | 27 backend API passes + frontend tests/build + desktop/mobile browser smoke |
 | 47.13 Refactor all pages around recent runs and named selectors | done | Daily test throughput and workflow resumption | 53 frontend tests + production build + desktop/mobile multi-page smoke |
-| 47.14 Final eval and acceptance | pending | Prove quality gains and provider fallback | full focused suites + RAG eval fixture + `git diff --check` |
+| 47.14 Final eval and acceptance | done | Prove quality gains and provider fallback | 69 focused backend passes + 53 frontend tests + final RAG eval + `git diff --check` |
 
 ## First Implementation Boundary
 
@@ -111,3 +111,22 @@ instead of an upgrade when the baseline is unknown.
 - Automation readiness and first-run pass rate.
 - Retrieval latency, fallback rate, stale-index rate, and provider failure rate.
 - Median clicks/time to resume a run and trace a failed conclusion to artifacts.
+
+## Final Acceptance Evidence
+
+- Final focused backend suite: `69 passed` across ingestion, retrieval,
+  PostgreSQL/optional providers, case evidence and quality, relationships,
+  feedback, trace, migrations, prompt eval, and both knowledge golden fixtures.
+- Frontend suite: `26 test files / 53 tests passed`; production build passed
+  with the existing chunk-size warning.
+- Final provider-neutral RAG fixture: required-card recall `1.0`, evidence
+  precision `1.0`, unsafe/cross-project exclusion `1.0`, and visible
+  `provider_unavailable` degraded fallback. These are fixed-fixture metrics, not
+  production-corpus claims.
+- Desktop and `390x844` browser smoke confirmed reachable resume/empty-state
+  controls and no horizontal overflow across the affected workflows.
+- Source `storage/chtest-dev.db` remained read-only and unchanged at SHA256
+  `d8fb34dc054cffc69675c92351ebfbdf6620e82dc76b31bcf7ee759f357a7e01`.
+- Known full-suite baseline failures remain separate: Windows fake executable
+  `WinError 193` and stale pre-Slice-47 golden fixtures missing
+  `decision_table_acknowledged=true`.
