@@ -24,9 +24,10 @@ from backend.app.modules.extension.schemas import (
     ToolDefinitionRead,
 )
 from backend.app.modules.projects.models import Project
+from backend.app.modules.knowledge.optional_providers import OPTIONAL_PROVIDER_TYPES
 
 
-ALLOWED_PROVIDER_TYPES = {"none", "stub", "deterministic_local", "postgres_hybrid"}
+ALLOWED_PROVIDER_TYPES = {"none", "stub", "deterministic_local", "postgres_hybrid", *OPTIONAL_PROVIDER_TYPES}
 ALLOWED_STATUSES = {
     "not_configured",
     "disabled",
@@ -45,6 +46,18 @@ POSTGRES_HYBRID_CONFIG_KEYS = {
     "text_search_config",
 }
 POSTGRES_HYBRID_SAFETY_KEYS = {"same_project_only", "require_allowed_for_prompt"}
+OPTIONAL_PROVIDER_CONFIG_KEYS = {
+    "collection_name",
+    "index_name",
+    "pipeline_name",
+    "retriever_name",
+    "retriever_mode",
+    "embedding_model",
+    "embedding_dim",
+    "top_k",
+    "min_score",
+}
+OPTIONAL_PROVIDER_SAFETY_KEYS = {"same_project_only", "require_allowed_for_prompt"}
 SECRET_OR_REMOTE_KEYS = {
     "api_key",
     "access_token",
@@ -310,6 +323,41 @@ def ensure_stub_only(data: KnowledgeAdapterUpdate) -> None:
             raise KnowledgeAdapterRuntimeNotAllowedError
         if not 0.0 <= min_similarity <= 1.0:
             raise KnowledgeAdapterRuntimeNotAllowedError
+        return
+
+    if data.provider_type in OPTIONAL_PROVIDER_TYPES:
+        if data.status not in {"configured", "indexing", "ready", "degraded", "failed", "disabled"}:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if not set(data.config).issubset(OPTIONAL_PROVIDER_CONFIG_KEYS):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if not set(data.safety_policy).issubset(OPTIONAL_PROVIDER_SAFETY_KEYS):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if contains_forbidden_key(data.config, SECRET_OR_REMOTE_KEYS) or contains_forbidden_key(
+            data.safety_policy,
+            SECRET_OR_REMOTE_KEYS,
+        ):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        raw_embedding_dim = data.config.get("embedding_dim", 64)
+        raw_top_k = data.config.get("top_k", 10)
+        raw_min_score = data.config.get("min_score", 0.0)
+        if any(isinstance(value, bool) for value in (raw_embedding_dim, raw_top_k, raw_min_score)):
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        try:
+            embedding_dim = int(raw_embedding_dim)
+            top_k = int(raw_top_k)
+            min_score = float(raw_min_score)
+        except (TypeError, ValueError) as exc:
+            raise KnowledgeAdapterRuntimeNotAllowedError from exc
+        if embedding_dim != raw_embedding_dim or not 16 <= embedding_dim <= 512:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if top_k != raw_top_k or not 1 <= top_k <= 50:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        if not 0.0 <= min_score <= 1.0:
+            raise KnowledgeAdapterRuntimeNotAllowedError
+        for key in ("collection_name", "index_name", "pipeline_name", "retriever_name", "retriever_mode", "embedding_model"):
+            value = data.config.get(key)
+            if value is not None and (not isinstance(value, str) or not 1 <= len(value) <= 160):
+                raise KnowledgeAdapterRuntimeNotAllowedError
         return
 
     if data.status not in {"not_configured", "disabled", "configured_stub"}:
@@ -612,7 +660,7 @@ def to_read(config: KnowledgeAdapterConfig, *, used_knowledge: bool = False) -> 
             "deterministic_local"
             if config.provider_type == "deterministic_local"
             else "hybrid"
-            if config.provider_type == "postgres_hybrid"
+            if config.provider_type in {"postgres_hybrid", *OPTIONAL_PROVIDER_TYPES}
             else None
         ),
         config=config.config_json,

@@ -249,6 +249,44 @@ def test_update_postgres_hybrid_adapter_accepts_only_local_safe_config(
     assert invalid_dimension.json()["error_code"] == "KNOWLEDGE_ADAPTER_RUNTIME_NOT_ALLOWED"
 
 
+def test_update_optional_provider_accepts_safe_contract_and_rejects_remote_runtime(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    project = create_project(_SessionLocal)
+    path = f"/api/projects/{project.id}/knowledge-adapter"
+
+    accepted = client.put(
+        path,
+        json_body={
+            "status": "ready",
+            "provider_type": "qdrant",
+            "config": {
+                "collection_name": "project-knowledge",
+                "embedding_model": "deterministic-hashing-v1",
+                "embedding_dim": 64,
+                "top_k": 8,
+                "min_score": 0.2,
+            },
+            "safety_policy": {"same_project_only": True, "require_allowed_for_prompt": True},
+        },
+    )
+    rejected = client.put(
+        path,
+        json_body={
+            "status": "ready",
+            "provider_type": "haystack",
+            "config": {"pipeline_name": "knowledge", "remote_url": "https://example.invalid"},
+        },
+    )
+
+    assert accepted.status_code == 200
+    assert accepted.json()["provider_type"] == "qdrant"
+    assert accepted.json()["retrieval_mode"] == "hybrid"
+    assert rejected.status_code == 422
+    assert rejected.json()["error_code"] == "KNOWLEDGE_ADAPTER_RUNTIME_NOT_ALLOWED"
+
+
 def test_get_knowledge_base_lists_context_artifacts_and_usage(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:

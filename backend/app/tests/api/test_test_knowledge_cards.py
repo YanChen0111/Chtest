@@ -970,6 +970,45 @@ def test_postgres_hybrid_adapter_degrades_to_keyword_on_sqlite(
     assert secret_query not in json.dumps(redacted)
 
 
+def test_optional_provider_without_client_degrades_to_keyword_without_vector_score(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, _SessionLocal = api_client
+    project_id, _artifact_id, _requirement_id, _cards = create_approved_test_knowledge(client)
+    configure = client.request(
+        "PUT",
+        f"/api/projects/{project_id}/knowledge-adapter",
+        {
+            "adapter_name": "default",
+            "status": "ready",
+            "provider_type": "qdrant",
+            "config": {"collection_name": "knowledge", "embedding_dim": 64, "top_k": 5},
+        },
+    )
+    assert configure.status_code == 200
+
+    response = client.post(
+        "/api/knowledge/retrieval-runs",
+        {
+            "project_id": project_id,
+            "query_text": "expired coupon checkout",
+            "retrieval_mode": "hybrid",
+            "approved_only": True,
+            "limit": 5,
+        },
+    )
+
+    assert response.status_code == 201
+    run = response.json()
+    assert run["provider_type"] == "qdrant"
+    assert run["retrieval_mode"] == "keyword"
+    assert run["degraded"] is True
+    assert run["fallback_reason"] == "provider_unavailable"
+    assert run["adapter_config_snapshot"]["provider_type"] == "qdrant"
+    assert run["items"]
+    assert all(item["vector_score"] is None for item in run["items"])
+
+
 def test_postgres_hybrid_native_result_normalizes_to_provider_neutral_evidence(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
     monkeypatch: pytest.MonkeyPatch,

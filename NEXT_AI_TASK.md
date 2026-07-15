@@ -10,24 +10,19 @@ Slice 47: Final Test Knowledge RAG System.
 
 ## Current Task
 
-Slice 47 Task 47.6: add optional Qdrant and Haystack/LlamaIndex provider
-contracts behind the provider-neutral KnowledgeAdapter boundary using fake
-clients only.
+Slice 47 Task 47.7: add evidence-backed CaseGeneration fields so every
+generated case explains why it exists.
 
 Required output:
 
-1. Define optional `qdrant`, `haystack`, and `llamaindex` provider configuration
-   and capability contracts without adding a required runtime dependency.
-2. Normalize fake provider matches into the existing KnowledgeRetrievalRun,
-   KnowledgeEvidence, Artifact, score, safety, lifecycle, and fallback shapes.
-3. Keep provider documents, payloads, node ids, collection schemas, and raw
-   scores out of public API, ORM, prompt, case, report, and evidence contracts.
-4. Add deterministic degraded/failed behavior and stable diagnostic snapshots
-   for unavailable or failing optional providers.
-5. Add focused provider contract tests with fake clients only. Do not start or
-   install Qdrant, Haystack, LlamaIndex, online embeddings, or cloud services.
+1. Add the contract-required evidence/reason fields to GeneratedCaseCandidate
+   and its API/persistence path.
+2. Keep source card, retrieval run, evidence, and artifact links stable and
+   provider-neutral when cases are generated.
+3. Add focused CaseGeneration contract and golden tests, preserving review
+   gates and existing candidate lifecycle behavior.
 
-## Previous Task Verified
+## Previous Tasks Verified
 
 - Added optional Alembic `20260714_0013`: PostgreSQL full-text GIN is always
   emitted; pgvector extension/native column/HNSW setup is capability-gated and
@@ -48,6 +43,10 @@ Required output:
   and the HNSW index. The application adapter returned a real hybrid match with
   `vector_score=1.0`; the limited database correctly reported no vector
   capability and never fabricated a vector score.
+- Added dependency-free optional Qdrant/Haystack/LlamaIndex fake-client
+  contracts, safe configuration validation, provider-visible routing, and
+  deterministic no-client/failure/invalid-candidate fallback. Focused suite is
+  `46 passed`.
 
 ## Task 47.5 Acceptance Evidence
 
@@ -65,8 +64,9 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can choose a scale or orchestration provider without changing
-the evidence, trace, safety, and review contracts used by the rest of Chtest.
+Every generated case must carry enough evidence and rationale for a test
+engineer to review its origin, coverage intent, and safety without reopening a
+provider-specific payload.
 
 ## Must Read
 
@@ -111,8 +111,7 @@ Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run focused optional-provider fake-client contract tests and provider-neutral
-retrieval API tests, then:
+Run focused CaseGeneration contract/golden tests, then:
 
 ```powershell
 git diff --check
@@ -123,11 +122,9 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Optional provider payloads never leak into public/core contracts.
-- Fake Qdrant/Haystack/LlamaIndex matches persist the same provider-neutral
-  run/evidence and Artifact shapes as PostgreSQL and deterministic fallback.
-- Unavailable/failing optional providers record actual degraded/failed state,
-  stable reasons, and no fabricated scores.
+- Generated case candidates expose source/evidence rationale with stable ids.
+- Review and approval state gates remain unchanged.
+- Provider-neutral evidence links remain queryable from case generation logs.
 - Prompt eligibility and freshness still exclude stale, unsafe, duplicate,
   archived, missing, or cross-project cards.
 - `git diff --check` passes.
@@ -135,10 +132,10 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 ## Commit Message
 
 ```text
-feat(knowledge): add optional provider contracts
+feat(cases): add evidence-backed generation fields
 ```
 
 ## Next Task
 
-After Task 47.6 is verified and committed, continue Task 47.7 with
-evidence-backed CaseGeneration fields.
+After Task 47.7 is verified and committed, continue Task 47.8 with CaseReview
+and CoverageGap quality agents.

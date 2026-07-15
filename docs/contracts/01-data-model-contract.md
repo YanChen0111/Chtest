@@ -885,14 +885,15 @@ configuration state only; it does not perform retrieval.
 
 Unique constraint: project_id + adapter_name.
 
-V1 KnowledgeAdapter rules:
+Pre-final RAG KnowledgeAdapter rules (before Final Test Knowledge promotion):
 
 - KnowledgeAdapterConfig is optional; missing config means `not_configured`.
-- `provider_type` must be `none` or `stub` in V1.
+- `provider_type` must be `none` or `stub` before the Final Test Knowledge
+  promotion rules below are active.
 - `config_json` must not contain API keys, provider credentials, vector database
   settings, embedding model settings, remote URLs, OAuth state, or MCP transport
   details.
-- KnowledgeAdapterConfig must not create vector indexes, chunk documents, embed
+- The pre-final surface must not create vector indexes, chunk documents, embed
   content, rank search results, or call external providers.
 - AI task responses must keep `used_knowledge=false` unless a future version
   implements a real KnowledgeAdapter runtime.

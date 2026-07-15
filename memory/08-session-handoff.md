@@ -10296,3 +10296,27 @@ Task 47.5 is complete; the next task is Slice 47 Task 47.6.
   never used for migration or smoke data.
 
 Docker Desktop/WSL remains unavailable, but it no longer blocks Task 47.5.
+
+## 2026-07-15 Slice 47.6 Optional Provider Contracts
+
+Current task:
+- Task 47.6 implementation is complete pending commit; next is Task 47.7.
+
+Implemented:
+- Added dependency-free Qdrant/Haystack/LlamaIndex fake-client contracts in
+  `backend/app/modules/knowledge/optional_providers.py`.
+- Normalization keeps only Chtest card UUIDs, bounded source locators, bounded
+  snippets, normalized component scores, and stable retrieval reasons.
+- Added deterministic capability snapshots and no-client/search-failure/
+  invalid-candidate reasons without persisting provider payloads or exception
+  messages.
+- Extended safe provider configuration and visible provider routing; optional
+  providers degrade to keyword retrieval when no client is registered.
+- Clarified the pre-final stub contract versus Final Test Knowledge provider
+  promotion rules in the API/data contracts.
+
+Verification:
+- Focused optional-provider, extension, retrieval, PostgreSQL adapter, and
+  migration suite: `46 passed`.
+- Temporary PostgreSQL service was stopped and its service/ACL cleanup was
+  completed after Task 47.5 acceptance.

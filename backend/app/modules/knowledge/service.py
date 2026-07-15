@@ -20,6 +20,7 @@ from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
 from backend.app.modules.extension.models import KnowledgeAdapterConfig
 from backend.app.modules.knowledge import postgres_adapter
+from backend.app.modules.knowledge.optional_providers import OPTIONAL_PROVIDER_TYPES, search_optional_provider
 from backend.app.modules.knowledge.models import (
     KnowledgeEvidence,
     KnowledgeIngestionRun,
@@ -1101,6 +1102,11 @@ def match_configured_knowledge_cards(
         and config.provider_type == "postgres_hybrid"
         and config.status in {"configured", "indexing", "ready", "degraded"}
     )
+    use_optional_provider = (
+        config is not None
+        and config.provider_type in OPTIONAL_PROVIDER_TYPES
+        and config.status in {"configured", "indexing", "ready", "degraded"}
+    )
     if use_postgres and not normalize_terms(query_text):
         capabilities = postgres_adapter.detect_capabilities(session)
         return KnowledgeMatchResult(
@@ -1117,6 +1123,57 @@ def match_configured_knowledge_cards(
                 "provider_type": "postgres_hybrid",
                 "config": dict(config.config_json),
                 "capabilities": capabilities.snapshot(),
+            },
+        )
+    if use_optional_provider and not normalize_terms(query_text):
+        return KnowledgeMatchResult(
+            candidate_count=0,
+            items=[],
+            vector_available=False,
+            actual_mode="keyword" if retrieval_mode in {"hybrid", "vector"} else retrieval_mode,
+            degraded=retrieval_mode in {"hybrid", "vector"},
+            fallback_reason=(
+                "query_redacted_or_empty" if retrieval_mode in {"hybrid", "vector"} else None
+            ),
+            provider_type=config.provider_type,
+            capability_snapshot={
+                "provider_type": config.provider_type,
+                "config": dict(config.config_json),
+                "available": False,
+                "searchable": False,
+                "reason": "query_redacted_or_empty",
+            },
+        )
+    if use_optional_provider:
+        provider_result = search_optional_provider(
+            config.provider_type,
+            None,
+            query_text=query_text,
+            limit=limit,
+            filters=filters,
+            retrieval_mode=retrieval_mode,
+        )
+        fallback = match_test_knowledge_cards(
+            session,
+            project_id=project_id,
+            query_text=query_text,
+            limit=limit,
+            approved_only=approved_only,
+            filters=filters,
+            retrieval_mode="keyword" if retrieval_mode in {"hybrid", "vector"} else retrieval_mode,
+        )
+        return KnowledgeMatchResult(
+            candidate_count=fallback.candidate_count,
+            items=fallback.items,
+            vector_available=False,
+            actual_mode=fallback.actual_mode,
+            degraded=True,
+            fallback_reason=provider_result.fallback_reason,
+            provider_type=config.provider_type,
+            capability_snapshot={
+                "provider_type": config.provider_type,
+                "config": dict(config.config_json),
+                **provider_result.capability_snapshot,
             },
         )
     if not use_postgres:
@@ -1323,9 +1380,9 @@ def create_knowledge_retrieval_run(
     validate_retrieval_input(data.query_text, filters)
     adapter_config = active_knowledge_adapter_config(session, data.project_id, data.adapter_name)
     configured_provider = (
-        "postgres_hybrid"
+        adapter_config.provider_type
         if adapter_config is not None
-        and adapter_config.provider_type == "postgres_hybrid"
+        and adapter_config.provider_type in {"postgres_hybrid", *OPTIONAL_PROVIDER_TYPES}
         and adapter_config.status in {"configured", "indexing", "ready", "degraded"}
         else "deterministic_local"
     )

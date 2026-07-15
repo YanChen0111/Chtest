@@ -4269,3 +4269,24 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 47.6: optional Qdrant and Haystack/LlamaIndex provider contracts using
   fake clients only.
+
+## 2026-07-15 Optional Provider Contracts
+
+### Implemented
+
+- Added dependency-free `optional_providers` contracts for Qdrant, Haystack,
+  and LlamaIndex-shaped fake clients. Provider point/document/node ids,
+  payloads, and raw scores are discarded at normalization time.
+- Added bounded score normalization, safe source locators, stable capability
+  snapshots, and deterministic `provider_unavailable`,
+  `provider_search_failed`, and `provider_candidate_unavailable` reasons.
+- Extended KnowledgeAdapter configuration validation and retrieval routing so
+  optional providers remain visible as the configured provider and degrade to
+  keyword evidence when no client is installed.
+- Clarified the contract boundary between pre-final stub rules and promoted
+  Final Test Knowledge provider rules.
+
+### Verification
+
+- Focused provider/extension/retrieval/PostgreSQL suite: `46 passed`.
+- `compileall` and `git diff --check`: passed.

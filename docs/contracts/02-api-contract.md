@@ -495,7 +495,10 @@ Response 200 returns KnowledgeAdapter read model.
 
 Hard rules:
 
-- `provider_type` must be `none` or `stub` in V1.
+- `provider_type` must be `none` or `stub` before Final Test Knowledge
+  promotion. The promoted `postgres_hybrid`, `qdrant`, `haystack`, and
+  `llamaindex` adapters are governed by the provider-neutral rules in section
+  2.14.
 - `provider_type=deterministic_local` is allowed only for the V2 Slice 19 local
   retrieval stub.
 - Secret-like fields, remote provider URLs, vector DB settings, embedding model
@@ -963,6 +966,15 @@ records `retrieval_mode=keyword`, `degraded=true`, and a stable fallback reason
 while preserving the same run/evidence response contract. SQLite uses this
 provider configuration only as a deterministic capability fallback and never
 claims native vector support.
+
+Optional `qdrant`, `haystack`, and `llamaindex` providers use the same
+provider-neutral run/evidence response. Their fake-client contract may report
+only normalized card ids, bounded source locators, and scores in the inclusive
+`0..1` range. Provider point/document/node ids, payloads, collection or
+pipeline names, and raw scores are private adapter details. A missing client
+records `degraded=true`, `retrieval_mode=keyword`, and
+`fallback_reason=provider_unavailable`; a client exception records the stable
+`provider_search_failed` reason without persisting the exception message.
 
 ### 2.14.8 List And Read KnowledgeRetrievalRuns
 
