@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import io
 import json
 import uuid
 from collections.abc import Iterator
@@ -8,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from openpyxl import Workbook
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -174,6 +177,44 @@ def test_create_context_artifact_writes_file_and_artifact_row(
         assert artifact.owner_entity_id == project.id
         assert artifact.sha256 == body["sha256"].removeprefix("sha256:")
         assert artifact.metadata_json["allowed_for_prompt"] is True
+
+
+def test_create_xlsx_context_artifact_persists_source_and_derived_text(
+    api_client: tuple[ASGIClient, sessionmaker[Session], Path],
+) -> None:
+    client, SessionLocal, artifact_root = api_client
+    project = create_project(SessionLocal, name="Spreadsheet")
+    workbook = Workbook()
+    workbook.active.title = "Limits"
+    workbook.active.append(["Current", "Fallback"])
+    workbook.active.append([32, "offline"])
+    payload = io.BytesIO()
+    workbook.save(payload)
+
+    response = client.post(
+        "/api/context-artifacts",
+        json_body={
+            "project_id": str(project.id),
+            "title": "charger-limits.xlsx",
+            "artifact_type": "context_xlsx",
+            "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "content_base64": base64.b64encode(payload.getvalue()).decode("ascii"),
+            "source_ref": "file:charger-limits.xlsx",
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["artifact_type"] == "context_text"
+    assert body["mime_type"] == "text/plain"
+    assert body["metadata"]["source_binary_mime_type"].endswith("spreadsheetml.sheet")
+    assert body["metadata"]["derived_parser"] == "openpyxl"
+    assert "# Sheet: Limits" in (artifact_root / body["file_path"]).read_text()
+
+    with SessionLocal() as session:
+        source_artifacts = session.query(Artifact).filter(Artifact.artifact_type == "source_xlsx").all()
+        assert len(source_artifacts) == 1
+        assert (artifact_root / source_artifacts[0].file_path).read_bytes() == payload.getvalue()
 
 
 def test_list_context_artifacts_returns_only_project_context_items(

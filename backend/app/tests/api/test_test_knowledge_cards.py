@@ -302,6 +302,7 @@ def test_retrieve_test_knowledge_card_evidence(
         {"project_id": project_id, "source_artifact_id": artifact_id},
     )
     assert extract_response.status_code == 201
+    approve_cards(client, project_id, extract_response.json()["items"])
 
     response = client.post(
         "/api/test-knowledge/cards/retrieve",
@@ -318,23 +319,15 @@ def test_retrieve_test_knowledge_card_evidence(
     assert first["score"] >= 1
     assert "expired" in first["matched_terms"]
     assert first["allowed_for_prompt"] is True
-    assert first["status"] == "extracted"
+    assert first["status"] == "approved"
 
     approved_only_response = client.post(
         "/api/test-knowledge/cards/retrieve",
         {"project_id": project_id, "query_text": "expired coupon checkout", "limit": 3, "approved_only": True},
     )
     assert approved_only_response.status_code == 200
-    assert approved_only_response.json()["total"] == 0
-
-    approve_cards(client, project_id, extract_response.json()["items"])
-    approved_response = client.post(
-        "/api/test-knowledge/cards/retrieve",
-        {"project_id": project_id, "query_text": "expired coupon checkout", "limit": 3, "approved_only": True},
-    )
-    assert approved_response.status_code == 200
-    assert approved_response.json()["total"] >= 1
-    assert approved_response.json()["items"][0]["status"] == "approved"
+    assert approved_only_response.json()["total"] >= 1
+    assert approved_only_response.json()["items"][0]["status"] == "approved"
 
 
 def test_extract_all_test_knowledge_cards_from_prompt_eligible_context(
@@ -366,6 +359,7 @@ def test_rebuild_test_knowledge_embedding_index_and_hybrid_retrieval(
     )
     assert extract_response.status_code == 201
     created_count = extract_response.json()["created_count"]
+    approve_cards(client, project_id, extract_response.json()["items"])
 
     rebuild_response = client.post(
         "/api/test-knowledge/index/rebuild",

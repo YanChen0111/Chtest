@@ -240,7 +240,7 @@ describe('KnowledgeBaseView', () => {
     const readinessText = wrapper.find('[data-test="knowledge-readiness-strip"]').text().replace(/\s+/g, ' ');
     expect(readinessText).toContain('Approved 0');
     expect(readinessText).toContain('Needs Review 1');
-    expect(readinessText).toContain('Prompt Ready 1');
+    expect(readinessText).toContain('Prompt Ready 0');
     expect(readinessText).toContain('Index Gap 0');
     expect(wrapper.text()).toContain('no_external_vector_runtime');
     expect(wrapper.text()).not.toContain('Provider 配置');
@@ -342,7 +342,6 @@ describe('KnowledgeBaseView', () => {
   it('uploads context artifacts, enables local retrieval, and runs retrieval tests', async () => {
     let uploadedBody: unknown = null;
     let adapterBody: unknown = null;
-    let retrievalBody: unknown = null;
     let extractionBody: unknown = null;
     let knowledgeCardRetrievalBody: unknown = null;
     let reviewBody: unknown = null;
@@ -598,33 +597,6 @@ describe('KnowledgeBaseView', () => {
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         );
       }
-      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/knowledge-adapter/retrieve') && init?.method === 'POST') {
-        retrievalBody = JSON.parse(String(init.body));
-        return new Response(
-          JSON.stringify({
-            adapter_name: 'default',
-            retrieval_mode: 'deterministic_local',
-            query_text: 'coupon expired checkout',
-            query_terms: ['coupon', 'expired', 'checkout'],
-            used_knowledge: true,
-            used_context_artifact_ids: ['ctx-uploaded'],
-            results: [
-              {
-                context_artifact_id: 'ctx-uploaded',
-                title: 'coupon-api-notes.md',
-                source_ref: 'manual:coupon-api-notes.md',
-                score: 3,
-                matched_terms: ['coupon', 'expired', 'checkout'],
-                snippet: 'Expired coupon validation blocks checkout.',
-                sha256: 'sha256:uploaded',
-                redaction_applied: false,
-                allowed_for_prompt: true,
-              },
-            ],
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        );
-      }
       return new Response('not found', { status: 404 });
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -676,7 +648,7 @@ describe('KnowledgeBaseView', () => {
       }),
     );
     expect(wrapper.text()).toContain('BoundaryCondition: expired coupon checkout');
-    expect(wrapper.text()).toContain('Prompt-ready knowledge cards missing index: 1');
+    expect(wrapper.text()).not.toContain('Prompt-ready knowledge cards missing index: 1');
     expect(wrapper.text()).toContain('新增 1，跳过 0');
 
     await wrapper.find('[data-test="approve-knowledge-card"]').trigger('click');
@@ -737,10 +709,12 @@ describe('KnowledgeBaseView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(retrievalBody).toEqual(
+    expect(knowledgeCardRetrievalBody).toEqual(
       expect.objectContaining({
+        project_id: '00000000-0000-0000-0000-000000000101',
         query_text: 'coupon expired checkout',
-        adapter_name: 'default',
+        limit: 5,
+        approved_only: true,
       }),
     );
     expect(wrapper.text()).toContain('检索词');

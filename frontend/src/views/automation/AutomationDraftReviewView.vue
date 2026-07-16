@@ -70,10 +70,11 @@
           <a-checkbox v-model="form.useKnowledge">结合 RAG 知识库</a-checkbox>
           <a-button
             data-test="generate-plan"
-            html-type="submit"
+            html-type="button"
             type="primary"
             :disabled="!form.testCaseId"
             :loading="store.loading"
+            @click="submitPlan"
           >
             生成自动化方案
           </a-button>
@@ -706,6 +707,7 @@ onMounted(async () => {
   if (store.loadLatestApprovedTestCaseContext()) {
     form.testCaseId = store.testCaseId;
   }
+  await store.restoreLatestAutomationDraft();
   await store.loadReviewerAssets();
 });
 </script>

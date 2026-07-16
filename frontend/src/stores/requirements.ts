@@ -12,7 +12,12 @@ import {
   type RequirementReviewRead,
   type RequirementReviewStartRead,
 } from '../api/requirements';
-import { DEFAULT_PROJECT_ID, saveLatestRequirementDocumentContext, saveLatestRequirementReviewContext } from './workflowContext';
+import {
+  DEFAULT_PROJECT_ID,
+  getLatestRequirementReviewContext,
+  saveLatestRequirementDocumentContext,
+  saveLatestRequirementReviewContext,
+} from './workflowContext';
 
 export const useRequirementsStore = defineStore('requirements', {
   state: () => ({
@@ -66,12 +71,31 @@ export const useRequirementsStore = defineStore('requirements', {
           projectId: this.projectId,
           requirementId: requirement.id,
           requirementReviewId: this.review.id,
+          requirement,
+          review: this.review,
         });
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '需求评审失败';
       } finally {
         this.loading = false;
       }
+    },
+    restoreLatestRequirementReview() {
+      const context = getLatestRequirementReviewContext();
+      if (!context?.requirement || !context.review) {
+        return false;
+      }
+      if (
+        context.requirement.id !== context.requirementId ||
+        context.review.id !== context.requirementReviewId ||
+        context.review.requirement_id !== context.requirementId
+      ) {
+        return false;
+      }
+      this.projectId = context.projectId;
+      this.requirement = context.requirement;
+      this.review = context.review;
+      return true;
     },
     async loadRequirementDocuments() {
       this.errorMessage = '';

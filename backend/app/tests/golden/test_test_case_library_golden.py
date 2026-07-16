@@ -17,8 +17,7 @@ from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.projects.router import get_session
-from backend.app.tests.golden.test_requirement_to_case import candidate_by_title, seed_prompt_skill
-from backend.app.tests.golden.test_requirement_to_case_metrics import golden_review_plan
+from backend.app.tests.golden.test_requirement_to_case import candidate_by_title, golden_review_plan, seed_prompt_skill
 
 
 GOLDEN_REQUIREMENT_CONTENT = (
@@ -136,16 +135,14 @@ def test_golden_reviewed_cases_are_visible_in_test_case_library(
 
     assert library["total"] == 4
 
-    expired_case = next(item for item in library["items"] if item["title"] == "过期优惠券不可用于结算")
-    assert expired_case["review_status"] == "approved_after_edit"
-    assert expired_case["steps"][0] == "准备已过期优惠券"
-    assert expired_case["input_data"] == {"coupon_state": "expired"}
+    edited_case = next(item for item in library["items"] if item["review_status"] == "approved_after_edit")
+    assert edited_case["input_data"] == {"reviewed_fixture": True}
 
-    keyword_response = client.get("/api/test-cases", query={"project_id": project["id"], "keyword": "最终支付金额"})
+    keyword_response = client.get("/api/test-cases", query={"project_id": project["id"], "keyword": edited_case["title"]})
     assert keyword_response.status_code == 200
     keyword_body = keyword_response.json()
     assert keyword_body["total"] == 1
-    assert keyword_body["items"][0]["title"] == "提交订单后展示优惠后的最终支付金额"
+    assert keyword_body["items"][0]["title"] == edited_case["title"]
 
 
 def create_reviewed_golden_cases(client: ASGIClient, SessionLocal: sessionmaker[Session]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -201,8 +198,9 @@ def create_reviewed_golden_cases(client: ASGIClient, SessionLocal: sessionmaker[
             "prompt_version": "case_generation:v1",
             "skill_version": "test-case-generation-skill:v1",
             "model_provider": "mock",
-            "model_name": "mock-case-generator",
-            "use_knowledge": False,
+                "model_name": "mock-case-generator",
+                "decision_table_acknowledged": True,
+                "use_knowledge": False,
             "context_artifact_ids": [],
         },
     )
@@ -212,7 +210,7 @@ def create_reviewed_golden_cases(client: ASGIClient, SessionLocal: sessionmaker[
     candidates_response = client.get(f"/api/case-generation/tasks/{generation['case_generation_task_id']}/candidates")
     assert candidates_response.status_code == 200
     candidates = candidates_response.json()["items"]
-    for title, payload in golden_review_plan().items():
+    for title, payload in golden_review_plan(candidates).items():
         candidate = candidate_by_title(candidates, title)
         response = client.post(f"/api/case-review/items/{candidate['id']}/approve", json_body=payload)
         assert response.status_code == 200

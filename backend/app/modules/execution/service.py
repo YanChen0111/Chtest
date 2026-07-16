@@ -10,6 +10,11 @@ from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.models import Artifact
 from backend.app.modules.automation.models import AutomationDraft
+from backend.app.modules.automation.service import (
+    AutomationDraftQualityGateError,
+    automation_draft_quality_gate,
+    validate_automation_draft_approval,
+)
 from backend.app.modules.execution.models import TestResult, TestRun
 from backend.app.modules.execution.jmeter_runner import (
     JMeterRunner,
@@ -68,6 +73,13 @@ def create_test_run_from_draft(session: Session, data: TestRunCreateRequest) -> 
         raise TestRunInvalidInputError
     if draft.status != "approved":
         raise TestRunInvalidInputError
+    if draft.ai_task is not None:
+        try:
+            validate_automation_draft_approval(draft)
+            if automation_draft_quality_gate(draft)["execution_evidence_level"] != "reviewed_candidate":
+                raise TestRunInvalidInputError
+        except AutomationDraftQualityGateError as exc:
+            raise TestRunInvalidInputError from exc
     if data.runner_mode == "playwright_local":
         return create_playwright_test_run_from_draft(session, data, draft)
     if draft.target_framework != "pytest":

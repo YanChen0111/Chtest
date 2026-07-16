@@ -235,10 +235,12 @@ export interface TestKnowledgeIndexRebuildRead {
 export interface ContextArtifactCreateRequest {
   readonly project_id: string;
   readonly title: string;
-  readonly artifact_type: 'context_markdown' | 'context_text';
-  readonly mime_type: 'text/markdown' | 'text/plain';
-  readonly content: string;
+  readonly artifact_type: 'context_markdown' | 'context_text' | 'context_pdf' | 'context_xlsx' | 'context_image';
+  readonly mime_type: string;
+  readonly content?: string;
+  readonly content_base64?: string;
   readonly source_ref: string;
+  readonly ocr_language?: string;
 }
 
 export interface ContextArtifactRead {

@@ -229,11 +229,7 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
     assert candidates_response.status_code == 200
     candidates = candidates_response.json()
     assert candidates["total"] >= 5
-    titles = {candidate["title"] for candidate in candidates["items"]}
-    assert "可用优惠券可成功抵扣订单金额" in titles
-    first_candidate = next(
-        candidate for candidate in candidates["items"] if candidate["title"] == "可用优惠券可成功抵扣订单金额"
-    )
+    first_candidate = next(candidate for candidate in candidates["items"] if candidate["title"].startswith("Main workflow:"))
     assert first_candidate["priority"] == "P0"
     assert first_candidate["test_type"] == "functional"
     assert first_candidate["steps"]
@@ -267,8 +263,35 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
 
 def test_case_generation_marks_wrong_domain_mock_output_failed(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client, SessionLocal = api_client
+
+    def fake_run_ai_task(session: Session, _store: LocalArtifactStore, job: Any) -> None:
+        ai_task = session.get(AITask, job.ai_task_id)
+        assert ai_task is not None
+        ai_task.status = "succeeded"
+        ai_task.output_json = {
+            "cases": [
+                {
+                    "title": "Expired coupon cannot be used at checkout",
+                    "priority": "P0",
+                    "test_type": "functional",
+                    "precondition": "A customer owns an expired coupon.",
+                    "steps": ["Open checkout", "Select the expired coupon"],
+                    "expected_results": ["Coupon selection is rejected."],
+                    "requirement_refs": ["REQ-COUPON-001"],
+                    "coverage_dimensions": [{"key": "negative", "evidence": "Expired coupon rejection."}],
+                    "ai_reason": "Cover coupon expiration behavior.",
+                },
+            ],
+            "used_knowledge": False,
+            "used_context_artifact_ids": [],
+        }
+        session.add(ai_task)
+        session.commit()
+
+    monkeypatch.setattr("backend.app.modules.cases.service.run_ai_task", fake_run_ai_task)
     seed_prompt_skill(SessionLocal)
     project = client.post("/api/projects", json_body={"name": "Charging System"}).json()
     requirement = client.post(

@@ -150,6 +150,9 @@ describe('NewmanExecutionView', () => {
     expect(wrapper.text()).toContain('API 执行');
     expect(wrapper.text()).toContain('TestCommand ID');
     expect(wrapper.text()).not.toContain('AutomationDraft ID');
+    await wrapper.find('[data-test="execution-source-id"] input').setValue(
+      '00000000-0000-0000-0000-000000000321',
+    );
     await wrapper.find('form').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();

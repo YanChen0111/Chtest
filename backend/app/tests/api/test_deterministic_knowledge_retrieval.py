@@ -18,9 +18,20 @@ from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.ai_runtime.schemas import ContextArtifactCreate
 from backend.app.modules.ai_runtime.service import create_context_artifact
 from backend.app.modules.extension import service
+from backend.app.modules.knowledge import service as knowledge_service
 from backend.app.modules.extension.models import KnowledgeAdapterConfig
 from backend.app.modules.projects.models import Project, Workspace
 from backend.app.modules.projects.router import get_session
+
+
+def test_normalize_terms_splits_mixed_language_tokens() -> None:
+    terms = knowledge_service.normalize_terms("block fallback" + "\u652f\u6301" + " 32A Wi-Fi")
+
+    assert "fallback" in terms
+    assert "\u652f\u6301" in terms
+    assert "32a" in terms
+    assert "wi" in terms
+    assert "fi" in terms
 
 
 class ASGIResponse:

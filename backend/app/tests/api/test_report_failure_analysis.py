@@ -428,6 +428,10 @@ def test_create_automation_execution_report_api_writes_evidence_artifacts() -> N
             if artifact["id"] == created["evidence_manifest_artifact_id"]
         )
         assert manifest["metadata_json"]["manifest_kind"] == "evidence_manifest"
+        for artifact in body["artifacts"]:
+            download = client.get(f"/api/artifacts/{artifact['id']}/download")
+            assert download.status_code == 200
+            assert len(download.body) == artifact["size_bytes"]
     finally:
         app.dependency_overrides.clear()
 

@@ -79,7 +79,8 @@ def test_case_generator_returns_golden_candidate_shape() -> None:
     assert response.status == "succeeded"
     assert len(response.output_json["cases"]) >= 5
     first_case = response.output_json["cases"][0]
-    assert first_case["title"] == "可用优惠券可成功抵扣订单金额"
+    assert first_case["title"].startswith("Main workflow:")
+    assert "优惠券结算规则" in first_case["title"]
     assert first_case["priority"] == "P0"
     assert first_case["steps"]
     assert first_case["expected_results"]

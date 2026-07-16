@@ -160,6 +160,28 @@ def context_artifact_secret_detected() -> HTTPException:
     )
 
 
+def context_artifact_extraction_failed() -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={
+            "error_code": "CONTEXT_ARTIFACT_EXTRACTION_FAILED",
+            "message": "Document content could not be extracted safely.",
+            "details": {},
+        },
+    )
+
+
+def context_artifact_extractor_unavailable() -> HTTPException:
+    return HTTPException(
+        status_code=503,
+        detail={
+            "error_code": "CONTEXT_ARTIFACT_EXTRACTOR_UNAVAILABLE",
+            "message": "The required document extractor is not available on this host.",
+            "details": {},
+        },
+    )
+
+
 def model_config_invalid(message: str) -> HTTPException:
     return HTTPException(
         status_code=422,
@@ -341,6 +363,10 @@ def create_context_artifact(
         raise context_artifact_too_large() from exc
     except service.ContextArtifactSecretDetectedError as exc:
         raise context_artifact_secret_detected() from exc
+    except service.ContextArtifactExtractorUnavailableError as exc:
+        raise context_artifact_extractor_unavailable() from exc
+    except service.ContextArtifactExtractionError as exc:
+        raise context_artifact_extraction_failed() from exc
 
     return context_artifact_read(artifact)
 

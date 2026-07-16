@@ -14,7 +14,10 @@
     </div>
 
     <a-alert v-if="store.errorMessage" data-test="knowledge-base-error" type="error" :content="store.errorMessage" show-icon />
+    <p v-if="store.errorMessage" class="operation-message operation-message--error">{{ store.errorMessage }}</p>
     <a-button v-if="store.errorMessage" data-test="retry-knowledge-base" size="small" @click="store.loadExtensionSurface()">Retry loading</a-button>
+    <a-alert v-if="store.successMessage" data-test="knowledge-base-success" type="success" :content="store.successMessage" show-icon />
+    <p v-if="store.successMessage" class="operation-message operation-message--success">{{ store.successMessage }}</p>
 
     <div class="knowledge-metrics">
       <a-card class="settings-panel" :bordered="false">
@@ -118,7 +121,7 @@
                 class="knowledge-file-input"
                 data-test="knowledge-file"
                 type="file"
-                accept=".md,.markdown,.txt,text/markdown,text/plain"
+                accept=".md,.markdown,.txt,.csv,.json,.yaml,.yml,.pdf,.xlsx,.jpg,.jpeg,.png,.webp,.tif,.tiff,text/markdown,text/plain,text/csv,application/json,application/yaml,text/yaml,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*"
                 @change="handleKnowledgeFileChange"
               />
             </label>
@@ -388,7 +391,7 @@ const store = useExtensionStore();
 const knowledgeForm = reactive({
   title: 'coupon-api-notes.md',
   sourceRef: 'manual:coupon-api-notes.md',
-  artifactType: 'context_markdown' as 'context_markdown' | 'context_text',
+  artifactType: 'context_markdown' as 'context_markdown' | 'context_text' | 'context_pdf' | 'context_xlsx' | 'context_image',
   content: '# Coupon API Notes\nCoupons are validated before order submit.',
 });
 const retrievalQuery = ref('coupon expired checkout');
@@ -507,10 +510,48 @@ async function handleKnowledgeFileChange(event: Event) {
   if (!file) {
     return;
   }
-  const isText = file.name.toLowerCase().endsWith('.txt') || file.type === 'text/plain';
+  const extension = file.name.toLowerCase().split('.').pop() ?? '';
+  const textExtensions = new Set(['md', 'markdown', 'txt', 'csv', 'json', 'yaml', 'yml']);
+  const binaryType = extension === 'pdf' || file.type === 'application/pdf'
+    ? 'context_pdf'
+    : extension === 'xlsx' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ? 'context_xlsx'
+      : file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'tif', 'tiff'].includes(extension)
+        ? 'context_image'
+        : null;
+  if (!textExtensions.has(extension) && !file.type.startsWith('text/') && !binaryType) {
+    store.errorMessage = 'Supported formats are Markdown, TXT, CSV, JSON, YAML, PDF, XLSX and common images.';
+    input.value = '';
+    return;
+  }
   knowledgeForm.title = file.name;
   knowledgeForm.sourceRef = `file:${file.name}`;
-  knowledgeForm.artifactType = isText ? 'context_text' : 'context_markdown';
+  if (binaryType) {
+    const contentBase64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = typeof reader.result === 'string' ? reader.result : '';
+        resolve(result.includes(',') ? result.split(',', 2)[1] : result);
+      };
+      reader.onerror = () => reject(reader.error ?? new Error('Failed to read file.'));
+      reader.readAsDataURL(file);
+    });
+    void store.uploadContextArtifact({
+      title: file.name,
+      sourceRef: `file:${file.name}`,
+      artifactType: binaryType,
+      contentBase64,
+      mimeType: file.type || (binaryType === 'context_pdf'
+        ? 'application/pdf'
+        : binaryType === 'context_xlsx'
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : 'image/png'),
+      ocrLanguage: 'eng+chi_sim',
+    });
+    input.value = '';
+    return;
+  }
+  knowledgeForm.artifactType = extension === 'md' || extension === 'markdown' ? 'context_markdown' : 'context_text';
   knowledgeForm.content = await file.text();
 }
 

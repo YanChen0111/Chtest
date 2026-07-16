@@ -20,7 +20,7 @@ def test_golden_reviewed_case_produces_approved_automation_draft_without_executi
 ) -> None:
     client, SessionLocal = api_client
     project, library = create_reviewed_golden_cases(client, SessionLocal)
-    expired_case = next(item for item in library["items"] if item["title"] == "过期优惠券不可用于结算")
+    expired_case = next(item for item in library["items"] if item["review_status"] == "approved_after_edit")
 
     create_response = client.post(
         "/api/automation/drafts",
@@ -43,7 +43,7 @@ def test_golden_reviewed_case_produces_approved_automation_draft_without_executi
     draft = get_response.json()
     assert draft["status"] == "draft_generated"
     assert draft["target_framework"] == "pytest"
-    assert "过期优惠券不可用于结算" in draft["draft_code"]
+    assert expired_case["title"] in draft["draft_code"]
     assert draft["suggested_file_path"].startswith("tests/test_")
     assert draft["execution_notes"]
     assert draft["risk_notes"]

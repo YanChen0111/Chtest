@@ -17,7 +17,11 @@ import {
 import { listTestCases, type TestCaseListItem } from '../api/cases';
 import { getProjectSettings, type ProjectTestCommand } from '../api/projects';
 import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
-import { getLatestApprovedTestCaseContext } from './workflowContext';
+import {
+  getLatestApprovedTestCaseContext,
+  getLatestAutomationDraftContext,
+  saveLatestAutomationDraftContext,
+} from './workflowContext';
 
 const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
 
@@ -124,6 +128,7 @@ export const useAutomationStore = defineStore('automation', {
         this.createdDraft = await generateAutomationDraftFromPlan(this.plan.id);
         this.plan = { ...this.plan, status: 'draft_generated' };
         this.draft = await getAutomationDraft(this.createdDraft.automation_draft_id);
+        this.rememberCurrentDraft();
         await Promise.all([this.loadCurrentPlanReviewHistory(), this.loadCurrentDraftReviewHistory()]);
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿生成失败';
@@ -146,6 +151,7 @@ export const useAutomationStore = defineStore('automation', {
           skill_version: 'automation-draft-skill:v1',
         });
         this.draft = await getAutomationDraft(this.createdDraft.automation_draft_id);
+        this.rememberCurrentDraft();
         await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿生成失败';
@@ -169,6 +175,7 @@ export const useAutomationStore = defineStore('automation', {
           review_comment: reviewComment,
         });
         this.draft = { ...this.draft, status: this.lastReview.status, review_comment: reviewComment };
+        this.rememberCurrentDraft();
         await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿编辑失败';
@@ -186,12 +193,44 @@ export const useAutomationStore = defineStore('automation', {
       try {
         this.lastReview = await approveAutomationDraft(this.draft.id, reviewComment);
         this.draft = { ...this.draft, status: this.lastReview.status, review_comment: reviewComment };
+        this.rememberCurrentDraft();
         await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿审批失败';
       } finally {
         this.loading = false;
       }
+    },
+    async restoreLatestAutomationDraft() {
+      const context = getLatestAutomationDraftContext();
+      if (!context || context.projectId !== this.projectId) {
+        return false;
+      }
+      this.testCaseId = context.testCaseId ?? this.testCaseId;
+      if (context.draft) {
+        this.draft = context.draft;
+        return true;
+      }
+      try {
+        this.draft = await getAutomationDraft(context.automationDraftId);
+        this.rememberCurrentDraft();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    rememberCurrentDraft() {
+      if (!this.draft) {
+        return;
+      }
+      saveLatestAutomationDraftContext({
+        projectId: this.projectId,
+        testCaseId: this.draft.test_case_id,
+        automationDraftId: this.draft.id,
+        status: this.draft.status,
+        targetFramework: this.draft.target_framework,
+        draft: this.draft,
+      });
     },
     async loadCurrentDraftReviewHistory() {
       if (!this.draft) {

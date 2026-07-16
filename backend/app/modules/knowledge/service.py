@@ -52,7 +52,7 @@ from backend.app.modules.review_history.service import append_review_history
 TERM_PATTERN = re.compile(r"\w+", re.UNICODE)
 SENTENCE_SPLIT_PATTERN = re.compile(r"[\n。！？!?；;]+")
 ENDPOINT_PATTERN = re.compile(r"\b(?:GET|POST|PUT|PATCH|DELETE)\s+(/[A-Za-z0-9_./{}:-]+)|(/[A-Za-z0-9_./{}:-]+)")
-PROMPT_ELIGIBLE_STATUSES = {"approved", "extracted"}
+PROMPT_ELIGIBLE_STATUSES = {"approved"}
 REVIEWABLE_STATUSES = {"approved", "stale", "unsafe", "duplicate", "archived"}
 STATUS_PRIORITY = {"approved": 0, "extracted": 1}
 DEFAULT_EMBEDDING_PROVIDER = "deterministic_local"
@@ -3166,7 +3166,17 @@ def confidence_for(sentence: str, knowledge_type: str) -> int:
 
 
 def normalize_terms(value: str) -> list[str]:
-    return [term.lower() for term in TERM_PATTERN.findall(value) if len(term) >= 2]
+    terms: list[str] = []
+    for raw_term in TERM_PATTERN.findall(value):
+        term = raw_term.lower()
+        if len(term) >= 2:
+            terms.append(term)
+        # Preserve whole-token matching while also indexing ASCII and
+        # non-ASCII runs inside mixed tokens such as ``fallback支持``.
+        for part in re.findall(r"[a-z0-9]+|[\u4e00-\u9fff]+", term):
+            if len(part) >= 2 and part != term:
+                terms.append(part)
+    return list(dict.fromkeys(terms))
 
 
 def to_read(card: TestKnowledgeCard) -> TestKnowledgeCardRead:

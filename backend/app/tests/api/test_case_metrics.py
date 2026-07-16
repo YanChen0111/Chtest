@@ -120,6 +120,8 @@ def add_candidate(
             tags=[],
             requirement_refs_json=requirement_refs_json if requirement_refs_json is not None else ["requirement"],
             risk_refs_json=[],
+            case_type="functional",
+            generation_reason="covers the requested behavior",
             ai_reason=ai_reason,
             status=status,
         ),

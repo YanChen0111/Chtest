@@ -6,18 +6,19 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
 
-from backend.app.modules.ai_runtime.router import router as ai_runtime_router
+from backend.app.modules.ai_runtime.router import ARTIFACT_ROOT, router as ai_runtime_router
 from backend.app.modules.automation.router import router as automation_router
 from backend.app.modules.cases.router import router as cases_router
 from backend.app.modules.cicd.router import router as cicd_router
 from backend.app.modules.execution.router import router as execution_router
 from backend.app.modules.extension.router import router as extension_router
 from backend.app.modules.knowledge.router import router as knowledge_router
-from backend.app.modules.projects.router import router as projects_router
+from backend.app.modules.projects.router import engine, router as projects_router
 from backend.app.modules.prompt_skill.router import router as prompt_skill_router
 from backend.app.modules.reporting.router import router as reporting_router
 from backend.app.modules.requirements.router import router as requirements_router
 from backend.app.modules.review_history.router import router as review_history_router
+from backend.app.readiness import check_readiness
 
 
 VALIDATION_ERROR_SAFE_KEYS = {"loc", "msg", "type", "ctx"}
@@ -42,6 +43,14 @@ app.include_router(review_history_router, prefix="/api")
 @app.get("/api/health", response_class=PlainTextResponse)
 def health() -> str:
     return "ok"
+
+
+@app.get("/ready")
+@app.get("/api/ready")
+def ready() -> JSONResponse:
+    report = check_readiness(engine, ARTIFACT_ROOT)
+    status_code = 503 if report["status"] == "not_ready" else 200
+    return JSONResponse(status_code=status_code, content=report)
 
 
 @app.exception_handler(HTTPException)

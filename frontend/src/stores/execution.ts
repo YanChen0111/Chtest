@@ -1,24 +1,27 @@
 import { defineStore } from 'pinia';
 
 import { createTestRun, getTestRun, type TestRunRead } from '../api/execution';
+import { DEFAULT_PROJECT_ID, getLatestAutomationDraftContext } from './workflowContext';
 
-const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
-const DEFAULT_AUTOMATION_DRAFT_ID = '00000000-0000-0000-0000-000000001001';
 const RECENT_RUNS_STORAGE_KEY = 'chtest.execution.recent-runs';
 const MAX_RECENT_RUNS = 8;
 
 export const useExecutionStore = defineStore('execution', {
-  state: () => ({
-    projectId: DEFAULT_PROJECT_ID,
-    automationDraftId: DEFAULT_AUTOMATION_DRAFT_ID,
-    testCommandId: '',
-    sourceMode: 'automation_draft' as 'automation_draft' | 'test_command',
-    run: null as TestRunRead | null,
-    recentRuns: [] as TestRunRead[],
-    recentRunsHydrated: false,
-    loading: false,
-    errorMessage: '',
-  }),
+  state: () => {
+    const latestDraft = getLatestAutomationDraftContext();
+    return {
+      projectId: latestDraft?.projectId ?? DEFAULT_PROJECT_ID,
+      automationDraftId: latestDraft?.status === 'approved' ? latestDraft.automationDraftId : '',
+      automationDraftFramework: latestDraft?.status === 'approved' ? latestDraft.targetFramework : '',
+      testCommandId: '',
+      sourceMode: 'automation_draft' as 'automation_draft' | 'test_command',
+      run: null as TestRunRead | null,
+      recentRuns: [] as TestRunRead[],
+      recentRunsHydrated: false,
+      loading: false,
+      errorMessage: '',
+    };
+  },
   actions: {
     hydrateRecentRuns() {
       if (this.recentRunsHydrated || typeof window === 'undefined') return;
@@ -42,6 +45,16 @@ export const useExecutionStore = defineStore('execution', {
       const runnerMode = options.runnerMode ?? 'local_subprocess';
       this.loading = true;
       this.errorMessage = '';
+      if (this.sourceMode === 'automation_draft' && !this.automationDraftId) {
+        this.errorMessage = '请先在自动化草稿页批准草稿，再启动执行。';
+        this.loading = false;
+        return;
+      }
+      if (this.sourceMode === 'test_command' && !this.testCommandId) {
+        this.errorMessage = '请先选择已配置的 TestCommand。';
+        this.loading = false;
+        return;
+      }
       try {
         this.run = await createTestRun({
           project_id: this.projectId,

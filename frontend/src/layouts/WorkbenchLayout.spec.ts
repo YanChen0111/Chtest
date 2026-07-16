@@ -1,12 +1,24 @@
 import { mount } from '@vue/test-utils';
 import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { router } from '../router';
 import WorkbenchLayout from './WorkbenchLayout.vue';
 
 describe('WorkbenchLayout', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      status: 200,
+      json: async () => ({
+        status: 'ready',
+        error_code: null,
+        message: 'Chtest is ready.',
+        checks: {},
+      }),
+    }));
+  });
+
   it('renders Chinese workbench navigation', async () => {
     await router.push({ name: 'ai-workbench' });
     await router.isReady();

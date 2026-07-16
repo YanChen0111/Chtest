@@ -873,7 +873,9 @@ def validate_case_generation_domain_alignment(
     requirement_document = input_json.get("requirement_document") if isinstance(input_json, dict) else None
     if isinstance(requirement_document, dict) and isinstance(requirement_document.get("content"), str):
         document_content = str(requirement_document["content"])
-    domain_terms = extract_domain_terms(f"{requirement.title}\n{requirement.content}\n{document_content}")
+    domain_terms = extract_domain_terms(
+        f"{requirement.title}\n{requirement.content}\n{requirement.source_ref or ''}\n{document_content}",
+    )
     if not domain_terms:
         return
     cases = output.get("cases", [])
@@ -885,7 +887,7 @@ def validate_case_generation_domain_alignment(
 def extract_domain_terms(text: str) -> set[str]:
     normalized = text.lower()
     terms: Counter[str] = Counter()
-    for word in re.findall(r"[a-zA-Z][a-zA-Z0-9_-]{2,}", normalized):
+    for word in re.findall(r"[a-zA-Z][a-zA-Z0-9]{2,}", normalized):
         if word not in COMMON_DOMAIN_TERMS:
             terms[word] += 1
             for alias in DOMAIN_TERM_ALIASES.get(word, set()):
@@ -907,6 +909,11 @@ def case_domain_aligned(case: dict, domain_terms: set[str]) -> bool:
             " ".join(str(item) for item in case.get("steps", [])),
             " ".join(str(item) for item in case.get("expected_results", [])),
             " ".join(str(item) for item in case.get("requirement_refs", [])),
+            " ".join(
+                f"{item.get('key', '')} {item.get('evidence', '')}"
+                for item in case.get("coverage_dimensions", [])
+                if isinstance(item, dict)
+            ),
             str(case.get("ai_reason", "")),
         ],
     ).lower()

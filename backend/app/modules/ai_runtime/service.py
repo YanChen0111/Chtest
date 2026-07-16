@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import re
 import uuid
+import base64
+import binascii
 from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
+from backend.app.modules.ai_runtime.document_extraction import (
+    DocumentExtractionError,
+    DocumentExtractorUnavailableError,
+    extract_document_text,
+)
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
 from backend.app.modules.ai_runtime.providers.base import ProviderArtifactPayload
 from backend.app.modules.ai_runtime.schemas import (
@@ -23,12 +30,19 @@ from backend.app.modules.projects.models import Project
 
 
 MAX_CONTEXT_ARTIFACT_BYTES = 1024 * 1024
+MAX_BINARY_CONTEXT_ARTIFACT_BYTES = 10 * 1024 * 1024
 CONTEXT_ARTIFACT_MIME_TYPES = {
     "context_markdown": {"text/markdown"},
     "context_text": {"text/plain"},
     "context_json": {"application/json"},
     "context_yaml": {"application/yaml", "text/yaml"},
     "context_openapi": {"application/yaml", "application/json", "text/yaml"},
+    "context_pdf": {"application/pdf"},
+    "context_xlsx": {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+    },
+    "context_image": {"image/jpeg", "image/png", "image/webp", "image/tiff"},
 }
 CONTEXT_FILE_NAMES = {
     "context_markdown": "content.md",
@@ -36,7 +50,11 @@ CONTEXT_FILE_NAMES = {
     "context_json": "content.json",
     "context_yaml": "content.yaml",
     "context_openapi": "openapi.yaml",
+    "context_pdf": "source.pdf",
+    "context_xlsx": "source.xlsx",
+    "context_image": "source-image",
 }
+DERIVED_CONTEXT_FILE_NAME = "extracted-content.txt"
 SECRET_PATTERNS = [
     re.compile(r"\bsk-[A-Za-z0-9_-]{8,}"),
     re.compile(r"\bghp_[A-Za-z0-9_]{8,}"),
@@ -68,6 +86,14 @@ class ContextArtifactSecretDetectedError(Exception):
     pass
 
 
+class ContextArtifactExtractionError(Exception):
+    pass
+
+
+class ContextArtifactExtractorUnavailableError(Exception):
+    pass
+
+
 class ProjectNotFoundError(Exception):
     pass
 
@@ -90,6 +116,16 @@ def create_context_artifact(
         raise ProjectNotFoundError
 
     validate_context_artifact_input(data)
+    if data.content_base64 is not None:
+        try:
+            content_bytes = base64.b64decode(data.content_base64, validate=True)
+        except (ValueError, binascii.Error) as exc:
+            raise ContextArtifactExtractionError("Binary context content is not valid base64.") from exc
+        if not content_bytes:
+            raise ContextArtifactExtractionError("Binary context content is empty.")
+        return create_binary_context_artifact(session, store, data, content_bytes)
+
+    assert data.content is not None
     content_bytes = data.content.encode("utf-8")
     artifact_id = uuid.uuid4()
     file_name = CONTEXT_FILE_NAMES[data.artifact_type]
@@ -125,6 +161,94 @@ def create_context_artifact(
     return artifact
 
 
+def create_binary_context_artifact(
+    session: Session,
+    store: LocalArtifactStore,
+    data: ContextArtifactCreate,
+    content_bytes: bytes,
+) -> Artifact:
+    if len(content_bytes) > MAX_BINARY_CONTEXT_ARTIFACT_BYTES:
+        raise ContextArtifactTooLargeError
+    try:
+        extracted = extract_document_text(
+            artifact_type=data.artifact_type,
+            content=content_bytes,
+            ocr_language=data.ocr_language,
+        )
+    except DocumentExtractorUnavailableError as exc:
+        raise ContextArtifactExtractorUnavailableError(str(exc)) from exc
+    except DocumentExtractionError as exc:
+        raise ContextArtifactExtractionError(str(exc)) from exc
+
+    extracted_content = extracted.text.encode("utf-8")
+    if has_high_risk_secret("\n".join([data.title, data.source_ref, extracted.text])):
+        raise ContextArtifactSecretDetectedError
+
+    raw_id = uuid.uuid4()
+    raw_name = CONTEXT_FILE_NAMES[data.artifact_type]
+    raw_path = f"projects/{data.project_id}/context-artifacts/{raw_id}/{raw_name}"
+    raw_write = store.write_bytes(raw_path, content_bytes)
+    raw_artifact = Artifact(
+        id=raw_id,
+        project_id=data.project_id,
+        owner_entity_type="Project",
+        owner_entity_id=data.project_id,
+        artifact_type=f"source_{data.artifact_type.removeprefix('context_')}",
+        file_path=raw_write.file_path,
+        mime_type=data.mime_type,
+        size_bytes=raw_write.size_bytes,
+        sha256=raw_write.sha256,
+        metadata_json={
+            "created_by_component": "ContextDocumentAdapter",
+            "source_entity_type": "Project",
+            "source_entity_id": str(data.project_id),
+            "title": data.title,
+            "source_ref": data.source_ref,
+            "safe_to_show": False,
+            "allowed_for_prompt": False,
+            "derived_parser": extracted.parser_name,
+            "derived_parser_version": extracted.parser_version,
+            "derived_unit_count": extracted.unit_count,
+        },
+    )
+    session.add(raw_artifact)
+
+    derived_id = uuid.uuid4()
+    derived_path = f"projects/{data.project_id}/context-artifacts/{derived_id}/{DERIVED_CONTEXT_FILE_NAME}"
+    derived_write = store.write_bytes(derived_path, extracted_content)
+    derived = Artifact(
+        id=derived_id,
+        project_id=data.project_id,
+        owner_entity_type="Project",
+        owner_entity_id=data.project_id,
+        artifact_type="context_text",
+        file_path=derived_write.file_path,
+        mime_type="text/plain",
+        size_bytes=derived_write.size_bytes,
+        sha256=derived_write.sha256,
+        metadata_json={
+            "created_by_component": "ContextDocumentAdapter",
+            "source_entity_type": "Project",
+            "source_entity_id": str(data.project_id),
+            "title": data.title,
+            "source_ref": data.source_ref,
+            "source_binary_artifact_id": str(raw_id),
+            "source_binary_mime_type": data.mime_type,
+            "safe_to_show": True,
+            "allowed_for_prompt": True,
+            "redaction_applied": False,
+            "derived_parser": extracted.parser_name,
+            "derived_parser_version": extracted.parser_version,
+            "derived_unit_count": extracted.unit_count,
+            "derived_metadata": extracted.metadata,
+        },
+    )
+    session.add(derived)
+    session.commit()
+    session.refresh(derived)
+    return derived
+
+
 def list_context_artifacts(session: Session, project_id: uuid.UUID) -> list[ContextArtifactListItemRead]:
     project = session.get(Project, project_id)
     if project is None:
@@ -157,11 +281,18 @@ def validate_context_artifact_input(data: ContextArtifactCreate) -> None:
     if data.mime_type not in CONTEXT_ARTIFACT_MIME_TYPES.get(data.artifact_type, set()):
         raise ContextArtifactNotAllowedError
 
-    content_bytes = data.content.encode("utf-8")
-    if len(content_bytes) > MAX_CONTEXT_ARTIFACT_BYTES:
+    if data.content is not None:
+        content_bytes = data.content.encode("utf-8")
+    else:
+        try:
+            content_bytes = base64.b64decode(data.content_base64 or "", validate=True)
+        except (ValueError, binascii.Error) as exc:
+            raise ContextArtifactExtractionError("Binary context content is not valid base64.") from exc
+    max_bytes = MAX_BINARY_CONTEXT_ARTIFACT_BYTES if data.content_base64 is not None else MAX_CONTEXT_ARTIFACT_BYTES
+    if len(content_bytes) > max_bytes:
         raise ContextArtifactTooLargeError
 
-    if has_high_risk_secret("\n".join([data.title, data.source_ref, data.content])):
+    if data.content is not None and has_high_risk_secret("\n".join([data.title, data.source_ref, data.content])):
         raise ContextArtifactSecretDetectedError
 
 

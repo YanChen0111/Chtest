@@ -8,6 +8,7 @@ from backend.app.tests.golden.test_requirement_to_case import (
     ASGIClient,
     api_client,
     candidate_by_title,
+    golden_review_plan,
     seed_prompt_skill,
 )
 
@@ -73,8 +74,9 @@ def test_golden_requirement_to_case_metrics_match_review_plan(
             "prompt_version": "case_generation:v1",
             "skill_version": "test-case-generation-skill:v1",
             "model_provider": "mock",
-            "model_name": "mock-case-generator",
-            "use_knowledge": False,
+                "model_name": "mock-case-generator",
+                "decision_table_acknowledged": True,
+                "use_knowledge": False,
             "context_artifact_ids": [],
         },
     )
@@ -85,7 +87,7 @@ def test_golden_requirement_to_case_metrics_match_review_plan(
     assert candidates_response.status_code == 200
     candidates = candidates_response.json()["items"]
 
-    for title, payload in golden_review_plan().items():
+    for title, payload in golden_review_plan(candidates).items():
         candidate = candidate_by_title(candidates, title)
         response = client.post(f"/api/case-review/items/{candidate['id']}/approve", json_body=payload)
         assert response.status_code == 200
@@ -100,29 +102,3 @@ def test_golden_requirement_to_case_metrics_match_review_plan(
     assert metrics["optimization_count"] == 1
     assert metrics["review_progress"] >= 1.0
     assert metrics["acceptance_rate"] == 0.8
-
-
-def golden_review_plan() -> dict[str, dict[str, Any]]:
-    return {
-        "可用优惠券可成功抵扣订单金额": {"action": "approve", "review_comment": "主流程完整"},
-        "优惠券不可与积分同时使用": {"action": "approve", "review_comment": "高风险互斥规则"},
-        "过期优惠券不可用于结算": {
-            "action": "approve_after_edit",
-            "review_comment": "补充测试数据准备",
-            "edited_case": {
-                "title": "过期优惠券不可用于结算",
-                "priority": "P0",
-                "test_type": "functional",
-                "precondition": "用户存在一张已过期优惠券，并已准备包含可用商品的订单",
-                "steps": ["准备已过期优惠券", "进入结算页", "查看优惠券列表", "尝试选择已过期优惠券", "提交订单"],
-                "expected_results": ["已过期优惠券不可选或提交失败", "页面提示优惠券已过期"],
-                "input_data": {"coupon_state": "expired"},
-                "tags": ["coupon", "boundary"],
-            },
-        },
-        "优惠券金额不能超过订单应付金额": {
-            "action": "needs_optimization",
-            "review_comment": "需求未明确阻断或限制抵扣策略",
-        },
-        "提交订单后展示优惠后的最终支付金额": {"action": "approve", "review_comment": "UI 展示可测"},
-    }

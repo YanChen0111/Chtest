@@ -63,7 +63,7 @@
               需求文档或评审结论已确认
             </a-checkbox>
             <a-checkbox v-model="decisionTableGate.riskDimensionsConfirmed" data-test="decision-risk-confirmed">
-              时间窗口、重复、最多 2 个、冲突、修改/删除、插枪、电流、权限、链路已进入设计范围
+              {{ reviewScopeConfirmationLabel }}
             </a-checkbox>
             <a-checkbox v-model="decisionTableGate.reviewReady" data-test="decision-review-ready">
               生成结果将按覆盖矩阵逐条评审后再入库
@@ -363,6 +363,14 @@ const isGenerationTaskStale = computed(() => {
 const decisionTableReady = computed(
   () => decisionTableGate.sourceConfirmed && decisionTableGate.riskDimensionsConfirmed && decisionTableGate.reviewReady,
 );
+const reviewScopeConfirmationLabel = computed(() => {
+  const riskTitles = store.requirementRiskTitles.filter(Boolean).slice(0, 4);
+  const riskSummary = riskTitles.length > 0 ? `风险：${riskTitles.join('、')}` : '当前评审识别的风险';
+  const clarificationSummary = store.requirementClarificationQuestions.length
+    ? `，以及 ${store.requirementClarificationQuestions.length} 个待澄清项`
+    : '';
+  return `${riskSummary}${clarificationSummary}已纳入本次生成范围`;
+});
 const generationSourceKey = computed(
   () => `${form.requirementId}|${form.requirementReviewId}|${form.requirementDocumentArtifactId}`,
 );
@@ -379,11 +387,11 @@ interface CoverageDimension {
 const coverageDimensionRules = [
   { key: 'positive', label: '主流程', hint: '缺少成功路径', keywords: ['成功', '有效', '正常', '可用', '启动', '创建'] },
   { key: 'negative', label: '异常/负向', hint: '缺少失败与拦截', keywords: ['失败', '不可', '拒绝', '错误', '阻止', '无效'] },
-  { key: 'boundary', label: '边界值', hint: '缺少数量/时间边界', keywords: ['边界', '最大', '最小', '超过', '等于', '24', '2 个', '2个', '限制', 'limit'] },
-  { key: 'state', label: '状态转换', hint: '缺少执行状态变化', keywords: ['状态', '开始', '结束', '执行', '等待', '删除', '修改', '暂停'] },
-  { key: 'permission', label: '权限', hint: '缺少角色权限覆盖', keywords: ['权限', '电工', '分享', '角色', '越权'] },
-  { key: 'channel', label: '下发链路', hint: '缺少网络/通道覆盖', keywords: ['蓝牙', '云端', 'wi-fi', 'wifi', '4g', '下发', '离线'] },
-  { key: 'condition', label: '设备/电流条件', hint: '缺少插枪/电流覆盖', keywords: ['电流', 'fallback', '插枪', '充电枪', '限流'] },
+  { key: 'boundary', label: '边界值', hint: '缺少数值、时间或容量边界', keywords: ['边界', '最大', '最小', '超过', '等于', '为空', '限制', 'limit'] },
+  { key: 'state', label: '状态转换', hint: '缺少生命周期和状态变化', keywords: ['状态', '开始', '结束', '执行', '等待', '创建', '删除', '修改', '暂停'] },
+  { key: 'permission', label: '权限', hint: '缺少角色与授权覆盖', keywords: ['权限', '角色', '授权', '越权', '只读'] },
+  { key: 'channel', label: '接口/链路', hint: '缺少接口、网络或集成链路覆盖', keywords: ['接口', '网络', '通道', '同步', '下发', '离线', '超时'] },
+  { key: 'condition', label: '外部条件', hint: '缺少依赖和外部条件覆盖', keywords: ['依赖', '前置', '条件', '配置', '环境', '版本', '服务'] },
   { key: 'risk', label: '风险引用', hint: '缺少风险引用', keywords: [] },
 ] as const;
 

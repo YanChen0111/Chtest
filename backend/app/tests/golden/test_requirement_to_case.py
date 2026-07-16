@@ -177,6 +177,35 @@ def candidate_by_title(candidates: list[dict[str, Any]], title: str) -> dict[str
     return next(candidate for candidate in candidates if candidate["title"] == title)
 
 
+def golden_review_plan(candidates: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    if len(candidates) < 5:
+        raise AssertionError("Golden case generation must provide at least five review candidates.")
+    edited = candidates[2]
+    return {
+        candidates[0]["title"]: {"action": "approve", "review_comment": "Primary workflow is complete."},
+        candidates[1]["title"]: {"action": "approve", "review_comment": "High-risk path is reviewable."},
+        edited["title"]: {
+            "action": "approve_after_edit",
+            "review_comment": "Add deterministic reviewed input data.",
+            "edited_case": {
+                "title": edited["title"],
+                "priority": edited["priority"],
+                "test_type": edited["test_type"],
+                "precondition": edited["precondition"],
+                "steps": edited["steps"],
+                "expected_results": edited["expected_results"],
+                "input_data": {"reviewed_fixture": True},
+                "tags": ["reviewed", "boundary"],
+            },
+        },
+        candidates[3]["title"]: {
+            "action": "needs_optimization",
+            "review_comment": "Expected behavior needs clarification.",
+        },
+        candidates[4]["title"]: {"action": "approve", "review_comment": "Observable result is testable."},
+    }
+
+
 def test_golden_requirement_flows_to_reviewed_test_cases(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:
@@ -256,29 +285,7 @@ def test_golden_requirement_flows_to_reviewed_test_cases(
         assert candidate["requirement_refs"]
         assert candidate["ai_reason"]
 
-    review_plan = {
-        "可用优惠券可成功抵扣订单金额": {"action": "approve", "review_comment": "主流程完整"},
-        "优惠券不可与积分同时使用": {"action": "approve", "review_comment": "高风险互斥规则"},
-        "过期优惠券不可用于结算": {
-            "action": "approve_after_edit",
-            "review_comment": "补充测试数据准备",
-            "edited_case": {
-                "title": "过期优惠券不可用于结算",
-                "priority": "P0",
-                "test_type": "functional",
-                "precondition": "用户存在一张已过期优惠券，并已准备包含可用商品的订单",
-                "steps": ["准备已过期优惠券", "进入结算页", "查看优惠券列表", "尝试选择已过期优惠券", "提交订单"],
-                "expected_results": ["已过期优惠券不可选或提交失败", "页面提示优惠券已过期"],
-                "input_data": {"coupon_state": "expired"},
-                "tags": ["coupon", "boundary"],
-            },
-        },
-        "优惠券金额不能超过订单应付金额": {
-            "action": "needs_optimization",
-            "review_comment": "需求未明确阻断或限制抵扣策略",
-        },
-        "提交订单后展示优惠后的最终支付金额": {"action": "approve", "review_comment": "UI 展示可测"},
-    }
+    review_plan = golden_review_plan(candidates)
 
     review_results = []
     for title, payload in review_plan.items():
@@ -329,8 +336,8 @@ def test_golden_requirement_flows_to_reviewed_test_cases(
         assert acceptance_rate >= 0.8
 
         edited_case = next(test_case for test_case in test_cases if test_case.review_status == "approved_after_edit")
-        assert edited_case.input_data_json == {"coupon_state": "expired"}
-        assert edited_case.steps_json[0] == "准备已过期优惠券"
+        assert edited_case.input_data_json == {"reviewed_fixture": True}
+        assert edited_case.steps_json
 
     statuses = {result["status"] for result in review_results}
     assert statuses == {"approved", "approved_after_edit", "needs_optimization"}

@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class AITaskRead(BaseModel):
@@ -62,9 +62,17 @@ class ContextArtifactCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     artifact_type: str
     mime_type: str
-    content: str = Field(min_length=1)
+    content: str | None = Field(default=None, min_length=1)
+    content_base64: str | None = Field(default=None, min_length=1)
     source_ref: str = Field(min_length=1, max_length=500)
     safe_to_show: bool | None = None
+    ocr_language: str = Field(default="eng+chi_sim", min_length=2, max_length=80)
+
+    @model_validator(mode="after")
+    def validate_content_source(self) -> "ContextArtifactCreate":
+        if bool(self.content) == bool(self.content_base64):
+            raise ValueError("Exactly one of content or content_base64 is required.")
+        return self
 
 
 class ContextArtifactRead(BaseModel):

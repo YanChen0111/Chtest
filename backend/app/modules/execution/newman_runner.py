@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.app.modules.projects.service import has_forbidden_shell_operator, is_command_allowlisted
+from backend.app.modules.execution.subprocess_utils import executable_argv
 
 
 class NewmanRunnerCommandError(ValueError):
@@ -86,7 +87,7 @@ def normalize_newman_argv(command: str, npx_executable: str) -> list[str]:
     parts = shlex.split(command)
     if parts[:3] != ["npx", "newman", "run"]:
         raise NewmanRunnerCommandError("Command must start with npx newman run.")
-    return [npx_executable, "newman", "run", *parts[3:]]
+    return executable_argv(npx_executable, "newman", "run", *parts[3:])
 
 
 def newman_report_path(command: str, working_directory: Path) -> Path:

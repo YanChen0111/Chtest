@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PytestExecutionView from './PytestExecutionView.vue';
 
@@ -103,7 +103,20 @@ function testRunBody() {
 }
 
 describe('PytestExecutionView', () => {
+  beforeEach(() => window.localStorage.clear());
+  afterEach(() => vi.unstubAllGlobals());
+
   it('starts and refreshes a pytest run with evidence details', async () => {
+    window.localStorage.setItem(
+      'chtest.latestAutomationDraft',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        testCaseId: '00000000-0000-0000-0000-000000000955',
+        automationDraftId: '00000000-0000-0000-0000-000000001001',
+        status: 'approved',
+        targetFramework: 'pytest',
+      }),
+    );
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/test-runs') && init?.method === 'POST') {
@@ -129,7 +142,10 @@ describe('PytestExecutionView', () => {
     });
 
     expect(wrapper.text()).toContain('执行中心');
-    expect(wrapper.text()).toContain('AutomationDraft ID');
+    expect(wrapper.text()).toContain('已批准自动化草稿');
+    expect((wrapper.find('[data-test="execution-source-id"] input').element as HTMLInputElement).value).toBe(
+      '00000000-0000-0000-0000-000000001001',
+    );
     await wrapper.find('form').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();
@@ -183,5 +199,21 @@ describe('PytestExecutionView', () => {
 
     expect(wrapper.text()).toContain('620 ms');
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not expose a fabricated draft id when no approved workflow context exists', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(PytestExecutionView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+
+    expect((wrapper.find('[data-test="execution-source-id"] input').element as HTMLInputElement).value).toBe('');
+    expect(wrapper.find('[data-test="start-run"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-test="execution-start-hint"]').text()).toContain('自动化草稿页');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

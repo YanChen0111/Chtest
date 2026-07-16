@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.app.modules.projects.service import has_forbidden_shell_operator, is_command_allowlisted
+from backend.app.modules.execution.subprocess_utils import executable_argv
 
 
 class JMeterRunnerCommandError(ValueError):
@@ -98,7 +99,7 @@ def normalize_jmeter_argv(command: str, jmeter_executable: str) -> list[str]:
         raise JMeterRunnerCommandError("JMeter command must include -t and -l paths.")
     if "-R" in parts or "-r" in parts:
         raise JMeterRunnerCommandError("Distributed JMeter execution is not allowed.")
-    return [jmeter_executable, *parts[1:]]
+    return executable_argv(jmeter_executable, *parts[1:])
 
 
 def jmeter_result_path(command: str, working_directory: Path) -> Path:

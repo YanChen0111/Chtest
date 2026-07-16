@@ -116,6 +116,16 @@ function playwrightRunBody() {
 
 describe('PlaywrightExecutionView', () => {
   it('starts and refreshes a Playwright run with trace and screenshot evidence', async () => {
+    window.localStorage.setItem(
+      'chtest.latestAutomationDraft',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        testCaseId: '00000000-0000-0000-0000-000000000955',
+        automationDraftId: '00000000-0000-0000-0000-000000001001',
+        status: 'approved',
+        targetFramework: 'playwright',
+      }),
+    );
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/test-runs') && init?.method === 'POST') {
@@ -142,7 +152,7 @@ describe('PlaywrightExecutionView', () => {
     });
 
     expect(wrapper.text()).toContain('Playwright 执行');
-    expect(wrapper.text()).toContain('AutomationDraft ID');
+    expect(wrapper.text()).toContain('已批准 Playwright 草稿');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();

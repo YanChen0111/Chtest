@@ -65,6 +65,27 @@ class MockLLMProvider:
             )
             or knowledge_evidence,
         )
+        if request.model_name == "mock-requirement-review" and not request.input_json.get("legacy_coupon_fixture"):
+            requirement_text = str(request.input_json.get("requirement") or "").strip()
+            excerpt = requirement_text[:160] or "the submitted requirement"
+            return {
+                "overall_score": 82,
+                "scores": {"completeness": 78, "clarity": 85, "consistency": 88, "testability": 84, "feasibility": 82, "logic": 75},
+                "issues": [
+                    {"type": "acceptance_criteria", "severity": "medium", "text": f"Explicit pass/fail acceptance criteria are incomplete for: {excerpt}"},
+                    {"type": "failure_behavior", "severity": "medium", "text": "Failure, retry, timeout, and partial-success behavior should be stated explicitly."},
+                ],
+                "clarification_questions": [
+                    "What observable result defines success for the main workflow?",
+                    "What should the system do when a dependency is unavailable or returns invalid data?",
+                ],
+                "risk_items": [
+                    {"title": "Ambiguous acceptance boundary", "risk_level": "high", "suggestion": "Define measurable success, rejection, and boundary outcomes before case generation."},
+                    {"title": "Dependency and recovery behavior", "risk_level": "high", "suggestion": "Cover dependency failure, retry, timeout, and evidence preservation scenarios."},
+                ],
+                "used_knowledge": used_knowledge,
+                "used_context_artifact_ids": context_ids,
+            }
         if request.model_name == "mock-requirement-review":
             return {
                 "overall_score": 82,
@@ -108,6 +129,84 @@ class MockLLMProvider:
                 "used_context_artifact_ids": context_ids,
             }
 
+        if request.model_name == "mock-case-generator" and not request.input_json.get("legacy_coupon_fixture"):
+            requirement_text = str(request.input_json.get("requirement") or "").strip()
+            requirement_ref = requirement_text or "submitted requirement"
+            scenario_name = " ".join(requirement_ref.split()[:8]) or "Requirement workflow"
+            generic_evidence = knowledge_evidence[:2]
+            generic_context_ids = sorted(
+                {
+                    str(item.get("source_artifact_id"))
+                    for item in generic_evidence
+                    if isinstance(item, dict) and item.get("source_artifact_id")
+                },
+            )
+            return {
+                "cases": [
+                    {
+                        "title": f"Main workflow: {scenario_name}",
+                        "priority": "P0",
+                        "test_type": "functional",
+                        "precondition": "Required project context and dependencies are available.",
+                        "steps": ["Prepare valid input from the requirement", "Execute the primary workflow", "Capture the result and evidence"],
+                        "expected_results": ["The documented success outcome is observable", "Execution evidence is persisted"],
+                        "requirement_refs": [requirement_ref],
+                        "source_knowledge_evidence": generic_evidence,
+                        "coverage_dimensions": [{"key": "positive", "evidence": "Covers the primary successful workflow."}],
+                        "ai_reason": "Cover the requirement's main user-visible behavior.",
+                    },
+                    {
+                        "title": f"Dependency failure: {scenario_name}",
+                        "priority": "P0",
+                        "test_type": "functional",
+                        "precondition": "A required dependency is unavailable or returns invalid data.",
+                        "steps": ["Prepare otherwise valid input", "Force the dependency failure", "Execute the workflow", "Inspect error and evidence"],
+                        "expected_results": ["The workflow does not report false success", "A diagnostic error and available evidence are preserved"],
+                        "requirement_refs": [requirement_ref],
+                        "source_knowledge_evidence": generic_evidence,
+                        "coverage_dimensions": [{"key": "negative", "evidence": "Covers dependency and recovery failure behavior."}],
+                        "ai_reason": "Cover a high-risk failure path without inventing a domain-specific rule.",
+                    },
+                    {
+                        "title": f"Boundary input: {scenario_name}",
+                        "priority": "P1",
+                        "test_type": "functional",
+                        "precondition": "The input is at a documented minimum, maximum, empty, or transition boundary.",
+                        "steps": ["Prepare a boundary value", "Execute the workflow", "Compare the result with the acceptance rule"],
+                        "expected_results": ["The boundary is accepted or rejected consistently", "No partial state is reported as success"],
+                        "requirement_refs": [requirement_ref],
+                        "source_knowledge_evidence": generic_evidence,
+                        "coverage_dimensions": [{"key": "boundary", "evidence": "Covers an explicit requirement boundary."}],
+                        "ai_reason": "Cover boundary behavior required for deterministic review.",
+                    },
+                    {
+                        "title": f"Permission denied: {scenario_name}",
+                        "priority": "P1",
+                        "test_type": "functional",
+                        "precondition": "The actor lacks a required permission or project scope.",
+                        "steps": ["Prepare valid input", "Use an unauthorized actor", "Execute the workflow", "Inspect state and evidence"],
+                        "expected_results": ["The operation is rejected without changing protected state", "The denial reason is observable"],
+                        "requirement_refs": [requirement_ref],
+                        "source_knowledge_evidence": generic_evidence,
+                        "coverage_dimensions": [{"key": "permission", "evidence": "Covers an authorization boundary."}],
+                        "ai_reason": "Cover permission enforcement without assuming a domain-specific role model.",
+                    },
+                    {
+                        "title": f"Repeated submission: {scenario_name}",
+                        "priority": "P1",
+                        "test_type": "functional",
+                        "precondition": "The same valid request can be submitted more than once.",
+                        "steps": ["Submit the valid request", "Repeat the same request", "Inspect resulting state and evidence"],
+                        "expected_results": ["Repeated submission follows a deterministic idempotency rule", "No duplicate success evidence is fabricated"],
+                        "requirement_refs": [requirement_ref],
+                        "source_knowledge_evidence": generic_evidence,
+                        "coverage_dimensions": [{"key": "state_transition", "evidence": "Covers repeat and state-transition behavior."}],
+                        "ai_reason": "Cover repeated actions and state consistency.",
+                    },
+                ],
+                "used_knowledge": used_knowledge,
+                "used_context_artifact_ids": generic_context_ids or context_ids,
+            }
         if request.model_name == "mock-case-generator":
             case_evidence = knowledge_evidence[:2]
             used_context_ids = sorted(

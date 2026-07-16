@@ -1,3 +1,6 @@
+import type { AutomationDraftRead } from '../api/automation';
+import type { RequirementRead, RequirementReviewRead } from '../api/requirements';
+
 export const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
 export const DEFAULT_REQUIREMENT_ID = '00000000-0000-0000-0000-000000000401';
 export const DEFAULT_REVIEW_ID = '00000000-0000-0000-0000-000000000601';
@@ -5,11 +8,23 @@ export const DEFAULT_REVIEW_ID = '00000000-0000-0000-0000-000000000601';
 const LATEST_REQUIREMENT_REVIEW_KEY = 'chtest.latestRequirementReview';
 const LATEST_REQUIREMENT_DOCUMENT_KEY = 'chtest.latestRequirementDocument';
 const LATEST_APPROVED_TEST_CASE_KEY = 'chtest.latestApprovedTestCase';
+const LATEST_AUTOMATION_DRAFT_KEY = 'chtest.latestAutomationDraft';
 
 export interface LatestRequirementReviewContext {
   readonly projectId: string;
   readonly requirementId: string;
   readonly requirementReviewId: string;
+  readonly requirement?: RequirementRead;
+  readonly review?: RequirementReviewRead;
+}
+
+export interface LatestAutomationDraftContext {
+  readonly projectId: string;
+  readonly testCaseId: string | null;
+  readonly automationDraftId: string;
+  readonly status: string;
+  readonly targetFramework: string;
+  readonly draft?: AutomationDraftRead;
 }
 
 export interface LatestRequirementDocumentContext extends LatestRequirementReviewContext {
@@ -44,6 +59,13 @@ export function saveLatestApprovedTestCaseContext(context: LatestApprovedTestCas
     return;
   }
   window.localStorage.setItem(LATEST_APPROVED_TEST_CASE_KEY, JSON.stringify(context));
+}
+
+export function saveLatestAutomationDraftContext(context: LatestAutomationDraftContext): void {
+  if (!hasLocalStorage()) {
+    return;
+  }
+  window.localStorage.setItem(LATEST_AUTOMATION_DRAFT_KEY, JSON.stringify(context));
 }
 
 export function getLatestRequirementReviewContext(): LatestRequirementReviewContext | null {
@@ -103,6 +125,25 @@ export function getLatestApprovedTestCaseContext(): LatestApprovedTestCaseContex
   }
 }
 
+export function getLatestAutomationDraftContext(): LatestAutomationDraftContext | null {
+  if (!hasLocalStorage()) {
+    return null;
+  }
+  const rawValue = window.localStorage.getItem(LATEST_AUTOMATION_DRAFT_KEY);
+  if (!rawValue) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(rawValue) as unknown;
+    if (!isAutomationDraftContext(parsed)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 function isContext(value: unknown): value is LatestRequirementReviewContext {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
@@ -133,6 +174,19 @@ function isApprovedTestCaseContext(value: unknown): value is LatestApprovedTestC
   }
   const record = value as unknown as Record<string, unknown>;
   return typeof record.projectId === 'string' && typeof record.testCaseId === 'string';
+}
+
+function isAutomationDraftContext(value: unknown): value is LatestAutomationDraftContext {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const record = value as unknown as Record<string, unknown>;
+  return (
+    typeof record.projectId === 'string' &&
+    typeof record.automationDraftId === 'string' &&
+    typeof record.status === 'string' &&
+    typeof record.targetFramework === 'string'
+  );
 }
 
 function hasLocalStorage(): boolean {

@@ -19,8 +19,8 @@
         <template #title>执行入口</template>
         <form class="execution-form" data-test="execution-form-playwright" @submit.prevent="startRun">
           <label>
-            <span>项目 ID</span>
-            <a-input v-model="store.projectId" data-test="execution-project-id" />
+            <span>当前项目</span>
+            <a-input :model-value="store.projectId" data-test="execution-project-id" readonly />
           </label>
           <label>
             <span>执行来源</span>
@@ -30,21 +30,28 @@
             </a-radio-group>
           </label>
           <label v-if="store.sourceMode === 'automation_draft'">
-            <span>AutomationDraft ID</span>
-            <a-input v-model="store.automationDraftId" data-test="execution-source-id" />
+            <span>已批准 Playwright 草稿</span>
+            <a-input :model-value="store.automationDraftId" data-test="execution-source-id" readonly />
           </label>
           <label v-else>
             <span>TestCommand ID</span>
             <a-input v-model="store.testCommandId" data-test="execution-source-id" />
           </label>
           <a-space wrap>
-            <a-button data-test="start-playwright-run" html-type="submit" type="primary" :loading="store.loading">
+            <a-button
+              data-test="start-playwright-run"
+              html-type="submit"
+              type="primary"
+              :disabled="!canStartRun"
+              :loading="store.loading"
+            >
               启动 Playwright
             </a-button>
             <a-button data-test="refresh-playwright-run" :disabled="!store.run" :loading="store.loading" @click="refreshRun">
               刷新结果
             </a-button>
           </a-space>
+          <p v-if="startHint" class="execution-start-hint">{{ startHint }}</p>
         </form>
         <ExecutionRecentRuns />
       </a-card>
@@ -109,6 +116,9 @@ import { playwrightOutputArtifacts } from './executionOutputArtifacts';
 import { buildExecutionRunManifestRows } from './executionRunManifest';
 
 const store = useExecutionStore();
+if (store.automationDraftFramework && store.automationDraftFramework !== 'playwright') {
+  store.automationDraftId = '';
+}
 
 const resultColumns = [
   { title: '测试', dataIndex: 'test_name' },
@@ -138,6 +148,16 @@ const browserArtifacts = computed(() => {
 });
 
 const manifestRows = computed(() => buildExecutionRunManifestRows(store.run, playwrightOutputArtifacts));
+const startHint = computed(() => {
+  if (store.sourceMode === 'automation_draft' && !store.automationDraftId) {
+    return '请先在自动化草稿页生成并批准 Playwright 草稿。';
+  }
+  if (store.sourceMode === 'test_command' && !store.testCommandId) {
+    return '请输入或选择项目中已配置的 Playwright TestCommand。';
+  }
+  return '';
+});
+const canStartRun = computed(() => !startHint.value);
 
 function startRun() {
   void store.startRun({
@@ -201,6 +221,11 @@ function refreshRun() {
   gap: 7px;
   color: #344054;
   font-weight: 700;
+}
+
+.execution-start-hint {
+  margin: 0;
+  color: #d46b08;
 }
 
 @media (max-width: 980px) {

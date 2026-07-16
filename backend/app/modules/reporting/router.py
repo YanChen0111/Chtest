@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.app.modules.projects.router import get_session
+from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
+from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.reporting import service
 from backend.app.modules.reporting.models import FailureAnalysis
 from backend.app.modules.reporting.schemas import (
@@ -74,9 +76,10 @@ def get_failure_analysis(
 def create_report(
     data: ReportCreateRequest,
     session: Session = Depends(get_session),
+    store: LocalArtifactStore = Depends(get_artifact_store),
 ) -> ReportCreateRead:
     try:
-        report, evidence_manifest_artifact_id = service.create_report(session, data)
+        report, evidence_manifest_artifact_id = service.create_report(session, data, store=store)
     except service.ReportInvalidInputError as exc:
         raise bad_request("REPORT_INVALID_INPUT", "Report input is invalid.") from exc
     return ReportCreateRead(

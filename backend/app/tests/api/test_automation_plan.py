@@ -401,8 +401,8 @@ def test_automation_plan_requires_approval_before_draft_and_execution(
             "reason": "run approved draft",
         },
     )
-    assert run_response.status_code == 202
-    assert run_response.json()["status"] == "passed"
+    assert run_response.status_code == 400
+    assert run_response.json()["error_code"] == "TEST_RUN_INVALID_INPUT"
 
     with SessionLocal() as session:
         plan = session.get(AutomationPlan, uuid.UUID(plan_body["id"]))
@@ -420,7 +420,7 @@ def test_automation_plan_requires_approval_before_draft_and_execution(
     assert draft is not None
     assert retrieval_artifact is not None
     assert plan_task is not None
-    assert test_run is not None
+    assert test_run is None
     assert plan.status == "draft_generated"
     assert draft.status == "approved"
     assert draft.automation_plan_id == plan.id

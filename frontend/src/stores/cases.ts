@@ -35,6 +35,8 @@ export const useCasesStore = defineStore('cases', {
       requirementReviewId: latestDocument?.requirementReviewId ?? latestContext?.requirementReviewId ?? '',
       requirementDocumentArtifactId: latestDocument?.requirementDocumentArtifactId ?? '',
       selectedRequirementDocumentNumber: latestDocument?.documentNumber ?? '',
+      requirementRiskTitles: latestContext?.review?.risk_items.map((item) => item.title) ?? [],
+      requirementClarificationQuestions: latestContext?.review?.clarification_questions ?? [],
       requirementDocuments: [] as RequirementDocumentRead[],
       generation: null as CaseGenerationStartRead | null,
       generationTask: null as CaseGenerationTaskRead | null,
@@ -81,6 +83,8 @@ export const useCasesStore = defineStore('cases', {
       this.requirementReviewId = latestContext.requirementReviewId;
       this.requirementDocumentArtifactId = '';
       this.selectedRequirementDocumentNumber = '';
+      this.requirementRiskTitles = latestContext.review?.risk_items.map((item) => item.title) ?? [];
+      this.requirementClarificationQuestions = latestContext.review?.clarification_questions ?? [];
       return true;
     },
     async loadRequirementDocuments() {
@@ -119,6 +123,14 @@ export const useCasesStore = defineStore('cases', {
       this.requirementReviewId = document.requirement_review_id;
       this.requirementDocumentArtifactId = document.artifact_id;
       this.selectedRequirementDocumentNumber = document.document_number;
+      const latestContext = getLatestRequirementReviewContext();
+      if (latestContext?.requirementReviewId === document.requirement_review_id) {
+        this.requirementRiskTitles = latestContext.review?.risk_items.map((item) => item.title) ?? [];
+        this.requirementClarificationQuestions = latestContext.review?.clarification_questions ?? [];
+      } else {
+        this.requirementRiskTitles = [];
+        this.requirementClarificationQuestions = [];
+      }
       return true;
     },
     clearRequirementDocumentSelection() {
@@ -128,6 +140,8 @@ export const useCasesStore = defineStore('cases', {
       if (!latestContext) {
         this.requirementId = '';
         this.requirementReviewId = '';
+        this.requirementRiskTitles = [];
+        this.requirementClarificationQuestions = [];
         return false;
       }
       this.projectId = latestContext.projectId;

@@ -23,6 +23,7 @@ from backend.app.modules.automation.schemas import (
     AutomationPlanUpdateRequest,
 )
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
+from backend.app.modules.cases.service import case_domain_aligned, extract_domain_terms
 from backend.app.modules.extension import service as extension_service
 from backend.app.modules.knowledge import service as knowledge_service
 from backend.app.modules.projects.models import Project
@@ -535,9 +536,30 @@ def automation_draft_approval_blocking_reasons(draft: AutomationDraft) -> list[s
         reasons.append(
             "Draft code references fake/stub/demo adapters and cannot be approved as real regression evidence."
         )
+    if automation_draft_domain_mismatch(draft):
+        reasons.append("Draft code does not align with the linked requirement or test-case domain.")
     if not draft.suggested_file_path or invalid_suggested_path(draft.suggested_file_path):
         reasons.append("Suggested file path must be relative and stay inside the test workspace.")
     return reasons
+
+
+def automation_draft_domain_mismatch(draft: AutomationDraft) -> bool:
+    """Reject generated code that has drifted away from its linked requirement."""
+    requirement = draft.requirement
+    if requirement is None:
+        return False
+    terms = extract_domain_terms(
+        f"{requirement.title}\n{requirement.content}\n{requirement.source_ref or ''}",
+    )
+    if not terms:
+        return False
+    candidate = {
+        "title": draft.title,
+        "precondition": draft.execution_notes or "",
+        "steps": [draft.draft_code],
+        "expected_results": [draft.risk_notes or ""],
+    }
+    return not case_domain_aligned(candidate, terms)
 
 
 def automation_draft_evidence_warnings(draft: AutomationDraft) -> list[str]:

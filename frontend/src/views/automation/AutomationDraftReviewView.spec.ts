@@ -440,6 +440,14 @@ describe('AutomationDraftReviewView', () => {
     await wrapper.vm.$nextTick();
     expect(wrapper.text()).toContain('approved');
     expect(wrapper.text()).toContain('前端批准草稿');
+    expect(JSON.parse(window.localStorage.getItem('chtest.latestAutomationDraft') ?? '{}')).toEqual(
+      expect.objectContaining({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        automationDraftId: draftId,
+        status: 'approved',
+        targetFramework: 'pytest',
+      }),
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       `/api/review-history?project_id=00000000-0000-0000-0000-000000000101&entity_type=AutomationDraft&entity_id=${draftId}&limit=20`,
       expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),

@@ -38,6 +38,10 @@ describe('CaseGenerationReviewView', () => {
         projectId: '00000000-0000-0000-0000-000000000101',
         requirementId: '00000000-0000-0000-0000-000000000411',
         requirementReviewId: '00000000-0000-0000-0000-000000000611',
+        review: {
+          risk_items: [{ title: '结算互斥规则' }, { title: '金额边界' }],
+          clarification_questions: ['优惠券是否支持叠加？'],
+        },
       }),
     );
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -226,6 +230,8 @@ describe('CaseGenerationReviewView', () => {
 
     expect(wrapper.text()).toContain('用例生成评审');
     expect(wrapper.text()).toContain('开始生成候选用例');
+    expect(wrapper.text()).toContain('风险：结算互斥规则、金额边界，以及 1 个待澄清项已纳入本次生成范围');
+    expect(wrapper.text()).not.toContain('插枪');
 
     await confirmDecisionTable(wrapper);
     await wrapper.find('form').trigger('submit');

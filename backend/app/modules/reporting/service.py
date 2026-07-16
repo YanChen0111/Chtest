@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass
 
@@ -7,7 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.model_config import resolve_model_identity
+from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact
+from backend.app.modules.automation.service import automation_draft_quality_gate
 from backend.app.modules.execution.models import TestResult, TestRun
 from backend.app.modules.reporting.models import FailureAnalysis, Report
 from backend.app.modules.reporting.schemas import FailureAnalysisCreateRequest, ReportCreateRequest
@@ -203,7 +206,11 @@ def stable_version_uuid(version: str) -> uuid.UUID:
     return uuid.uuid5(uuid.NAMESPACE_URL, f"chtest:{version}")
 
 
-def create_report(session: Session, data: ReportCreateRequest) -> tuple[Report, uuid.UUID | None]:
+def create_report(
+    session: Session,
+    data: ReportCreateRequest,
+    store: LocalArtifactStore,
+) -> tuple[Report, uuid.UUID | None]:
     if data.report_type != "automation_execution" or data.related_entity_type != "TestRun":
         raise ReportInvalidInputError
 
@@ -248,7 +255,7 @@ def create_report(session: Session, data: ReportCreateRequest) -> tuple[Report, 
     session.flush()
 
     evidence_manifest = build_evidence_manifest(report, conclusion, test_run, test_results, execution_artifacts)
-    report_artifacts = create_report_artifacts(session, report, evidence_manifest)
+    report_artifacts = create_report_artifacts(session, report, evidence_manifest, store=store)
     report.artifact_ids = [artifact.id for artifact in report_artifacts]
     report.status = "ready"
     session.add(report)
@@ -274,6 +281,11 @@ def report_conclusion(test_run: TestRun, test_results: list[TestResult], artifac
     parsed = test_run.parsed_result_json or {}
     if parsed.get("failed") or parsed.get("error") or test_run.status in {"failed", "error"}:
         return "failed"
+    draft = test_run.automation_draft
+    if draft is not None and draft.ai_task is not None:
+        quality_gate = automation_draft_quality_gate(draft)
+        if quality_gate["execution_evidence_level"] != "reviewed_candidate":
+            return "insufficient_evidence"
     if parsed.get("passed") and artifacts:
         return "passed"
     return "insufficient_evidence"
@@ -328,7 +340,13 @@ def build_evidence_manifest(
     }
 
 
-def create_report_artifacts(session: Session, report: Report, evidence_manifest: dict) -> list[Artifact]:
+def create_report_artifacts(
+    session: Session,
+    report: Report,
+    evidence_manifest: dict,
+    *,
+    store: LocalArtifactStore,
+) -> list[Artifact]:
     base_path = f"projects/{report.project_id}/reports/{report.id}"
     specs = [
         (
@@ -356,17 +374,51 @@ def create_report_artifacts(session: Session, report: Report, evidence_manifest:
             },
         ),
     ]
+    # Keep the database record and local evidence file in lockstep.
+    report_json = {
+        "report_id": str(report.id),
+        "project_id": str(report.project_id),
+        "report_type": report.report_type,
+        "conclusion": report.conclusion,
+        "summary": report.summary,
+        "metrics": report.metrics_json,
+        "evidence_manifest": evidence_manifest,
+    }
+    report_markdown = (
+        f"# {report.title}\n\n"
+        f"- Conclusion: **{report.conclusion}**\n"
+        f"- Summary: {report.summary}\n\n"
+        "## Evidence\n\n"
+        + "\n".join(
+            f"- {item.get('artifact_type', item.get('metric', 'evidence'))}: {item.get('supports_claim', '')}"
+            for item in evidence_manifest.get("evidence", [])
+        )
+        + "\n"
+    )
+    contents = {
+        "report.md": report_markdown.encode("utf-8"),
+        "report.json": json.dumps(report_json, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8"),
+        "evidence_manifest.json": json.dumps(
+            evidence_manifest,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ).encode("utf-8"),
+    }
     artifacts: list[Artifact] = []
     for artifact_type, filename, mime_type, metadata in specs:
+        content = contents[filename]
+        relative_path = f"{base_path}/{filename}"
+        write_result = store.write_bytes(relative_path, content)
         artifact = Artifact(
             project_id=report.project_id,
             owner_entity_type="Report",
             owner_entity_id=report.id,
             artifact_type=artifact_type,
-            file_path=f"{base_path}/{filename}",
+            file_path=relative_path,
             mime_type=mime_type,
-            size_bytes=0,
-            sha256=f"sha256:{artifact_type}:{filename}:{report.id}",
+            size_bytes=write_result.size_bytes,
+            sha256=f"sha256:{write_result.sha256}",
             metadata_json=metadata,
         )
         session.add(artifact)

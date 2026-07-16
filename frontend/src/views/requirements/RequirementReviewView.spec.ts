@@ -1,11 +1,14 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RequirementReviewView from './RequirementReviewView.vue';
 
 describe('RequirementReviewView', () => {
+  beforeEach(() => window.localStorage.clear());
+  afterEach(() => vi.unstubAllGlobals());
+
   it('creates a requirement and shows review scores, risks, and context usage', async () => {
     const reviewBodies: unknown[] = [];
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -141,6 +144,16 @@ describe('RequirementReviewView', () => {
     expect(wrapper.text()).toContain('外部知识库未使用');
     expect(wrapper.text()).toContain('上下文清单');
 
+    const persistedContext = JSON.parse(window.localStorage.getItem('chtest.latestRequirementReview') ?? '{}');
+    expect(persistedContext).toEqual(
+      expect.objectContaining({
+        requirementId: '00000000-0000-0000-0000-000000000401',
+        requirementReviewId: '00000000-0000-0000-0000-000000000601',
+        requirement: expect.objectContaining({ title: '优惠券结算规则' }),
+        review: expect.objectContaining({ overall_score: 82 }),
+      }),
+    );
+
     await wrapper.find('[data-test="supplement-text"] textarea').setValue('平台活动可以叠加，但积分不可同时使用。');
     await wrapper.find('[data-test="clarification-answer"] input').setValue('可以与平台活动叠加。');
     await wrapper.find('[data-test="submit-supplement"]').trigger('click');
@@ -166,5 +179,15 @@ describe('RequirementReviewView', () => {
     expect(wrapper.text()).toContain('正式需求文档');
     expect(wrapper.text()).toContain('RD-CHECKOUT-SYSTEM-20260709-0001');
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000d01/download"]').exists()).toBe(true);
+
+    wrapper.unmount();
+    const restoredWrapper = mount(RequirementReviewView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+    await restoredWrapper.vm.$nextTick();
+    expect(restoredWrapper.text()).toContain('综合评分');
+    expect(restoredWrapper.text()).toContain('82');
+    expect(restoredWrapper.find('input').element.value).toBe('优惠券结算规则');
   });
 });

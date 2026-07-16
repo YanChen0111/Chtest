@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.app.modules.projects.service import has_forbidden_shell_operator, is_command_allowlisted
+from backend.app.modules.execution.subprocess_utils import executable_argv
 
 
 class PlaywrightRunnerCommandError(ValueError):
@@ -72,7 +73,7 @@ def normalize_playwright_argv(command: str, npx_executable: str) -> list[str]:
     parts = shlex.split(command)
     if parts[:3] != ["npx", "playwright", "test"]:
         raise PlaywrightRunnerCommandError("Command must start with npx playwright test.")
-    return [npx_executable, "playwright", "test", *parts[3:]]
+    return executable_argv(npx_executable, "playwright", "test", *parts[3:])
 
 
 def parse_playwright_counts(stdout: str, stderr: str = "") -> dict[str, Any]:

@@ -17,12 +17,12 @@ from backend.app.tests.golden.test_test_case_library_golden import (
 )
 
 
-def test_golden_approved_automation_draft_executes_pytest_with_evidence(
+def test_golden_placeholder_automation_draft_cannot_be_approved(
     api_client: tuple[ASGIClient, sessionmaker[Session]],
 ) -> None:
     client, SessionLocal = api_client
     project, library = create_reviewed_golden_cases(client, SessionLocal)
-    expired_case = next(item for item in library["items"] if item["title"] == "过期优惠券不可用于结算")
+    expired_case = next(item for item in library["items"] if item["review_status"] == "approved_after_edit")
 
     create_response = client.post(
         "/api/automation/drafts",
@@ -62,58 +62,17 @@ def test_golden_approved_automation_draft_executes_pytest_with_evidence(
         f"/api/automation/drafts/{draft_id}/approve",
         json_body={"action": "approve", "review_comment": "Approved for controlled pytest execution."},
     )
-    assert approve_response.status_code == 200
-    assert approve_response.json()["status"] == "approved"
-
-    run_response = client.post(
-        "/api/test-runs",
-        json_body={
-            "project_id": project["id"],
-            "automation_draft_id": draft_id,
-            "reason": "golden approved draft execution",
-            "runner_mode": "local_subprocess",
-        },
-    )
-    assert run_response.status_code == 202
-    run = run_response.json()
-    assert run["automation_draft_id"] == draft_id
-    assert run["status"] == "passed"
-    assert run["exit_code"] == 0
-    assert run["runner_mode"] == "local_subprocess"
-    assert run["repository_readonly"] is True
-    assert run["network_enabled"] is False
-    assert run["parsed_result"]["passed"] == 1
-    assert run["test_results"][0]["test_name"] == "generated::test_golden_pytest_execution"
-    assert {artifact["artifact_type"] for artifact in run["artifacts"]} >= {"runtime_manifest", "stdout", "stderr"}
-
-    get_response = client.get(f"/api/test-runs/{run['id']}")
-    assert get_response.status_code == 200
-    fetched = get_response.json()
-    assert fetched["id"] == run["id"]
-    assert fetched["test_results"][0]["status"] == "passed"
+    assert approve_response.status_code == 400
+    assert approve_response.json()["error_code"] == "AUTOMATION_DRAFT_QUALITY_GATE_FAILED"
 
     with SessionLocal() as session:
         persisted_draft = session.get(AutomationDraft, uuid.UUID(draft_id))
-        persisted_run = session.get(TestRun, uuid.UUID(run["id"]))
-        persisted_results = list(session.scalars(select(TestResult).where(TestResult.test_run_id == uuid.UUID(run["id"]))))
-        persisted_artifacts = list(
-            session.scalars(
-                select(Artifact).where(
-                    Artifact.owner_entity_type == "TestRun",
-                    Artifact.owner_entity_id == uuid.UUID(run["id"]),
-                ),
-            ),
-        )
+        persisted_run = session.scalar(select(TestRun).where(TestRun.automation_draft_id == uuid.UUID(draft_id)))
         report = session.scalar(select(Report))
         quality_gate_decision = session.scalar(select(QualityGateDecision))
 
     assert persisted_draft is not None
-    assert persisted_draft.status == "approved"
-    assert persisted_run is not None
-    assert persisted_run.status == "passed"
-    assert persisted_run.parsed_result_json["passed"] == 1
-    assert len(persisted_results) == 1
-    assert persisted_results[0].status == "passed"
-    assert {artifact.artifact_type for artifact in persisted_artifacts} >= {"runtime_manifest", "stdout", "stderr"}
+    assert persisted_draft.status == "edited"
+    assert persisted_run is None
     assert report is None
     assert quality_gate_decision is None

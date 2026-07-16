@@ -268,6 +268,11 @@ function submitSupplement() {
 }
 
 onMounted(() => {
+  if (store.restoreLatestRequirementReview() && store.requirement) {
+    form.title = store.requirement.title;
+    form.sourceRef = store.requirement.source_ref ?? '';
+    form.content = store.requirement.content;
+  }
   void store.loadRequirementDocuments();
 });
 </script>

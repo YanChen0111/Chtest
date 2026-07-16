@@ -15,10 +15,10 @@
           :key="item.routeName"
           class="nav-item"
           :class="{ active: item.routeName === activeRouteName }"
-          :to="item.status === '就绪' ? { name: item.routeName } : routeFallback"
+          :to="{ name: item.routeName }"
         >
           <span>{{ item.label }}</span>
-          <a-tag size="small" :color="item.status === '就绪' ? 'green' : 'gray'">{{ item.status }}</a-tag>
+          <a-tag size="small" :color="readinessColor">{{ readinessLabel }}</a-tag>
         </RouterLink>
       </nav>
     </a-layout-sider>
@@ -43,21 +43,43 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 
 import { useWorkbenchStore } from '../stores';
+import { getReadiness, type ReadinessRead } from '../api/readiness';
 
 const route = useRoute();
 const workbench = useWorkbenchStore();
-const routeFallback = { name: 'ai-workbench' };
+const readiness = ref<ReadinessRead | null>(null);
+const readinessFailed = ref(false);
 
 const activeRouteName = computed(() => String(route.name ?? 'ai-workbench'));
+const readinessLabel = computed(() => {
+  if (readiness.value?.status === 'ready') return '就绪';
+  if (readiness.value?.status === 'degraded') return '部分可用';
+  if (readiness.value?.status === 'not_ready' || readinessFailed.value) return '不可用';
+  return '检查中';
+});
+const readinessColor = computed(() => {
+  if (readiness.value?.status === 'ready') return 'green';
+  if (readiness.value?.status === 'degraded') return 'orange';
+  if (readiness.value?.status === 'not_ready' || readinessFailed.value) return 'red';
+  return 'gray';
+});
 const currentTitle = computed(() => {
   if (typeof route.meta.title === 'string') {
     return route.meta.title;
   }
   const matched = workbench.navigation.find((item) => item.routeName === activeRouteName.value);
   return matched?.label ?? 'AI 工作台';
+});
+
+onMounted(async () => {
+  try {
+    readiness.value = await getReadiness();
+  } catch {
+    readinessFailed.value = true;
+  }
 });
 </script>

@@ -45,7 +45,7 @@ def bad_request(error_code: str, message: str) -> HTTPException:
 
 def schema_invalid(error_code: str, message: str) -> HTTPException:
     return HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail={"error_code": error_code, "message": message, "details": {}},
     )
 
