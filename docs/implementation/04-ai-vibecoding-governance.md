@@ -234,7 +234,7 @@ Recommended scopes:
 ```text
 repo, backend, frontend, worker, deploy, db, api, models, schemas,
 ai-runtime, prompt, skill, tool, artifact, requirement, case,
-automation, git-quality, report, docs, memory, test
+automation, cicd-quality, report, docs, memory, test
 ```
 
 Examples:
@@ -244,7 +244,7 @@ feat(backend): add health check endpoint
 feat(db): add project and module models
 feat(ai-runtime): add mock llm provider
 feat(automation): add automation draft state machine
-feat(git-quality): add patch scope gate
+feat(cicd-quality): add patch scope gate
 test(api): cover requirement review creation
 docs(contracts): add repository api contract
 chore(deploy): add docker compose services

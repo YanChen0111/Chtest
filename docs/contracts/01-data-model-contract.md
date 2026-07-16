@@ -2,7 +2,9 @@
 
 ## 1. Purpose
 
-This document is the field-level data model contract for Chtest V1. ORM models, Pydantic schemas, API handlers, fixtures, and reports must follow this contract.
+This document is the field-level data model contract for Chtest V1 and promoted
+final-product slices. ORM models, Pydantic schemas, API handlers, fixtures, and
+reports must follow this contract.
 
 V1 uses PostgreSQL. All tables include these base fields unless explicitly stated otherwise:
 
@@ -35,6 +37,7 @@ V1 is single-user, but owner fields are kept for later extension.
 |---|---|
 | AITaskStatus | created, pending, running, waiting_review, waiting_approval, succeeded, failed, cancelled |
 | CandidateStatus | generated, under_review, approved, approved_after_edit, rejected, needs_optimization, optimization_pending_review, archived |
+| AutomationPlanStatus | plan_generated, edited, approved, rejected, draft_generated, archived |
 | AutomationDraftStatus | draft_generated, under_review, approved, edited, rejected, execution_pending, executed, execution_failed, promoted, archived |
 | PatchStatus | generated, scope_validated, scope_rejected, awaiting_review, approved, rejected, edited, applied, apply_failed, replaced |
 | ToolInvocationStatus | created, waiting_approval, approved, rejected, running, succeeded, failed, timeout, cancelled |
@@ -44,10 +47,18 @@ V1 is single-user, but owner fields are kept for later extension.
 | PromptStatus | draft, active, deprecated |
 | SkillStatus | draft, active, deprecated |
 | ToolDefinitionStatus | active, disabled, archived |
+| KnowledgeAdapterStatus | not_configured, disabled, configured_stub, configured, indexing, ready, degraded, failed |
+| KnowledgeIngestionRunStatus | created, parsing, extracting, waiting_review, completed, partial_failed, failed, cancelled |
+| KnowledgeRetrievalRunStatus | created, retrieving, normalizing, completed, failed, cancelled |
+| TestKnowledgeCardStatus | extracted, approved, stale, unsafe, duplicate, archived |
+| TestKnowledgeEmbeddingIndexStatus | indexed, stale, failed |
+| KnowledgeFeedbackStatus | proposed, waiting_review, approved, rejected, applied, failed |
+| KnowledgeRelationshipStatus | active, stale, archived |
 | FailureClassification | product_defect, test_script_issue, environment_issue, test_data_issue, dependency_issue, flaky_test, insufficient_evidence |
-| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationDraft, TestRun, Report, GitChangeSet, ToolInvocation |
+| ArtifactOwnerType | Project, AITask, Requirement, RequirementReview, CaseGenerationTask, AutomationPlan, AutomationDraft, TestRun, Report, CICDRun, ToolInvocation, KnowledgeIngestionRun, KnowledgeRetrievalRun, KnowledgeFeedbackEvent |
 | LLMCallStatus | started, succeeded, failed, timeout, schema_invalid |
 | AutomationRepairStatus | created, running, candidate_generated, waiting_review, approved, rejected, failed |
+| ReviewHistoryAction | open_review, approve, approve_after_edit, reject, edit, generate_draft, request_optimization, compute_quality_gate, recompute_quality_gate |
 
 ## 3. Workspace
 
@@ -127,11 +138,20 @@ Constraint: level between 1 and 5.
 | name | varchar(160) | yes | none | Example `pytest unit` |
 | command | text | yes | none | Must match allowlist rules |
 | working_directory | text | yes | none | Must be under repository path |
-| command_type | varchar(40) | yes | pytest | pytest, npm, playwright |
+| command_type | varchar(40) | yes | pytest | pytest, npm, playwright, newman, jmeter |
 | timeout_seconds | int | yes | 600 | Max runtime |
 | parse_junit | bool | yes | true | Parse JUnit output |
 | parse_coverage | bool | yes | false | Parse coverage output |
 | status | EntityStatus | yes | active | Status |
+
+JMeter TestCommand rules:
+
+- `command_type=jmeter` is used only for approved local JMeter non-GUI
+  execution in Slice 22.
+- The command must pass the JMeter ToolDefinition allowlist and must not carry
+  arbitrary shell text from the client.
+- JMX plan paths and JTL output paths must stay under the repository path or a
+  Chtest-managed runtime workspace.
 
 ## 10. Requirement
 
@@ -188,6 +208,15 @@ Constraint: level between 1 and 5.
 | status | AITaskStatus | yes | created | Task status |
 | generated_count | int | yes | 0 | Candidate count |
 
+Rules:
+
+- CaseGenerationTask is created before candidates are available.
+- Status progresses through `pending` or `running` to `succeeded` or `failed`.
+- Candidates are persisted only after schema validation and domain-alignment
+  checks pass.
+- Wrong-domain output fails the task and records
+  `CASE_GENERATION_DOMAIN_MISMATCH` on the linked AITask.
+
 ## 14. GeneratedCaseCandidate
 
 | Field | Type | Required | Default | Notes |
@@ -205,10 +234,34 @@ Constraint: level between 1 and 5.
 | tags | text[] | yes | {} | Tags |
 | requirement_refs_json | jsonb | yes | [] | Requirement references |
 | risk_refs_json | jsonb | yes | [] | Risk references |
+| source_knowledge_evidence_json | jsonb | yes | [] | TestKnowledgeCard evidence snippets used for this candidate |
+| coverage_dimensions_json | jsonb | yes | [] | Coverage dimensions from CaseGenerationAgent output |
+| covered_requirement_ids_json | jsonb | yes | [] | Requirement ids explicitly covered by the case |
+| covered_risk_ids_json | jsonb | yes | [] | Risk or RiskPoint ids explicitly covered by the case |
+| case_type | varchar(80) | yes | functional | Main flow, negative, boundary, state, permission, channel, compatibility, security, performance, or regression classification |
+| generation_reason | text | yes | none | Evidence-backed reason this distinct case is needed |
+| coverage_gap_notes | text | no | null | Known uncovered dimensions or unresolved ambiguity |
+| automation_readiness_json | jsonb | yes | {} | Framework suitability, blockers, required fixtures/selectors/hooks, and confidence |
+| quality_assessment_json | jsonb | yes | {} | CaseReviewAgent and CoverageGapAgent findings |
 | ai_reason | text | yes | none | AI generation reason |
 | duplicate_of_case_id | uuid | no | null | Potential duplicate case |
 | status | CandidateStatus | yes | generated | Candidate status |
 | review_comment | text | no | null | Human review comment |
+
+Rules:
+
+- `coverage_dimensions_json` stores reviewable testing-dimension evidence for
+  `positive`, `negative`, `boundary`, `state`, `permission`, `channel`,
+  `condition`, and `risk`.
+- New CaseGenerationAgent outputs must provide at least one legal coverage
+  dimension per candidate. Missing, empty, or unknown coverage dimensions fail
+  schema validation and must not persist candidates.
+- Frontends must display persisted coverage dimensions from this field instead
+  of recomputing coverage from candidate title or text heuristics.
+- Final CaseGeneration output must persist covered requirement/risk ids,
+  `case_type`, `generation_reason`, `coverage_gap_notes`, and
+  `automation_readiness_json`. A case without evidence or a verifiable expected
+  result must be blocked or explicitly marked `needs_optimization`.
 
 ## 15. TestCase
 
@@ -229,6 +282,37 @@ Constraint: level between 1 and 5.
 | review_status | ReviewStatus | yes | approved | Review status |
 | status | EntityStatus | yes | active | Status |
 
+## 15A. AutomationPlan
+
+AutomationPlan records the human-reviewable execution plan derived from a reviewed TestCase before code draft generation.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| test_case_id | uuid | yes | none | FK approved TestCase |
+| requirement_id | uuid | no | null | FK source Requirement derived from CaseGenerationTask |
+| requirement_review_id | uuid | no | null | FK source RequirementReview |
+| source_candidate_id | uuid | no | null | FK GeneratedCaseCandidate that produced the TestCase |
+| ai_task_id | uuid | yes | none | FK AutomationPlanAgent AITask |
+| knowledge_retrieval_artifact_id | uuid | no | null | FK `knowledge_retrieval` Artifact |
+| target_framework | varchar(60) | yes | pytest | pytest, playwright |
+| title | varchar(255) | yes | none | Plan title |
+| plan_json | jsonb | yes | {} | Structured plan summary |
+| execution_steps_json | jsonb | yes | [] | Reviewable execution steps |
+| test_data_json | jsonb | yes | {} | Test data required by the plan |
+| dependency_notes | text | no | null | Dependency and fixture notes |
+| risk_notes | text | no | null | Human review focus |
+| used_context_artifact_ids | uuid[] | yes | {} | ContextArtifact ids used by deterministic retrieval |
+| status | AutomationPlanStatus | yes | plan_generated | Status |
+| review_comment | text | no | null | Review comment |
+
+Rules:
+
+- AutomationPlan creation requires an active TestCase with `review_status in (approved, approved_after_edit)` and a non-null `source_candidate_id`.
+- When `use_knowledge=true`, deterministic local retrieval may attach `knowledge_retrieval` evidence to the AutomationPlan AITask.
+- Only `status=approved` AutomationPlan rows may generate AutomationDraft rows.
+- Generating a draft changes the AutomationPlan status to `draft_generated`; it does not approve the AutomationDraft.
+
 ## 16. AutomationDraft
 
 AutomationDraft is a core V1 entity that connects reviewed cases and executable tests.
@@ -239,6 +323,7 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | test_case_id | uuid | no | null | FK TestCase |
 | requirement_id | uuid | no | null | FK Requirement |
 | ai_task_id | uuid | yes | none | FK AITask |
+| automation_plan_id | uuid | no | null | FK AutomationPlan when generated from an approved plan |
 | target_framework | varchar(60) | yes | pytest | pytest, playwright |
 | title | varchar(255) | yes | none | Draft title |
 | draft_code | text | yes | none | AI-generated code draft |
@@ -253,26 +338,72 @@ AutomationDraft is a core V1 entity that connects reviewed cases and executable 
 | runtime_artifact_id | uuid | no | null | Artifact for approved temporary runtime file |
 | promoted_artifact_id | uuid | no | null | Promoted artifact |
 
+AutomationDraft read APIs may include a computed, read-only `quality_gate`
+object. It is not a persisted database column. The gate exposes
+`status`, `execution_evidence_level`, `approval_blocking_reasons`, and
+`evidence_warnings` so reviewers can distinguish real regression candidates
+from placeholder or fake/stub/demo adapter evidence before approval.
+
 V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed artifact runtime directory before execution. It is not written directly into the target business repository.
 
-## 17. GitChangeSet
+V2 Newman rule: Newman API execution uses configured TestCommand records with
+`command_type=newman`. It is not generated from AutomationDraft in Slice 18.
+The command must match Newman allowlist rules and must not contain arbitrary
+shell operators.
+
+## 17. CICDRun
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
 | repository_id | uuid | no | null | FK Repository |
-| source_type | varchar(40) | yes | local_diff | local_diff, uploaded_diff |
+| source_type | varchar(40) | yes | local_diff | local_diff, uploaded_diff, manual_check, ci_import |
+| trigger_type | varchar(40) | yes | manual | manual in V1; imported in Slice 20; webhook, pr, scheduled are future only |
+| provider | varchar(40) | yes | local | local in V1; imported/github_actions/gitlab_ci/jenkins/circleci/buildkite/other labels are evidence only in Slice 20 |
+| pipeline_name | varchar(160) | no | null | Optional local pipeline/check name |
 | base_ref | varchar(160) | no | null | Base commit or branch |
 | head_ref | varchar(160) | no | null | Head commit or branch |
 | summary | text | no | null | Change summary |
 | overall_risk | RiskLevel | yes | medium | Overall risk |
-| status | varchar(40) | yes | created | created, analyzed, reported, archived |
+| quality_gate_status | varchar(40) | yes | pending | pending, passed, failed, needs_review |
+| status | varchar(40) | yes | created | created, imported, import_failed, analyzed, patch_ready, tests_running, reported, archived |
 
-## 18. GitChangedFile
+V1 Slice 15 boundary:
+
+- `source_type` supports `local_diff` and `manual_check`; `uploaded_diff` is
+  accepted only as stored diff text, not as remote provider ingestion.
+- `trigger_type` is `manual` only.
+- `provider` is `local` only.
+- `quality_gate_status` remains `pending` in Slice 15 because
+  QualityGateDecision belongs to Slice 16.
+- Slice 15 must not trigger merge, push, release, deployment, webhook handling,
+  PR comments, or remote CI provider synchronization.
+
+V2 Slice 20 import boundary:
+
+- `source_type=ci_import` is allowed only for static CI metadata imported into
+  Chtest as evidence.
+- `trigger_type=imported` may be used to distinguish imported facts from local
+  manual runs. It must not imply webhook, PR, scheduled, or remote-triggered
+  execution.
+- `provider` may store inert labels such as `imported`, `github_actions`,
+  `gitlab_ci`, or `jenkins` only as source metadata. Provider labels must not
+  enable provider APIs, credential lookup, webhook processing, pipeline
+  triggering, reruns, PR comments, deployment, release, or remote status update.
+- Imported CI metadata may include pipeline name, job name, inert run URL,
+  commit SHA, base/head refs, conclusion, started/finished timestamps, duration,
+  changed files, and artifact references. These values live in
+  `ci_run_metadata.json` Artifact content and metadata unless a later contract
+  explicitly promotes individual fields onto CICDRun. They are not remote
+  integration configuration.
+- Imported CI conclusion is evidence only. It must not automatically create a
+  `QualityGateDecision` or change `quality_gate_status` to `passed`.
+
+## 18. CICDChangedFile
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
-| change_set_id | uuid | yes | none | FK GitChangeSet |
+| cicd_run_id | uuid | yes | none | FK CICDRun |
 | path | text | yes | none | File path |
 | old_path | text | no | null | Rename source path |
 | change_type | varchar(40) | yes | modified | added, modified, deleted, renamed |
@@ -283,11 +414,23 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | lines_added | int | yes | 0 | Added lines |
 | lines_deleted | int | yes | 0 | Deleted lines |
 
+CICDChangedFile evidence rules:
+
+- Rows are derived from local unified diff text, manual changed-file input, or
+  Slice 20 static CI metadata imports.
+- `file_role` is deterministic from path and extension.
+- `risk_reasons_json` must explain why `risk_level` was assigned.
+- Every changed file in `changed_files.json` should have a matching
+  CICDChangedFile row.
+- Imported changed files must preserve provider-supplied path/change metadata
+  only as local evidence. They must not cause repository checkout, fetch, merge,
+  pull, push, or remote comparison.
+
 ## 19. UnitTestPatch
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
-| change_set_id | uuid | yes | none | FK GitChangeSet |
+| cicd_run_id | uuid | yes | none | FK CICDRun |
 | ai_task_id | uuid | yes | none | FK AITask |
 | patch_text | text | yes | none | Unified diff |
 | target_framework | varchar(60) | yes | pytest | pytest/jest/vitest |
@@ -297,19 +440,33 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | status | PatchStatus | yes | generated | Status |
 | review_comment | text | no | null | Review comment |
 
+UnitTestPatch rules:
+
+- UnitTestPatch is review-gated. Generated patches must not be applied until a
+  user approves them.
+- `scope_gate_result_json` must include `allowed`, `checked_paths`,
+  `blocked_paths`, `forbidden_patterns`, `risk_level`, and `reason` when
+  rejected.
+- PatchScopeGate must reject any patch that modifies business source files,
+  configuration, migrations, generated artifacts, or files outside allowed test
+  directories.
+- `scope_rejected` patches cannot transition to `approved`.
+- Applied patches must preserve the original `patch_text` as evidence and write
+  an applied patch artifact.
+
 ## 20. TestRun
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| change_set_id | uuid | no | null | FK GitChangeSet |
+| cicd_run_id | uuid | no | null | FK CICDRun |
 | automation_draft_id | uuid | no | null | FK AutomationDraft |
 | test_command_id | uuid | no | null | FK TestCommand |
 | tool_invocation_id | uuid | no | null | FK ToolInvocation |
 | name | varchar(255) | yes | none | Run name |
 | command | text | yes | none | Executed command |
 | working_directory | text | yes | none | Working directory |
-| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, docker_runner |
+| runner_mode | varchar(40) | yes | local_subprocess | local_subprocess, playwright_local, newman_local, jmeter_local, docker_runner |
 | run_workspace | text | no | null | Isolated execution workspace |
 | repository_readonly | bool | yes | true | Target repository mounted/read as readonly when possible |
 | network_enabled | bool | yes | false | Network access during run |
@@ -321,7 +478,149 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | duration_ms | int | no | null | Duration |
 | parsed_result_json | jsonb | yes | {} | Parsed aggregate result |
 
-## 21. TestResult
+Newman TestRun rules:
+
+- `runner_mode=newman_local` is used for approved local Newman API execution.
+- Newman TestRuns must reference `test_command_id`; Slice 18 does not execute
+  Newman from AutomationDraft.
+- `parsed_result_json` must include aggregate request/assertion counts:
+  `total`, `passed`, `failed`, `skipped`, `error`, `request_count`, and
+  `assertion_count`.
+- `failed` means Newman completed and one or more API assertions failed.
+- `error` means Newman could not run, timed out, or produced unparseable output.
+- `network_enabled` remains explicit. Local fixture tests should keep it false;
+  any future live API collection must display the chosen network policy.
+
+JMeter TestRun rules:
+
+- `runner_mode=jmeter_local` is used for approved local JMeter non-GUI
+  execution.
+- JMeter TestRuns must reference `test_command_id`; Slice 22 does not execute
+  JMeter from AutomationDraft.
+- `parsed_result_json` must include aggregate sampler/assertion counts:
+  `total`, `passed`, `failed`, `skipped`, `error`, `sampler_count`,
+  `assertion_count`, `duration_ms`, and `average_latency_ms` when available.
+- `failed` means JMeter completed and one or more samplers/assertions failed.
+- `error` means JMeter could not run, timed out, or produced unparseable JTL
+  output.
+- Local fixture tests must not require a real JMeter installation; they may use
+  deterministic JTL files or a fake executable.
+
+Slice 29 execution run manifest rules:
+
+- Execution run manifest is read-only presentation derived from existing
+  TestRun fields and Artifact metadata. It does not add a new table.
+- Manifest identity fields are `id`, `name`, `status`, `automation_draft_id`,
+  `test_command_id`, and `tool_invocation_id`.
+- Manifest command fields are `command`, `working_directory`, `runner_mode`,
+  and `run_workspace`.
+- Manifest safety fields are `repository_readonly` and `network_enabled`.
+  `network_enabled=false` is the default local safety policy;
+  `network_enabled=true` must remain visible and must not be hidden behind a
+  passed status.
+- Manifest snapshot fields are `runtime_artifact_ids`,
+  `dependency_snapshot_artifact_id`, and `environment_snapshot_artifact_id`.
+  Missing snapshot ids remain meaningful unavailable evidence and must not be
+  treated as passing evidence.
+- Manifest result fields are `exit_code`, `duration_ms`, and
+  `parsed_result_json`.
+- Manifest artifact rows are existing Artifact rows owned by the TestRun or
+  cited by these snapshot fields. The manifest does not create, rewrite, or
+  delete Artifact rows.
+- Execution run manifest must not mutate TestRun, TestResult, Artifact, Report,
+  FailureAnalysis, QualityGateDecision, AutomationDraft, ToolDefinition,
+  ToolInvocation, CI metadata, or review history.
+
+## 21. QualityGateDecision
+
+QualityGateDecision records one computed CI/CD quality gate result for a CICDRun. V1 computes it from local diff risk, PatchScopeGate, new test results, regression results, and failure analysis evidence. It does not trigger merge, push, or deployment automatically. Recomputing the gate creates a new QualityGateDecision record and updates `CICDRun.quality_gate_status`; old decisions remain as evidence history.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| cicd_run_id | uuid | yes | none | FK CICDRun |
+| status | varchar(40) | yes | needs_review | passed, failed, needs_review |
+| summary | text | yes | none | Human-readable gate conclusion |
+| blocking_reasons_json | jsonb | yes | [] | Reasons blocking merge/release readiness |
+| evidence_artifact_ids | uuid[] | yes | {} | Diff, patch, JUnit, logs, failure analysis |
+| decided_by | varchar(40) | yes | system | system in V1; user_override is V2+ |
+| status_detail_json | jsonb | yes | {} | Patch/test/regression/failure-analysis signals |
+
+QualityGateDecision rules:
+
+- `passed` requires passing PatchScopeGate evidence, approved/applied
+  UnitTestPatch evidence when a patch is used, passing new-test evidence, and
+  passing regression evidence or a documented low-risk regression waiver.
+- `failed` requires at least one concrete blocking reason, such as scope
+  rejection, failed tests, failed regression, or high-risk uncovered changes.
+- `needs_review` is required when evidence is missing, ambiguous, or manually
+  risky.
+- Imported CI conclusion can be cited in `status_detail_json` and
+  `evidence_artifact_ids`, but it is not sufficient by itself for `passed`.
+  Existing local evidence requirements still apply unless a later contract
+  explicitly changes them.
+- QualityGateDecision never triggers merge, push, release, deployment, remote CI
+  status updates, or PR comments.
+
+## 21.1 ReviewHistory
+
+ReviewHistory records local append-only review attribution events across the
+existing review-gated evidence loop. It is evidence metadata, not an
+authorization, login, RBAC, tenant, assignment, notification, or enterprise
+audit model.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| entity_type | varchar(80) | yes | none | GeneratedCaseCandidate, TestCase, TestKnowledgeCard, AutomationDraft, UnitTestPatch, CICDRun, QualityGateDecision, AutomationRepairTask |
+| entity_id | uuid | yes | none | Reviewed or decision entity id |
+| related_entity_type | varchar(80) | no | null | Optional display/query relation, for example QualityGateDecision -> CICDRun |
+| related_entity_id | uuid | no | null | Optional related entity id |
+| action | varchar(80) | yes | none | ReviewHistoryAction or deterministic workflow action label |
+| from_status | varchar(80) | no | null | Status before successful action |
+| to_status | varchar(80) | no | null | Status after successful action or computed status |
+| reviewer | varchar(120) | yes | Default User | Local display label, not an auth principal |
+| comment | text | no | null | Human review comment or computed decision summary |
+| evidence_artifact_ids | uuid[] | yes | {} | Existing Artifact ids supporting the event |
+| metadata_json | jsonb | yes | {} | Safe workflow-specific metadata such as quality_gate_decision_id |
+| created_at | timestamptz | yes | now() | Event time |
+
+ReviewHistory rules:
+
+- Records are append-only through the public service/API surface. Existing
+  review actions may append records; clients must not overwrite or delete
+  history records as part of Slice 21.
+- `reviewer` is a local display label. The default is `Default User` and it
+  must not be treated as an authenticated user id, role, permission, tenant, or
+  session principal.
+- ReviewHistory must not decide whether an action is allowed. Existing
+  state-machine and service validation remains the authority.
+- Record only successful review or decision events. Failed validation,
+  forbidden transitions, and rejected API payloads must not append history.
+- `evidence_artifact_ids` references persisted Artifact rows. ReviewHistory
+  must not duplicate raw artifact content, secrets, tokens, or remote provider
+  credentials in `comment` or `metadata_json`.
+- Slice 21 covers local events for generated case review, AutomationDraft
+  review/edit/approval where supported, UnitTestPatch approval/rejection, and
+  QualityGateDecision compute/recompute.
+- Generated case approval history should be written for the
+  GeneratedCaseCandidate. The created TestCase may display that history through
+  `source_candidate_id`; it should not duplicate an identical approval record
+  unless a later contract defines a separate TestCase review action.
+- QualityGateDecision compute history should record the created
+  QualityGateDecision as `entity_type=QualityGateDecision` and may set
+  `related_entity_type=CICDRun` so the CI/CD quality page can display the event
+  from the run. `from_status` and `to_status` describe the
+  `CICDRun.quality_gate_status` transition caused by the recompute.
+- TestKnowledgeCard approval, safety, duplicate, staleness, and archive actions
+  append history only after successful transition validation. Duplicate events
+  set the canonical card as the related TestKnowledgeCard.
+- ReviewHistory must not introduce users, roles, permissions, tenants,
+  departments, SSO, login/session flows, assignment workflow, notifications,
+  team inboxes, PR comments, remote provider governance, or enterprise audit
+  policy.
+
+## 22. TestResult
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -335,7 +634,19 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | failure_artifact_ids | uuid[] | yes | {} | Related artifacts |
 | metadata_json | jsonb | yes | {} | Parser-specific metadata |
 
-## 22. FailureAnalysis
+Newman TestResult metadata rules:
+
+- Newman results are mapped at assertion granularity when available.
+- `test_name` should be deterministic, for example
+  `collection/folder/request::assertion`.
+- `test_file` may be the collection path when known.
+- `metadata_json` should include safe fields such as `collection_name`,
+  `folder_name`, `request_name`, `assertion_name`, `method`, `url_template`,
+  and `iteration`.
+- `metadata_json` must not store secrets, bearer tokens, cookies, or raw
+  environment values.
+
+## 23. FailureAnalysis
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -351,7 +662,7 @@ V1 execution rule: an approved AutomationDraft is copied into a Chtest-managed a
 | suggested_actions_json | jsonb | yes | [] | Suggested next actions |
 | status | varchar(40) | yes | draft | draft, confirmed, rejected |
 
-## 23. AutomationRepairTask
+## 24. AutomationRepairTask
 
 AutomationRepairTask records an evidence-driven attempt to improve an AutomationDraft after a failed execution. It does not overwrite the approved AutomationDraft silently.
 
@@ -377,12 +688,12 @@ Rules:
 - Repair candidate cannot automatically replace or promote an approved AutomationDraft.
 - Repair approval does not execute automatically; it creates or updates a review-gated AutomationDraft candidate.
 
-## 24. Report
+## 25. Report
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
-| report_type | varchar(80) | yes | execution | requirement_review, case_quality, automation_execution, git_quality, ai_effectiveness |
+| report_type | varchar(80) | yes | execution | requirement_review, case_quality, automation_execution, cicd_quality, ai_effectiveness |
 | title | varchar(255) | yes | none | Report title |
 | related_entity_type | varchar(80) | no | null | Related entity type |
 | related_entity_id | uuid | no | null | Related entity id |
@@ -392,7 +703,7 @@ Rules:
 | metrics_json | jsonb | yes | {} | Metrics |
 | artifact_ids | uuid[] | yes | {} | Report artifacts |
 
-## 25. AITask
+## 26. AITask
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -412,7 +723,22 @@ Rules:
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 26. LLMCallLog
+Deterministic knowledge retrieval rules:
+
+- V2 Slice 19 may store deterministic local retrieval summaries in
+  `input_json` and `output_json`.
+- `input_json` may include `use_knowledge=true`, `knowledge_query_text`,
+  `knowledge_query_terms`, and requested retrieval limits.
+- `output_json` must include `used_knowledge=true` only when retrieved snippets
+  were actually injected into the AI task prompt.
+- `output_json.used_context_artifact_ids` must list the exact ContextArtifact
+  ids used by deterministic retrieval.
+- `output_json.retrieval_evidence_artifact_id` may reference an Artifact with
+  `artifact_type=knowledge_retrieval`.
+- Retrieval evidence must not be inferred from model text alone; it must cite
+  persisted ContextArtifact ids and artifact evidence.
+
+## 27. LLMCallLog
 
 LLMCallLog records each provider call made inside an AITask. AITask is the workflow-level task; LLMCallLog is the per-model-call audit log.
 
@@ -440,7 +766,7 @@ LLMCallLog records each provider call made inside an AITask. AITask is the workf
 
 Relationship: AITask 1:N LLMCallLog.
 
-## 27. PromptVersion
+## 28. PromptVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -455,7 +781,7 @@ Relationship: AITask 1:N LLMCallLog.
 
 Unique constraint: name + version.
 
-## 28. SkillVersion
+## 29. SkillVersion
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -471,7 +797,7 @@ Unique constraint: name + version.
 
 Unique constraint: name + version.
 
-## 29. ToolDefinition
+## 30. ToolDefinition
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -490,11 +816,373 @@ Unique constraint: name + version.
 | max_stdout_bytes | int | yes | 1048576 | Captured stdout limit |
 | max_stderr_bytes | int | yes | 1048576 | Captured stderr limit |
 | artifact_policy_json | jsonb | yes | {} | Artifact capture rules |
+| is_mcp_ready | bool | yes | false | Schema can be exposed through future MCP layer |
+| mcp_metadata_json | jsonb | yes | {} | MCP-ready metadata, not runtime config |
 | status | ToolDefinitionStatus | yes | active | Status |
 
 Unique constraint: project_id + name, treating null project_id as built-in scope.
 
-## 30. ToolInvocation
+MCP-ready ToolDefinition rules:
+
+- `is_mcp_ready=true` means the tool has stable name, description,
+  input/output schema, risk, approval, timeout, allowlist, and artifact policy
+  metadata suitable for future MCP exposure.
+- V1 execution still goes through ToolInvocation and internal Tool Adapter
+  allowlist rules.
+- `mcp_metadata_json` may store `schema_version`, `capability_name`,
+  `safe_description`, and `exposure_notes`.
+- `mcp_metadata_json` must not store MCP server URLs, tokens, OAuth state, remote
+  transport settings, or plugin marketplace references.
+- `tool_type=mcp_proxy` is schema intent only in V1 and must not trigger an MCP
+  runtime dependency.
+
+Newman ToolDefinition rules:
+
+- Built-in Newman execution uses a ToolDefinition such as
+  `newman_collection_run`.
+- `tool_type` remains `test_runner`.
+- `command_allowlist_json` must constrain commands to backend-approved Newman
+  templates, for example `npx newman run <collection> --reporters json,junit`.
+- `allowed_working_directories_json` must keep execution under the repository
+  path or Chtest-managed runtime workspace.
+- `artifact_policy_json` must name stdout, stderr, `newman_json`, optional
+  `junit`, runtime manifest, dependency snapshot, environment snapshot, and
+  parsed result artifacts.
+- Forbidden shell operators remain rejected. A Newman command cannot use shell
+  chaining, redirection, command substitution, or pipes.
+
+JMeter ToolDefinition rules:
+
+- Built-in JMeter execution uses a ToolDefinition such as
+  `jmeter_non_gui_run`.
+- `tool_type` remains `test_runner`.
+- `command_allowlist_json` must constrain commands to backend-approved JMeter
+  non-GUI templates equivalent to `jmeter -n -t <plan.jmx> -l <result.jtl>`.
+- `allowed_working_directories_json` must keep execution under the repository
+  path or Chtest-managed runtime workspace.
+- `artifact_policy_json` must name stdout, stderr, `jmeter_jtl`, runtime
+  manifest, dependency snapshot, environment snapshot, and parsed result
+  artifacts.
+- Forbidden shell operators remain rejected. A JMeter command cannot use shell
+  chaining, redirection, command substitution, pipes, remote agents, or cloud
+  load testing controls.
+
+## 31. KnowledgeAdapterConfig
+
+KnowledgeAdapterConfig records the V1 empty KnowledgeAdapter surface. It is
+configuration state only; it does not perform retrieval.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| adapter_name | varchar(120) | yes | default | Name inside project |
+| status | KnowledgeAdapterStatus | yes | not_configured | Empty adapter state |
+| provider_type | varchar(80) | yes | none | none, stub, deterministic_local, postgres_hybrid, qdrant, haystack, llamaindex |
+| config_json | jsonb | yes | {} | Non-secret display/config state |
+| safety_policy_json | jsonb | yes | {} | Prompt eligibility and safety notes |
+| last_checked_at | timestamptz | no | null | Last local validation time |
+| notes | text | no | null | Human-readable notes |
+
+Unique constraint: project_id + adapter_name.
+
+Pre-final RAG KnowledgeAdapter rules (before Final Test Knowledge promotion):
+
+- KnowledgeAdapterConfig is optional; missing config means `not_configured`.
+- `provider_type` must be `none` or `stub` before the Final Test Knowledge
+  promotion rules below are active.
+- `config_json` must not contain API keys, provider credentials, vector database
+  settings, embedding model settings, remote URLs, OAuth state, or MCP transport
+  details.
+- The pre-final surface must not create vector indexes, chunk documents, embed
+  content, rank search results, or call external providers.
+- AI task responses must keep `used_knowledge=false` unless a future version
+  implements a real KnowledgeAdapter runtime.
+
+V2 deterministic KnowledgeAdapter rules:
+
+- Slice 19 may set `provider_type=deterministic_local` with
+  `status=configured_stub` to enable the deterministic local retrieval stub.
+- `config_json` may include non-secret values such as `match_mode`,
+  `max_results`, `max_snippet_chars`, `min_score`, and `case_sensitive=false`.
+- Retrieval may read only same-project ContextArtifact rows that are safe to
+  show and allowed for prompt use.
+- Retrieval must return deterministic scores, matched terms, bounded snippets,
+  and exact ContextArtifact ids.
+- `used_knowledge=true` is allowed only when this local deterministic stub
+  contributes retrieved snippets to an AI task.
+- Slice 19 still must not create vector indexes, chunking pipelines,
+  embeddings, reranking jobs, external provider calls, MCP runtime calls, RBAC,
+  tenant, permission, marketplace, cloud sync, release, or remote CI/CD
+  behavior.
+
+Final Test Knowledge RAG promotion rules:
+
+- Final RAG slices may use `status=configured/indexing/ready/degraded/failed`
+  and real provider adapters.
+- `postgres_hybrid` is the default local-first provider: PostgreSQL metadata
+  filters and full-text search are combined with pgvector similarity when the
+  extension is available.
+- `qdrant` is an optional scale adapter. Haystack and LlamaIndex are optional
+  orchestration/provider adapters. Provider request/response schemas must not
+  leak into Chtest ORM, API, prompt, case, report, or evidence models.
+- Secrets remain external secret references. `config_json` stores non-secret
+  provider configuration and capability state only.
+- Adapter failures must set `degraded` or `failed`, create diagnostic evidence,
+  and leave core non-RAG workflows available.
+
+## 31.1 TestKnowledgeCard
+
+TestKnowledgeCard stores deterministic, prompt-safe testing knowledge extracted
+from project ContextArtifact content. It is a compact evidence row, not a vector
+index, embedding, or external RAG document.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| source_artifact_id | uuid | yes | none | FK ContextArtifact Artifact |
+| source_document_version | varchar(80) | yes | v1 | Extracted source version label |
+| source_section | varchar(160) | no | null | Source section or line range label |
+| source_quote_hash | varchar(128) | yes | none | Deterministic quote hash for de-duplication |
+| source_locator_json | jsonb | yes | {} | Page, paragraph, JSON pointer, OpenAPI operation, line, or record locator |
+| source_ref | text | no | null | Stable human-readable source reference |
+| ingestion_run_id | uuid | no | null | FK KnowledgeIngestionRun |
+| knowledge_type | varchar(60) | yes | BusinessRule | RequirementPoint, BusinessRule, APIContract, BoundaryCondition, ExceptionScenario, RiskPoint, BugPattern, ExistingTestCasePattern, AntiPattern, TestStrategyNote |
+| title | varchar(255) | yes | none | Human-readable evidence title |
+| content | text | yes | none | Bounded safe snippet |
+| module_key | varchar(120) | no | null | Optional module hint |
+| api_endpoint | varchar(255) | no | null | Optional endpoint hint |
+| risk_type | varchar(80) | no | null | Optional risk category |
+| case_type_hint | varchar(80) | no | null | Optional case generation hint |
+| applicability | varchar(120) | yes | case_generation | Target workflow |
+| confidence | int | yes | 50 | 0-100 deterministic confidence |
+| safe_to_show | bool | yes | true | Must be safe for UI display |
+| allowed_for_prompt | bool | yes | true | Prompt eligibility copied from source safety |
+| status | TestKnowledgeCardStatus | yes | extracted | Card lifecycle status |
+| reviewed_at | timestamptz | no | null | Latest human review time |
+| review_comment | text | no | null | Latest review rationale |
+| duplicate_of_card_id | uuid | no | null | Canonical duplicate card when status=duplicate |
+| last_verified_at | timestamptz | no | null | Latest source/meaning verification |
+
+Rules:
+
+- Extraction may read only same-project project-level ContextArtifact rows with
+  `safe_to_show=true` and `allowed_for_prompt=true`.
+- `(source_artifact_id, source_quote_hash)` identifies duplicate extracted cards
+  for the same source artifact.
+- RAG preview retrieval may show prompt-safe `extracted` and `approved` cards.
+- CaseGeneration prompt evidence must use `status=approved`,
+  `safe_to_show=true`, and `allowed_for_prompt=true` cards only.
+- TestKnowledgeCard extraction must not create vector indexes, embeddings,
+  chunking jobs, reranking jobs, external provider calls, MCP runtime calls,
+  RBAC, tenants, or permissions behavior.
+- Final ingestion may create cards from requirements, OpenAPI/API documents,
+  test designs, historical cases, FailureAnalysis, and Reports. Each card must
+  retain an exact source locator or hash and its owning ingestion run.
+- Only `approved + safe_to_show + allowed_for_prompt` cards may contribute to
+  final CaseGeneration evidence. Preview search may include extracted cards but
+  must label them unapproved.
+- Feedback-created cards always start as `extracted`; feedback confidence never
+  bypasses human review.
+
+## 31.2 TestKnowledgeEmbeddingIndex
+
+TestKnowledgeEmbeddingIndex stores the deterministic local vector index for
+prompt-safe TestKnowledgeCard rows. It is the portable vector storage contract
+for local testing and can be migrated to pgvector-backed storage later without
+changing API behavior.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| knowledge_card_id | uuid | yes | none | FK TestKnowledgeCard |
+| index_kind | varchar(80) | yes | test_knowledge_card | Indexed entity kind |
+| embedding_provider | varchar(80) | yes | deterministic_local | Provider used to build the vector |
+| embedding_model | varchar(120) | yes | deterministic-hashing-v1 | Embedding model/version label |
+| embedding_dim | int | yes | 64 | Vector dimension |
+| content_hash | varchar(128) | yes | none | Hash of indexed card text |
+| embedding_json | jsonb | yes | [] | Portable vector values |
+| embedding_vector | vector | no | null | Native pgvector value in PostgreSQL deployments |
+| status | TestKnowledgeEmbeddingIndexStatus | yes | indexed | Index lifecycle status |
+| metadata_json | jsonb | yes | {} | Source/card metadata snapshot |
+
+Rules:
+
+- `(knowledge_card_id, embedding_model)` is unique.
+- Rebuild reads only same-project TestKnowledgeCard rows with
+  `status in (approved, extracted)`, `safe_to_show=true`, and
+  `allowed_for_prompt=true`.
+- Rebuild is idempotent: unchanged `content_hash`, `embedding_model`, and
+  `embedding_dim` rows remain indexed and count as skipped.
+- TestKnowledgeCard review changes must keep related index metadata in sync.
+  When a card becomes `stale`, `unsafe`, `duplicate`, or `archived`, existing
+  indexes for that card must be marked `stale` and excluded from prompt-ready
+  index coverage until the card is prompt-eligible again.
+- The V1/V2 local contract stores vectors in `embedding_json` for portability.
+  A production pgvector optimization may add a native vector column later, but
+  must preserve this API-level behavior.
+- Index rebuild and retrieval must not call online embedding providers,
+  external vector databases, rerankers, MCP runtime calls, RBAC, tenants, or
+  permissions behavior.
+
+Final vector rules:
+
+- PostgreSQL deployments should use the native `embedding_vector` column and an
+  HNSW or IVFFlat index selected by measured corpus/recall needs. SQLite tests
+  may continue using deterministic `embedding_json` fallback.
+- The optional PostgreSQL capability migration must always create the safe
+  full-text surface, but must not fail the Alembic head when the `vector`
+  extension is unavailable or the database user cannot create it. The native
+  column/index are nullable capabilities and are never required by the core
+  ORM mapping.
+- Native and fallback storage must produce the same KnowledgeEvidence fields;
+  callers cannot depend on pgvector-specific operators or Qdrant payload shape.
+- Index freshness is compared against card content hash, source version,
+  embedding provider/model, and adapter configuration version.
+
+## 31.3 KnowledgeIngestionRun
+
+KnowledgeIngestionRun is the observable and retryable boundary for importing
+project knowledge. It exists because a file upload alone cannot explain parser
+failures, partial extraction, or which evidence entered the trusted corpus.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| idempotency_key | varchar(128) | yes | none | Server-computed canonical hash of project, source content, parser, and config |
+| source_type | varchar(80) | yes | artifact | requirement, openapi, api_document, test_design, historical_case, failure_analysis, report, artifact |
+| source_refs_json | jsonb | yes | [] | Stable source entity/artifact references |
+| input_artifact_ids_json | jsonb | yes | [] | Imported local Artifact ids |
+| parser_name | varchar(120) | yes | deterministic | Parser/provider snapshot |
+| parser_version | varchar(80) | yes | v1 | Parser version snapshot |
+| config_snapshot_json | jsonb | yes | {} | Non-secret ingestion settings |
+| status | KnowledgeIngestionRunStatus | yes | created | Run lifecycle |
+| parsed_count | int | yes | 0 | Successfully parsed source units |
+| extracted_card_count | int | yes | 0 | New cards created |
+| skipped_count | int | yes | 0 | Idempotent/duplicate skips |
+| failed_count | int | yes | 0 | Source units that failed |
+| error_code | varchar(120) | no | null | Stable failure code |
+| error_message | text | no | null | Safe diagnostic summary |
+| evidence_artifact_ids_json | jsonb | yes | [] | Manifest, parse, extraction, safety, and error artifacts |
+| ai_task_id | uuid | no | null | Optional KnowledgeIngestionAgent AITask |
+| started_at | timestamptz | no | null | Start time |
+| completed_at | timestamptz | no | null | Terminal time |
+
+Idempotency key: project_id + source_type + stable source identity + source
+content hash + parser version + config hash. Distinct Artifact ids with identical
+bytes remain distinct ingestion sources for traceability.
+
+Unique constraint: project_id + idempotency_key. `force=true` creates a new
+attempt key while preserving the canonical source/config evidence in the run
+manifest. The key is returned for diagnostics but is always computed by the
+server; clients cannot choose it.
+
+## 31.4 KnowledgeRetrievalRun
+
+KnowledgeRetrievalRun makes every search query, provider choice, latency,
+filter, failure, and evidence set queryable for debugging and quality analysis.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| ai_task_id | uuid | no | null | Optional consuming AITask |
+| consumer_entity_type | varchar(80) | no | null | Optional Requirement, CaseGenerationTask, TestCase, AutomationPlan, or other Chtest consumer type |
+| consumer_entity_id | uuid | no | null | Optional same-project consumer entity id |
+| adapter_name | varchar(120) | yes | default | KnowledgeAdapter snapshot |
+| provider_type | varchar(80) | yes | deterministic_local | Provider snapshot |
+| requested_retrieval_mode | varchar(80) | yes | hybrid | Client/consumer requested mode |
+| retrieval_mode | varchar(80) | yes | hybrid | Actual metadata, keyword, vector, hybrid, or graph mode |
+| adapter_config_snapshot_json | jsonb | yes | {} | Non-secret provider/version/capability snapshot |
+| query_text_hash | varchar(128) | yes | none | Query hash for correlation without exposing unsafe text |
+| query_text_redacted | text | yes | none | Safe bounded query text |
+| filters_json | jsonb | yes | {} | Module, API, type, risk, status filters |
+| status | KnowledgeRetrievalRunStatus | yes | created | Run lifecycle |
+| candidate_count | int | yes | 0 | Pre-normalization matches |
+| evidence_count | int | yes | 0 | Final evidence rows |
+| latency_ms | int | no | null | End-to-end retrieval latency |
+| degraded | bool | yes | false | True when an optional retrieval component was unavailable |
+| fallback_reason | text | no | null | Safe reason for keyword/metadata fallback |
+| error_code | varchar(120) | no | null | Stable failure code |
+| error_message | text | no | null | Safe diagnostic summary |
+| evidence_artifact_id | uuid | no | null | FK normalized retrieval Artifact |
+| started_at | timestamptz | no | null | Retrieval start time |
+| completed_at | timestamptz | no | null | Terminal time |
+
+## 31.5 KnowledgeEvidence
+
+KnowledgeEvidence is the provider-neutral persisted evidence returned by every
+retrieval path and referenced by generated cases, reports, graph edges, and
+quality analysis.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| retrieval_run_id | uuid | yes | none | FK KnowledgeRetrievalRun |
+| knowledge_card_id | uuid | yes | none | FK TestKnowledgeCard |
+| source_artifact_id | uuid | yes | none | FK Artifact |
+| snippet | text | yes | none | Bounded safe evidence text |
+| source_locator_json | jsonb | yes | {} | Exact source locator snapshot |
+| metadata_score | float | yes | 0 | Filter contribution |
+| keyword_score | float | yes | 0 | Full-text/keyword contribution |
+| vector_score | float | no | null | Semantic contribution; null when vector capability was not used |
+| rerank_score | float | no | null | Optional reranker contribution |
+| final_score | float | yes | 0 | Normalized final score |
+| matched_terms_json | jsonb | yes | [] | Exact matched terms/phrases |
+| retrieval_reason | text | yes | none | Human-reviewable reason |
+| card_status_snapshot | varchar(40) | yes | none | Card review status when evidence was produced |
+| safe_to_show | bool | yes | true | Display safety snapshot |
+| allowed_for_prompt | bool | yes | true | Prompt eligibility snapshot |
+
+Each invocation creates a new KnowledgeRetrievalRun. Identical inputs must
+produce deterministic normalized scores/order for the same provider/config
+version, but retrieval logs are not deduplicated. `(retrieval_run_id,
+knowledge_card_id)` is unique.
+
+Retrieval read models additionally derive `current_card_status` and
+`currently_prompt_eligible` from the current TestKnowledgeCard. These are not
+persisted snapshots and must not overwrite `card_status_snapshot` or the stored
+safety/prompt flags.
+
+## 31.6 TestKnowledgeRelationship
+
+TestKnowledgeRelationship stores typed, auditable graph edges without requiring
+a graph database. PostgreSQL remains the system of record; graph providers may
+accelerate queries behind KnowledgeAdapter later.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| source_entity_type | varchar(80) | yes | none | Requirement, Module, API, RiskPoint, TestCase, TestRun, FailureAnalysis, Artifact, TestKnowledgeCard |
+| source_entity_id | uuid | yes | none | Source entity id |
+| target_entity_type | varchar(80) | yes | none | Target type |
+| target_entity_id | uuid | yes | none | Target entity id |
+| relationship_type | varchar(120) | yes | none | requires, belongs_to, exposes, covers, validates, failed_as, derived_from, similar_to |
+| evidence_artifact_ids_json | jsonb | yes | [] | Supporting local evidence |
+| confidence | int | yes | 100 | 0-100, reviewed edges default 100 |
+| status | KnowledgeRelationshipStatus | yes | active | Edge lifecycle |
+| metadata_json | jsonb | yes | {} | Non-secret derivation metadata |
+
+Unique active edge: project + source type/id + target type/id + relationship
+type.
+
+## 31.7 KnowledgeFeedbackEvent
+
+KnowledgeFeedbackEvent records proposed learning from reviewed cases, rejected
+candidates, comments, failures, and reports. It is separate from
+TestKnowledgeCard so automatic feedback cannot mutate trusted knowledge.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project |
+| source_entity_type | varchar(80) | yes | none | TestCase, GeneratedCaseCandidate, ReviewHistory, FailureAnalysis, Report |
+| source_entity_id | uuid | yes | none | Source entity id |
+| proposed_knowledge_type | varchar(80) | yes | none | ExistingTestCasePattern, AntiPattern, TestStrategyNote, BugPattern |
+| proposed_content_json | jsonb | yes | {} | Reviewable proposed card content |
+| status | KnowledgeFeedbackStatus | yes | proposed | Feedback lifecycle |
+| evidence_artifact_ids_json | jsonb | yes | [] | Source evidence references |
+| resulting_card_id | uuid | no | null | Created TestKnowledgeCard after approval |
+| review_comment | text | no | null | Reviewer rationale |
+
+## 32. ToolInvocation
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
@@ -516,14 +1204,14 @@ Unique constraint: project_id + name, treating null project_id as built-in scope
 | started_at | timestamptz | no | null | Start time |
 | finished_at | timestamptz | no | null | Finish time |
 
-## 31. Artifact
+## 33. Artifact
 
 | Field | Type | Required | Default | Notes |
 |---|---|---:|---|---|
 | project_id | uuid | yes | none | FK Project |
 | owner_entity_type | varchar(80) | yes | none | ArtifactOwnerType |
 | owner_entity_id | uuid | yes | none | Related entity |
-| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi |
+| artifact_type | varchar(80) | yes | json | raw_llm_output, stdout, stderr, junit, coverage, trace, screenshot, patch, report_md, report_html, report_json, automation_draft_code, runtime_manifest, dependency_snapshot, environment_snapshot, context_markdown, context_text, context_json, context_yaml, context_openapi, diff_patch, changed_files, risk_analysis, unit_test_patch, patch_scope_gate, regression_plan, quality_gate, ci_run_metadata, knowledge_retrieval |
 | file_path | text | yes | none | Artifact-relative path |
 | mime_type | varchar(120) | yes | application/json | MIME |
 | size_bytes | bigint | yes | 0 | File size |
@@ -539,7 +1227,24 @@ V1 ContextArtifact rule:
 - A prompt input artifact must include `context_manifest.json` with the exact context artifact ids, hashes, titles, MIME types, and redaction flags used for that AI task.
 - Artifact owner fields must never be null for ContextArtifact.
 
-## 32. AutomationQualityMetric
+Deterministic retrieval Artifact rule:
+
+- Slice 19 retrieval evidence uses `artifact_type=knowledge_retrieval`.
+- `owner_entity_type=AITask` and `owner_entity_id=ai_task_id`.
+- `metadata_json` must include `created_by_component=DeterministicKnowledgeAdapter`,
+  `retrieval_mode=deterministic_local`, `query_terms`, `result_count`,
+  `used_context_artifact_ids`, and redaction status.
+
+CI import Artifact rule:
+
+- Slice 20 CI metadata import uses `artifact_type=ci_run_metadata`.
+- `owner_entity_type=CICDRun` and `owner_entity_id=cicd_run_id`.
+- `metadata_json` must include `created_by_component=CICDRunMetadataImport`,
+  `source_type=ci_import`, `provider`, `provider_is_inert_label=true`,
+  `import_mode`, `changed_file_count`, `artifact_reference_count`,
+  `remote_fetch_performed=false`, and `quality_gate_auto_decision=false`.
+
+## 34. AutomationQualityMetric
 
 AutomationQualityMetric stores batch-level AutomationDraft generation, execution, and repair quality. Ratio fields use `0.00-1.00`; UI may render percentages.
 
@@ -568,19 +1273,29 @@ AutomationQualityMetric stores batch-level AutomationDraft generation, execution
 | repair_success_rate | numeric(3,2) | yes | 0.00 | repair_success_count / repair_attempt_count |
 | evidence_complete_rate | numeric(3,2) | yes | 0.00 | evidence_complete_count / first_run_fail_count |
 
-## 33. Relationship Summary
+## 34. Relationship Summary
 
 ```text
 Workspace -> Project
 Project -> Module / Repository / Environment / TestCommand
 Project -> Artifact (ContextArtifact)
+Project -> KnowledgeAdapterConfig
+Project -> KnowledgeIngestionRun -> TestKnowledgeCard
+Project -> KnowledgeRetrievalRun -> KnowledgeEvidence -> TestKnowledgeCard
+Project -> TestKnowledgeCard -> TestKnowledgeEmbeddingIndex
 Project -> Requirement -> RequirementReview -> RiskItem
-Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase
+Requirement -> CaseGenerationTask -> GeneratedCaseCandidate -> TestCase -> AutomationPlan -> AutomationDraft -> TestRun -> TestResult -> Report
+ContextArtifact -> TestKnowledgeCard -> TestKnowledgeEmbeddingIndex
+TestKnowledgeCard -> GeneratedCaseCandidate.source_knowledge_evidence_json
+Project -> TestKnowledgeRelationship -> Requirement/Module/API/RiskPoint/TestCase/TestRun/FailureAnalysis/TestKnowledgeCard
+Project -> KnowledgeFeedbackEvent -> TestKnowledgeCard
 TestCase/Requirement -> AutomationDraft -> TestRun -> TestResult -> Report
 TestRun/TestResult -> FailureAnalysis -> AutomationRepairTask -> Report
-Repository -> GitChangeSet -> GitChangedFile -> UnitTestPatch -> TestRun -> Report
+Repository -> CICDRun -> CICDChangedFile -> UnitTestPatch -> TestRun -> QualityGateDecision -> Report
+Project -> ReviewHistory -> GeneratedCaseCandidate/TestCase/AutomationPlan/AutomationDraft/UnitTestPatch/CICDRun/QualityGateDecision
 AITask -> LLMCallLog
 AITask -> Artifact / ContextArtifact references
+AITask -> KnowledgeRetrievalRun -> KnowledgeEvidence
 AutomationDraft -> AutomationRepairTask -> AutomationQualityMetric
 ToolDefinition -> ToolInvocation -> Artifact
 Report -> Artifact

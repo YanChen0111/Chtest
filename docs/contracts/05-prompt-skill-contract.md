@@ -9,11 +9,14 @@
 ```text
 prompts/
   requirement_review/v1.md
+  risk_matrix/v1.md
   case_generation/v1.md
+  case_review/v1.md
   automation_draft_generation/v1.md
-  git_diff_analysis/v1.md
+  cicd_change_analysis/v1.md
   unit_test_generation/v1.md
   regression_selection/v1.md
+  tool_execution/v1.md
   failure_analysis/v1.md
   report_generation/v1.md
 ```
@@ -24,6 +27,7 @@ prompts/
 skills/
   requirement-review-skill/v1.md
   test-case-generation-skill/v1.md
+  testcase-review-skill/v1.md
   automation-draft-skill/v1.md
   unit-test-generation-skill/v1.md
   regression-selection-skill/v1.md
@@ -92,6 +96,56 @@ Prompt input must include:
 }
 ```
 
+RequirementReviewAgent may also receive clarification input for a follow-up
+review pass:
+
+```json
+{
+  "clarification_context": {
+    "supplement_text": "Coupons can stack with platform campaigns but not points.",
+    "clarification_answers": [
+      {
+        "question": "Can coupons be combined with campaign discounts?",
+        "answer": "Yes, coupons can stack with platform campaigns."
+      }
+    ]
+  }
+}
+```
+
+CaseGenerationAgent may receive a generated requirement document:
+
+```json
+{
+  "requirement_document": {
+    "artifact_id": "00000000-0000-0000-0000-000000000d01",
+    "document_number": "RD-CHECKOUT-SYSTEM-20260709-0001",
+    "version": "v1",
+    "title": "Coupon checkout rules",
+    "content": "# 需求规格说明书\n...",
+    "sha256": "sha256:example"
+  }
+}
+```
+
+CaseGenerationAgent may also receive deterministic TestKnowledgeCard evidence:
+
+```json
+{
+  "knowledge_evidence": [
+    {
+      "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
+      "source_artifact_id": "00000000-0000-0000-0000-000000000371",
+      "knowledge_type": "BoundaryCondition",
+      "title": "BoundaryCondition: expired coupon checkout",
+      "snippet": "Expired coupon validation blocks checkout.",
+      "score": 3,
+      "matched_terms": ["expired", "coupon", "checkout"]
+    }
+  ]
+}
+```
+
 Rules:
 
 - `use_knowledge=false` means external RAG/KnowledgeAdapter is disabled.
@@ -99,6 +153,15 @@ Rules:
 - Prompt input artifacts must save `context_manifest.json`.
 - Model output or parsed AITask output must expose `used_context_artifact_ids`.
 - Model output must not claim external evidence when `used_knowledge=false`.
+- CaseGeneration `knowledge_evidence` must be derived from same-project
+  TestKnowledgeCard rows with `status=approved`, `safe_to_show=true`, and
+  `allowed_for_prompt=true`.
+- CaseGenerationAgent output should copy used card references into each
+  candidate `source_knowledge_evidence` item.
+- Clarification input must be recorded as prompt input evidence and must not
+  overwrite the original Requirement.
+- Requirement document input must come from a same-project `requirement_md`
+  Artifact generated for the same Requirement.
 
 ## 5. Skill 文件格式
 
@@ -139,11 +202,15 @@ Describe required output fields.
 | 流程 | Agent | Prompt | Skill |
 |---|---|---|---|
 | 需求评审 | RequirementReviewAgent | requirement_review:v1 | requirement-review-skill:v1 |
+| 风险矩阵 | RequirementReviewAgent | risk_matrix:v1 | requirement-review-skill:v1 |
 | 用例生成 | CaseGenerationAgent | case_generation:v1 | test-case-generation-skill:v1 |
+| 用例评审 | CaseReviewAgent | case_review:v1 | testcase-review-skill:v1 |
+| 自动化方案 | AutomationPlanAgent | automation_plan_generation:v1 | automation-plan-skill:v1 |
 | 自动化草稿 | AutomationDraftAgent | automation_draft_generation:v1 | automation-draft-skill:v1 |
-| Git 分析 | GitDiffAgent | git_diff_analysis:v1 | regression-selection-skill:v1 |
+| CI/CD 变更分析 | CICDChangeAnalysisAgent | cicd_change_analysis:v1 | regression-selection-skill:v1 |
 | 单测 patch | UnitTestAgent | unit_test_generation:v1 | unit-test-generation-skill:v1 |
 | 回归选择 | RegressionAgent | regression_selection:v1 | regression-selection-skill:v1 |
+| 工具执行计划 | ToolExecutionAgent | tool_execution:v1 | tool-execution-skill:v1 |
 | 失败归因 | FailureAnalysisAgent | failure_analysis:v1 | failure-analysis-skill:v1 |
 | 报告生成 | ReportAgent | report_generation:v1 | report-generation-skill:v1 |
 
@@ -164,13 +231,57 @@ Describe required output fields.
       "input_data": {"coupon_status": "expired"},
       "requirement_refs": ["过期优惠券不可使用"],
       "risk_refs": ["RISK-001"],
+      "coverage_dimensions": [
+        {
+          "key": "boundary",
+          "evidence": "Expired coupon is the date-validity boundary."
+        },
+        {
+          "key": "negative",
+          "evidence": "Checkout submit must be blocked."
+        }
+      ],
+      "source_knowledge_evidence": [
+        {
+          "knowledge_card_id": "00000000-0000-0000-0000-000000000c01",
+          "knowledge_type": "BoundaryCondition",
+          "title": "BoundaryCondition: expired coupon checkout",
+          "snippet": "Expired coupon validation blocks checkout."
+        }
+      ],
       "ai_reason": "覆盖优惠券有效期边界"
     }
   ]
 }
 ```
 
-### 7.2 AutomationDraft 输出
+### 7.2 AutomationPlan 输出
+
+AutomationPlan output must be reviewable before code generation and must be
+derived from a reviewed TestCase.
+
+```json
+{
+  "title": "pytest automation plan for Expired coupon cannot submit order",
+  "plan": {
+    "source": "reviewed_test_case",
+    "test_case_title": "Expired coupon cannot submit order",
+    "target_framework": "pytest",
+    "knowledge_evidence": []
+  },
+  "execution_steps": ["Prepare precondition: User has an expired coupon"],
+  "test_data": {"coupon_state": "expired"},
+  "dependency_notes": "Requires pytest and project-local fixtures.",
+  "risk_notes": "Review selectors, fixtures, and environment data before generating executable code."
+}
+```
+
+AutomationPlan prompt input must include `test_case_id`, `source_candidate_id`,
+source `requirement_id`, `requirement_review_id`, `target_framework`,
+`use_knowledge`, selected `context_artifact_ids`, and deterministic retrieval
+evidence when used.
+
+### 7.3 AutomationDraft 输出
 
 ```json
 {
@@ -188,7 +299,11 @@ Describe required output fields.
 }
 ```
 
-### 7.3 UnitTestPatch 输出
+AutomationDraft prompt input may include an `automation_plan` summary. If it
+does, the generated draft must preserve `automation_plan_id` traceability and
+must not mark the draft approved.
+
+### 7.4 UnitTestPatch 输出
 
 ```json
 {
@@ -200,12 +315,36 @@ Describe required output fields.
 }
 ```
 
+### 7.5 RegressionPlan 输出
+
+```json
+{
+  "recommended_test_command_ids": ["00000000-0000-0000-0000-000000000302"],
+  "reasons": ["Changed source branch is covered by pytest unit command."],
+  "risk_coverage": ["src/coupon.py coupon.amount > order_total"],
+  "needs_review": false
+}
+```
+
+### 7.6 Report 输出
+
+```json
+{
+  "conclusion": "passed",
+  "summary": "Patch scope, new tests, and regression passed with evidence.",
+  "metrics": {"new_tests_passed": true, "regression_passed": true},
+  "evidence_artifact_ids": ["00000000-0000-0000-0000-000000001601"],
+  "next_actions": []
+}
+```
+
 ## 8. 质量门禁
 
 | 输出 | 门禁 |
 |---|---|
 | RequirementReview | 必须包含六维评分和至少一个测试设计建议 |
-| GeneratedCaseCandidate | 必须有步骤、预期、需求引用、AI 理由 |
+| GeneratedCaseCandidate | 必须有步骤、预期、需求引用、合法且带 evidence 的覆盖维度、AI 理由 |
+| AutomationPlan | 必须标明 source、target_framework、execution_steps、risk_notes |
 | AutomationDraft | 必须标明 target_framework、suggested_file_path、draft_code |
 | UnitTestPatch | 必须通过 PatchScopeGate，不能修改业务源码 |
 | RegressionPlan | 每个推荐命令必须有 reason |

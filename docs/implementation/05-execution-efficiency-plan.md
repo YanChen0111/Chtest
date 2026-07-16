@@ -24,7 +24,7 @@ NEXT_AI_TASK
 - Fixtures explain product paths, but real tester scenarios were not explicit.
 - Prompt and Skill behavior existed as a contract, but not as seed files that an
   AI worker can load or test.
-- Some future AI sessions may expand into dashboards, Git Quality, RAG, or MCP
+- Some future AI sessions may expand into dashboards, CI/CD Quality Center, RAG, or MCP
   before the V0.1 evidence loop runs.
 
 ## 3. Optimization Decisions
@@ -67,6 +67,17 @@ marketplace concepts, or advanced model comparison.
 If `NEXT_AI_TASK.md` conflicts with contracts or product scope, contracts and
 product scope win. Update `NEXT_AI_TASK.md` after the current task changes.
 
+### 3.4 Add A Minimal Sample Repository Before Runner Smoke
+
+The V0.1 and V1 evidence loops require a real pytest target. Before starting
+the TestRunner smoke, ensure there is a minimal sample repository fixture such
+as `examples/sample-checkout-app`, or an equivalent allowlisted local repository,
+with a deterministic coupon validation function and `tests/` directory.
+
+This fixture is not a new product feature. It exists so AI sessions can verify
+runner, artifact, report, and evidence behavior without depending on an
+uncontrolled external project.
+
 ## 4. AI Session Rules
 
 - Start from `START_HERE_FOR_AI.md`, then read `NEXT_AI_TASK.md`.
@@ -76,7 +87,9 @@ product scope win. Update `NEXT_AI_TASK.md` after the current task changes.
 - Every task must have one primary verification command before editing starts.
 - If no verification command exists, the first task is to create a smoke check.
 - Stop after two or three failed repair attempts and write a failure handoff.
-- Do not add UI, dashboard, RAG, MCP, or Git Quality breadth unless the active
+- Do not start V0.1 runner smoke until the sample repository path and pytest
+  TestCommand are defined and allowlisted.
+- Do not add UI, dashboard, RAG, MCP, or CI/CD Quality Center breadth unless the active
   task moves the V0.1 or V1 evidence loop forward.
 
 ## 5. Documentation Routing
@@ -89,7 +102,7 @@ product scope win. Update `NEXT_AI_TASK.md` after the current task changes.
 | Artifact/evidence work | `docs/contracts/04-artifact-contract.md` |
 | Prompt/Skill/mock provider work | `docs/contracts/05-prompt-skill-contract.md`, `docs/contracts/08-mock-provider-contract.md`, `docs/fixtures/05-minimal-prompt-skill-seeds.md` |
 | User scenario or demo fixture work | `docs/fixtures/00-v1-demo-path.md`, `docs/fixtures/04-real-user-scenarios.md` |
-| Frontend page work | `docs/product/06-frontend-ui-guidelines.md` plus the relevant API contract |
+| Frontend page work | `docs/product/08-frontend-design-spec.md`, `docs/product/06-frontend-ui-guidelines.md`, plus the relevant API contract |
 
 ## 6. Completion Gate
 
@@ -102,4 +115,3 @@ A task is complete only when:
 - `NEXT_AI_TASK.md` is updated when the active task changes;
 - `memory/08-session-handoff.md` is updated when slice state, risk, or blocker
   changes.
-

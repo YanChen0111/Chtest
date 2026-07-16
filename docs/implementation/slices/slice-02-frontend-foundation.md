@@ -4,6 +4,8 @@
 
 Create the Vue 3 + TypeScript + Vite + Arco Design Vue frontend foundation required before Slice 3 frontend pages.
 
+The visible frontend copy in this slice must be Chinese-first. Navigation labels, page titles, buttons, table headers, empty states, and status text should use Chinese terms such as `AI 工作台`, `需求评审`, `上下文工件`, `AI 任务`, `大模型调用日志`, and `工件`.
+
 ## Source Documents
 
 - `docs/product/06-frontend-ui-guidelines.md`
@@ -17,7 +19,7 @@ Create the Vue 3 + TypeScript + Vite + Arco Design Vue frontend foundation requi
 | Task | Status | Verification Command | Commit | Notes |
 |---|---|---|---|---|
 | Scaffold Vue Vite app | planned | `npm --prefix frontend run build` | - | Vue 3 + TypeScript |
-| Add Arco, router, store, and API shell | planned | `npm --prefix frontend run test -- --run` | - | Minimal workbench shell |
+| Add Arco, router, store, and API shell | planned | `npm --prefix frontend run test -- --run` | - | Minimal workbench shell, Chinese UI copy |
 | Add frontend Docker dev command | planned | `docker compose -f deploy/docker-compose.yml config` | - | Align with deploy docs |
 | Add frontend health/API smoke | planned | `npm --prefix frontend run test -- --run` | - | API base URL and health probe |
 
@@ -56,7 +58,7 @@ feat(frontend): scaffold vue workbench app
 
 ## Task 2: Add Arco Router Store And API Shell
 
-Goal: Add the shared frontend shell used by Slice 3-5 pages.
+Goal: Add the shared frontend shell used by Slice 3-5 pages, with Chinese-first visible labels.
 
 Expected files:
 

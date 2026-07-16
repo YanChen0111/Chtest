@@ -1,10 +1,12 @@
-# Chtest Git Quality Center Design
+# Chtest CI/CD Quality Center Design
 
 ## 1. 文档目的
 
-Git Quality Center 是 Chtest V1 的支线能力。它负责把一次本地代码变更转换成测试补全、pytest 回归、失败归因和质量报告，但不压过“需求到用例、用例到自动化”两条主线。
+CI/CD 质量中心是 Chtest V1 的支线能力。它负责把一次本地代码变更转换成测试补全、pytest 回归、失败归因、质量门禁和质量报告，但不压过“需求到用例、用例到自动化”两条主线。
 
-本文定义该模块的产品流程、技术实现、数据模型、安全边界和 V1 验收标准。
+用户可见页面名称统一为 `CI/CD 质量中心`。当前内部领域对象和契约名使用 `CICDRun`、`CICDChangedFile`、`CICDChangeAnalysisAgent`、`UnitTestPatch`、`QualityGateDecision`。
+
+本文定义该模块的产品流程、技术实现、数据模型、安全边界、版本边界和 V1 验收标准。
 
 ## 2. 核心目标
 
@@ -14,7 +16,8 @@ Git Quality Center 是 Chtest V1 的支线能力。它负责把一次本地代�
 - 自动选择相关 pytest 回归测试。
 - 运行新增 pytest 和回归测试。
 - 失败时基于证据进行归因。
-- 输出可追溯 Git 质量报告。
+- 输出 passed、failed、needs_review 的质量门禁结论。
+- 输出可追溯 CI/CD 质量报告。
 
 ## 3. V1 输入范围
 
@@ -25,15 +28,16 @@ Git Quality Center 是 Chtest V1 的支线能力。它负责把一次本地代�
 | GitHub PR URL | 否 | V2 通过 GitHub MCP |
 | GitHub webhook | 否 | V2 |
 | CI 自动触发 | 否 | V2/V3 |
+| 真实 CD 发布 | 否 | V3；V1 只给发布准备度和质量门禁结论 |
 
 ## 4. 处理流程
 
 ```text
 Repository selected
-  -> create GitChangeSet
-  -> GitTool reads status/diff
+  -> create CICDRun
+  -> ChangeSetTool reads status/diff
   -> changed files categorized
-  -> GitDiffAgent analyzes risk
+  -> CICDChangeAnalysisAgent analyzes risk
   -> UnitTestAgent generates patch
   -> PatchScopeGate validates patch
   -> user reviews patch
@@ -42,16 +46,17 @@ Repository selected
   -> RegressionAgent selects regression
   -> regression executed
   -> FailureAnalysisAgent analyzes failures
-  -> ReportAgent generates Git Quality Report
+  -> QualityGateDecision generated
+  -> ReportAgent generates CI/CD Quality Report
 ```
 
 ## 5. 文件变更分类
 
-GitChangedFile 建议字段：
+CICDChangedFile 建议字段：
 
 ```text
 id
-change_set_id
+cicd_run_id
 path
 old_path
 change_type: added | modified | deleted | renamed
@@ -90,7 +95,7 @@ lines_deleted
 | 只改测试 | medium |
 | 修改依赖配置 | medium/high |
 
-GitDiffAgent 输出：
+CICDChangeAnalysisAgent 输出：
 
 ```json
 {
@@ -188,7 +193,7 @@ generated
 
 RegressionAgent 输入：
 
-- GitRiskAnalysis。
+- `risk_analysis.json` artifact。
 - changed files。
 - test commands。
 - test case library。
@@ -237,7 +242,7 @@ TestRun 字段建议：
 ```text
 id
 project_id
-change_set_id
+cicd_run_id
 tool_name
 command
 working_directory
@@ -265,34 +270,36 @@ duration_ms
 
 ## 10. 页面设计
 
-Git Quality Center 详情页建议布局：
+CI/CD 质量中心详情页建议布局：
 
 | 区域 | 内容 |
 |---|---|
-| Header | 仓库、branch、base、head、整体风险、最终结论 |
+| Header | 仓库、branch、base、head、整体风险、质量门禁结论 |
 | Changed Files | 文件路径、类型、风险、行数变化 |
 | AI Risk Analysis | 摘要、影响模块、高风险原因、建议测试 |
 | Unit Test Patch | diff viewer、scope gate、测试意图、操作按钮 |
 | Regression Plan | 推荐命令、原因、风险、用户确认 |
 | Execution | 新增测试和回归结果、artifact |
 | Failure Analysis | 分类、证据、建议 |
-| Report | Git 质量报告、导出 |
+| Quality Gate | passed、failed、needs_review、阻塞原因 |
+| Report | CI/CD 质量报告、导出 |
 
 ## 11. API 草案
 
 ```text
-POST /api/git/change-sets
-GET  /api/git/change-sets
-GET  /api/git/change-sets/{id}
-POST /api/git/change-sets/{id}/analyze
-POST /api/git/change-sets/{id}/generate-unit-test-patch
-POST /api/git/unit-test-patches/{id}/approve
-POST /api/git/unit-test-patches/{id}/reject
-POST /api/git/unit-test-patches/{id}/apply
-POST /api/git/change-sets/{id}/run-new-tests
-POST /api/git/change-sets/{id}/select-regression
-POST /api/git/change-sets/{id}/run-regression
-POST /api/git/change-sets/{id}/generate-report
+POST /api/cicd/runs
+GET  /api/cicd/runs
+GET  /api/cicd/runs/{id}
+POST /api/cicd/runs/{id}/analyze
+POST /api/cicd/runs/{id}/unit-test-patches
+POST /api/cicd/unit-test-patches/{id}/approve
+POST /api/cicd/unit-test-patches/{id}/reject
+POST /api/cicd/unit-test-patches/{id}/apply
+POST /api/cicd/runs/{id}/run-new-tests
+POST /api/cicd/runs/{id}/select-regression
+POST /api/cicd/runs/{id}/run-regression
+POST /api/cicd/runs/{id}/quality-gate
+POST /api/cicd/runs/{id}/generate-report
 ```
 
 ## 12. 安全边界
@@ -308,15 +315,16 @@ POST /api/git/change-sets/{id}/generate-report
 
 ## 13. Artifact 设计
 
-每个 GitChangeSet 建议 artifact 目录：
+每个 CICDRun 建议 artifact 目录：
 
 ```text
-artifacts/projects/{project_id}/git-quality/{change_set_id}/
+artifacts/projects/{project_id}/cicd-quality/{cicd_run_id}/
   diff.patch
   changed_files.json
   risk_analysis.json
   unit_test.patch
   patch_scope_gate.json
+  regression_plan.json
   new_tests_stdout.log
   new_tests_stderr.log
   regression_stdout.log
@@ -324,28 +332,38 @@ artifacts/projects/{project_id}/git-quality/{change_set_id}/
   junit.xml
   coverage.xml
   failure_analysis.json
-  git_quality_report.md
-  git_quality_report.html
-  git_quality_report.json
+  quality_gate.json
+  cicd_quality_report.md
+  cicd_quality_report.html
+  cicd_quality_report.json
 ```
 
 ## 14. V1 验收标准
 
-- 能创建 GitChangeSet。
+- 能创建 CICDRun。
 - 能读取本地 base/head diff 或上传 diff。
 - 能展示变更文件、文件角色、风险等级。
-- GitDiffAgent 能生成风险摘要。
+- CICDChangeAnalysisAgent 能生成风险摘要。
 - UnitTestAgent 能生成 patch artifact。
 - Patch Scope Gate 能阻止业务源码修改。
 - 用户可以审批、拒绝、重新生成 patch。
 - 能执行新增测试和至少一个回归命令。
 - 失败结果能进入 FailureAnalysisAgent。
-- 能生成 Git Quality Report。
+- 能生成 QualityGateDecision。
+- 能生成 CI/CD quality report。
 
 ## 15. V2 扩展
 
 - GitHub MCP 读取 PR、commit、Actions 日志。
+- GitHub Actions / GitLab CI / Jenkins 运行记录导入。
 - PR 评论自动发布报告。
 - CI webhook 自动触发。
 - 基于过往失败和覆盖率优化回归选择。
 - 更强代码结构分析和调用影响分析。
+
+## 16. V3 扩展
+
+- 远程 runner 和分布式执行。
+- CD 发布准备检查、发布窗口、回滚建议。
+- 小团队质量策略和 branch protection 集成。
+- 多项目趋势分析和质量门禁规则模板。

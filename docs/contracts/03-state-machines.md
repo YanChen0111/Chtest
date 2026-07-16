@@ -28,6 +28,47 @@ pending/running/waiting_review/waiting_approval -> cancelled
 
 规则：schema 校验失败不能写业务主表，必须保存 raw output artifact。
 
+Deterministic retrieval 规则：
+
+- `use_knowledge=true` may run deterministic local retrieval before or during
+  `pending -> running`.
+- Retrieval success does not add a new AITask status; it is recorded as
+  `knowledge_retrieval` artifact evidence and AITask output metadata.
+- Retrieval failure may continue with `used_knowledge=false` only when the
+  workflow explicitly allows fallback and records the retrieval error evidence.
+- `used_knowledge=true` is invalid without retrieved snippets and exact
+  `used_context_artifact_ids`.
+- Deterministic retrieval must not enqueue background indexing, embedding,
+  reranking, external provider, MCP runtime, RBAC, tenant, or permission
+  behavior.
+
+## 2A. CaseGenerationTask 状态机
+
+```text
+pending -> running -> succeeded
+pending -> running -> failed
+pending/running -> cancelled
+```
+
+| 当前状态 | 动作 | 目标状态 | 触发者 |
+|---|---|---|---|
+| pending | worker_start | running | Background task |
+| running | candidates_persisted | succeeded | Background task |
+| running | model_or_schema_error | failed | Background task |
+| running | domain_mismatch | failed | Background task |
+| pending/running | cancel | cancelled | User/API |
+
+规则：
+
+- `POST /api/case-generation/tasks` 创建 `pending` 任务；候选用例不保证立即存在。
+- `decision_table_acknowledged` 缺失或为 false 时必须同步拒绝请求，返回
+  `CASE_GENERATION_DECISION_TABLE_REQUIRED`，且不得创建 AITask 或
+  CaseGenerationTask。
+- 客户端必须读取任务状态，只有 `succeeded` 后才能把候选列表视为完整结果。
+- schema invalid、provider error、wrong-domain output 均进入 `failed`，不得写入候选用例。
+- 每条候选用例必须包含合法、非空的 `coverage_dimensions`；缺失、空数组、未知 key
+  或缺少 evidence 均属于 schema invalid。
+
 ## 3. GeneratedCaseCandidate 状态机
 
 ```text
@@ -51,6 +92,38 @@ any non-final -> archived
 
 规则：approved/approved_after_edit/rejected 是最终评审状态，不允许再次修改为 generated。
 
+ReviewHistory side effect:
+
+- `approve`, `approve_after_edit`, and `reject` append a ReviewHistory record
+  after the state transition succeeds.
+- The primary history entity is the GeneratedCaseCandidate. The created
+  TestCase may display this source history through `source_candidate_id`
+  without duplicating the same approval event.
+- Invalid transitions must not append successful review history.
+
+## 3A. AutomationPlan 状态机
+
+```text
+plan_generated -> edited -> approved -> draft_generated
+plan_generated -> approved -> draft_generated
+plan_generated/edited -> rejected
+```
+
+| 当前状态 | 动作 | 目标状态 | 说明 |
+|---|---|---|---|
+| plan_generated | edit | edited | 用户补充或修正执行方案 |
+| plan_generated/edited | approve | approved | 允许生成 AutomationDraft |
+| plan_generated/edited | reject | rejected | 不生成草稿 |
+| approved | generate_draft | draft_generated | 生成 review-gated AutomationDraft |
+
+规则：
+
+- AutomationPlan 只能从已评审并入库的 TestCase 创建。
+- AutomationPlan 审批只代表方案可行，不代表代码可执行。
+- 只有 `approved` AutomationPlan 可以生成 AutomationDraft。
+- 生成 AutomationDraft 后仍必须单独审批 AutomationDraft，未审批草稿不能创建 TestRun。
+- `edit`, `approve`, `generate_draft` 成功后追加 ReviewHistory；失败校验不得追加成功记录。
+
 ## 4. AutomationDraft 状态机
 
 ```text
@@ -73,6 +146,15 @@ authorized execution failure: execution_pending -> execution_failed -> under_rev
 | executed | promote | promoted | 可转为正式自动化资产或 artifact |
 
 规则：AutomationDraft 未 approved 前不能执行。V1 不允许自动写业务源码。
+
+ReviewHistory side effect:
+
+- `edit`, `approve`, and `reject` append ReviewHistory after successful
+  transitions where the workflow implements the action.
+- ReviewHistory does not make a draft executable. Only the existing
+  `status=approved` rule authorizes execution.
+- Invalid transitions and validation failures must not append successful review
+  history.
 
 ## 5. AutomationRepairTask 状态机
 
@@ -118,7 +200,18 @@ approved -> apply_failed
 | approved | apply_patch_failed | apply_failed | 应用失败 |
 | awaiting_review/approved | regenerate | replaced | 被新 patch 替代 |
 
-规则：scope_rejected 不能进入 approved。UnitTestPatch 只允许写测试目录。
+规则：
+
+- `scope_rejected` 不能进入 `approved`。
+- UnitTestPatch 只允许写测试目录。
+- `approved` 之前不能 apply。
+- PatchScopeGate must pass before `approved -> applied`.
+- Apply failure must preserve the original patch and error evidence.
+- `approve` and `reject` append ReviewHistory after successful review
+  transitions. `apply_patch_success` is execution evidence, not a review
+  approval event in Slice 21.
+- ReviewHistory must not weaken PatchScopeGate or allow a `scope_rejected`
+  patch to become approved.
 
 ## 7. ToolInvocation 状态机
 
@@ -143,6 +236,138 @@ running -> failed / timeout / cancelled
 
 规则：ToolInvocation 必须来自 ToolDefinition allowlist，禁止任意 shell。
 
+Newman 规则：
+
+- Newman execution uses a ToolInvocation created from the
+  `newman_collection_run` ToolDefinition or equivalent built-in allowlisted
+  tool.
+- The ToolInvocation input must reference an approved `TestCommand` with
+  `command_type=newman`; it must not carry arbitrary shell text from the client.
+- Shell chaining, redirection, command substitution, and pipes remain forbidden
+  even when the underlying executable is Newman.
+
+## 7.1 KnowledgeAdapterConfig 状态机
+
+```text
+not_configured -> configured_stub
+not_configured -> disabled
+configured_stub -> disabled
+disabled -> configured_stub
+configured_stub -> not_configured
+disabled -> not_configured
+```
+
+| 当前状态 | 动作 | 目标状态 | 说明 |
+|---|---|---|---|
+| not_configured | save_stub_config | configured_stub | 只保存 V1 占位配置 |
+| not_configured | disable | disabled | 显式禁用 |
+| configured_stub | disable | disabled | 禁用占位配置 |
+| disabled | enable_stub | configured_stub | 重新启用占位配置 |
+| configured_stub | clear | not_configured | 清空配置 |
+| disabled | clear | not_configured | 清空配置 |
+
+规则：
+
+- KnowledgeAdapterConfig 状态变化只影响配置展示，不触发 retrieval。
+- V1 `configured_stub` 仍然必须返回 `used_knowledge=false`。
+- 状态机不得创建 vector index、embedding、reranking job、external provider
+  call、MCP runtime call、RBAC、tenant 或 permission 行为。
+
+V2 deterministic retrieval 规则：
+
+- Slice 19 may use `configured_stub` with `provider_type=deterministic_local`
+  as a local retrieval stub.
+- Configuration changes still do not trigger retrieval by themselves.
+- Retrieval is scoped to an AI task invocation and writes evidence artifacts;
+  it does not create a long-running adapter state transition.
+- `disabled` and `not_configured` always force `used_knowledge=false`.
+
+## 7.2 TestKnowledgeCard 状态机
+
+```text
+extracted -> approved
+extracted -> stale
+extracted -> unsafe
+extracted -> duplicate
+extracted/approved/stale/unsafe/duplicate -> archived
+```
+
+规则：
+
+- 当前实现只自动创建 `extracted` 卡片；`approved`、`stale`、`unsafe`、
+  `duplicate` 和 `archived` 是后续审核/治理扩展的稳定状态。
+- `extracted` 卡片可用于 RAG 页面预览；CaseGenerationAgent 的
+  `source_knowledge_evidence` 只能使用 `approved` 且
+  `safe_to_show=true`、`allowed_for_prompt=true` 的卡片。
+- 知识卡抽取是同步的确定性本地解析，不创建 AITask 状态，不排队索引任务，
+  不调用模型、embedding、vector DB、reranking、external provider 或 MCP runtime。
+- 用例生成引用知识卡证据时，不改变知识卡状态；证据引用写入
+  GeneratedCaseCandidate。
+
+Final RAG promotion rules:
+
+- `approved -> stale/unsafe/duplicate/archived` is allowed when source drift,
+  security review, deduplication, or archival provides review evidence.
+- `stale/unsafe/duplicate -> extracted` requires an explicit remediation action
+  and returns the card to human review; it never returns directly to approved.
+- Every status transition appends ReviewHistory and synchronizes retrieval/index
+  eligibility without deleting historical evidence.
+
+## 7.3 KnowledgeIngestionRun 状态机
+
+```text
+created -> parsing -> extracting -> waiting_review -> completed
+created/parsing/extracting -> partial_failed
+created/parsing/extracting -> failed
+created/parsing/extracting/waiting_review -> cancelled
+partial_failed/failed -> parsing
+```
+
+Rules:
+
+- A run exists before parsing starts, so UI and logs can expose progress and
+  failures immediately.
+- `partial_failed` preserves successful cards and identifies failed source units;
+  it cannot be presented as fully completed.
+- `waiting_review` means extracted cards exist but are not trusted for final case
+  generation until card review succeeds.
+- Retry creates new attempt evidence on the same run or a linked retry run; it
+  must not overwrite the previous failure artifact.
+
+## 7.4 KnowledgeRetrievalRun 状态机
+
+```text
+created -> retrieving -> normalizing -> completed
+created/retrieving/normalizing -> failed
+created/retrieving/normalizing -> cancelled
+```
+
+Rules:
+
+- `completed` requires a normalized retrieval artifact, including the valid
+  empty-result case. An empty result is not a failure.
+- Provider timeout, schema mismatch, unsafe evidence, or normalization error
+  produces `failed` with error evidence; it must not silently fall back unless
+  the run records the fallback provider/mode and degraded reason.
+- Only evidence backed by approved, safe, prompt-eligible cards may be attached
+  to CaseGeneration prompt input.
+
+## 7.5 KnowledgeFeedbackEvent 状态机
+
+```text
+proposed -> waiting_review -> approved -> applied
+proposed/waiting_review -> rejected
+approved -> failed
+```
+
+Rules:
+
+- Automatic feedback stops at `proposed` or `waiting_review`.
+- `applied` creates a new `extracted` TestKnowledgeCard and evidence relationship;
+  it does not create an approved card.
+- Rejection remains queryable as AntiPattern/feedback quality evidence and does
+  not delete the source review, failure, or report.
+
 ## 8. TestRun 状态机
 
 ```text
@@ -165,7 +390,100 @@ running -> timeout
 
 规则：failed 与 error 不等价。failed 是测试断言失败，error 是环境、命令、解析器或执行器异常。
 
-## 9. Report 状态机
+Newman 规则：
+
+- Newman follows the same TestRun statuses.
+- Newman assertion failures produce `failed`.
+- Newman process launch failure, timeout, allowlist rejection, missing
+  collection, malformed output, or parser failure produces `error` unless the
+  run was cancelled or timed out by the user/runtime.
+- Newman `parsed_result_json` and `newman_json` artifacts must be written before
+  marking the run `passed` or `failed` when the runner produced parseable
+  output.
+
+JMeter 规则：
+
+- JMeter follows the same TestRun statuses.
+- JMeter sampler/assertion failures produce `failed`.
+- JMeter process launch failure, timeout, allowlist rejection, missing JMX/JTL,
+  malformed JTL output, or parser failure produces `error` unless the run was
+  cancelled or timed out by the user/runtime.
+- JMeter `parsed_result_json` and `jmeter_jtl` artifacts must be written before
+  marking the run `passed` or `failed` when the runner produced parseable
+  output.
+- JMeter execution must stay under ToolDefinition/TestCommand allowlists and
+  must not add distributed load agents, cloud load testing controls,
+  performance dashboards, RAG runtime calls, MCP runtime dependencies, RBAC,
+  tenants, or permissions behavior.
+
+## 8.1 CICDRun Import 状态规则
+
+Slice 20 `ci_import` is an evidence import state, not a remote CI provider
+execution state.
+
+```text
+created -> imported
+created -> import_failed
+imported -> analyzed
+imported -> archived
+```
+
+规则：
+
+- `POST /api/cicd/runs/import` may create a CICDRun directly in `imported`
+  status after `ci_run_metadata.json` and changed-file evidence are persisted.
+- `import_failed` means the local import payload could not be validated or
+  persisted. It does not mean a remote CI job failed.
+- Imported CI conclusion values (`success`, `failure`, `cancelled`, `skipped`,
+  `timed_out`, `unknown`) are evidence fields, not CICDRun state transitions.
+- Imported CI success must not automatically transition
+  `CICDRun.quality_gate_status` to `passed`.
+- Imported CI failure must not automatically transition
+  `CICDRun.quality_gate_status` to `failed`.
+- `quality_gate_status` remains `pending` until
+  `POST /api/cicd/runs/{id}/quality-gate` or an equivalent explicit gate
+  recompute creates a QualityGateDecision.
+- Import must not trigger remote CI provider API calls, webhooks, reruns,
+  cancellation, scheduling, PR comments, commit status updates, merge, deploy,
+  release, credentials, RBAC, tenants, or permissions behavior.
+
+## 9. QualityGateDecision 状态机
+
+```text
+CICDRun.quality_gate_status pending -> passed
+CICDRun.quality_gate_status pending -> failed
+CICDRun.quality_gate_status pending -> needs_review
+passed/failed/needs_review -> new QualityGateDecision record on recompute, then update CICDRun.quality_gate_status
+```
+
+| 当前状态 | 动作 | 目标状态 | 说明 |
+|---|---|---|---|
+| pending | compute_gate_pass | passed | PatchScopeGate、新增测试、回归和失败证据均通过 |
+| pending | compute_gate_fail | failed | 存在阻塞原因，例如 patch 越界、测试失败或高风险未覆盖 |
+| pending | compute_gate_needs_review | needs_review | 证据不足、风险中等或需要人工判断 |
+| passed/failed/needs_review | recompute | passed/failed/needs_review | V1 保留旧决定，新建 QualityGateDecision 记录，并更新 CICDRun.quality_gate_status |
+
+规则：
+
+- `pending` 只存在于 `CICDRun.quality_gate_status`，表示尚未产生
+  QualityGateDecision。
+- QualityGateDecision 记录本身只能是 `passed`、`failed` 或
+  `needs_review`。
+- QualityGateDecision 不触发 merge、push、release、deployment、remote CI
+  status update 或 PR comment。
+- Imported CI conclusion may be cited as evidence, but success alone is never
+  enough for `passed` and failure alone is not automatically `failed`. Missing
+  required local evidence keeps the gate at `needs_review`.
+- 每个结论必须引用 evidence artifacts；证据缺失时只能是
+  `needs_review`，不能写成 `passed`。
+- A successful compute or recompute appends ReviewHistory with
+  `entity_type=QualityGateDecision`. `from_status` and `to_status` describe the
+  `CICDRun.quality_gate_status` before and after recompute, and
+  `related_entity_type=CICDRun` may be used for CI/CD quality page display.
+- ReviewHistory does not authorize merge, push, release, deployment, remote CI
+  status update, PR comment, RBAC, tenants, or permissions behavior.
+
+## 10. Report 状态机
 
 ```text
 draft -> generating -> ready
@@ -184,7 +502,7 @@ failed -> generating
 
 规则：报告结论必须引用 evidence/artifact。无证据时 conclusion 必须是 `insufficient_evidence` 或 `needs_attention`。
 
-## 10. PromptVersion 和 SkillVersion 状态机
+## 11. PromptVersion 和 SkillVersion 状态机
 
 ```text
 draft -> active -> deprecated

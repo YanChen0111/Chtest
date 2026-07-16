@@ -34,7 +34,7 @@ Minimum built-in prompts:
 - `automation_draft_generation:v1`
 - `failure_analysis:v1`
 - `report_generation:v1`
-- `git_diff_analysis:v1`
+- `cicd_change_analysis:v1`
 - `unit_test_generation:v1`
 - `regression_selection:v1`
 
@@ -60,7 +60,7 @@ Minimum built-in tools:
 |---|---|---|---|---|
 | TestRunnerTool | test_runner | medium | true by default | pytest execution |
 | PlaywrightTool | playwright | medium | true by default | Playwright minimal loop |
-| GitTool | git | low/medium | depends on action | local diff and status |
+| ChangeSetTool | git | low/medium | depends on action | local diff and status |
 | ArtifactTool | artifact | low | false | artifact read/write |
 | ReportTool | report | low | false | report generation |
 

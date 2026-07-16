@@ -6,11 +6,11 @@
 - 第一版是面向个人测试工程师、自动化测试工程师的 AI 测试设计与自动化落地工作台，不是企业协作测试管理平台。
 - 第一版必须是真实测试全流程闭环，不做一次性演示。
 - 第一版必须直接使用 PostgreSQL + Redis。
-- 第一版主线是需求到用例、用例到自动化；Git 到质量报告是支线能力。
+- 第一版主线是需求到用例、用例到自动化；CI/CD 质量中心中的本地 Git diff 到质量报告是支线能力。
 - 第一版必须包含 AI 用例生成评审窗口和质量指标。
 - 第一版必须包含 AutomationDraft，AI 自动化草稿必须审批后执行。
-- 第一版必须包含 Git Quality Center，支持 push/PR/diff 后单测生成和回归测试查看，但不能压过主线。
-- 第一版不搭建 RAG，不内置向量数据库，只预留 Knowledge/RAG Adapter。
+- 第一版必须包含 CI/CD 质量中心，支持本地 diff 后单测生成和回归测试查看，但不能压过主线；远程 PR/云 CI 集成后置。
+- 第一版不搭建 RAG，不内置向量数据库、chunking 或 rerank，只预留 Knowledge/RAG Adapter 和 RAG 知识库管理页面。
 - 第一版不深度二开 WHartTest 或 MeterSphere，只吸收可复刻能力。
 
 ## 2. AI 输出约束
@@ -75,5 +75,5 @@ MeterSphere 可吸收：用例评审列表、创建、详情、用例详情页�
 - 工具调用有审批和日志。
 - 生成用例有评审结果和质量指标。
 - AutomationDraft 有审批、执行结果和 artifact。
-- Git 变更有 diff 分析、UnitTestPatch、回归计划和报告。
+- CI/CD 质量中心变更有 diff 分析、UnitTestPatch、回归计划和报告。
 - 测试执行有原始日志和结构化结果。

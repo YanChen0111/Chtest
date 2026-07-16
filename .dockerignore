@@ -1,0 +1,15 @@
+.git
+.tmp
+.pytest_cache
+artifacts/*
+!artifacts/.gitkeep
+storage/*
+!storage/.gitkeep
+backend/.pytest_cache
+backend/.venv
+backend/tmp-pytest-artifacts
+frontend/dist
+frontend/node_modules
+tmp_serial_logs
+**/__pycache__
+**/*.pyc

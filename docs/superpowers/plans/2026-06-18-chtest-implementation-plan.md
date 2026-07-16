@@ -1,5 +1,9 @@
 # Chtest V1 Implementation Plan
 
+> Historical planning artifact from 2026-06-18. The canonical active task source
+> is now `NEXT_AI_TASK.md`, with detailed task status in
+> `docs/implementation/slices/` and `memory/08-session-handoff.md`.
+
 ## Batch 1: Repository And Docker Foundation
 
 Tasks:
@@ -13,7 +17,7 @@ Tasks:
 
 Verification:
 
-- `docker compose up postgres redis` works.
+- `docker compose -f deploy/docker-compose.yml up postgres redis` works.
 - `GET /health` returns OK.
 - `GET /ready` checks PostgreSQL and Redis.
 - Frontend shell opens and calls backend health.
@@ -132,17 +136,17 @@ Verification:
 - Report generated from TestRun includes evidence and metrics.
 - AI quality metrics are visible.
 
-## Batch 9: Git Quality Support Workflow
+## Batch 9: CI/CD Quality Support Workflow
 
 Tasks:
 
-1. Add GitChangeSet and GitChangedFile.
+1. Add CICDRun and CICDChangedFile.
 2. Add local diff import and base/head analysis.
-3. Add GitDiffAgent.
+3. Add CICDChangeAnalysisAgent.
 4. Add UnitTestPatch and scope gate.
 5. Add UnitTestAgent and patch review page.
 6. Add RegressionAgent and regression command selection.
-7. Add Git Quality report.
+7. Add CI/CD Quality report.
 
 Verification:
 
@@ -150,7 +154,7 @@ Verification:
 - UnitTestPatch is generated and scope-validated.
 - Patch cannot modify business source files.
 - Approved patch can be applied and tested.
-- Git quality report explains risk, test generation, regression, and final status.
+- CI/CD quality report explains risk, test generation, regression, and final status.
 
 ## Batch 10: Extension Surfaces
 

@@ -42,7 +42,7 @@ Git diff driven unit-test generation and regression are included as a support wo
 | Playwright smoke loop | Medium-high | V1 | Trace/screenshot artifact model is mature |
 | Failure Analysis | Medium | V1 | Evidence-based classification is practical |
 | Report Center | High | V1 | Markdown/HTML/JSON generation is straightforward |
-| Git Quality Center | Medium-high | V1 support | Local diff + scope gate is manageable |
+| CI/CD Quality Center | Medium-high | V1 support | Local diff + scope gate is manageable |
 | Newman adapter | High | V1.1 | Add after TestRun/Report contracts stabilize |
 | JMeter adapter | Medium-high | V1.1/V2 | Non-GUI execution is feasible, richer parsing later |
 | MCP Center | Medium | V2 | Internal Tool Adapter should prove the model first |
@@ -70,7 +70,7 @@ Git diff driven unit-test generation and regression are included as a support wo
 6. AutomationDraft and pytest execution.
 7. Playwright minimal loop.
 8. Failure Analysis and Report Center.
-9. Git Quality support workflow.
+9. CI/CD Quality support workflow.
 10. KnowledgeAdapter and MCP-ready ToolDefinition surface.
 
 ## 6. Final Assessment

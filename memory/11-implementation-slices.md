@@ -22,7 +22,7 @@
 
 交付：`backend/`、`frontend/`、`worker/`、`deploy/`、`prompts/`、`skills/`、`mcp_tools/`、`artifacts/` 目录；`deploy/docker-compose.yml`；`.env.example`。
 
-验收：PostgreSQL、Redis 可启动；backend health check 可访问；worker 能连接 Redis。
+验收：平台目录、PostgreSQL、Redis、backend/worker/frontend 容器占位配置可通过 `docker compose -f deploy/docker-compose.yml config` 校验。Backend health check 和 worker Redis ping 属于 Slice 2 及后续任务。
 
 ## Slice 2: Backend Core
 
@@ -128,26 +128,26 @@
 
 验收：失败有证据链；报告输出 md/html/json；无证据时不能给出 passed 结论。
 
-## Slice 15: Git Quality Foundation
+## Slice 15: CI/CD Quality Foundation
 
-目标：支线能力：本地 diff 有质量视图。
+目标：支线能力：本地 diff 有 CI/CD 质量视图和风险摘要。
 
-交付：GitChangeSet、GitChangedFile、diff 导入 API、本地 git diff 解析、Git 质量任务列表和详情页。
+交付：CICDRun、CICDChangedFile、diff 导入 API、本地 git diff 解析、CI/CD 质量中心任务列表和详情页。
 
-验收：使用 `docs/fixtures/03-golden-git-quality.md` 的 diff 可看到变更文件、类型和风险摘要。
+验收：使用 `docs/fixtures/03-golden-cicd-quality.md` 的 diff 可看到变更文件、类型和风险摘要。
 
-## Slice 16: UnitTestPatch And Regression
+## Slice 16: CI/CD Test Patch And Quality Gate
 
-目标：根据 diff 生成单测 patch 并跑 pytest 回归。
+目标：根据 diff 生成单测 patch、跑 pytest 回归并生成质量门禁结论。
 
-交付：UnitTestPatch、UnitTestAgent、PatchScopeGate、Patch 评审页面、RegressionPlan、pytest 回归执行。
+交付：UnitTestPatch、UnitTestAgent、PatchScopeGate、Patch 评审页面、RegressionPlan、pytest 回归执行、QualityGateDecision。
 
-验收：AI 生成 patch；patch 默认只包含测试目录变更；用户审批后应用；新增测试和回归结果进入 Git Quality Center。
+验收：AI 生成 patch；patch 默认只包含测试目录变更；用户审批后应用；新增测试和回归结果进入 CI/CD 质量中心；质量门禁输出 passed / failed / needs_review。
 
 ## Slice 17: Extension Surface
 
-目标：预留后续 RAG/MCP 扩展接口。
+目标：预留后续 RAG/MCP 扩展接口，并提供 RAG 知识库管理页面。
 
-交付：KnowledgeAdapter 空实现、McpServerConfig placeholder、ToolDefinition schema MCP-ready、文档更新。
+交付：RAG 知识库 surface、KnowledgeAdapter 空实现、McpServerConfig placeholder、ToolDefinition schema MCP-ready、文档更新。
 
 验收：未配置 RAG/MCP 时主流程仍可运行；后续可接外部 RAG 和 GitHub MCP。
