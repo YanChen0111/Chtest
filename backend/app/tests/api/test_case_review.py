@@ -19,6 +19,7 @@ from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.cases.models import GeneratedCaseCandidate, TestCase as CaseModel
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 from backend.app.modules.review_history.models import ReviewHistory
 
 
@@ -121,28 +122,28 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                 PromptVersion(
                     name="requirement_review",
                     version="v1",
-                    hash="sha256:" + "a" * 64,
+                    hash=compute_content_hash("# Requirement Review Prompt"),
                     agent_name="RequirementReviewAgent",
                     content="# Requirement Review Prompt",
                 ),
                 SkillVersion(
                     name="requirement-review-skill",
                     version="v1",
-                    hash="sha256:" + "b" * 64,
+                    hash=compute_content_hash("# Requirement Review Skill"),
                     applicable_agents=["RequirementReviewAgent"],
                     content="# Requirement Review Skill",
                 ),
                 PromptVersion(
                     name="case_generation",
                     version="v1",
-                    hash="sha256:" + "c" * 64,
+                    hash=compute_content_hash("# Case Generation Prompt"),
                     agent_name="CaseGenerationAgent",
                     content="# Case Generation Prompt",
                 ),
                 SkillVersion(
                     name="test-case-generation-skill",
                     version="v1",
-                    hash="sha256:" + "d" * 64,
+                    hash=compute_content_hash("# Case Generation Skill"),
                     applicable_agents=["CaseGenerationAgent"],
                     content="# Case Generation Skill",
                 ),

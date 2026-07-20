@@ -24,6 +24,7 @@ from backend.app.modules.cases.models import TestCase as CaseModel
 from backend.app.modules.projects.models import Project, Workspace
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 from backend.app.modules.review_history.models import ReviewHistory
 
 
@@ -182,14 +183,14 @@ def seed_automation_draft_prompt_skill(session: Session) -> tuple[PromptVersion,
     prompt = PromptVersion(
         name="automation_draft_generation",
         version="v1",
-        hash="sha256:" + "a" * 64,
+        hash=compute_content_hash("# Automation Draft Prompt"),
         agent_name="AutomationDraftAgent",
         content="# Automation Draft Prompt",
     )
     skill = SkillVersion(
         name="automation-draft-skill",
         version="v1",
-        hash="sha256:" + "b" * 64,
+        hash=compute_content_hash("# Automation Draft Skill"),
         applicable_agents=["AutomationDraftAgent"],
         content="# Automation Draft Skill",
     )

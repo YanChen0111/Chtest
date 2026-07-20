@@ -6,17 +6,24 @@ Docker Desktop/WSL engine is unavailable.
 
 ## Current Slice
 
-Slice 47: Final Test Knowledge RAG System is complete.
+Slice 48: Agent Reliability and EvalOps.
 
 ## Current Task
 
-No active Slice 47 implementation task. Final acceptance is complete.
+Task 48.1 is complete: make published Prompt/Skill content the authoritative
+runtime policy for queued AI tasks.
 
-Required output before further implementation:
+Verified behavior:
 
-1. Select the next product slice or explicitly scoped bug from the product
-   priority; do not infer a broad roadmap expansion from Slice 47 completion.
-2. Preserve the final acceptance evidence and the read-only source database.
+1. The worker compiles and validates PromptVersion and SkillVersion by the IDs
+   fixed on AITask.
+2. OpenAI-compatible providers consume the compiled policy and have no
+   task-specific business instruction map.
+3. `runtime_policy.json` records the exact content, schemas, versions, hashes,
+   gates, and permissions used for the call.
+4. Missing, mismatched, inactive, or mutated policy fails closed before a model
+   request.
+5. Backend verification is `458 passed`.
 
 ## Previous Tasks Verified
 
@@ -168,4 +175,6 @@ No commit is pending for Slice 47 after the final acceptance commit.
 
 ## Next Task
 
-Choose the next explicitly scoped product task before further implementation.
+Task 48.2: add immutable requirement claims and validate every generated case
+against cited requirement/risk/evidence claims instead of batch keyword
+alignment. Do not begin it without an explicit implementation request.

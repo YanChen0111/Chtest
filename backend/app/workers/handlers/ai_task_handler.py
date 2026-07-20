@@ -13,8 +13,10 @@ from backend.app.modules.ai_runtime.providers.base import (
     LLMProviderRequest,
     LLMProviderTimeoutError,
     ProviderArtifactPayload,
+    RuntimePolicyBundle,
 )
 from backend.app.modules.ai_runtime.providers.factory import LLMProvider, create_llm_provider
+from backend.app.modules.ai_runtime.runtime_policy import RuntimePolicyInvalidError, compile_runtime_policy
 from backend.app.workers.enqueue import AIQueueJob
 
 
@@ -40,16 +42,34 @@ def run_ai_task(
     session.commit()
     session.refresh(ai_task)
 
+    try:
+        runtime_policy = compile_runtime_policy(session, ai_task)
+    except RuntimePolicyInvalidError as exc:
+        error_json = {
+            "error_code": "RUNTIME_POLICY_INVALID",
+            "message": str(exc),
+            "recoverable": False,
+        }
+        try:
+            artifacts_by_name = write_request_artifacts(session, store, ai_task)
+            artifacts_by_name.update(write_error_artifact(session, store, ai_task, error_json))
+        except OSError as write_exc:
+            mark_artifact_write_failed(session, ai_task.id, write_exc)
+            return
+        finish_failed_task(session, ai_task, artifacts_by_name, "failed", error_json)
+        return
+
     request = LLMProviderRequest(
         task_type=ai_task.task_type,
         model_name=ai_task.model_name,
         input_json=ai_task.input_json,
         context_artifact_ids=ai_task.context_artifact_ids,
         context_manifest=list(ai_task.input_json.get("context_manifest", [])),
+        runtime_policy=runtime_policy,
         mode=str(ai_task.input_json.get("mock_mode", "success")),
     )
     try:
-        request_artifacts_by_name = write_request_artifacts(session, store, ai_task)
+        request_artifacts_by_name = write_request_artifacts(session, store, ai_task, runtime_policy)
         session.commit()
     except OSError as exc:
         mark_artifact_write_failed(session, ai_task.id, exc)
@@ -127,6 +147,7 @@ def write_request_artifacts(
     session: Session,
     store: LocalArtifactStore,
     ai_task: AITask,
+    runtime_policy: RuntimePolicyBundle | None = None,
 ) -> dict[str, Artifact]:
     payloads = [
         ProviderArtifactPayload(
@@ -136,6 +157,19 @@ def write_request_artifacts(
             content=json.dumps(ai_task.input_json, ensure_ascii=False, sort_keys=True).encode("utf-8"),
         ),
     ]
+    if runtime_policy is not None:
+        payloads.append(
+            ProviderArtifactPayload(
+                artifact_type="input_json",
+                file_name="runtime_policy.json",
+                mime_type="application/json",
+                content=json.dumps(
+                    runtime_policy.manifest(),
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ).encode("utf-8"),
+            ),
+        )
     if ai_task.context_artifact_ids:
         payloads.append(
             ProviderArtifactPayload(

@@ -20,6 +20,7 @@ from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.extension.models import KnowledgeAdapterConfig
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 from backend.app.modules.requirements.models import RequirementReview, RiskItem
 
 
@@ -127,7 +128,7 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                 PromptVersion(
                     name="requirement_review",
                     version="v1",
-                    hash="sha256:" + "a" * 64,
+                    hash=compute_content_hash("# Prompt"),
                     agent_name="RequirementReviewAgent",
                     content="# Prompt",
                     output_schema_json={"required": ["scores", "issues"]},
@@ -135,7 +136,7 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                 SkillVersion(
                     name="requirement-review-skill",
                     version="v1",
-                    hash="sha256:" + "b" * 64,
+                    hash=compute_content_hash("# Skill"),
                     applicable_agents=["RequirementReviewAgent"],
                     content="# Skill",
                 ),
@@ -258,6 +259,12 @@ def test_start_requirement_review_persists_review_risks_and_ai_evidence(
         assert ai_task.task_type == "requirement_review"
         assert ai_task.status == "succeeded"
         assert ai_task.context_artifact_ids == [uuid.UUID(context_id)]
+        assert session.scalar(
+            select(Artifact).where(
+                Artifact.owner_entity_id == ai_task.id,
+                Artifact.file_path.endswith("/runtime_policy.json"),
+            ),
+        )
         assert session.scalar(select(RequirementReview).where(RequirementReview.requirement_id == uuid.UUID(requirement["id"])))
         assert len(list(session.scalars(select(RiskItem)))) >= 2
 

@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from backend.app.modules.ai_runtime.providers.base import LLMProviderError, LLMProviderRequest
+from backend.app.modules.ai_runtime.providers.base import LLMProviderError, LLMProviderRequest, RuntimePolicyBundle
 from backend.app.modules.ai_runtime.providers.factory import create_llm_provider
 from backend.app.modules.ai_runtime.providers.openai_responses_provider import OpenAIResponsesProvider
 
@@ -36,6 +36,30 @@ class FakeHTTPResponse:
 @pytest.fixture(autouse=True)
 def isolate_model_connection_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CHTEST_MODEL_CONNECTION_PATH", str(tmp_path / "missing-model-connection.json"))
+
+
+def runtime_policy(
+    *,
+    agent_name: str = "RequirementReviewAgent",
+    prompt_name: str = "requirement_review",
+    skill_name: str = "requirement-review-skill",
+) -> RuntimePolicyBundle:
+    return RuntimePolicyBundle(
+        agent_name=agent_name,
+        prompt_name=prompt_name,
+        prompt_version="v7",
+        prompt_hash="sha256:prompt-policy-marker",
+        prompt_content="PROMPT_POLICY_MARKER: review only the supplied requirement evidence.",
+        input_schema_json={"type": "object"},
+        output_schema_json={"type": "object", "required": ["scores"]},
+        skill_name=skill_name,
+        skill_version="v4",
+        skill_hash="sha256:skill-policy-marker",
+        skill_content="SKILL_POLICY_MARKER: identify testability gaps before scoring.",
+        quality_gates=["Every issue cites requirement evidence."],
+        forbidden_actions=["Do not invent requirement facts."],
+        tool_permissions=[],
+    )
 
 
 def test_openai_responses_provider_posts_responses_request_and_records_artifacts(
@@ -100,6 +124,7 @@ def test_openai_responses_provider_posts_responses_request_and_records_artifacts
             model_name="gpt-test",
             input_json={"requirement": "Review checkout coupon rules."},
             context_artifact_ids=[uuid.UUID("00000000-0000-0000-0000-000000000371")],
+            runtime_policy=runtime_policy(),
         ),
     )
 
@@ -113,6 +138,10 @@ def test_openai_responses_provider_posts_responses_request_and_records_artifacts
     assert captured["payload"]["reasoning"] == {"effort": "low"}
     assert captured["payload"]["text"] == {"format": {"type": "json_object"}}
     assert "Review checkout coupon rules." in captured["payload"]["input"]
+    assert "PROMPT_POLICY_MARKER" in captured["payload"]["input"]
+    assert "SKILL_POLICY_MARKER" in captured["payload"]["input"]
+    assert "Prompt requirement_review:v7" in captured["payload"]["input"]
+    assert "Review the requirement for test design readiness" not in captured["payload"]["input"]
     assert response.provider == "openai"
     assert response.status == "succeeded"
     assert response.output_json["overall_score"] == 88
@@ -205,6 +234,7 @@ def test_openai_responses_provider_falls_back_to_chat_completions_when_responses
             task_type="requirement_review",
             model_name="gpt-test",
             input_json={"requirement": "Review coupon boundaries."},
+            runtime_policy=runtime_policy(),
         ),
     )
 
@@ -290,6 +320,11 @@ def test_openai_responses_provider_falls_back_to_chat_completions_on_recoverable
             task_type="case_generation",
             model_name="gpt-test",
             input_json={"requirement": "Generate NFC tests."},
+            runtime_policy=runtime_policy(
+                agent_name="CaseGenerationAgent",
+                prompt_name="case_generation",
+                skill_name="test-case-generation-skill",
+            ),
         ),
     )
 

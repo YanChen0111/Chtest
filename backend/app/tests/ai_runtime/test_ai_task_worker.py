@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session, sessionmaker
 from backend.app.models.base import Base
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
+from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 from backend.app.modules.projects.models import Project, Workspace
 from backend.app.workers.enqueue import FakeAIQueue, enqueue_ai_task
 from backend.app.workers.handlers.ai_task_handler import run_ai_task
@@ -32,12 +34,35 @@ def create_ai_task(
     status: str = "created",
 ) -> AITask:
     project = Project(workspace=Workspace(name=f"Workspace {uuid.uuid4()}"), name=f"Project {uuid.uuid4()}")
+    prompt_content = "# Prompt: requirement_review v1\n\n## Agent\n\nRequirementReviewAgent"
+    skill_content = "# Skill: requirement-review-skill v1\n\n## Applies To\n\n- RequirementReviewAgent"
+    prompt = PromptVersion(
+        name="requirement_review",
+        version="v1",
+        hash=compute_content_hash(prompt_content),
+        agent_name="RequirementReviewAgent",
+        content=prompt_content,
+        input_schema_json={"type": "object"},
+        output_schema_json={"type": "object"},
+    )
+    skill = SkillVersion(
+        name="requirement-review-skill",
+        version="v1",
+        hash=compute_content_hash(skill_content),
+        applicable_agents=["RequirementReviewAgent"],
+        content=skill_content,
+        quality_gates_json=["Return structured review output."],
+        forbidden_actions_json=["Do not invent requirement facts."],
+        tool_permissions_json=[],
+    )
+    session.add_all([prompt, skill])
+    session.flush()
     ai_task = AITask(
         project=project,
         agent_name="RequirementReviewAgent",
         task_type="requirement_review",
-        prompt_version_id=uuid.uuid4(),
-        skill_version_id=uuid.uuid4(),
+        prompt_version_id=prompt.id,
+        skill_version_id=skill.id,
         model_provider=model_provider,
         model_name=model_name,
         input_json={
@@ -108,12 +133,20 @@ def test_worker_runs_pending_task_and_records_artifacts_and_llm_log(
             "parsed_output.json",
             "schema_validation.json",
             "context_manifest.json",
+            "runtime_policy.json",
         }
         context_manifest_artifact = next(
             artifact for artifact in artifacts if Path(artifact.file_path).name == "context_manifest.json"
         )
         context_manifest = json.loads((tmp_path / context_manifest_artifact.file_path).read_text())
         assert context_manifest["context_manifest"][0]["title"] == "coupon-api-notes.md"
+        runtime_policy_artifact = next(
+            artifact for artifact in artifacts if Path(artifact.file_path).name == "runtime_policy.json"
+        )
+        runtime_policy = json.loads((tmp_path / runtime_policy_artifact.file_path).read_text())
+        assert runtime_policy["agent_name"] == "RequirementReviewAgent"
+        assert runtime_policy["prompt"]["name"] == "requirement_review"
+        assert runtime_policy["skill"]["quality_gates"] == ["Return structured review output."]
         assert all((tmp_path / artifact.file_path).exists() for artifact in artifacts)
         raw_artifact = next(artifact for artifact in artifacts if artifact.artifact_type == "raw_llm_output")
         assert raw_artifact.metadata_json["safe_to_show"] is False
@@ -149,6 +182,30 @@ def test_worker_marks_schema_invalid_task_failed_and_records_error_artifact(
         assert llm_log is not None
         assert llm_log.status == "schema_invalid"
         assert llm_log.error_json is not None
+
+
+def test_worker_fails_closed_when_published_prompt_hash_does_not_match(
+    session_factory: sessionmaker[Session],
+    tmp_path: Path,
+) -> None:
+    with session_factory() as session:
+        ai_task = create_ai_task(session)
+        prompt = session.get(PromptVersion, ai_task.prompt_version_id)
+        assert prompt is not None
+        prompt.content += "\nchanged after publish"
+        session.commit()
+        queue = FakeAIQueue()
+        enqueue_ai_task(session, queue, ai_task.id)
+
+        run_ai_task(session, LocalArtifactStore(tmp_path), queue.pop_next())
+
+        session.refresh(ai_task)
+        assert ai_task.status == "failed"
+        assert ai_task.error_json == {
+            "error_code": "RUNTIME_POLICY_INVALID",
+            "message": "Prompt content hash does not match its published version.",
+            "recoverable": False,
+        }
 
 
 def test_worker_marks_provider_error_failed_and_records_error_artifact(

@@ -10432,3 +10432,20 @@ Slice 47 is complete; no Slice 47 implementation task remains.
   `d8fb34dc054cffc69675c92351ebfbdf6620e82dc76b31bcf7ee759f357a7e01`.
 - Known unrelated full-suite baseline failures are Windows fake runner
   `WinError 193` and stale golden inputs missing the decision-table gate.
+
+## 2026-07-20 Slice 48.1 Runtime Policy Authority
+
+Task 48.1 is complete but not committed in this dirty worktree.
+
+- Added a fail-closed RuntimePolicyBundle compiled from the exact PromptVersion
+  and SkillVersion referenced by each queued AITask.
+- Runtime compilation verifies active state, content hashes, prompt-agent
+  assignment, and skill applicability.
+- OpenAI-compatible transport now consumes the policy bundle; task-specific
+  business instructions and task-name output routing were removed.
+- Each successful queued task records `runtime_policy.json` with prompt, skill,
+  schemas, gates, permissions, versions, and hashes.
+- Updated legacy test seeds to use hashes derived from their published content.
+- Verification: provider focused `14 passed`; backend full suite `458 passed`;
+  runtime DB prompt/skill hash audit found no mismatches.
+- Next scoped task: immutable requirement claims and per-case grounding checks.

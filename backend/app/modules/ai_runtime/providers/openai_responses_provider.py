@@ -157,7 +157,7 @@ class OpenAIResponsesProvider:
         reasoning_effort = os.getenv("LLM_REASONING_EFFORT", "low").strip().lower()
         if reasoning_effort and reasoning_effort not in {"default", "auto"}:
             payload["reasoning"] = {"effort": reasoning_effort}
-        if self._expects_json_object(request.task_type):
+        if self._expects_json_object(request):
             payload["text"] = {"format": {"type": "json_object"}}
         return payload
 
@@ -230,51 +230,28 @@ class OpenAIResponsesProvider:
             "context_artifact_ids": [str(context_id) for context_id in request.context_artifact_ids],
             "context_manifest": request.context_manifest,
         }
-        instruction = self._task_instruction(request.task_type)
-        return (
-            "You are Chtest's AI testing assistant. Return only valid JSON, with no Markdown fences or prose.\n"
-            f"{instruction}\n"
-            f"{json.dumps(payload, ensure_ascii=False, sort_keys=True)}"
-        )
+        policy = request.runtime_policy
+        if policy is None:
+            instruction = (
+                "Return valid JSON for the caller's task. Do not add Markdown fences or prose. "
+                "A production workflow must provide a versioned runtime policy bundle."
+            )
+        else:
+            instruction = (
+                "Follow this versioned runtime policy as the authoritative instruction. "
+                "Do not replace it with general knowledge or hidden task rules.\n"
+                f"Agent: {policy.agent_name}\n"
+                f"Prompt {policy.prompt_name}:{policy.prompt_version} ({policy.prompt_hash})\n"
+                f"{policy.prompt_content}\n"
+                f"Skill {policy.skill_name}:{policy.skill_version} ({policy.skill_hash})\n"
+                f"{policy.skill_content}\n"
+                "The input and output schemas in the policy are mandatory."
+            )
+        return f"{instruction}\n{json.dumps(payload, ensure_ascii=False, sort_keys=True)}"
 
-    def _task_instruction(self, task_type: str) -> str:
-        if task_type == "requirement_review":
-            return (
-                "Review the requirement for test design readiness. Output a JSON object with: "
-                "overall_score integer 0-100; scores object containing integer keys completeness, clarity, "
-                "consistency, testability, feasibility, logic; issues array of objects with type, severity, text; "
-                "clarification_questions array of strings; test_design_notes array of strings; risk_items array of "
-                "objects with title, risk_level low|medium|high|critical, category business|technical|data|environment|regression, "
-                "impact, suggestion; used_knowledge boolean; used_context_artifact_ids array of strings. "
-                "If input_json.clarification_context is present, use the supplement and answers to perform a follow-up review "
-                "without silently rewriting the original requirement."
-            )
-        if task_type == "case_generation":
-            return (
-                "Generate executable test case candidates. Output a JSON object with cases array. Each case must include "
-                "title string, priority P0|P1|P2|P3, test_type functional|api|ui|performance|security|compatibility|regression|unit, "
-                "precondition string, steps non-empty string array, expected_results non-empty string array, "
-                "requirement_refs non-empty string array, risk_refs array, input_data object, tags array, ai_reason string, "
-                "coverage_dimensions array of objects with key one of positive|negative|boundary|state|permission|channel|condition|risk "
-                "and evidence explaining which requirement or risk the case covers, "
-                "source_knowledge_evidence array copied from relevant input_json.knowledge_evidence items when available; "
-                "also include used_knowledge boolean and used_context_artifact_ids array of strings. "
-                "If input_json.requirement_document is present, treat that requirement document as the primary reviewed source."
-            )
-        if task_type == "automation_draft_generation":
-            return (
-                "Generate a reviewable automation test draft from the approved AutomationPlan or reviewed TestCase. "
-                "Output a JSON object with title string, draft_language python|typescript, draft_code string, "
-                "suggested_file_path string, execution_notes string, risk_notes string, used_knowledge boolean, "
-                "and used_context_artifact_ids array of strings. For pytest, draft_code must define at least one "
-                "test_ function and be syntactically runnable. For Playwright, draft_code must define at least one "
-                "test(...) block. Do not return placeholder-only code such as assert True. Include realistic fixtures, "
-                "stubs, or clearly named adapter calls when the application automation hooks are not available."
-            )
-        return "Output a JSON object relevant to the task."
-
-    def _expects_json_object(self, task_type: str) -> bool:
-        return task_type in {"requirement_review", "case_generation", "automation_draft_generation"}
+    def _expects_json_object(self, request: LLMProviderRequest) -> bool:
+        policy = request.runtime_policy
+        return policy is not None and policy.output_schema_json.get("type") == "object"
 
     def _output_json(
         self,
@@ -282,7 +259,7 @@ class OpenAIResponsesProvider:
         response_json: dict[str, Any],
         response_text: str,
     ) -> dict[str, Any]:
-        if request.task_type in {"requirement_review", "case_generation", "automation_draft_generation"}:
+        if self._expects_json_object(request):
             parsed = self._parse_json_object(response_text)
             parsed.setdefault("used_knowledge", bool(request.input_json.get("knowledge_retrieval")))
             parsed.setdefault("used_context_artifact_ids", [str(context_id) for context_id in request.context_artifact_ids])

@@ -20,6 +20,7 @@ from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.extension.models import KnowledgeAdapterConfig
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 
 
 FIXTURE_PATH = Path("docs/fixtures/08-deterministic-knowledge-retrieval-golden.md")
@@ -139,7 +140,7 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                 PromptVersion(
                     name="requirement_review",
                     version="v1",
-                    hash="sha256:" + "a" * 64,
+                    hash=compute_content_hash("# Requirement Review Prompt"),
                     agent_name="RequirementReviewAgent",
                     content="# Requirement Review Prompt",
                     output_schema_json={"required": ["scores", "issues"]},
@@ -147,7 +148,7 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                 SkillVersion(
                     name="requirement-review-skill",
                     version="v1",
-                    hash="sha256:" + "b" * 64,
+                    hash=compute_content_hash("# Requirement Review Skill"),
                     applicable_agents=["RequirementReviewAgent"],
                     content="# Requirement Review Skill",
                 ),

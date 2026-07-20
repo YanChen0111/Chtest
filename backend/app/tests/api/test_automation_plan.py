@@ -22,6 +22,7 @@ from backend.app.modules.cases.models import GeneratedCaseCandidate
 from backend.app.modules.execution.models import TestRun
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 from backend.app.modules.review_history.models import ReviewHistory
 
 
@@ -127,56 +128,56 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                 PromptVersion(
                     name="requirement_review",
                     version="v1",
-                    hash="sha256:" + "a" * 64,
+                    hash=compute_content_hash("# Requirement Review Prompt"),
                     agent_name="RequirementReviewAgent",
                     content="# Requirement Review Prompt",
                 ),
                 SkillVersion(
                     name="requirement-review-skill",
                     version="v1",
-                    hash="sha256:" + "b" * 64,
+                    hash=compute_content_hash("# Requirement Review Skill"),
                     applicable_agents=["RequirementReviewAgent"],
                     content="# Requirement Review Skill",
                 ),
                 PromptVersion(
                     name="case_generation",
                     version="v1",
-                    hash="sha256:" + "c" * 64,
+                    hash=compute_content_hash("# Case Generation Prompt"),
                     agent_name="CaseGenerationAgent",
                     content="# Case Generation Prompt",
                 ),
                 SkillVersion(
                     name="test-case-generation-skill",
                     version="v1",
-                    hash="sha256:" + "d" * 64,
+                    hash=compute_content_hash("# Case Generation Skill"),
                     applicable_agents=["CaseGenerationAgent"],
                     content="# Case Generation Skill",
                 ),
                 PromptVersion(
                     name="automation_plan_generation",
                     version="v1",
-                    hash="sha256:" + "e" * 64,
+                    hash=compute_content_hash("# Automation Plan Prompt"),
                     agent_name="AutomationPlanAgent",
                     content="# Automation Plan Prompt",
                 ),
                 SkillVersion(
                     name="automation-plan-skill",
                     version="v1",
-                    hash="sha256:" + "f" * 64,
+                    hash=compute_content_hash("# Automation Plan Skill"),
                     applicable_agents=["AutomationPlanAgent"],
                     content="# Automation Plan Skill",
                 ),
                 PromptVersion(
                     name="automation_draft_generation",
                     version="v1",
-                    hash="sha256:" + "1" * 64,
+                    hash=compute_content_hash("# Automation Draft Prompt"),
                     agent_name="AutomationDraftAgent",
                     content="# Automation Draft Prompt",
                 ),
                 SkillVersion(
                     name="automation-draft-skill",
                     version="v1",
-                    hash="sha256:" + "2" * 64,
+                    hash=compute_content_hash("# Automation Draft Skill"),
                     applicable_agents=["AutomationDraftAgent"],
                     content="# Automation Draft Skill",
                 ),

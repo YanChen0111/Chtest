@@ -367,3 +367,24 @@ must not mark the draft approved.
 - quality_gate_result。
 
 指标按 PromptVersion 和 SkillVersion 聚合：采纳率、编辑率、驳回率、schema 通过率、执行通过率、失败率、平均 token、平均耗时。
+
+## 10. Runtime Policy Bundle
+
+Queued AI tasks must execute the exact published PromptVersion and SkillVersion
+referenced by the AITask. The worker compiles them into a RuntimePolicyBundle
+before calling a provider.
+
+Runtime rules:
+
+- The prompt and skill rows must exist and be active.
+- Their stored hashes must match their current content.
+- The prompt agent must equal the AITask agent.
+- The skill must list the AITask agent in `applicable_agents`.
+- The bundle includes prompt and skill content, input/output schemas, quality
+  gates, forbidden actions, tool permissions, versions, and hashes.
+- Providers are transport adapters. They must not contain separate
+  task-specific business instructions or task-name output routing.
+- Structured output behavior is derived from the bundle output schema.
+- Every executed task persists `runtime_policy.json` beside `input.json`.
+- Invalid or missing policy fails closed with `RUNTIME_POLICY_INVALID` before
+  any model call.

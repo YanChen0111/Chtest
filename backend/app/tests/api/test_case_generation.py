@@ -20,6 +20,7 @@ from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase as CaseModel
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 
 
 class ASGIResponse:
@@ -122,28 +123,28 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                 PromptVersion(
                     name="requirement_review",
                     version="v1",
-                    hash="sha256:" + "a" * 64,
+                    hash=compute_content_hash("# Requirement Review Prompt"),
                     agent_name="RequirementReviewAgent",
                     content="# Requirement Review Prompt",
                 ),
                 SkillVersion(
                     name="requirement-review-skill",
                     version="v1",
-                    hash="sha256:" + "b" * 64,
+                    hash=compute_content_hash("# Requirement Review Skill"),
                     applicable_agents=["RequirementReviewAgent"],
                     content="# Requirement Review Skill",
                 ),
                 PromptVersion(
                     name="case_generation",
                     version="v1",
-                    hash="sha256:" + "c" * 64,
+                    hash=compute_content_hash("# Case Generation Prompt"),
                     agent_name="CaseGenerationAgent",
                     content="# Case Generation Prompt",
                 ),
                 SkillVersion(
                     name="test-case-generation-skill",
                     version="v1",
-                    hash="sha256:" + "d" * 64,
+                    hash=compute_content_hash("# Case Generation Skill"),
                     applicable_agents=["CaseGenerationAgent"],
                     content="# Case Generation Skill",
                 ),
@@ -257,6 +258,12 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
         assert ai_task.status == "succeeded"
         assert ai_task.input_json["decision_table_acknowledged"] is True
         assert any(dimension["key"] == "boundary" for dimension in ai_task.input_json["decision_table_dimensions"])
+        assert session.scalar(
+            select(Artifact).where(
+                Artifact.owner_entity_id == ai_task.id,
+                Artifact.file_path.endswith("/runtime_policy.json"),
+            ),
+        )
         assert session.scalar(select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id))
         assert list(session.scalars(select(CaseModel))) == []
 

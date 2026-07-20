@@ -31,6 +31,7 @@ from backend.app.modules.knowledge import service as knowledge_service
 from backend.app.modules.knowledge.schemas import KnowledgeRetrievalRunCreateRequest
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
+from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 from backend.app.modules.review_history.models import ReviewHistory
 
 
@@ -141,14 +142,14 @@ def seed_case_generation_prompt_skill(SessionLocal: sessionmaker[Session]) -> No
                 PromptVersion(
                     name="case_generation",
                     version="v1",
-                    hash="sha256:" + "c" * 64,
+                    hash=compute_content_hash("# Case Generation Prompt"),
                     agent_name="CaseGenerationAgent",
                     content="# Case Generation Prompt",
                 ),
                 SkillVersion(
                     name="test-case-generation-skill",
                     version="v1",
-                    hash="sha256:" + "d" * 64,
+                    hash=compute_content_hash("# Case Generation Skill"),
                     applicable_agents=["CaseGenerationAgent"],
                     content="# Case Generation Skill",
                 ),
