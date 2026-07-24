@@ -1,0 +1,222 @@
+{
+  "snapshot_input": {
+    "requirement_id": "req-coupon-001",
+    "requirement_title": "Coupon checkout rules",
+    "requirement_content": "An active coupon reduces the payable amount.\nAn expired coupon is rejected before payment.\nThe checkout page displays the final payable amount.",
+    "requirement_document": null,
+    "risk_items": [
+      {
+        "id": "risk-amount-001",
+        "title": "Payment amount tampering",
+        "impact": "An incorrect payable amount may be charged",
+        "suggestion": "Verify the server rejects a mismatched payable amount"
+      }
+    ],
+    "knowledge_evidence": [
+      {
+        "knowledge_evidence_id": "evidence-coupon-audit-001",
+        "title": "Coupon audit requirement",
+        "snippet": "Coupon rejection records the validation reason in the audit log"
+      }
+    ]
+  },
+  "claim_keys": {
+    "active_coupon": {
+      "source_type": "requirement",
+      "text_contains": "active coupon reduces"
+    },
+    "expired_coupon": {
+      "source_type": "requirement",
+      "text_contains": "expired coupon is rejected"
+    },
+    "final_amount": {
+      "source_type": "requirement",
+      "text_contains": "displays the final payable amount"
+    },
+    "amount_tampering": {
+      "source_type": "risk",
+      "text_contains": "Payment amount tampering"
+    },
+    "coupon_audit": {
+      "source_type": "knowledge_evidence",
+      "text_contains": "records the validation reason"
+    }
+  },
+  "expected_valid_citation_claim_keys": [
+    "active_coupon",
+    "expired_coupon",
+    "final_amount",
+    "amount_tampering",
+    "coupon_audit"
+  ],
+  "expected_requirement_claim_keys": [
+    "active_coupon",
+    "expired_coupon",
+    "final_amount"
+  ],
+  "baseline_version": "case_generation:v1|test-case-generation-skill:v1",
+  "version_runs": [
+    {
+      "prompt_version": "case_generation:v1",
+      "skill_version": "test-case-generation-skill:v1",
+      "cases": [
+        {
+          "case": {
+            "title": "Verify an active coupon reduces the payable amount",
+            "steps": ["Apply an active coupon at checkout"],
+            "expected_results": ["The active coupon reduces the payable amount"],
+            "ai_reason": "Covers the main coupon path",
+            "risk_refs": [],
+            "source_knowledge_evidence": []
+          }
+        },
+        {
+          "case": {
+            "title": "Verify an expired coupon is rejected",
+            "steps": ["Apply an expired coupon before payment"],
+            "expected_results": ["The expired coupon is rejected before payment"],
+            "ai_reason": "Covers coupon rejection",
+            "risk_refs": [],
+            "source_knowledge_evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "prompt_version": "case_generation:v2",
+      "skill_version": "test-case-generation-skill:v2",
+      "cases": [
+        {
+          "citations": [{"claim_key": "active_coupon"}],
+          "case": {
+            "title": "Verify an active coupon reduces the payable amount",
+            "steps": ["Apply an active coupon at checkout"],
+            "expected_results": ["The active coupon reduces the payable amount"],
+            "ai_reason": "Tests the active coupon reduction claim",
+            "risk_refs": [],
+            "source_knowledge_evidence": []
+          }
+        },
+        {
+          "citations": [{"claim_key": "expired_coupon"}],
+          "case": {
+            "title": "Verify an expired coupon is rejected",
+            "steps": ["Apply an expired coupon before payment"],
+            "expected_results": ["The expired coupon is rejected before payment"],
+            "ai_reason": "Tests the expired coupon rejection claim",
+            "risk_refs": [],
+            "source_knowledge_evidence": []
+          }
+        },
+        {
+          "citations": [{"claim_key": "final_amount"}],
+          "case": {
+            "title": "Verify the final payable amount is displayed",
+            "steps": ["Open the checkout page after applying a coupon"],
+            "expected_results": ["The checkout page displays the final payable amount"],
+            "ai_reason": "Tests the final payable amount display claim",
+            "risk_refs": [],
+            "source_knowledge_evidence": []
+          }
+        },
+        {
+          "citations": [{"claim_key": "amount_tampering"}],
+          "case": {
+            "title": "Verify payment amount tampering is rejected",
+            "steps": ["Submit a mismatched payable amount to the server"],
+            "expected_results": ["The server rejects the mismatched payable amount"],
+            "ai_reason": "Tests the payment amount tampering risk",
+            "risk_refs": ["risk-amount-001"],
+            "source_knowledge_evidence": []
+          }
+        },
+        {
+          "citations": [
+            {"claim_key": "expired_coupon"},
+            {"claim_key": "coupon_audit"}
+          ],
+          "case": {
+            "title": "Verify coupon rejection records the validation reason",
+            "steps": ["Reject an invalid coupon and inspect the audit log"],
+            "expected_results": ["The audit log records the coupon validation reason"],
+            "ai_reason": "Tests the approved coupon audit evidence",
+            "risk_refs": [],
+            "source_knowledge_evidence": [
+              {"knowledge_evidence_id": "evidence-coupon-audit-001"}
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "unsupported_cases": [
+    {
+      "citations": [
+        {
+          "claim_id": "CLM-invented-boundary",
+          "evidence": "Coupons may be retried exactly three times"
+        }
+      ],
+      "case": {
+        "title": "Verify coupon retry limit",
+        "steps": ["Retry a coupon four times"],
+        "expected_results": ["The fourth retry is blocked"],
+        "ai_reason": "Invented retry boundary",
+        "risk_refs": [],
+        "source_knowledge_evidence": []
+      }
+    },
+    {
+      "citations": [
+        {
+          "claim_key": "expired_coupon",
+          "evidence": "Warehouse inventory is reserved"
+        }
+      ],
+      "case": {
+        "title": "Verify expired coupon rejection",
+        "steps": ["Apply an expired coupon"],
+        "expected_results": ["The expired coupon is rejected"],
+        "ai_reason": "Citation excerpt is unrelated",
+        "risk_refs": [],
+        "source_knowledge_evidence": []
+      }
+    },
+    {
+      "citations": [{"claim_key": "expired_coupon"}],
+      "case": {
+        "title": "Verify administrator permission escalation",
+        "steps": ["Sign in as a guest and request administrator access"],
+        "expected_results": ["Administrator access is denied"],
+        "ai_reason": "Permission behavior is absent from the requirement",
+        "risk_refs": [],
+        "source_knowledge_evidence": []
+      }
+    },
+    {
+      "citations": [{"claim_key": "amount_tampering"}],
+      "case": {
+        "title": "Verify payment amount tampering is rejected",
+        "steps": ["Submit a mismatched payable amount"],
+        "expected_results": ["The server rejects the mismatched payable amount"],
+        "ai_reason": "Risk source link is deliberately missing",
+        "risk_refs": [],
+        "source_knowledge_evidence": []
+      }
+    },
+    {
+      "citations": [
+        {"claim_key": "expired_coupon"},
+        {"claim_key": "coupon_audit"}
+      ],
+      "case": {
+        "title": "Verify coupon rejection records the validation reason",
+        "steps": ["Reject an invalid coupon and inspect the audit log"],
+        "expected_results": ["The audit log records the coupon validation reason"],
+        "ai_reason": "Knowledge evidence source link is deliberately missing",
+        "risk_refs": [],
+        "source_knowledge_evidence": []
+      }
+    }
+  ]
+}

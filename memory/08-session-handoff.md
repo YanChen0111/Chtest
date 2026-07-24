@@ -10467,3 +10467,21 @@ Task 48.1 is complete but not committed in this dirty worktree.
 - Verification: provider focused `14 passed`; backend full suite `458 passed`;
   runtime DB prompt/skill hash audit found no mismatches.
 - Next scoped task: immutable requirement claims and per-case grounding checks.
+
+## 2026-07-24 Slice 48.3 Claim Grounding EvalOps
+
+Task 48.3 is complete; next is Task 49.1 human-gated workflow transition
+policy.
+
+- Added a fixed offline corpus for explicit v1/v2 Prompt/Skill pairs and an
+  explicit v1 baseline.
+- Added deterministic citation recall, unsupported rejection, requirement
+  coverage, signed drift, missing/unexpected Claim ids, and per-case diagnostics.
+- Evaluation reuses production grounding on deep copies and fails closed for
+  empty metric inputs, duplicate pairs, or an unknown baseline.
+- Fixed results: v1 recall/coverage `0.0`; v2 recall/coverage `1.0`; v2 drift
+  `+1.0`; unsupported rejection `5/5`.
+- Verification: focused `23 passed`; backend `471 passed, 1 deselected` because
+  Windows lacks symlink creation privilege; frontend `25 files / 54 tests`;
+  production build passed with the existing chunk-size warning.
+- Source `storage/chtest-dev.db` was not used.

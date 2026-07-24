@@ -10,21 +10,21 @@ Slice 48: Agent Reliability and EvalOps.
 
 ## Current Task
 
-Task 48.2 is complete: ground every generated case in immutable requirement,
-risk, or approved evidence claims.
+Task 48.3 is complete: fixed, offline Claim Grounding EvalOps now compares
+approved Prompt/Skill pairs without relying on provider behavior.
 
 Verified behavior:
 
-1. `case_generation:v2` persists a deterministic, hashed
-   `requirement_claim_snapshot` on AITask input.
-2. Every candidate must cite real snapshot claim ids with semantically matching
-   evidence; risk and knowledge citations must also link their persisted ids.
-3. Validation is per candidate and fails the complete batch closed with
-   `CASE_GENERATION_GROUNDING_INVALID` before any candidate is persisted.
-4. V1 remains available for replay, while the frontend defaults new generation
-   to v2 and recovers the latest reviewed requirement without browser-local ids.
-5. Verification is backend `462 passed`, frontend `25 files / 54 tests`, and a
-   successful production build.
+1. The fixed corpus pins v1 and v2 Prompt/Skill pairs plus an explicit baseline.
+2. Evaluation reuses the production snapshot builder and grounding validator on
+   isolated candidate copies.
+3. Metrics report valid citation recall, unsupported-case rejection,
+   requirement coverage, signed coverage drift, missing/unexpected Claim ids,
+   and per-case diagnostics.
+4. Empty metric inputs, duplicate version pairs, and an unknown baseline fail
+   closed.
+5. Fixed results are v1 recall/coverage `0.0`, v2 recall/coverage `1.0`, v2
+   coverage drift `+1.0`, and unsupported rejection `5/5`.
 
 ## Previous Tasks Verified
 
@@ -111,8 +111,8 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can ingest, review, retrieve, diagnose, trace, and improve
-knowledge from one efficient operational surface.
+Test engineers can detect Prompt/Skill grounding regressions before a changed
+AI policy becomes the default for new case generation.
 
 ## Must Read
 
@@ -135,18 +135,17 @@ knowledge from one efficient operational surface.
 
 ## Expected Files
 
-Default write boundary:
+Default write boundary for Task 49.1:
 
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-frontend/src/** knowledge workbench routes/components/services only
-frontend/tests/** knowledge workbench only
 docs/contracts/01-data-model-contract.md
-docs/contracts/02-api-contract.md
-docs/contracts/04-artifact-contract.md
-docs/implementation/slices/slice-47-final-test-knowledge-rag-system.md
+docs/contracts/03-state-machines.md
+docs/architecture/04-agent-workflow-design.md
+backend/app/modules/workflow_control/policy.py
+backend/app/tests/workflow_control/test_policy.py
 ```
 
 Explain any write outside this set before editing it.
@@ -167,21 +166,22 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Every v2 candidate is validated against immutable source claims before
-  persistence.
-- Empty/stale browser workflow context recovers the latest reviewed project
-  requirement instead of submitting blank ids.
+- AI output alone can never advance a controlled workflow stage.
+- Approval is scoped to the exact input snapshot and becomes invalid after an
+  input hash changes.
+- Skipped stages and transitions without required review/approval fail closed.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(case-generation): enforce immutable claim grounding
+feat(workflow-control): add human-gated transition policy
 ```
 
 ## Next Task
 
-Task 48.3: add a fixed claim-grounding evaluation corpus that measures valid
-citation recall, unsupported-case rejection, and requirement coverage drift
-across Prompt/Skill versions. Do not begin it without an explicit
-implementation request.
+Task 49.1: add a deterministic, persistence-free workflow transition policy for
+human review and approval gates. The policy must bind approvals to immutable
+input snapshots, reject skipped stages, and keep AI agents unable to advance
+workflow state by themselves. Database persistence and frontend integration are
+separate follow-up tasks.

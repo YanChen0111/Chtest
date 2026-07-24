@@ -4469,3 +4469,21 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Production build passed with the existing large-chunk warning.
 - Runtime DB acceptance: v2 task succeeded with 11 claims, 5 candidates, and
   grounding status `pass` for every candidate.
+
+## 2026-07-24 Slice 48.3 Claim Grounding EvalOps
+
+### Implemented
+
+- Added a fixed, provider-neutral Claim Grounding corpus for explicit v1/v2
+  Prompt/Skill pairs.
+- Added fail-closed offline metrics for citation recall, unsupported rejection,
+  requirement coverage, coverage drift, and per-case Claim diagnostics.
+- Documented the EvalOps metric and corpus contract.
+
+### Verification
+
+- Focused grounding/API suite: `23 passed`.
+- Backend: `471 passed, 1 deselected`; the deselected symlink security test
+  requires a Windows privilege unavailable to the current process.
+- Frontend: `25 files / 54 tests`; production build passed with the existing
+  chunk-size warning.

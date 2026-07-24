@@ -400,3 +400,38 @@ for new case-generation tasks. V2 consumes the immutable
 overlap the source claim and candidate semantics, and risk or knowledge claims
 must link to their persisted source ids. Validation is per candidate and fails
 the complete batch closed; published v1 content remains unchanged for replay.
+
+## 12. Claim Grounding EvalOps
+
+Case-generation Prompt/Skill pairs must be compared with a fixed, offline
+claim-grounding corpus before a new pair becomes the default. The corpus must
+pin the exact Prompt and Skill references and declare its baseline pair instead
+of inferring either from registry order.
+
+Required metrics:
+
+- `valid_citation_recall`: distinct expected Claim ids cited by candidates that
+  pass the production grounding validator divided by all expected citation
+  Claim ids;
+- `unsupported_case_rejection`: unsupported candidates rejected by the
+  production grounding validator divided by all fixed unsupported candidates;
+- `requirement_coverage`: distinct expected requirement Claim ids covered by
+  accepted candidates divided by all expected requirement Claim ids;
+- `requirement_coverage_drift`: signed requirement-coverage difference between
+  a Prompt/Skill pair and the corpus baseline pair.
+
+Rules:
+
+- Gold Claim denominators are explicit corpus fields; they are not inferred
+  from every sentence that happens to be present in a snapshot.
+- Every version run contains frozen candidate output. The deterministic mock
+  provider is not evidence that one Prompt/Skill version is better than another.
+- Evaluation reuses the production snapshot builder and grounding validator on
+  isolated candidate copies.
+- Empty version runs, empty candidate sets, empty unsupported sets, empty metric
+  denominators, duplicate version pairs, and unknown baselines fail closed.
+- Results expose missing and unexpected Claim ids plus per-case acceptance
+  diagnostics, so an aggregate rate cannot hide a regression.
+- The corpus includes invented Claim ids, evidence mismatch, unsupported
+  semantics, missing risk references, and missing knowledge-evidence source
+  links.
