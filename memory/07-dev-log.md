@@ -4487,3 +4487,25 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
   requires a Windows privilege unavailable to the current process.
 - Frontend: `25 files / 54 tests`; production build passed with the existing
   chunk-size warning.
+
+## 2026-07-24 Slice 49.1 Human-Controlled Transition Policy
+
+### Implemented
+
+- Added persistence-free workflow positions and scoped human approval grants.
+- Added requirement-to-execution and CI/CD patch stage sequences with exact
+  predecessor-prefix validation.
+- Restricted AI to candidate submission and deterministic system code to
+  adjacent-stage advancement after matching human approval.
+- Added stale/cross-workflow/cross-subject grant rejection, new-snapshot rules,
+  separate automation plan/draft gates, and CI/CD patch gate coverage.
+- Documented the policy boundary without claiming integration into current
+  domain services.
+
+### Verification
+
+- Focused workflow policy: `29 passed`.
+- Backend: `500 passed, 1 deselected`; the deselected symlink escape test needs
+  a Windows privilege unavailable to the current process.
+- Frontend: `25 test files / 54 tests passed`.
+- Production build passed with the existing large-chunk warning.

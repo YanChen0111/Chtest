@@ -10485,3 +10485,21 @@ policy.
   Windows lacks symlink creation privilege; frontend `25 files / 54 tests`;
   production build passed with the existing chunk-size warning.
 - Source `storage/chtest-dev.db` was not used.
+
+## 2026-07-24 Slice 49.1 Human-Controlled Transition Policy
+
+Task 49.1 is complete; next is Task 49.2 persistence for workflow positions,
+snapshots, human decisions, and approval fingerprints.
+
+- Added a pure workflow policy with explicit AI, human, and deterministic
+  system actors.
+- Human approval is scoped to workflow, subject, stage, action, and canonical
+  immutable input SHA-256; changed input invalidates the grant.
+- Workflow-specific ordered prefixes block stage skips. Advancing creates a new
+  target-stage snapshot and is never an AI action.
+- Automation plan/draft approvals and CI/CD patch gates remain independent.
+- Verification: focused `29 passed`; backend `500 passed, 1 deselected` for the
+  known Windows symlink privilege test; frontend `25 files / 54 tests`; build
+  passed with the existing chunk-size warning.
+- The policy is intentionally not integrated into existing domain services or
+  the database yet. Source `storage/chtest-dev.db` was not used.

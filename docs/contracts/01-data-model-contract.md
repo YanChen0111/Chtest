@@ -620,6 +620,37 @@ ReviewHistory rules:
   team inboxes, PR comments, remote provider governance, or enterprise audit
   policy.
 
+## 21.2 Workflow-Control Value Contract
+
+Task 49.1 defines persistence-free value objects only. It introduces no table,
+migration, RBAC principal, tenant, or enterprise approval workflow.
+
+`WorkflowPosition` fields:
+
+- `workflow_kind`, `workflow_ref`, and `subject_ref` scope the workflow.
+- `stage` and `state` identify the current controlled gate.
+- `input_snapshot_hash` is canonical `sha256:<lowercase-hex>` over the exact
+  stage input snapshot.
+- `completed_stages` is the exact ordered prefix required before `stage`.
+  It is a trusted service value, not client-supplied approval evidence.
+
+`ApprovalGrant` fields:
+
+- the same workflow kind/reference, subject reference, stage, and input hash;
+- `allowed_action=advance` and an explicit approved/rejected decision;
+- `actor=human` and a local reviewer display label;
+- a deterministic fingerprint for later persistence and audit correlation.
+
+ReviewHistory remains evidence metadata, not authority. A future persistence
+task may store workflow positions, snapshots, decisions, and grant
+fingerprints, but must preserve the pure policy semantics and must append
+history only after the domain transition succeeds.
+
+The pure policy validates a matching grant but cannot consume it by itself.
+Persistence must load the current position server-side and use one transaction
+or compare-and-swap to write the next position and a unique consumed grant
+fingerprint. Replaying an old position or trusting a client prefix is forbidden.
+
 ## 22. TestResult
 
 | Field | Type | Required | Default | Notes |

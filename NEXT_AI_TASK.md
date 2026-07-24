@@ -6,25 +6,26 @@ Docker Desktop/WSL engine is unavailable.
 
 ## Current Slice
 
-Slice 48: Agent Reliability and EvalOps.
+Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 48.3 is complete: fixed, offline Claim Grounding EvalOps now compares
-approved Prompt/Skill pairs without relying on provider behavior.
+Task 49.1 is complete: a deterministic, persistence-free transition policy now
+defines the human review and approval boundary for controlled AI workflows.
 
 Verified behavior:
 
-1. The fixed corpus pins v1 and v2 Prompt/Skill pairs plus an explicit baseline.
-2. Evaluation reuses the production snapshot builder and grounding validator on
-   isolated candidate copies.
-3. Metrics report valid citation recall, unsupported-case rejection,
-   requirement coverage, signed coverage drift, missing/unexpected Claim ids,
-   and per-case diagnostics.
-4. Empty metric inputs, duplicate version pairs, and an unknown baseline fail
-   closed.
-5. Fixed results are v1 recall/coverage `0.0`, v2 recall/coverage `1.0`, v2
-   coverage drift `+1.0`, and unsupported rejection `5/5`.
+1. AI may submit review candidates but cannot review, approve, reject, revise,
+   move backward, or advance a controlled business stage.
+2. Human grants bind workflow kind/reference, subject, stage, `advance`
+   capability, decision, reviewer, and canonical input snapshot SHA-256.
+3. Only the deterministic system actor may advance an approved adjacent stage,
+   and it must create a distinct target-stage snapshot.
+4. Ordered workflow prefixes fail closed on skipped stages, cross-branch use,
+   stale grants, changed input, terminal advancement, or missing gates.
+5. AutomationPlan and AutomationDraft remain separate approvals; the CI/CD
+   patch flow separately gates scope, patch review, apply, regression, and
+   quality review.
 
 ## Previous Tasks Verified
 
@@ -111,8 +112,8 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can detect Prompt/Skill grounding regressions before a changed
-AI policy becomes the default for new case generation.
+Test engineers retain explicit control of every promoted AI result, while
+deterministic policy prevents stale approval reuse and silent stage skipping.
 
 ## Must Read
 
@@ -135,17 +136,20 @@ AI policy becomes the default for new case generation.
 
 ## Expected Files
 
-Default write boundary for Task 49.1:
+Default write boundary for Task 49.2:
 
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/contracts/01-data-model-contract.md
+docs/contracts/02-api-contract.md
 docs/contracts/03-state-machines.md
-docs/architecture/04-agent-workflow-design.md
-backend/app/modules/workflow_control/policy.py
-backend/app/tests/workflow_control/test_policy.py
+backend/alembic/versions/*workflow_control*.py
+backend/app/modules/workflow_control/models.py
+backend/app/modules/workflow_control/schemas.py
+backend/app/modules/workflow_control/service.py
+backend/app/tests/workflow_control/test_persistence.py
 ```
 
 Explain any write outside this set before editing it.
@@ -180,8 +184,6 @@ feat(workflow-control): add human-gated transition policy
 
 ## Next Task
 
-Task 49.1: add a deterministic, persistence-free workflow transition policy for
-human review and approval gates. The policy must bind approvals to immutable
-input snapshots, reject skipped stages, and keep AI agents unable to advance
-workflow state by themselves. Database persistence and frontend integration are
-separate follow-up tasks.
+Task 49.2: persist workflow runs, immutable stage snapshots, human decisions,
+and approval fingerprints behind a project-scoped service. Keep API/frontend
+integration and migration of existing domain services as separate follow-ups.

@@ -35,6 +35,29 @@ Every AI task records:
 - knowledge evidence.
 - token usage, runtime, and status.
 
+### 2.1 Human-Controlled Business Advancement
+
+AITask completion and business workflow advancement are different decisions.
+An agent may finish technical generation and persist a reviewable candidate,
+but that success never makes the next business stage eligible by itself.
+
+The deterministic workflow policy accepts an immutable position and returns a
+new position or a stable failure code. Each position carries the workflow kind,
+workflow and subject references, current stage, gate state, exact input
+snapshot hash, and the completed ordered stage prefix.
+
+Human approval is represented by a scoped grant. The grant binds the workflow,
+subject, stage, `advance` capability, approval decision, reviewer label, and
+input snapshot hash. The system may advance only to the adjacent stage and must
+build a new target-stage snapshot that includes the approved upstream result.
+Changed input returns to draft and invalidates the old grant without deleting
+the historical decision.
+
+The pure policy validates shape and authority but does not provide persistence
+or replay protection alone. The persistence layer must load the authoritative
+position and atomically record the next position with a unique consumed grant
+fingerprint; clients cannot supply trusted predecessor completion.
+
 ## 3. Shared Agent Context
 
 Backend services should pass a unified context object to agents:
@@ -84,7 +107,7 @@ Responsibilities:
 
 - Create workflow steps from user actions.
 - Chain multiple agents.
-- Advance state machines.
+- Request deterministic state-machine transitions.
 - Persist workflow artifacts.
 - Pause at human review or approval checkpoints.
 
@@ -93,6 +116,11 @@ Inputs: workflow_type, project_id, entity ids.
 Outputs: workflow_run, step results, next_action.
 
 Forbidden actions: bypassing human review, applying high-risk patches, or executing unapproved high-risk tools.
+
+The OrchestratorAgent cannot approve or directly advance a controlled business
+stage. It may submit a candidate and coordinate a transition request; the
+policy validates human authority, snapshot identity, predecessor completion,
+and target adjacency.
 
 ### 5.2 RequirementReviewAgent
 

@@ -1,5 +1,48 @@
 # Chtest State Machines
 
+## Human-Controlled Workflow Policy
+
+The persistence-free workflow policy sits above the entity state machines in
+this document. It controls business-stage advancement; it does not replace
+AITask technical completion or existing entity validation.
+
+```text
+draft
+  -> waiting_review        AI or deterministic system submits a candidate
+  -> waiting_approval      human completes review without changing input
+  -> approved              human grants approval for the exact input snapshot
+  -> next stage draft      deterministic system validates that approval
+```
+
+Rules:
+
+- AI may submit a candidate for review but may not complete review, approve,
+  reject, revise, move backward, or advance a business stage.
+- An approval grant is bound to workflow kind, workflow reference, subject
+  reference, stage, `advance` capability, human decision, and a canonical
+  `sha256:<lowercase-hex>` input snapshot hash.
+- Only the deterministic system actor may advance an approved stage. It must
+  present the matching human grant and create a distinct immutable snapshot
+  for the adjacent target stage.
+- Workflow-specific ordered stage prefixes validate the declared predecessor
+  shape and reject stage skips, branch crossing, and terminal advancement.
+- Editing or moving backward creates a new snapshot and returns the target
+  stage to `draft`; an old approval never authorizes changed input.
+- AutomationPlan review and AutomationDraft review are separate stages. Plan
+  approval authorizes draft generation only; draft approval remains required
+  before execution.
+- The CI/CD patch flow separately gates change scope, UnitTestPatch review,
+  patch apply, regression planning, and quality-gate review.
+- Deterministic quality computation and low-risk read-only ToolInvocation
+  completion are not human approval. They may complete technical work but may
+  not impersonate a human grant or advance a controlled business stage.
+- This Task 49.1 policy is not yet wired into existing services or persistence.
+  Existing entity state machines remain authoritative until each domain is
+  migrated and compatibility-tested in a later task.
+- Task 49.2 must load the authoritative position server-side and atomically
+  persist the next position plus a unique consumed approval fingerprint. A
+  client-provided prefix or repeated policy call is not proof of prior approval.
+
 ## 1. 文档目的
 
 本文定义 Chtest V1 核心状态机。任何后端 service、worker、前端操作按钮和测试 fixture 都必须遵循本文的允许迁移。
