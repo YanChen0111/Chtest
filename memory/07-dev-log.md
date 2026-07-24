@@ -4451,3 +4451,21 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
   `d8fb34dc054cffc69675c92351ebfbdf6620e82dc76b31bcf7ee759f357a7e01`.
 - Slice 47 is complete. Known Windows runner and stale pre-Slice-47 golden
   failures remain unrelated baseline issues.
+
+## 2026-07-24 Slice 48.2 Immutable Case Grounding
+
+### Implemented
+
+- Added hashed requirement/risk/knowledge claim snapshots and Prompt/Skill v2.
+- Replaced batch-only alignment for v2 with per-case, fail-closed grounding
+  validation and persisted grounding quality evidence.
+- Added automatic reviewed-requirement recovery for new browsers and rejected
+  stale cross-requirement document selections.
+
+### Verification
+
+- Backend: `462 passed`.
+- Frontend: `25 test files / 54 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- Runtime DB acceptance: v2 task succeeded with 11 claims, 5 candidates, and
+  grounding status `pass` for every candidate.

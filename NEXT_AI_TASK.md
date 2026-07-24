@@ -10,20 +10,21 @@ Slice 48: Agent Reliability and EvalOps.
 
 ## Current Task
 
-Task 48.1 is complete: make published Prompt/Skill content the authoritative
-runtime policy for queued AI tasks.
+Task 48.2 is complete: ground every generated case in immutable requirement,
+risk, or approved evidence claims.
 
 Verified behavior:
 
-1. The worker compiles and validates PromptVersion and SkillVersion by the IDs
-   fixed on AITask.
-2. OpenAI-compatible providers consume the compiled policy and have no
-   task-specific business instruction map.
-3. `runtime_policy.json` records the exact content, schemas, versions, hashes,
-   gates, and permissions used for the call.
-4. Missing, mismatched, inactive, or mutated policy fails closed before a model
-   request.
-5. Backend verification is `458 passed`.
+1. `case_generation:v2` persists a deterministic, hashed
+   `requirement_claim_snapshot` on AITask input.
+2. Every candidate must cite real snapshot claim ids with semantically matching
+   evidence; risk and knowledge citations must also link their persisted ids.
+3. Validation is per candidate and fails the complete batch closed with
+   `CASE_GENERATION_GROUNDING_INVALID` before any candidate is persisted.
+4. V1 remains available for replay, while the frontend defaults new generation
+   to v2 and recovers the latest reviewed requirement without browser-local ids.
+5. Verification is backend `462 passed`, frontend `25 files / 54 tests`, and a
+   successful production build.
 
 ## Previous Tasks Verified
 
@@ -152,9 +153,12 @@ Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run focused frontend tests and build, then browser smoke on desktop/mobile:
+Run backend and frontend regression plus the production build:
 
 ```powershell
+backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q
+npm --prefix frontend test -- --run
+npm --prefix frontend run build
 git diff --check
 ```
 
@@ -163,18 +167,21 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- Slice 47 final acceptance is recorded in the slice document and memory.
-- No Slice 47 implementation work remains.
+- Every v2 candidate is validated against immutable source claims before
+  persistence.
+- Empty/stale browser workflow context recovers the latest reviewed project
+  requirement instead of submitting blank ids.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-No commit is pending for Slice 47 after the final acceptance commit.
+feat(case-generation): enforce immutable claim grounding
 ```
 
 ## Next Task
 
-Task 48.2: add immutable requirement claims and validate every generated case
-against cited requirement/risk/evidence claims instead of batch keyword
-alignment. Do not begin it without an explicit implementation request.
+Task 48.3: add a fixed claim-grounding evaluation corpus that measures valid
+citation recall, unsupported-case rejection, and requirement coverage drift
+across Prompt/Skill versions. Do not begin it without an explicit
+implementation request.

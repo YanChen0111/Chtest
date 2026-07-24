@@ -179,8 +179,9 @@ def load_builtin_registry(session: Session, root: Path) -> RegistryLoadResult:
 
 def _discover_version_files(base: Path) -> dict[str, Path]:
     files: dict[str, Path] = {}
-    for path in sorted(base.glob("*/v1.md")):
-        files[path.parent.name] = path
+    for path in sorted(base.glob("*/v[0-9]*.md")):
+        key = path.parent.name if path.stem == "v1" else f"{path.parent.name}:{path.stem}"
+        files[key] = path
     return files
 
 

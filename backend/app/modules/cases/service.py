@@ -11,6 +11,11 @@ from backend.app.modules.ai_runtime import service as ai_runtime_service
 from backend.app.modules.ai_runtime.artifact_store import LocalArtifactStore
 from backend.app.modules.ai_runtime.model_config import resolve_model_identity
 from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
+from backend.app.modules.cases.grounding import (
+    CaseGroundingInvalidError,
+    build_requirement_claim_snapshot,
+    validate_case_grounding,
+)
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
 from backend.app.modules.cases.quality_agents import evaluate_case_quality_bundle
 from backend.app.modules.cases.schemas import (
@@ -22,10 +27,10 @@ from backend.app.modules.cases.schemas import (
     TestCaseListItemRead,
 )
 from backend.app.modules.knowledge import service as knowledge_service
-from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.projects.models import Project
-from backend.app.modules.requirements.models import Requirement, RequirementReview, RiskItem
+from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.requirements import service as requirements_service
+from backend.app.modules.requirements.models import Requirement, RequirementReview, RiskItem
 from backend.app.modules.review_history.service import append_review_history
 from backend.app.workers.enqueue import FakeAIQueue, enqueue_ai_task
 from backend.app.workers.handlers.ai_task_handler import run_ai_task
@@ -183,6 +188,16 @@ def start_case_generation(
         risk_items = list(
             session.scalars(select(RiskItem).where(RiskItem.requirement_review_id == data.requirement_review_id)),
         )
+    requirement_claim_snapshot = None
+    if prompt.version == "v2":
+        requirement_claim_snapshot = build_requirement_claim_snapshot(
+            requirement_id=str(requirement.id),
+            requirement_title=requirement.title,
+            requirement_content=requirement.content,
+            requirement_document=requirement_document_summary(requirement_document, requirement_document_text),
+            risk_items=[risk_summary(risk) for risk in risk_items],
+            knowledge_evidence=knowledge_evidence,
+        )
     model_provider, model_name = resolve_model_identity(
         model_provider=data.model_provider,
         model_name=data.model_name,
@@ -204,6 +219,7 @@ def start_case_generation(
             "requirement_document": requirement_document_summary(requirement_document, requirement_document_text),
             "requirement_review": review_summary(review) if review is not None else None,
             "risk_items": [risk_summary(risk) for risk in risk_items],
+            "requirement_claim_snapshot": requirement_claim_snapshot,
             "target_test_types": data.target_test_types,
             "decision_table_acknowledged": data.decision_table_acknowledged,
             "decision_table_dimensions": [
@@ -281,7 +297,11 @@ def run_case_generation_task(session: Session, store: LocalArtifactStore, genera
     try:
         validate_case_generation_output(ai_task.output_json)
         normalize_case_generation_knowledge_evidence(session, generation_task, ai_task.output_json)
-        validate_case_generation_domain_alignment(session, generation_task, ai_task.output_json)
+        claim_snapshot = ai_task.input_json.get("requirement_claim_snapshot")
+        if isinstance(claim_snapshot, dict):
+            validate_case_grounding(ai_task.output_json, claim_snapshot)
+        else:
+            validate_case_generation_domain_alignment(session, generation_task, ai_task.output_json)
     except CaseGenerationSchemaInvalidError:
         mark_case_generation_schema_invalid(session, ai_task)
         generation_task.status = "failed"
@@ -290,6 +310,12 @@ def run_case_generation_task(session: Session, store: LocalArtifactStore, genera
         return
     except CaseGenerationDomainMismatchError:
         mark_case_generation_domain_mismatch(session, ai_task)
+        generation_task.status = "failed"
+        session.add(generation_task)
+        session.commit()
+        return
+    except CaseGroundingInvalidError:
+        mark_case_generation_grounding_invalid(session, ai_task)
         generation_task.status = "failed"
         session.add(generation_task)
         session.commit()
@@ -818,6 +844,24 @@ def mark_case_generation_domain_mismatch(session: Session, ai_task: AITask) -> N
     session.commit()
 
 
+def mark_case_generation_grounding_invalid(session: Session, ai_task: AITask) -> None:
+    error_json = {
+        "error_code": "CASE_GENERATION_GROUNDING_INVALID",
+        "message": "One or more generated cases are not grounded in cited requirement, risk, or evidence claims.",
+        "recoverable": True,
+    }
+    ai_task.status = "failed"
+    ai_task.error_json = error_json
+    ai_task.finished_at = ai_runtime_service.utc_now()
+    llm_log = session.scalar(select(LLMCallLog).where(LLMCallLog.ai_task_id == ai_task.id))
+    if llm_log is not None:
+        llm_log.status = "schema_invalid"
+        llm_log.error_json = error_json
+        session.add(llm_log)
+    session.add(ai_task)
+    session.commit()
+
+
 COMMON_DOMAIN_TERMS = {
     "用户",
     "系统",
@@ -966,6 +1010,8 @@ def persist_case_generation_candidates(
 ) -> CaseGenerationTask:
     for case in output["cases"]:
         quality_assessment, automation_readiness = evaluate_case_quality_bundle(case)
+        if isinstance(case.get("grounding_assessment"), dict):
+            quality_assessment["grounding"] = dict(case["grounding_assessment"])
         session.add(
             GeneratedCaseCandidate(
                 generation_task_id=generation_task.id,

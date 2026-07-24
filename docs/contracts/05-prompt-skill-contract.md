@@ -11,6 +11,7 @@ prompts/
   requirement_review/v1.md
   risk_matrix/v1.md
   case_generation/v1.md
+  case_generation/v2.md
   case_review/v1.md
   automation_draft_generation/v1.md
   cicd_change_analysis/v1.md
@@ -27,6 +28,7 @@ prompts/
 skills/
   requirement-review-skill/v1.md
   test-case-generation-skill/v1.md
+  test-case-generation-skill/v2.md
   testcase-review-skill/v1.md
   automation-draft-skill/v1.md
   unit-test-generation-skill/v1.md
@@ -388,3 +390,13 @@ Runtime rules:
 - Every executed task persists `runtime_policy.json` beside `input.json`.
 - Invalid or missing policy fails closed with `RUNTIME_POLICY_INVALID` before
   any model call.
+
+## 11. Grounded Case Generation V2
+
+`case_generation:v2` and `test-case-generation-skill:v2` are the default pair
+for new case-generation tasks. V2 consumes the immutable
+`requirement_claim_snapshot` and requires every candidate to return one or more
+`coverage_claims`. Each cited id must exist in the snapshot, its evidence must
+overlap the source claim and candidate semantics, and risk or knowledge claims
+must link to their persisted source ids. Validation is per candidate and fails
+the complete batch closed; published v1 content remains unchanged for replay.

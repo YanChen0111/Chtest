@@ -632,7 +632,7 @@ function formatDateTime(value: string): string {
 }
 
 onMounted(async () => {
-  syncLatestRequirementReviewContext();
+  await store.loadGenerationSource();
   await store.loadRequirementDocuments();
   form.requirementId = store.requirementId;
   form.requirementReviewId = store.requirementReviewId;

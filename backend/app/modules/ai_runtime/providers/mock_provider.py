@@ -130,6 +130,9 @@ class MockLLMProvider:
             }
 
         if request.model_name == "mock-case-generator" and not request.input_json.get("legacy_coupon_fixture"):
+            claim_snapshot = request.input_json.get("requirement_claim_snapshot")
+            if isinstance(claim_snapshot, dict):
+                return self._grounded_case_output(request, claim_snapshot, context_ids)
             requirement_text = str(request.input_json.get("requirement") or "").strip()
             requirement_ref = requirement_text or "submitted requirement"
             scenario_name = " ".join(requirement_ref.split()[:8]) or "Requirement workflow"
@@ -459,6 +462,56 @@ class MockLLMProvider:
     def _with_context(self, output_json: dict, context_ids: list[str]) -> dict:
         return {
             **output_json,
+            "used_knowledge": False,
+            "used_context_artifact_ids": context_ids,
+        }
+
+    def _grounded_case_output(
+        self,
+        request: LLMProviderRequest,
+        snapshot: dict,
+        context_ids: list[str],
+    ) -> dict:
+        claims = [
+            claim
+            for claim in snapshot.get("claims", [])
+            if isinstance(claim, dict)
+            and claim.get("claim_id")
+            and claim.get("text")
+            and claim.get("source_type") in {"requirement", "requirement_document", "risk"}
+        ][:5]
+        target_types = request.input_json.get("target_test_types")
+        test_type = str(target_types[0]) if isinstance(target_types, list) and target_types else "functional"
+        cases = []
+        for index, claim in enumerate(claims):
+            claim_id = str(claim["claim_id"])
+            claim_text = str(claim["text"])
+            source_type = str(claim.get("source_type") or "requirement")
+            source_ref = str(claim.get("source_ref") or "")
+            risk_id = source_ref.partition(":")[2] if source_type == "risk" else ""
+            cases.append(
+                {
+                    "title": f"Verify claim: {claim_text}"[:255],
+                    "priority": "P0" if source_type == "risk" else "P1",
+                    "test_type": test_type,
+                    "precondition": "The system is ready to exercise the cited behavior.",
+                    "steps": [f"Prepare input for the cited behavior: {claim_text}", "Execute the behavior and capture the result"],
+                    "expected_results": [f"The observed result conforms to the cited claim: {claim_text}"],
+                    "requirement_refs": [claim_id],
+                    "risk_refs": [risk_id] if risk_id else [],
+                    "source_knowledge_evidence": [],
+                    "coverage_claims": [{"claim_id": claim_id, "evidence": claim_text}],
+                    "coverage_dimensions": [
+                        {
+                            "key": "risk" if source_type == "risk" else "positive",
+                            "evidence": f"Candidate {index + 1} directly tests {claim_id}.",
+                        },
+                    ],
+                    "ai_reason": f"Directly test immutable claim {claim_id}: {claim_text}",
+                },
+            )
+        return {
+            "cases": cases,
             "used_knowledge": False,
             "used_context_artifact_ids": context_ids,
         }

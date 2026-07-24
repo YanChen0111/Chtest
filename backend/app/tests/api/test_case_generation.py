@@ -148,6 +148,20 @@ def seed_prompt_skill(SessionLocal: sessionmaker[Session]) -> None:
                     applicable_agents=["CaseGenerationAgent"],
                     content="# Case Generation Skill",
                 ),
+                PromptVersion(
+                    name="case_generation",
+                    version="v2",
+                    hash=compute_content_hash("# Grounded Case Generation Prompt"),
+                    agent_name="CaseGenerationAgent",
+                    content="# Grounded Case Generation Prompt",
+                ),
+                SkillVersion(
+                    name="test-case-generation-skill",
+                    version="v2",
+                    hash=compute_content_hash("# Grounded Case Generation Skill"),
+                    applicable_agents=["CaseGenerationAgent"],
+                    content="# Grounded Case Generation Skill",
+                ),
             ],
         )
         session.commit()
@@ -266,6 +280,44 @@ def test_start_case_generation_persists_candidates_without_creating_test_cases(
         )
         assert session.scalar(select(GeneratedCaseCandidate).where(GeneratedCaseCandidate.generation_task_id == generation_task.id))
         assert list(session.scalars(select(CaseModel))) == []
+
+
+def test_case_generation_v2_persists_immutable_claim_grounding(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    requirement, review = create_reviewed_requirement(client, SessionLocal)
+
+    response = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": requirement["project_id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional"],
+            "prompt_version": "case_generation:v2",
+            "skill_version": "test-case-generation-skill:v2",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "decision_table_acknowledged": True,
+            "context_artifact_ids": [],
+        },
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    candidates = client.get(f"/api/case-generation/tasks/{body['case_generation_task_id']}/candidates").json()
+    assert candidates["total"] >= 2
+    assert all(item["quality_assessment"]["grounding"]["status"] == "pass" for item in candidates["items"])
+
+    with SessionLocal() as session:
+        ai_task = session.get(AITask, uuid.UUID(body["ai_task_id"]))
+        assert ai_task is not None
+        snapshot = ai_task.input_json["requirement_claim_snapshot"]
+        assert snapshot["version"] == "requirement-claims-v1"
+        assert snapshot["snapshot_hash"].startswith("sha256:")
+        assert all(case["coverage_claims"] for case in ai_task.output_json["cases"])
 
 
 def test_case_generation_marks_wrong_domain_mock_output_failed(

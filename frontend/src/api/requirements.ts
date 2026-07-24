@@ -22,6 +22,11 @@ export interface RequirementRead {
   readonly updated_at: string;
 }
 
+export interface RequirementListRead {
+  readonly items: RequirementRead[];
+  readonly total: number;
+}
+
 export interface RequirementReviewStartRequest {
   readonly prompt_version: 'requirement_review:v1';
   readonly skill_version: 'requirement-review-skill:v1';
@@ -107,6 +112,10 @@ export interface RequirementDocumentListRead {
 
 export async function createRequirement(data: RequirementCreateRequest): Promise<RequirementRead> {
   return apiClient.postJson<RequirementRead, RequirementCreateRequest>('/requirements', data);
+}
+
+export async function listRequirements(projectId: string): Promise<RequirementListRead> {
+  return apiClient.getJson<RequirementListRead>(`/projects/${projectId}/requirements`);
 }
 
 export async function startRequirementReview(

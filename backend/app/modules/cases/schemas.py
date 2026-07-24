@@ -14,8 +14,8 @@ class CaseGenerationStartRequest(BaseModel):
     requirement_review_id: uuid.UUID | None = None
     requirement_document_artifact_id: uuid.UUID | None = None
     target_test_types: list[str] = Field(default_factory=list)
-    prompt_version: Literal["case_generation:v1"] = "case_generation:v1"
-    skill_version: Literal["test-case-generation-skill:v1"] = "test-case-generation-skill:v1"
+    prompt_version: Literal["case_generation:v1", "case_generation:v2"] = "case_generation:v2"
+    skill_version: Literal["test-case-generation-skill:v1", "test-case-generation-skill:v2"] = "test-case-generation-skill:v2"
     model_provider: str | None = None
     model_name: str | None = None
     use_knowledge: bool = False

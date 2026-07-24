@@ -6,8 +6,8 @@ export interface CaseGenerationStartRequest {
   readonly requirement_review_id?: string | null;
   readonly requirement_document_artifact_id?: string | null;
   readonly target_test_types: string[];
-  readonly prompt_version: 'case_generation:v1';
-  readonly skill_version: 'test-case-generation-skill:v1';
+  readonly prompt_version: 'case_generation:v1' | 'case_generation:v2';
+  readonly skill_version: 'test-case-generation-skill:v1' | 'test-case-generation-skill:v2';
   readonly model_provider?: string | null;
   readonly model_name?: string | null;
   readonly use_knowledge: boolean;

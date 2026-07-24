@@ -34,12 +34,14 @@ def test_discovers_builtin_prompt_and_skill_files() -> None:
     prompt_files = discover_builtin_prompt_files(ROOT)
     skill_files = discover_builtin_skill_files(ROOT)
 
-    assert len(prompt_files) == 12
-    assert len(skill_files) == 10
+    assert len(prompt_files) == 13
+    assert len(skill_files) == 11
     assert prompt_files["requirement_review"] == ROOT / "prompts/requirement_review/v1.md"
     assert prompt_files["automation_plan_generation"] == ROOT / "prompts/automation_plan_generation/v1.md"
+    assert prompt_files["case_generation:v2"] == ROOT / "prompts/case_generation/v2.md"
     assert skill_files["requirement-review-skill"] == ROOT / "skills/requirement-review-skill/v1.md"
     assert skill_files["automation-plan-skill"] == ROOT / "skills/automation-plan-skill/v1.md"
+    assert skill_files["test-case-generation-skill:v2"] == ROOT / "skills/test-case-generation-skill/v2.md"
 
 
 def test_parses_prompt_and_skill_contract_fields() -> None:
@@ -127,14 +129,14 @@ def test_load_builtin_registry_is_idempotent(session: Session) -> None:
     prompts = session.scalars(select(PromptVersion)).all()
     skills = session.scalars(select(SkillVersion)).all()
 
-    assert first_result.created_prompts == 12
-    assert first_result.created_skills == 10
+    assert first_result.created_prompts == 13
+    assert first_result.created_skills == 11
     assert second_result.created_prompts == 0
     assert second_result.created_skills == 0
-    assert second_result.unchanged_prompts == 12
-    assert second_result.unchanged_skills == 10
-    assert len(prompts) == 12
-    assert len(skills) == 10
+    assert second_result.unchanged_prompts == 13
+    assert second_result.unchanged_skills == 11
+    assert len(prompts) == 13
+    assert len(skills) == 11
 
 
 def test_loader_rejects_existing_version_with_different_content(session: Session) -> None:

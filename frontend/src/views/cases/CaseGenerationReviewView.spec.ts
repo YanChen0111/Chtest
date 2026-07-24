@@ -647,4 +647,80 @@ describe('CaseGenerationReviewView', () => {
     expect(wrapper.text()).toContain('请先完成需求评审，或选择一份正式需求文档。');
     expect(fetchMock).not.toHaveBeenCalledWith('/api/case-generation/tasks', expect.objectContaining({ method: 'POST' }));
   });
+
+  it('recovers the latest reviewed requirement when browser workflow context is absent', async () => {
+    window.localStorage.setItem(
+      'chtest.latestRequirementReview',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        requirementId: '00000000-0000-0000-0000-000000000499',
+        requirementReviewId: '00000000-0000-0000-0000-000000000699',
+      }),
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirements')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: '00000000-0000-0000-0000-000000000411',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                module_id: null,
+                title: 'Recovered reviewed requirement',
+                content: 'A reviewed requirement available from the project.',
+                source_type: 'manual',
+                source_ref: null,
+                status: 'active',
+                created_at: '2026-07-24T10:00:00Z',
+                updated_at: '2026-07-24T10:00:00Z',
+              },
+            ],
+            total: 1,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/requirements/00000000-0000-0000-0000-000000000411/review')) {
+        return new Response(
+          JSON.stringify({
+            id: '00000000-0000-0000-0000-000000000611',
+            requirement_id: '00000000-0000-0000-0000-000000000411',
+            overall_score: 82,
+            scores: { completeness: 80, clarity: 80, consistency: 80, testability: 80, feasibility: 80, logic: 80 },
+            issues: [],
+            clarification_questions: [],
+            risk_items: [{ title: 'Recovered risk', risk_level: 'high', suggestion: 'Cover the risk.' }],
+            used_knowledge: false,
+            used_context_artifact_ids: [],
+            context_manifest_artifact_id: null,
+            status: 'reviewed',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
+        return new Response(JSON.stringify({ items: [], total: 0 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect((wrapper.find('[data-test="requirement-id-input"] input').element as HTMLInputElement).value).toBe(
+      '00000000-0000-0000-0000-000000000411',
+    );
+    expect((wrapper.find('[data-test="requirement-review-id-input"] input').element as HTMLInputElement).value).toBe(
+      '00000000-0000-0000-0000-000000000611',
+    );
+  });
 });

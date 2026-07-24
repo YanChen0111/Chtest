@@ -38,13 +38,13 @@ def test_local_bootstrap_seeds_default_project_and_builtin_prompt_skill_registry
         skill_count = session.scalar(select(func.count(SkillVersion.id)))
 
     assert first_result is not None
-    assert first_result.registry.created_prompts == 12
-    assert first_result.registry.created_skills == 10
+    assert first_result.registry.created_prompts == 13
+    assert first_result.registry.created_skills == 11
     assert second_result is not None
     assert second_result.registry.created_prompts == 0
     assert second_result.registry.created_skills == 0
-    assert second_result.registry.unchanged_prompts == 12
-    assert second_result.registry.unchanged_skills == 10
+    assert second_result.registry.unchanged_prompts == 13
+    assert second_result.registry.unchanged_skills == 11
     assert default_project is not None
-    assert prompt_count == 12
-    assert skill_count == 10
+    assert prompt_count == 13
+    assert skill_count == 11

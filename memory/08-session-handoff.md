@@ -1,5 +1,23 @@
 # Session Handoff
 
+## 2026-07-24 Slice 48.2 Immutable Case Grounding
+
+Task 48.2 is complete; next is Task 48.3 fixed grounding evaluation.
+
+- Added deterministic, hashed requirement claim snapshots to v2 case-generation
+  AITask input without adding a database migration.
+- Added Prompt/Skill v2 and multi-version registry discovery; published v1
+  content remains unchanged for replay.
+- Added per-candidate claim, semantic, risk-id, and knowledge-evidence-id
+  validation. Any invalid candidate fails the complete batch before persistence.
+- Persisted passing grounding assessments inside candidate quality evidence.
+- The case-generation page defaults to v2, rejects stale document binding, and
+  recovers the latest reviewed requirement when browser-local workflow ids are
+  absent or empty.
+- Runtime acceptance produced 5 grounded candidates from an 11-claim snapshot.
+- Verification: backend `462 passed`; frontend `25 files / 54 tests`; build
+  passed with the existing chunk-size warning; `git diff --check` passed.
+
 ## 2026-07-13 Case Generation Decision Gate And Coverage Dimensions
 
 Current Task:

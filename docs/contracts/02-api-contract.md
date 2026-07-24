@@ -1275,8 +1275,8 @@ Request:
   "requirement_review_id": "00000000-0000-0000-0000-000000000601",
   "requirement_document_artifact_id": "00000000-0000-0000-0000-000000000d01",
   "target_test_types": ["functional", "ui"],
-  "prompt_version": "case_generation:v1",
-  "skill_version": "test-case-generation-skill:v1",
+  "prompt_version": "case_generation:v2",
+  "skill_version": "test-case-generation-skill:v2",
   "model_provider": "mock",
   "model_name": "mock-case-generator",
   "use_knowledge": false,
@@ -1293,6 +1293,14 @@ artifact id, document number, version, title, content, and sha256.
 confirmed the pre-generation clarification/decision-table checklist before
 final candidate generation. The CaseGenerationAgent input must persist that
 boolean plus the decision-table dimension list as prompt evidence.
+
+`case_generation:v2` with `test-case-generation-skill:v2` is the default. The
+AITask input persists an immutable `requirement_claim_snapshot` containing a
+content hash and stable claims from the requirement, selected requirement
+document, reviewed risks, and approved retrieval evidence. Every returned case
+must cite an existing claim in `coverage_claims`; the server validates each case
+independently before persisting any candidate. V1 remains accepted for replay of
+existing tasks.
 
 Response 202:
 
@@ -1313,6 +1321,9 @@ Response 202:
 - If generated candidates do not match the source requirement domain, the task
   must fail with `CASE_GENERATION_DOMAIN_MISMATCH` and must not persist
   candidates.
+- If any v2 candidate has a missing, invented, source-mismatched, or
+  semantically unrelated claim citation, the whole task must fail with
+  `CASE_GENERATION_GROUNDING_INVALID` and must not persist candidates.
 - If `decision_table_acknowledged` is missing or false, the API must synchronously
   reject the request with `400 CASE_GENERATION_DECISION_TABLE_REQUIRED` and must
   not create an AITask or CaseGenerationTask.

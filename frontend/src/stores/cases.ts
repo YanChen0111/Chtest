@@ -17,7 +17,12 @@ import {
   type TestCaseListItem,
 } from '../api/cases';
 import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
-import { listRequirementDocuments, type RequirementDocumentRead } from '../api/requirements';
+import {
+  getRequirementReview,
+  listRequirementDocuments,
+  listRequirements,
+  type RequirementDocumentRead,
+} from '../api/requirements';
 import {
   DEFAULT_PROJECT_ID,
   getLatestRequirementDocumentContext,
@@ -29,12 +34,17 @@ export const useCasesStore = defineStore('cases', {
   state: () => {
     const latestDocument = getLatestRequirementDocumentContext();
     const latestContext = getLatestRequirementReviewContext();
+    const matchingDocument = latestDocument && (!latestContext || latestDocument.requirementId === latestContext.requirementId)
+      ? latestDocument
+      : null;
     return {
-      projectId: latestDocument?.projectId ?? latestContext?.projectId ?? DEFAULT_PROJECT_ID,
-      requirementId: latestDocument?.requirementId ?? latestContext?.requirementId ?? '',
-      requirementReviewId: latestDocument?.requirementReviewId ?? latestContext?.requirementReviewId ?? '',
-      requirementDocumentArtifactId: latestDocument?.requirementDocumentArtifactId ?? '',
-      selectedRequirementDocumentNumber: latestDocument?.documentNumber ?? '',
+      projectId: latestContext?.projectId ?? matchingDocument?.projectId ?? DEFAULT_PROJECT_ID,
+      requirementId: latestContext?.requirementId ?? matchingDocument?.requirementId ?? '',
+      requirementReviewId: latestContext?.requirementReviewId ?? matchingDocument?.requirementReviewId ?? '',
+      requirementDocumentArtifactId: matchingDocument?.requirementDocumentArtifactId ?? '',
+      selectedRequirementDocumentNumber: matchingDocument?.documentNumber ?? '',
+      requirementTitle: latestContext?.requirement?.title ?? '',
+      requirementReviewConfirmed: Boolean(latestContext?.review),
       requirementRiskTitles: latestContext?.review?.risk_items.map((item) => item.title) ?? [],
       requirementClarificationQuestions: latestContext?.review?.clarification_questions ?? [],
       requirementDocuments: [] as RequirementDocumentRead[],
@@ -66,15 +76,20 @@ export const useCasesStore = defineStore('cases', {
   actions: {
     loadLatestRequirementReviewContext() {
       const latestDocument = getLatestRequirementDocumentContext();
-      if (latestDocument) {
-        this.projectId = latestDocument.projectId;
-        this.requirementId = latestDocument.requirementId;
-        this.requirementReviewId = latestDocument.requirementReviewId;
-        this.requirementDocumentArtifactId = latestDocument.requirementDocumentArtifactId;
-        this.selectedRequirementDocumentNumber = latestDocument.documentNumber;
+      const latestContext = getLatestRequirementReviewContext();
+      const matchingDocument = latestDocument && (!latestContext || latestDocument.requirementId === latestContext.requirementId)
+        ? latestDocument
+        : null;
+      if (matchingDocument) {
+        this.projectId = matchingDocument.projectId;
+        this.requirementId = matchingDocument.requirementId;
+        this.requirementReviewId = matchingDocument.requirementReviewId;
+        this.requirementDocumentArtifactId = matchingDocument.requirementDocumentArtifactId;
+        this.selectedRequirementDocumentNumber = matchingDocument.documentNumber;
+        this.requirementTitle = latestContext?.requirement?.title ?? '';
+        this.requirementReviewConfirmed = true;
         return true;
       }
-      const latestContext = getLatestRequirementReviewContext();
       if (!latestContext) {
         return false;
       }
@@ -83,9 +98,47 @@ export const useCasesStore = defineStore('cases', {
       this.requirementReviewId = latestContext.requirementReviewId;
       this.requirementDocumentArtifactId = '';
       this.selectedRequirementDocumentNumber = '';
+      this.requirementTitle = latestContext.requirement?.title ?? '';
+      this.requirementReviewConfirmed = Boolean(latestContext.review);
       this.requirementRiskTitles = latestContext.review?.risk_items.map((item) => item.title) ?? [];
       this.requirementClarificationQuestions = latestContext.review?.clarification_questions ?? [];
       return true;
+    },
+    async loadGenerationSource() {
+      if (this.loadLatestRequirementReviewContext() && this.requirementId && this.requirementReviewId) {
+        try {
+          const review = await getRequirementReview(this.requirementId);
+          if (review.id === this.requirementReviewId) {
+            return true;
+          }
+        } catch {
+          // The browser can outlive runtime data; recover from current project records below.
+        }
+      }
+      this.projectId = this.projectId || DEFAULT_PROJECT_ID;
+      try {
+        const requirements = await listRequirements(this.projectId);
+        for (const requirement of [...requirements.items].reverse()) {
+          try {
+            const review = await getRequirementReview(requirement.id);
+            this.projectId = requirement.project_id;
+            this.requirementId = requirement.id;
+            this.requirementReviewId = review.id;
+            this.requirementDocumentArtifactId = '';
+            this.selectedRequirementDocumentNumber = '';
+            this.requirementTitle = requirement.title;
+            this.requirementReviewConfirmed = true;
+            this.requirementRiskTitles = review.risk_items.map((item) => item.title);
+            this.requirementClarificationQuestions = review.clarification_questions;
+            return true;
+          } catch {
+            // Continue to the next most recent requirement with a completed review.
+          }
+        }
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '无法加载已评审需求';
+      }
+      return false;
     },
     async loadRequirementDocuments() {
       this.loadingGeneration = true;
@@ -105,7 +158,9 @@ export const useCasesStore = defineStore('cases', {
         return;
       }
       const document = this.requirementDocuments.find(
-        (item) => item.artifact_id === this.requirementDocumentArtifactId,
+        (item) => item.artifact_id === this.requirementDocumentArtifactId
+          && item.requirement_id === this.requirementId
+          && (!this.requirementReviewId || item.requirement_review_id === this.requirementReviewId),
       );
       if (document) {
         this.selectRequirementDocument(document.artifact_id);
@@ -195,10 +250,10 @@ export const useCasesStore = defineStore('cases', {
           requirement_review_id: data.requirementReviewId,
           requirement_document_artifact_id: data.requirementDocumentArtifactId || null,
           target_test_types: data.targetTestTypes,
-          prompt_version: 'case_generation:v1',
-          skill_version: 'test-case-generation-skill:v1',
-          use_knowledge: false,
-          context_artifact_ids: data.contextArtifactIds,
+          prompt_version: 'case_generation:v2',
+          skill_version: 'test-case-generation-skill:v2',
+          use_knowledge: true,
+          context_artifact_ids: data.contextArtifactIds ?? [],
           decision_table_acknowledged: Boolean(data.decisionTableAcknowledged),
         });
         this.generationTask = await this.waitForGenerationTask(this.generation.case_generation_task_id);
