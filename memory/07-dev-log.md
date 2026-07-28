@@ -4467,6 +4467,29 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Backend: `462 passed`.
 - Frontend: `25 test files / 54 tests passed`.
 - Production build passed with the existing large-chunk warning.
+
+## 2026-07-28 Slice 49.2 Workflow-Control Persistence
+
+### Implemented
+
+- Added project-scoped persistent workflow runs, immutable stage snapshots,
+  append-only human decisions, and append-only transition events.
+- Added server-side position reconstruction, stage-scoped canonical hashing,
+  secret/size/integrity checks, and optimistic compare-and-swap.
+- Added exact approval-decision consumption with database uniqueness and ABA
+  coverage; fingerprints remain correlation/integrity metadata only.
+- Added Alembic metadata registration and upgraded the migration-head contract
+  to revision `20260728_0019`.
+- Kept public APIs, frontend, and existing domain-service migration out of this
+  task.
+
+### Verification
+
+- Focused policy, persistence, and migration suite: `44 passed`.
+- Backend: `511 passed, 1 deselected`; the deselected symlink escape test needs
+  a Windows privilege unavailable to the current process.
+- Frontend: `25 test files / 54 tests passed`.
+- Production build passed with the existing large-chunk warning.
 - Runtime DB acceptance: v2 task succeeded with 11 claims, 5 candidates, and
   grounding status `pass` for every candidate.
 

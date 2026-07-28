@@ -10,22 +10,22 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.1 is complete: a deterministic, persistence-free transition policy now
-defines the human review and approval boundary for controlled AI workflows.
+Task 49.2 is complete: workflow positions, stage snapshots, human decisions,
+transition events, and one-time approval consumption now have a project-scoped
+persistence service.
 
 Verified behavior:
 
-1. AI may submit review candidates but cannot review, approve, reject, revise,
-   move backward, or advance a controlled business stage.
-2. Human grants bind workflow kind/reference, subject, stage, `advance`
-   capability, decision, reviewer, and canonical input snapshot SHA-256.
-3. Only the deterministic system actor may advance an approved adjacent stage,
-   and it must create a distinct target-stage snapshot.
-4. Ordered workflow prefixes fail closed on skipped stages, cross-branch use,
-   stale grants, changed input, terminal advancement, or missing gates.
-5. AutomationPlan and AutomationDraft remain separate approvals; the CI/CD
-   patch flow separately gates scope, patch review, apply, regression, and
-   quality review.
+1. The server loads authoritative position and snapshot state; clients cannot
+   supply trusted completed stages, gate state, or snapshot identity.
+2. Stage-scoped canonical snapshots reject secret-like keys, oversized input,
+   tampering, update, and deletion.
+3. Human decisions and transition events are immutable; run updates use
+   optimistic compare-and-swap in the same transaction.
+4. Advance consumes the exact approval decision instance once using database
+   uniqueness. Fingerprints are integrity metadata, not bearer credentials.
+5. ABA restoration to the same stage and content requires a new approval
+   decision; old decisions remain stale even when hashes match again.
 
 ## Previous Tasks Verified
 
@@ -112,8 +112,8 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers retain explicit control of every promoted AI result, while
-deterministic policy prevents stale approval reuse and silent stage skipping.
+Test engineers retain explicit control of promoted AI results, and Chtest can
+now persist that control without trusting client state or replaying approvals.
 
 ## Must Read
 
@@ -136,20 +136,26 @@ deterministic policy prevents stale approval reuse and silent stage skipping.
 
 ## Expected Files
 
-Default write boundary for Task 49.2:
+Default write boundary for Task 49.3:
 
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/contracts/01-data-model-contract.md
 docs/contracts/02-api-contract.md
 docs/contracts/03-state-machines.md
-backend/alembic/versions/*workflow_control*.py
-backend/app/modules/workflow_control/models.py
+backend/app/main.py
+backend/app/modules/workflow_control/router.py
 backend/app/modules/workflow_control/schemas.py
 backend/app/modules/workflow_control/service.py
-backend/app/tests/workflow_control/test_persistence.py
+backend/app/modules/requirements/router.py
+backend/app/modules/requirements/service.py
+backend/app/tests/api/test_requirement_review.py
+backend/app/tests/api/test_workflow_control.py
+frontend/src/api/requirements.ts
+frontend/src/stores/requirements.ts
+frontend/src/views/requirements/RequirementReviewView.vue
+frontend/src/views/requirements/RequirementReviewView.spec.ts
 ```
 
 Explain any write outside this set before editing it.
@@ -179,11 +185,12 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 ## Commit Message
 
 ```text
-feat(workflow-control): add human-gated transition policy
+feat(workflow-control): persist human approval workflow
 ```
 
 ## Next Task
 
-Task 49.2: persist workflow runs, immutable stage snapshots, human decisions,
-and approval fingerprints behind a project-scoped service. Keep API/frontend
-integration and migration of existing domain services as separate follow-ups.
+Task 49.3 integrates the persisted gate into RequirementReview as the first
+vertical slice. Add project-scoped read/action APIs and a tester-facing review,
+edit, approve, and continue flow. Do not migrate Case, Automation, execution,
+CI/CD, or knowledge workflows in the same task.

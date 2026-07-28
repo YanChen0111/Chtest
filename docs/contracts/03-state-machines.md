@@ -36,12 +36,16 @@ Rules:
 - Deterministic quality computation and low-risk read-only ToolInvocation
   completion are not human approval. They may complete technical work but may
   not impersonate a human grant or advance a controlled business stage.
-- This Task 49.1 policy is not yet wired into existing services or persistence.
+- This policy is not yet wired into existing domain services.
   Existing entity state machines remain authoritative until each domain is
   migrated and compatibility-tested in a later task.
-- Task 49.2 must load the authoritative position server-side and atomically
-  persist the next position plus a unique consumed approval fingerprint. A
-  client-provided prefix or repeated policy call is not proof of prior approval.
+- Task 49.2 loads the authoritative position and immutable snapshot server-side.
+  It atomically compare-and-swaps the run, appends a transition event, and uses
+  a database uniqueness constraint to consume the exact approval decision once.
+  A fingerprint, client-provided prefix, or repeated policy call is not proof of
+  prior approval.
+- Human decisions and transition events are append-only evidence. Revisions
+  create a new stage iteration; they never overwrite the reviewed snapshot.
 
 ## 1. 文档目的
 

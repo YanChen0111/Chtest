@@ -3201,3 +3201,24 @@ Rules:
 - Evidence artifact ids are references to existing Artifact rows. The API must
   not inline raw artifact content, secrets, tokens, or external provider
   credentials in ReviewHistory responses.
+
+## 11. Workflow-Control API Boundary
+
+Task 49.2 adds no public endpoint. Workflow persistence is an internal,
+project-scoped service contract so the data and replay boundary can be verified
+before existing product flows are migrated.
+
+Rules for a later API task:
+
+- Route `project_id` is authoritative; a request body must not select another
+  project or provide trusted workflow state.
+- Mutation requests carry only the human action payload and expected
+  `lock_version`; the server loads stage, state, completed prefix, current
+  snapshot, and decision history.
+- Advance requests identify the exact `approval_decision_id`, not merely a
+  deterministic fingerprint, reviewer label, stage, or snapshot hash.
+- Version conflicts return a stable conflict response and append no snapshot,
+  decision, transition event, or successful ReviewHistory row.
+- Workflow snapshots never return secret-bearing raw provider input.
+- Adding routes must be paired with domain-service migration; exposing a
+  disconnected generic workflow editor is forbidden.

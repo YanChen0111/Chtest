@@ -10503,3 +10503,24 @@ snapshots, human decisions, and approval fingerprints.
   passed with the existing chunk-size warning.
 - The policy is intentionally not integrated into existing domain services or
   the database yet. Source `storage/chtest-dev.db` was not used.
+
+## 2026-07-28 Slice 49.2 Workflow-Control Persistence
+
+Task 49.2 is complete; next is Task 49.3 RequirementReview integration as the
+first API/frontend vertical slice.
+
+- Added migration `20260728_0019` and ORM models for WorkflowRun, immutable
+  WorkflowStageSnapshot, WorkflowHumanDecision, and WorkflowTransitionEvent.
+- The project-scoped service rebuilds policy positions from trusted rows,
+  verifies canonical stage hashes, and uses run `lock_version` compare-and-swap.
+- Advance consumes one exact approval decision through a unique transition
+  event. ABA restoration requires a new decision even when stage/hash match.
+- Snapshots reject secret-like keys, payloads over 1 MiB, mutation, deletion,
+  and hash tampering. No API route or existing domain integration was added.
+- Focused policy/persistence/migration verification: `44 passed`; backend
+  `511 passed, 1 deselected` for the known Windows symlink privilege test;
+  frontend `25 files / 54 tests`; production build passed with the existing
+  chunk-size warning.
+- `backend/alembic/env.py` and the existing migration-head test were necessary
+  writes outside the initial file list. Source `storage/chtest-dev.db` was not
+  used.

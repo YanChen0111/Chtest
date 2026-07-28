@@ -21,6 +21,7 @@ from backend.app.modules.prompt_skill import models as _prompt_skill_models  # n
 from backend.app.modules.reporting import models as _reporting_models  # noqa: F401
 from backend.app.modules.requirements import models as _requirements_models  # noqa: F401
 from backend.app.modules.review_history import models as _review_history_models  # noqa: F401
+from backend.app.modules.workflow_control import models as _workflow_control_models  # noqa: F401
 
 
 config = context.config

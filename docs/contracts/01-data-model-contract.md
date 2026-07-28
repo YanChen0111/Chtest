@@ -648,8 +648,62 @@ history only after the domain transition succeeds.
 
 The pure policy validates a matching grant but cannot consume it by itself.
 Persistence must load the current position server-side and use one transaction
-or compare-and-swap to write the next position and a unique consumed grant
-fingerprint. Replaying an old position or trusting a client prefix is forbidden.
+or compare-and-swap to write the next position and uniquely consume the exact
+approval decision instance. A grant fingerprint is integrity metadata, not a
+bearer credential. Replaying an old position or trusting a client prefix is
+forbidden.
+
+## 21.3 Workflow-Control Persistence
+
+Task 49.2 persists the pure policy without exposing a generic API. The service
+owns all workflow positions; clients never submit `completed_stages`, gate
+state, current snapshot id, or transition history.
+
+### WorkflowRun
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project and project-isolation boundary |
+| workflow_kind | varchar(80) | yes | none | Policy workflow kind |
+| subject_ref | varchar(255) | yes | none | Stable local business subject ref |
+| current_stage | varchar(80) | yes | none | Server-owned current stage |
+| gate_state | varchar(40) | yes | draft | Server-owned gate state |
+| input_snapshot_hash | varchar(71) | yes | none | Current stage-scoped canonical SHA-256 |
+| current_snapshot_id | uuid | yes | none | Current WorkflowStageSnapshot id |
+| completed_stages_json | jsonb | yes | [] | Server-owned exact ordered prefix |
+| lock_version | int | yes | 0 | Optimistic compare-and-swap version |
+| status | varchar(40) | yes | active | active, completed, cancelled, archived |
+
+### WorkflowStageSnapshot
+
+Immutable snapshot rows contain project/run scope, stage, monotonically
+increasing stage iteration, canonical hash, safe bounded input JSON, prior
+snapshot reference, creation actor/label, and timestamp. Update and delete are
+forbidden through the ORM; project/run composite foreign keys prevent
+cross-project linkage. Snapshot hashing includes the stage name. Secret-like
+keys and payloads larger than 1 MiB fail closed.
+
+### WorkflowHumanDecision
+
+Append-only decisions bind project, run, snapshot, stage, action, decision,
+reviewer, optional comment, source run version, and optional advance grant. An
+approved grant records `allowed_action=advance` and its deterministic
+fingerprint. A rejection is evidence only and has no grant. The decision row id,
+snapshot id, and source run version form the authorization instance; the
+fingerprint alone is not a bearer credential.
+
+### WorkflowTransitionEvent
+
+Every successful transition appends an immutable event with actor/action,
+from/to stage and state, source/target snapshots, source/result run versions,
+and related human decision. An advance stores
+`consumed_approval_decision_id`; a database unique constraint permits one
+successful consumption for each approval instance. Run compare-and-swap and
+event insertion occur in the same transaction.
+
+Task 49.2 does not migrate existing domain services, create API routes, add
+frontend controls, or claim that current Requirement/Case/Automation/CI/CD
+flows use this persistence yet.
 
 ## 22. TestResult
 
