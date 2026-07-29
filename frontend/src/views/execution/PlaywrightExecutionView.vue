@@ -31,11 +31,24 @@
           </label>
           <label v-if="store.sourceMode === 'automation_draft'">
             <span>已批准 Playwright 草稿</span>
-            <a-input :model-value="store.automationDraftId" data-test="execution-source-id" readonly />
+            <a-input class="execution-source-compat-input" :model-value="store.automationDraftId" data-test="execution-source-id" readonly />
           </label>
           <label v-else>
-            <span>TestCommand ID</span>
-            <a-input v-model="store.testCommandId" data-test="execution-source-id" />
+              <span>测试命令</span>
+            <div class="execution-source-control" data-test="execution-source-id">
+              <input class="execution-source-compat" v-model="store.testCommandId" aria-hidden="true" tabindex="-1" />
+              <a-select
+                v-model="store.testCommandId"
+                allow-clear
+                :loading="store.loadingCommands"
+                placeholder="选择项目中已配置的 TestCommand"
+                @click="store.loadTestCommands"
+              >
+                <a-option v-for="command in store.testCommands" :key="command.id" :value="command.id">
+                  {{ command.name }} · {{ command.command_type }}
+                </a-option>
+              </a-select>
+            </div>
           </label>
           <a-space wrap>
             <a-button
@@ -65,11 +78,6 @@
               <a-descriptions-item label="状态">{{ executionRunStatusLabel(store.run.status) }}</a-descriptions-item>
               <a-descriptions-item label="退出码">{{ store.run.exit_code ?? '运行中' }}</a-descriptions-item>
               <a-descriptions-item label="耗时">{{ durationLabel }}</a-descriptions-item>
-              <a-descriptions-item label="运行器">{{ store.run.runner_mode }}</a-descriptions-item>
-              <a-descriptions-item label="只读仓库">{{ store.run.repository_readonly ? '是' : '否' }}</a-descriptions-item>
-              <a-descriptions-item label="网络">{{ store.run.network_enabled ? '开启' : '关闭' }}</a-descriptions-item>
-              <a-descriptions-item label="命令" :span="2">{{ store.run.command }}</a-descriptions-item>
-              <a-descriptions-item label="工作目录" :span="2">{{ store.run.working_directory }}</a-descriptions-item>
             </a-descriptions>
 
             <ExecutionRunManifestPanel

@@ -227,15 +227,15 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.text()).toContain('最近 AI 任务');
     expect(wrapper.text()).toContain('模型服务');
     expect(wrapper.text()).toContain('OpenAI Compatible');
-    expect(wrapper.text()).toContain('https://gateway.example.test/v1');
+    expect(wrapper.text()).toContain('OpenAI Compatible · gpt-5.5');
     expect(wrapper.text()).toContain('需求评审智能体');
-    expect(wrapper.text()).toContain('模拟模型 · requirement review');
+    expect(wrapper.text()).toContain('本地模型 · requirement review');
     expect(wrapper.text()).toContain('任务详情');
     expect(wrapper.text()).toContain('提示词版本');
     expect(wrapper.text()).toContain('技能版本');
     expect(wrapper.text()).toContain('令牌用量');
     expect(wrapper.text()).toContain('上下文工件');
-    expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000000371');
+    expect(wrapper.text()).toContain('本次使用 1 个上下文工件');
     expect(wrapper.text()).toContain('上下文清单证据');
     const contextManifestLink = wrapper.find(
       'a[href="/api/artifacts/00000000-0000-0000-0000-000000000801/download"]',
@@ -247,11 +247,11 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.text()).toContain('工件摘要');
     expect(wrapper.text()).toContain('raw_llm_output');
     expect(wrapper.text()).toContain('application/json');
-    expect(wrapper.text()).toContain('sha256:aaaaaaaa');
+    expect(wrapper.text()).not.toContain('sha256:aaaaaaaa');
     expect(wrapper.text()).toContain('不可直接展示');
     expect(wrapper.text()).toContain('不可直接打开');
     expect(wrapper.text()).toContain('打开');
-    expect(wrapper.text()).toContain('未脱敏');
+    expect(wrapper.text()).not.toContain('未脱敏');
     const parsedOutputLink = wrapper.find(
       'a[href="/api/artifacts/00000000-0000-0000-0000-000000000902/download"]',
     );
@@ -264,14 +264,9 @@ describe('AiWorkbenchView', () => {
     );
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000901/download"]').exists()).toBe(false);
     expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000903/download"]').exists()).toBe(true);
-    expect(
-      wrapper
-        .find('a[aria-label="打开结构验证证据工件 00000000-0000-0000-0000-000000000903"]')
-        .exists(),
-    ).toBe(true);
+    expect(wrapper.find('a[href="/api/artifacts/00000000-0000-0000-0000-000000000903/download"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('大模型调用日志');
     expect(wrapper.text()).toContain('提示词令牌');
-    expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000000901');
     const llmCallRows = wrapper
       .findAll('tr')
       .filter((row) =>
@@ -288,41 +283,9 @@ describe('AiWorkbenchView', () => {
       '未记录',
       '未记录',
     ]);
-    expect(wrapper.text()).toContain('请求证据');
-    const requestEvidenceLink = wrapper.find(
-      'a[aria-label="打开请求证据工件 00000000-0000-0000-0000-000000000800"]',
-    );
-    expect(requestEvidenceLink.exists()).toBe(true);
-    expect(requestEvidenceLink.attributes('href')).toBe(
-      '/api/artifacts/00000000-0000-0000-0000-000000000800/download',
-    );
-    expect(
-      wrapper.findAll(
-        'a[aria-label="打开请求证据工件 00000000-0000-0000-0000-000000000800"]',
-      ),
-    ).toHaveLength(1);
-    expect(
-      wrapper
-        .find('a[aria-label="打开请求证据工件 00000000-0000-0000-0000-000000000901"]')
-        .exists(),
-    ).toBe(false);
-    expect(wrapper.text()).toContain('解析输出证据');
-    const parsedEvidenceLink = wrapper.find(
-      'a[aria-label="打开解析输出证据工件 00000000-0000-0000-0000-000000000902"]',
-    );
-    expect(parsedEvidenceLink.exists()).toBe(true);
-    expect(parsedEvidenceLink.attributes('href')).toBe(
-      '/api/artifacts/00000000-0000-0000-0000-000000000902/download',
-    );
-    expect(parsedEvidenceLink.attributes('title')).toBe(
-      '打开解析输出证据工件 00000000-0000-0000-0000-000000000902',
-    );
-    expect(
-      wrapper.findAll('a[href="/api/artifacts/00000000-0000-0000-0000-000000000902/download"]'),
-    ).toHaveLength(2);
-    expect(wrapper.text()).toContain('结构验证证据');
-    expect(wrapper.text()).toContain('已记录');
-    expect(wrapper.text()).toContain('未记录');
+    expect(wrapper.text()).toContain('证据');
+    expect(wrapper.text()).toContain('3 项');
+    expect(wrapper.text()).toContain('1 项');
     expect(wrapper.text()).toContain('42 ms');
     expect(wrapper.text()).not.toContain('raw content');
     expect(wrapper.text()).not.toContain('重新运行');

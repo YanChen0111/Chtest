@@ -38,6 +38,13 @@ describe('WorkbenchLayout', () => {
     expect(wrapper.text()).toContain('自动化草稿中心');
     expect(wrapper.text()).toContain('提示词 / 技能中心');
     expect(wrapper.text()).toContain('RAG 知识库');
+    expect(wrapper.findAll('.nav-group-label').map((label) => label.text())).toEqual([
+      '设计与评审',
+      '自动化与证据',
+      '知识与配置',
+    ]);
+    expect(wrapper.findAll('.nav-list .arco-tag')).toHaveLength(0);
+    expect(wrapper.find('button[aria-label="打开导航"]').exists()).toBe(true);
     expect(wrapper.text()).not.toContain('Playwright 执行');
     expect(wrapper.text()).not.toContain('API 执行');
     expect(wrapper.text()).not.toContain('JMeter 执行');

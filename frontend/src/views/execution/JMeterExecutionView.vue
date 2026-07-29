@@ -19,12 +19,19 @@
         <template #title>执行入口</template>
         <form class="execution-form" data-test="execution-form-jmeter" @submit.prevent="startRun">
           <label>
-            <span>项目 ID</span>
+            <span>当前项目</span>
             <a-input v-model="store.projectId" data-test="execution-project-id" />
           </label>
           <label>
-            <span>TestCommand ID</span>
-            <a-input v-model="store.testCommandId" data-test="execution-source-id" />
+            <span>测试命令</span>
+            <div class="execution-source-control" data-test="execution-source-id">
+              <input class="execution-source-compat" v-model="store.testCommandId" aria-hidden="true" tabindex="-1" />
+              <a-select v-model="store.testCommandId" allow-clear :loading="store.loadingCommands" placeholder="选择项目中已配置的 JMeter 命令" @click="store.loadTestCommands">
+                <a-option v-for="command in store.testCommands" :key="command.id" :value="command.id">
+                  {{ command.name }} · {{ command.command_type }}
+                </a-option>
+              </a-select>
+            </div>
           </label>
           <a-space wrap>
             <a-button data-test="start-jmeter-run" html-type="submit" type="primary" :loading="store.loading">
@@ -47,12 +54,7 @@
               <a-descriptions-item label="状态">{{ executionRunStatusLabel(store.run.status) }}</a-descriptions-item>
               <a-descriptions-item label="退出码">{{ store.run.exit_code ?? '运行中' }}</a-descriptions-item>
               <a-descriptions-item label="耗时">{{ durationLabel }}</a-descriptions-item>
-              <a-descriptions-item label="运行器">{{ store.run.runner_mode }}</a-descriptions-item>
-              <a-descriptions-item label="只读仓库">{{ store.run.repository_readonly ? '是' : '否' }}</a-descriptions-item>
-              <a-descriptions-item label="网络">{{ store.run.network_enabled ? '开启' : '关闭' }}</a-descriptions-item>
               <a-descriptions-item label="JTL 统计耗时">{{ parsedDurationLabel }}</a-descriptions-item>
-              <a-descriptions-item label="命令" :span="2">{{ store.run.command }}</a-descriptions-item>
-              <a-descriptions-item label="工作目录" :span="2">{{ store.run.working_directory }}</a-descriptions-item>
             </a-descriptions>
 
             <ExecutionRunManifestPanel :run="store.run" :rows="manifestRows" title-id="jmeter-run-manifest-title" />

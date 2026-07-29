@@ -2,20 +2,20 @@
   <section class="recent-runs" data-test="recent-runs" aria-labelledby="recent-runs-title">
     <div class="recent-runs-heading">
       <div>
-        <p class="eyebrow">Session continuity</p>
-        <h3 id="recent-runs-title">Recent runs</h3>
+        <p class="eyebrow">本次使用记录</p>
+        <h3 id="recent-runs-title">最近运行</h3>
       </div>
       <a-tag v-if="staleCount" color="orange" data-test="recent-runs-stale-state">
-        {{ staleCount }} stale
+        {{ staleCount }} 条待刷新
       </a-tag>
     </div>
     <div v-if="store.recentRuns.length" class="recent-runs-list" data-test="recent-runs-list">
       <article v-for="run in store.recentRuns" :key="run.id" class="recent-run-row">
         <div class="recent-run-copy">
           <strong>{{ run.name }}</strong>
-          <span>{{ run.runner_mode }} · {{ run.id }}</span>
+          <span>{{ statusLabel(run.status) }}</span>
           <small :class="{ stale: isStale(run) }">
-            {{ run.status }}<template v-if="isStale(run)"> · stale snapshot</template>
+            {{ run.runner_mode }}<template v-if="isStale(run)"> · 结果可能已过期</template>
           </small>
         </div>
         <a-button
@@ -25,11 +25,11 @@
           :loading="store.loading && store.run?.id === run.id"
           @click="resume(run.id)"
         >
-          Resume
+          查看结果
         </a-button>
       </article>
     </div>
-    <a-empty v-else description="No runs in this session" data-test="recent-runs-empty-state" />
+    <a-empty v-else description="暂无运行记录" data-test="recent-runs-empty-state" />
   </section>
 </template>
 
@@ -48,6 +48,20 @@ const isStale = (run: TestRunRead) => {
 };
 
 const staleCount = computed(() => store.recentRuns.filter(isStale).length);
+
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    pending: '等待运行',
+    execution_pending: '等待运行',
+    running: '运行中',
+    succeeded: '已通过',
+    passed: '已通过',
+    failed: '失败',
+    error: '异常',
+    cancelled: '已取消',
+  };
+  return labels[status] ?? status;
+}
 
 function resume(runId: string) {
   void store.resumeRun(runId);

@@ -77,8 +77,6 @@
                   {{ statusLabel(store.selectedTask.status) }}
                 </a-tag>
               </a-descriptions-item>
-              <a-descriptions-item label="提示词版本">{{ store.selectedTask.prompt_version_id }}</a-descriptions-item>
-              <a-descriptions-item label="技能版本">{{ store.selectedTask.skill_version_id }}</a-descriptions-item>
               <a-descriptions-item label="模型">
                 {{ store.selectedTask.model_provider }} / {{ readableModelName(store.selectedTask.model_name) }}
               </a-descriptions-item>
@@ -86,32 +84,45 @@
                 {{ compactJson(store.selectedTask.token_usage) }}
               </a-descriptions-item>
               <a-descriptions-item label="上下文工件" :span="2">
-                {{ idListText(store.selectedTask.context_artifact_ids) }}
+                {{ contextUsageLabel(store.selectedTask.context_artifact_ids, '已关联') }}
               </a-descriptions-item>
               <a-descriptions-item label="已使用上下文" :span="2">
-                {{ idListText(store.selectedTask.used_context_artifact_ids) }}
-              </a-descriptions-item>
-              <a-descriptions-item label="上下文清单证据" :span="2">
-                <div class="evidence-cell">
-                  <a-tag :color="contextManifestEvidence.recorded ? 'green' : 'gray'">
-                    {{ contextManifestEvidence.statusText }}
-                  </a-tag>
-                  <a-link
-                    v-if="contextManifestEvidence.openable"
-                    :href="contextManifestEvidence.downloadUrl"
-                    :aria-label="contextManifestEvidence.openLabel"
-                    :title="contextManifestEvidence.openLabel"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    打开
-                  </a-link>
-                  <span v-else class="muted-text">
-                    {{ contextManifestEvidence.recorded ? '不可打开' : '未生成' }}
-                  </span>
-                </div>
+                {{ contextUsageLabel(store.selectedTask.used_context_artifact_ids, '本次使用') }}
               </a-descriptions-item>
             </a-descriptions>
+
+            <a-collapse class="technical-trace-collapse" :default-active-key="[]">
+              <a-collapse-item key="trace" title="查看执行追踪">
+                <a-descriptions :column="2" bordered size="small">
+                  <a-descriptions-item label="提示词版本">
+                    {{ store.selectedTask.prompt_version_id ? '已记录，可在 Prompt / Skill 中心追溯' : '未记录' }}
+                  </a-descriptions-item>
+                  <a-descriptions-item label="技能版本">
+                    {{ store.selectedTask.skill_version_id ? '已记录，可在 Prompt / Skill 中心追溯' : '未记录' }}
+                  </a-descriptions-item>
+                  <a-descriptions-item label="上下文清单证据" :span="2">
+                    <div class="evidence-cell">
+                      <a-tag :color="contextManifestEvidence.recorded ? 'green' : 'gray'">
+                        {{ contextManifestEvidence.statusText }}
+                      </a-tag>
+                      <a-link
+                        v-if="contextManifestEvidence.openable"
+                        :href="contextManifestEvidence.downloadUrl"
+                        :aria-label="contextManifestEvidence.openLabel"
+                        :title="contextManifestEvidence.openLabel"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        打开
+                      </a-link>
+                      <span v-else class="muted-text">
+                        {{ contextManifestEvidence.recorded ? '不可打开' : '未生成' }}
+                      </span>
+                    </div>
+                  </a-descriptions-item>
+                </a-descriptions>
+              </a-collapse-item>
+            </a-collapse>
 
             <div class="detail-section">
               <h3>工件摘要</h3>
@@ -265,23 +276,15 @@ const taskColumns = [
 const artifactColumns = [
   { title: '工件类型', dataIndex: 'artifact_type' },
   { title: '文件格式', dataIndex: 'mime_type' },
-  { title: '路径', dataIndex: 'file_path' },
-  { title: '大小', dataIndex: 'sizeText' },
-  { title: 'SHA256', dataIndex: 'sha256' },
   { title: '展示安全', slotName: 'safe' },
-  { title: '脱敏状态', dataIndex: 'redactionText' },
   { title: '本地打开', slotName: 'open', width: 120 },
 ];
 
 const llmCallColumns = [
   { title: '序号', dataIndex: 'call_index' },
-  { title: '模型提供方', dataIndex: 'provider' },
   { title: '模型', dataIndex: 'model_name' },
   { title: '状态', slotName: 'status' },
-  { title: '请求证据', slotName: 'requestEvidence', width: 160 },
-  { title: '响应工件', dataIndex: 'responseArtifactText' },
-  { title: '解析输出证据', slotName: 'parsedOutputEvidence', width: 160 },
-  { title: '结构验证证据', slotName: 'schemaValidationEvidence', width: 160 },
+  { title: '证据', dataIndex: 'evidenceSummary', width: 150 },
   { title: '耗时', dataIndex: 'latencyText' },
   { title: '令牌用量', dataIndex: 'tokenUsageText' },
 ];
@@ -305,10 +308,7 @@ const modelConnectionDetail = computed(() => {
   if (!config?.configured) {
     return modelSetupHintText;
   }
-  const keyState = config.api_key_configured ? '\u5df2\u914d\u7f6e key' : '\u672a\u914d\u7f6e key';
-  return `${config.provider ?? notConfiguredText} / ${config.model_name ?? notConfiguredText} / ${
-    config.base_url ?? notConfiguredText
-  } / ${keyState}`;
+  return `${config.provider ?? notConfiguredText} · ${config.model_name ?? notConfiguredText}`;
 });
 
 const taskRows = computed(() =>
@@ -341,7 +341,8 @@ const llmCallRows = computed(
   () =>
     store.selectedTask?.llm_call_logs.map((callLog) => ({
       ...callLog,
-      responseArtifactText: callLog.response_artifact_id ?? '无',
+      evidenceSummary: [callLog.request_artifact_id, callLog.parsed_artifact_id, callLog.schema_validation_artifact_id]
+        .filter(Boolean).length + ' 项',
       requestEvidence: artifactEvidence(
         callLog.request_artifact_id,
         '请求证据',
@@ -432,7 +433,7 @@ function readableAgentName(agentName: string): string {
 
 function readableModelName(modelName: string): string {
   return modelName
-    .replace(/^mock-/, '模拟模型 · ')
+    .replace(/^mock-/, '本地模型 · ')
     .replace(/-/g, ' ');
 }
 
@@ -469,8 +470,8 @@ function tokenLabel(key: string): string {
   return labels[key] ?? key;
 }
 
-function idListText(ids: string[]): string {
-  return ids.length > 0 ? ids.join(', ') : '无';
+function contextUsageLabel(ids: string[], prefix: string): string {
+  return ids.length > 0 ? `${prefix} ${ids.length} 个上下文工件` : `${prefix} 0 个上下文工件`;
 }
 
 function selectTask(task: TableData) {
@@ -582,6 +583,13 @@ onMounted(() => {
 
 .detail-panel {
   min-width: 0;
+}
+
+.technical-trace-collapse {
+  margin-top: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fafafa;
 }
 
 :deep(.arco-table-th),

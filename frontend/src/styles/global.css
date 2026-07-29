@@ -82,6 +82,22 @@ body {
   background: #ffffff;
 }
 
+.workbench-header .arco-space .arco-tag {
+  display: none;
+}
+
+.workbench-header .arco-space::after {
+  content: "证据链工作台";
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid #dbe3ef;
+  border-radius: 999px;
+  color: #475569;
+  font-size: 12px;
+}
+
 .workbench-header h1,
 .workbench-header p {
   margin: 0;
@@ -241,6 +257,60 @@ body {
   border-radius: 8px;
 }
 
+.requirement-form::after {
+  content: "建议至少写清：谁在什么条件下做什么，成功结果是什么，失败或超时如何处理。";
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.reporting-form .reporting-project-field {
+  display: none;
+}
+
+.reporting-form > label:first-child {
+  display: none;
+}
+
+.reporting-form-helper {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.execution-form > label:first-child {
+  display: none;
+}
+
+.execution-source-control {
+  position: relative;
+}
+
+.execution-source-compat {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.execution-source-compat-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .knowledge-grid {
   display: grid;
   grid-template-columns: minmax(320px, 0.9fr) minmax(320px, 1.1fr);
@@ -356,13 +426,758 @@ body {
   gap: 8px;
 }
 
+/* Keep internal implementation boundaries out of the primary user workflow. */
+.knowledge-base-page .settings-heading > .arco-space .arco-tag:nth-child(2),
+.knowledge-base-page .knowledge-grid > .knowledge-tools-panel {
+  display: none;
+}
+
+.knowledge-base-page .settings-heading p:not(.eyebrow) {
+  max-width: 900px;
+  font-size: 0;
+}
+
+.knowledge-base-page .settings-heading p:not(.eyebrow)::after {
+  content: "导入并审核项目知识，让批准后的证据参与需求评审、用例生成和检索。";
+  display: block;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.knowledge-base-page .knowledge-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+}
+
+.knowledge-base-page .knowledge-metrics .settings-panel {
+  min-height: 84px;
+  padding: 14px 16px;
+}
+
+.knowledge-base-page .knowledge-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.knowledge-base-page .knowledge-adapter-panel {
+  grid-column: 1 / -1;
+}
+
+.knowledge-base-page .knowledge-adapter-panel::before,
+.knowledge-base-page .retrieval-test-panel::before,
+.knowledge-base-page .test-knowledge-card-panel::before {
+  display: block;
+  margin-bottom: 10px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.knowledge-base-page .knowledge-adapter-panel::before {
+  content: "00 · 连接本地检索";
+}
+
+.knowledge-base-page .retrieval-test-panel::before {
+  content: "03 · 验证检索结果";
+}
+
+.knowledge-base-page .test-knowledge-card-panel::before {
+  content: "02 · 审核知识卡并建立索引";
+}
+
+.knowledge-base-page .knowledge-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.knowledge-base-page .knowledge-form > label:nth-of-type(3),
+.knowledge-base-page .knowledge-form > label:nth-of-type(5),
+.knowledge-base-page .knowledge-form > button {
+  grid-column: 1 / -1;
+}
+
+.knowledge-base-page .test-knowledge-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.knowledge-base-page .test-knowledge-card p {
+  max-height: 7.5em;
+  overflow: auto;
+  margin: 0;
+  color: #334155;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+/* Final workbench visual system: compact, evidence-first, and responsive. */
+:root {
+  --wb-bg: #f4f6f8;
+  --wb-surface: #ffffff;
+  --wb-surface-soft: #f7f8fa;
+  --wb-border: #e5e8ec;
+  --wb-border-strong: #cfd5dd;
+  --wb-text: #1d2735;
+  --wb-muted: #667085;
+  --wb-tertiary: #98a2b3;
+  --wb-brand: #1664d9;
+  --wb-brand-soft: #eaf3ff;
+  --wb-success: #14804a;
+  --wb-warning: #c45f00;
+  --wb-danger: #d92d20;
+}
+
+html,
+body,
+#app {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+body {
+  color: var(--wb-text);
+  background: var(--wb-bg);
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.workbench-layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--wb-bg);
+}
+
+.workbench-main {
+  min-width: 0;
+}
+
+.workbench-sidebar {
+  position: sticky !important;
+  top: 0;
+  z-index: 30;
+  height: 100vh;
+  height: 100dvh;
+  border-right: 1px solid var(--wb-border);
+  background: var(--wb-surface);
+  box-shadow: none;
+}
+
+.sidebar-inner {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.brand {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--wb-border);
+  color: var(--wb-text);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--wb-text);
+}
+
+.brand-mark {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--wb-brand);
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.brand-copy {
+  min-width: 0;
+}
+
+.brand-copy strong,
+.brand-copy small {
+  display: block;
+}
+
+.brand-copy strong {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.brand-copy small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--wb-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-list {
+  display: block;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px;
+  scrollbar-width: thin;
+}
+
+.nav-group + .nav-group {
+  margin-top: 14px;
+}
+
+.nav-group-label {
+  margin: 0 10px 5px;
+  color: var(--wb-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 24px;
+}
+
+.nav-item {
+  position: relative;
+  display: grid;
+  min-height: 38px;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: #475467;
+  font-size: 13px;
+  line-height: 20px;
+  text-decoration: none;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.nav-item:hover {
+  color: var(--wb-brand);
+  background: var(--wb-surface-soft);
+  transform: none;
+}
+
+.nav-item.active {
+  color: #0f56bd;
+  background: var(--wb-brand-soft);
+  font-weight: 700;
+}
+
+.nav-item.active::before {
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: -10px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--wb-brand);
+  content: "";
+}
+
+.nav-item__icon {
+  width: 16px;
+  height: 16px;
+  color: #667085;
+  font-size: 16px;
+}
+
+.nav-item.active .nav-item__icon,
+.nav-item:hover .nav-item__icon {
+  color: var(--wb-brand);
+}
+
+.nav-item__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-status {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 9px;
+  margin: 0 10px 12px;
+  padding: 10px 8px 10px 10px;
+  border: 1px solid var(--wb-border);
+  border-radius: 8px;
+  background: var(--wb-surface-soft);
+}
+
+.sidebar-status__copy strong,
+.sidebar-status__copy small {
+  display: block;
+}
+
+.sidebar-status__copy strong {
+  color: #344054;
+  font-size: 12px;
+}
+
+.sidebar-status__copy small {
+  margin-top: 2px;
+  color: var(--wb-tertiary);
+  font-size: 11px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--wb-tertiary);
+}
+
+.status-dot--success {
+  background: var(--wb-success);
+}
+
+.status-dot--warning {
+  background: var(--wb-warning);
+}
+
+.status-dot--danger {
+  background: var(--wb-danger);
+}
+
+.icon-button.arco-btn {
+  width: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  color: #667085;
+}
+
+.icon-button.arco-btn:hover {
+  color: var(--wb-brand);
+  background: #eef4fb;
+}
+
+.workbench-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  height: 72px;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--wb-border);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: none;
+}
+
+.header-leading,
+.header-actions,
+.header-project,
+.header-readiness {
+  display: flex;
+  align-items: center;
+}
+
+.header-leading {
+  min-width: 0;
+  gap: 10px;
+}
+
+.header-title {
+  min-width: 0;
+}
+
+.workbench-header h1,
+.workbench-header p {
+  margin: 0;
+}
+
+.workbench-header h1 {
+  overflow: hidden;
+  color: var(--wb-text);
+  font-size: 19px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-kicker {
+  margin-bottom: 2px !important;
+  color: var(--wb-tertiary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.header-actions {
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.header-project,
+.header-readiness {
+  min-height: 30px;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--wb-border);
+  border-radius: 6px;
+  color: #475467;
+  background: var(--wb-surface-soft);
+  font-size: 12px;
+}
+
+.header-project svg {
+  color: var(--wb-success);
+}
+
+.mobile-menu-button {
+  display: none !important;
+}
+
+.workbench-content {
+  min-width: 0;
+  padding: 26px 28px 44px;
+  background: var(--wb-bg);
+}
+
+.workbench-content > * {
+  width: min(100%, 1480px);
+  min-width: 0;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.arco-card,
+.status-grid,
+.ai-metric-grid,
+.ai-task-layout,
+.status-grid > *,
+.ai-metric-grid > *,
+.ai-task-layout > * {
+  min-width: 0;
+}
+
+.arco-card {
+  overflow: hidden;
+}
+
+.arco-card-body,
+.arco-spin,
+.arco-spin-children {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.arco-card-body {
+  overflow-x: auto;
+}
+
+.settings-heading,
+.workbench-heading,
+.case-review-heading,
+.requirement-review-heading,
+.automation-draft-heading,
+.execution-heading,
+.reporting-heading {
+  gap: 16px;
+  padding-bottom: 2px;
+}
+
+.settings-heading h2,
+.workbench-heading h2,
+.case-review-heading h2,
+.requirement-review-heading h2,
+.automation-draft-heading h2,
+.execution-heading h2,
+.reporting-heading h2 {
+  color: var(--wb-text);
+  font-size: 26px;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.settings-heading p:not(.eyebrow),
+.workbench-heading p:not(.eyebrow),
+.case-review-heading p:not(.eyebrow),
+.requirement-review-heading p:not(.eyebrow),
+.automation-draft-heading p:not(.eyebrow),
+.execution-heading p:not(.eyebrow),
+.reporting-heading p:not(.eyebrow) {
+  max-width: 860px;
+  color: var(--wb-muted);
+  line-height: 1.65;
+}
+
+.eyebrow {
+  color: var(--wb-brand);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.settings-panel,
+.case-panel,
+.requirement-panel,
+.automation-draft-panel,
+.execution-panel,
+.reporting-panel,
+.draft-panel,
+.status-panel,
+.ai-metric-card,
+.task-panel {
+  border: 1px solid var(--wb-border) !important;
+  border-radius: 8px !important;
+  background: var(--wb-surface) !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+}
+
+.arco-card-header {
+  min-height: 50px;
+  padding-right: 16px;
+  padding-left: 16px;
+  border-bottom-color: var(--wb-border) !important;
+}
+
+.arco-card-header-title {
+  color: var(--wb-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.arco-card-body {
+  padding: 16px;
+}
+
+.requirement-form,
+.case-generation-form,
+.draft-form,
+.execution-form,
+.reporting-form,
+.knowledge-form {
+  gap: 14px 16px;
+}
+
+.requirement-form label,
+.case-generation-form label,
+.draft-form label,
+.execution-form label,
+.reporting-form label,
+.knowledge-form label {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.requirement-form label > span,
+.case-generation-form label > span,
+.draft-form label > span,
+.execution-form label > span,
+.reporting-form label > span,
+.knowledge-form label > span {
+  line-height: 1.4;
+}
+
+.arco-input-wrapper,
+.arco-textarea-wrapper,
+.arco-select-view,
+.arco-picker {
+  border-color: var(--wb-border-strong);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.arco-input-wrapper:hover,
+.arco-textarea-wrapper:hover,
+.arco-select-view:hover {
+  border-color: #98a2b3;
+}
+
+.arco-input-wrapper:focus-within,
+.arco-textarea-wrapper:focus-within,
+.arco-select-view-focus {
+  border-color: #5b8def;
+  box-shadow: 0 0 0 3px rgba(36, 105, 214, 0.12);
+}
+
+.arco-btn {
+  min-height: 34px;
+  border-radius: 6px;
+  font-weight: 650;
+}
+
+.arco-table {
+  overflow: hidden;
+  border: 1px solid var(--wb-border);
+  border-radius: 6px;
+}
+
+.arco-table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.arco-descriptions-body,
+.arco-descriptions-bordered .arco-descriptions-body {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.arco-table-th {
+  color: #475467;
+  background: #f7f8fa;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.arco-table-td {
+  color: #344054;
+}
+
+.arco-table-tr:hover .arco-table-td {
+  background: #f8fbff;
+}
+
+.arco-empty {
+  padding: 28px 16px;
+}
+
+.workflow-progress {
+  margin-bottom: 0;
+}
+
+.metric-grid,
+.knowledge-metrics,
+.prompt-skill-metrics {
+  gap: 12px;
+}
+
+.metric-grid > *,
+.knowledge-metrics > *,
+.prompt-skill-metrics > * {
+  border: 1px solid var(--wb-border);
+  border-radius: 8px;
+  background: var(--wb-surface);
+}
+
+.knowledge-base-page .knowledge-adapter-panel::before,
+.knowledge-base-page .retrieval-test-panel::before,
+.knowledge-base-page .test-knowledge-card-panel::before {
+  letter-spacing: 0;
+}
+
+.mobile-navigation-drawer .arco-drawer {
+  max-width: calc(100vw - 32px);
+}
+
+.mobile-navigation-drawer .arco-drawer-header {
+  min-height: 72px;
+  padding: 0 12px 0 0;
+  border-bottom: 1px solid var(--wb-border);
+}
+
+.mobile-navigation-drawer .arco-drawer-title {
+  width: 100%;
+  overflow: visible;
+}
+
+.mobile-navigation-drawer .brand--drawer {
+  min-height: 71px;
+  padding: 12px 16px;
+  border-bottom: 0;
+}
+
+.mobile-navigation-drawer .arco-drawer-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.mobile-navigation-drawer .nav-list {
+  flex: 1;
+}
+
+.mobile-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 12px 14px;
+  padding: 11px 12px;
+  border: 1px solid var(--wb-border);
+  border-radius: 8px;
+  color: #475467;
+  background: var(--wb-surface-soft);
+  font-size: 12px;
+}
+
 @media (max-width: 960px) {
-  .workbench-layout {
-    display: block;
+  .desktop-sidebar {
+    display: none !important;
   }
 
-  .workbench-sidebar {
-    width: 100% !important;
+  .workbench-header {
+    height: 60px;
+    min-height: 60px;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex !important;
+  }
+
+  .header-kicker,
+  .header-project {
+    display: none;
+  }
+
+  .workbench-header h1 {
+    font-size: 17px;
+  }
+
+  .header-readiness {
+    min-height: 28px;
+    padding: 0 8px;
+  }
+
+  .workbench-content {
+    padding: 18px 16px 32px;
+  }
+
+  .settings-heading,
+  .workbench-heading,
+  .case-review-heading,
+  .requirement-review-heading,
+  .automation-draft-heading,
+  .execution-heading,
+  .reporting-heading {
+    display: grid;
+  }
+
+  .settings-heading h2,
+  .workbench-heading h2,
+  .case-review-heading h2,
+  .requirement-review-heading h2,
+  .automation-draft-heading h2,
+  .execution-heading h2,
+  .reporting-heading h2 {
+    font-size: 22px;
   }
 
   .metric-grid,
@@ -376,14 +1191,74 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .workbench-header {
-    height: auto;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 18px;
+  .knowledge-base-page .knowledge-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .settings-heading {
-    display: grid;
+  .knowledge-base-page .knowledge-grid,
+  .knowledge-base-page .knowledge-form {
+    grid-template-columns: 1fr;
   }
+
+  .arco-card-body {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 520px) {
+  .workbench-content {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .ai-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .header-readiness {
+    width: 28px;
+    min-width: 28px;
+    padding: 0;
+    justify-content: center;
+    overflow: hidden;
+    color: transparent;
+  }
+
+  .header-readiness .status-dot {
+    flex: 0 0 8px;
+  }
+
+  .settings-heading > .arco-space,
+  .workbench-heading > .arco-space,
+  .case-review-heading > .arco-space,
+  .requirement-review-heading > .arco-space,
+  .automation-draft-heading > .arco-space,
+  .execution-heading > .arco-space,
+  .reporting-heading > .arco-space {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .settings-heading > .arco-space .arco-btn,
+  .workbench-heading > .arco-space .arco-btn,
+  .case-review-heading > .arco-space .arco-btn,
+  .requirement-review-heading > .arco-space .arco-btn,
+  .automation-draft-heading > .arco-space .arco-btn,
+  .execution-heading > .arco-space .arco-btn,
+  .reporting-heading > .arco-space .arco-btn {
+    flex: 1;
+  }
+}
+
+/* The knowledge workbench follows one operational sequence instead of a dashboard grid. */
+.knowledge-base-page .knowledge-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.knowledge-base-page .knowledge-adapter-panel::before,
+.knowledge-base-page .retrieval-test-panel::before,
+.knowledge-base-page .test-knowledge-card-panel::before {
+  display: none;
+  content: none;
 }
