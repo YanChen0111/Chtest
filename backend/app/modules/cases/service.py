@@ -23,6 +23,10 @@ from backend.app.modules.cases.schemas import (
     CaseGenerationTaskRead,
     CaseMetricsRead,
     CaseReviewRequest,
+    CaseReviewWorkflowActionRequest,
+    CaseReviewWorkflowContinueRequest,
+    CaseReviewWorkflowEditRequest,
+    CaseReviewWorkflowRead,
     GeneratedCaseCandidateListItemRead,
     TestCaseListItemRead,
 )
@@ -32,6 +36,10 @@ from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.requirements import service as requirements_service
 from backend.app.modules.requirements.models import Requirement, RequirementReview, RiskItem
 from backend.app.modules.review_history.service import append_review_history
+from backend.app.modules.workflow_control import service as workflow_service
+from backend.app.modules.workflow_control.models import WorkflowHumanDecision
+from backend.app.modules.workflow_control.policy import ApprovalDecision, ControlledStage, GateState, TransitionAction, WorkflowKind
+from backend.app.modules.workflow_control.schemas import HumanApprovalCreate, HumanReviewCreate, WorkflowRevisionCreate
 from backend.app.workers.enqueue import FakeAIQueue, enqueue_ai_task
 from backend.app.workers.handlers.ai_task_handler import run_ai_task
 
@@ -118,6 +126,21 @@ class CaseCandidateAlreadyFinalError(Exception):
 
 
 class CaseReviewInvalidActionError(Exception):
+    pass
+
+
+class CaseReviewWorkflowStageError(Exception):
+    code = "WORKFLOW_STAGE_MISMATCH"
+
+
+class CaseReviewCandidateGateError(Exception):
+    code = "CASE_REVIEW_CANDIDATE_APPROVAL_REQUIRED"
+
+
+WorkflowPersistenceError = workflow_service.WorkflowPersistenceError
+
+
+class CaseNotFoundError(Exception):
     pass
 
 
@@ -447,6 +470,68 @@ def list_test_cases(
     ]
 
 
+def import_test_cases(
+    session: Session,
+    *,
+    project_id: uuid.UUID,
+    items: list[dict[str, object]],
+) -> tuple[list[TestCase], int]:
+    if session.get(Project, project_id) is None:
+        raise ProjectNotFoundError
+
+    existing_titles = {
+        title
+        for title in session.scalars(select(TestCase.title).where(TestCase.project_id == project_id))
+    }
+    imported: list[TestCase] = []
+    skipped = 0
+    for item in items:
+        title = str(item.get("title", "")).strip()
+        if not title or title in existing_titles:
+            skipped += 1
+            continue
+        test_case = TestCase(
+            project_id=project_id,
+            module_id=None,
+            source_candidate_id=None,
+            title=title,
+            priority=str(item.get("priority") or "P2"),
+            test_type=str(item.get("test_type") or "functional"),
+            precondition=item.get("precondition") if isinstance(item.get("precondition"), str) else None,
+            steps_json=list(item.get("steps") or []),
+            expected_results_json=list(item.get("expected_results") or []),
+            input_data_json=dict(item.get("input_data") or {}),
+            tags=[str(tag) for tag in list(item.get("tags") or [])],
+            source_type="imported",
+            review_status="imported",
+            status="active",
+        )
+        session.add(test_case)
+        imported.append(test_case)
+        existing_titles.add(title)
+    session.commit()
+    for test_case in imported:
+        session.refresh(test_case)
+    return imported, skipped
+
+
+def update_test_case_status(
+    session: Session,
+    *,
+    case_id: uuid.UUID,
+    project_id: uuid.UUID,
+    status: str,
+) -> TestCase:
+    test_case = session.scalar(select(TestCase).where(TestCase.id == case_id, TestCase.project_id == project_id))
+    if test_case is None:
+        raise CaseNotFoundError
+    test_case.status = status
+    session.add(test_case)
+    session.commit()
+    session.refresh(test_case)
+    return test_case
+
+
 def review_candidate(session: Session, candidate_id: uuid.UUID, data: CaseReviewRequest) -> tuple[GeneratedCaseCandidate, TestCase | None]:
     candidate = session.get(GeneratedCaseCandidate, candidate_id)
     if candidate is None:
@@ -494,6 +579,369 @@ def review_candidate(session: Session, candidate_id: uuid.UUID, data: CaseReview
     if test_case is not None:
         session.refresh(test_case)
     return candidate, test_case
+
+
+def get_case_review_workflow_detail(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> CaseReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    return _case_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def submit_case_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+) -> CaseReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _case_review_workflow(session, project_id, review.id)
+    workflow_service.submit_for_review(session, project_id, run.id, expected_version=data.expected_version)
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    return _case_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def complete_case_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+) -> CaseReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _case_review_workflow(session, project_id, review.id)
+    workflow_service.complete_human_review(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    return _case_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def edit_case_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowEditRequest,
+) -> CaseReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    payload = dict(snapshot.input_payload_json)
+    payload["candidate_decisions"] = _json_safe(data.candidate_decisions)
+    payload["generated_candidate_ids"] = [
+        str(candidate_id) for candidate_id in _candidate_ids_for_requirement_review(session, project_id, review.id)
+    ]
+    revised_run, _, _ = workflow_service.revise_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=WorkflowRevisionCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            input_payload=payload,
+        ),
+    )
+    workflow_service.submit_for_review(
+        session,
+        project_id,
+        revised_run.id,
+        expected_version=revised_run.lock_version,
+    )
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    return _case_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def decide_case_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+    *,
+    decision: ApprovalDecision,
+) -> CaseReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    if decision is ApprovalDecision.APPROVED:
+        _require_reviewed_case_candidates(session, project_id, snapshot.input_payload_json)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            decision=decision,
+        ),
+    )
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    return _case_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def continue_case_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowContinueRequest,
+) -> CaseReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    _require_reviewed_case_candidates(session, project_id, snapshot.input_payload_json)
+    workflow_service.advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        approval_decision_id=data.approval_decision_id,
+        target_stage=ControlledStage.AUTOMATION_PLAN_REVIEW,
+        next_input_payload=_automation_plan_review_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = _review_workflow(session, project_id, review.id)
+    return _case_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def approve_and_continue_case_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+) -> CaseReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _case_review_workflow(session, project_id, review.id)
+    _require_reviewed_case_candidates(session, project_id, snapshot.input_payload_json)
+    workflow_service.approve_and_advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+        target_stage=ControlledStage.AUTOMATION_PLAN_REVIEW,
+        next_input_payload=_automation_plan_review_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = _review_workflow(session, project_id, review.id)
+    return _case_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def _review_workflow(session: Session, project_id: uuid.UUID, requirement_review_id: uuid.UUID):
+    return workflow_service.get_workflow_run_for_subject(
+        session,
+        project_id,
+        workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+        subject_ref=str(requirement_review_id),
+    )
+
+
+def _case_review_workflow(session: Session, project_id: uuid.UUID, requirement_review_id: uuid.UUID):
+    run, snapshot = _review_workflow(session, project_id, requirement_review_id)
+    if run.current_stage != ControlledStage.CASE_REVIEW.value:
+        raise CaseReviewWorkflowStageError
+    return run, snapshot
+
+
+def _require_requirement_review_in_project(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> RequirementReview:
+    row = session.execute(
+        select(RequirementReview, Requirement)
+        .join(Requirement, Requirement.id == RequirementReview.requirement_id)
+        .where(RequirementReview.id == requirement_review_id, Requirement.project_id == project_id),
+    ).one_or_none()
+    if row is None:
+        raise RequirementReviewNotFoundError
+    return row[0]
+
+
+def _case_review_workflow_read(session: Session, project_id: uuid.UUID, review_id: uuid.UUID, run, snapshot) -> CaseReviewWorkflowRead:
+    payload = snapshot.input_payload_json
+    latest_approval = session.scalar(
+        select(WorkflowHumanDecision)
+        .where(
+            WorkflowHumanDecision.project_id == run.project_id,
+            WorkflowHumanDecision.workflow_run_id == run.id,
+            WorkflowHumanDecision.snapshot_id == run.current_snapshot_id,
+            WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+            WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+        )
+        .order_by(WorkflowHumanDecision.created_at.desc(), WorkflowHumanDecision.id.desc()),
+    )
+    candidate_ids = _candidate_ids_for_requirement_review(session, project_id, review_id)
+    return CaseReviewWorkflowRead(
+        project_id=project_id,
+        requirement_review_id=review_id,
+        workflow={
+            "run_id": str(run.id),
+            "stage": run.current_stage,
+            "state": run.gate_state,
+            "lock_version": run.lock_version,
+            "snapshot_id": str(run.current_snapshot_id),
+            "approval_decision_id": str(latest_approval.id) if latest_approval else None,
+            "can_submit": run.gate_state == GateState.DRAFT.value,
+            "can_complete_review": run.gate_state == GateState.WAITING_REVIEW.value,
+            "can_edit": run.gate_state in {
+                GateState.WAITING_REVIEW.value,
+                GateState.WAITING_APPROVAL.value,
+                GateState.APPROVED.value,
+                GateState.REJECTED.value,
+            },
+            "can_approve": run.gate_state == GateState.WAITING_APPROVAL.value,
+            "can_continue": run.gate_state == GateState.APPROVED.value and latest_approval is not None,
+        },
+        source_test_plan_review_snapshot_id=payload.get("source_test_plan_review_snapshot_id"),
+        source_test_plan_review_snapshot_hash=payload.get("source_test_plan_review_snapshot_hash"),
+        test_strategy=payload.get("test_strategy"),
+        plan_items=payload.get("plan_items", []),
+        generated_candidate_ids=candidate_ids,
+        candidate_decisions=_candidate_decisions_for_ids(session, project_id, candidate_ids),
+    )
+
+
+def _candidate_ids_for_requirement_review(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> list[uuid.UUID]:
+    rows = session.scalars(
+        select(GeneratedCaseCandidate.id)
+        .join(CaseGenerationTask, CaseGenerationTask.id == GeneratedCaseCandidate.generation_task_id)
+        .where(
+            GeneratedCaseCandidate.project_id == project_id,
+            CaseGenerationTask.requirement_review_id == requirement_review_id,
+        )
+        .order_by(GeneratedCaseCandidate.created_at.asc(), GeneratedCaseCandidate.id.asc()),
+    )
+    return list(rows)
+
+
+def _candidate_decisions_for_ids(
+    session: Session,
+    project_id: uuid.UUID,
+    candidate_ids: list[uuid.UUID],
+) -> list[dict[str, object]]:
+    if not candidate_ids:
+        return []
+    candidates = list(
+        session.scalars(
+            select(GeneratedCaseCandidate)
+            .where(
+                GeneratedCaseCandidate.project_id == project_id,
+                GeneratedCaseCandidate.id.in_(candidate_ids),
+            )
+            .order_by(GeneratedCaseCandidate.created_at.asc(), GeneratedCaseCandidate.id.asc()),
+        ),
+    )
+    test_cases_by_candidate = {
+        test_case.source_candidate_id: test_case
+        for test_case in session.scalars(
+            select(TestCase).where(
+                TestCase.project_id == project_id,
+                TestCase.source_candidate_id.in_(candidate_ids),
+            ),
+        )
+        if test_case.source_candidate_id is not None
+    }
+    return [
+        {
+            "candidate_id": str(candidate.id),
+            "status": candidate.status,
+            "review_comment": candidate.review_comment,
+            "test_case_id": str(test_cases_by_candidate[candidate.id].id)
+            if candidate.id in test_cases_by_candidate
+            else None,
+        }
+        for candidate in candidates
+    ]
+
+
+def _json_safe(value):
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    return value
+
+
+def _require_reviewed_case_candidates(session: Session, project_id: uuid.UUID, payload: dict) -> None:
+    review_id = uuid.UUID(str(payload.get("requirement_review_id")))
+    candidate_ids = _candidate_ids_for_requirement_review(session, project_id, review_id)
+    if not candidate_ids:
+        raise CaseReviewCandidateGateError
+    candidates = list(
+        session.scalars(
+            select(GeneratedCaseCandidate).where(
+                GeneratedCaseCandidate.project_id == project_id,
+                GeneratedCaseCandidate.id.in_(candidate_ids),
+            ),
+        ),
+    )
+    final_statuses = {"approved", "approved_after_edit", "rejected"}
+    if len(candidates) != len(candidate_ids) or any(candidate.status not in final_statuses for candidate in candidates):
+        raise CaseReviewCandidateGateError
+    approved_candidate_ids = [candidate.id for candidate in candidates if candidate.status in {"approved", "approved_after_edit"}]
+    if not approved_candidate_ids:
+        raise CaseReviewCandidateGateError
+    approved_test_case_count = session.scalar(
+        select(TestCase.id)
+        .where(
+            TestCase.project_id == project_id,
+            TestCase.source_candidate_id.in_(approved_candidate_ids),
+            TestCase.review_status.in_(["approved", "approved_after_edit"]),
+        )
+        .limit(1),
+    )
+    if approved_test_case_count is None:
+        raise CaseReviewCandidateGateError
+
+
+def _automation_plan_review_input_payload(session: Session, project_id: uuid.UUID, source_snapshot) -> dict[str, object]:
+    payload = source_snapshot.input_payload_json
+    review_id = uuid.UUID(str(payload.get("requirement_review_id")))
+    candidate_ids = _candidate_ids_for_requirement_review(session, project_id, review_id)
+    approved_candidate_ids = [
+        candidate_id
+        for candidate_id in candidate_ids
+        if session.scalar(
+            select(GeneratedCaseCandidate.status).where(
+                GeneratedCaseCandidate.project_id == project_id,
+                GeneratedCaseCandidate.id == candidate_id,
+                GeneratedCaseCandidate.status.in_(["approved", "approved_after_edit"]),
+            ),
+        )
+        is not None
+    ]
+    approved_test_case_ids = list(
+        session.scalars(
+            select(TestCase.id)
+            .where(
+                TestCase.project_id == project_id,
+                TestCase.source_candidate_id.in_(approved_candidate_ids),
+                TestCase.review_status.in_(["approved", "approved_after_edit"]),
+            )
+            .order_by(TestCase.created_at.asc(), TestCase.id.asc()),
+        ),
+    )
+    return {
+        "requirement_id": payload.get("requirement_id"),
+        "requirement_review_id": payload.get("requirement_review_id"),
+        "source_case_review_snapshot_id": str(source_snapshot.id),
+        "source_case_review_snapshot_hash": source_snapshot.input_snapshot_hash,
+        "source_test_plan_review_snapshot_id": payload.get("source_test_plan_review_snapshot_id"),
+        "source_test_plan_review_snapshot_hash": payload.get("source_test_plan_review_snapshot_hash"),
+        "test_strategy": payload.get("test_strategy"),
+        "plan_items": payload.get("plan_items", []),
+        "candidate_decisions": _candidate_decisions_for_ids(session, project_id, candidate_ids),
+        "approved_candidate_ids": [str(candidate_id) for candidate_id in approved_candidate_ids],
+        "approved_test_case_ids": [str(test_case_id) for test_case_id in approved_test_case_ids],
+    }
 
 
 def calculate_case_metrics(session: Session, generation_task_id: uuid.UUID) -> CaseMetricsRead:

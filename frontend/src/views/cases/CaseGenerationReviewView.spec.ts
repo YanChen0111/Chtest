@@ -245,6 +245,8 @@ describe('CaseGenerationReviewView', () => {
         requirement_review_id: '00000000-0000-0000-0000-000000000611',
         requirement_document_artifact_id: null,
         decision_table_acknowledged: true,
+        use_knowledge: true,
+        context_artifact_ids: [],
       }),
     );
     expect(wrapper.text()).toContain('候选用例');
@@ -450,6 +452,8 @@ describe('CaseGenerationReviewView', () => {
         requirement_review_id: '00000000-0000-0000-0000-000000000621',
         requirement_document_artifact_id: '00000000-0000-0000-0000-000000000d01',
         decision_table_acknowledged: true,
+        use_knowledge: true,
+        context_artifact_ids: [],
       }),
     );
   });
@@ -542,7 +546,7 @@ describe('CaseGenerationReviewView', () => {
     await flushPromises();
 
     expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeDefined();
-    expect(wrapper.text()).toContain('请先确认生成前决策表，避免直接把未澄清需求送入最终用例生成。');
+    expect(wrapper.text()).toContain('需要从需求评审页进入，系统才能自动带入完整评审结果。');
     expect(fetchMock).not.toHaveBeenCalledWith('/api/case-generation/tasks', expect.objectContaining({ method: 'POST' }));
   });
 
@@ -722,5 +726,175 @@ describe('CaseGenerationReviewView', () => {
     expect((wrapper.find('[data-test="requirement-review-id-input"] input').element as HTMLInputElement).value).toBe(
       '00000000-0000-0000-0000-000000000611',
     );
+  });
+
+  it('renders the persisted CaseReview gate and advances it with project-scoped actions', async () => {
+    let caseReviewActionBody: unknown = null;
+    window.localStorage.setItem(
+      'chtest.latestRequirementReview',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        requirementId: '00000000-0000-0000-0000-000000000411',
+        requirementReviewId: '00000000-0000-0000-0000-000000000611',
+        review: {
+          risk_items: [{ title: 'High-risk coupon boundary' }],
+          clarification_questions: [],
+        },
+      }),
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirements')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: '00000000-0000-0000-0000-000000000411',
+                project_id: '00000000-0000-0000-0000-000000000101',
+                module_id: null,
+                title: 'Coupon checkout rules',
+                content: 'Coupon cannot be used with points.',
+                source_type: 'manual',
+                source_ref: null,
+                status: 'active',
+                created_at: '2026-07-29T10:00:00Z',
+                updated_at: '2026-07-29T10:00:00Z',
+              },
+            ],
+            total: 1,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/requirements/00000000-0000-0000-0000-000000000411/review')) {
+        return new Response(
+          JSON.stringify({
+            id: '00000000-0000-0000-0000-000000000611',
+            requirement_id: '00000000-0000-0000-0000-000000000411',
+            overall_score: 88,
+            scores: { completeness: 90, clarity: 90, consistency: 88, testability: 88, feasibility: 88, logic: 88 },
+            issues: [],
+            clarification_questions: [],
+            risk_items: [{ title: 'High-risk coupon boundary', risk_level: 'high', suggestion: 'Cover the risk.' }],
+            used_knowledge: false,
+            used_context_artifact_ids: [],
+            context_manifest_artifact_id: null,
+            status: 'reviewed',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-documents')) {
+        return new Response(JSON.stringify({ items: [], total: 0 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-reviews/00000000-0000-0000-0000-000000000611/case-review')) {
+        return new Response(
+          JSON.stringify({
+            project_id: '00000000-0000-0000-0000-000000000101',
+            requirement_review_id: '00000000-0000-0000-0000-000000000611',
+            workflow: {
+              run_id: '00000000-0000-0000-0000-000000000c01',
+              stage: 'case_review',
+              state: 'waiting_approval',
+              lock_version: 3,
+              snapshot_id: '00000000-0000-0000-0000-000000000c02',
+              approval_decision_id: null,
+              can_submit: false,
+              can_complete_review: false,
+              can_edit: true,
+              can_approve: true,
+              can_continue: false,
+            },
+            source_test_plan_review_snapshot_id: '00000000-0000-0000-0000-000000000b01',
+            source_test_plan_review_snapshot_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+            test_strategy: 'Cover the high-risk coupon boundary.',
+            plan_items: [{ title: 'Boundary coverage', risk_level: 'high' }],
+            generated_candidate_ids: [
+              '00000000-0000-0000-0000-000000000801',
+              '00000000-0000-0000-0000-000000000802',
+            ],
+            candidate_decisions: [
+              {
+                candidate_id: '00000000-0000-0000-0000-000000000801',
+                status: 'approved',
+                review_comment: 'Promote this candidate.',
+                test_case_id: '00000000-0000-0000-0000-000000000901',
+              },
+              {
+                candidate_id: '00000000-0000-0000-0000-000000000802',
+                status: 'rejected',
+                review_comment: 'Outside scope.',
+                test_case_id: null,
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (
+        url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-reviews/00000000-0000-0000-0000-000000000611/case-review/approve-and-continue') &&
+        init?.method === 'POST'
+      ) {
+        caseReviewActionBody = JSON.parse(String(init.body));
+        return new Response(
+          JSON.stringify({
+            project_id: '00000000-0000-0000-0000-000000000101',
+            requirement_review_id: '00000000-0000-0000-0000-000000000611',
+            workflow: {
+              run_id: '00000000-0000-0000-0000-000000000c01',
+              stage: 'automation_plan_review',
+              state: 'draft',
+              lock_version: 4,
+              snapshot_id: '00000000-0000-0000-0000-000000000c03',
+              approval_decision_id: '00000000-0000-0000-0000-000000000d01',
+              can_submit: false,
+              can_complete_review: false,
+              can_edit: false,
+              can_approve: false,
+              can_continue: false,
+            },
+            source_test_plan_review_snapshot_id: '00000000-0000-0000-0000-000000000b01',
+            source_test_plan_review_snapshot_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+            test_strategy: 'Cover the high-risk coupon boundary.',
+            plan_items: [{ title: 'Boundary coverage', risk_level: 'high' }],
+            generated_candidate_ids: [
+              '00000000-0000-0000-0000-000000000801',
+              '00000000-0000-0000-0000-000000000802',
+            ],
+            candidate_decisions: [],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: {
+        plugins: [createPinia(), ArcoVue],
+      },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('[data-test="case-review-workflow-panel"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('CaseReview gate');
+    expect(wrapper.text()).toContain('case_review');
+    await wrapper.find('[data-test="case-review-approve-continue"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(caseReviewActionBody).toEqual(
+      expect.objectContaining({
+        expected_version: 3,
+        comment: 'Case review approved and advanced.',
+      }),
+    );
+    expect(wrapper.text()).toContain('automation_plan_review');
   });
 });

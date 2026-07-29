@@ -21,6 +21,7 @@ from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 from backend.app.modules.review_history.models import ReviewHistory
+from backend.app.modules.workflow_control.models import WorkflowStageSnapshot
 
 
 class ASGIResponse:
@@ -335,3 +336,200 @@ def test_final_candidate_status_cannot_be_reviewed_again(api_client: tuple[ASGIC
 
     assert response.status_code == 409
     assert response.json()["error_code"] == "CASE_CANDIDATE_ALREADY_FINAL"
+
+
+def test_case_review_workflow_requires_existing_candidate_review_and_consumes_exact_approval(
+    api_client: tuple[ASGIClient, sessionmaker[Session]],
+) -> None:
+    client, SessionLocal = api_client
+    seed_prompt_skill(SessionLocal)
+    project = client.post("/api/projects", json_body={"name": "Checkout System"}).json()
+    requirement = client.post(
+        "/api/requirements",
+        json_body={
+            "project_id": project["id"],
+            "title": "Coupon checkout rules",
+            "content": "Coupon cannot be used with points. Expired coupons cannot be used.",
+        },
+    ).json()
+    assert client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        json_body={
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    ).status_code == 202
+    review = client.get(f"/api/requirements/{requirement['id']}/review").json()
+    requirement_completed = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/complete-review",
+        json_body={"expected_version": review["workflow"]["lock_version"]},
+    ).json()
+    risk_draft = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/approve-and-continue",
+        json_body={"expected_version": requirement_completed["workflow"]["lock_version"]},
+    ).json()
+    risk_submitted = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/risk-review/submit",
+        json_body={"expected_version": risk_draft["workflow"]["lock_version"]},
+    ).json()
+    risk_completed = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/risk-review/complete-review",
+        json_body={"expected_version": risk_submitted["workflow"]["lock_version"]},
+    ).json()
+    test_plan_draft = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/risk-review/approve-and-continue",
+        json_body={"expected_version": risk_completed["workflow"]["lock_version"]},
+    ).json()
+    test_plan_submitted = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/test-plan-review/submit",
+        json_body={"expected_version": test_plan_draft["workflow"]["lock_version"]},
+    ).json()
+    strategy = "Cover high-risk coupon validation before generating formal cases."
+    test_plan_edited = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/test-plan-review/edit",
+        json_body={
+            "expected_version": test_plan_submitted["workflow"]["lock_version"],
+            "test_strategy": strategy,
+            "plan_items": [{"risk_title": "Coupon validation", "risk_level": "high", "strategy": strategy}],
+        },
+    ).json()
+    test_plan_completed = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/test-plan-review/complete-review",
+        json_body={"expected_version": test_plan_edited["workflow"]["lock_version"]},
+    ).json()
+    case_review_draft = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/test-plan-review/approve-and-continue",
+        json_body={"expected_version": test_plan_completed["workflow"]["lock_version"]},
+    ).json()
+    assert case_review_draft["workflow"]["stage"] == "case_review"
+    assert case_review_draft["workflow"]["state"] == "draft"
+
+    generation = client.post(
+        "/api/case-generation/tasks",
+        json_body={
+            "project_id": project["id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "decision_table_acknowledged": True,
+            "context_artifact_ids": [],
+        },
+    ).json()
+    candidates = client.get(
+        f"/api/case-generation/tasks/{generation['case_generation_task_id']}/candidates",
+    ).json()["items"]
+    candidate = candidates[0]
+
+    case_review = client.get(f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review")
+    assert case_review.status_code == 200
+    assert case_review.json()["workflow"]["state"] == "draft"
+    assert client.get(f"/api/projects/{uuid.uuid4()}/requirement-reviews/{review['id']}/case-review").status_code == 404
+
+    submitted = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/submit",
+        json_body={"expected_version": case_review.json()["workflow"]["lock_version"]},
+    ).json()
+    completed = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/complete-review",
+        json_body={"expected_version": submitted["workflow"]["lock_version"]},
+    ).json()
+    blocked = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/approve",
+        json_body={"expected_version": completed["workflow"]["lock_version"]},
+    )
+    assert blocked.status_code == 409
+    assert blocked.json()["error_code"] == "CASE_REVIEW_CANDIDATE_APPROVAL_REQUIRED"
+
+    approved_case = client.post(
+        f"/api/case-review/items/{candidate['id']}/approve",
+        json_body={"action": "approve", "review_comment": "Promote this candidate."},
+    ).json()
+    for rejected_candidate in candidates[1:]:
+        rejected = client.post(
+            f"/api/case-review/items/{rejected_candidate['id']}/approve",
+            json_body={"action": "reject", "review_comment": "Outside this review scope."},
+        )
+        assert rejected.status_code == 200
+    edited_response = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/edit",
+        json_body={
+            "expected_version": completed["workflow"]["lock_version"],
+            "candidate_decisions": [{"candidate_id": candidate["id"], "action": "approve"}],
+        },
+    )
+    assert edited_response.status_code == 200, edited_response.json()
+    edited = edited_response.json()
+    assert edited["workflow"]["state"] == "waiting_review"
+    assert edited["workflow"]["approval_decision_id"] is None
+    assert candidate["id"] in edited["generated_candidate_ids"]
+
+    completed_again = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/complete-review",
+        json_body={"expected_version": edited["workflow"]["lock_version"]},
+    ).json()
+    old_approved = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/approve",
+        json_body={"expected_version": completed_again["workflow"]["lock_version"]},
+    ).json()
+    old_approval_id = old_approved["workflow"]["approval_decision_id"]
+    revised = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/edit",
+        json_body={
+            "expected_version": old_approved["workflow"]["lock_version"],
+            "candidate_decisions": [
+                {
+                    "candidate_id": candidate["id"],
+                    "action": "approve",
+                    "test_case_id": approved_case["test_case_id"],
+                },
+            ],
+        },
+    ).json()
+    stale = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/continue",
+        json_body={
+            "expected_version": revised["workflow"]["lock_version"],
+            "approval_decision_id": old_approval_id,
+        },
+    )
+    assert stale.status_code == 409
+
+    completed_final = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/complete-review",
+        json_body={"expected_version": revised["workflow"]["lock_version"]},
+    ).json()
+    approved_final = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/approve",
+        json_body={"expected_version": completed_final["workflow"]["lock_version"]},
+    ).json()
+    advanced = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/continue",
+        json_body={
+            "expected_version": approved_final["workflow"]["lock_version"],
+            "approval_decision_id": approved_final["workflow"]["approval_decision_id"],
+        },
+    )
+    assert advanced.status_code == 200
+    advanced_body = advanced.json()
+    assert advanced_body["workflow"]["stage"] == "automation_plan_review"
+    assert advanced_body["workflow"]["state"] == "draft"
+
+    with SessionLocal() as session:
+        automation_snapshot = session.get(WorkflowStageSnapshot, uuid.UUID(advanced_body["workflow"]["snapshot_id"]))
+        assert automation_snapshot is not None
+        source_case_snapshot = session.get(WorkflowStageSnapshot, automation_snapshot.previous_snapshot_id)
+        assert source_case_snapshot is not None
+        assert automation_snapshot.input_payload_json["source_case_review_snapshot_id"] == str(source_case_snapshot.id)
+        assert automation_snapshot.input_payload_json["source_case_review_snapshot_hash"] == source_case_snapshot.input_snapshot_hash
+        assert automation_snapshot.input_payload_json["source_test_plan_review_snapshot_id"]
+        assert automation_snapshot.input_payload_json["approved_candidate_ids"] == [candidate["id"]]
+        assert automation_snapshot.input_payload_json["approved_test_case_ids"] == [approved_case["test_case_id"]]

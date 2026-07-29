@@ -1,20 +1,32 @@
 import { defineStore } from 'pinia';
 
 import {
+  approveAndContinueCaseReviewWorkflow,
+  approveCaseReviewWorkflow,
+  completeCaseReviewWorkflow,
+  continueCaseReviewWorkflow,
+  editCaseReviewWorkflow,
   getCaseGenerationTask,
   getCaseMetrics,
+  getCaseReviewWorkflow,
+  importTestCases,
   listCaseCandidates,
   listTestCases,
+  rejectCaseReviewWorkflow,
   reviewCaseCandidate,
   startCaseGeneration,
+  submitCaseReviewWorkflow,
+  updateTestCaseStatus,
   type CaseGenerationStartRead,
   type CaseGenerationTaskRead,
   type CaseMetricsRead,
   type CaseReviewAction,
   type CaseReviewEditedCase,
   type CaseReviewRead,
+  type CaseReviewWorkflowRead,
   type GeneratedCaseCandidateListItem,
   type TestCaseListItem,
+  type TestCaseImportItem,
 } from '../api/cases';
 import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
 import {
@@ -59,10 +71,12 @@ export const useCasesStore = defineStore('cases', {
       selectedCandidateId: '',
       lastReview: null as CaseReviewRead | null,
       lastReviewCandidateId: '',
+      caseReviewWorkflow: null as CaseReviewWorkflowRead | null,
       reviewHistory: [] as ReviewHistoryItem[],
       loadingGeneration: false,
       loadingReview: false,
       errorMessage: '',
+      successMessage: '',
     };
   },
   getters: {
@@ -140,6 +154,18 @@ export const useCasesStore = defineStore('cases', {
       }
       return false;
     },
+    async loadCaseReviewWorkflow() {
+      if (!this.projectId || !this.requirementReviewId) {
+        return null;
+      }
+      try {
+        this.caseReviewWorkflow = await getCaseReviewWorkflow(this.projectId, this.requirementReviewId);
+        return this.caseReviewWorkflow;
+      } catch {
+        this.caseReviewWorkflow = null;
+        return null;
+      }
+    },
     async loadRequirementDocuments() {
       this.loadingGeneration = true;
       this.errorMessage = '';
@@ -180,9 +206,13 @@ export const useCasesStore = defineStore('cases', {
       this.selectedRequirementDocumentNumber = document.document_number;
       const latestContext = getLatestRequirementReviewContext();
       if (latestContext?.requirementReviewId === document.requirement_review_id) {
+        this.requirementTitle = latestContext.requirement?.title ?? document.title;
+        this.requirementReviewConfirmed = Boolean(latestContext.review);
         this.requirementRiskTitles = latestContext.review?.risk_items.map((item) => item.title) ?? [];
         this.requirementClarificationQuestions = latestContext.review?.clarification_questions ?? [];
       } else {
+        this.requirementTitle = document.title;
+        this.requirementReviewConfirmed = false;
         this.requirementRiskTitles = [];
         this.requirementClarificationQuestions = [];
       }
@@ -195,6 +225,8 @@ export const useCasesStore = defineStore('cases', {
       if (!latestContext) {
         this.requirementId = '';
         this.requirementReviewId = '';
+        this.requirementTitle = '';
+        this.requirementReviewConfirmed = false;
         this.requirementRiskTitles = [];
         this.requirementClarificationQuestions = [];
         return false;
@@ -202,6 +234,8 @@ export const useCasesStore = defineStore('cases', {
       this.projectId = latestContext.projectId;
       this.requirementId = latestContext.requirementId;
       this.requirementReviewId = latestContext.requirementReviewId;
+      this.requirementTitle = latestContext.requirement?.title ?? '';
+      this.requirementReviewConfirmed = Boolean(latestContext.review);
       return true;
     },
     async loadTestCases() {
@@ -218,11 +252,41 @@ export const useCasesStore = defineStore('cases', {
         this.loadingGeneration = false;
       }
     },
+    async importCases(items: TestCaseImportItem[]) {
+      this.loadingGeneration = true;
+      this.errorMessage = '';
+      this.successMessage = '';
+      try {
+        const result = await importTestCases(this.projectId, items);
+        this.successMessage = `已导入 ${result.imported_count} 条用例${result.skipped_count ? `，跳过 ${result.skipped_count} 条重复标题` : ''}`;
+        await this.loadTestCases();
+        return result;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '用例导入失败';
+        return null;
+      } finally {
+        this.loadingGeneration = false;
+      }
+    },
+    async setTestCaseStatus(caseId: string, status: 'active' | 'archived') {
+      this.loadingGeneration = true;
+      this.errorMessage = '';
+      this.successMessage = '';
+      try {
+        await updateTestCaseStatus(this.projectId, caseId, status);
+        this.successMessage = status === 'archived' ? '用例已归档' : '用例已恢复';
+        await this.loadTestCases();
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '用例状态更新失败';
+      } finally {
+        this.loadingGeneration = false;
+      }
+    },
     async generateCandidates(data: {
       requirementId: string;
       requirementReviewId: string;
       targetTestTypes: string[];
-      contextArtifactIds: string[];
+      contextArtifactIds?: string[];
       requirementDocumentArtifactId?: string;
       decisionTableAcknowledged?: boolean;
     }) {
@@ -276,6 +340,7 @@ export const useCasesStore = defineStore('cases', {
           await this.loadSelectedCandidateReviewHistory(this.selectedCandidateId);
         }
         this.metrics = await getCaseMetrics(this.generation.case_generation_task_id);
+        await this.loadCaseReviewWorkflow();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '候选用例生成失败';
       } finally {
@@ -331,6 +396,7 @@ export const useCasesStore = defineStore('cases', {
         if (this.generation) {
           this.metrics = await getCaseMetrics(this.generation.case_generation_task_id);
         }
+        await this.loadCaseReviewWorkflow();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '候选用例评审失败';
       } finally {
@@ -364,6 +430,93 @@ export const useCasesStore = defineStore('cases', {
       if (this.selectedCandidateId === targetCandidateId) {
         this.reviewHistory = history.items;
       }
+    },
+    currentCandidateDecisionSnapshot() {
+      return this.candidates.map((candidate) => {
+        const matchingReview = this.lastReviewCandidateId === candidate.id ? this.lastReview : null;
+        const matchingTestCase = this.testCases.find((testCase) => testCase.source_candidate_id === candidate.id);
+        return {
+          candidate_id: candidate.id,
+          status: candidate.status,
+          review_comment: matchingReview?.candidate_id === candidate.id ? null : undefined,
+          test_case_id: matchingReview?.candidate_id === candidate.id
+            ? matchingReview.test_case_id
+            : matchingTestCase?.id ?? null,
+        };
+      });
+    },
+    async runCaseWorkflowAction(action: () => Promise<CaseReviewWorkflowRead>) {
+      this.loadingReview = true;
+      this.errorMessage = '';
+      try {
+        this.caseReviewWorkflow = await action();
+        return true;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : 'CaseReview workflow action failed';
+        await this.loadCaseReviewWorkflow();
+        return false;
+      } finally {
+        this.loadingReview = false;
+      }
+    },
+    async submitCaseReviewGate() {
+      const workflow = this.caseReviewWorkflow?.workflow;
+      if (!workflow) return false;
+      return this.runCaseWorkflowAction(() => submitCaseReviewWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+      }));
+    },
+    async completeCaseReviewGate() {
+      const workflow = this.caseReviewWorkflow?.workflow;
+      if (!workflow) return false;
+      return this.runCaseWorkflowAction(() => completeCaseReviewWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+      }));
+    },
+    async editCaseReviewGate() {
+      const workflow = this.caseReviewWorkflow?.workflow;
+      if (!workflow) return false;
+      return this.runCaseWorkflowAction(() => editCaseReviewWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+        candidate_decisions: this.currentCandidateDecisionSnapshot(),
+      }));
+    },
+    async approveCaseReviewGate(comment?: string) {
+      const workflow = this.caseReviewWorkflow?.workflow;
+      if (!workflow) return false;
+      return this.runCaseWorkflowAction(() => approveCaseReviewWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async rejectCaseReviewGate(comment?: string) {
+      const workflow = this.caseReviewWorkflow?.workflow;
+      if (!workflow) return false;
+      return this.runCaseWorkflowAction(() => rejectCaseReviewWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async continueCaseReviewGate() {
+      const workflow = this.caseReviewWorkflow?.workflow;
+      const approvalDecisionId = workflow?.approval_decision_id;
+      if (!workflow || !approvalDecisionId) return false;
+      return this.runCaseWorkflowAction(() => continueCaseReviewWorkflow(
+        this.projectId,
+        this.requirementReviewId,
+        {
+          expected_version: workflow.lock_version,
+          approval_decision_id: approvalDecisionId,
+        },
+      ));
+    },
+    async approveAndContinueCaseReviewGate(comment?: string) {
+      const workflow = this.caseReviewWorkflow?.workflow;
+      if (!workflow) return false;
+      return this.runCaseWorkflowAction(() => approveAndContinueCaseReviewWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
     },
   },
 });

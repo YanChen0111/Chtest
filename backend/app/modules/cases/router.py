@@ -15,10 +15,18 @@ from backend.app.modules.cases.schemas import (
     CaseMetricsRead,
     CaseReviewRead,
     CaseReviewRequest,
+    CaseReviewWorkflowActionRequest,
+    CaseReviewWorkflowContinueRequest,
+    CaseReviewWorkflowEditRequest,
+    CaseReviewWorkflowRead,
     GeneratedCaseCandidateListRead,
     TestCaseListRead,
+    TestCaseImportRead,
+    TestCaseImportRequest,
+    TestCaseStatusUpdateRequest,
 )
 from backend.app.modules.projects.router import get_session
+from backend.app.modules.workflow_control.policy import ApprovalDecision, TransitionPolicyError
 
 
 router = APIRouter(tags=["cases"])
@@ -53,6 +61,19 @@ def bad_request(error_code: str, message: str) -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail={"error_code": error_code, "message": message, "details": {}},
+    )
+
+
+def workflow_error(exc: Exception) -> HTTPException:
+    error_code = getattr(exc, "code", exc.__class__.__name__.replace("Error", "").upper())
+    status_code = (
+        status.HTTP_404_NOT_FOUND
+        if error_code in {"WORKFLOW_RUN_NOT_FOUND", "WORKFLOW_PROJECT_NOT_FOUND"}
+        else status.HTTP_409_CONFLICT
+    )
+    return HTTPException(
+        status_code=status_code,
+        detail={"error_code": error_code, "message": "Workflow action was rejected.", "details": {}},
     )
 
 
@@ -176,6 +197,46 @@ def list_test_cases(
     return TestCaseListRead(items=items, total=len(items))
 
 
+@router.post("/test-cases/import", response_model=TestCaseImportRead, status_code=status.HTTP_201_CREATED)
+def import_test_cases(
+    data: TestCaseImportRequest,
+    session: Session = Depends(get_session),
+) -> TestCaseImportRead:
+    try:
+        imported, skipped = service.import_test_cases(
+            session,
+            project_id=data.project_id,
+            items=[item.model_dump() for item in data.items],
+        )
+        items = service.list_test_cases(session, project_id=data.project_id)
+    except service.ProjectNotFoundError as exc:
+        raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc
+    return TestCaseImportRead(
+        project_id=data.project_id,
+        imported_count=len(imported),
+        skipped_count=skipped,
+        items=[item for item in items if item.id in {case.id for case in imported}],
+    )
+
+
+@router.patch("/test-cases/{case_id}")
+def update_test_case_status(
+    case_id: uuid.UUID,
+    data: TestCaseStatusUpdateRequest,
+    session: Session = Depends(get_session),
+) -> dict[str, object]:
+    try:
+        updated = service.update_test_case_status(
+            session,
+            case_id=case_id,
+            project_id=data.project_id,
+            status=data.status,
+        )
+    except service.CaseNotFoundError as exc:
+        raise not_found("TEST_CASE_NOT_FOUND", "Test case not found in this project.") from exc
+    return {"id": updated.id, "status": updated.status}
+
+
 @router.post("/case-review/items/{candidate_id}/approve", response_model=CaseReviewRead)
 def review_candidate(
     candidate_id: uuid.UUID,
@@ -196,3 +257,183 @@ def review_candidate(
         status=candidate.status,
         test_case_id=test_case.id if test_case is not None else None,
     )
+
+
+@router.get(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/case-review",
+    response_model=CaseReviewWorkflowRead,
+)
+def read_case_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> CaseReviewWorkflowRead:
+    try:
+        return service.get_case_review_workflow_detail(session, project_id, requirement_review_id)
+    except service.RequirementReviewNotFoundError as exc:
+        raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except (
+        service.WorkflowPersistenceError,
+        service.CaseReviewWorkflowStageError,
+        service.CaseReviewCandidateGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/case-review/submit",
+    response_model=CaseReviewWorkflowRead,
+)
+def submit_case_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> CaseReviewWorkflowRead:
+    try:
+        return service.submit_case_review_workflow(session, project_id, requirement_review_id, data)
+    except service.RequirementReviewNotFoundError as exc:
+        raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except (
+        service.WorkflowPersistenceError,
+        service.CaseReviewWorkflowStageError,
+        service.CaseReviewCandidateGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/case-review/complete-review",
+    response_model=CaseReviewWorkflowRead,
+)
+def complete_case_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> CaseReviewWorkflowRead:
+    try:
+        return service.complete_case_review_workflow(session, project_id, requirement_review_id, data)
+    except service.RequirementReviewNotFoundError as exc:
+        raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except (service.WorkflowPersistenceError, service.CaseReviewWorkflowStageError, TransitionPolicyError) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/case-review/edit",
+    response_model=CaseReviewWorkflowRead,
+)
+def edit_case_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowEditRequest,
+    session: Session = Depends(get_session),
+) -> CaseReviewWorkflowRead:
+    try:
+        return service.edit_case_review_workflow(session, project_id, requirement_review_id, data)
+    except service.RequirementReviewNotFoundError as exc:
+        raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except (service.WorkflowPersistenceError, service.CaseReviewWorkflowStageError, TransitionPolicyError) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/case-review/approve",
+    response_model=CaseReviewWorkflowRead,
+)
+def approve_case_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> CaseReviewWorkflowRead:
+    try:
+        return service.decide_case_review_workflow(
+            session,
+            project_id,
+            requirement_review_id,
+            data,
+            decision=ApprovalDecision.APPROVED,
+        )
+    except service.RequirementReviewNotFoundError as exc:
+        raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except (
+        service.WorkflowPersistenceError,
+        service.CaseReviewWorkflowStageError,
+        service.CaseReviewCandidateGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/case-review/reject",
+    response_model=CaseReviewWorkflowRead,
+)
+def reject_case_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> CaseReviewWorkflowRead:
+    try:
+        return service.decide_case_review_workflow(
+            session,
+            project_id,
+            requirement_review_id,
+            data,
+            decision=ApprovalDecision.REJECTED,
+        )
+    except service.RequirementReviewNotFoundError as exc:
+        raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except (service.WorkflowPersistenceError, service.CaseReviewWorkflowStageError, TransitionPolicyError) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/case-review/continue",
+    response_model=CaseReviewWorkflowRead,
+)
+def continue_case_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowContinueRequest,
+    session: Session = Depends(get_session),
+) -> CaseReviewWorkflowRead:
+    try:
+        return service.continue_case_review_workflow(session, project_id, requirement_review_id, data)
+    except service.RequirementReviewNotFoundError as exc:
+        raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except (
+        service.WorkflowPersistenceError,
+        service.CaseReviewWorkflowStageError,
+        service.CaseReviewCandidateGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/case-review/approve-and-continue",
+    response_model=CaseReviewWorkflowRead,
+)
+def approve_and_continue_case_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: CaseReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> CaseReviewWorkflowRead:
+    try:
+        return service.approve_and_continue_case_review_workflow(session, project_id, requirement_review_id, data)
+    except service.RequirementReviewNotFoundError as exc:
+        raise not_found("REQUIREMENT_REVIEW_NOT_FOUND", "Requirement review not found.") from exc
+    except (
+        service.WorkflowPersistenceError,
+        service.CaseReviewWorkflowStageError,
+        service.CaseReviewCandidateGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc

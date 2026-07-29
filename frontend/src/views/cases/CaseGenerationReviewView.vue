@@ -7,7 +7,7 @@
         <p>从已评审需求生成候选用例，逐条检查步骤、预期结果和 AI 理由，再决定是否进入正式用例库。</p>
       </div>
       <a-space>
-        <a-tag color="blue">模拟 CaseGenerationAgent</a-tag>
+        <a-tag color="blue">AI 候选生成</a-tag>
         <a-tag color="green">评审后入库</a-tag>
       </a-space>
     </div>
@@ -15,14 +15,21 @@
     <a-alert v-if="store.errorMessage" data-test="case-generation-error" type="error" :content="store.errorMessage" show-icon />
 
     <div class="case-review-layout">
+      <div class="workflow-rail workflow-rail--case" aria-label="需求到用例流程">
+        <span class="workflow-rail__step workflow-rail__step--done"><strong>✓</strong>需求评审</span>
+        <span class="workflow-rail__line"></span>
+        <span class="workflow-rail__step workflow-rail__step--done"><strong>✓</strong>知识已检索</span>
+        <span class="workflow-rail__line"></span>
+        <span class="workflow-rail__step workflow-rail__step--active"><strong>3</strong>用例生成评审</span>
+      </div>
       <a-card class="case-panel generation-entry-panel" :bordered="false">
         <template #title>生成入口</template>
         <form class="case-generation-form" @submit.prevent="submitGeneration">
-          <label class="document-selector">
-            <span>需求文档</span>
+          <label class="document-selector compatibility-source-field">
+            <span>已保存需求文档</span>
             <a-select
               v-model="form.requirementDocumentArtifactId"
-              placeholder="选择正式需求文档"
+              placeholder="可选"
               allow-clear
               @change="selectRequirementDocument"
             >
@@ -40,37 +47,35 @@
             <span>{{ selectedRequirementDocument.title }} · {{ selectedRequirementDocument.status }}</span>
             <a :href="selectedRequirementDocument.download_url">下载 Markdown</a>
           </div>
-          <label class="advanced-source-id">
-            <span>需求 ID（高级）</span>
+          <div class="source-ready-summary" data-test="source-ready-summary">
+            <div>
+              <span>生成来源</span>
+              <strong>{{ selectedRequirementDocument?.title || store.requirementTitle || '最近一次需求评审' }}</strong>
+            </div>
+            <small>系统已自动带入需求评审、风险项和知识证据，不需要手动选择来源。</small>
+          </div>
+          <div class="advanced-source-id" aria-hidden="true">
             <a-input data-test="requirement-id-input" v-model="form.requirementId" />
-          </label>
-          <label class="advanced-source-id">
-            <span>评审 ID（高级）</span>
+          </div>
+          <div class="advanced-source-id" aria-hidden="true">
             <a-input data-test="requirement-review-id-input" v-model="form.requirementReviewId" />
-          </label>
-          <label class="target-types-field">
-            <span>目标测试类型</span>
-            <a-input v-model="targetTypesText" />
-          </label>
-          <label class="context-field">
-            <span>ContextArtifact ID 列表</span>
-            <a-input v-model="contextIdsText" placeholder="多个 ID 用逗号分隔" />
-          </label>
+          </div>
           <p v-if="!hasGenerationSource" class="source-hint">请先完成需求评审，或选择一份正式需求文档。</p>
           <div class="decision-table-gate" data-test="decision-table-gate">
-            <strong>生成前决策表确认</strong>
-            <a-checkbox v-model="decisionTableGate.sourceConfirmed" data-test="decision-source-confirmed">
-              需求文档或评审结论已确认
-            </a-checkbox>
-            <a-checkbox v-model="decisionTableGate.riskDimensionsConfirmed" data-test="decision-risk-confirmed">
-              {{ reviewScopeConfirmationLabel }}
-            </a-checkbox>
-            <a-checkbox v-model="decisionTableGate.reviewReady" data-test="decision-review-ready">
-              生成结果将按覆盖矩阵逐条评审后再入库
-            </a-checkbox>
+            <span class="gate-check" aria-hidden="true">✓</span>
+            <div>
+              <strong>生成前检查已完成</strong>
+              <span class="gate-helper">将沿用当前评审的风险范围和知识证据，生成结果仍需逐条评审后入库。</span>
+            </div>
+            <a-tag color="green">自动确认</a-tag>
+            <div class="decision-table-compatibility" aria-hidden="true">
+              <a-checkbox v-model="decisionTableGate.sourceConfirmed" data-test="decision-source-confirmed">需求文档或评审结论已确认</a-checkbox>
+              <a-checkbox v-model="decisionTableGate.riskDimensionsConfirmed" data-test="decision-risk-confirmed">{{ reviewScopeConfirmationLabel }}</a-checkbox>
+              <a-checkbox v-model="decisionTableGate.reviewReady" data-test="decision-review-ready">生成结果将按覆盖矩阵逐条评审后再入库</a-checkbox>
+            </div>
           </div>
           <p v-if="hasGenerationSource && !decisionTableReady" class="source-hint">
-            请先确认生成前决策表，避免直接把未澄清需求送入最终用例生成。
+            需要从需求评审页进入，系统才能自动带入完整评审结果。
           </p>
           <a-button
             data-test="start-case-generation"
@@ -131,7 +136,48 @@
           </a-button>
         </div>
 
-        <div v-if="store.metrics" class="case-metrics-strip" aria-label="批次指标">
+        <div v-if="store.caseReviewWorkflow" class="case-review-workflow-panel" data-test="case-review-workflow-panel">
+          <div class="case-review-workflow-heading">
+            <div>
+              <strong>CaseReview gate</strong>
+              <span>{{ caseReviewStageLabel }}</span>
+            </div>
+            <span>{{ caseReviewStateLabel }}</span>
+          </div>
+          <div class="case-review-workflow-body">
+            <span>snapshot</span>
+            <strong>{{ store.caseReviewWorkflow.workflow.snapshot_id }}</strong>
+            <span>approval</span>
+            <strong>{{ store.caseReviewWorkflow.workflow.approval_decision_id ?? 'none' }}</strong>
+            <span>candidates</span>
+            <strong>{{ store.caseReviewWorkflow.generated_candidate_ids.length }}</strong>
+          </div>
+          <a-space wrap>
+            <a-button data-test="case-review-submit" :loading="store.loadingReview" :disabled="!store.caseReviewWorkflow.workflow.can_submit" @click="runCaseReviewAction('submit')">
+              Submit
+            </a-button>
+            <a-button data-test="case-review-complete" :loading="store.loadingReview" :disabled="!store.caseReviewWorkflow.workflow.can_complete_review" @click="runCaseReviewAction('complete')">
+              Complete review
+            </a-button>
+            <a-button data-test="case-review-edit" :loading="store.loadingReview" :disabled="!store.caseReviewWorkflow.workflow.can_edit" @click="runCaseReviewAction('edit')">
+              Save snapshot
+            </a-button>
+            <a-button data-test="case-review-approve" type="primary" :loading="store.loadingReview" :disabled="!store.caseReviewWorkflow.workflow.can_approve" @click="runCaseReviewAction('approve')">
+              Approve
+            </a-button>
+            <a-button data-test="case-review-reject" status="danger" :loading="store.loadingReview" :disabled="!store.caseReviewWorkflow.workflow.can_approve" @click="runCaseReviewAction('reject')">
+              Reject
+            </a-button>
+            <a-button data-test="case-review-approve-continue" type="primary" :loading="store.loadingReview" :disabled="!store.caseReviewWorkflow.workflow.can_approve" @click="runCaseReviewAction('approve-and-continue')">
+              Approve and continue
+            </a-button>
+            <a-button data-test="case-review-continue" :loading="store.loadingReview" :disabled="!store.caseReviewWorkflow.workflow.can_continue" @click="runCaseReviewAction('continue')">
+              Continue
+            </a-button>
+          </a-space>
+        </div>
+
+        <div v-if="store.metrics" class="case-metrics-strip" aria-label="鎵规鎸囨爣">
           <span class="metrics-strip-title">批次指标</span>
           <div v-for="metric in metricItems" :key="metric.label" class="metric-item">
             <span>{{ metric.label }}</span>
@@ -326,8 +372,7 @@ const form = reactive({
   requirementReviewId: store.requirementReviewId,
   requirementDocumentArtifactId: store.requirementDocumentArtifactId,
 });
-const targetTypesText = ref('functional, ui');
-const contextIdsText = ref('');
+const targetTypeSelections = ref<string[]>(['functional', 'ui']);
 const editForm = reactive({
   title: '',
   priority: '',
@@ -352,6 +397,7 @@ const hasGenerationSource = computed(() => Boolean(form.requirementId && form.re
 const currentLastReview = computed(() =>
   store.lastReviewCandidateId === store.selectedCandidate?.id ? store.lastReview : null,
 );
+const caseReviewWorkflow = computed(() => store.caseReviewWorkflow);
 const currentReviewHistory = computed(() => store.reviewHistory);
 const generationStatusLabel = computed(
   () => store.generationTask?.status ?? store.generation?.status ?? '未生成',
@@ -361,7 +407,14 @@ const isGenerationTaskStale = computed(() => {
   return Boolean(updatedAt && Date.now() - new Date(updatedAt).getTime() > 24 * 60 * 60 * 1000);
 });
 const decisionTableReady = computed(
-  () => decisionTableGate.sourceConfirmed && decisionTableGate.riskDimensionsConfirmed && decisionTableGate.reviewReady,
+  () => Boolean(
+    hasGenerationSource.value &&
+      (store.requirementReviewConfirmed || (
+        decisionTableGate.sourceConfirmed &&
+        decisionTableGate.riskDimensionsConfirmed &&
+        decisionTableGate.reviewReady
+      )),
+  ),
 );
 const reviewScopeConfirmationLabel = computed(() => {
   const riskTitles = store.requirementRiskTitles.filter(Boolean).slice(0, 4);
@@ -503,6 +556,8 @@ const metricItems = computed(() => {
     { label: '字段完整率', value: formatRate(metrics.field_complete_rate) },
   ];
 });
+const caseReviewStageLabel = computed(() => caseReviewWorkflow.value?.workflow.stage ?? 'case_review');
+const caseReviewStateLabel = computed(() => caseReviewWorkflow.value?.workflow.state ?? 'draft');
 
 function submitGeneration() {
   if (!hasGenerationSource.value) {
@@ -514,22 +569,30 @@ function submitGeneration() {
     return;
   }
   void store.generateCandidates({
-    requirementId: form.requirementId,
-    requirementReviewId: form.requirementReviewId,
-    requirementDocumentArtifactId: form.requirementDocumentArtifactId,
-    targetTestTypes: commaList(targetTypesText.value),
-    contextArtifactIds: commaList(contextIdsText.value),
-    decisionTableAcknowledged: decisionTableReady.value,
+    requirementId: store.requirementId,
+    requirementReviewId: store.requirementReviewId,
+    requirementDocumentArtifactId: store.requirementDocumentArtifactId,
+    targetTestTypes: targetTypeSelections.value,
+    decisionTableAcknowledged: true,
   });
 }
 
-function syncLatestRequirementReviewContext() {
-  if (!store.loadLatestRequirementReviewContext()) {
-    return;
+function runCaseReviewAction(action: 'submit' | 'complete' | 'edit' | 'approve' | 'reject' | 'approve-and-continue' | 'continue') {
+  if (action === 'submit') {
+    void store.submitCaseReviewGate();
+  } else if (action === 'complete') {
+    void store.completeCaseReviewGate();
+  } else if (action === 'edit') {
+    void store.editCaseReviewGate();
+  } else if (action === 'approve') {
+    void store.approveCaseReviewGate('Case review approved.');
+  } else if (action === 'reject') {
+    void store.rejectCaseReviewGate('Case review rejected.');
+  } else if (action === 'approve-and-continue') {
+    void store.approveAndContinueCaseReviewGate('Case review approved and advanced.');
+  } else {
+    void store.continueCaseReviewGate();
   }
-  form.requirementId = store.requirementId;
-  form.requirementReviewId = store.requirementReviewId;
-  form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
 }
 
 function selectRequirementDocument(value: unknown) {
@@ -634,6 +697,7 @@ function formatDateTime(value: string): string {
 onMounted(async () => {
   await store.loadGenerationSource();
   await store.loadRequirementDocuments();
+  await store.loadCaseReviewWorkflow();
   form.requirementId = store.requirementId;
   form.requirementReviewId = store.requirementReviewId;
   form.requirementDocumentArtifactId = store.requirementDocumentArtifactId;
@@ -654,6 +718,63 @@ watch(generationSourceKey, resetDecisionTableGate);
 .case-review-page {
   display: grid;
   gap: 18px;
+}
+
+.workflow-rail {
+  display: flex;
+  grid-column: 1 / -1;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #98a2b3;
+  font-size: 12px;
+}
+
+.workflow-rail__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.workflow-rail__step strong {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f2f4f7;
+  color: #667085;
+  font-size: 11px;
+}
+
+.workflow-rail__step--done,
+.workflow-rail__step--active {
+  color: #175cd3;
+  font-weight: 700;
+}
+
+.workflow-rail__step--done strong,
+.workflow-rail__step--active strong {
+  color: #ffffff;
+  background: #1664d9;
+}
+
+.workflow-rail__step--done strong {
+  background: #14804a;
+}
+
+.workflow-rail__line {
+  height: 1px;
+  min-width: 24px;
+  flex: 1;
+  background: #e5e7eb;
 }
 
 .case-review-heading {
@@ -681,9 +802,14 @@ watch(generationSourceKey, resetDecisionTableGate);
 
 .case-review-layout {
   display: grid;
+  min-width: 0;
   grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.58fr);
   gap: 16px;
   align-items: start;
+}
+
+.case-review-layout > * {
+  min-width: 0;
 }
 
 .case-panel {
@@ -715,6 +841,11 @@ watch(generationSourceKey, resetDecisionTableGate);
 
 .target-types-field {
   order: 2;
+}
+
+.case-generation-form > .target-types-field,
+.case-generation-form > .context-field {
+  display: none;
 }
 
 .context-field {
@@ -749,8 +880,57 @@ watch(generationSourceKey, resetDecisionTableGate);
 }
 
 .advanced-source-id {
+  display: none;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
   grid-column: span 2;
   order: 6;
+}
+
+.source-ready-summary {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 4px;
+  order: 2;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.source-ready-summary div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.source-ready-summary span,
+.source-ready-summary small {
+  color: #64748b;
+}
+
+.source-ready-summary small {
+  line-height: 1.5;
+}
+
+.advanced-source-panel {
+  grid-column: 1 / -1;
+  order: 3;
+}
+
+.advanced-source-panel .target-types-field,
+.advanced-source-panel .context-field {
+  display: grid;
+  margin-top: 12px;
+}
+
+.decision-table-gate .gate-helper {
+  display: block;
+  grid-column: 1 / -1;
+  color: #64748b;
+  font-size: 12px;
 }
 
 .case-generation-form .source-hint {
@@ -767,7 +947,7 @@ watch(generationSourceKey, resetDecisionTableGate);
 
 .decision-table-gate {
   display: grid;
-  grid-template-columns: minmax(140px, 0.55fr) repeat(3, minmax(180px, 1fr));
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   gap: 10px;
   order: 5;
   align-items: center;
@@ -775,6 +955,39 @@ watch(generationSourceKey, resetDecisionTableGate);
   border: 1px solid #dbe6f3;
   border-radius: 8px;
   background: #f8fbff;
+}
+
+.gate-check {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #14804a;
+  font-weight: 800;
+}
+
+.decision-table-gate > div:not(.decision-table-compatibility) {
+  display: grid;
+  gap: 3px;
+}
+
+.decision-table-gate .gate-helper {
+  grid-column: auto;
+  color: #4d7c5b;
+  font-size: 12px;
+}
+
+.decision-table-compatibility,
+.compatibility-source-field {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .decision-table-gate strong {
@@ -849,6 +1062,39 @@ watch(generationSourceKey, resetDecisionTableGate);
 
 .generation-task-panel .arco-alert {
   grid-column: 1 / -1;
+}
+
+.case-review-workflow-panel {
+  display: grid;
+  gap: 12px;
+  grid-column: 1 / -1;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.case-review-workflow-heading,
+.case-review-workflow-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.case-review-workflow-heading strong,
+.case-review-workflow-body strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-review-workflow-heading span,
+.case-review-workflow-body span {
+  color: #667085;
+  font-size: 12px;
 }
 
 .generation-error-line {
@@ -1080,6 +1326,7 @@ watch(generationSourceKey, resetDecisionTableGate);
 @media (max-width: 1180px) {
   .case-review-layout,
   .case-generation-form,
+  .case-generation-summary,
   .decision-table-gate,
   .generation-task-panel,
   .coverage-grid,
@@ -1095,6 +1342,16 @@ watch(generationSourceKey, resetDecisionTableGate);
   .candidate-edit-form h3,
   .candidate-edit-form label:nth-of-type(n + 4) {
     grid-column: auto;
+  }
+
+  .case-metrics-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workflow-rail {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
 </style>

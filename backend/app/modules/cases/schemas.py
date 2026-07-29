@@ -136,6 +136,37 @@ class CaseReviewRead(BaseModel):
     test_case_id: uuid.UUID | None
 
 
+class CaseReviewWorkflowActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    reviewer: str = Field(default="Default User", min_length=1, max_length=120)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class CaseReviewWorkflowEditRequest(CaseReviewWorkflowActionRequest):
+    candidate_decisions: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class CaseReviewWorkflowContinueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    approval_decision_id: uuid.UUID
+
+
+class CaseReviewWorkflowRead(BaseModel):
+    project_id: uuid.UUID
+    requirement_review_id: uuid.UUID
+    workflow: dict[str, Any]
+    source_test_plan_review_snapshot_id: str | None = None
+    source_test_plan_review_snapshot_hash: str | None = None
+    test_strategy: str | None = None
+    plan_items: list[Any] = Field(default_factory=list)
+    generated_candidate_ids: list[uuid.UUID] = Field(default_factory=list)
+    candidate_decisions: list[Any] = Field(default_factory=list)
+
+
 class CaseMetricsRead(BaseModel):
     generation_task_id: uuid.UUID
     generated_count: int
@@ -195,3 +226,31 @@ class TestCaseListItemRead(BaseModel):
 class TestCaseListRead(BaseModel):
     items: list[TestCaseListItemRead]
     total: int
+
+
+class TestCaseImportItem(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    priority: str = "P2"
+    test_type: str = "functional"
+    precondition: str | None = None
+    steps: list[Any] = Field(default_factory=list)
+    expected_results: list[Any] = Field(default_factory=list)
+    input_data: dict[str, Any] = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
+
+
+class TestCaseImportRequest(BaseModel):
+    project_id: uuid.UUID
+    items: list[TestCaseImportItem] = Field(min_length=1, max_length=500)
+
+
+class TestCaseImportRead(BaseModel):
+    project_id: uuid.UUID
+    imported_count: int
+    skipped_count: int
+    items: list[TestCaseListItemRead]
+
+
+class TestCaseStatusUpdateRequest(BaseModel):
+    project_id: uuid.UUID
+    status: Literal["active", "archived"]
