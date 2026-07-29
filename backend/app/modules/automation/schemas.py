@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AutomationPlanCreateRequest(BaseModel):
@@ -64,6 +65,39 @@ class AutomationPlanReviewRead(BaseModel):
     status: str
 
 
+class AutomationPlanReviewWorkflowActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    reviewer: str = Field(default="Default User", min_length=1, max_length=120)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class AutomationPlanReviewWorkflowEditRequest(AutomationPlanReviewWorkflowActionRequest):
+    plan_decisions: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AutomationPlanReviewWorkflowContinueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    approval_decision_id: uuid.UUID
+
+
+class AutomationPlanReviewWorkflowRead(BaseModel):
+    project_id: uuid.UUID
+    requirement_review_id: uuid.UUID
+    workflow: dict[str, Any]
+    source_case_review_snapshot_id: str | None = None
+    source_case_review_snapshot_hash: str | None = None
+    source_test_plan_review_snapshot_id: str | None = None
+    source_test_plan_review_snapshot_hash: str | None = None
+    approved_candidate_ids: list[str] = Field(default_factory=list)
+    approved_test_case_ids: list[str] = Field(default_factory=list)
+    generated_plan_ids: list[uuid.UUID] = Field(default_factory=list)
+    plan_decisions: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class AutomationDraftCreateRequest(BaseModel):
     project_id: uuid.UUID
     test_case_id: uuid.UUID | None = None
@@ -98,6 +132,39 @@ class AutomationDraftApproveRequest(BaseModel):
 class AutomationDraftReviewRead(BaseModel):
     automation_draft_id: uuid.UUID
     status: str
+
+
+class AutomationDraftReviewWorkflowActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    reviewer: str = Field(default="Default User", min_length=1, max_length=120)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class AutomationDraftReviewWorkflowEditRequest(AutomationDraftReviewWorkflowActionRequest):
+    draft_decisions: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AutomationDraftReviewWorkflowContinueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    approval_decision_id: uuid.UUID
+
+
+class AutomationDraftReviewWorkflowRead(BaseModel):
+    project_id: uuid.UUID
+    requirement_review_id: uuid.UUID
+    workflow: dict[str, Any]
+    source_automation_plan_review_snapshot_id: str | None = None
+    source_automation_plan_review_snapshot_hash: str | None = None
+    source_case_review_snapshot_id: str | None = None
+    source_case_review_snapshot_hash: str | None = None
+    approved_automation_plan_ids: list[str] = Field(default_factory=list)
+    approved_test_case_ids: list[str] = Field(default_factory=list)
+    generated_draft_ids: list[uuid.UUID] = Field(default_factory=list)
+    draft_decisions: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class AutomationDraftQualityGateRead(BaseModel):

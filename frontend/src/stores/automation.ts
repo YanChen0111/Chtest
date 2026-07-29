@@ -1,18 +1,36 @@
 import { defineStore } from 'pinia';
 
 import {
+  approveAndContinueAutomationPlanReviewWorkflow,
+  approveAndContinueAutomationDraftReviewWorkflow,
   approveAutomationPlan,
+  approveAutomationPlanReviewWorkflow,
   approveAutomationDraft,
+  approveAutomationDraftReviewWorkflow,
+  completeAutomationPlanReviewWorkflow,
+  completeAutomationDraftReviewWorkflow,
+  continueAutomationPlanReviewWorkflow,
+  continueAutomationDraftReviewWorkflow,
   createAutomationPlan,
   createAutomationDraft,
+  editAutomationPlanReviewWorkflow,
   editAutomationDraft,
+  editAutomationDraftReviewWorkflow,
   generateAutomationDraftFromPlan,
   getAutomationDraft,
+  getAutomationDraftReviewWorkflow,
+  getAutomationPlanReviewWorkflow,
+  rejectAutomationPlanReviewWorkflow,
+  rejectAutomationDraftReviewWorkflow,
+  submitAutomationPlanReviewWorkflow,
+  submitAutomationDraftReviewWorkflow,
   type AutomationDraftCreateRead,
   type AutomationDraftRead,
   type AutomationDraftReviewRead,
+  type AutomationDraftReviewWorkflowRead,
   type AutomationPlanRead,
   type AutomationPlanReviewRead,
+  type AutomationPlanReviewWorkflowRead,
 } from '../api/automation';
 import { listTestCases, type TestCaseListItem } from '../api/cases';
 import { getProjectSettings, type ProjectTestCommand } from '../api/projects';
@@ -35,10 +53,12 @@ export const useAutomationStore = defineStore('automation', {
       testCommands: [] as ProjectTestCommand[],
       plan: null as AutomationPlanRead | null,
       lastPlanReview: null as AutomationPlanReviewRead | null,
+      planReviewWorkflow: null as AutomationPlanReviewWorkflowRead | null,
       planReviewHistory: [] as ReviewHistoryItem[],
       createdDraft: null as AutomationDraftCreateRead | null,
       draft: null as AutomationDraftRead | null,
       lastReview: null as AutomationDraftReviewRead | null,
+      draftReviewWorkflow: null as AutomationDraftReviewWorkflowRead | null,
       reviewHistory: [] as ReviewHistoryItem[],
       loading: false,
       loadingAssets: false,
@@ -93,6 +113,7 @@ export const useAutomationStore = defineStore('automation', {
           prompt_version: 'automation_plan_generation:v1',
           skill_version: 'automation-plan-skill:v1',
         });
+        await this.loadAutomationPlanReviewWorkflow();
         await this.loadCurrentPlanReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化方案生成失败';
@@ -110,6 +131,7 @@ export const useAutomationStore = defineStore('automation', {
       try {
         this.lastPlanReview = await approveAutomationPlan(this.plan.id, reviewComment);
         this.plan = { ...this.plan, status: this.lastPlanReview.status, review_comment: reviewComment };
+        await this.loadAutomationPlanReviewWorkflow();
         await this.loadCurrentPlanReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化方案审批失败';
@@ -129,6 +151,7 @@ export const useAutomationStore = defineStore('automation', {
         this.plan = { ...this.plan, status: 'draft_generated' };
         this.draft = await getAutomationDraft(this.createdDraft.automation_draft_id);
         this.rememberCurrentDraft();
+        await this.loadAutomationDraftReviewWorkflow();
         await Promise.all([this.loadCurrentPlanReviewHistory(), this.loadCurrentDraftReviewHistory()]);
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿生成失败';
@@ -152,6 +175,7 @@ export const useAutomationStore = defineStore('automation', {
         });
         this.draft = await getAutomationDraft(this.createdDraft.automation_draft_id);
         this.rememberCurrentDraft();
+        await this.loadAutomationDraftReviewWorkflow();
         await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿生成失败';
@@ -176,6 +200,7 @@ export const useAutomationStore = defineStore('automation', {
         });
         this.draft = { ...this.draft, status: this.lastReview.status, review_comment: reviewComment };
         this.rememberCurrentDraft();
+        await this.loadAutomationDraftReviewWorkflow();
         await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿编辑失败';
@@ -194,6 +219,7 @@ export const useAutomationStore = defineStore('automation', {
         this.lastReview = await approveAutomationDraft(this.draft.id, reviewComment);
         this.draft = { ...this.draft, status: this.lastReview.status, review_comment: reviewComment };
         this.rememberCurrentDraft();
+        await this.loadAutomationDraftReviewWorkflow();
         await this.loadCurrentDraftReviewHistory();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '自动化草稿审批失败';
@@ -225,6 +251,7 @@ export const useAutomationStore = defineStore('automation', {
       }
       saveLatestAutomationDraftContext({
         projectId: this.projectId,
+        requirementReviewId: this.plan?.requirement_review_id ?? null,
         testCaseId: this.draft.test_case_id,
         automationDraftId: this.draft.id,
         status: this.draft.status,
@@ -257,6 +284,223 @@ export const useAutomationStore = defineStore('automation', {
         limit: 20,
       });
       this.planReviewHistory = history.items;
+    },
+    async loadAutomationPlanReviewWorkflow() {
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!this.projectId || !requirementReviewId) {
+        this.planReviewWorkflow = null;
+        return null;
+      }
+      try {
+        this.planReviewWorkflow = await getAutomationPlanReviewWorkflow(this.projectId, requirementReviewId);
+        return this.planReviewWorkflow;
+      } catch {
+        this.planReviewWorkflow = null;
+        return null;
+      }
+    },
+    currentAutomationPlanDecisionSnapshot() {
+      if (!this.plan) {
+        return [];
+      }
+      return [
+        {
+          automation_plan_id: this.plan.id,
+          test_case_id: this.plan.test_case_id,
+          status: this.plan.status,
+          target_framework: this.plan.target_framework,
+          review_comment: this.plan.review_comment,
+        },
+      ];
+    },
+    async runAutomationPlanWorkflowAction(action: () => Promise<AutomationPlanReviewWorkflowRead>) {
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.planReviewWorkflow = await action();
+        return true;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : 'AutomationPlanReview workflow action failed';
+        await this.loadAutomationPlanReviewWorkflow();
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async submitAutomationPlanReviewGate() {
+      const workflow = this.planReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationPlanWorkflowAction(() => submitAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+      }));
+    },
+    async completeAutomationPlanReviewGate() {
+      const workflow = this.planReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationPlanWorkflowAction(() => completeAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+      }));
+    },
+    async editAutomationPlanReviewGate() {
+      const workflow = this.planReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationPlanWorkflowAction(() => editAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+        plan_decisions: this.currentAutomationPlanDecisionSnapshot(),
+      }));
+    },
+    async approveAutomationPlanReviewGate(comment?: string) {
+      const workflow = this.planReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationPlanWorkflowAction(() => approveAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async rejectAutomationPlanReviewGate(comment?: string) {
+      const workflow = this.planReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationPlanWorkflowAction(() => rejectAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async continueAutomationPlanReviewGate() {
+      const workflow = this.planReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      const approvalDecisionId = workflow?.approval_decision_id;
+      if (!workflow || !requirementReviewId || !approvalDecisionId) return false;
+      return this.runAutomationPlanWorkflowAction(() => continueAutomationPlanReviewWorkflow(
+        this.projectId,
+        requirementReviewId,
+        {
+          expected_version: workflow.lock_version,
+          approval_decision_id: approvalDecisionId,
+        },
+      ));
+    },
+    async approveAndContinueAutomationPlanReviewGate(comment?: string) {
+      const workflow = this.planReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationPlanWorkflowAction(() => approveAndContinueAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async loadAutomationDraftReviewWorkflow() {
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!this.projectId || !requirementReviewId || !this.draft) {
+        this.draftReviewWorkflow = null;
+        return null;
+      }
+      try {
+        this.draftReviewWorkflow = await getAutomationDraftReviewWorkflow(this.projectId, requirementReviewId);
+        return this.draftReviewWorkflow;
+      } catch {
+        this.draftReviewWorkflow = null;
+        return null;
+      }
+    },
+    currentAutomationDraftDecisionSnapshot() {
+      if (!this.draft) {
+        return [];
+      }
+      return [
+        {
+          automation_draft_id: this.draft.id,
+          automation_plan_id: this.draft.automation_plan_id,
+          test_case_id: this.draft.test_case_id,
+          status: this.draft.status,
+          target_framework: this.draft.target_framework,
+          review_comment: this.draft.review_comment,
+        },
+      ];
+    },
+    async runAutomationDraftWorkflowAction(action: () => Promise<AutomationDraftReviewWorkflowRead>) {
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.draftReviewWorkflow = await action();
+        return true;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : 'AutomationDraftReview workflow action failed';
+        await this.loadAutomationDraftReviewWorkflow();
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async submitAutomationDraftReviewGate() {
+      const workflow = this.draftReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationDraftWorkflowAction(() => submitAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+      }));
+    },
+    async completeAutomationDraftReviewGate() {
+      const workflow = this.draftReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationDraftWorkflowAction(() => completeAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+      }));
+    },
+    async editAutomationDraftReviewGate() {
+      const workflow = this.draftReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationDraftWorkflowAction(() => editAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+        draft_decisions: this.currentAutomationDraftDecisionSnapshot(),
+      }));
+    },
+    async approveAutomationDraftReviewGate(comment?: string) {
+      const workflow = this.draftReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationDraftWorkflowAction(() => approveAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async rejectAutomationDraftReviewGate(comment?: string) {
+      const workflow = this.draftReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationDraftWorkflowAction(() => rejectAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async continueAutomationDraftReviewGate() {
+      const workflow = this.draftReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      const approvalDecisionId = workflow?.approval_decision_id;
+      if (!workflow || !requirementReviewId || !approvalDecisionId) return false;
+      return this.runAutomationDraftWorkflowAction(() => continueAutomationDraftReviewWorkflow(
+        this.projectId,
+        requirementReviewId,
+        {
+          expected_version: workflow.lock_version,
+          approval_decision_id: approvalDecisionId,
+        },
+      ));
+    },
+    async approveAndContinueAutomationDraftReviewGate(comment?: string) {
+      const workflow = this.draftReviewWorkflow?.workflow;
+      const requirementReviewId = this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId) return false;
+      return this.runAutomationDraftWorkflowAction(() => approveAndContinueAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
     },
   },
 });

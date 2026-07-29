@@ -18,8 +18,16 @@ from backend.app.modules.automation.schemas import (
     AutomationDraftApproveRequest,
     AutomationDraftCreateRequest,
     AutomationDraftEditRequest,
+    AutomationDraftReviewWorkflowActionRequest,
+    AutomationDraftReviewWorkflowContinueRequest,
+    AutomationDraftReviewWorkflowEditRequest,
+    AutomationDraftReviewWorkflowRead,
     AutomationPlanApproveRequest,
     AutomationPlanCreateRequest,
+    AutomationPlanReviewWorkflowActionRequest,
+    AutomationPlanReviewWorkflowContinueRequest,
+    AutomationPlanReviewWorkflowEditRequest,
+    AutomationPlanReviewWorkflowRead,
     AutomationPlanUpdateRequest,
 )
 from backend.app.modules.cases.models import CaseGenerationTask, GeneratedCaseCandidate, TestCase
@@ -28,8 +36,12 @@ from backend.app.modules.extension import service as extension_service
 from backend.app.modules.knowledge import service as knowledge_service
 from backend.app.modules.projects.models import Project
 from backend.app.modules.prompt_skill import service as prompt_skill_service
-from backend.app.modules.requirements.models import Requirement
+from backend.app.modules.requirements.models import Requirement, RequirementReview
 from backend.app.modules.review_history.service import append_review_history
+from backend.app.modules.workflow_control import service as workflow_service
+from backend.app.modules.workflow_control.models import WorkflowHumanDecision
+from backend.app.modules.workflow_control.policy import ApprovalDecision, ControlledStage, GateState, TransitionAction, WorkflowKind
+from backend.app.modules.workflow_control.schemas import HumanApprovalCreate, HumanReviewCreate, WorkflowRevisionCreate
 from backend.app.workers.enqueue import FakeAIQueue, enqueue_ai_task
 from backend.app.workers.handlers.ai_task_handler import run_ai_task
 
@@ -88,6 +100,25 @@ class AutomationPlanNotApprovedError(Exception):
 
 class AutomationPlanSourceNotApprovedError(Exception):
     pass
+
+
+class AutomationPlanReviewWorkflowStageError(Exception):
+    code = "WORKFLOW_STAGE_MISMATCH"
+
+
+class AutomationPlanReviewGateError(Exception):
+    code = "AUTOMATION_PLAN_REVIEW_PLAN_APPROVAL_REQUIRED"
+
+
+class AutomationDraftReviewWorkflowStageError(Exception):
+    code = "WORKFLOW_STAGE_MISMATCH"
+
+
+class AutomationDraftReviewGateError(Exception):
+    code = "AUTOMATION_DRAFT_REVIEW_DRAFT_APPROVAL_REQUIRED"
+
+
+WorkflowPersistenceError = workflow_service.WorkflowPersistenceError
 
 
 class ContextArtifactNotFoundError(Exception):
@@ -307,6 +338,287 @@ def approve_automation_plan(
     return plan
 
 
+def get_automation_plan_review_workflow_detail(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> AutomationPlanReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    return _automation_plan_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def submit_automation_plan_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+) -> AutomationPlanReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _automation_plan_review_workflow(session, project_id, review.id)
+    workflow_service.submit_for_review(session, project_id, run.id, expected_version=data.expected_version)
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    return _automation_plan_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def complete_automation_plan_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+) -> AutomationPlanReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _automation_plan_review_workflow(session, project_id, review.id)
+    workflow_service.complete_human_review(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    return _automation_plan_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def edit_automation_plan_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowEditRequest,
+) -> AutomationPlanReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    payload = dict(snapshot.input_payload_json)
+    payload["plan_decisions"] = _json_safe(data.plan_decisions)
+    payload["generated_plan_ids"] = [
+        str(plan_id) for plan_id in _automation_plan_ids_for_requirement_review(session, project_id, review.id, payload)
+    ]
+    revised_run, _, _ = workflow_service.revise_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=WorkflowRevisionCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            input_payload=payload,
+        ),
+    )
+    workflow_service.submit_for_review(
+        session,
+        project_id,
+        revised_run.id,
+        expected_version=revised_run.lock_version,
+    )
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    return _automation_plan_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def decide_automation_plan_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+    *,
+    decision: ApprovalDecision,
+) -> AutomationPlanReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    if decision is ApprovalDecision.APPROVED:
+        _require_approved_automation_plan(session, project_id, snapshot.input_payload_json)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            decision=decision,
+        ),
+    )
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    return _automation_plan_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def continue_automation_plan_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowContinueRequest,
+) -> AutomationPlanReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    _require_approved_automation_plan(session, project_id, snapshot.input_payload_json)
+    workflow_service.advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        approval_decision_id=data.approval_decision_id,
+        target_stage=ControlledStage.AUTOMATION_DRAFT_REVIEW,
+        next_input_payload=_automation_draft_review_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = _review_workflow(session, project_id, review.id)
+    return _automation_plan_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def approve_and_continue_automation_plan_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+) -> AutomationPlanReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_plan_review_workflow(session, project_id, review.id)
+    _require_approved_automation_plan(session, project_id, snapshot.input_payload_json)
+    workflow_service.approve_and_advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+        target_stage=ControlledStage.AUTOMATION_DRAFT_REVIEW,
+        next_input_payload=_automation_draft_review_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = _review_workflow(session, project_id, review.id)
+    return _automation_plan_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def get_automation_draft_review_workflow_detail(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> AutomationDraftReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    return _automation_draft_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def submit_automation_draft_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+) -> AutomationDraftReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _automation_draft_review_workflow(session, project_id, review.id)
+    workflow_service.submit_for_review(session, project_id, run.id, expected_version=data.expected_version)
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    return _automation_draft_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def complete_automation_draft_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+) -> AutomationDraftReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _automation_draft_review_workflow(session, project_id, review.id)
+    workflow_service.complete_human_review(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    return _automation_draft_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def edit_automation_draft_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowEditRequest,
+) -> AutomationDraftReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    payload = dict(snapshot.input_payload_json)
+    payload["draft_decisions"] = _json_safe(data.draft_decisions)
+    payload["generated_draft_ids"] = [
+        str(draft_id) for draft_id in _automation_draft_ids_for_requirement_review(session, project_id, payload)
+    ]
+    revised_run, _, _ = workflow_service.revise_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=WorkflowRevisionCreate(reviewer=data.reviewer, comment=data.comment, input_payload=payload),
+    )
+    workflow_service.submit_for_review(session, project_id, revised_run.id, expected_version=revised_run.lock_version)
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    return _automation_draft_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def decide_automation_draft_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+    *,
+    decision: ApprovalDecision,
+) -> AutomationDraftReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    if decision is ApprovalDecision.APPROVED:
+        _require_approved_automation_draft(session, project_id, snapshot.input_payload_json)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(reviewer=data.reviewer, comment=data.comment, decision=decision),
+    )
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    return _automation_draft_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def continue_automation_draft_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowContinueRequest,
+) -> AutomationDraftReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    _require_approved_automation_draft(session, project_id, snapshot.input_payload_json)
+    workflow_service.advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        approval_decision_id=data.approval_decision_id,
+        target_stage=ControlledStage.EXECUTION_APPROVAL,
+        next_input_payload=_execution_approval_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = _review_workflow(session, project_id, review.id)
+    return _automation_draft_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def approve_and_continue_automation_draft_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+) -> AutomationDraftReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _automation_draft_review_workflow(session, project_id, review.id)
+    _require_approved_automation_draft(session, project_id, snapshot.input_payload_json)
+    workflow_service.approve_and_advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+        target_stage=ControlledStage.EXECUTION_APPROVAL,
+        next_input_payload=_execution_approval_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = _review_workflow(session, project_id, review.id)
+    return _automation_draft_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
 def create_automation_draft(
     session: Session,
     store: LocalArtifactStore,
@@ -493,6 +805,368 @@ def approve_automation_draft(session: Session, draft_id: uuid.UUID, data: Automa
     session.commit()
     session.refresh(draft)
     return draft
+
+
+def _review_workflow(session: Session, project_id: uuid.UUID, requirement_review_id: uuid.UUID):
+    return workflow_service.get_workflow_run_for_subject(
+        session,
+        project_id,
+        workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+        subject_ref=str(requirement_review_id),
+    )
+
+
+def _automation_plan_review_workflow(session: Session, project_id: uuid.UUID, requirement_review_id: uuid.UUID):
+    run, snapshot = _review_workflow(session, project_id, requirement_review_id)
+    if run.current_stage != ControlledStage.AUTOMATION_PLAN_REVIEW.value:
+        raise AutomationPlanReviewWorkflowStageError
+    return run, snapshot
+
+
+def _automation_draft_review_workflow(session: Session, project_id: uuid.UUID, requirement_review_id: uuid.UUID):
+    run, snapshot = _review_workflow(session, project_id, requirement_review_id)
+    if run.current_stage != ControlledStage.AUTOMATION_DRAFT_REVIEW.value:
+        raise AutomationDraftReviewWorkflowStageError
+    return run, snapshot
+
+
+def _require_requirement_review_in_project(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> RequirementReview:
+    row = session.execute(
+        select(RequirementReview, Requirement)
+        .join(Requirement, Requirement.id == RequirementReview.requirement_id)
+        .where(RequirementReview.id == requirement_review_id, Requirement.project_id == project_id),
+    ).one_or_none()
+    if row is None:
+        raise AutomationPlanReviewWorkflowStageError
+    return row[0]
+
+
+def _automation_plan_review_workflow_read(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    run,
+    snapshot,
+) -> AutomationPlanReviewWorkflowRead:
+    payload = snapshot.input_payload_json
+    latest_approval = session.scalar(
+        select(WorkflowHumanDecision)
+        .where(
+            WorkflowHumanDecision.project_id == run.project_id,
+            WorkflowHumanDecision.workflow_run_id == run.id,
+            WorkflowHumanDecision.snapshot_id == run.current_snapshot_id,
+            WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+            WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+        )
+        .order_by(WorkflowHumanDecision.created_at.desc(), WorkflowHumanDecision.id.desc()),
+    )
+    plan_ids = _automation_plan_ids_for_requirement_review(session, project_id, review_id, payload)
+    return AutomationPlanReviewWorkflowRead(
+        project_id=project_id,
+        requirement_review_id=review_id,
+        workflow={
+            "run_id": str(run.id),
+            "stage": run.current_stage,
+            "state": run.gate_state,
+            "lock_version": run.lock_version,
+            "snapshot_id": str(run.current_snapshot_id),
+            "approval_decision_id": str(latest_approval.id) if latest_approval else None,
+            "can_submit": run.gate_state == GateState.DRAFT.value,
+            "can_complete_review": run.gate_state == GateState.WAITING_REVIEW.value,
+            "can_edit": run.gate_state in {
+                GateState.WAITING_REVIEW.value,
+                GateState.WAITING_APPROVAL.value,
+                GateState.APPROVED.value,
+                GateState.REJECTED.value,
+            },
+            "can_approve": run.gate_state == GateState.WAITING_APPROVAL.value,
+            "can_continue": run.gate_state == GateState.APPROVED.value and latest_approval is not None,
+        },
+        source_case_review_snapshot_id=payload.get("source_case_review_snapshot_id"),
+        source_case_review_snapshot_hash=payload.get("source_case_review_snapshot_hash"),
+        source_test_plan_review_snapshot_id=payload.get("source_test_plan_review_snapshot_id"),
+        source_test_plan_review_snapshot_hash=payload.get("source_test_plan_review_snapshot_hash"),
+        approved_candidate_ids=list(payload.get("approved_candidate_ids", [])),
+        approved_test_case_ids=list(payload.get("approved_test_case_ids", [])),
+        generated_plan_ids=plan_ids,
+        plan_decisions=_automation_plan_decisions_for_ids(session, project_id, plan_ids),
+    )
+
+
+def _automation_plan_ids_for_requirement_review(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    payload: dict,
+) -> list[uuid.UUID]:
+    approved_test_case_ids = [
+        uuid.UUID(str(test_case_id))
+        for test_case_id in payload.get("approved_test_case_ids", [])
+        if str(test_case_id)
+    ]
+    if not approved_test_case_ids:
+        return []
+    rows = session.scalars(
+        select(AutomationPlan.id)
+        .where(
+            AutomationPlan.project_id == project_id,
+            AutomationPlan.requirement_review_id == requirement_review_id,
+            AutomationPlan.test_case_id.in_(approved_test_case_ids),
+        )
+        .order_by(AutomationPlan.created_at.asc(), AutomationPlan.id.asc()),
+    )
+    return list(rows)
+
+
+def _automation_plan_decisions_for_ids(
+    session: Session,
+    project_id: uuid.UUID,
+    plan_ids: list[uuid.UUID],
+) -> list[dict[str, object]]:
+    if not plan_ids:
+        return []
+    plans = list(
+        session.scalars(
+            select(AutomationPlan)
+            .where(
+                AutomationPlan.project_id == project_id,
+                AutomationPlan.id.in_(plan_ids),
+            )
+            .order_by(AutomationPlan.created_at.asc(), AutomationPlan.id.asc()),
+        ),
+    )
+    return [
+        {
+            "automation_plan_id": str(plan.id),
+            "test_case_id": str(plan.test_case_id),
+            "status": plan.status,
+            "target_framework": plan.target_framework,
+            "review_comment": plan.review_comment,
+        }
+        for plan in plans
+    ]
+
+
+def _require_approved_automation_plan(session: Session, project_id: uuid.UUID, payload: dict) -> None:
+    review_id = uuid.UUID(str(payload.get("requirement_review_id")))
+    plan_ids = _automation_plan_ids_for_requirement_review(session, project_id, review_id, payload)
+    if not plan_ids:
+        raise AutomationPlanReviewGateError
+    approved_plan_id = session.scalar(
+        select(AutomationPlan.id)
+        .where(
+            AutomationPlan.project_id == project_id,
+            AutomationPlan.id.in_(plan_ids),
+            AutomationPlan.status == "approved",
+        )
+        .limit(1),
+    )
+    if approved_plan_id is None:
+        raise AutomationPlanReviewGateError
+
+
+def _automation_draft_review_input_payload(session: Session, project_id: uuid.UUID, source_snapshot) -> dict[str, object]:
+    payload = source_snapshot.input_payload_json
+    review_id = uuid.UUID(str(payload.get("requirement_review_id")))
+    plan_ids = _automation_plan_ids_for_requirement_review(session, project_id, review_id, payload)
+    approved_plan_ids = list(
+        session.scalars(
+            select(AutomationPlan.id)
+            .where(
+                AutomationPlan.project_id == project_id,
+                AutomationPlan.id.in_(plan_ids),
+                AutomationPlan.status == "approved",
+            )
+            .order_by(AutomationPlan.created_at.asc(), AutomationPlan.id.asc()),
+        ),
+    )
+    approved_test_case_ids = list(
+        session.scalars(
+            select(AutomationPlan.test_case_id)
+            .where(
+                AutomationPlan.project_id == project_id,
+                AutomationPlan.id.in_(approved_plan_ids),
+            )
+            .order_by(AutomationPlan.created_at.asc(), AutomationPlan.id.asc()),
+        ),
+    )
+    return {
+        "requirement_id": payload.get("requirement_id"),
+        "requirement_review_id": payload.get("requirement_review_id"),
+        "source_automation_plan_review_snapshot_id": str(source_snapshot.id),
+        "source_automation_plan_review_snapshot_hash": source_snapshot.input_snapshot_hash,
+        "source_case_review_snapshot_id": payload.get("source_case_review_snapshot_id"),
+        "source_case_review_snapshot_hash": payload.get("source_case_review_snapshot_hash"),
+        "source_test_plan_review_snapshot_id": payload.get("source_test_plan_review_snapshot_id"),
+        "source_test_plan_review_snapshot_hash": payload.get("source_test_plan_review_snapshot_hash"),
+        "approved_candidate_ids": list(payload.get("approved_candidate_ids", [])),
+        "approved_test_case_ids": [str(test_case_id) for test_case_id in approved_test_case_ids],
+        "approved_automation_plan_ids": [str(plan_id) for plan_id in approved_plan_ids],
+        "plan_decisions": _automation_plan_decisions_for_ids(session, project_id, plan_ids),
+    }
+
+
+def _automation_draft_review_workflow_read(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    run,
+    snapshot,
+) -> AutomationDraftReviewWorkflowRead:
+    payload = snapshot.input_payload_json
+    latest_approval = session.scalar(
+        select(WorkflowHumanDecision)
+        .where(
+            WorkflowHumanDecision.project_id == run.project_id,
+            WorkflowHumanDecision.workflow_run_id == run.id,
+            WorkflowHumanDecision.snapshot_id == run.current_snapshot_id,
+            WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+            WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+        )
+        .order_by(WorkflowHumanDecision.created_at.desc(), WorkflowHumanDecision.id.desc()),
+    )
+    draft_ids = _automation_draft_ids_for_requirement_review(session, project_id, payload)
+    return AutomationDraftReviewWorkflowRead(
+        project_id=project_id,
+        requirement_review_id=review_id,
+        workflow={
+            "run_id": str(run.id),
+            "stage": run.current_stage,
+            "state": run.gate_state,
+            "lock_version": run.lock_version,
+            "snapshot_id": str(run.current_snapshot_id),
+            "approval_decision_id": str(latest_approval.id) if latest_approval else None,
+            "can_submit": run.gate_state == GateState.DRAFT.value,
+            "can_complete_review": run.gate_state == GateState.WAITING_REVIEW.value,
+            "can_edit": run.gate_state in {
+                GateState.WAITING_REVIEW.value,
+                GateState.WAITING_APPROVAL.value,
+                GateState.APPROVED.value,
+                GateState.REJECTED.value,
+            },
+            "can_approve": run.gate_state == GateState.WAITING_APPROVAL.value,
+            "can_continue": run.gate_state == GateState.APPROVED.value and latest_approval is not None,
+        },
+        source_automation_plan_review_snapshot_id=payload.get("source_automation_plan_review_snapshot_id"),
+        source_automation_plan_review_snapshot_hash=payload.get("source_automation_plan_review_snapshot_hash"),
+        source_case_review_snapshot_id=payload.get("source_case_review_snapshot_id"),
+        source_case_review_snapshot_hash=payload.get("source_case_review_snapshot_hash"),
+        approved_automation_plan_ids=list(payload.get("approved_automation_plan_ids", [])),
+        approved_test_case_ids=list(payload.get("approved_test_case_ids", [])),
+        generated_draft_ids=draft_ids,
+        draft_decisions=_automation_draft_decisions_for_ids(session, project_id, draft_ids),
+    )
+
+
+def _automation_draft_ids_for_requirement_review(
+    session: Session,
+    project_id: uuid.UUID,
+    payload: dict,
+) -> list[uuid.UUID]:
+    approved_plan_ids = [
+        uuid.UUID(str(plan_id))
+        for plan_id in payload.get("approved_automation_plan_ids", [])
+        if str(plan_id)
+    ]
+    if not approved_plan_ids:
+        return []
+    rows = session.scalars(
+        select(AutomationDraft.id)
+        .where(
+            AutomationDraft.project_id == project_id,
+            AutomationDraft.automation_plan_id.in_(approved_plan_ids),
+        )
+        .order_by(AutomationDraft.created_at.asc(), AutomationDraft.id.asc()),
+    )
+    return list(rows)
+
+
+def _automation_draft_decisions_for_ids(
+    session: Session,
+    project_id: uuid.UUID,
+    draft_ids: list[uuid.UUID],
+) -> list[dict[str, object]]:
+    if not draft_ids:
+        return []
+    drafts = list(
+        session.scalars(
+            select(AutomationDraft)
+            .where(AutomationDraft.project_id == project_id, AutomationDraft.id.in_(draft_ids))
+            .order_by(AutomationDraft.created_at.asc(), AutomationDraft.id.asc()),
+        ),
+    )
+    return [
+        {
+            "automation_draft_id": str(draft.id),
+            "automation_plan_id": str(draft.automation_plan_id) if draft.automation_plan_id else None,
+            "test_case_id": str(draft.test_case_id) if draft.test_case_id else None,
+            "status": draft.status,
+            "target_framework": draft.target_framework,
+            "review_comment": draft.review_comment,
+        }
+        for draft in drafts
+    ]
+
+
+def _require_approved_automation_draft(session: Session, project_id: uuid.UUID, payload: dict) -> None:
+    draft_ids = _automation_draft_ids_for_requirement_review(session, project_id, payload)
+    if not draft_ids:
+        raise AutomationDraftReviewGateError
+    approved_draft_id = session.scalar(
+        select(AutomationDraft.id)
+        .where(
+            AutomationDraft.project_id == project_id,
+            AutomationDraft.id.in_(draft_ids),
+            AutomationDraft.status == "approved",
+        )
+        .limit(1),
+    )
+    if approved_draft_id is None:
+        raise AutomationDraftReviewGateError
+
+
+def _execution_approval_input_payload(session: Session, project_id: uuid.UUID, source_snapshot) -> dict[str, object]:
+    payload = source_snapshot.input_payload_json
+    draft_ids = _automation_draft_ids_for_requirement_review(session, project_id, payload)
+    approved_draft_ids = list(
+        session.scalars(
+            select(AutomationDraft.id)
+            .where(
+                AutomationDraft.project_id == project_id,
+                AutomationDraft.id.in_(draft_ids),
+                AutomationDraft.status == "approved",
+            )
+            .order_by(AutomationDraft.created_at.asc(), AutomationDraft.id.asc()),
+        ),
+    )
+    return {
+        "requirement_id": payload.get("requirement_id"),
+        "requirement_review_id": payload.get("requirement_review_id"),
+        "source_automation_draft_review_snapshot_id": str(source_snapshot.id),
+        "source_automation_draft_review_snapshot_hash": source_snapshot.input_snapshot_hash,
+        "source_automation_plan_review_snapshot_id": payload.get("source_automation_plan_review_snapshot_id"),
+        "source_automation_plan_review_snapshot_hash": payload.get("source_automation_plan_review_snapshot_hash"),
+        "source_case_review_snapshot_id": payload.get("source_case_review_snapshot_id"),
+        "source_case_review_snapshot_hash": payload.get("source_case_review_snapshot_hash"),
+        "approved_automation_plan_ids": list(payload.get("approved_automation_plan_ids", [])),
+        "approved_test_case_ids": list(payload.get("approved_test_case_ids", [])),
+        "approved_automation_draft_ids": [str(draft_id) for draft_id in approved_draft_ids],
+        "draft_decisions": _automation_draft_decisions_for_ids(session, project_id, draft_ids),
+    }
+
+
+def _json_safe(value):
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    return value
 
 
 def validate_automation_draft_approval(draft: AutomationDraft) -> None:

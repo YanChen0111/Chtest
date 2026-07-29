@@ -15,15 +15,24 @@ from backend.app.modules.automation.schemas import (
     AutomationDraftEditRequest,
     AutomationDraftRead,
     AutomationDraftReviewRead,
+    AutomationDraftReviewWorkflowActionRequest,
+    AutomationDraftReviewWorkflowContinueRequest,
+    AutomationDraftReviewWorkflowEditRequest,
+    AutomationDraftReviewWorkflowRead,
     AutomationPlanApproveRequest,
     AutomationPlanCreateRequest,
     AutomationPlanGenerateDraftRequest,
     AutomationPlanRead,
     AutomationPlanReviewRead,
+    AutomationPlanReviewWorkflowActionRequest,
+    AutomationPlanReviewWorkflowContinueRequest,
+    AutomationPlanReviewWorkflowEditRequest,
+    AutomationPlanReviewWorkflowRead,
     AutomationPlanUpdateRequest,
 )
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill import service as prompt_skill_service
+from backend.app.modules.workflow_control.policy import ApprovalDecision, TransitionPolicyError
 
 
 router = APIRouter(tags=["automation"])
@@ -61,6 +70,19 @@ def conflict(error_code: str, message: str) -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_409_CONFLICT,
         detail={"error_code": error_code, "message": message, "details": {}},
+    )
+
+
+def workflow_error(exc: Exception) -> HTTPException:
+    error_code = getattr(exc, "code", exc.__class__.__name__.replace("Error", "").upper())
+    status_code = (
+        status.HTTP_404_NOT_FOUND
+        if error_code in {"WORKFLOW_RUN_NOT_FOUND", "WORKFLOW_PROJECT_NOT_FOUND"}
+        else status.HTTP_409_CONFLICT
+    )
+    return HTTPException(
+        status_code=status_code,
+        detail={"error_code": error_code, "message": "Workflow action was rejected.", "details": {}},
     )
 
 
@@ -130,6 +152,185 @@ def approve_automation_plan(
     except service.AutomationPlanInvalidActionError as exc:
         raise bad_request("AUTOMATION_PLAN_INVALID_ACTION", "Automation plan action is invalid.") from exc
     return AutomationPlanReviewRead(automation_plan_id=plan.id, status=plan.status)
+
+
+@router.get(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-plan-review",
+    response_model=AutomationPlanReviewWorkflowRead,
+)
+def read_automation_plan_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> AutomationPlanReviewWorkflowRead:
+    try:
+        return service.get_automation_plan_review_workflow_detail(session, project_id, requirement_review_id)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationPlanReviewWorkflowStageError,
+        service.AutomationPlanReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-plan-review/submit",
+    response_model=AutomationPlanReviewWorkflowRead,
+)
+def submit_automation_plan_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationPlanReviewWorkflowRead:
+    try:
+        return service.submit_automation_plan_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationPlanReviewWorkflowStageError,
+        service.AutomationPlanReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-plan-review/complete-review",
+    response_model=AutomationPlanReviewWorkflowRead,
+)
+def complete_automation_plan_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationPlanReviewWorkflowRead:
+    try:
+        return service.complete_automation_plan_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationPlanReviewWorkflowStageError,
+        service.AutomationPlanReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-plan-review/edit",
+    response_model=AutomationPlanReviewWorkflowRead,
+)
+def edit_automation_plan_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowEditRequest,
+    session: Session = Depends(get_session),
+) -> AutomationPlanReviewWorkflowRead:
+    try:
+        return service.edit_automation_plan_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationPlanReviewWorkflowStageError,
+        service.AutomationPlanReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-plan-review/approve",
+    response_model=AutomationPlanReviewWorkflowRead,
+)
+def approve_automation_plan_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationPlanReviewWorkflowRead:
+    try:
+        return service.decide_automation_plan_review_workflow(
+            session,
+            project_id,
+            requirement_review_id,
+            data,
+            decision=ApprovalDecision.APPROVED,
+        )
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationPlanReviewWorkflowStageError,
+        service.AutomationPlanReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-plan-review/reject",
+    response_model=AutomationPlanReviewWorkflowRead,
+)
+def reject_automation_plan_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationPlanReviewWorkflowRead:
+    try:
+        return service.decide_automation_plan_review_workflow(
+            session,
+            project_id,
+            requirement_review_id,
+            data,
+            decision=ApprovalDecision.REJECTED,
+        )
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationPlanReviewWorkflowStageError,
+        service.AutomationPlanReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-plan-review/continue",
+    response_model=AutomationPlanReviewWorkflowRead,
+)
+def continue_automation_plan_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowContinueRequest,
+    session: Session = Depends(get_session),
+) -> AutomationPlanReviewWorkflowRead:
+    try:
+        return service.continue_automation_plan_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationPlanReviewWorkflowStageError,
+        service.AutomationPlanReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-plan-review/approve-and-continue",
+    response_model=AutomationPlanReviewWorkflowRead,
+)
+def approve_and_continue_automation_plan_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationPlanReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationPlanReviewWorkflowRead:
+    try:
+        return service.approve_and_continue_automation_plan_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationPlanReviewWorkflowStageError,
+        service.AutomationPlanReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
 
 
 @router.post(
@@ -270,6 +471,185 @@ def approve_automation_draft(
             "Automation draft must contain non-placeholder executable test code before approval.",
         ) from exc
     return AutomationDraftReviewRead(automation_draft_id=draft.id, status=draft.status)
+
+
+@router.get(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-draft-review",
+    response_model=AutomationDraftReviewWorkflowRead,
+)
+def read_automation_draft_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> AutomationDraftReviewWorkflowRead:
+    try:
+        return service.get_automation_draft_review_workflow_detail(session, project_id, requirement_review_id)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationDraftReviewWorkflowStageError,
+        service.AutomationDraftReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-draft-review/submit",
+    response_model=AutomationDraftReviewWorkflowRead,
+)
+def submit_automation_draft_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationDraftReviewWorkflowRead:
+    try:
+        return service.submit_automation_draft_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationDraftReviewWorkflowStageError,
+        service.AutomationDraftReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-draft-review/complete-review",
+    response_model=AutomationDraftReviewWorkflowRead,
+)
+def complete_automation_draft_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationDraftReviewWorkflowRead:
+    try:
+        return service.complete_automation_draft_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationDraftReviewWorkflowStageError,
+        service.AutomationDraftReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-draft-review/edit",
+    response_model=AutomationDraftReviewWorkflowRead,
+)
+def edit_automation_draft_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowEditRequest,
+    session: Session = Depends(get_session),
+) -> AutomationDraftReviewWorkflowRead:
+    try:
+        return service.edit_automation_draft_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationDraftReviewWorkflowStageError,
+        service.AutomationDraftReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-draft-review/approve",
+    response_model=AutomationDraftReviewWorkflowRead,
+)
+def approve_automation_draft_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationDraftReviewWorkflowRead:
+    try:
+        return service.decide_automation_draft_review_workflow(
+            session,
+            project_id,
+            requirement_review_id,
+            data,
+            decision=ApprovalDecision.APPROVED,
+        )
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationDraftReviewWorkflowStageError,
+        service.AutomationDraftReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-draft-review/reject",
+    response_model=AutomationDraftReviewWorkflowRead,
+)
+def reject_automation_draft_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationDraftReviewWorkflowRead:
+    try:
+        return service.decide_automation_draft_review_workflow(
+            session,
+            project_id,
+            requirement_review_id,
+            data,
+            decision=ApprovalDecision.REJECTED,
+        )
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationDraftReviewWorkflowStageError,
+        service.AutomationDraftReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-draft-review/continue",
+    response_model=AutomationDraftReviewWorkflowRead,
+)
+def continue_automation_draft_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowContinueRequest,
+    session: Session = Depends(get_session),
+) -> AutomationDraftReviewWorkflowRead:
+    try:
+        return service.continue_automation_draft_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationDraftReviewWorkflowStageError,
+        service.AutomationDraftReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/automation-draft-review/approve-and-continue",
+    response_model=AutomationDraftReviewWorkflowRead,
+)
+def approve_and_continue_automation_draft_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: AutomationDraftReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> AutomationDraftReviewWorkflowRead:
+    try:
+        return service.approve_and_continue_automation_draft_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.WorkflowPersistenceError,
+        service.AutomationDraftReviewWorkflowStageError,
+        service.AutomationDraftReviewGateError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
 
 
 def automation_plan_read(plan) -> AutomationPlanRead:

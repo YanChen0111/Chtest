@@ -20,6 +20,7 @@ export interface LatestRequirementReviewContext {
 
 export interface LatestAutomationDraftContext {
   readonly projectId: string;
+  readonly requirementReviewId?: string | null;
   readonly testCaseId: string | null;
   readonly automationDraftId: string;
   readonly status: string;

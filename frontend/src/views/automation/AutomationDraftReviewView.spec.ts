@@ -785,4 +785,308 @@ describe('AutomationDraftReviewView', () => {
       expect.objectContaining({ method: 'POST' }),
     );
   });
+
+  it('renders the persisted AutomationPlanReview gate and advances it with project-scoped actions', async () => {
+    const testCaseId = '00000000-0000-0000-0000-000000000955';
+    const requirementReviewId = '00000000-0000-0000-0000-000000000611';
+    const planId = '00000000-0000-0000-0000-000000000a01';
+    let workflowActionBody: unknown = null;
+    window.localStorage.setItem(
+      'chtest.latestApprovedTestCase',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        testCaseId,
+      }),
+    );
+    const workflowPayload = (state: string, stage = 'automation_plan_review') => ({
+      project_id: '00000000-0000-0000-0000-000000000101',
+      requirement_review_id: requirementReviewId,
+      workflow: {
+        run_id: '00000000-0000-0000-0000-000000000b01',
+        stage,
+        state,
+        lock_version: 4,
+        snapshot_id: '00000000-0000-0000-0000-000000000b02',
+        approval_decision_id: null,
+        can_submit: false,
+        can_complete_review: false,
+        can_edit: true,
+        can_approve: true,
+        can_continue: false,
+      },
+      source_case_review_snapshot_id: '00000000-0000-0000-0000-000000000c01',
+      source_case_review_snapshot_hash: 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+      source_test_plan_review_snapshot_id: '00000000-0000-0000-0000-000000000d01',
+      source_test_plan_review_snapshot_hash: 'sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
+      approved_candidate_ids: ['00000000-0000-0000-0000-000000000801'],
+      approved_test_case_ids: [testCaseId],
+      generated_plan_ids: [planId],
+      plan_decisions: [{ automation_plan_id: planId, status: 'approved' }],
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/test-cases?project_id=')) {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: testCaseId,
+                project_id: '00000000-0000-0000-0000-000000000101',
+                module_id: null,
+                source_candidate_id: '00000000-0000-0000-0000-000000000801',
+                title: 'Expired coupon cannot submit order',
+                priority: 'P0',
+                test_type: 'functional',
+                precondition: null,
+                steps: ['Submit order'],
+                expected_results: ['Submit is blocked'],
+                input_data: {},
+                tags: ['reviewed'],
+                source_type: 'ai',
+                review_status: 'approved',
+                status: 'active',
+              },
+            ],
+            total: 1,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/settings')) {
+        return new Response(
+          JSON.stringify({
+            project: {
+              id: '00000000-0000-0000-0000-000000000101',
+              name: 'Chtest',
+              default_language: 'zh-CN',
+              default_test_type: 'functional',
+            },
+            modules: [],
+            repositories: [],
+            environments: [],
+            test_commands: [],
+            tool_definitions: [],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/automation/plans') && init?.method === 'POST') {
+        return new Response(
+          JSON.stringify({
+            id: planId,
+            project_id: '00000000-0000-0000-0000-000000000101',
+            test_case_id: testCaseId,
+            requirement_id: '00000000-0000-0000-0000-000000000411',
+            requirement_review_id: requirementReviewId,
+            source_candidate_id: '00000000-0000-0000-0000-000000000801',
+            ai_task_id: '00000000-0000-0000-0000-000000000a02',
+            knowledge_retrieval_artifact_id: null,
+            target_framework: 'pytest',
+            title: 'Automate expired coupon checkout',
+            plan: { source: 'reviewed_test_case' },
+            execution_steps: ['Open checkout', 'Submit expired coupon'],
+            test_data: {},
+            dependency_notes: 'Use project fixtures.',
+            risk_notes: 'Keep coupon state deterministic.',
+            used_context_artifact_ids: [],
+            status: 'approved',
+            review_comment: 'Plan is feasible.',
+          }),
+          { status: 202, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith(`/projects/00000000-0000-0000-0000-000000000101/requirement-reviews/${requirementReviewId}/automation-plan-review`)) {
+        return new Response(JSON.stringify(workflowPayload('waiting_approval')), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (
+        url.endsWith(`/projects/00000000-0000-0000-0000-000000000101/requirement-reviews/${requirementReviewId}/automation-plan-review/approve-and-continue`) &&
+        init?.method === 'POST'
+      ) {
+        workflowActionBody = JSON.parse(String(init.body));
+        return new Response(JSON.stringify(workflowPayload('draft', 'automation_draft_review')), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/review-history?')) {
+        return new Response(JSON.stringify({ items: [], total: 0 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(AutomationDraftReviewView, {
+      global: {
+        plugins: [createPinia(), ArcoVue],
+      },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await wrapper.find('[data-test="generate-plan"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('[data-test="automation-plan-workflow-panel"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('AutomationPlanReview gate');
+    expect(wrapper.text()).toContain('automation_plan_review');
+
+    await wrapper.find('[data-test="automation-plan-review-approve-continue"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(workflowActionBody).toEqual(
+      expect.objectContaining({
+        expected_version: 4,
+        comment: 'Automation plan review approved and advanced.',
+      }),
+    );
+    expect(wrapper.text()).toContain('automation_draft_review');
+  });
+
+  it('renders the persisted AutomationDraftReview gate and advances it with project-scoped actions', async () => {
+    const requirementReviewId = '00000000-0000-0000-0000-000000000611';
+    const draftId = '00000000-0000-0000-0000-000000000d01';
+    let workflowActionBody: unknown = null;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (
+        url.endsWith(`/projects/00000000-0000-0000-0000-000000000101/requirement-reviews/${requirementReviewId}/automation-draft-review/approve-and-continue`) &&
+        init?.method === 'POST'
+      ) {
+        workflowActionBody = JSON.parse(String(init.body));
+        return new Response(
+          JSON.stringify({
+            project_id: '00000000-0000-0000-0000-000000000101',
+            requirement_review_id: requirementReviewId,
+            workflow: {
+              run_id: '00000000-0000-0000-0000-000000000e01',
+              stage: 'execution_approval',
+              state: 'draft',
+              lock_version: 8,
+              snapshot_id: '00000000-0000-0000-0000-000000000e03',
+              approval_decision_id: null,
+              can_submit: false,
+              can_complete_review: false,
+              can_edit: false,
+              can_approve: false,
+              can_continue: false,
+            },
+            source_automation_plan_review_snapshot_id: '00000000-0000-0000-0000-000000000b01',
+            source_automation_plan_review_snapshot_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+            source_case_review_snapshot_id: '00000000-0000-0000-0000-000000000c01',
+            source_case_review_snapshot_hash: 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+            approved_automation_plan_ids: ['00000000-0000-0000-0000-000000000a01'],
+            approved_test_case_ids: ['00000000-0000-0000-0000-000000000955'],
+            generated_draft_ids: [draftId],
+            draft_decisions: [{ automation_draft_id: draftId, status: 'approved' }],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pinia = createPinia();
+    const wrapper = mount(AutomationDraftReviewView, {
+      global: {
+        plugins: [pinia, ArcoVue],
+      },
+    });
+    const store = useAutomationStore();
+    store.plan = {
+      id: '00000000-0000-0000-0000-000000000a01',
+      project_id: '00000000-0000-0000-0000-000000000101',
+      test_case_id: '00000000-0000-0000-0000-000000000955',
+      requirement_id: '00000000-0000-0000-0000-000000000411',
+      requirement_review_id: requirementReviewId,
+      source_candidate_id: '00000000-0000-0000-0000-000000000801',
+      ai_task_id: '00000000-0000-0000-0000-000000000a02',
+      knowledge_retrieval_artifact_id: null,
+      target_framework: 'pytest',
+      title: 'Automate expired coupon checkout',
+      plan: {},
+      execution_steps: ['Run pytest'],
+      test_data: {},
+      dependency_notes: null,
+      risk_notes: null,
+      used_context_artifact_ids: [],
+      status: 'draft_generated',
+      review_comment: null,
+    };
+    store.draft = {
+      id: draftId,
+      project_id: '00000000-0000-0000-0000-000000000101',
+      test_case_id: '00000000-0000-0000-0000-000000000955',
+      requirement_id: '00000000-0000-0000-0000-000000000411',
+      ai_task_id: '00000000-0000-0000-0000-000000000d02',
+      automation_plan_id: '00000000-0000-0000-0000-000000000a01',
+      target_framework: 'pytest',
+      title: 'Automated expired coupon checkout',
+      draft_code: 'def test_expired_coupon():\n    assert checkout_expired_coupon() == "blocked"\n',
+      draft_language: 'python',
+      suggested_file_path: 'tests/test_expired_coupon.py',
+      execution_notes: 'Uses project checkout fixture.',
+      risk_notes: 'Keep coupon state deterministic.',
+      execution_strategy: 'artifact_runtime_copy',
+      approval_required: true,
+      status: 'approved',
+      review_comment: null,
+      runtime_artifact_id: null,
+      promoted_artifact_id: null,
+      quality_gate: {
+        status: 'ready_for_approval',
+        execution_evidence_level: 'reviewed_candidate',
+        approval_blocking_reasons: [],
+        evidence_warnings: [],
+      },
+    };
+    store.draftReviewWorkflow = {
+      project_id: '00000000-0000-0000-0000-000000000101',
+      requirement_review_id: requirementReviewId,
+      workflow: {
+        run_id: '00000000-0000-0000-0000-000000000e01',
+        stage: 'automation_draft_review',
+        state: 'waiting_approval',
+        lock_version: 7,
+        snapshot_id: '00000000-0000-0000-0000-000000000e02',
+        approval_decision_id: null,
+        can_submit: false,
+        can_complete_review: false,
+        can_edit: true,
+        can_approve: true,
+        can_continue: false,
+      },
+      source_automation_plan_review_snapshot_id: '00000000-0000-0000-0000-000000000b01',
+      source_automation_plan_review_snapshot_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      source_case_review_snapshot_id: '00000000-0000-0000-0000-000000000c01',
+      source_case_review_snapshot_hash: 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+      approved_automation_plan_ids: ['00000000-0000-0000-0000-000000000a01'],
+      approved_test_case_ids: ['00000000-0000-0000-0000-000000000955'],
+      generated_draft_ids: [draftId],
+      draft_decisions: [{ automation_draft_id: draftId, status: 'approved' }],
+    };
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('[data-test="automation-draft-workflow-panel"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('AutomationDraftReview gate');
+    await wrapper.find('[data-test="automation-draft-review-approve-continue"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(workflowActionBody).toEqual(
+      expect.objectContaining({
+        expected_version: 7,
+        comment: 'Automation draft review approved and advanced.',
+      }),
+    );
+    expect(wrapper.text()).toContain('execution_approval');
+  });
 });

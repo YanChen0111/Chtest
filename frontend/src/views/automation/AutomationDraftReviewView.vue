@@ -7,7 +7,7 @@
         <p>从已评审用例生成可审查的自动化草稿，审批后在同一页面按自动化类型启动执行并查看证据。</p>
       </div>
       <a-space>
-        <a-tag color="blue">模拟 AutomationDraftAgent</a-tag>
+        <a-tag color="blue">AI 自动化草稿</a-tag>
         <a-tag color="green">草稿评审 + 执行证据</a-tag>
       </a-space>
     </div>
@@ -67,7 +67,10 @@
               <a-option value="playwright">Playwright</a-option>
             </a-select>
           </label>
-          <a-checkbox v-model="form.useKnowledge">结合 RAG 知识库</a-checkbox>
+          <div class="automation-knowledge-note" data-test="automation-knowledge-note">
+            <strong>自动使用需求与用例知识</strong>
+            <span>系统会把当前用例关联的风险和已审核知识带入自动化方案，不需要额外选择。</span>
+          </div>
           <a-button
             data-test="generate-plan"
             html-type="button"
@@ -86,7 +89,7 @@
             <a-descriptions-item label="标题">{{ store.plan.title }}</a-descriptions-item>
             <a-descriptions-item label="状态">{{ store.plan.status }}</a-descriptions-item>
             <a-descriptions-item label="知识证据">
-              {{ store.plan.knowledge_retrieval_artifact_id ?? '无命中证据' }}
+              {{ store.plan.knowledge_retrieval_artifact_id ? '已记录，可追溯' : '未命中可用证据' }}
             </a-descriptions-item>
             <a-descriptions-item label="依赖说明">{{ store.plan.dependency_notes ?? '无' }}</a-descriptions-item>
             <a-descriptions-item label="风险说明">{{ store.plan.risk_notes ?? '无' }}</a-descriptions-item>
@@ -108,6 +111,50 @@
               生成草稿
             </a-button>
           </a-space>
+          <section
+            v-if="store.planReviewWorkflow"
+            class="automation-plan-workflow-panel"
+            data-test="automation-plan-workflow-panel"
+          >
+            <div class="automation-plan-workflow-heading">
+              <strong>AutomationPlanReview gate</strong>
+              <a-tag color="blue">{{ automationPlanReviewStageLabel }}</a-tag>
+              <a-tag :color="store.planReviewWorkflow.workflow.state === 'approved' ? 'green' : 'orange'">
+                {{ automationPlanReviewStateLabel }}
+              </a-tag>
+            </div>
+            <div class="automation-plan-workflow-body">
+              <span>snapshot</span>
+              <strong>{{ store.planReviewWorkflow.workflow.snapshot_id }}</strong>
+              <span>plans</span>
+              <strong>{{ store.planReviewWorkflow.generated_plan_ids.length }}</strong>
+              <span>approval</span>
+              <strong>{{ store.planReviewWorkflow.workflow.approval_decision_id ?? 'none' }}</strong>
+            </div>
+            <a-space wrap>
+              <a-button data-test="automation-plan-review-submit" :disabled="!store.planReviewWorkflow.workflow.can_submit" :loading="store.loading" @click="runAutomationPlanReviewAction('submit')">
+                Submit
+              </a-button>
+              <a-button data-test="automation-plan-review-complete" :disabled="!store.planReviewWorkflow.workflow.can_complete_review" :loading="store.loading" @click="runAutomationPlanReviewAction('complete')">
+                Complete review
+              </a-button>
+              <a-button data-test="automation-plan-review-edit" :disabled="!store.planReviewWorkflow.workflow.can_edit" :loading="store.loading" @click="runAutomationPlanReviewAction('edit')">
+                Save snapshot
+              </a-button>
+              <a-button data-test="automation-plan-review-approve" type="primary" :disabled="!store.planReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationPlanReviewAction('approve')">
+                Approve
+              </a-button>
+              <a-button data-test="automation-plan-review-reject" status="danger" :disabled="!store.planReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationPlanReviewAction('reject')">
+                Reject
+              </a-button>
+              <a-button data-test="automation-plan-review-approve-continue" type="primary" :disabled="!store.planReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationPlanReviewAction('approve-and-continue')">
+                Approve and continue
+              </a-button>
+              <a-button data-test="automation-plan-review-continue" :disabled="!store.planReviewWorkflow.workflow.can_continue" :loading="store.loading" @click="runAutomationPlanReviewAction('continue')">
+                Continue
+              </a-button>
+            </a-space>
+          </section>
           <div v-if="store.lastPlanReview" class="draft-result">
             <span>方案评审结果：{{ store.lastPlanReview.status }}</span>
             <strong>AutomationPlan：{{ store.lastPlanReview.automation_plan_id }}</strong>
@@ -181,6 +228,51 @@
               </a-button>
             </a-space>
 
+            <section
+              v-if="store.draftReviewWorkflow"
+              class="automation-plan-workflow-panel"
+              data-test="automation-draft-workflow-panel"
+            >
+              <div class="automation-plan-workflow-heading">
+                <strong>AutomationDraftReview gate</strong>
+                <a-tag color="blue">{{ automationDraftReviewStageLabel }}</a-tag>
+                <a-tag :color="store.draftReviewWorkflow.workflow.state === 'approved' ? 'green' : 'orange'">
+                  {{ automationDraftReviewStateLabel }}
+                </a-tag>
+              </div>
+              <div class="automation-plan-workflow-body">
+                <span>snapshot</span>
+                <strong>{{ store.draftReviewWorkflow.workflow.snapshot_id }}</strong>
+                <span>drafts</span>
+                <strong>{{ store.draftReviewWorkflow.generated_draft_ids.length }}</strong>
+                <span>approval</span>
+                <strong>{{ store.draftReviewWorkflow.workflow.approval_decision_id ?? 'none' }}</strong>
+              </div>
+              <a-space wrap>
+                <a-button data-test="automation-draft-review-submit" :disabled="!store.draftReviewWorkflow.workflow.can_submit" :loading="store.loading" @click="runAutomationDraftReviewAction('submit')">
+                  Submit
+                </a-button>
+                <a-button data-test="automation-draft-review-complete" :disabled="!store.draftReviewWorkflow.workflow.can_complete_review" :loading="store.loading" @click="runAutomationDraftReviewAction('complete')">
+                  Complete review
+                </a-button>
+                <a-button data-test="automation-draft-review-edit" :disabled="!store.draftReviewWorkflow.workflow.can_edit" :loading="store.loading" @click="runAutomationDraftReviewAction('edit')">
+                  Save snapshot
+                </a-button>
+                <a-button data-test="automation-draft-review-approve" type="primary" :disabled="!store.draftReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationDraftReviewAction('approve')">
+                  Approve
+                </a-button>
+                <a-button data-test="automation-draft-review-reject" status="danger" :disabled="!store.draftReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationDraftReviewAction('reject')">
+                  Reject
+                </a-button>
+                <a-button data-test="automation-draft-review-approve-continue" type="primary" :disabled="!store.draftReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationDraftReviewAction('approve-and-continue')">
+                  Approve and continue
+                </a-button>
+                <a-button data-test="automation-draft-review-continue" :disabled="!store.draftReviewWorkflow.workflow.can_continue" :loading="store.loading" @click="runAutomationDraftReviewAction('continue')">
+                  Continue
+                </a-button>
+              </a-space>
+            </section>
+
             <div v-if="store.lastReview" class="draft-result">
               <span>评审结果：{{ store.lastReview.status }}</span>
               <strong>AutomationDraft：{{ store.lastReview.automation_draft_id }}</strong>
@@ -225,14 +317,11 @@
               />
 
               <form class="automation-execution-form" @submit.prevent="startAutomationExecution">
-                <label>
-                  <span>项目 ID</span>
-                  <a-input :model-value="store.projectId" readonly />
-                </label>
-                <label v-if="selectedExecutionType.sourceMode === 'automation_draft'">
-                  <span>AutomationDraft ID</span>
-                  <a-input :model-value="store.draft.id" readonly />
-                </label>
+                <div v-if="selectedExecutionType.sourceMode === 'automation_draft'" class="automation-execution-source-summary">
+                  <span>执行来源</span>
+                  <strong>{{ store.draft.title }}</strong>
+                  <small>{{ store.draft.target_framework }} · 已批准草稿</small>
+                </div>
                 <label v-else>
                   <span>测试命令</span>
                   <a-select
@@ -443,7 +532,6 @@ const executionTypeOptions: readonly AutomationExecutionTypeOption[] = [
 const form = reactive({
   testCaseId: store.testCaseId,
   targetFramework: 'pytest',
-  useKnowledge: true,
 });
 const executionForm = reactive({
   executionType: 'pytest' as AutomationExecutionType,
@@ -451,6 +539,10 @@ const executionForm = reactive({
 });
 
 const canApprovePlan = computed(() => ['plan_generated', 'edited'].includes(store.plan?.status ?? ''));
+const automationPlanReviewStageLabel = computed(() => store.planReviewWorkflow?.workflow.stage ?? 'automation_plan_review');
+const automationPlanReviewStateLabel = computed(() => store.planReviewWorkflow?.workflow.state ?? 'draft');
+const automationDraftReviewStageLabel = computed(() => store.draftReviewWorkflow?.workflow.stage ?? 'automation_draft_review');
+const automationDraftReviewStateLabel = computed(() => store.draftReviewWorkflow?.workflow.state ?? 'draft');
 const selectedTestCase = computed(() => store.testCases.find((item) => item.id === form.testCaseId) ?? null);
 const draftQualityGate = computed(
   () =>
@@ -580,7 +672,7 @@ function submitPlan() {
   void store.createPlan({
     testCaseId: form.testCaseId,
     targetFramework: form.targetFramework,
-    useKnowledge: form.useKnowledge,
+    useKnowledge: true,
   });
 }
 
@@ -590,6 +682,46 @@ function approvePlan() {
 
 function generateDraftFromPlan() {
   void store.generateDraftFromPlan();
+}
+
+function runAutomationPlanReviewAction(
+  action: 'submit' | 'complete' | 'edit' | 'approve' | 'reject' | 'approve-and-continue' | 'continue',
+) {
+  if (action === 'submit') {
+    void store.submitAutomationPlanReviewGate();
+  } else if (action === 'complete') {
+    void store.completeAutomationPlanReviewGate();
+  } else if (action === 'edit') {
+    void store.editAutomationPlanReviewGate();
+  } else if (action === 'approve') {
+    void store.approveAutomationPlanReviewGate('Automation plan review approved.');
+  } else if (action === 'reject') {
+    void store.rejectAutomationPlanReviewGate('Automation plan review rejected.');
+  } else if (action === 'approve-and-continue') {
+    void store.approveAndContinueAutomationPlanReviewGate('Automation plan review approved and advanced.');
+  } else {
+    void store.continueAutomationPlanReviewGate();
+  }
+}
+
+function runAutomationDraftReviewAction(
+  action: 'submit' | 'complete' | 'edit' | 'approve' | 'reject' | 'approve-and-continue' | 'continue',
+) {
+  if (action === 'submit') {
+    void store.submitAutomationDraftReviewGate();
+  } else if (action === 'complete') {
+    void store.completeAutomationDraftReviewGate();
+  } else if (action === 'edit') {
+    void store.editAutomationDraftReviewGate();
+  } else if (action === 'approve') {
+    void store.approveAutomationDraftReviewGate('Automation draft review approved.');
+  } else if (action === 'reject') {
+    void store.rejectAutomationDraftReviewGate('Automation draft review rejected.');
+  } else if (action === 'approve-and-continue') {
+    void store.approveAndContinueAutomationDraftReviewGate('Automation draft review approved and advanced.');
+  } else {
+    void store.continueAutomationDraftReviewGate();
+  }
 }
 
 function editDraft() {
@@ -855,6 +987,29 @@ onMounted(async () => {
   font-size: 12px;
 }
 
+.automation-knowledge-note,
+.automation-execution-source-summary {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #b7ebc6;
+  border-radius: 8px;
+  background: #f3fff6;
+}
+
+.automation-knowledge-note strong,
+.automation-execution-source-summary strong {
+  color: #166534;
+}
+
+.automation-knowledge-note span,
+.automation-execution-source-summary span,
+.automation-execution-source-summary small {
+  color: #4d7c5b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .automation-plan-panel {
   display: grid;
   gap: 12px;
@@ -870,6 +1025,36 @@ onMounted(async () => {
   padding-left: 20px;
   color: #475569;
   line-height: 1.7;
+}
+
+.automation-plan-workflow-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.automation-plan-workflow-heading,
+.automation-plan-workflow-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.automation-plan-workflow-heading strong,
+.automation-plan-workflow-body strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.automation-plan-workflow-body span {
+  color: #667085;
+  font-size: 12px;
 }
 
 .draft-code-panel {
@@ -1038,6 +1223,10 @@ onMounted(async () => {
   min-width: 0;
   color: #344054;
   font-weight: 700;
+}
+
+.automation-execution-source-summary {
+  grid-column: 1 / -1;
 }
 
 .execution-actions {

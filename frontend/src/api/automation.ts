@@ -50,6 +50,47 @@ export interface AutomationPlanReviewRead {
   readonly status: string;
 }
 
+export interface AutomationPlanReviewWorkflowActionRequest {
+  readonly expected_version: number;
+  readonly reviewer?: string;
+  readonly comment?: string | null;
+}
+
+export interface AutomationPlanReviewWorkflowEditRequest extends AutomationPlanReviewWorkflowActionRequest {
+  readonly plan_decisions: Record<string, unknown>[];
+}
+
+export interface AutomationPlanReviewWorkflowContinueRequest {
+  readonly expected_version: number;
+  readonly approval_decision_id: string;
+}
+
+export interface AutomationPlanReviewWorkflowRead {
+  readonly project_id: string;
+  readonly requirement_review_id: string;
+  readonly workflow: {
+    readonly run_id: string;
+    readonly stage: string;
+    readonly state: string;
+    readonly lock_version: number;
+    readonly snapshot_id: string;
+    readonly approval_decision_id: string | null;
+    readonly can_submit: boolean;
+    readonly can_complete_review: boolean;
+    readonly can_edit: boolean;
+    readonly can_approve: boolean;
+    readonly can_continue: boolean;
+  };
+  readonly source_case_review_snapshot_id: string | null;
+  readonly source_case_review_snapshot_hash: string | null;
+  readonly source_test_plan_review_snapshot_id: string | null;
+  readonly source_test_plan_review_snapshot_hash: string | null;
+  readonly approved_candidate_ids: string[];
+  readonly approved_test_case_ids: string[];
+  readonly generated_plan_ids: string[];
+  readonly plan_decisions: Record<string, unknown>[];
+}
+
 export interface AutomationDraftCreateRead {
   readonly automation_draft_id: string;
   readonly ai_task_id: string;
@@ -99,6 +140,47 @@ export interface AutomationDraftReviewRead {
   readonly status: string;
 }
 
+export interface AutomationDraftReviewWorkflowActionRequest {
+  readonly expected_version: number;
+  readonly reviewer?: string;
+  readonly comment?: string | null;
+}
+
+export interface AutomationDraftReviewWorkflowEditRequest extends AutomationDraftReviewWorkflowActionRequest {
+  readonly draft_decisions: Record<string, unknown>[];
+}
+
+export interface AutomationDraftReviewWorkflowContinueRequest {
+  readonly expected_version: number;
+  readonly approval_decision_id: string;
+}
+
+export interface AutomationDraftReviewWorkflowRead {
+  readonly project_id: string;
+  readonly requirement_review_id: string;
+  readonly workflow: {
+    readonly run_id: string;
+    readonly stage: string;
+    readonly state: string;
+    readonly lock_version: number;
+    readonly snapshot_id: string;
+    readonly approval_decision_id: string | null;
+    readonly can_submit: boolean;
+    readonly can_complete_review: boolean;
+    readonly can_edit: boolean;
+    readonly can_approve: boolean;
+    readonly can_continue: boolean;
+  };
+  readonly source_automation_plan_review_snapshot_id: string | null;
+  readonly source_automation_plan_review_snapshot_hash: string | null;
+  readonly source_case_review_snapshot_id: string | null;
+  readonly source_case_review_snapshot_hash: string | null;
+  readonly approved_automation_plan_ids: string[];
+  readonly approved_test_case_ids: string[];
+  readonly generated_draft_ids: string[];
+  readonly draft_decisions: Record<string, unknown>[];
+}
+
 export async function createAutomationDraft(data: AutomationDraftCreateRequest): Promise<AutomationDraftCreateRead> {
   return apiClient.postJson<AutomationDraftCreateRead, AutomationDraftCreateRequest>('/automation/drafts', data);
 }
@@ -125,6 +207,92 @@ export async function generateAutomationDraftFromPlan(planId: string): Promise<A
   );
 }
 
+export async function getAutomationPlanReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+): Promise<AutomationPlanReviewWorkflowRead> {
+  return apiClient.getJson<AutomationPlanReviewWorkflowRead>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review`,
+  );
+}
+
+export async function submitAutomationPlanReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationPlanReviewWorkflowActionRequest,
+): Promise<AutomationPlanReviewWorkflowRead> {
+  return apiClient.postJson<AutomationPlanReviewWorkflowRead, AutomationPlanReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review/submit`,
+    data,
+  );
+}
+
+export async function completeAutomationPlanReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationPlanReviewWorkflowActionRequest,
+): Promise<AutomationPlanReviewWorkflowRead> {
+  return apiClient.postJson<AutomationPlanReviewWorkflowRead, AutomationPlanReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review/complete-review`,
+    data,
+  );
+}
+
+export async function editAutomationPlanReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationPlanReviewWorkflowEditRequest,
+): Promise<AutomationPlanReviewWorkflowRead> {
+  return apiClient.postJson<AutomationPlanReviewWorkflowRead, AutomationPlanReviewWorkflowEditRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review/edit`,
+    data,
+  );
+}
+
+export async function approveAutomationPlanReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationPlanReviewWorkflowActionRequest,
+): Promise<AutomationPlanReviewWorkflowRead> {
+  return apiClient.postJson<AutomationPlanReviewWorkflowRead, AutomationPlanReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review/approve`,
+    data,
+  );
+}
+
+export async function rejectAutomationPlanReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationPlanReviewWorkflowActionRequest,
+): Promise<AutomationPlanReviewWorkflowRead> {
+  return apiClient.postJson<AutomationPlanReviewWorkflowRead, AutomationPlanReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review/reject`,
+    data,
+  );
+}
+
+export async function continueAutomationPlanReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationPlanReviewWorkflowContinueRequest,
+): Promise<AutomationPlanReviewWorkflowRead> {
+  return apiClient.postJson<AutomationPlanReviewWorkflowRead, AutomationPlanReviewWorkflowContinueRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review/continue`,
+    data,
+  );
+}
+
+export async function approveAndContinueAutomationPlanReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationPlanReviewWorkflowActionRequest,
+): Promise<AutomationPlanReviewWorkflowRead> {
+  return apiClient.postJson<AutomationPlanReviewWorkflowRead, AutomationPlanReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review/approve-and-continue`,
+    data,
+  );
+}
+
 export async function getAutomationDraft(draftId: string): Promise<AutomationDraftRead> {
   return apiClient.getJson<AutomationDraftRead>(`/automation/drafts/${draftId}`);
 }
@@ -140,5 +308,91 @@ export async function approveAutomationDraft(draftId: string, reviewComment: str
   return apiClient.postJson<AutomationDraftReviewRead, { action: 'approve'; review_comment: string }>(
     `/automation/drafts/${draftId}/approve`,
     { action: 'approve', review_comment: reviewComment },
+  );
+}
+
+export async function getAutomationDraftReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+): Promise<AutomationDraftReviewWorkflowRead> {
+  return apiClient.getJson<AutomationDraftReviewWorkflowRead>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-draft-review`,
+  );
+}
+
+export async function submitAutomationDraftReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationDraftReviewWorkflowActionRequest,
+): Promise<AutomationDraftReviewWorkflowRead> {
+  return apiClient.postJson<AutomationDraftReviewWorkflowRead, AutomationDraftReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-draft-review/submit`,
+    data,
+  );
+}
+
+export async function completeAutomationDraftReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationDraftReviewWorkflowActionRequest,
+): Promise<AutomationDraftReviewWorkflowRead> {
+  return apiClient.postJson<AutomationDraftReviewWorkflowRead, AutomationDraftReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-draft-review/complete-review`,
+    data,
+  );
+}
+
+export async function editAutomationDraftReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationDraftReviewWorkflowEditRequest,
+): Promise<AutomationDraftReviewWorkflowRead> {
+  return apiClient.postJson<AutomationDraftReviewWorkflowRead, AutomationDraftReviewWorkflowEditRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-draft-review/edit`,
+    data,
+  );
+}
+
+export async function approveAutomationDraftReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationDraftReviewWorkflowActionRequest,
+): Promise<AutomationDraftReviewWorkflowRead> {
+  return apiClient.postJson<AutomationDraftReviewWorkflowRead, AutomationDraftReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-draft-review/approve`,
+    data,
+  );
+}
+
+export async function rejectAutomationDraftReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationDraftReviewWorkflowActionRequest,
+): Promise<AutomationDraftReviewWorkflowRead> {
+  return apiClient.postJson<AutomationDraftReviewWorkflowRead, AutomationDraftReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-draft-review/reject`,
+    data,
+  );
+}
+
+export async function continueAutomationDraftReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationDraftReviewWorkflowContinueRequest,
+): Promise<AutomationDraftReviewWorkflowRead> {
+  return apiClient.postJson<AutomationDraftReviewWorkflowRead, AutomationDraftReviewWorkflowContinueRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-draft-review/continue`,
+    data,
+  );
+}
+
+export async function approveAndContinueAutomationDraftReviewWorkflow(
+  projectId: string,
+  requirementReviewId: string,
+  data: AutomationDraftReviewWorkflowActionRequest,
+): Promise<AutomationDraftReviewWorkflowRead> {
+  return apiClient.postJson<AutomationDraftReviewWorkflowRead, AutomationDraftReviewWorkflowActionRequest>(
+    `/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-draft-review/approve-and-continue`,
+    data,
   );
 }
