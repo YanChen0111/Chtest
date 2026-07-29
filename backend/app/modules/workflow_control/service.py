@@ -108,7 +108,14 @@ def canonical_snapshot_hash(stage: ControlledStage, payload: dict[str, Any]) -> 
 def create_workflow_run(session: Session, data: WorkflowRunCreate) -> WorkflowRun:
     if session.get(Project, data.project_id) is None:
         raise ProjectNotFoundError
-    stage = WORKFLOW_STAGE_SEQUENCES[data.workflow_kind][0]
+    sequence = WORKFLOW_STAGE_SEQUENCES[data.workflow_kind]
+    stage = data.initial_stage or sequence[0]
+    if stage not in sequence:
+        raise WorkflowSnapshotInvalidError
+    stage_index = sequence.index(stage)
+    completed_stages = tuple(data.completed_stages or sequence[:stage_index])
+    if completed_stages != sequence[:stage_index]:
+        raise WorkflowSnapshotInvalidError
     snapshot_hash = canonical_snapshot_hash(stage, data.input_payload)
     run_id = uuid.uuid4()
     snapshot_id = uuid.uuid4()
@@ -121,7 +128,7 @@ def create_workflow_run(session: Session, data: WorkflowRunCreate) -> WorkflowRu
         gate_state=GateState.DRAFT.value,
         input_snapshot_hash=snapshot_hash,
         current_snapshot_id=snapshot_id,
-        completed_stages_json=[],
+        completed_stages_json=[item.value for item in completed_stages],
         lock_version=0,
         status="active",
     )
@@ -150,6 +157,37 @@ def get_workflow_run(session: Session, project_id: uuid.UUID, run_id: uuid.UUID)
     if run is None:
         raise WorkflowRunNotFoundError
     return run
+
+
+def get_workflow_run_authoritative(
+    session: Session,
+    project_id: uuid.UUID,
+    run_id: uuid.UUID,
+) -> tuple[WorkflowRun, WorkflowStageSnapshot]:
+    run = get_workflow_run(session, project_id, run_id)
+    return _authoritative_position(session, project_id, run_id, run.lock_version)
+
+
+def get_workflow_run_for_subject(
+    session: Session,
+    project_id: uuid.UUID,
+    *,
+    workflow_kind: WorkflowKind,
+    subject_ref: str,
+) -> tuple[WorkflowRun, WorkflowStageSnapshot]:
+    run = session.scalar(
+        select(WorkflowRun)
+        .where(
+            WorkflowRun.project_id == project_id,
+            WorkflowRun.workflow_kind == workflow_kind.value,
+            WorkflowRun.subject_ref == subject_ref,
+            WorkflowRun.status == "active",
+        )
+        .order_by(WorkflowRun.created_at.desc(), WorkflowRun.id.desc()),
+    )
+    if run is None:
+        raise WorkflowRunNotFoundError
+    return _authoritative_position(session, project_id, run.id, run.lock_version)
 
 
 def submit_for_review(
@@ -390,6 +428,122 @@ def advance_workflow(
     )
 
 
+def approve_and_advance_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    run_id: uuid.UUID,
+    *,
+    expected_version: int,
+    data: HumanReviewCreate,
+    target_stage: ControlledStage,
+    next_input_payload: dict[str, Any],
+    created_by: str = "system",
+) -> tuple[WorkflowRun, WorkflowHumanDecision]:
+    """Approve the current snapshot and consume that approval atomically."""
+    run, source_snapshot = _authoritative_position(session, project_id, run_id, expected_version)
+    grant = _grant(run, data.reviewer, ApprovalDecision.APPROVED)
+    approved_position = apply_transition(
+        _position(run),
+        action=TransitionAction.APPROVE,
+        actor=Actor.HUMAN,
+        approval=grant,
+    )
+    next_hash = canonical_snapshot_hash(target_stage, next_input_payload)
+    advanced_position = apply_transition(
+        approved_position,
+        action=TransitionAction.ADVANCE,
+        actor=Actor.SYSTEM,
+        approval=grant,
+        target_stage=target_stage,
+        new_input_snapshot_hash=next_hash,
+    )
+    decision = _decision(
+        run,
+        source_snapshot,
+        action=TransitionAction.APPROVE,
+        decision=ApprovalDecision.APPROVED.value,
+        reviewer=data.reviewer,
+        comment=data.comment,
+        source_run_version=expected_version,
+        allowed_action=TransitionAction.ADVANCE,
+        grant_fingerprint=grant.fingerprint,
+    )
+    target_snapshot = _new_snapshot(
+        session,
+        run,
+        source_snapshot,
+        stage=target_stage,
+        snapshot_hash=next_hash,
+        payload=next_input_payload,
+        actor=Actor.SYSTEM,
+        label=created_by,
+    )
+    session.add_all([decision, target_snapshot])
+    session.flush()
+
+    result = session.execute(
+        update(WorkflowRun)
+        .where(
+            WorkflowRun.id == run.id,
+            WorkflowRun.project_id == run.project_id,
+            WorkflowRun.lock_version == expected_version,
+            WorkflowRun.current_stage == run.current_stage,
+            WorkflowRun.gate_state == run.gate_state,
+            WorkflowRun.current_snapshot_id == run.current_snapshot_id,
+        )
+        .values(
+            current_stage=advanced_position.stage.value,
+            gate_state=advanced_position.state.value,
+            input_snapshot_hash=advanced_position.input_snapshot_hash,
+            current_snapshot_id=target_snapshot.id,
+            completed_stages_json=[stage.value for stage in advanced_position.completed_stages],
+            lock_version=expected_version + 2,
+        )
+        .execution_options(synchronize_session=False),
+    )
+    if result.rowcount != 1:
+        session.rollback()
+        raise WorkflowVersionConflictError
+
+    approval_event = WorkflowTransitionEvent(
+        project_id=run.project_id,
+        workflow_run_id=run.id,
+        actor=Actor.HUMAN.value,
+        action=TransitionAction.APPROVE.value,
+        from_stage=run.current_stage,
+        from_state=run.gate_state,
+        to_stage=approved_position.stage.value,
+        to_state=approved_position.state.value,
+        source_snapshot_id=source_snapshot.id,
+        target_snapshot_id=source_snapshot.id,
+        human_decision_id=decision.id,
+        grant_fingerprint=grant.fingerprint,
+        source_run_version=expected_version,
+        result_run_version=expected_version + 1,
+    )
+    advance_event = WorkflowTransitionEvent(
+        project_id=run.project_id,
+        workflow_run_id=run.id,
+        actor=Actor.SYSTEM.value,
+        action=TransitionAction.ADVANCE.value,
+        from_stage=approved_position.stage.value,
+        from_state=approved_position.state.value,
+        to_stage=advanced_position.stage.value,
+        to_state=advanced_position.state.value,
+        source_snapshot_id=source_snapshot.id,
+        target_snapshot_id=target_snapshot.id,
+        consumed_approval_decision_id=decision.id,
+        grant_fingerprint=grant.fingerprint,
+        source_run_version=expected_version + 1,
+        result_run_version=expected_version + 2,
+    )
+    session.add_all([approval_event, advance_event])
+    _commit(session, WorkflowConflictError)
+    session.expire(run)
+    session.refresh(decision)
+    return get_workflow_run(session, project_id, run_id), decision
+
+
 def _authoritative_position(
     session: Session,
     project_id: uuid.UUID,
@@ -475,6 +629,9 @@ def _persist_transition(
     )
     session.add(event)
     _commit(session, WorkflowConflictError)
+    # API sessions intentionally keep objects after commit; expire the prior
+    # identity so callers always receive the authoritative CAS result.
+    session.expire(run)
     return get_workflow_run(session, run.project_id, run.id)
 
 
