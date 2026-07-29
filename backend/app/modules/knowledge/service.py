@@ -59,6 +59,7 @@ DEFAULT_EMBEDDING_PROVIDER = "deterministic_local"
 DEFAULT_EMBEDDING_MODEL = "deterministic-hashing-v1"
 DEFAULT_EMBEDDING_DIM = 64
 MIN_VECTOR_SIMILARITY = 0.05
+MAX_KNOWLEDGE_CARDS_PER_SOURCE = 200
 SECRET_CONFIG_KEYS = {
     "api_key",
     "authorization",
@@ -719,14 +720,13 @@ def extract_test_knowledge_cards(
         for item in session.scalars(
             select(TestKnowledgeCard).where(
                 TestKnowledgeCard.project_id == project_id,
-                TestKnowledgeCard.source_artifact_id == source_artifact_id,
             ),
         )
     }
     cards: list[TestKnowledgeCard] = []
     skipped_count = 0
     for index, sentence in enumerate(candidate_sentences(text), start=1):
-        quote_hash = hashlib.sha256(sentence.encode("utf-8")).hexdigest()
+        quote_hash = knowledge_fingerprint(sentence)
         if quote_hash in existing_hashes:
             skipped_count += 1
             continue
@@ -777,6 +777,7 @@ def extract_all_test_knowledge_cards(
     *,
     project_id: uuid.UUID,
     source_artifact_ids: list[uuid.UUID] | None = None,
+    replace_unreviewed: bool = False,
 ) -> KnowledgeBatchExtractionResult:
     if session.get(Project, project_id) is None:
         raise ProjectNotFoundError
@@ -785,6 +786,19 @@ def extract_all_test_knowledge_cards(
     skipped_count = 0
     cards: list[TestKnowledgeCard] = []
     for artifact_id in artifact_ids:
+        if replace_unreviewed:
+            stale_cards = list(
+                session.scalars(
+                    select(TestKnowledgeCard).where(
+                        TestKnowledgeCard.project_id == project_id,
+                        TestKnowledgeCard.source_artifact_id == artifact_id,
+                        TestKnowledgeCard.status == "extracted",
+                    ),
+                ),
+            )
+            for stale_card in stale_cards:
+                session.delete(stale_card)
+            session.flush()
         result = extract_test_knowledge_cards(
             session,
             store,
@@ -3091,15 +3105,127 @@ def ensure_extractable_context_artifact(artifact: Artifact) -> None:
 
 
 def candidate_sentences(text: str) -> list[str]:
-    sentences = [re.sub(r"\s+", " ", item).strip(" -#*") for item in SENTENCE_SPLIT_PATTERN.split(text)]
-    return [sentence for sentence in sentences if len(sentence) >= 12][:20]
+    chunks: list[str] = []
+    heading = ""
+    table_headers: list[str] = []
+    for raw_line in text.splitlines():
+        raw_line = re.sub(
+            r"!?\[(?:image|image\s*\d*|\u56fe\u7247|\u56fe\s*\d*)\]\([^\r\n)]*(?:\)|$)",
+            " ",
+            raw_line,
+            flags=re.IGNORECASE,
+        )
+        raw_line = re.sub(r"\[([^]]+)\]\([^\r\n)]*(?:\)|$)", r"\1", raw_line)
+        line = re.sub(r"\s+", " ", raw_line).strip()
+        if not line:
+            continue
+        if line.startswith("#"):
+            heading = line.lstrip("# ").strip()
+            continue
+        if "\t" in raw_line:
+            cells = [re.sub(r"\s+", " ", cell).strip() for cell in raw_line.split("\t")]
+            values = cells[1:] if cells and cells[0].isdigit() else cells
+            normalized_values = {value.lower().strip() for value in values}
+            if not table_headers and normalized_values.intersection(
+                {"command", "purpose", "parameter", "parameters", "\u6307\u4ee4", "\u7528\u9014", "\u53c2\u6570", "\u53c2\u6570\u7c7b\u578b\u4e0e\u610f\u4e49", "\u7528\u4f8b\u540d\u79f0"},
+            ):
+                table_headers = values
+                continue
+            if table_headers:
+                mapped = [
+                    f"{table_headers[index]}: {value}"
+                    for index, value in enumerate(values[: len(table_headers)])
+                    if value
+                ]
+                candidates = ["; ".join(mapped)]
+            else:
+                candidates = [line]
+        elif line.startswith("|") and line.endswith("|"):
+            candidates = [line]
+        else:
+            candidates = re.split(r"[\u3002\uff01\uff1f!?\uff1b;]+", line)
+        for candidate in candidates:
+            candidate = re.sub(
+                r"!?\[(?:image|image\s*\d*|\u56fe\u7247|\u56fe\s*\d*)\]\([^)]+\)",
+                " ",
+                candidate,
+                flags=re.IGNORECASE,
+            )
+            candidate = re.sub(r"\[([^]]+)\]\([^)]+\)", r"\1", candidate)
+            compact = re.sub(r"\s+", " ", candidate).strip(" -#*|")
+            if len(compact) < 12:
+                continue
+            if heading and not compact.lower().startswith(heading.lower()):
+                compact = f"{heading}: {compact}"
+            compact = compact[:1200]
+            if is_quality_knowledge_candidate(compact):
+                chunks.append(compact)
+    return list(dict.fromkeys(chunks))[:MAX_KNOWLEDGE_CARDS_PER_SOURCE]
+
+
+def knowledge_fingerprint(content: str) -> str:
+    normalized = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", "", content.lower())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def is_quality_knowledge_candidate(content: str) -> bool:
+    compact = content.strip()
+    lower = compact.lower()
+    if compact.endswith(":") or compact.endswith("："):
+        return False
+    if len(re.sub(r"\W+", "", compact, flags=re.UNICODE)) < 12:
+        return False
+    if re.search(r"from=from_copylink|^https?://|^www\.", lower):
+        return False
+    if re.search(r"(?:todo|tbd|\u5f85\u5b9a|\u9700\u8981\u6539)$", lower) and len(compact) < 40:
+        return False
+    if lower.startswith("sheet:") and lower.count(":") < 2:
+        return False
+    return True
 
 
 def classify_knowledge(sentence: str) -> str:
     lower = sentence.lower()
+    if any(marker in lower for marker in ["command:", "\u6307\u4ee4:"]):
+        return "CommandReference"
+    if re.search(r"\b(?:ocpp|mqtt|modbus)\b", lower) and any(
+        marker in lower
+        for marker in [
+            "request",
+            "message",
+            "payload",
+            "field",
+            "topic",
+            "publish",
+            "subscribe",
+            "请求",
+            "报文",
+            "字段",
+            "主题",
+            "发布",
+            "订阅",
+        ]
+    ):
+        return "APIContract"
+    if any(keyword in lower for keyword in ["reconnect", "resume", "recover", "rollback", "\u91cd\u8fde", "\u6062\u590d", "\u56de\u6eda", "\u65ad\u7535\u7eed\u4f20"]):
+        return "RecoveryScenario"
+    if any(keyword in lower for keyword in ["if ", "when ", "then ", "otherwise", "\u5982\u679c", "\u5f53", "\u5219", "\u5426\u5219", "\u60c5\u51b5\u4e0b"]):
+        return "BusinessRule"
+    if any(keyword in lower for keyword in ["fallback", "timeout", "restart", "\u8d85\u65f6", "\u91cd\u542f", "\u65ad\u7535", "\u65ad\u5f00"]):
+        return "RecoveryScenario"
+    if any(keyword in lower for keyword in ["latency", "throughput", "success rate", "\u6210\u529f\u7387", "\u54cd\u5e94\u65f6\u95f4", "\u5e76\u53d1", "\u6027\u80fd"]):
+        return "PerformanceConstraint"
+    if any(keyword in lower for keyword in ["password", "certificate", "signature", "permission", "\u5bc6\u7801", "\u8bc1\u4e66", "\u7b7e\u540d", "\u6743\u9650", "\u9274\u6743"]):
+        return "SecurityConstraint"
+    if re.search(r"\d+(?:\.\d+)?\s*(?:a|v|kw|%|ms|s|min|\u79d2|\u5206\u949f|\u6b21|\u6444\u6c0f\u5ea6|\u00b0c)\b", lower):
+        return "BoundaryCondition"
+    if any(keyword in lower for keyword in ["if ", "when ", "then ", "otherwise", "\u5982\u679c", "\u5f53", "\u5219", "\u5426\u5219", "\u5141\u8bb8", "\u53ea\u6709", "\u4e0d\u5f97"]):
+        return "BusinessRule"
     if re.search(r"\b(get|post|put|patch|delete)\b|/api/|endpoint|接口", lower):
         return "APIContract"
-    if any(keyword in lower for keyword in ["expired", "过期", "不能超过", "大于", "小于", "边界", "boundary", "limit"]):
+    if re.search(r"\b(?:expired|boundary|limit)\b", lower) or any(
+        keyword in lower for keyword in ["过期", "不能超过", "大于", "小于", "边界"]
+    ):
         return "BoundaryCondition"
     if any(keyword in lower for keyword in ["error", "fail", "blocked", "reject", "不可", "不能", "禁止", "失败"]):
         return "ExceptionScenario"
@@ -3119,6 +3245,17 @@ def card_title(sentence: str, knowledge_type: str) -> str:
 
 def infer_module_key(sentence: str) -> str | None:
     lower = sentence.lower()
+    evse_modules = {
+        "ota": ("ota", "firmware", "\u5347\u7ea7", "\u56fa\u4ef6"),
+        "ocpp": ("ocpp", "bootnotification", "starttransaction"),
+        "mqtt": ("mqtt",),
+        "charging": ("charging", "charger", "charge point", "evse", "phase", "\u5145\u7535", "\u5145\u7535\u6869", "\u6869", "\u76f8\u4f4d", "\u4e09\u76f8", "\u5355\u76f8"),
+        "network": ("wifi", "4g", "ethernet", "network", "\u7f51\u7edc", "\u91cd\u8fde"),
+        "load_balancing": ("load balance", "dlm", "fallback", "block", "\u8d1f\u8f7d\u5747\u8861"),
+    }
+    for module, keywords in evse_modules.items():
+        if any(keyword in lower for keyword in keywords):
+            return module
     for key in ("coupon", "checkout", "order", "payment", "login"):
         if key in lower:
             return key
@@ -3137,7 +3274,17 @@ def infer_api_endpoint(sentence: str) -> str | None:
 
 def infer_risk_type(sentence: str) -> str | None:
     lower = sentence.lower()
-    if any(keyword in lower for keyword in ["expired", "过期", "不能超过", "limit", "boundary"]):
+    if any(keyword in lower for keyword in ["reconnect", "recover", "rollback", "\u91cd\u8fde", "\u6062\u590d", "\u56de\u6eda"]):
+        return "recovery"
+    if any(keyword in lower for keyword in ["fallback", "timeout", "restart", "\u8d85\u65f6", "\u91cd\u542f", "\u65ad\u7535"]):
+        return "recovery"
+    if any(keyword in lower for keyword in ["latency", "throughput", "success rate", "\u6210\u529f\u7387", "\u54cd\u5e94\u65f6\u95f4", "\u5e76\u53d1"]):
+        return "performance"
+    if any(keyword in lower for keyword in ["password", "certificate", "permission", "\u5bc6\u7801", "\u8bc1\u4e66", "\u6743\u9650", "\u9274\u6743"]):
+        return "security"
+    if re.search(r"\b(?:expired|boundary|limit)\b", lower) or any(
+        keyword in lower for keyword in ["过期", "不能超过"]
+    ):
         return "boundary"
     if any(keyword in lower for keyword in ["error", "fail", "失败", "不可", "不能"]):
         return "business"
@@ -3147,6 +3294,14 @@ def infer_risk_type(sentence: str) -> str | None:
 
 
 def infer_case_type_hint(sentence: str, knowledge_type: str) -> str | None:
+    if knowledge_type == "CommandReference":
+        return "api"
+    if knowledge_type == "RecoveryScenario":
+        return "recovery"
+    if knowledge_type == "PerformanceConstraint":
+        return "performance"
+    if knowledge_type == "SecurityConstraint":
+        return "security"
     if knowledge_type in {"BoundaryCondition", "ExceptionScenario"}:
         return "negative"
     if knowledge_type == "APIContract":
@@ -3158,9 +3313,19 @@ def infer_case_type_hint(sentence: str, knowledge_type: str) -> str | None:
 
 def confidence_for(sentence: str, knowledge_type: str) -> int:
     confidence = 70
-    if knowledge_type in {"BoundaryCondition", "APIContract", "ExceptionScenario"}:
+    if knowledge_type in {
+        "BoundaryCondition",
+        "APIContract",
+        "ExceptionScenario",
+        "RecoveryScenario",
+        "PerformanceConstraint",
+        "SecurityConstraint",
+        "CommandReference",
+    }:
         confidence += 10
     if infer_api_endpoint(sentence):
+        confidence += 5
+    if re.search(r"\b(must|should|required)\b|\u5fc5\u987b|\u5e94\u5f53|\u9700\u8981|\u4e0d\u5f97", sentence, re.IGNORECASE):
         confidence += 5
     return min(confidence, 95)
 

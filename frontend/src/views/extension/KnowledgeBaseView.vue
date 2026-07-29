@@ -2,15 +2,26 @@
   <section class="knowledge-base-page" aria-labelledby="knowledge-base-title" data-test="knowledge-base-page">
     <div class="settings-heading">
       <div>
-        <p class="eyebrow">扩展表面</p>
+        <p class="eyebrow">项目知识</p>
         <h2 id="knowledge-base-title">RAG 知识库</h2>
-        <p>查看项目上下文、提示词可用性、AI 使用记录和 MCP-ready 工具结构；V1 仅保留扩展表面。</p>
+        <p>导入并审核项目知识，让批准后的证据参与需求评审、用例生成和检索。</p>
       </div>
       <a-space>
         <a-tag color="blue">ContextArtifact</a-tag>
-        <a-tag color="gray">无 RAG 运行时</a-tag>
+        <a-tag color="gray">本地检索</a-tag>
+        <a-button type="primary" data-test="open-knowledge-import" @click="openKnowledgeImport">导入文档</a-button>
         <a-button type="primary" :loading="store.loading" @click="store.loadExtensionSurface()">刷新</a-button>
       </a-space>
+    </div>
+
+    <div class="knowledge-workflow-rail" data-test="knowledge-workflow-rail" aria-label="知识处理流程">
+      <div class="knowledge-workflow-step knowledge-workflow-step--active"><strong>1</strong><span>导入上下文</span><small>文档、截图、接口说明</small></div>
+      <span class="knowledge-workflow-arrow">›</span>
+      <div class="knowledge-workflow-step"><strong>2</strong><span>抽取知识卡</span><small>把文档变成可审核条目</small></div>
+      <span class="knowledge-workflow-arrow">›</span>
+      <div class="knowledge-workflow-step"><strong>3</strong><span>审核并允许使用</span><small>只有批准内容进入 AI</small></div>
+      <span class="knowledge-workflow-arrow">›</span>
+      <div class="knowledge-workflow-step"><strong>4</strong><span>建索引并验证</span><small>检查检索是否命中</small></div>
     </div>
 
     <a-alert v-if="store.errorMessage" data-test="knowledge-base-error" type="error" :content="store.errorMessage" show-icon />
@@ -21,7 +32,7 @@
 
     <div class="knowledge-metrics">
       <a-card class="settings-panel" :bordered="false">
-        <span>ContextArtifact</span>
+        <span>上下文工件</span>
         <strong>{{ store.contextArtifactCount }}</strong>
       </a-card>
       <a-card class="settings-panel" :bordered="false">
@@ -33,43 +44,29 @@
         <strong>{{ store.promptEligibleCount }}</strong>
       </a-card>
       <a-card class="settings-panel" :bordered="false">
-        <span>MCP-ready 工具</span>
-        <strong>{{ store.mcpReadyToolCount }}</strong>
+        <span>测试知识卡</span>
+        <strong>{{ store.testKnowledgeCardCount }}</strong>
       </a-card>
       <a-card class="settings-panel" :bordered="false">
         <span>检索证据</span>
         <strong>{{ store.latestRetrievals.length }}</strong>
       </a-card>
-      <a-card class="settings-panel" :bordered="false">
-        <span>测试知识卡</span>
-        <strong>{{ store.testKnowledgeCardCount }}</strong>
-      </a-card>
-      <a-card class="settings-panel" :bordered="false">
-        <span>知识覆盖率</span>
-        <strong>{{ Math.round(store.knowledgeCoverageRatio * 100) }}%</strong>
-      </a-card>
-      <a-card class="settings-panel" :bordered="false">
-        <span>Vector Index</span>
-        <strong>{{ store.indexedKnowledgeCardCount }}</strong>
-      </a-card>
-      <a-card class="settings-panel" :bordered="false">
-        <span>Vector Coverage</span>
-        <strong>{{ Math.round(store.vectorIndexCoverageRatio * 100) }}%</strong>
-      </a-card>
-      <a-card class="settings-panel" :bordered="false">
-        <span>Prompt Ready</span>
-        <strong>{{ store.promptReadyKnowledgeCardCount }}</strong>
-      </a-card>
-      <a-card class="settings-panel" :bordered="false">
-        <span>Index Gap</span>
-        <strong>{{ store.knowledgeIndexGapCount }}</strong>
-      </a-card>
+    </div>
+
+    <div class="knowledge-view-switch" data-test="knowledge-view-switch">
+      <span>工作区</span>
+      <a-space size="mini" wrap>
+        <a-button data-test="view-all" size="small" :type="activeKnowledgeView === 'all' ? 'primary' : 'secondary'" @click="activeKnowledgeView = 'all'">总览</a-button>
+        <a-button data-test="view-ingestion" size="small" :type="activeKnowledgeView === 'ingestion' ? 'primary' : 'secondary'" @click="activeKnowledgeView = 'ingestion'">导入处理</a-button>
+        <a-button data-test="view-cards" size="small" :type="activeKnowledgeView === 'cards' ? 'primary' : 'secondary'" @click="activeKnowledgeView = 'cards'">知识卡</a-button>
+        <a-button data-test="view-retrieval" size="small" :type="activeKnowledgeView === 'retrieval' ? 'primary' : 'secondary'" @click="activeKnowledgeView = 'retrieval'">检索记录</a-button>
+      </a-space>
     </div>
 
     <a-spin :loading="store.loading" class="settings-spin">
       <div class="knowledge-grid">
         <a-card class="settings-panel knowledge-adapter-panel" :bordered="false">
-          <template #title>KnowledgeAdapter</template>
+          <template #title><span class="step-title"><b>基础设置 <span class="compat-label">KnowledgeAdapter</span></b><small>先启用本地检索，后续评审才会使用知识</small></span></template>
           <div class="adapter-state">
             <div>
               <span>状态</span>
@@ -79,13 +76,11 @@
               使用知识={{ adapterState.used_knowledge ? '是' : '否' }}
             </a-tag>
           </div>
-          <a-descriptions :column="1" size="small" bordered>
-            <a-descriptions-item label="适配器">{{ adapterState.adapter_name }}</a-descriptions-item>
-            <a-descriptions-item label="提供方">{{ adapterState.provider_type }}</a-descriptions-item>
-            <a-descriptions-item label="检索模式">{{ retrievalModeLabel(adapterState.retrieval_mode) }}</a-descriptions-item>
-            <a-descriptions-item label="最近检查">{{ adapterState.last_checked_at ?? '未检查' }}</a-descriptions-item>
-            <a-descriptions-item label="备注">{{ adapterState.notes ?? 'V1 空适配器外壳' }}</a-descriptions-item>
-          </a-descriptions>
+          <div class="adapter-meta">
+            <span>当前模式</span>
+            <strong>{{ retrievalModeLabel(adapterState.retrieval_mode) }}</strong>
+            <small>{{ adapterState.used_knowledge ? '评审正在使用知识证据' : '导入后可直接参与需求评审' }}</small>
+          </div>
           <a-button
             class="adapter-action"
             data-test="enable-local-retrieval"
@@ -96,16 +91,8 @@
           </a-button>
         </a-card>
 
-        <a-card class="settings-panel" :bordered="false">
-          <template #title>V1 非目标</template>
-          <div class="non-goal-list">
-            <a-tag v-for="goal in store.knowledgeBase?.non_goals ?? []" :key="goal" color="gray">{{ goal }}</a-tag>
-          </div>
-          <a-empty v-if="(store.knowledgeBase?.non_goals.length ?? 0) === 0" description="暂无边界声明" />
-        </a-card>
-
-        <a-card class="settings-panel" :bordered="false">
-          <template #title>导入知识</template>
+        <a-card v-if="activeKnowledgeView === 'all' || activeKnowledgeView === 'ingestion'" id="knowledge-import" class="settings-panel" :bordered="false">
+          <template #title><span class="step-title"><b>1. 导入上下文</b><small>上传需求、接口、规则、截图或测试资料</small></span></template>
           <form class="knowledge-form" @submit.prevent="submitKnowledge">
             <label>
               <span>标题</span>
@@ -120,37 +107,58 @@
               <input
                 class="knowledge-file-input"
                 data-test="knowledge-file"
+                ref="knowledgeFileInput"
                 type="file"
                 accept=".md,.markdown,.txt,.csv,.json,.yaml,.yml,.pdf,.xlsx,.jpg,.jpeg,.png,.webp,.tif,.tiff,text/markdown,text/plain,text/csv,application/json,application/yaml,text/yaml,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*"
                 @change="handleKnowledgeFileChange"
               />
             </label>
-            <label>
-              <span>格式</span>
+            <label v-if="!pendingBinaryUpload">
+              <span>手动内容格式</span>
               <a-radio-group v-model="knowledgeForm.artifactType">
                 <a-radio value="context_markdown">Markdown</a-radio>
                 <a-radio value="context_text">TXT</a-radio>
               </a-radio-group>
             </label>
-            <label>
+            <div v-else class="detected-file-format" data-test="detected-file-format">
+              <span>已识别文件</span>
+              <strong>{{ knowledgeForm.title }}</strong>
+              <a-tag color="blue">{{ artifactTypeLabel(knowledgeForm.artifactType) }}</a-tag>
+            </div>
+            <div class="supported-format-list">
+              <span>支持格式</span>
+              <a-tag>Markdown</a-tag>
+              <a-tag>TXT</a-tag>
+              <a-tag color="red">PDF</a-tag>
+              <a-tag color="green">XLSX</a-tag>
+              <a-tag color="orange">图片 OCR</a-tag>
+            </div>
+            <label v-if="!pendingBinaryUpload">
               <span>内容</span>
               <a-textarea data-test="knowledge-content" v-model="knowledgeForm.content" :auto-size="{ minRows: 5, maxRows: 9 }" />
             </label>
+            <a-alert
+              v-else
+              type="info"
+              show-icon
+              content="文件会在导入后自动提取文字，再进入知识抽取、审核和索引流程。"
+            />
             <a-button data-test="upload-knowledge" html-type="submit" type="primary" :loading="store.loadingMutation">
-              导入 ContextArtifact
+              导入并自动处理
             </a-button>
+            <small class="automation-note">导入后系统会自动抽取、审核高置信知识并建立索引；只有低置信或受限内容需要人工复核。</small>
           </form>
         </a-card>
 
-        <a-card class="settings-panel retrieval-test-panel" :bordered="false">
-          <template #title>检索测试</template>
+        <a-card v-if="activeKnowledgeView === 'all' || activeKnowledgeView === 'retrieval'" class="settings-panel retrieval-test-panel" :bordered="false">
+          <template #title><span class="step-title"><b>5. 检索验证</b><small>输入真实测试问题，确认 AI 能找到正确知识</small></span></template>
           <form class="knowledge-form" @submit.prevent="submitRetrievalTest">
             <label>
               <span>查询</span>
               <a-textarea data-test="retrieval-query" v-model="retrievalQuery" :auto-size="{ minRows: 3, maxRows: 5 }" />
             </label>
             <a-button data-test="run-retrieval" html-type="submit" type="primary" :loading="store.loadingMutation">
-              运行本地检索
+              运行检索验证
             </a-button>
           </form>
           <div v-if="store.retrievalTest" class="retrieval-test-results">
@@ -173,18 +181,28 @@
           </div>
         </a-card>
 
-        <a-card class="settings-panel test-knowledge-card-panel" :bordered="false">
-          <template #title>测试知识卡</template>
+        <a-card v-if="activeKnowledgeView === 'all' || activeKnowledgeView === 'cards'" class="settings-panel test-knowledge-card-panel" :bordered="false">
+          <template #title><span class="step-title"><b>2-4. 知识卡处理</b><small>抽取 → 审核 → 建索引，按顺序完成</small></span></template>
           <a-space>
             <a-button
               data-test="extract-knowledge-cards"
               type="primary"
               :disabled="promptEligibleContextArtifactIds.length === 0"
               :loading="store.loadingMutation"
-              @click="extractKnowledgeCards"
+              @click="extractKnowledgeCards()"
             >
-              抽取知识卡
+              重新处理未完成文档
             </a-button>
+            <a-popconfirm
+              content="将删除全部待审核卡并使用新规则重新抽取；已批准和已归档卡会保留。"
+              ok-text="重新抽取"
+              cancel-text="取消"
+              @ok="extractKnowledgeCards(true)"
+            >
+              <a-button data-test="reextract-knowledge-cards" :disabled="promptEligibleContextArtifactIds.length === 0" :loading="store.loadingMutation">
+                清理并重新抽取
+              </a-button>
+            </a-popconfirm>
             <a-tag color="blue">{{ store.testKnowledgeCardCount }} 张</a-tag>
             <a-button
               data-test="rebuild-knowledge-index"
@@ -192,13 +210,43 @@
               :loading="store.loadingMutation"
               @click="store.rebuildKnowledgeIndex()"
             >
-              Rebuild Vector Index
+              重建检索索引 <span class="compat-label">Vector Index</span>
             </a-button>
           </a-space>
+          <div class="knowledge-card-status-filter" data-test="knowledge-card-status-filter">
+            <span>查看列表</span>
+            <a-space size="mini" wrap>
+              <a-button data-test="filter-extracted-cards" size="small" :aria-pressed="knowledgeCardStatusFilter === 'extracted'" :type="knowledgeCardStatusFilter === 'extracted' ? 'primary' : 'secondary'" @click="knowledgeCardStatusFilter = 'extracted'">
+                待审核 {{ extractedCardCount }}
+              </a-button>
+              <a-button data-test="filter-approved-cards" size="small" :aria-pressed="knowledgeCardStatusFilter === 'approved'" :type="knowledgeCardStatusFilter === 'approved' ? 'primary' : 'secondary'" @click="knowledgeCardStatusFilter = 'approved'">
+                已批准 {{ approvedCardCount }}
+              </a-button>
+              <a-button data-test="filter-archived-cards" size="small" :aria-pressed="knowledgeCardStatusFilter === 'archived'" :type="knowledgeCardStatusFilter === 'archived' ? 'primary' : 'secondary'" @click="knowledgeCardStatusFilter = 'archived'">
+                已归档 {{ archivedCardCount }}
+              </a-button>
+              <a-button data-test="filter-all-cards" size="small" :aria-pressed="knowledgeCardStatusFilter === 'all'" :type="knowledgeCardStatusFilter === 'all' ? 'primary' : 'secondary'" @click="knowledgeCardStatusFilter = 'all'">
+                全部 {{ store.testKnowledgeCardCount }}
+              </a-button>
+            </a-space>
+          </div>
+          <div class="knowledge-card-bulk-actions" data-test="knowledge-card-bulk-actions">
+            <a-checkbox :model-value="allVisibleCardsSelected" @change="toggleVisibleCardSelection">
+              选择当前页
+            </a-checkbox>
+            <span>已选 {{ selectedKnowledgeCardIds.length }} 张</span>
+            <a-button size="small" type="primary" :disabled="selectedKnowledgeCardIds.length === 0" :loading="store.loadingMutation" @click="bulkReviewKnowledgeCards('approved')">
+              批量批准
+            </a-button>
+            <a-button size="small" status="danger" :disabled="selectedKnowledgeCardIds.length === 0" :loading="store.loadingMutation" @click="bulkReviewKnowledgeCards('archived')">
+              批量归档
+            </a-button>
+          </div>
           <div class="knowledge-readiness-strip" data-test="knowledge-readiness-strip">
             <span>Approved <strong>{{ store.approvedKnowledgeCardCount }}</strong></span>
             <span>Needs Review <strong>{{ store.pendingKnowledgeCardCount }}</strong></span>
             <span>Prompt Ready <strong>{{ store.promptReadyKnowledgeCardCount }}</strong></span>
+            <span>Vector Coverage <strong>{{ Math.round(store.vectorIndexCoverageRatio * 100) }}%</strong></span>
             <span>Index Gap <strong>{{ store.knowledgeIndexGapCount }}</strong></span>
           </div>
           <div
@@ -250,10 +298,13 @@
               description="没有命中可用于 prompt 的知识卡"
             />
           </div>
-          <div v-if="store.testKnowledgeCards.length" class="test-knowledge-card-list">
-            <article v-for="card in store.testKnowledgeCards.slice(0, 5)" :key="card.id" class="test-knowledge-card">
+          <div v-if="filteredKnowledgeCards.length" class="test-knowledge-card-list">
+            <article v-for="card in visibleKnowledgeCards" :key="card.id" class="test-knowledge-card">
               <div class="retrieval-result__meta">
-                <strong>{{ card.title }}</strong>
+                <div class="knowledge-card-title">
+                  <a-checkbox :disabled="card.status !== 'extracted'" :model-value="selectedKnowledgeCardIds.includes(card.id)" @change="toggleKnowledgeCardSelection(card.id)" />
+                  <strong>{{ card.title }}</strong>
+                </div>
                 <a-space>
                   <a-tag color="green">{{ card.knowledge_type }}</a-tag>
                   <a-tag :color="cardStatusColor(card.status)">{{ card.status }}</a-tag>
@@ -284,19 +335,24 @@
                 </a-button>
               </div>
             </article>
+            <div v-if="knowledgeCardPageCount > 1" class="knowledge-card-pagination">
+              <a-button size="small" :disabled="knowledgeCardPage <= 1" @click="knowledgeCardPage -= 1">上一页</a-button>
+              <span>第 {{ knowledgeCardPage }} / {{ knowledgeCardPageCount }} 页，共 {{ filteredKnowledgeCards.length }} 张</span>
+              <a-button size="small" :disabled="knowledgeCardPage >= knowledgeCardPageCount" @click="knowledgeCardPage += 1">下一页</a-button>
+            </div>
           </div>
-          <a-empty v-else description="暂无测试知识卡" />
+          <a-empty v-else description="还没有知识卡。先导入上下文，再点击“从待处理文档抽取”。" />
         </a-card>
       </div>
 
       <div class="knowledge-grid knowledge-main-grid">
-        <a-card class="settings-panel" :bordered="false">
-          <template #title>ContextArtifact 清单</template>
+        <a-card v-if="activeKnowledgeView === 'all' || activeKnowledgeView === 'ingestion'" class="settings-panel" :bordered="false">
+          <template #title><span class="step-title"><b>上下文清单</b><small>这里查看导入资料是否允许进入 AI</small></span></template>
           <a-table
             :columns="contextColumns"
             :data="contextRows"
             :pagination="false"
-            :scroll="{ x: 980 }"
+            :scroll="{ x: 760 }"
             row-key="id"
             size="small"
           >
@@ -308,11 +364,23 @@
                 {{ record.allowed_for_prompt ? '允许' : '阻止' }}
               </a-tag>
             </template>
+            <template #actions="{ record }">
+              <a-popconfirm
+                :content="`删除“${record.title}”及其自动生成的知识卡？`"
+                ok-text="删除"
+                cancel-text="取消"
+                @ok="store.deleteContextArtifact(record.id, record.title)"
+              >
+                <a-button data-test="delete-context-artifact" size="mini" status="danger" :loading="store.loadingMutation">
+                  删除
+                </a-button>
+              </a-popconfirm>
+            </template>
           </a-table>
           <a-empty v-if="!store.loading && contextRows.length === 0" description="暂无 ContextArtifact" />
         </a-card>
 
-        <a-card class="settings-panel retrieval-panel" :bordered="false" data-test="recent-knowledge-retrievals">
+        <a-card v-if="activeKnowledgeView === 'all' || activeKnowledgeView === 'retrieval'" class="settings-panel retrieval-panel" :bordered="false" data-test="recent-knowledge-retrievals">
           <template #title>最近检索证据</template>
           <a-alert
             v-if="hasStaleRetrievals"
@@ -325,16 +393,16 @@
             <article v-for="retrieval in latestRetrievalRows" :key="retrieval.retrieval_evidence_artifact_id" class="retrieval-item" data-test="recent-knowledge-retrieval-row">
               <div class="retrieval-item__header">
                 <div>
-                  <span class="muted-label">AI 任务</span>
-                  <strong>{{ retrieval.ai_task_id }}</strong>
+                  <span class="muted-label">检索时间</span>
+                  <strong>{{ retrieval.createdAt }}</strong>
                 </div>
-                <a-tag color="blue">{{ retrieval.createdAt }}</a-tag>
+                <a-tag color="blue">{{ retrieval.snippet_count }} 条证据</a-tag>
               </div>
               <div class="retrieval-terms">
                 <span>命中词</span>
                 <a-tag v-for="term in retrieval.query_terms" :key="term" color="green">{{ term }}</a-tag>
               </div>
-              <a-button data-test="resume-knowledge-retrieval" size="small" @click="resumeRetrieval(retrieval.query_terms)">Reuse query</a-button>
+              <a-button data-test="resume-knowledge-retrieval" size="small" @click="resumeRetrieval(retrieval.query_terms)">重新使用查询</a-button>
               <div class="retrieval-results">
                 <div v-for="result in retrieval.results" :key="result.context_artifact_id" class="retrieval-result">
                   <div class="retrieval-result__meta">
@@ -350,43 +418,21 @@
               </div>
             </article>
           </div>
-          <a-empty v-else-if="!store.loading" description="暂无 deterministic retrieval evidence" />
+          <a-empty v-else-if="!store.loading" description="暂无检索记录" />
         </a-card>
 
-        <a-card class="settings-panel" :bordered="false">
-          <template #title>MCP-ready ToolDefinition</template>
-          <a-table
-            :columns="toolColumns"
-            :data="toolRows"
-            :pagination="false"
-            :scroll="{ x: 920 }"
-            row-key="id"
-            size="small"
-          >
-            <template #ready="{ record }">
-              <a-tag :color="record.is_mcp_ready ? 'green' : 'gray'">
-                {{ record.is_mcp_ready ? '就绪' : '仅结构' }}
-              </a-tag>
-            </template>
-            <template #approval="{ record }">
-              <a-tag :color="record.approval_required ? 'orange' : 'blue'">
-                {{ record.approval_required ? '需审批' : '已列入白名单' }}
-              </a-tag>
-            </template>
-          </a-table>
-          <a-empty v-if="!store.loading && toolRows.length === 0" description="暂无 ToolDefinition" />
-        </a-card>
       </div>
     </a-spin>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 
 import { useExtensionStore } from '../../stores/extension';
 
 const store = useExtensionStore();
+const activeKnowledgeView = ref<'all' | 'ingestion' | 'cards' | 'retrieval'>('ingestion');
 
 const knowledgeForm = reactive({
   title: 'coupon-api-notes.md',
@@ -396,6 +442,16 @@ const knowledgeForm = reactive({
 });
 const retrievalQuery = ref('coupon expired checkout');
 const knowledgeCardQuery = ref('coupon expired checkout');
+const knowledgeCardPage = ref(1);
+const knowledgeCardsPageSize = 10;
+const knowledgeCardStatusFilter = ref<'all' | 'extracted' | 'approved' | 'archived'>('extracted');
+const selectedKnowledgeCardIds = ref<string[]>([]);
+const pendingBinaryUpload = ref<{
+  contentBase64: string;
+  mimeType: string;
+  ocrLanguage?: string;
+} | null>(null);
+const knowledgeFileInput = ref<HTMLInputElement | null>(null);
 
 const emptyAdapter = {
   adapter_name: 'default',
@@ -412,27 +468,17 @@ const adapterState = computed(() => store.knowledgeBase?.knowledge_adapter ?? em
 const contextColumns = [
   { title: '标题', dataIndex: 'title', width: 220 },
   { title: '来源', dataIndex: 'source_ref', width: 260 },
-  { title: '文件格式', dataIndex: 'mime_type', width: 150 },
+  { title: '文件格式', dataIndex: 'displayMimeType', width: 150 },
   { title: '展示安全', slotName: 'safe', width: 120 },
   { title: '提示词', slotName: 'prompt', width: 110 },
-  { title: '使用次数', dataIndex: 'usage_count', width: 110 },
-  { title: '最近使用', dataIndex: 'latestUsedAt', width: 180 },
   { title: '检索次数', dataIndex: 'retrieved_count', width: 110 },
-  { title: '最近检索', dataIndex: 'latestRetrievedAt', width: 180 },
-];
-
-const toolColumns = [
-  { title: '名称', dataIndex: 'name', width: 220 },
-  { title: '类型', dataIndex: 'tool_type', width: 150 },
-  { title: '风险', dataIndex: 'risk_level', width: 100 },
-  { title: '审批', slotName: 'approval', width: 150 },
-  { title: 'MCP', slotName: 'ready', width: 110 },
-  { title: '能力', dataIndex: 'capability', width: 190 },
+  { title: '操作', slotName: 'actions', width: 96, fixed: 'right' as const },
 ];
 
 const contextRows = computed(() =>
   (store.knowledgeBase?.context_artifacts ?? []).map((artifact) => ({
     ...artifact,
+    displayMimeType: artifact.source_mime_type ?? artifact.mime_type,
     latestUsedAt: artifact.latest_used_at ?? '未使用',
     retrieved_count: artifact.retrieved_count ?? 0,
     latestRetrievedAt: artifact.latest_retrieved_at ?? '未检索',
@@ -456,12 +502,39 @@ const promptEligibleContextArtifactIds = computed(() =>
   contextRows.value.filter((artifact) => artifact.allowed_for_prompt).map((artifact) => artifact.id),
 );
 
-const toolRows = computed(() =>
-  store.toolDefinitions.map((tool) => ({
-    ...tool,
-    capability: typeof tool.mcp_metadata.capability_name === 'string' ? tool.mcp_metadata.capability_name : '未声明',
-  })),
+const knowledgeCardPageCount = computed(() =>
+  Math.max(1, Math.ceil(filteredKnowledgeCards.value.length / knowledgeCardsPageSize)),
 );
+
+const extractedCardCount = computed(() => store.testKnowledgeCards.filter((card) => card.status === 'extracted').length);
+const approvedCardCount = computed(() => store.testKnowledgeCards.filter((card) => card.status === 'approved').length);
+const archivedCardCount = computed(() => store.testKnowledgeCards.filter((card) => card.status === 'archived').length);
+
+const filteredKnowledgeCards = computed(() =>
+  knowledgeCardStatusFilter.value === 'all'
+    ? store.testKnowledgeCards
+    : store.testKnowledgeCards.filter((card) => card.status === knowledgeCardStatusFilter.value),
+);
+
+const visibleKnowledgeCards = computed(() => {
+  const page = Math.min(knowledgeCardPage.value, knowledgeCardPageCount.value);
+  const start = (page - 1) * knowledgeCardsPageSize;
+  return filteredKnowledgeCards.value.slice(start, start + knowledgeCardsPageSize);
+});
+
+const selectableVisibleKnowledgeCardIds = computed(() =>
+  visibleKnowledgeCards.value.filter((card) => card.status === 'extracted').map((card) => card.id),
+);
+
+const allVisibleCardsSelected = computed(() =>
+  selectableVisibleKnowledgeCardIds.value.length > 0
+  && selectableVisibleKnowledgeCardIds.value.every((cardId) => selectedKnowledgeCardIds.value.includes(cardId)),
+);
+
+watch(knowledgeCardStatusFilter, () => {
+  knowledgeCardPage.value = 1;
+  selectedKnowledgeCardIds.value = [];
+});
 
 function adapterStatusLabel(status: string): string {
   const labels: Record<string, string> = {
@@ -495,13 +568,57 @@ function formatSemanticScore(score: number): string {
   return score.toFixed(2);
 }
 
-function submitKnowledge() {
-  void store.uploadContextArtifact({
+function artifactTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    context_markdown: 'Markdown',
+    context_text: 'TXT',
+    context_pdf: 'PDF',
+    context_xlsx: 'XLSX',
+    context_image: '图片 OCR',
+  };
+  return labels[type] ?? type;
+}
+
+async function submitKnowledge() {
+  await store.uploadContextArtifact({
     title: knowledgeForm.title,
     sourceRef: knowledgeForm.sourceRef,
     artifactType: knowledgeForm.artifactType,
-    content: knowledgeForm.content,
+    ...(pendingBinaryUpload.value
+      ? pendingBinaryUpload.value
+      : { content: knowledgeForm.content }),
   });
+  if (!store.errorMessage) {
+    pendingBinaryUpload.value = null;
+    selectBestKnowledgeCardStatus();
+  }
+}
+
+async function openKnowledgeImport() {
+  activeKnowledgeView.value = 'ingestion';
+  await nextTick();
+  document.getElementById('knowledge-import')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  knowledgeFileInput.value?.click();
+}
+
+function toggleKnowledgeCardSelection(cardId: string) {
+  selectedKnowledgeCardIds.value = selectedKnowledgeCardIds.value.includes(cardId)
+    ? selectedKnowledgeCardIds.value.filter((id) => id !== cardId)
+    : [...selectedKnowledgeCardIds.value, cardId];
+}
+
+function toggleVisibleCardSelection() {
+  selectedKnowledgeCardIds.value = allVisibleCardsSelected.value
+    ? selectedKnowledgeCardIds.value.filter((id) => !selectableVisibleKnowledgeCardIds.value.includes(id))
+    : [...new Set([...selectedKnowledgeCardIds.value, ...selectableVisibleKnowledgeCardIds.value])];
+}
+
+async function bulkReviewKnowledgeCards(status: 'approved' | 'archived') {
+  const completed = await store.bulkReviewKnowledgeCards(selectedKnowledgeCardIds.value, status);
+  if (completed) {
+    selectedKnowledgeCardIds.value = [];
+    knowledgeCardStatusFilter.value = status;
+  }
 }
 
 async function handleKnowledgeFileChange(event: Event) {
@@ -510,6 +627,7 @@ async function handleKnowledgeFileChange(event: Event) {
   if (!file) {
     return;
   }
+  pendingBinaryUpload.value = null;
   const extension = file.name.toLowerCase().split('.').pop() ?? '';
   const textExtensions = new Set(['md', 'markdown', 'txt', 'csv', 'json', 'yaml', 'yml']);
   const binaryType = extension === 'pdf' || file.type === 'application/pdf'
@@ -536,19 +654,17 @@ async function handleKnowledgeFileChange(event: Event) {
       reader.onerror = () => reject(reader.error ?? new Error('Failed to read file.'));
       reader.readAsDataURL(file);
     });
-    void store.uploadContextArtifact({
-      title: file.name,
-      sourceRef: `file:${file.name}`,
-      artifactType: binaryType,
+    knowledgeForm.artifactType = binaryType;
+    knowledgeForm.content = '';
+    pendingBinaryUpload.value = {
       contentBase64,
       mimeType: file.type || (binaryType === 'context_pdf'
         ? 'application/pdf'
         : binaryType === 'context_xlsx'
           ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           : 'image/png'),
-      ocrLanguage: 'eng+chi_sim',
-    });
-    input.value = '';
+      ...(binaryType === 'context_image' ? { ocrLanguage: 'eng+chi_sim' } : {}),
+    };
     return;
   }
   knowledgeForm.artifactType = extension === 'md' || extension === 'markdown' ? 'context_markdown' : 'context_text';
@@ -563,11 +679,22 @@ function resumeRetrieval(queryTerms: string[]) {
   retrievalQuery.value = queryTerms.join(' ');
 }
 
-function extractKnowledgeCards() {
+async function extractKnowledgeCards(replaceUnreviewed = false) {
   if (promptEligibleContextArtifactIds.value.length === 0) {
     return;
   }
-  void store.extractAllKnowledgeCards(promptEligibleContextArtifactIds.value);
+  await store.extractAllKnowledgeCards(promptEligibleContextArtifactIds.value, replaceUnreviewed);
+  if (!store.errorMessage) selectBestKnowledgeCardStatus();
+}
+
+function selectBestKnowledgeCardStatus() {
+  knowledgeCardStatusFilter.value = extractedCardCount.value > 0
+    ? 'extracted'
+    : approvedCardCount.value > 0
+      ? 'approved'
+      : archivedCardCount.value > 0
+        ? 'archived'
+        : 'all';
 }
 
 function submitKnowledgeCardRetrieval() {
@@ -578,13 +705,14 @@ function reviewKnowledgeCard(cardId: string, status: string) {
   void store.reviewKnowledgeCard(cardId, status);
 }
 
-onMounted(() => {
+onMounted(async () => {
   const resumedQuery = window.sessionStorage.getItem('chtest:knowledge-retrieval-query');
   if (resumedQuery) {
     retrievalQuery.value = resumedQuery;
     window.sessionStorage.removeItem('chtest:knowledge-retrieval-query');
   }
-  void store.loadExtensionSurface();
+  await store.loadExtensionSurface();
+  selectBestKnowledgeCardStatus();
 });
 </script>
 
@@ -594,9 +722,97 @@ onMounted(() => {
   margin-top: 14px;
 }
 
+.knowledge-workflow-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.knowledge-workflow-step {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  column-gap: 8px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  color: #667085;
+}
+
+.knowledge-workflow-step strong {
+  display: grid;
+  grid-row: span 2;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #475467;
+  background: #eef2f6;
+}
+
+.knowledge-workflow-step span {
+  font-weight: 700;
+  color: #344054;
+}
+
+.knowledge-workflow-step small {
+  overflow: hidden;
+  color: #98a2b3;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.knowledge-workflow-step--active strong {
+  color: #ffffff;
+  background: #2563eb;
+}
+
+.knowledge-workflow-arrow {
+  align-self: center;
+  color: #98a2b3;
+  font-size: 22px;
+}
+
+.step-title {
+  display: grid;
+  gap: 3px;
+}
+
+.step-title small {
+  color: #98a2b3;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.compat-label {
+  color: #98a2b3;
+  font-size: 11px;
+  font-weight: 400;
+}
+
 .knowledge-form {
   display: grid;
   gap: 12px;
+}
+
+.adapter-meta {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+}
+
+.adapter-meta span,
+.adapter-meta small {
+  color: #667085;
+}
+
+.adapter-meta strong {
+  color: #101828;
+  font-size: 16px;
 }
 
 .knowledge-form label {
@@ -604,6 +820,48 @@ onMounted(() => {
   gap: 6px;
   color: #344054;
   font-weight: 700;
+}
+
+.automation-note {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.supported-format-list,
+.detected-file-format {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.supported-format-list > span,
+.detected-file-format > span {
+  margin-right: 4px;
+  color: #667085;
+  font-size: 12px;
+}
+
+.detected-file-format strong {
+  overflow-wrap: anywhere;
+  color: #344054;
+  font-size: 13px;
+}
+
+@media (max-width: 860px) {
+  .knowledge-workflow-rail {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .knowledge-workflow-step {
+    width: 100%;
+  }
+
+  .knowledge-workflow-arrow {
+    display: none;
+  }
 }
 
 .knowledge-file-input {
@@ -698,6 +956,66 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   margin-top: 10px;
+}
+
+.knowledge-card-pagination {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.knowledge-card-pagination span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.knowledge-card-status-filter {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.knowledge-view-switch {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.knowledge-view-switch > span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.knowledge-card-status-filter > span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.knowledge-card-bulk-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.knowledge-card-bulk-actions > span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.knowledge-card-title {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
 }
 
 .retrieval-result {

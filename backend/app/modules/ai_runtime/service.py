@@ -61,11 +61,13 @@ SECRET_PATTERNS = [
     re.compile(r"\bAKIA[0-9A-Z]{8,}"),
     re.compile(r"authorization\s*:\s*bearer\s+\S+", re.IGNORECASE),
     re.compile(r"cookie\s*:\s*\S+", re.IGNORECASE),
-    re.compile(r"\b(password|token|secret|api_key)\s*[:=]\s*\S+", re.IGNORECASE),
+    re.compile(
+        r"\b(password|token|secret|api_key)\s*[:=]\s*(?!string\b|number\b|boolean\b|<[^>]+>|\$\{)[^\s,;}]+",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
     re.compile(r"\b1[3-9]\d{9}\b"),
     re.compile(r"\b\d{17}[\dXx]\b"),
-    re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
     re.compile(r"\bpostgres(?:ql)?://\S+", re.IGNORECASE),
     re.compile(r"\bmysql://\S+", re.IGNORECASE),
     re.compile(r"\bmongodb(?:\+srv)?://\S+", re.IGNORECASE),
@@ -99,6 +101,10 @@ class ProjectNotFoundError(Exception):
 
 
 class AITaskNotFoundError(Exception):
+    pass
+
+
+class ContextArtifactNotFoundError(Exception):
     pass
 
 
@@ -275,6 +281,70 @@ def list_context_artifacts(session: Session, project_id: uuid.UUID) -> list[Cont
         )
         for artifact in artifacts
     ]
+
+
+def delete_context_artifact(
+    session: Session,
+    store: LocalArtifactStore,
+    artifact_id: uuid.UUID,
+) -> None:
+    """Delete an imported document and every generated representation from it."""
+    artifact = session.get(Artifact, artifact_id)
+    if artifact is None or artifact.owner_entity_type != "Project":
+        raise ContextArtifactNotFoundError
+
+    # Binary imports create a hidden source file plus a prompt-safe extracted text
+    # artifact. Deleting either visible row must remove the complete import.
+    project_artifacts = session.scalars(
+        select(Artifact).where(
+            Artifact.project_id == artifact.project_id,
+            Artifact.owner_entity_type == "Project",
+            Artifact.owner_entity_id == artifact.project_id,
+        ),
+    ).all()
+    target_ids = {artifact.id}
+    source_binary_id = artifact.metadata_json.get("source_binary_artifact_id")
+    if source_binary_id:
+        try:
+            target_ids.add(uuid.UUID(str(source_binary_id)))
+        except (ValueError, TypeError):
+            pass
+    changed = True
+    while changed:
+        changed = False
+        for candidate in project_artifacts:
+            source_id = candidate.metadata_json.get("source_binary_artifact_id")
+            linked = False
+            if source_id:
+                try:
+                    linked = uuid.UUID(str(source_id)) in target_ids
+                except (ValueError, TypeError):
+                    linked = False
+            if candidate.id in target_ids or linked:
+                if candidate.id not in target_ids:
+                    target_ids.add(candidate.id)
+                    changed = True
+
+    from backend.app.modules.knowledge.models import TestKnowledgeCard
+
+    cards = session.scalars(
+        select(TestKnowledgeCard).where(TestKnowledgeCard.source_artifact_id.in_(target_ids)),
+    ).all()
+    linked_cards = session.scalars(
+        select(TestKnowledgeCard).where(TestKnowledgeCard.duplicate_of_card_id.in_([card.id for card in cards])),
+    ).all()
+    for linked_card in linked_cards:
+        linked_card.duplicate_of_card_id = None
+        if linked_card.status == "duplicate":
+            linked_card.status = "archived"
+    for card in cards:
+        session.delete(card)
+
+    for candidate in project_artifacts:
+        if candidate.id in target_ids:
+            store.delete(candidate.file_path)
+            session.delete(candidate)
+    session.commit()
 
 
 def validate_context_artifact_input(data: ContextArtifactCreate) -> None:

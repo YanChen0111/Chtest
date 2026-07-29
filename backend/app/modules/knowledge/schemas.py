@@ -247,6 +247,7 @@ class TestKnowledgeCardRetrieveRequest(BaseModel):
 class TestKnowledgeCardExtractBatchRequest(BaseModel):
     project_id: uuid.UUID
     source_artifact_ids: list[uuid.UUID] | None = None
+    replace_unreviewed: bool = False
 
 
 class TestKnowledgeCardReviewRequest(BaseModel):

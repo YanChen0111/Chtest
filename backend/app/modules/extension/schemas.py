@@ -63,6 +63,7 @@ class KnowledgeBaseContextArtifactRead(BaseModel):
     title: str
     artifact_type: str
     mime_type: str
+    source_mime_type: str | None = None
     source_ref: str
     safe_to_show: bool
     redaction_applied: bool

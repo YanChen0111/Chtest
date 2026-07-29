@@ -386,6 +386,18 @@ def list_context_artifacts(
     return ContextArtifactListRead(items=items, total=len(items))
 
 
+@router.delete("/context-artifacts/{artifact_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_context_artifact(
+    artifact_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    store: LocalArtifactStore = Depends(get_artifact_store),
+) -> None:
+    try:
+        service.delete_context_artifact(session, store, artifact_id)
+    except service.ContextArtifactNotFoundError as exc:
+        raise artifact_not_found() from exc
+
+
 @router.get("/ai-tasks/{ai_task_id}", response_model=AITaskDetailRead)
 def get_ai_task(
     ai_task_id: uuid.UUID,

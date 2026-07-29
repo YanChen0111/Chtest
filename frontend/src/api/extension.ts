@@ -18,6 +18,7 @@ export interface KnowledgeBaseContextArtifactRead {
   readonly title: string;
   readonly artifact_type: string;
   readonly mime_type: string;
+  readonly source_mime_type?: string | null;
   readonly source_ref: string;
   readonly safe_to_show: boolean;
   readonly redaction_applied: boolean;
@@ -140,6 +141,7 @@ export interface TestKnowledgeCardExtractRead {
 export interface TestKnowledgeCardExtractBatchRequest {
   readonly project_id: string;
   readonly source_artifact_ids?: string[];
+  readonly replace_unreviewed?: boolean;
 }
 
 export interface TestKnowledgeCardExtractBatchRead {
@@ -389,6 +391,10 @@ export async function retrieveTestKnowledgeCards(
 
 export async function createContextArtifact(data: ContextArtifactCreateRequest): Promise<ContextArtifactRead> {
   return apiClient.postJson<ContextArtifactRead, ContextArtifactCreateRequest>('/context-artifacts', data);
+}
+
+export async function deleteContextArtifact(artifactId: string): Promise<void> {
+  return apiClient.delete(`/context-artifacts/${artifactId}`);
 }
 
 export async function updateKnowledgeAdapter(

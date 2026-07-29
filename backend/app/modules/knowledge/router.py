@@ -288,6 +288,7 @@ def extract_all_test_knowledge_cards(
             store,
             project_id=data.project_id,
             source_artifact_ids=data.source_artifact_ids,
+            replace_unreviewed=data.replace_unreviewed,
         )
     except service.ProjectNotFoundError as exc:
         raise not_found("PROJECT_NOT_FOUND", "Project not found.") from exc

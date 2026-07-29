@@ -86,6 +86,13 @@ export class ApiClient {
     return response.json() as Promise<TResponse>;
   }
 
+  async delete(path: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: { Accept: 'application/json' } });
+    if (!response.ok) {
+      throw await this.errorFromResponse(response);
+    }
+  }
+
   private async errorFromResponse(response: Response): Promise<ApiError> {
     let message = `请求失败：${response.status}`;
     try {

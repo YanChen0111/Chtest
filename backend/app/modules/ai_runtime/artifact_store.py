@@ -43,6 +43,14 @@ class LocalArtifactStore:
     def read_bytes(self, file_path: str) -> bytes:
         return self._resolve_relative_path(file_path).read_bytes()
 
+    def delete(self, file_path: str) -> None:
+        """Remove a locally stored artifact when it is no longer referenced."""
+        destination = self._resolve_relative_path(file_path)
+        try:
+            destination.unlink()
+        except FileNotFoundError:
+            return
+
     def _resolve_relative_path(self, file_path: str) -> Path:
         normalized_path = self._normalize_relative_path(file_path)
         destination = (self.root / normalized_path).resolve()

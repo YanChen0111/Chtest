@@ -222,19 +222,23 @@ describe('KnowledgeBaseView', () => {
     expect(wrapper.text()).toContain('manual:coupon-api-notes.md');
     expect(wrapper.text()).toContain('允许');
     expect(wrapper.text()).toContain('检索证据');
+    await wrapper.find('[data-test="view-retrieval"]').trigger('click');
+    await wrapper.vm.$nextTick();
     expect(wrapper.text()).toContain('2026-06-30T10:30:00Z');
     expect(wrapper.find('[data-test="knowledge-base-page"]').exists()).toBe(true);
     expect(wrapper.find('[data-test="recent-knowledge-retrieval-row"]').exists()).toBe(true);
     await wrapper.find('[data-test="resume-knowledge-retrieval"]').trigger('click');
     expect((wrapper.find('[data-test="retrieval-query"] textarea').element as HTMLTextAreaElement).value).toBe('coupon expired');
-    expect(wrapper.text()).toContain('pytest_runner');
-    expect(wrapper.text()).toContain('MCP-ready');
     expect(wrapper.text()).toContain('最近检索证据');
     expect(wrapper.text()).toContain('命中词');
     expect(wrapper.text()).toContain('coupon');
     expect(wrapper.text()).toContain('expired');
     expect(wrapper.text()).toContain('得分 2');
     expect(wrapper.text()).toContain('Expired coupon validation blocks checkout.');
+    await wrapper.find('[data-test="view-cards"]').trigger('click');
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-test="filter-extracted-cards"]').attributes('aria-pressed')).toBe('true');
+    expect(wrapper.text()).toContain('BoundaryCondition: expired coupon checkout');
     expect(wrapper.text()).toContain('Vector Index');
     expect(wrapper.text()).toContain('Vector Coverage');
     const readinessText = wrapper.find('[data-test="knowledge-readiness-strip"]').text().replace(/\s+/g, ' ');
@@ -242,7 +246,7 @@ describe('KnowledgeBaseView', () => {
     expect(readinessText).toContain('Needs Review 1');
     expect(readinessText).toContain('Prompt Ready 0');
     expect(readinessText).toContain('Index Gap 0');
-    expect(wrapper.text()).toContain('no_external_vector_runtime');
+    expect(wrapper.text()).not.toContain('no_external_vector_runtime');
     expect(wrapper.text()).not.toContain('Provider 配置');
     expect(wrapper.text()).not.toContain('向量检索');
   });
@@ -327,10 +331,14 @@ describe('KnowledgeBaseView', () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
+    await wrapper.find('[data-test="view-retrieval"]').trigger('click');
+    await wrapper.vm.$nextTick();
+
     expect(wrapper.text()).toContain('最近检索证据');
-    expect(wrapper.text()).toContain('暂无 deterministic retrieval evidence');
+    expect(wrapper.text()).toContain('暂无检索记录');
     expect(wrapper.text()).toContain('ContextArtifact');
-    expect(wrapper.text()).toContain('MCP-ready');
+    await wrapper.find('[data-test="view-cards"]').trigger('click');
+    await wrapper.vm.$nextTick();
     const readinessText = wrapper.find('[data-test="knowledge-readiness-strip"]').text().replace(/\s+/g, ' ');
     expect(readinessText).toContain('Approved 0');
     expect(readinessText).toContain('Needs Review 0');
@@ -637,6 +645,8 @@ describe('KnowledgeBaseView', () => {
       }),
     );
 
+    await wrapper.find('[data-test="view-cards"]').trigger('click');
+    await wrapper.vm.$nextTick();
     await wrapper.find('[data-test="extract-knowledge-cards"]').trigger('click');
     await flushPromises();
     await wrapper.vm.$nextTick();
@@ -705,7 +715,9 @@ describe('KnowledgeBaseView', () => {
       }),
     );
 
-    await wrapper.findAll('form')[1].trigger('submit');
+    await wrapper.find('[data-test="view-retrieval"]').trigger('click');
+    await wrapper.vm.$nextTick();
+    await wrapper.findAll('form')[0].trigger('submit');
     await flushPromises();
     await wrapper.vm.$nextTick();
 

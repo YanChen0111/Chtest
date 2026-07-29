@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import {
   createContextArtifact,
+  deleteContextArtifact,
   extractAllTestKnowledgeCards,
   extractTestKnowledgeCards,
   getTestKnowledgeGraph,
@@ -125,10 +126,67 @@ export const useExtensionStore = defineStore('extension', {
           ...(data.ocrLanguage ? { ocr_language: data.ocrLanguage } : {}),
         };
         const created = await createContextArtifact(payload);
-        this.successMessage = `Imported ${created.title || data.title} as ${created.artifact_type}.`;
-        await this.loadExtensionSurface();
+        try {
+          const extraction = await extractAllTestKnowledgeCards({
+            project_id: this.projectId,
+            source_artifact_ids: [created.id],
+          });
+          this.latestKnowledgeExtraction = extraction.source_artifact_ids.length > 0
+            ? {
+                source_artifact_id: extraction.source_artifact_ids[0],
+                created_count: extraction.created_count,
+                skipped_count: extraction.skipped_count,
+                items: extraction.items,
+              }
+            : null;
+          await this.loadExtensionSurface();
+          const extractedCards = this.testKnowledgeCards.filter(
+            (card) => card.source_artifact_id === created.id && card.status === 'extracted',
+          );
+          const autoApprovedCards = extractedCards.filter(
+            (card) => card.safe_to_show && card.allowed_for_prompt && card.confidence >= 80,
+          );
+          for (const card of autoApprovedCards) {
+            await reviewTestKnowledgeCard(card.id, {
+              project_id: this.projectId,
+              status: 'approved',
+            });
+          }
+          if (autoApprovedCards.length > 0) {
+            await rebuildTestKnowledgeIndex({
+              project_id: this.projectId,
+              embedding_model: 'deterministic-hashing-v1',
+              embedding_dim: 64,
+            });
+          }
+          await this.loadExtensionSurface();
+          const needsReview = this.testKnowledgeCards.filter(
+            (card) => card.source_artifact_id === created.id && card.status === 'extracted',
+          ).length;
+          this.successMessage = `已导入 ${created.title || data.title}，自动抽取 ${extraction.created_count} 条知识，自动启用 ${autoApprovedCards.length} 条${needsReview ? `，${needsReview} 条需要人工复核` : ''}。`;
+        } catch (processingError) {
+          await this.loadExtensionSurface();
+          this.successMessage = `已导入 ${created.title || data.title}，资料已保存。`;
+          this.errorMessage = processingError instanceof Error
+            ? `自动知识处理未完成：${processingError.message}`
+            : '自动知识处理未完成，可稍后重试。';
+        }
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '知识导入失败';
+      } finally {
+      this.loadingMutation = false;
+      }
+    },
+    async deleteContextArtifact(artifactId: string, title?: string) {
+      this.loadingMutation = true;
+      this.errorMessage = '';
+      this.successMessage = '';
+      try {
+        await deleteContextArtifact(artifactId);
+        await this.loadExtensionSurface();
+        this.successMessage = `已删除 ${title || '知识库资料'}，相关知识卡和检索内容已同步移除。`;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '删除知识库资料失败';
       } finally {
         this.loadingMutation = false;
       }
@@ -179,7 +237,7 @@ export const useExtensionStore = defineStore('extension', {
         this.loadingMutation = false;
       }
     },
-    async extractAllKnowledgeCards(sourceArtifactIds: string[]) {
+    async extractAllKnowledgeCards(sourceArtifactIds: string[], replaceUnreviewed = false) {
       this.loadingMutation = true;
       this.errorMessage = '';
       this.successMessage = '';
@@ -187,6 +245,7 @@ export const useExtensionStore = defineStore('extension', {
         const result: TestKnowledgeCardExtractBatchRead = await extractAllTestKnowledgeCards({
           project_id: this.projectId,
           source_artifact_ids: sourceArtifactIds,
+          replace_unreviewed: replaceUnreviewed,
         });
         this.latestKnowledgeExtraction =
           result.source_artifact_ids.length > 0
@@ -197,7 +256,9 @@ export const useExtensionStore = defineStore('extension', {
                 items: result.items,
               }
             : null;
-        this.successMessage = 'Knowledge cards were extracted and are ready for review.';
+        this.successMessage = replaceUnreviewed
+          ? `已使用新规则重建待审核知识卡：新增 ${result.created_count} 张，跳过 ${result.skipped_count} 张。`
+          : 'Knowledge cards were extracted and are ready for review.';
         await this.loadExtensionSurface();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '测试知识卡抽取失败';
@@ -251,10 +312,45 @@ export const useExtensionStore = defineStore('extension', {
           project_id: this.projectId,
           status,
         });
+        if (status === 'approved') {
+          await rebuildTestKnowledgeIndex({
+            project_id: this.projectId,
+            embedding_model: 'deterministic-hashing-v1',
+            embedding_dim: 64,
+          });
+        }
         this.successMessage = `Knowledge card status changed to ${status}.`;
         await this.loadExtensionSurface();
       } catch (error) {
         this.errorMessage = error instanceof Error ? error.message : '测试知识卡审核失败';
+      } finally {
+        this.loadingMutation = false;
+      }
+    },
+    async bulkReviewKnowledgeCards(cardIds: string[], status: 'approved' | 'archived') {
+      if (cardIds.length === 0) return false;
+      this.loadingMutation = true;
+      this.errorMessage = '';
+      this.successMessage = '';
+      try {
+        for (const cardId of cardIds) {
+          await reviewTestKnowledgeCard(cardId, { project_id: this.projectId, status });
+        }
+        if (status === 'approved') {
+          await rebuildTestKnowledgeIndex({
+            project_id: this.projectId,
+            embedding_model: 'deterministic-hashing-v1',
+            embedding_dim: 64,
+          });
+        }
+        await this.loadExtensionSurface();
+        this.successMessage = status === 'approved'
+          ? `已批准 ${cardIds.length} 张知识卡并更新检索索引。`
+          : `已归档 ${cardIds.length} 张知识卡。`;
+        return true;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '批量处理知识卡失败';
+        return false;
       } finally {
         this.loadingMutation = false;
       }

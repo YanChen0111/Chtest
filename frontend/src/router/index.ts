@@ -11,7 +11,6 @@ import NewmanExecutionView from '../views/execution/NewmanExecutionView.vue';
 import PlaywrightExecutionView from '../views/execution/PlaywrightExecutionView.vue';
 import PytestExecutionView from '../views/execution/PytestExecutionView.vue';
 import KnowledgeBaseView from '../views/extension/KnowledgeBaseView.vue';
-import RagWorkbenchView from '../views/extension/RagWorkbenchView.vue';
 import PromptSkillCenterView from '../views/prompt-skill/PromptSkillCenterView.vue';
 import ReportFailureAnalysisView from '../views/reporting/ReportFailureAnalysisView.vue';
 import RequirementReviewView from '../views/requirements/RequirementReviewView.vue';
@@ -135,12 +134,6 @@ export const router = createRouter({
           meta: {
             title: 'RAG 知识库',
           },
-        },
-        {
-          path: 'extension/knowledge-workbench',
-          name: 'knowledge-workbench',
-          component: RagWorkbenchView,
-          meta: { title: 'Knowledge Workbench' },
         },
       ],
     },

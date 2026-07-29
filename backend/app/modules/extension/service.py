@@ -639,6 +639,11 @@ def to_context_artifact_read(
         title=str(metadata.get("title", "")),
         artifact_type=artifact.artifact_type,
         mime_type=artifact.mime_type,
+        source_mime_type=(
+            str(metadata["source_binary_mime_type"])
+            if metadata.get("source_binary_mime_type")
+            else None
+        ),
         source_ref=str(metadata.get("source_ref", "")),
         safe_to_show=bool(metadata.get("safe_to_show", False)),
         redaction_applied=bool(metadata.get("redaction_applied", False)),
