@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.app.modules.ai_runtime.schemas import ArtifactRead
 
@@ -12,6 +12,7 @@ class TestRunCreateRequest(BaseModel):
     project_id: uuid.UUID
     automation_draft_id: uuid.UUID | None = None
     test_command_id: uuid.UUID | None = None
+    execution_approval_decision_id: uuid.UUID | None = None
     reason: str | None = None
     runner_mode: str = "local_subprocess"
 
@@ -61,3 +62,78 @@ class TestRunRead(BaseModel):
     parsed_result: dict[str, Any] = Field(default_factory=dict)
     test_results: list[TestResultRead] = Field(default_factory=list)
     artifacts: list[ArtifactRead] = Field(default_factory=list)
+
+
+class ExecutionApprovalWorkflowActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    reviewer: str = Field(default="Default User", min_length=1, max_length=120)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class ExecutionApprovalWorkflowEditRequest(ExecutionApprovalWorkflowActionRequest):
+    execution_decisions: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ExecutionApprovalWorkflowContinueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    approval_decision_id: uuid.UUID
+
+
+class ExecutionApprovalWorkflowRead(BaseModel):
+    project_id: uuid.UUID
+    requirement_review_id: uuid.UUID
+    workflow: dict[str, Any]
+    source_automation_draft_review_snapshot_id: str | None = None
+    source_automation_draft_review_snapshot_hash: str | None = None
+    source_automation_plan_review_snapshot_id: str | None = None
+    source_automation_plan_review_snapshot_hash: str | None = None
+    source_case_review_snapshot_id: str | None = None
+    source_case_review_snapshot_hash: str | None = None
+    approved_automation_plan_ids: list[str] = Field(default_factory=list)
+    approved_test_case_ids: list[str] = Field(default_factory=list)
+    approved_automation_draft_ids: list[str] = Field(default_factory=list)
+    generated_test_run_ids: list[uuid.UUID] = Field(default_factory=list)
+    draft_decisions: list[dict[str, Any]] = Field(default_factory=list)
+    execution_decisions: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ExecutionResultReviewWorkflowActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    reviewer: str = Field(default="Default User", min_length=1, max_length=120)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class ExecutionResultReviewWorkflowEditRequest(ExecutionResultReviewWorkflowActionRequest):
+    result_decisions: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ExecutionResultReviewWorkflowContinueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    approval_decision_id: uuid.UUID
+
+
+class ExecutionResultReviewWorkflowRead(BaseModel):
+    project_id: uuid.UUID
+    requirement_review_id: uuid.UUID
+    workflow: dict[str, Any]
+    source_execution_approval_snapshot_id: str | None = None
+    source_execution_approval_snapshot_hash: str | None = None
+    source_automation_draft_review_snapshot_id: str | None = None
+    source_automation_draft_review_snapshot_hash: str | None = None
+    source_automation_plan_review_snapshot_id: str | None = None
+    source_automation_plan_review_snapshot_hash: str | None = None
+    source_case_review_snapshot_id: str | None = None
+    source_case_review_snapshot_hash: str | None = None
+    approved_automation_draft_ids: list[str] = Field(default_factory=list)
+    generated_test_run_ids: list[uuid.UUID] = Field(default_factory=list)
+    execution_artifact_ids: list[uuid.UUID] = Field(default_factory=list)
+    execution_decisions: list[dict[str, Any]] = Field(default_factory=list)
+    result_decisions: list[dict[str, Any]] = Field(default_factory=list)

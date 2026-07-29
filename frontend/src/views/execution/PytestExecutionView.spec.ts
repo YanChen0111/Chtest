@@ -102,6 +102,39 @@ function testRunBody() {
   };
 }
 
+function executionApprovalBody() {
+  return {
+    project_id: '00000000-0000-0000-0000-000000000101',
+    requirement_review_id: '00000000-0000-0000-0000-000000000601',
+    workflow: {
+      run_id: '00000000-0000-0000-0000-000000009001',
+      stage: 'execution_approval',
+      state: 'approved',
+      lock_version: 8,
+      snapshot_id: '00000000-0000-0000-0000-000000009002',
+      approval_decision_id: '00000000-0000-0000-0000-000000009003',
+      can_submit: false,
+      can_complete_review: false,
+      can_edit: true,
+      can_approve: false,
+      can_execute: true,
+      can_continue: true,
+    },
+    source_automation_draft_review_snapshot_id: '00000000-0000-0000-0000-000000008002',
+    source_automation_draft_review_snapshot_hash: 'sha256:draft-review',
+    source_automation_plan_review_snapshot_id: '00000000-0000-0000-0000-000000007002',
+    source_automation_plan_review_snapshot_hash: 'sha256:plan-review',
+    source_case_review_snapshot_id: '00000000-0000-0000-0000-000000006002',
+    source_case_review_snapshot_hash: 'sha256:case-review',
+    approved_automation_plan_ids: ['00000000-0000-0000-0000-000000001101'],
+    approved_test_case_ids: ['00000000-0000-0000-0000-000000000955'],
+    approved_automation_draft_ids: ['00000000-0000-0000-0000-000000001001'],
+    generated_test_run_ids: [],
+    draft_decisions: [],
+    execution_decisions: [],
+  };
+}
+
 describe('PytestExecutionView', () => {
   beforeEach(() => window.localStorage.clear());
   afterEach(() => vi.unstubAllGlobals());
@@ -199,6 +232,56 @@ describe('PytestExecutionView', () => {
 
     expect(wrapper.text()).toContain('620 ms');
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('requires the server ExecutionApproval gate for workflow-backed draft execution', async () => {
+    window.localStorage.setItem(
+      'chtest.latestAutomationDraft',
+      JSON.stringify({
+        projectId: '00000000-0000-0000-0000-000000000101',
+        requirementReviewId: '00000000-0000-0000-0000-000000000601',
+        testCaseId: '00000000-0000-0000-0000-000000000955',
+        automationDraftId: '00000000-0000-0000-0000-000000001001',
+        status: 'approved',
+        targetFramework: 'pytest',
+      }),
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-reviews/00000000-0000-0000-0000-000000000601/execution-approval')) {
+        return new Response(JSON.stringify(executionApprovalBody()), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/test-runs') && init?.method === 'POST') {
+        const payload = JSON.parse(String(init.body));
+        expect(payload.execution_approval_decision_id).toBe('00000000-0000-0000-0000-000000009003');
+        return new Response(JSON.stringify(testRunBody()), {
+          status: 202,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(PytestExecutionView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('[data-test="execution-approval-panel"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('ExecutionApproval gate');
+    expect(wrapper.text()).toContain('00000000-0000-0000-0000-000000009003');
+    expect(wrapper.find('[data-test="start-run"]').attributes('disabled')).toBeUndefined();
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(wrapper.text()).toContain('pytest tests/test_generated_ok.py -q');
   });
 
   it('does not expose a fabricated draft id when no approved workflow context exists', async () => {

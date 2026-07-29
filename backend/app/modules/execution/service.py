@@ -6,10 +6,11 @@ import tempfile
 import uuid
 from pathlib import Path
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.modules.ai_runtime.models import Artifact
-from backend.app.modules.automation.models import AutomationDraft
+from backend.app.modules.automation.models import AutomationDraft, AutomationPlan
 from backend.app.modules.automation.service import (
     AutomationDraftQualityGateError,
     automation_draft_quality_gate,
@@ -32,8 +33,26 @@ from backend.app.modules.execution.playwright_runner import (
     PlaywrightRunnerResult,
 )
 from backend.app.modules.execution.pytest_runner import PytestRunner, PytestRunnerCommandError
-from backend.app.modules.execution.schemas import TestRunCreateRequest
+from backend.app.modules.execution.schemas import (
+    ExecutionApprovalWorkflowActionRequest,
+    ExecutionApprovalWorkflowContinueRequest,
+    ExecutionApprovalWorkflowEditRequest,
+    ExecutionApprovalWorkflowRead,
+    ExecutionResultReviewWorkflowActionRequest,
+    ExecutionResultReviewWorkflowContinueRequest,
+    ExecutionResultReviewWorkflowEditRequest,
+    ExecutionResultReviewWorkflowRead,
+    TestRunCreateRequest,
+)
 from backend.app.modules.projects.models import Project, TestCommand
+from backend.app.modules.requirements.models import Requirement, RequirementReview
+from backend.app.modules.workflow_control import service as workflow_service
+from backend.app.modules.workflow_control.models import WorkflowHumanDecision
+from backend.app.modules.workflow_control.policy import ApprovalDecision, ControlledStage, GateState, TransitionAction, WorkflowKind
+from backend.app.modules.workflow_control.schemas import HumanApprovalCreate, HumanReviewCreate, WorkflowRevisionCreate
+
+
+WorkflowPersistenceError = workflow_service.WorkflowPersistenceError
 
 
 class ProjectNotFoundError(Exception):
@@ -46,6 +65,22 @@ class TestRunNotFoundError(Exception):
 
 class TestRunInvalidInputError(Exception):
     pass
+
+
+class ExecutionApprovalWorkflowStageError(Exception):
+    code = "EXECUTION_APPROVAL_STAGE_REQUIRED"
+
+
+class ExecutionApprovalGateError(Exception):
+    code = "EXECUTION_APPROVAL_DRAFT_APPROVAL_REQUIRED"
+
+
+class ExecutionResultReviewWorkflowStageError(Exception):
+    code = "EXECUTION_RESULT_REVIEW_STAGE_REQUIRED"
+
+
+class ExecutionResultReviewGateError(Exception):
+    code = "EXECUTION_RESULT_REVIEW_EVIDENCE_REQUIRED"
 
 
 def create_test_run(session: Session, data: TestRunCreateRequest) -> TestRun:
@@ -67,17 +102,297 @@ def get_test_run(session: Session, test_run_id: uuid.UUID) -> TestRun:
     return test_run
 
 
+def get_execution_approval_workflow_detail(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> ExecutionApprovalWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    return _execution_approval_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def submit_execution_approval_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionApprovalWorkflowActionRequest,
+) -> ExecutionApprovalWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _execution_approval_workflow(session, project_id, review.id)
+    workflow_service.submit_for_review(session, project_id, run.id, expected_version=data.expected_version)
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    return _execution_approval_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def complete_execution_approval_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionApprovalWorkflowActionRequest,
+) -> ExecutionApprovalWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _execution_approval_workflow(session, project_id, review.id)
+    workflow_service.complete_human_review(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    return _execution_approval_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def edit_execution_approval_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionApprovalWorkflowEditRequest,
+) -> ExecutionApprovalWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    payload = dict(snapshot.input_payload_json)
+    payload["execution_decisions"] = _json_safe(data.execution_decisions)
+    workflow_service.revise_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=WorkflowRevisionCreate(input_payload=payload, reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    return _execution_approval_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def decide_execution_approval_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionApprovalWorkflowActionRequest,
+    *,
+    decision: ApprovalDecision,
+) -> ExecutionApprovalWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    if decision is ApprovalDecision.APPROVED:
+        _require_approved_execution_draft(session, project_id, snapshot.input_payload_json)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(decision=decision, reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    return _execution_approval_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def continue_execution_approval_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionApprovalWorkflowContinueRequest,
+) -> ExecutionApprovalWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    _require_approved_execution_draft(session, project_id, snapshot.input_payload_json)
+    workflow_service.advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        approval_decision_id=data.approval_decision_id,
+        target_stage=ControlledStage.EXECUTION_RESULT_REVIEW,
+        next_input_payload=_execution_result_review_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = workflow_service.get_workflow_run_for_subject(
+        session,
+        project_id,
+        workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+        subject_ref=str(review.id),
+    )
+    return _execution_approval_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def approve_and_continue_execution_approval_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionApprovalWorkflowActionRequest,
+) -> ExecutionApprovalWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_approval_workflow(session, project_id, review.id)
+    _require_approved_execution_draft(session, project_id, snapshot.input_payload_json)
+    workflow_service.approve_and_advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+        target_stage=ControlledStage.EXECUTION_RESULT_REVIEW,
+        next_input_payload=_execution_result_review_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = workflow_service.get_workflow_run_for_subject(
+        session,
+        project_id,
+        workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+        subject_ref=str(review.id),
+    )
+    return _execution_approval_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def get_execution_result_review_workflow_detail(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> ExecutionResultReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    return _execution_result_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def submit_execution_result_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionResultReviewWorkflowActionRequest,
+) -> ExecutionResultReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _execution_result_review_workflow(session, project_id, review.id)
+    workflow_service.submit_for_review(session, project_id, run.id, expected_version=data.expected_version)
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    return _execution_result_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def complete_execution_result_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionResultReviewWorkflowActionRequest,
+) -> ExecutionResultReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, _ = _execution_result_review_workflow(session, project_id, review.id)
+    workflow_service.complete_human_review(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    return _execution_result_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def edit_execution_result_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionResultReviewWorkflowEditRequest,
+) -> ExecutionResultReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    payload = dict(snapshot.input_payload_json)
+    payload["result_decisions"] = _json_safe(data.result_decisions)
+    workflow_service.revise_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=WorkflowRevisionCreate(input_payload=payload, reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    return _execution_result_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def decide_execution_result_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionResultReviewWorkflowActionRequest,
+    *,
+    decision: ApprovalDecision,
+) -> ExecutionResultReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    if decision is ApprovalDecision.APPROVED:
+        _require_execution_result_evidence(session, project_id, snapshot.input_payload_json)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(decision=decision, reviewer=data.reviewer, comment=data.comment),
+    )
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    return _execution_result_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def continue_execution_result_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionResultReviewWorkflowContinueRequest,
+) -> ExecutionResultReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    _require_execution_result_evidence(session, project_id, snapshot.input_payload_json)
+    workflow_service.advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        approval_decision_id=data.approval_decision_id,
+        target_stage=ControlledStage.REPORT_REVIEW,
+        next_input_payload=_report_review_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = workflow_service.get_workflow_run_for_subject(
+        session,
+        project_id,
+        workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+        subject_ref=str(review.id),
+    )
+    return _execution_result_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
+def approve_and_continue_execution_result_review_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ExecutionResultReviewWorkflowActionRequest,
+) -> ExecutionResultReviewWorkflowRead:
+    review = _require_requirement_review_in_project(session, project_id, requirement_review_id)
+    run, snapshot = _execution_result_review_workflow(session, project_id, review.id)
+    _require_execution_result_evidence(session, project_id, snapshot.input_payload_json)
+    workflow_service.approve_and_advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+        target_stage=ControlledStage.REPORT_REVIEW,
+        next_input_payload=_report_review_input_payload(session, project_id, snapshot),
+    )
+    run, snapshot = workflow_service.get_workflow_run_for_subject(
+        session,
+        project_id,
+        workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+        subject_ref=str(review.id),
+    )
+    return _execution_result_review_workflow_read(session, project_id, review.id, run, snapshot)
+
+
 def create_test_run_from_draft(session: Session, data: TestRunCreateRequest) -> TestRun:
     draft = session.get(AutomationDraft, data.automation_draft_id)
     if draft is None or draft.project_id != data.project_id:
         raise TestRunInvalidInputError
     if draft.status != "approved":
         raise TestRunInvalidInputError
+    if _draft_requires_execution_approval(session, draft):
+        _require_execution_approval_for_draft(session, data.project_id, draft, data.execution_approval_decision_id)
     if draft.ai_task is not None:
         try:
             validate_automation_draft_approval(draft)
-            if automation_draft_quality_gate(draft)["execution_evidence_level"] != "reviewed_candidate":
-                raise TestRunInvalidInputError
         except AutomationDraftQualityGateError as exc:
             raise TestRunInvalidInputError from exc
     if data.runner_mode == "playwright_local":
@@ -598,6 +913,349 @@ def status_from_jmeter_result(result: JMeterRunnerResult) -> str:
     if result.exit_code == 0:
         return "passed"
     return "error"
+
+
+def _review_workflow(session: Session, project_id: uuid.UUID, requirement_review_id: uuid.UUID):
+    return workflow_service.get_workflow_run_for_subject(
+        session,
+        project_id,
+        workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+        subject_ref=str(requirement_review_id),
+    )
+
+
+def _execution_approval_workflow(session: Session, project_id: uuid.UUID, requirement_review_id: uuid.UUID):
+    run, snapshot = _review_workflow(session, project_id, requirement_review_id)
+    if run.current_stage != ControlledStage.EXECUTION_APPROVAL.value:
+        raise ExecutionApprovalWorkflowStageError
+    return run, snapshot
+
+
+def _execution_result_review_workflow(session: Session, project_id: uuid.UUID, requirement_review_id: uuid.UUID):
+    run, snapshot = _review_workflow(session, project_id, requirement_review_id)
+    if run.current_stage != ControlledStage.EXECUTION_RESULT_REVIEW.value:
+        raise ExecutionResultReviewWorkflowStageError
+    return run, snapshot
+
+
+def _require_requirement_review_in_project(
+    session: Session,
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+) -> RequirementReview:
+    row = session.execute(
+        select(RequirementReview, Requirement)
+        .join(Requirement, Requirement.id == RequirementReview.requirement_id)
+        .where(RequirementReview.id == requirement_review_id, Requirement.project_id == project_id),
+    ).one_or_none()
+    if row is None:
+        raise ExecutionApprovalWorkflowStageError
+    return row[0]
+
+
+def _execution_approval_workflow_read(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    run,
+    snapshot,
+) -> ExecutionApprovalWorkflowRead:
+    payload = snapshot.input_payload_json
+    latest_approval = session.scalar(
+        select(WorkflowHumanDecision)
+        .where(
+            WorkflowHumanDecision.project_id == run.project_id,
+            WorkflowHumanDecision.workflow_run_id == run.id,
+            WorkflowHumanDecision.snapshot_id == run.current_snapshot_id,
+            WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+            WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+        )
+        .order_by(WorkflowHumanDecision.created_at.desc(), WorkflowHumanDecision.id.desc()),
+    )
+    approved_draft_ids = _approved_automation_draft_ids_from_payload(payload)
+    return ExecutionApprovalWorkflowRead(
+        project_id=project_id,
+        requirement_review_id=review_id,
+        workflow={
+            "run_id": str(run.id),
+            "stage": run.current_stage,
+            "state": run.gate_state,
+            "lock_version": run.lock_version,
+            "snapshot_id": str(run.current_snapshot_id),
+            "approval_decision_id": str(latest_approval.id) if latest_approval else None,
+            "can_submit": run.gate_state == GateState.DRAFT.value,
+            "can_complete_review": run.gate_state == GateState.WAITING_REVIEW.value,
+            "can_edit": run.gate_state
+            in {
+                GateState.WAITING_REVIEW.value,
+                GateState.WAITING_APPROVAL.value,
+                GateState.APPROVED.value,
+                GateState.REJECTED.value,
+            },
+            "can_approve": run.gate_state == GateState.WAITING_APPROVAL.value,
+            "can_execute": run.current_stage == ControlledStage.EXECUTION_APPROVAL.value
+            and run.gate_state == GateState.APPROVED.value
+            and latest_approval is not None,
+            "can_continue": run.gate_state == GateState.APPROVED.value and latest_approval is not None,
+        },
+        source_automation_draft_review_snapshot_id=payload.get("source_automation_draft_review_snapshot_id"),
+        source_automation_draft_review_snapshot_hash=payload.get("source_automation_draft_review_snapshot_hash"),
+        source_automation_plan_review_snapshot_id=payload.get("source_automation_plan_review_snapshot_id"),
+        source_automation_plan_review_snapshot_hash=payload.get("source_automation_plan_review_snapshot_hash"),
+        source_case_review_snapshot_id=payload.get("source_case_review_snapshot_id"),
+        source_case_review_snapshot_hash=payload.get("source_case_review_snapshot_hash"),
+        approved_automation_plan_ids=list(payload.get("approved_automation_plan_ids", [])),
+        approved_test_case_ids=list(payload.get("approved_test_case_ids", [])),
+        approved_automation_draft_ids=[str(item) for item in approved_draft_ids],
+        execution_decisions=list(payload.get("execution_decisions", [])),
+        generated_test_run_ids=_test_run_ids_for_drafts(session, project_id, approved_draft_ids),
+    )
+
+
+def _approved_automation_draft_ids_from_payload(payload: dict) -> list[uuid.UUID]:
+    draft_ids: list[uuid.UUID] = []
+    for draft_id in payload.get("approved_automation_draft_ids", []):
+        if str(draft_id):
+            draft_ids.append(uuid.UUID(str(draft_id)))
+    return draft_ids
+
+
+def _test_run_ids_from_payload(payload: dict) -> list[uuid.UUID]:
+    run_ids: list[uuid.UUID] = []
+    for run_id in payload.get("generated_test_run_ids", []):
+        if str(run_id):
+            run_ids.append(uuid.UUID(str(run_id)))
+    return run_ids
+
+
+def _test_run_ids_for_drafts(
+    session: Session,
+    project_id: uuid.UUID,
+    draft_ids: list[uuid.UUID],
+) -> list[uuid.UUID]:
+    if not draft_ids:
+        return []
+    return list(
+        session.scalars(
+            select(TestRun.id)
+            .where(TestRun.project_id == project_id, TestRun.automation_draft_id.in_(draft_ids))
+            .order_by(TestRun.created_at.asc(), TestRun.id.asc()),
+        ),
+    )
+
+
+def _execution_artifact_ids_for_test_runs(
+    session: Session,
+    project_id: uuid.UUID,
+    test_run_ids: list[uuid.UUID],
+) -> list[uuid.UUID]:
+    if not test_run_ids:
+        return []
+    return list(
+        session.scalars(
+            select(Artifact.id)
+            .where(
+                Artifact.project_id == project_id,
+                Artifact.owner_entity_type == "TestRun",
+                Artifact.owner_entity_id.in_(test_run_ids),
+            )
+            .order_by(Artifact.created_at.asc(), Artifact.id.asc()),
+        ),
+    )
+
+
+def _require_approved_execution_draft(session: Session, project_id: uuid.UUID, payload: dict) -> None:
+    draft_ids = _approved_automation_draft_ids_from_payload(payload)
+    if not draft_ids:
+        raise ExecutionApprovalGateError
+    approved_draft_id = session.scalar(
+        select(AutomationDraft.id)
+        .where(
+            AutomationDraft.project_id == project_id,
+            AutomationDraft.id.in_(draft_ids),
+            AutomationDraft.status == "approved",
+        )
+        .limit(1),
+    )
+    if approved_draft_id is None:
+        raise ExecutionApprovalGateError
+
+
+def _execution_result_review_input_payload(session: Session, project_id: uuid.UUID, source_snapshot) -> dict[str, object]:
+    payload = source_snapshot.input_payload_json
+    approved_draft_ids = _approved_automation_draft_ids_from_payload(payload)
+    return {
+        "requirement_id": payload.get("requirement_id"),
+        "requirement_review_id": payload.get("requirement_review_id"),
+        "source_execution_approval_snapshot_id": str(source_snapshot.id),
+        "source_execution_approval_snapshot_hash": source_snapshot.input_snapshot_hash,
+        "source_automation_draft_review_snapshot_id": payload.get("source_automation_draft_review_snapshot_id"),
+        "source_automation_draft_review_snapshot_hash": payload.get("source_automation_draft_review_snapshot_hash"),
+        "source_automation_plan_review_snapshot_id": payload.get("source_automation_plan_review_snapshot_id"),
+        "source_automation_plan_review_snapshot_hash": payload.get("source_automation_plan_review_snapshot_hash"),
+        "source_case_review_snapshot_id": payload.get("source_case_review_snapshot_id"),
+        "source_case_review_snapshot_hash": payload.get("source_case_review_snapshot_hash"),
+        "approved_automation_plan_ids": list(payload.get("approved_automation_plan_ids", [])),
+        "approved_test_case_ids": list(payload.get("approved_test_case_ids", [])),
+        "approved_automation_draft_ids": [str(draft_id) for draft_id in approved_draft_ids],
+        "execution_decisions": list(payload.get("execution_decisions", [])),
+        "generated_test_run_ids": [
+            str(run_id) for run_id in _test_run_ids_for_drafts(session, project_id, approved_draft_ids)
+        ],
+    }
+
+
+def _execution_result_review_workflow_read(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    run,
+    snapshot,
+) -> ExecutionResultReviewWorkflowRead:
+    payload = snapshot.input_payload_json
+    latest_approval = session.scalar(
+        select(WorkflowHumanDecision)
+        .where(
+            WorkflowHumanDecision.project_id == run.project_id,
+            WorkflowHumanDecision.workflow_run_id == run.id,
+            WorkflowHumanDecision.snapshot_id == run.current_snapshot_id,
+            WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+            WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+        )
+        .order_by(WorkflowHumanDecision.created_at.desc(), WorkflowHumanDecision.id.desc()),
+    )
+    test_run_ids = _test_run_ids_from_payload(payload)
+    artifact_ids = _execution_artifact_ids_for_test_runs(session, project_id, test_run_ids)
+    return ExecutionResultReviewWorkflowRead(
+        project_id=project_id,
+        requirement_review_id=review_id,
+        workflow={
+            "run_id": str(run.id),
+            "stage": run.current_stage,
+            "state": run.gate_state,
+            "lock_version": run.lock_version,
+            "snapshot_id": str(run.current_snapshot_id),
+            "approval_decision_id": str(latest_approval.id) if latest_approval else None,
+            "can_submit": run.gate_state == GateState.DRAFT.value,
+            "can_complete_review": run.gate_state == GateState.WAITING_REVIEW.value,
+            "can_edit": run.gate_state
+            in {
+                GateState.WAITING_REVIEW.value,
+                GateState.WAITING_APPROVAL.value,
+                GateState.APPROVED.value,
+                GateState.REJECTED.value,
+            },
+            "can_approve": run.gate_state == GateState.WAITING_APPROVAL.value,
+            "can_continue": run.gate_state == GateState.APPROVED.value and latest_approval is not None,
+        },
+        source_execution_approval_snapshot_id=payload.get("source_execution_approval_snapshot_id"),
+        source_execution_approval_snapshot_hash=payload.get("source_execution_approval_snapshot_hash"),
+        source_automation_draft_review_snapshot_id=payload.get("source_automation_draft_review_snapshot_id"),
+        source_automation_draft_review_snapshot_hash=payload.get("source_automation_draft_review_snapshot_hash"),
+        source_automation_plan_review_snapshot_id=payload.get("source_automation_plan_review_snapshot_id"),
+        source_automation_plan_review_snapshot_hash=payload.get("source_automation_plan_review_snapshot_hash"),
+        source_case_review_snapshot_id=payload.get("source_case_review_snapshot_id"),
+        source_case_review_snapshot_hash=payload.get("source_case_review_snapshot_hash"),
+        approved_automation_draft_ids=list(payload.get("approved_automation_draft_ids", [])),
+        generated_test_run_ids=test_run_ids,
+        execution_artifact_ids=artifact_ids,
+        execution_decisions=list(payload.get("execution_decisions", [])),
+        result_decisions=list(payload.get("result_decisions", [])),
+    )
+
+
+def _require_execution_result_evidence(session: Session, project_id: uuid.UUID, payload: dict) -> None:
+    test_run_ids = _test_run_ids_from_payload(payload)
+    if not test_run_ids:
+        raise ExecutionResultReviewGateError
+    existing_run_id = session.scalar(
+        select(TestRun.id)
+        .where(TestRun.project_id == project_id, TestRun.id.in_(test_run_ids))
+        .limit(1),
+    )
+    if existing_run_id is None:
+        raise ExecutionResultReviewGateError
+    if not _execution_artifact_ids_for_test_runs(session, project_id, test_run_ids):
+        raise ExecutionResultReviewGateError
+
+
+def _report_review_input_payload(session: Session, project_id: uuid.UUID, source_snapshot) -> dict[str, object]:
+    payload = source_snapshot.input_payload_json
+    test_run_ids = _test_run_ids_from_payload(payload)
+    return {
+        "requirement_id": payload.get("requirement_id"),
+        "requirement_review_id": payload.get("requirement_review_id"),
+        "source_execution_result_review_snapshot_id": str(source_snapshot.id),
+        "source_execution_result_review_snapshot_hash": source_snapshot.input_snapshot_hash,
+        "source_execution_approval_snapshot_id": payload.get("source_execution_approval_snapshot_id"),
+        "source_execution_approval_snapshot_hash": payload.get("source_execution_approval_snapshot_hash"),
+        "source_automation_draft_review_snapshot_id": payload.get("source_automation_draft_review_snapshot_id"),
+        "source_automation_draft_review_snapshot_hash": payload.get("source_automation_draft_review_snapshot_hash"),
+        "source_automation_plan_review_snapshot_id": payload.get("source_automation_plan_review_snapshot_id"),
+        "source_automation_plan_review_snapshot_hash": payload.get("source_automation_plan_review_snapshot_hash"),
+        "source_case_review_snapshot_id": payload.get("source_case_review_snapshot_id"),
+        "source_case_review_snapshot_hash": payload.get("source_case_review_snapshot_hash"),
+        "approved_automation_draft_ids": list(payload.get("approved_automation_draft_ids", [])),
+        "execution_decisions": list(payload.get("execution_decisions", [])),
+        "result_decisions": list(payload.get("result_decisions", [])),
+        "generated_test_run_ids": [str(run_id) for run_id in test_run_ids],
+        "execution_artifact_ids": [
+            str(artifact_id)
+            for artifact_id in _execution_artifact_ids_for_test_runs(session, project_id, test_run_ids)
+        ],
+    }
+
+
+def _draft_requires_execution_approval(session: Session, draft: AutomationDraft) -> bool:
+    if draft.automation_plan_id is None:
+        return False
+    plan = session.get(AutomationPlan, draft.automation_plan_id)
+    return plan is not None and plan.requirement_review_id is not None
+
+
+def _require_execution_approval_for_draft(
+    session: Session,
+    project_id: uuid.UUID,
+    draft: AutomationDraft,
+    decision_id: uuid.UUID | None,
+) -> None:
+    if decision_id is None or draft.automation_plan_id is None:
+        raise TestRunInvalidInputError
+    plan = session.get(AutomationPlan, draft.automation_plan_id)
+    if plan is None or plan.requirement_review_id is None:
+        raise TestRunInvalidInputError
+    try:
+        run, snapshot = _execution_approval_workflow(session, project_id, plan.requirement_review_id)
+    except (WorkflowPersistenceError, ExecutionApprovalWorkflowStageError) as exc:
+        raise TestRunInvalidInputError from exc
+    if draft.id not in _approved_automation_draft_ids_from_payload(snapshot.input_payload_json):
+        raise TestRunInvalidInputError
+    decision = session.scalar(
+        select(WorkflowHumanDecision).where(
+            WorkflowHumanDecision.id == decision_id,
+            WorkflowHumanDecision.project_id == project_id,
+            WorkflowHumanDecision.workflow_run_id == run.id,
+            WorkflowHumanDecision.snapshot_id == run.current_snapshot_id,
+            WorkflowHumanDecision.stage == ControlledStage.EXECUTION_APPROVAL.value,
+            WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+            WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+            WorkflowHumanDecision.allowed_action == TransitionAction.ADVANCE.value,
+        ),
+    )
+    if decision is None:
+        raise TestRunInvalidInputError
+    if run.gate_state != GateState.APPROVED.value:
+        raise TestRunInvalidInputError
+
+
+def _json_safe(value):
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    return value
 
 
 def jmeter_jtl_mime_type(path: Path) -> str:

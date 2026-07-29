@@ -1,8 +1,10 @@
-import { mount } from '@vue/test-utils';
+import { enableAutoUnmount, mount } from '@vue/test-utils';
 import ArcoVue from '@arco-design/web-vue';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import ExecutionArtifactTable from './ExecutionArtifactTable.vue';
+
+enableAutoUnmount(afterEach);
 
 function artifactRows() {
   return [

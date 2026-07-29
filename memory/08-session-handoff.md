@@ -1,5 +1,174 @@
 # Session Handoff
 
+## 2026-07-29 Slice 49.10 ExecutionResultReview Workflow Integration
+
+Task 49.10 is complete; next is Task 49.11 ReportReview workflow integration
+from the exact approved ExecutionResultReview snapshot.
+
+- Added project-scoped ExecutionResultReview read/submit/complete/edit/approve/
+  reject/continue/approve-and-continue actions on the existing
+  RequirementReview-owned WorkflowRun.
+- ExecutionResultReview input preserves the exact approved ExecutionApproval
+  snapshot id and hash, generated TestRun ids, execution Artifact ids, upstream
+  AutomationDraftReview/AutomationPlanReview/CaseReview snapshot evidence, and
+  execution decision evidence.
+- ExecutionResultReview approval and advancement require generated TestRun
+  evidence plus at least one persisted same-project TestRun Artifact. Edits
+  create a JSON-safe immutable result-decision snapshot, re-enter review, and
+  invalidate old approval.
+- Workflow-backed failure analysis and automation execution report generation
+  now require the current ExecutionResultReview approval decision id, or the
+  same approval consumed by a recorded successful advance into ReportReview.
+  Execution output alone no longer authorizes those reporting actions.
+- The reporting page loads the authoritative ExecutionResultReview gate for
+  workflow-backed runs, blocks failure-analysis/report actions before approval,
+  and sends the approved decision id in both requests.
+- Contracts were updated for the ExecutionResultReview API/state-machine
+  boundary.
+- Necessary writes outside the initial Expected Files: reporting router/schema/
+  service and frontend reporting API/store were needed so the gate is enforced
+  server-side and in the request contract, not only by page UI; the
+  ExecutionArtifactTable spec gained auto-unmount cleanup to prevent Arco/jsdom
+  teardown rAF residue during full Vitest.
+- Verification: focused backend ExecutionResultReview/reporting/pytest/workflow
+  `63 passed`; full backend `521 passed`; focused frontend reporting+pytest
+  `2 files / 6 tests passed`; full frontend `25 files / 60 tests passed`;
+  production build passed with the existing large-chunk warning;
+  `git diff --check` passed.
+- Temporary Node/npm remains isolated under `%TEMP%\chtest-task49-node`; it was
+  not committed and did not change system PATH.
+- No commit was created because the workspace already contains many unrelated
+  uncommitted changes from prior tasks; commit only with path-limited staging
+  after owner review.
+
+## 2026-07-29 Slice 49.9 ExecutionApproval Workflow Integration
+
+Task 49.9 is complete; next is Task 49.10 ExecutionResultReview workflow
+integration from the exact approved ExecutionApproval snapshot.
+
+- Added project-scoped ExecutionApproval read/submit/complete/edit/approve/
+  reject/continue/approve-and-continue actions on the existing
+  RequirementReview-owned WorkflowRun.
+- ExecutionApproval input preserves the exact approved AutomationDraftReview
+  snapshot id and hash. Advancing creates the adjacent ExecutionResultReview
+  draft from the exact approved ExecutionApproval snapshot and records upstream
+  AutomationDraftReview, AutomationPlanReview, and CaseReview snapshot
+  evidence, approved AutomationDraft ids, execution decisions, and generated
+  TestRun ids.
+- Workflow-backed AutomationDraft execution now requires the current
+  ExecutionApproval approval decision id. AI execution recommendations or
+  approved draft code alone cannot create a TestRun.
+- ExecutionApproval edits create a JSON-safe immutable execution-decision
+  snapshot, re-enter human review, and invalidate old approval.
+- The pytest execution page now loads the authoritative ExecutionApproval gate
+  for workflow-backed drafts and sends the approved decision id when starting
+  a run.
+- Contracts were updated for the ExecutionApproval API/state-machine boundary.
+- Verification: focused backend ExecutionApproval/pytest/workflow `55 passed`;
+  full backend `521 passed`; focused frontend PytestExecutionView `1 file / 3
+  tests passed`; full frontend `25 files / 59 tests passed`; production build
+  passed with the existing large-chunk warning; `git diff --check` passed.
+- Temporary Node/npm remains isolated under `%TEMP%\chtest-task49-node`; it was
+  not committed and did not change system PATH.
+
+## 2026-07-29 Slice 49.8 AutomationDraftReview Workflow Integration
+
+Task 49.8 is complete; next is Task 49.9 ExecutionApproval workflow
+integration from the exact approved AutomationDraftReview snapshot.
+
+- Added project-scoped AutomationDraftReview read/submit/complete/edit/approve/
+  reject/continue/approve-and-continue actions on the existing
+  RequirementReview-owned WorkflowRun.
+- AutomationDraftReview input preserves the exact approved AutomationPlanReview
+  snapshot id and hash. Advancing creates the adjacent ExecutionApproval draft
+  from the exact approved AutomationDraftReview snapshot and records the source
+  AutomationDraftReview snapshot id/hash, source AutomationPlanReview snapshot
+  id/hash, source CaseReview snapshot id/hash, approved AutomationPlan ids,
+  approved TestCase ids, approved AutomationDraft ids, and draft decision
+  evidence.
+- Existing AutomationDraft creation/approval remains authoritative for draft
+  code approval. AI draft output alone cannot approve code or execute tests.
+- AutomationDraftReview approval and advancement require at least one approved
+  AutomationDraft for an approved AutomationPlan in the AutomationPlanReview
+  snapshot.
+- AutomationDraftReview edits create a JSON-safe immutable draft-decision
+  snapshot, re-enter human review, and invalidate old approval.
+- The AutomationDraftReview page now loads the authoritative
+  AutomationDraftReview gate after draft creation and drives server-owned
+  workflow actions with lock versions.
+- Contracts were updated for the AutomationDraftReview API/state-machine
+  boundary.
+- Verification: focused backend AutomationDraftReview/workflow `44 passed`;
+  full backend `520 passed`; focused frontend AutomationDraftReview `1 file / 7
+  tests passed`; full frontend `25 files / 58 tests passed`; production build
+  passed with the existing large-chunk warning; `git diff --check` passed.
+- Temporary Node/npm remains isolated under `%TEMP%\chtest-task49-node`; it was
+  not committed and did not change system PATH.
+
+## 2026-07-29 Slice 49.7 AutomationPlanReview Workflow Integration
+
+Task 49.7 is complete; next is Task 49.8 AutomationDraftReview workflow
+integration from the exact approved AutomationPlanReview snapshot.
+
+- Added project-scoped AutomationPlanReview read/submit/complete/edit/approve/
+  reject/continue/approve-and-continue actions on the existing
+  RequirementReview-owned WorkflowRun.
+- AutomationPlanReview input preserves the exact approved CaseReview snapshot
+  id and hash. Advancing creates the adjacent AutomationDraftReview draft from
+  the exact approved AutomationPlanReview snapshot and records the source
+  AutomationPlanReview snapshot id/hash, source CaseReview snapshot id/hash,
+  source TestPlanReview snapshot id/hash, approved candidate ids, approved
+  TestCase ids, approved AutomationPlan ids, and plan decision evidence.
+- Existing AutomationPlan creation/approval remains authoritative for
+  individual plan approval. AI plan output alone cannot generate draft code,
+  approve draft code, or execute tests.
+- AutomationPlanReview approval and advancement require at least one approved
+  AutomationPlan for an approved TestCase in the CaseReview snapshot.
+- AutomationPlanReview edits create a JSON-safe immutable plan-decision
+  snapshot, re-enter human review, and invalidate old approval.
+- The AutomationDraftReview page now loads the authoritative
+  AutomationPlanReview gate after plan generation and drives server-owned
+  workflow actions with lock versions.
+- Contracts were updated for the AutomationPlanReview API/state-machine
+  boundary.
+- Verification: focused backend AutomationPlanReview/CaseReview/workflow
+  `49 passed`; full backend `519 passed`; focused frontend AutomationDraftReview
+  `1 file / 6 tests passed`; full frontend `25 files / 57 tests passed`;
+  production build passed with the existing large-chunk warning;
+  `git diff --check` passed.
+- Temporary Node/npm remains isolated under `%TEMP%\chtest-task49-node`; it was
+  not committed and did not change system PATH.
+
+## 2026-07-29 Slice 49.6 CaseReview Workflow Integration
+
+Task 49.6 is complete; next is Task 49.7 AutomationPlanReview workflow
+integration from the exact approved CaseReview snapshot.
+
+- Added project-scoped CaseReview read/submit/complete/edit/approve/reject/
+  continue/approve-and-continue actions on the existing RequirementReview-owned
+  WorkflowRun.
+- CaseReview input preserves the exact approved TestPlanReview snapshot id and
+  hash. Advancing creates the adjacent AutomationPlanReview draft from the exact
+  approved CaseReview snapshot and records the source CaseReview snapshot
+  id/hash, source TestPlanReview snapshot id/hash, approved candidate ids,
+  approved TestCase ids, and candidate decision evidence.
+- Existing GeneratedCaseCandidate review remains authoritative for individual
+  candidate approval/rejection and formal TestCase creation. CaseReview approval
+  and advancement require final human-reviewed candidate states and at least one
+  approved candidate with a TestCase.
+- CaseReview edits create a JSON-safe immutable candidate-decision snapshot,
+  re-enter human review, and invalidate old approval.
+- The CaseGenerationReview page now loads the authoritative CaseReview gate and
+  drives server-owned workflow actions with lock versions; the view no longer
+  relies on browser state to decide advancement.
+- Contracts were updated for the CaseReview API/state-machine boundary.
+- Verification: focused backend CaseReview/workflow `46 passed`; full backend
+  `518 passed`; focused frontend CaseGenerationReview `1 file / 8 tests
+  passed`; full frontend `25 files / 56 tests passed`; production build passed
+  with the existing large-chunk warning; `git diff --check` passed.
+- Temporary Node/npm remains isolated under `%TEMP%\chtest-task49-node`; it was
+  not committed and did not change system PATH.
+
 ## 2026-07-24 Slice 48.2 Immutable Case Grounding
 
 Task 48.2 is complete; next is Task 48.3 fixed grounding evaluation.
@@ -10524,3 +10693,73 @@ first API/frontend vertical slice.
 - `backend/alembic/env.py` and the existing migration-head test were necessary
   writes outside the initial file list. Source `storage/chtest-dev.db` was not
   used.
+
+## 2026-07-29 Slice 49.3 RequirementReview Workflow Integration
+
+Task 49.3 is complete; the next smallest task is RiskReview workflow
+integration without migrating Case, Automation, execution, CI/CD, report, or
+knowledge flows in the same task.
+
+- RequirementReview creation now creates an authoritative WorkflowRun and
+  immutable candidate snapshot before entering `waiting_review`.
+- Project-scoped read, complete, edit, approve, reject, selected-regeneration,
+  continue, and atomic approve-and-continue APIs fail closed on stale versions,
+  cross-project access, forged state, missing approval, and replay.
+- Formal RequirementDocument creation requires current approval or evidence
+  that the exact approval was consumed by a successful advance.
+- The frontend now reads server `can_*` actions, supports candidate editing,
+  approval comments, rejection, approval, controlled continue, stale-input
+  blocking, authoritative refresh, and fail-closed formal document generation.
+- Backend focused verification: `68 passed`; full backend: `515 passed`.
+  Frontend: `25 files / 55 tests`; production build passed with the existing
+  large-chunk warning. `git diff --check` passed.
+- `backend/app/tests/api/test_case_generation.py` was a necessary write outside
+  the default Task 49.3 list because its old fixture created a formal document
+  without the newly required human approval. Source `storage/chtest-dev.db` was
+  not used.
+
+## 2026-07-29 Slice 49.4 RiskReview Workflow Integration
+
+Task 49.4 is complete; the next smallest task is TestPlanReview workflow
+integration.
+
+- RiskReview input preserves the exact consumed RequirementReview snapshot id
+  and hash; TestPlanReview input preserves the exact approved RiskReview
+  snapshot id and hash.
+- Project-scoped RiskReview submit, complete, edit, approve, reject, continue,
+  and atomic approve-and-continue actions reject stale versions, stage skips,
+  missing approval, cross-project access, and approval replay.
+- Risk edits create a new immutable snapshot, immediately re-enter human
+  review, and invalidate old approval.
+- The frontend now switches its human gate controls by authoritative stage and
+  does not navigate from RequirementReview directly to case generation.
+- Verification: focused backend `60 passed`; full backend `516 passed`; frontend
+  `25 files / 55 tests`; production build passed with the existing chunk-size
+  warning. Source `storage/chtest-dev.db` was not used.
+
+## 2026-07-29 Slice 49.5 TestPlanReview Workflow Integration
+
+Task 49.5 is complete. Backend integration and frontend TestPlanReview wiring
+are implemented and verified. Node/npm were restored only for this shell from a
+temporary official Node distribution under `%TEMP%\chtest-task49-node`.
+
+- TestPlanReview now has project-scoped read, submit, complete, edit, approve,
+  reject, continue, and atomic approve-and-continue backend actions using the
+  same authoritative WorkflowRun and optimistic compare-and-swap pattern.
+- The TestPlanReview draft preserves the exact approved RiskReview snapshot id
+  and hash. Advancing from TestPlanReview creates the adjacent CaseReview draft
+  from the exact approved TestPlanReview snapshot without migrating Case
+  workflow behavior.
+- Human test plan edits create a new immutable snapshot, re-enter review, and
+  invalidate old approval. High or critical risk items require a non-empty test
+  strategy before plan approval or advancement.
+- Frontend RequirementReview now switches submit, complete, edit, approve,
+  reject, and continue actions by authoritative workflow stage, including the
+  TestPlanReview strategy/plan-item editor and review panel.
+- Contracts were updated for the TestPlanReview API/state-machine boundary.
+- Verification: focused `backend\\.venv\\Scripts\\python.exe -m pytest backend/app/tests/api/test_requirement_review.py -q` => `21 passed`; focused workflow suite `backend\\.venv\\Scripts\\python.exe -m pytest backend/app/tests/api/test_requirement_review.py backend/app/tests/workflow_control -q` => `61 passed`; full backend `backend\\.venv\\Scripts\\python.exe -m pytest backend/app/tests -q` => `517 passed`; focused frontend `npm.cmd --prefix frontend test -- --run src/views/requirements/RequirementReviewView.spec.ts` with temporary Node `v24.18.0` => `1 file / 2 tests passed`; full frontend `npm.cmd --prefix frontend test -- --run` with temporary Node `v24.18.0` => `25 files / 55 tests passed`; production build `npm.cmd --prefix frontend run build` with temporary Node `v24.18.0` passed with the existing large-chunk warning; `git diff --check` passed.
+- No commit was created in this pass because the workspace already contains many
+  uncommitted changes from prior Task 49.x/frontend work; committing safely
+  requires staging only the intended Task 49.5 files after owner review.
+- Next: Task 49.6 integrates persisted workflow control into CaseReview using
+  the exact approved TestPlanReview snapshot as input.

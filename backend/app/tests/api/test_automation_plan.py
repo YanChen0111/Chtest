@@ -19,11 +19,14 @@ from backend.app.modules.ai_runtime.models import AITask, Artifact
 from backend.app.modules.ai_runtime.router import get_artifact_store
 from backend.app.modules.automation.models import AutomationDraft, AutomationPlan
 from backend.app.modules.cases.models import GeneratedCaseCandidate
+from backend.app.modules.execution import service as execution_service
 from backend.app.modules.execution.models import TestRun
+from backend.app.modules.execution.pytest_runner import PytestRunnerResult
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.prompt_skill.registry_loader import compute_content_hash
 from backend.app.modules.review_history.models import ReviewHistory
+from backend.app.modules.workflow_control.models import WorkflowHumanDecision, WorkflowStageSnapshot
 
 
 class ASGIResponse:
@@ -256,6 +259,133 @@ def create_approved_test_case(client: ASGIClient, SessionLocal: sessionmaker[Ses
     }
 
 
+def create_automation_plan_review_context(client: ASGIClient, SessionLocal: sessionmaker[Session]) -> dict[str, Any]:
+    seed_prompt_skill(SessionLocal)
+    project = client.post("/api/projects", {"name": "Checkout System"}).json()
+    requirement = client.post(
+        "/api/requirements",
+        {
+            "project_id": project["id"],
+            "title": "Coupon checkout rules",
+            "content": "Expired coupons cannot be used at checkout.",
+        },
+    ).json()
+    assert client.post(
+        f"/api/requirements/{requirement['id']}/review",
+        {
+            "prompt_version": "requirement_review:v1",
+            "skill_version": "requirement-review-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-requirement-review",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+        },
+    ).status_code == 202
+    review = client.get(f"/api/requirements/{requirement['id']}/review").json()
+    requirement_completed = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/complete-review",
+        {"expected_version": review["workflow"]["lock_version"]},
+    ).json()
+    risk_draft = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/approve-and-continue",
+        {"expected_version": requirement_completed["workflow"]["lock_version"]},
+    ).json()
+    risk_submitted = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/risk-review/submit",
+        {"expected_version": risk_draft["workflow"]["lock_version"]},
+    ).json()
+    risk_completed = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/risk-review/complete-review",
+        {"expected_version": risk_submitted["workflow"]["lock_version"]},
+    ).json()
+    test_plan_draft = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/risk-review/approve-and-continue",
+        {"expected_version": risk_completed["workflow"]["lock_version"]},
+    ).json()
+    test_plan_submitted = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/test-plan-review/submit",
+        {"expected_version": test_plan_draft["workflow"]["lock_version"]},
+    ).json()
+    strategy = "Cover coupon validation before automation planning."
+    test_plan_edited = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/test-plan-review/edit",
+        {
+            "expected_version": test_plan_submitted["workflow"]["lock_version"],
+            "test_strategy": strategy,
+            "plan_items": [{"risk_title": "Expired coupon", "risk_level": "high", "strategy": strategy}],
+        },
+    ).json()
+    test_plan_completed = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/test-plan-review/complete-review",
+        {"expected_version": test_plan_edited["workflow"]["lock_version"]},
+    ).json()
+    case_review_draft = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/test-plan-review/approve-and-continue",
+        {"expected_version": test_plan_completed["workflow"]["lock_version"]},
+    ).json()
+    generation = client.post(
+        "/api/case-generation/tasks",
+        {
+            "project_id": project["id"],
+            "requirement_id": requirement["id"],
+            "requirement_review_id": review["id"],
+            "target_test_types": ["functional"],
+            "prompt_version": "case_generation:v1",
+            "skill_version": "test-case-generation-skill:v1",
+            "model_provider": "mock",
+            "model_name": "mock-case-generator",
+            "use_knowledge": False,
+            "decision_table_acknowledged": True,
+            "context_artifact_ids": [],
+        },
+    ).json()
+    candidates = client.get(f"/api/case-generation/tasks/{generation['case_generation_task_id']}/candidates").json()["items"]
+    candidate = candidates[0]
+    approved_case = client.post(
+        f"/api/case-review/items/{candidate['id']}/approve",
+        {"action": "approve", "review_comment": "Ready for automation planning."},
+    ).json()
+    for rejected_candidate in candidates[1:]:
+        assert client.post(
+            f"/api/case-review/items/{rejected_candidate['id']}/approve",
+            {"action": "reject", "review_comment": "Outside automation scope."},
+        ).status_code == 200
+    case_submitted = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/submit",
+        {"expected_version": case_review_draft["workflow"]["lock_version"]},
+    ).json()
+    case_edited = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/edit",
+        {
+            "expected_version": case_submitted["workflow"]["lock_version"],
+            "candidate_decisions": [
+                {
+                    "candidate_id": candidate["id"],
+                    "action": "approve",
+                    "test_case_id": approved_case["test_case_id"],
+                },
+            ],
+        },
+    ).json()
+    case_completed = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/complete-review",
+        {"expected_version": case_edited["workflow"]["lock_version"]},
+    ).json()
+    automation_plan_draft = client.post(
+        f"/api/projects/{project['id']}/requirement-reviews/{review['id']}/case-review/approve-and-continue",
+        {"expected_version": case_completed["workflow"]["lock_version"]},
+    ).json()
+    assert automation_plan_draft["workflow"]["stage"] == "automation_plan_review"
+    return {
+        "project_id": project["id"],
+        "requirement_id": requirement["id"],
+        "requirement_review_id": review["id"],
+        "candidate_id": candidate["id"],
+        "test_case_id": approved_case["test_case_id"],
+        "automation_plan_workflow": automation_plan_draft,
+    }
+
+
 def enable_local_knowledge(client: ASGIClient, project_id: str) -> None:
     response = client.put(
         f"/api/projects/{project_id}/knowledge-adapter",
@@ -285,6 +415,620 @@ def create_context_artifact(client: ASGIClient, project_id: str) -> str:
     )
     assert response.status_code == 201
     return str(response.json()["id"])
+
+
+def test_automation_plan_review_workflow_requires_approved_plan_and_consumes_exact_approval(
+    api_client: tuple[ASGIClient, sessionmaker[Session], Path],
+) -> None:
+    client, SessionLocal, _artifact_root = api_client
+    context = create_automation_plan_review_context(client, SessionLocal)
+
+    workflow_response = client.get(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review",
+    )
+    assert workflow_response.status_code == 200
+    workflow = workflow_response.json()
+    assert workflow["workflow"]["state"] == "draft"
+    assert workflow["source_case_review_snapshot_id"]
+    assert workflow["approved_test_case_ids"] == [context["test_case_id"]]
+
+    plan_response = client.post(
+        "/api/automation/plans",
+        {
+            "project_id": context["project_id"],
+            "test_case_id": context["test_case_id"],
+            "target_framework": "pytest",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+            "model_provider": "mock",
+            "model_name": "mock-automation-plan",
+        },
+    )
+    assert plan_response.status_code == 202
+    plan_body = plan_response.json()
+
+    submitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/submit",
+        {"expected_version": workflow["workflow"]["lock_version"]},
+    ).json()
+    completed = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/complete-review",
+        {"expected_version": submitted["workflow"]["lock_version"]},
+    ).json()
+    blocked = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/approve",
+        {"expected_version": completed["workflow"]["lock_version"]},
+    )
+    assert blocked.status_code == 409
+    assert blocked.json()["error_code"] == "AUTOMATION_PLAN_REVIEW_PLAN_APPROVAL_REQUIRED"
+
+    approve_plan = client.post(
+        f"/api/automation/plans/{plan_body['id']}/approve",
+        {"action": "approve", "review_comment": "Plan is feasible."},
+    )
+    assert approve_plan.status_code == 200
+    edited = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/edit",
+        {
+            "expected_version": completed["workflow"]["lock_version"],
+            "plan_decisions": [{"automation_plan_id": plan_body["id"], "status": "approved"}],
+        },
+    ).json()
+    assert edited["workflow"]["state"] == "waiting_review"
+    assert plan_body["id"] in edited["generated_plan_ids"]
+
+    completed_again = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/complete-review",
+        {"expected_version": edited["workflow"]["lock_version"]},
+    ).json()
+    old_approved = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/approve",
+        {"expected_version": completed_again["workflow"]["lock_version"]},
+    ).json()
+    old_approval_id = old_approved["workflow"]["approval_decision_id"]
+
+    revised = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/edit",
+        {
+            "expected_version": old_approved["workflow"]["lock_version"],
+            "plan_decisions": [
+                {
+                    "automation_plan_id": plan_body["id"],
+                    "status": "approved",
+                    "review_comment": "Still feasible.",
+                },
+            ],
+        },
+    ).json()
+    stale = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/continue",
+        {
+            "expected_version": revised["workflow"]["lock_version"],
+            "approval_decision_id": old_approval_id,
+        },
+    )
+    assert stale.status_code == 409
+
+    completed_final = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/complete-review",
+        {"expected_version": revised["workflow"]["lock_version"]},
+    ).json()
+    approved_final = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/approve",
+        {"expected_version": completed_final["workflow"]["lock_version"]},
+    ).json()
+    advanced = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/continue",
+        {
+            "expected_version": approved_final["workflow"]["lock_version"],
+            "approval_decision_id": approved_final["workflow"]["approval_decision_id"],
+        },
+    )
+    assert advanced.status_code == 200
+    advanced_body = advanced.json()
+    assert advanced_body["workflow"]["stage"] == "automation_draft_review"
+    assert advanced_body["workflow"]["state"] == "draft"
+
+    with SessionLocal() as session:
+        draft_snapshot = session.get(WorkflowStageSnapshot, uuid.UUID(advanced_body["workflow"]["snapshot_id"]))
+        assert draft_snapshot is not None
+        source_plan_snapshot = session.get(WorkflowStageSnapshot, draft_snapshot.previous_snapshot_id)
+        assert source_plan_snapshot is not None
+        payload = draft_snapshot.input_payload_json
+
+    assert payload["source_automation_plan_review_snapshot_id"] == str(source_plan_snapshot.id)
+    assert payload["source_automation_plan_review_snapshot_hash"] == source_plan_snapshot.input_snapshot_hash
+    assert payload["source_case_review_snapshot_id"]
+    assert payload["source_case_review_snapshot_hash"]
+    assert payload["approved_automation_plan_ids"] == [plan_body["id"]]
+    assert payload["approved_test_case_ids"] == [context["test_case_id"]]
+
+
+def test_automation_draft_review_workflow_requires_approved_draft_before_execution_approval(
+    api_client: tuple[ASGIClient, sessionmaker[Session], Path],
+) -> None:
+    client, SessionLocal, _artifact_root = api_client
+    context = create_automation_plan_review_context(client, SessionLocal)
+    workflow = context["automation_plan_workflow"]
+    plan_body = client.post(
+        "/api/automation/plans",
+        {
+            "project_id": context["project_id"],
+            "test_case_id": context["test_case_id"],
+            "target_framework": "pytest",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+            "model_provider": "mock",
+            "model_name": "mock-automation-plan",
+        },
+    ).json()
+    assert client.post(
+        f"/api/automation/plans/{plan_body['id']}/approve",
+        {"action": "approve", "review_comment": "Plan is feasible."},
+    ).status_code == 200
+    plan_submitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/submit",
+        {"expected_version": workflow["workflow"]["lock_version"]},
+    ).json()
+    plan_edited = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/edit",
+        {
+            "expected_version": plan_submitted["workflow"]["lock_version"],
+            "plan_decisions": [{"automation_plan_id": plan_body["id"], "status": "approved"}],
+        },
+    ).json()
+    plan_completed = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/complete-review",
+        {"expected_version": plan_edited["workflow"]["lock_version"]},
+    ).json()
+    draft_stage = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/approve-and-continue",
+        {"expected_version": plan_completed["workflow"]["lock_version"]},
+    ).json()
+    assert draft_stage["workflow"]["stage"] == "automation_draft_review"
+
+    draft_body = client.post(
+        f"/api/automation/plans/{plan_body['id']}/generate-draft",
+        {"model_provider": "mock", "model_name": "mock-automation-draft"},
+    ).json()
+    draft_workflow = client.get(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review",
+    ).json()
+    assert draft_workflow["workflow"]["state"] == "draft"
+    assert draft_body["automation_draft_id"] in draft_workflow["generated_draft_ids"]
+
+    draft_submitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/submit",
+        {"expected_version": draft_workflow["workflow"]["lock_version"]},
+    ).json()
+    draft_completed = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/complete-review",
+        {"expected_version": draft_submitted["workflow"]["lock_version"]},
+    ).json()
+    blocked = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/approve",
+        {"expected_version": draft_completed["workflow"]["lock_version"]},
+    )
+    assert blocked.status_code == 409
+    assert blocked.json()["error_code"] == "AUTOMATION_DRAFT_REVIEW_DRAFT_APPROVAL_REQUIRED"
+
+    assert client.post(
+        f"/api/automation/drafts/{draft_body['automation_draft_id']}/approve",
+        {"action": "approve", "review_comment": "Draft code is safe to execute."},
+    ).status_code == 200
+    draft_edited = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/edit",
+        {
+            "expected_version": draft_completed["workflow"]["lock_version"],
+            "draft_decisions": [{"automation_draft_id": draft_body["automation_draft_id"], "status": "approved"}],
+        },
+    ).json()
+    draft_completed_final = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/complete-review",
+        {"expected_version": draft_edited["workflow"]["lock_version"]},
+    ).json()
+    approved_final = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/approve",
+        {"expected_version": draft_completed_final["workflow"]["lock_version"]},
+    ).json()
+    advanced = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/continue",
+        {
+            "expected_version": approved_final["workflow"]["lock_version"],
+            "approval_decision_id": approved_final["workflow"]["approval_decision_id"],
+        },
+    )
+    assert advanced.status_code == 200
+    advanced_body = advanced.json()
+    assert advanced_body["workflow"]["stage"] == "execution_approval"
+    assert advanced_body["workflow"]["state"] == "draft"
+
+    with SessionLocal() as session:
+        execution_snapshot = session.get(WorkflowStageSnapshot, uuid.UUID(advanced_body["workflow"]["snapshot_id"]))
+        assert execution_snapshot is not None
+        source_draft_snapshot = session.get(WorkflowStageSnapshot, execution_snapshot.previous_snapshot_id)
+        assert source_draft_snapshot is not None
+        payload = execution_snapshot.input_payload_json
+
+    assert payload["source_automation_draft_review_snapshot_id"] == str(source_draft_snapshot.id)
+    assert payload["source_automation_draft_review_snapshot_hash"] == source_draft_snapshot.input_snapshot_hash
+    assert payload["approved_automation_plan_ids"] == [plan_body["id"]]
+    assert payload["approved_automation_draft_ids"] == [draft_body["automation_draft_id"]]
+
+
+def test_execution_approval_workflow_gates_test_run_and_preserves_draft_snapshot(
+    api_client: tuple[ASGIClient, sessionmaker[Session], Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, SessionLocal, _artifact_root = api_client
+    context = create_automation_plan_review_context(client, SessionLocal)
+    workflow = context["automation_plan_workflow"]
+    plan_body = client.post(
+        "/api/automation/plans",
+        {
+            "project_id": context["project_id"],
+            "test_case_id": context["test_case_id"],
+            "target_framework": "pytest",
+            "use_knowledge": False,
+            "context_artifact_ids": [],
+            "model_provider": "mock",
+            "model_name": "mock-automation-plan",
+        },
+    ).json()
+    assert client.post(
+        f"/api/automation/plans/{plan_body['id']}/approve",
+        {"action": "approve", "review_comment": "Plan is feasible."},
+    ).status_code == 200
+    plan_submitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/submit",
+        {"expected_version": workflow["workflow"]["lock_version"]},
+    ).json()
+    plan_edited = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/edit",
+        {
+            "expected_version": plan_submitted["workflow"]["lock_version"],
+            "plan_decisions": [{"automation_plan_id": plan_body["id"], "status": "approved"}],
+        },
+    ).json()
+    plan_completed = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/complete-review",
+        {"expected_version": plan_edited["workflow"]["lock_version"]},
+    ).json()
+    draft_stage = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-plan-review/approve-and-continue",
+        {"expected_version": plan_completed["workflow"]["lock_version"]},
+    ).json()
+    assert draft_stage["workflow"]["stage"] == "automation_draft_review"
+
+    draft_body = client.post(
+        f"/api/automation/plans/{plan_body['id']}/generate-draft",
+        {"model_provider": "mock", "model_name": "mock-automation-draft"},
+    ).json()
+    assert client.post(
+        f"/api/automation/drafts/{draft_body['automation_draft_id']}/approve",
+        {"action": "approve", "review_comment": "Draft code is safe to execute."},
+    ).status_code == 200
+    draft_workflow = client.get(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review",
+    ).json()
+    draft_submitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/submit",
+        {"expected_version": draft_workflow["workflow"]["lock_version"]},
+    ).json()
+    draft_edited = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/edit",
+        {
+            "expected_version": draft_submitted["workflow"]["lock_version"],
+            "draft_decisions": [{"automation_draft_id": draft_body["automation_draft_id"], "status": "approved"}],
+        },
+    ).json()
+    draft_completed = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/complete-review",
+        {"expected_version": draft_edited["workflow"]["lock_version"]},
+    ).json()
+    execution_stage = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/automation-draft-review/approve-and-continue",
+        {"expected_version": draft_completed["workflow"]["lock_version"]},
+    ).json()
+    assert execution_stage["workflow"]["stage"] == "execution_approval"
+
+    blocked_run_response = client.post(
+        "/api/test-runs",
+        {
+            "project_id": context["project_id"],
+            "automation_draft_id": draft_body["automation_draft_id"],
+            "reason": "AI execution recommendation without human execution approval",
+        },
+    )
+    assert blocked_run_response.status_code == 400
+    assert blocked_run_response.json()["error_code"] == "TEST_RUN_INVALID_INPUT"
+
+    execution_workflow = client.get(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval",
+    ).json()
+    assert execution_workflow["approved_automation_draft_ids"] == [draft_body["automation_draft_id"]]
+    assert execution_workflow["source_automation_draft_review_snapshot_id"]
+    execution_submitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval/submit",
+        {"expected_version": execution_workflow["workflow"]["lock_version"]},
+    ).json()
+    execution_completed = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval/complete-review",
+        {"expected_version": execution_submitted["workflow"]["lock_version"]},
+    ).json()
+    execution_approved = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval/approve",
+        {
+            "expected_version": execution_completed["workflow"]["lock_version"],
+            "comment": "Approved for controlled local pytest execution.",
+        },
+    ).json()
+    stale_approval_id = execution_approved["workflow"]["approval_decision_id"]
+    assert execution_approved["workflow"]["state"] == "approved"
+    assert execution_approved["workflow"]["can_execute"] is True
+
+    execution_edited = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval/edit",
+        {
+            "expected_version": execution_approved["workflow"]["lock_version"],
+            "execution_decisions": [
+                {
+                    "automation_draft_id": draft_body["automation_draft_id"],
+                    "status": "approved",
+                    "runner_mode": "local_subprocess",
+                    "reason": "Human reviewed execution scope.",
+                },
+            ],
+        },
+    ).json()
+    assert execution_edited["workflow"]["state"] == "draft"
+    stale_run_response = client.post(
+        "/api/test-runs",
+        {
+            "project_id": context["project_id"],
+            "automation_draft_id": draft_body["automation_draft_id"],
+            "execution_approval_decision_id": stale_approval_id,
+            "reason": "attempt with stale execution approval",
+        },
+    )
+    assert stale_run_response.status_code == 400
+    assert stale_run_response.json()["error_code"] == "TEST_RUN_INVALID_INPUT"
+
+    execution_resubmitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval/submit",
+        {"expected_version": execution_edited["workflow"]["lock_version"]},
+    ).json()
+    execution_recompleted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval/complete-review",
+        {"expected_version": execution_resubmitted["workflow"]["lock_version"]},
+    ).json()
+    execution_reapproved = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval/approve",
+        {"expected_version": execution_recompleted["workflow"]["lock_version"]},
+    ).json()
+    assert execution_reapproved["workflow"]["state"] == "approved"
+    assert execution_reapproved["workflow"]["approval_decision_id"]
+    assert execution_reapproved["approved_automation_draft_ids"] == [draft_body["automation_draft_id"]]
+
+    with SessionLocal() as session:
+        draft = session.get(AutomationDraft, uuid.UUID(draft_body["automation_draft_id"]))
+        assert draft is not None
+        gate_run, gate_snapshot = execution_service._execution_approval_workflow(
+            session,
+            uuid.UUID(context["project_id"]),
+            uuid.UUID(context["requirement_review_id"]),
+        )
+        gate_decision = session.get(
+            WorkflowHumanDecision,
+            uuid.UUID(execution_reapproved["workflow"]["approval_decision_id"]),
+        )
+        assert gate_run.gate_state == "approved"
+        assert gate_run.current_snapshot_id == gate_snapshot.id
+        assert str(draft.id) in gate_snapshot.input_payload_json["approved_automation_draft_ids"]
+        assert gate_decision is not None
+        assert gate_decision.project_id == uuid.UUID(context["project_id"])
+        assert gate_decision.workflow_run_id == gate_run.id
+        assert gate_decision.snapshot_id == gate_snapshot.id
+        assert gate_decision.stage == "execution_approval"
+        assert gate_decision.action == "approve"
+        assert gate_decision.decision == "approved"
+        assert gate_decision.allowed_action == "advance"
+        execution_service.validate_automation_draft_approval(draft)
+        assert execution_service.automation_draft_quality_gate(draft)["approval_blocking_reasons"] == []
+        assert draft.suggested_file_path and not Path(draft.suggested_file_path).is_absolute()
+
+    class SuccessfulPytestRunner:
+        def run(self, _command: str, _working_directory: Path, timeout_seconds: int = 600) -> PytestRunnerResult:
+            assert timeout_seconds == 600
+            return PytestRunnerResult(
+                stdout="1 passed in 0.01s",
+                stderr="",
+                exit_code=0,
+                duration_ms=10,
+                parsed_result={"total": 1, "passed": 1, "failed": 0, "skipped": 0, "error": 0},
+            )
+
+    monkeypatch.setattr(execution_service, "PytestRunner", SuccessfulPytestRunner)
+    run_response = client.post(
+        "/api/test-runs",
+        {
+            "project_id": context["project_id"],
+            "automation_draft_id": draft_body["automation_draft_id"],
+            "execution_approval_decision_id": execution_reapproved["workflow"]["approval_decision_id"],
+            "reason": "controlled execution approval",
+        },
+    )
+    assert run_response.status_code == 202
+    run_body = run_response.json()
+    assert run_body["automation_draft_id"] == draft_body["automation_draft_id"]
+
+    advanced = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-approval/continue",
+        {
+            "expected_version": execution_reapproved["workflow"]["lock_version"],
+            "approval_decision_id": execution_reapproved["workflow"]["approval_decision_id"],
+        },
+    )
+    assert advanced.status_code == 200
+    advanced_body = advanced.json()
+    assert advanced_body["workflow"]["stage"] == "execution_result_review"
+
+    with SessionLocal() as session:
+        result_snapshot = session.get(WorkflowStageSnapshot, uuid.UUID(advanced_body["workflow"]["snapshot_id"]))
+        assert result_snapshot is not None
+        source_execution_snapshot = session.get(WorkflowStageSnapshot, result_snapshot.previous_snapshot_id)
+        assert source_execution_snapshot is not None
+        payload = result_snapshot.input_payload_json
+        test_run = session.get(TestRun, uuid.UUID(run_body["id"]))
+
+    assert test_run is not None
+    assert payload["source_execution_approval_snapshot_id"] == str(source_execution_snapshot.id)
+    assert payload["source_execution_approval_snapshot_hash"] == source_execution_snapshot.input_snapshot_hash
+    assert payload["source_automation_draft_review_snapshot_id"] == execution_workflow[
+        "source_automation_draft_review_snapshot_id"
+    ]
+    assert payload["source_automation_draft_review_snapshot_hash"] == execution_workflow[
+        "source_automation_draft_review_snapshot_hash"
+    ]
+    assert payload["approved_automation_draft_ids"] == [draft_body["automation_draft_id"]]
+    assert run_body["id"] in payload["generated_test_run_ids"]
+
+    result_workflow = client.get(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review",
+    ).json()
+    assert result_workflow["workflow"]["state"] == "draft"
+    assert result_workflow["source_execution_approval_snapshot_id"] == str(source_execution_snapshot.id)
+    assert result_workflow["source_execution_approval_snapshot_hash"] == source_execution_snapshot.input_snapshot_hash
+    assert result_workflow["generated_test_run_ids"] == [run_body["id"]]
+    assert result_workflow["execution_artifact_ids"]
+
+    result_submitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/submit",
+        {"expected_version": result_workflow["workflow"]["lock_version"]},
+    ).json()
+    result_completed = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/complete-review",
+        {"expected_version": result_submitted["workflow"]["lock_version"]},
+    ).json()
+    result_approved = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/approve",
+        {"expected_version": result_completed["workflow"]["lock_version"]},
+    ).json()
+    stale_result_approval_id = result_approved["workflow"]["approval_decision_id"]
+    assert result_approved["workflow"]["state"] == "approved"
+
+    result_edited = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/edit",
+        {
+            "expected_version": result_approved["workflow"]["lock_version"],
+            "result_decisions": [
+                {
+                    "test_run_id": run_body["id"],
+                    "status": run_body["status"],
+                    "artifact_ids": result_workflow["execution_artifact_ids"],
+                    "conclusion": "Execution evidence reviewed by human.",
+                },
+            ],
+        },
+    ).json()
+    assert result_edited["workflow"]["state"] == "draft"
+    stale_continue = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/continue",
+        {
+            "expected_version": result_edited["workflow"]["lock_version"],
+            "approval_decision_id": stale_result_approval_id,
+        },
+    )
+    assert stale_continue.status_code == 409
+
+    result_resubmitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/submit",
+        {"expected_version": result_edited["workflow"]["lock_version"]},
+    ).json()
+    result_recompleted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/complete-review",
+        {"expected_version": result_resubmitted["workflow"]["lock_version"]},
+    ).json()
+    result_reapproved = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/approve",
+        {"expected_version": result_recompleted["workflow"]["lock_version"]},
+    ).json()
+    blocked_failure_analysis = client.post(
+        f"/api/test-runs/{run_body['id']}/failure-analysis",
+        {"model_provider": "mock", "model_name": "mock-failure-analysis"},
+    )
+    assert blocked_failure_analysis.status_code == 400
+    assert blocked_failure_analysis.json()["error_code"] == "EXECUTION_RESULT_REVIEW_APPROVAL_REQUIRED"
+
+    stale_failure_analysis = client.post(
+        f"/api/test-runs/{run_body['id']}/failure-analysis",
+        {
+            "model_provider": "mock",
+            "model_name": "mock-failure-analysis",
+            "execution_result_review_decision_id": stale_result_approval_id,
+        },
+    )
+    assert stale_failure_analysis.status_code == 400
+    assert stale_failure_analysis.json()["error_code"] == "EXECUTION_RESULT_REVIEW_APPROVAL_REQUIRED"
+
+    allowed_failure_analysis = client.post(
+        f"/api/test-runs/{run_body['id']}/failure-analysis",
+        {
+            "model_provider": "mock",
+            "model_name": "mock-failure-analysis",
+            "execution_result_review_decision_id": result_reapproved["workflow"]["approval_decision_id"],
+        },
+    )
+    assert allowed_failure_analysis.status_code == 202
+
+    blocked_report = client.post(
+        "/api/reports",
+        {
+            "project_id": context["project_id"],
+            "report_type": "automation_execution",
+            "related_entity_type": "TestRun",
+            "related_entity_id": run_body["id"],
+        },
+    )
+    assert blocked_report.status_code == 400
+    assert blocked_report.json()["error_code"] == "EXECUTION_RESULT_REVIEW_APPROVAL_REQUIRED"
+
+    allowed_report = client.post(
+        "/api/reports",
+        {
+            "project_id": context["project_id"],
+            "report_type": "automation_execution",
+            "related_entity_type": "TestRun",
+            "related_entity_id": run_body["id"],
+            "execution_result_review_decision_id": result_reapproved["workflow"]["approval_decision_id"],
+        },
+    )
+    assert allowed_report.status_code == 202
+
+    report_stage = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/continue",
+        {
+            "expected_version": result_reapproved["workflow"]["lock_version"],
+            "approval_decision_id": result_reapproved["workflow"]["approval_decision_id"],
+        },
+    )
+    assert report_stage.status_code == 200
+    report_stage_body = report_stage.json()
+    assert report_stage_body["workflow"]["stage"] == "report_review"
+
+    with SessionLocal() as session:
+        report_snapshot = session.get(WorkflowStageSnapshot, uuid.UUID(report_stage_body["workflow"]["snapshot_id"]))
+        assert report_snapshot is not None
+        source_result_snapshot = session.get(WorkflowStageSnapshot, report_snapshot.previous_snapshot_id)
+        assert source_result_snapshot is not None
+        report_payload = report_snapshot.input_payload_json
+
+    assert report_payload["source_execution_result_review_snapshot_id"] == str(source_result_snapshot.id)
+    assert report_payload["source_execution_result_review_snapshot_hash"] == source_result_snapshot.input_snapshot_hash
+    assert report_payload["source_execution_approval_snapshot_id"] == str(source_execution_snapshot.id)
+    assert report_payload["source_execution_approval_snapshot_hash"] == source_execution_snapshot.input_snapshot_hash
+    assert report_payload["generated_test_run_ids"] == [run_body["id"]]
+    assert set(report_payload["execution_artifact_ids"]) == set(result_workflow["execution_artifact_ids"])
 
 
 def test_automation_plan_requires_approval_before_draft_and_execution(

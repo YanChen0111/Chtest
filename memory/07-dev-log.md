@@ -4532,3 +4532,297 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
   a Windows privilege unavailable to the current process.
 - Frontend: `25 test files / 54 tests passed`.
 - Production build passed with the existing large-chunk warning.
+
+## 2026-07-29 Slice 49.3 RequirementReview Workflow Integration
+
+### Implemented
+
+- Integrated RequirementReview with authoritative WorkflowRun snapshots and
+  project-scoped complete, edit, reject, approve, continue, selected revision,
+  and atomic approve-and-continue actions.
+- Required exact approval evidence before formal RequirementDocument creation.
+- Replaced direct frontend navigation with server-driven `can_*` actions,
+  candidate editing, stale-state refresh, controlled advance, and formal-asset
+  blocking before approval.
+
+### Verification
+
+- Focused backend workflow/requirements suite: `68 passed`.
+- Full backend: `515 passed`.
+- Frontend: `25 test files / 55 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed; the protected source database was not used.
+
+### Next
+
+- Task 49.4: integrate the adjacent RiskReview stage without migrating later
+  domains in the same task.
+
+## 2026-07-29 Slice 49.4 RiskReview Workflow Integration
+
+### Implemented
+
+- Bound the RiskReview draft to the exact consumed RequirementReview snapshot
+  id and hash.
+- Added project-scoped submit, complete, edit, approve, reject, continue, and
+  atomic approve-and-continue actions with server-owned state and optimistic
+  compare-and-swap.
+- Made current risk candidates come from the authoritative immutable workflow
+  snapshot, so edited candidates and the approval target cannot diverge.
+- Added frontend RiskReview stage switching, candidate editing, server-driven
+  actions, stale-state refresh, and controlled advance to TestPlanReview.
+
+### Verification
+
+- Focused backend workflow/requirements suite: `60 passed`.
+- Full backend: `516 passed`.
+- Frontend: `25 test files / 55 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed; the protected source database was not used.
+
+### Next
+
+- Task 49.5: integrate TestPlanReview without migrating later domains in the
+  same task.
+
+## 2026-07-29 Slice 49.5 TestPlanReview Workflow Integration
+
+### Implemented
+
+- Added project-scoped TestPlanReview backend actions on the existing
+  RequirementReview-owned WorkflowRun: submit, complete, edit, approve, reject,
+  continue, and atomic approve-and-continue.
+- Bound TestPlanReview input to the exact approved RiskReview snapshot id and
+  hash, and bound the adjacent CaseReview draft to the exact approved
+  TestPlanReview snapshot id and hash without migrating Case workflow behavior.
+- Required an explicit non-empty test strategy before approving or advancing a
+  plan that contains high or critical approved risk items.
+- Documented the TestPlanReview API/state-machine contract.
+- Wired the RequirementReview frontend store/API/view to switch TestPlanReview
+  submit, complete, edit, approve, reject, and continue actions by authoritative
+  workflow stage.
+
+### Verification
+
+- Focused backend requirement API suite: `21 passed`.
+- Focused backend requirement/workflow suite: `61 passed`.
+- Full backend: `517 passed`.
+- Focused frontend RequirementReview suite with temporary Node `v24.18.0`:
+  `1 file / 2 tests passed`.
+- Full frontend with temporary Node `v24.18.0`: `25 files / 55 tests passed`.
+- Production build with temporary Node `v24.18.0` passed with the existing
+  large-chunk warning.
+- `git diff --check` passed.
+- The temporary Node runtime was restored only for this shell under
+  `%TEMP%\chtest-task49-node`; it was not committed and did not change system
+  PATH.
+
+### Next
+
+- Task 49.6: integrate CaseReview into persisted workflow control using the
+  exact approved TestPlanReview snapshot as input.
+
+## 2026-07-29 Slice 49.6 CaseReview Workflow Integration
+
+### Implemented
+
+- Added project-scoped CaseReview backend actions on the existing
+  RequirementReview-owned WorkflowRun: read, submit, complete, edit, approve,
+  reject, continue, and atomic approve-and-continue.
+- Bound CaseReview input to the exact approved TestPlanReview snapshot id and
+  hash, and bound the adjacent AutomationPlanReview draft to the exact approved
+  CaseReview snapshot id/hash plus approved candidate/test-case evidence.
+- Preserved existing GeneratedCaseCandidate review rules: AI generation alone
+  cannot approve candidates or create formal TestCase rows; CaseReview approval
+  requires all same-review candidates to reach final human-reviewed states and
+  at least one approved candidate to have a TestCase.
+- Made CaseReview edits create a JSON-safe immutable snapshot and invalidate old
+  approval before re-entering human review.
+- Documented the CaseReview API/state-machine contract.
+- Wired the CaseGenerationReview frontend store/API/view to load the
+  authoritative CaseReview gate and invoke submit, complete, edit, approve,
+  reject, continue, and approve-and-continue actions with server-owned lock
+  versions.
+
+### Verification
+
+- Focused backend CaseReview/workflow suite: `46 passed`.
+- Full backend: `518 passed`.
+- Focused frontend CaseGenerationReview suite with temporary Node `v24.18.0`:
+  `1 file / 8 tests passed`.
+- Full frontend with temporary Node `v24.18.0`: `25 files / 56 tests passed`.
+- Production build with temporary Node `v24.18.0` passed with the existing
+  large-chunk warning.
+- `git diff --check` passed.
+- The temporary Node runtime remains isolated under `%TEMP%\chtest-task49-node`;
+  it was not committed and did not change system PATH.
+
+### Next
+
+- Task 49.7: integrate AutomationPlanReview into persisted workflow control
+  using the exact approved CaseReview snapshot as input.
+
+## 2026-07-29 Slice 49.7 AutomationPlanReview Workflow Integration
+
+### Implemented
+
+- Added project-scoped AutomationPlanReview backend actions on the existing
+  RequirementReview-owned WorkflowRun: read, submit, complete, edit, approve,
+  reject, continue, and atomic approve-and-continue.
+- Bound AutomationPlanReview input to the exact approved CaseReview snapshot id
+  and hash, and bound the adjacent AutomationDraftReview draft to the exact
+  approved AutomationPlanReview snapshot id/hash plus approved plan/test-case
+  evidence.
+- Preserved existing AutomationPlan review rules: AI plan output alone cannot
+  generate draft code, approve draft code, or execute tests; AutomationPlanReview
+  approval requires at least one approved AutomationPlan for an approved
+  TestCase from the CaseReview snapshot.
+- Made AutomationPlanReview edits create a JSON-safe immutable snapshot and
+  invalidate old approval before re-entering human review.
+- Documented the AutomationPlanReview API/state-machine contract.
+- Wired the AutomationDraftReview frontend store/API/view to load the
+  authoritative AutomationPlanReview gate after plan generation and invoke
+  submit, complete, edit, approve, reject, continue, and approve-and-continue
+  actions with server-owned lock versions.
+
+### Verification
+
+- Focused backend AutomationPlanReview/CaseReview/workflow suite: `49 passed`.
+- Full backend: `519 passed`.
+- Focused frontend AutomationDraftReview suite with temporary Node `v24.18.0`:
+  `1 file / 6 tests passed`.
+- Full frontend with temporary Node `v24.18.0`: `25 files / 57 tests passed`.
+- Production build with temporary Node `v24.18.0` passed with the existing
+  large-chunk warning.
+- `git diff --check` passed.
+- The temporary Node runtime remains isolated under `%TEMP%\chtest-task49-node`;
+  it was not committed and did not change system PATH.
+
+### Next
+
+- Task 49.8: integrate AutomationDraftReview into persisted workflow control
+  using the exact approved AutomationPlanReview snapshot as input.
+
+## 2026-07-29 Slice 49.8 AutomationDraftReview Workflow Integration
+
+### Implemented
+
+- Added project-scoped AutomationDraftReview backend actions on the existing
+  RequirementReview-owned WorkflowRun: read, submit, complete, edit, approve,
+  reject, continue, and atomic approve-and-continue.
+- Bound AutomationDraftReview input to the exact approved AutomationPlanReview
+  snapshot id and hash, and bound the adjacent ExecutionApproval draft to the
+  exact approved AutomationDraftReview snapshot id/hash plus approved
+  AutomationPlan, AutomationDraft, and TestCase evidence.
+- Preserved existing AutomationDraft review rules: AI draft output alone cannot
+  approve code or execute tests; AutomationDraftReview approval requires at
+  least one approved AutomationDraft for an approved AutomationPlan from the
+  AutomationPlanReview snapshot.
+- Made AutomationDraftReview edits create a JSON-safe immutable snapshot and
+  invalidate old approval before re-entering human review.
+- Documented the AutomationDraftReview API/state-machine contract.
+- Wired the AutomationDraftReview frontend store/API/view to load the
+  authoritative AutomationDraftReview gate after draft creation and invoke
+  submit, complete, edit, approve, reject, continue, and approve-and-continue
+  actions with server-owned lock versions.
+
+### Verification
+
+- Focused backend AutomationDraftReview/workflow suite: `44 passed`.
+- Full backend: `520 passed`.
+- Focused frontend AutomationDraftReview suite with temporary Node `v24.18.0`:
+  `1 file / 7 tests passed`.
+- Full frontend with temporary Node `v24.18.0`: `25 files / 58 tests passed`.
+- Production build with temporary Node `v24.18.0` passed with the existing
+  large-chunk warning.
+- `git diff --check` passed.
+- The temporary Node runtime remains isolated under `%TEMP%\chtest-task49-node`;
+  it was not committed and did not change system PATH.
+
+### Next
+
+- Task 49.9: integrate ExecutionApproval into persisted workflow control using
+  the exact approved AutomationDraftReview snapshot as input.
+
+## 2026-07-29 Slice 49.9 ExecutionApproval Workflow Integration
+
+### Implemented
+
+- Added project-scoped ExecutionApproval backend actions on the existing
+  RequirementReview-owned WorkflowRun: read, submit, complete, edit, approve,
+  reject, continue, and atomic approve-and-continue.
+- Bound ExecutionApproval input to the exact approved AutomationDraftReview
+  snapshot id and hash, and bound the adjacent ExecutionResultReview draft to
+  the exact approved ExecutionApproval snapshot id/hash plus upstream snapshot
+  evidence, approved AutomationDraft ids, execution decisions, and generated
+  TestRun ids.
+- Required workflow-backed AutomationDraft execution to include the current
+  ExecutionApproval approval decision id; stale approval decisions are rejected
+  after edits create a new snapshot.
+- Preserved deterministic draft blocking reasons before execution while moving
+  demo/unverified evidence warnings into the explicit ExecutionApproval human
+  gate instead of requiring pre-existing execution evidence for a first run.
+- Documented the ExecutionApproval API/state-machine contract.
+- Wired the pytest execution frontend store/API/view to load the authoritative
+  ExecutionApproval gate and send the approved decision id when starting a
+  draft-backed run.
+
+### Verification
+
+- Focused backend ExecutionApproval/pytest/workflow suite: `55 passed`.
+- Full backend: `521 passed`.
+- Focused frontend PytestExecutionView suite with temporary Node `v24.18.0`:
+  `1 file / 3 tests passed`.
+- Full frontend with temporary Node `v24.18.0`: `25 files / 59 tests passed`.
+- Production build with temporary Node `v24.18.0` passed with the existing
+  large-chunk warning.
+- `git diff --check` passed.
+- The temporary Node runtime remains isolated under `%TEMP%\chtest-task49-node`;
+  it was not committed and did not change system PATH.
+
+### Next
+
+- Task 49.10: integrate ExecutionResultReview into persisted workflow control
+  using the exact approved ExecutionApproval snapshot as input.
+
+## 2026-07-29 Slice 49.10 ExecutionResultReview Workflow Integration
+
+### Implemented
+
+- Added project-scoped ExecutionResultReview backend actions on the existing
+  RequirementReview-owned WorkflowRun: read, submit, complete, edit, approve,
+  reject, continue, and atomic approve-and-continue.
+- Bound ExecutionResultReview input to the exact approved ExecutionApproval
+  snapshot id and hash, generated TestRun ids, execution Artifact ids, and
+  upstream AutomationDraftReview/AutomationPlanReview/CaseReview snapshot
+  evidence.
+- Required ExecutionResultReview approval and advancement to have generated
+  TestRun evidence plus at least one persisted same-project execution Artifact.
+- Required workflow-backed failure analysis and automation execution report
+  generation to include the current ExecutionResultReview approval decision id,
+  or the same approval already consumed by a successful advance to ReportReview.
+- Made ExecutionResultReview edits create a JSON-safe immutable result-decision
+  snapshot and invalidate old approval before re-entering human review.
+- Documented the ExecutionResultReview API/state-machine contract.
+- Wired the reporting frontend API/store/view to load the authoritative
+  ExecutionResultReview gate, block report/failure-analysis actions before
+  approval, and send the approved decision id in both request payloads.
+
+### Verification
+
+- Focused backend ExecutionResultReview/reporting/pytest/workflow suite:
+  `63 passed`.
+- Full backend: `521 passed`.
+- Focused frontend reporting + PytestExecutionView suite with temporary Node
+  `v24.18.0`: `2 files / 6 tests passed`.
+- Full frontend with temporary Node `v24.18.0`: `25 files / 60 tests passed`.
+- Production build with temporary Node `v24.18.0` passed with the existing
+  large-chunk warning.
+- `git diff --check` passed.
+- The temporary Node runtime remains isolated under `%TEMP%\chtest-task49-node`;
+  it was not committed and did not change system PATH.
+
+### Next
+
+- Task 49.11: integrate ReportReview into persisted workflow control using the
+  exact approved ExecutionResultReview snapshot as input.

@@ -6,6 +6,7 @@ export interface FailureAnalysisCreateRequest {
   readonly skill_version?: string;
   readonly model_provider?: string;
   readonly model_name?: string;
+  readonly execution_result_review_decision_id?: string;
 }
 
 export interface FailureAnalysisCreateRead {
@@ -34,6 +35,7 @@ export interface ReportCreateRequest {
   readonly report_type: string;
   readonly related_entity_type: string;
   readonly related_entity_id: string;
+  readonly execution_result_review_decision_id?: string;
 }
 
 export interface ReportCreateRead {

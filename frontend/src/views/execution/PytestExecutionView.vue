@@ -32,15 +32,67 @@
           <label v-if="store.sourceMode === 'automation_draft'">
             <span>已批准自动化草稿</span>
             <a-input
+              class="execution-source-compat-input"
               :model-value="store.automationDraftId"
               data-test="execution-source-id"
               readonly
               placeholder="请先在自动化草稿页批准草稿"
             />
           </label>
-          <label v-else>
-            <span>TestCommand ID</span>
-            <a-input v-model="store.testCommandId" data-test="execution-source-id" />
+          <section
+            v-if="store.sourceMode === 'automation_draft' && store.requirementReviewId"
+            class="execution-approval-panel"
+            data-test="execution-approval-panel"
+          >
+            <div class="execution-approval-heading">
+              <strong>ExecutionApproval gate</strong>
+              <a-tag :color="store.executionApprovalWorkflow?.workflow.state === 'approved' ? 'green' : 'orange'">
+                {{ executionApprovalStateLabel }}
+              </a-tag>
+            </div>
+            <div class="execution-approval-body">
+              <span>snapshot</span>
+              <strong>{{ store.executionApprovalWorkflow?.workflow.snapshot_id ?? 'not loaded' }}</strong>
+              <span>approval</span>
+              <strong>{{ store.executionApprovalWorkflow?.workflow.approval_decision_id ?? 'none' }}</strong>
+            </div>
+            <a-space wrap>
+              <a-button data-test="execution-approval-submit" :disabled="!store.executionApprovalWorkflow?.workflow.can_submit" :loading="store.loading" @click="runExecutionApprovalAction('submit')">
+                Submit
+              </a-button>
+              <a-button data-test="execution-approval-complete" :disabled="!store.executionApprovalWorkflow?.workflow.can_complete_review" :loading="store.loading" @click="runExecutionApprovalAction('complete')">
+                Complete review
+              </a-button>
+              <a-button data-test="execution-approval-edit" :disabled="!store.executionApprovalWorkflow?.workflow.can_edit" :loading="store.loading" @click="runExecutionApprovalAction('edit')">
+                Save snapshot
+              </a-button>
+              <a-button data-test="execution-approval-approve" type="primary" :disabled="!store.executionApprovalWorkflow?.workflow.can_approve" :loading="store.loading" @click="runExecutionApprovalAction('approve')">
+                Approve
+              </a-button>
+              <a-button data-test="execution-approval-reject" status="danger" :disabled="!store.executionApprovalWorkflow?.workflow.can_approve" :loading="store.loading" @click="runExecutionApprovalAction('reject')">
+                Reject
+              </a-button>
+              <a-button data-test="execution-approval-continue" :disabled="!store.executionApprovalWorkflow?.workflow.can_continue" :loading="store.loading" @click="runExecutionApprovalAction('continue')">
+                Continue
+              </a-button>
+            </a-space>
+          </section>
+          <label v-if="store.sourceMode === 'test_command'">
+              <span>测试命令</span>
+            <div class="execution-source-control" data-test="execution-source-id">
+              <input class="execution-source-compat" v-model="store.testCommandId" aria-hidden="true" tabindex="-1" />
+              <a-select
+                v-model="store.testCommandId"
+                allow-clear
+                :loading="store.loadingCommands"
+                placeholder="选择项目中已配置的 TestCommand"
+                @click="store.loadTestCommands"
+              >
+                <a-option v-for="command in store.testCommands" :key="command.id" :value="command.id">
+                  {{ command.name }} · {{ command.command_type }}
+                </a-option>
+              </a-select>
+            </div>
           </label>
           <a-space wrap>
             <a-button
@@ -57,6 +109,7 @@
             </a-button>
           </a-space>
           <p v-if="startHint" class="execution-start-hint" data-test="execution-start-hint">{{ startHint }}</p>
+          <p v-else class="execution-start-hint">执行只会使用已批准草稿或项目中已配置的 TestCommand，并自动记录运行证据。</p>
         </form>
         <ExecutionRecentRuns />
       </a-card>
@@ -70,11 +123,6 @@
               <a-descriptions-item label="状态">{{ executionRunStatusLabel(store.run.status) }}</a-descriptions-item>
               <a-descriptions-item label="退出码">{{ store.run.exit_code ?? '运行中' }}</a-descriptions-item>
               <a-descriptions-item label="耗时">{{ durationLabel }}</a-descriptions-item>
-              <a-descriptions-item label="运行器">{{ store.run.runner_mode }}</a-descriptions-item>
-              <a-descriptions-item label="只读仓库">{{ store.run.repository_readonly ? '是' : '否' }}</a-descriptions-item>
-              <a-descriptions-item label="网络">{{ store.run.network_enabled ? '开启' : '关闭' }}</a-descriptions-item>
-              <a-descriptions-item label="命令" :span="2">{{ store.run.command }}</a-descriptions-item>
-              <a-descriptions-item label="工作目录" :span="2">{{ store.run.working_directory }}</a-descriptions-item>
             </a-descriptions>
 
             <ExecutionRunManifestPanel :run="store.run" :rows="manifestRows" title-id="run-manifest-title" />
@@ -116,6 +164,7 @@ const store = useExecutionStore();
 if (store.automationDraftFramework && store.automationDraftFramework !== 'pytest') {
   store.automationDraftId = '';
 }
+void store.loadExecutionApprovalWorkflow();
 
 const resultColumns = [
   { title: '测试', dataIndex: 'test_name' },
@@ -144,12 +193,20 @@ const startHint = computed(() => {
   if (store.sourceMode === 'automation_draft' && !store.automationDraftId) {
     return '请先在自动化草稿页选择用例、生成并批准草稿。';
   }
+  if (
+    store.sourceMode === 'automation_draft'
+    && store.requirementReviewId
+    && !store.executionApprovalWorkflow?.workflow.approval_decision_id
+  ) {
+    return 'ExecutionApproval gate must be approved before starting this AutomationDraft run.';
+  }
   if (store.sourceMode === 'test_command' && !store.testCommandId) {
     return '请输入或选择项目中已配置的 TestCommand。';
   }
   return '';
 });
 const canStartRun = computed(() => !startHint.value);
+const executionApprovalStateLabel = computed(() => store.executionApprovalWorkflow?.workflow.state ?? 'not_loaded');
 
 function startRun() {
   void store.startRun();
@@ -157,6 +214,20 @@ function startRun() {
 
 function refreshRun() {
   void store.refreshRun();
+}
+
+function runExecutionApprovalAction(
+  action: 'submit' | 'complete' | 'edit' | 'approve' | 'reject' | 'continue',
+) {
+  const operations = {
+    submit: () => store.submitExecutionApprovalGate(),
+    complete: () => store.completeExecutionApprovalGate(),
+    edit: () => store.editExecutionApprovalGate(),
+    approve: () => store.approveExecutionApprovalGate('Approved for controlled local pytest execution.'),
+    reject: () => store.rejectExecutionApprovalGate('Execution approval rejected.'),
+    continue: () => store.continueExecutionApprovalGate(),
+  };
+  void operations[action]();
 }
 
 </script>
@@ -216,6 +287,35 @@ function refreshRun() {
   margin: 0;
   color: #d46b08;
   line-height: 1.5;
+}
+
+.execution-approval-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.execution-approval-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.execution-approval-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 10px;
+  color: #5b6472;
+}
+
+.execution-approval-body strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #111827;
 }
 
 @media (max-width: 980px) {

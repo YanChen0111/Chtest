@@ -51,6 +51,11 @@ def create_failure_analysis(
         analysis = service.create_failure_analysis(session, test_run_id, data)
     except service.TestRunNotFoundError as exc:
         raise not_found("TEST_RUN_NOT_FOUND", "Test run not found.") from exc
+    except service.ExecutionResultReviewApprovalRequiredError as exc:
+        raise bad_request(
+            "EXECUTION_RESULT_REVIEW_APPROVAL_REQUIRED",
+            "ExecutionResultReview approval is required before failure analysis.",
+        ) from exc
     return FailureAnalysisCreateRead(
         ai_task_id=analysis.ai_task_id,
         failure_analysis_id=analysis.id,
@@ -82,6 +87,11 @@ def create_report(
         report, evidence_manifest_artifact_id = service.create_report(session, data, store=store)
     except service.ReportInvalidInputError as exc:
         raise bad_request("REPORT_INVALID_INPUT", "Report input is invalid.") from exc
+    except service.ExecutionResultReviewApprovalRequiredError as exc:
+        raise bad_request(
+            "EXECUTION_RESULT_REVIEW_APPROVAL_REQUIRED",
+            "ExecutionResultReview approval is required before report generation.",
+        ) from exc
     return ReportCreateRead(
         report_id=report.id,
         status=report.status,

@@ -36,9 +36,11 @@ Rules:
 - Deterministic quality computation and low-risk read-only ToolInvocation
   completion are not human approval. They may complete technical work but may
   not impersonate a human grant or advance a controlled business stage.
-- This policy is not yet wired into existing domain services.
-  Existing entity state machines remain authoritative until each domain is
-  migrated and compatibility-tested in a later task.
+- RequirementReview and its adjacent RiskReview stage are wired into this
+  policy by Tasks 49.3 and 49.4. Existing entity state machines remain
+  authoritative for TestPlan, Case, Automation, execution, CI/CD, report, and
+  knowledge flows until each domain is migrated and compatibility-tested in a
+  later task.
 - Task 49.2 loads the authoritative position and immutable snapshot server-side.
   It atomically compare-and-swaps the run, appends a transition event, and uses
   a database uniqueness constraint to consume the exact approval decision once.
@@ -46,6 +48,79 @@ Rules:
   prior approval.
 - Human decisions and transition events are append-only evidence. Revisions
   create a new stage iteration; they never overwrite the reviewed snapshot.
+- RequirementReview follows `waiting_review -> waiting_approval -> approved ->
+  risk_review:draft`. Human edit or selected regeneration creates a new
+  snapshot and returns to `waiting_review`; rejection grants no advance.
+- RequirementReview approval and immediate advance may run in one database
+  transaction, but still create a distinct human decision and consume that
+  exact decision once. AI output alone cannot call either operation.
+- RiskReview follows `draft -> waiting_review -> waiting_approval -> approved ->
+  test_plan_review:draft`. Its input binds the exact consumed RequirementReview
+  snapshot id and hash. Human risk edits create a new RiskReview snapshot and
+  invalidate old approval; the TestPlanReview draft binds the exact approved
+  RiskReview snapshot id and hash. AI may submit the candidate but cannot
+  complete review, approve, reject, edit, or advance it.
+- TestPlanReview follows `draft -> waiting_review -> waiting_approval ->
+  approved -> case_review:draft`. Its input binds the exact consumed RiskReview
+  snapshot id and hash. Human test plan edits create a new TestPlanReview
+  snapshot and invalidate old approval. High or critical risk items require an
+  explicit non-empty test strategy before plan approval or advancement. AI may
+  submit the candidate but cannot complete review, approve, reject, edit, or
+  advance it. The adjacent CaseReview draft binds the exact approved
+  TestPlanReview snapshot id and hash.
+- CaseReview follows `draft -> waiting_review -> waiting_approval -> approved
+  -> automation_plan_review:draft`. Its input binds the exact consumed
+  TestPlanReview snapshot id and hash. GeneratedCaseCandidate review remains
+  the only path that can approve/reject individual candidates or create formal
+  TestCase rows. CaseReview approval and advancement require all same-review
+  candidates to be in final human-reviewed states and at least one approved
+  candidate to have a TestCase. Human CaseReview edits create a new JSON-safe
+  candidate decision snapshot, return to `waiting_review`, and invalidate old
+  approval. AI may submit the candidate snapshot but cannot complete review,
+  approve, reject, edit, or advance it.
+- AutomationPlanReview follows `draft -> waiting_review -> waiting_approval ->
+  approved -> automation_draft_review:draft`. Its input binds the exact
+  consumed CaseReview snapshot id and hash. Existing AutomationPlan creation and
+  approval remain the only path that can create and human-approve individual
+  plans. AutomationPlanReview approval and advancement require at least one
+  AutomationPlan for an approved TestCase in the CaseReview snapshot to be
+  approved. Human AutomationPlanReview edits create a new JSON-safe plan
+  decision snapshot, return to `waiting_review`, and invalidate old approval.
+  AI may submit the candidate snapshot but cannot complete review, approve,
+  reject, edit, advance, generate draft code, approve draft code, or execute it.
+  AutomationDraftReview remains a separate later domain gate.
+- AutomationDraftReview follows `draft -> waiting_review -> waiting_approval ->
+  approved -> execution_approval:draft`. Its input binds the exact consumed
+  AutomationPlanReview snapshot id and hash. Existing AutomationDraft creation
+  and approval remain the only path that can create and human-approve draft
+  code. AutomationDraftReview approval and advancement require at least one
+  AutomationDraft for an approved AutomationPlan in the AutomationPlanReview
+  snapshot to be approved. Human AutomationDraftReview edits create a new
+  JSON-safe draft decision snapshot, return to `waiting_review`, and invalidate
+  old approval. AI may submit the candidate snapshot but cannot complete review,
+  approve, reject, edit, advance, or execute draft code. ExecutionApproval
+  remains a separate later domain gate.
+- ExecutionApproval follows `draft -> waiting_review -> waiting_approval ->
+  approved -> execution_result_review:draft`. Its input binds the exact
+  consumed AutomationDraftReview snapshot id and hash. Workflow-backed
+  AutomationDraft execution requires both an approved AutomationDraft and the
+  current ExecutionApproval approval decision id; AI execution recommendations,
+  approved code, or browser state alone cannot create a TestRun. Human
+  ExecutionApproval edits create a JSON-safe execution decision snapshot, return
+  to `waiting_review`, and invalidate old approval. The adjacent
+  ExecutionResultReview draft binds the exact approved ExecutionApproval
+  snapshot id/hash plus the upstream AutomationDraftReview,
+  AutomationPlanReview, and CaseReview snapshot evidence.
+- ExecutionResultReview follows `draft -> waiting_review -> waiting_approval
+  -> approved -> report_review:draft`. Its input binds the exact consumed
+  ExecutionApproval snapshot id and hash. Workflow-backed failure analysis or
+  report generation cannot advance from execution output alone; the human gate
+  must review generated TestRun ids and persisted execution Artifact evidence.
+  Human ExecutionResultReview edits create a JSON-safe result decision
+  snapshot, return to `waiting_review`, and invalidate old approval. The
+  adjacent ReportReview draft binds the exact approved ExecutionResultReview
+  snapshot id/hash, the source ExecutionApproval snapshot id/hash, generated
+  TestRun ids, execution artifact ids, and upstream snapshot evidence.
 
 ## 1. 文档目的
 

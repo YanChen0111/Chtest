@@ -8,7 +8,7 @@
       </div>
       <a-space>
         <a-tag color="green">证据优先</a-tag>
-        <a-tag color="blue">模拟提供方</a-tag>
+        <a-tag color="blue">证据分析</a-tag>
       </a-space>
     </div>
 
@@ -24,14 +24,57 @@
       <a-card class="reporting-panel" :bordered="false">
         <template #title>生成入口</template>
         <form class="reporting-form" @submit.prevent>
-          <label>
-            <span>项目 ID</span>
-            <a-input v-model="store.projectId" data-test="reporting-project-id" />
-          </label>
-          <label>
-            <span>TestRun ID</span>
+          <div class="reporting-source-summary" data-test="reporting-source-summary">
+            <span>当前分析对象</span>
+            <strong>{{ selectedRun?.name ?? '尚未选择运行' }}</strong>
+            <small>{{ selectedRun ? `${selectedRun.status} · ${selectedRun.command}` : '请从下方最近运行中选择' }}</small>
+          </div>
+          <div class="reporting-test-run-compatibility" aria-hidden="true">
             <a-input v-model="store.testRunId" data-test="reporting-test-run-id" />
-          </label>
+          </div>
+          <p class="reporting-form-helper">先在执行中心完成一次测试，再从“最近运行”选择要分析的运行。</p>
+          <section
+            v-if="store.requirementReviewId"
+            class="execution-result-review-panel"
+            data-test="execution-result-review-panel"
+          >
+            <div class="gate-heading">
+              <strong>ExecutionResultReview gate</strong>
+              <a-tag :color="store.executionResultReviewWorkflow?.workflow.state === 'approved' ? 'green' : 'orange'">
+                {{ executionResultReviewStateLabel }}
+              </a-tag>
+            </div>
+            <div class="gate-body">
+              <span>snapshot</span>
+              <strong>{{ store.executionResultReviewWorkflow?.workflow.snapshot_id ?? 'not loaded' }}</strong>
+              <span>approval</span>
+              <strong>{{ store.executionResultReviewWorkflow?.workflow.approval_decision_id ?? 'none' }}</strong>
+              <span>test runs</span>
+              <strong>{{ store.executionResultReviewWorkflow?.generated_test_run_ids.length ?? 0 }}</strong>
+              <span>artifacts</span>
+              <strong>{{ store.executionResultReviewWorkflow?.execution_artifact_ids.length ?? 0 }}</strong>
+            </div>
+            <a-space wrap>
+              <a-button data-test="execution-result-review-submit" :disabled="!store.executionResultReviewWorkflow?.workflow.can_submit" :loading="store.loadingReport" @click="runExecutionResultReviewAction('submit')">
+                Submit
+              </a-button>
+              <a-button data-test="execution-result-review-complete" :disabled="!store.executionResultReviewWorkflow?.workflow.can_complete_review" :loading="store.loadingReport" @click="runExecutionResultReviewAction('complete')">
+                Complete review
+              </a-button>
+              <a-button data-test="execution-result-review-edit" :disabled="!store.executionResultReviewWorkflow?.workflow.can_edit" :loading="store.loadingReport" @click="runExecutionResultReviewAction('edit')">
+                Save snapshot
+              </a-button>
+              <a-button data-test="execution-result-review-approve" type="primary" :disabled="!store.executionResultReviewWorkflow?.workflow.can_approve" :loading="store.loadingReport" @click="runExecutionResultReviewAction('approve')">
+                Approve
+              </a-button>
+              <a-button data-test="execution-result-review-reject" status="danger" :disabled="!store.executionResultReviewWorkflow?.workflow.can_approve" :loading="store.loadingReport" @click="runExecutionResultReviewAction('reject')">
+                Reject
+              </a-button>
+              <a-button data-test="execution-result-review-continue" :disabled="!store.executionResultReviewWorkflow?.workflow.can_continue" :loading="store.loadingReport" @click="runExecutionResultReviewAction('continue')">
+                Continue
+              </a-button>
+            </a-space>
+          </section>
           <a-space wrap>
             <a-button
               data-test="start-failure-analysis"
@@ -65,7 +108,7 @@
             <article v-for="run in executionStore.recentRuns" :key="run.id" class="recent-run-row">
               <div>
                 <strong>{{ run.name }}</strong>
-                <span>{{ run.status }} · {{ shortId(run.id) }}</span>
+                <span>{{ run.status }} · {{ run.command }}</span>
               </div>
               <a-button
                 size="small"
@@ -182,6 +225,9 @@ const staleRecentRunCount = computed(() =>
   executionStore.recentRuns.filter((run) => ['pending', 'running', 'execution_pending'].includes(run.status)).length,
 );
 
+const selectedRun = computed(() => executionStore.recentRuns.find((run) => run.id === store.testRunId) ?? null);
+const executionResultReviewStateLabel = computed(() => store.executionResultReviewWorkflow?.workflow.state ?? 'not_loaded');
+
 const evidenceColumns = [
   { title: '证据', dataIndex: 'label' },
   { title: '支撑结论', dataIndex: 'supports_claim' },
@@ -191,8 +237,6 @@ const evidenceColumns = [
 
 const artifactColumns = [
   { title: '类型', dataIndex: 'artifact_type' },
-  { title: '路径', dataIndex: 'file_path' },
-  { title: '大小', dataIndex: 'size_bytes' },
   { title: '访问', slotName: 'action' },
 ];
 
@@ -261,11 +305,24 @@ function resumeReportingRun(runId: string) {
   store.errorMessage = '';
 }
 
-function shortId(value: string): string {
-  return value.length > 8 ? `${value.slice(0, 8)}...` : value;
+function runExecutionResultReviewAction(
+  action: 'submit' | 'complete' | 'edit' | 'approve' | 'reject' | 'continue',
+) {
+  const operations = {
+    submit: () => store.submitExecutionResultReviewGate(),
+    complete: () => store.completeExecutionResultReviewGate(),
+    edit: () => store.editExecutionResultReviewGate(),
+    approve: () => store.approveExecutionResultReviewGate('Execution result evidence reviewed.'),
+    reject: () => store.rejectExecutionResultReviewGate('Execution result review rejected.'),
+    continue: () => store.continueExecutionResultReviewGate(),
+  };
+  void operations[action]();
 }
 
-onMounted(() => executionStore.hydrateRecentRuns());
+onMounted(() => {
+  executionStore.hydrateRecentRuns();
+  void store.loadExecutionResultReviewWorkflow();
+});
 </script>
 
 <style scoped>
@@ -315,6 +372,38 @@ onMounted(() => executionStore.hydrateRecentRuns());
 .reporting-form {
   display: grid;
   gap: 14px;
+}
+
+.reporting-source-summary {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.reporting-source-summary span,
+.reporting-source-summary small {
+  color: #667085;
+  font-size: 12px;
+}
+
+.reporting-source-summary strong {
+  color: #1d4ed8;
+}
+
+.reporting-source-summary small {
+  overflow-wrap: anywhere;
+}
+
+.reporting-test-run-compatibility {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .recent-reporting-runs {
@@ -417,6 +506,35 @@ onMounted(() => executionStore.hydrateRecentRuns());
 .report-summary {
   margin: 0 0 14px;
   color: #475569;
+}
+
+.execution-result-review-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.gate-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gate-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 10px;
+  color: #5b6472;
+}
+
+.gate-body strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #111827;
 }
 
 .action-list {

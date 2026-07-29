@@ -3222,3 +3222,278 @@ Rules for a later API task:
 - Workflow snapshots never return secret-bearing raw provider input.
 - Adding routes must be paired with domain-service migration; exposing a
   disconnected generic workflow editor is forbidden.
+
+### 11.1 RequirementReview Controlled Actions
+
+Task 49.3 exposes the first domain-integrated workflow API. All routes are
+project scoped and return the RequirementReview detail with the authoritative
+workflow stage, gate state, snapshot id, lock version, exact approval decision
+id when available, and server-computed `can_*` actions.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/regenerate-selected
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/approve-and-continue
+```
+
+Mutation requests carry `expected_version`, an optional local reviewer/comment,
+and only action-specific candidate data. Extra fields fail closed. Edit and
+regenerate-selected create a new candidate snapshot and re-enter review; the
+latter accepts already-generated selected fields and does not itself invoke a
+model or authorize advancement.
+
+`continue` must identify the exact unconsumed approval decision. The combined
+approve-and-continue action creates and consumes its decision, appends both
+events, creates the RiskReview snapshot, and compare-and-swaps WorkflowRun in
+one transaction. Version conflict rolls the whole operation back.
+
+Formal RequirementDocument creation returns `409
+REQUIREMENT_REVIEW_APPROVAL_REQUIRED` unless RequirementReview is currently
+approved or its approval was consumed by a recorded successful advance.
+
+### 11.2 RiskReview Controlled Actions
+
+Task 49.4 extends the same authoritative WorkflowRun into the adjacent
+RiskReview stage. RiskReview is addressed through the owning project and
+RequirementReview; clients cannot supply or replace its source snapshot.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}/risk-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/risk-review/submit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/risk-review/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/risk-review/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/risk-review/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/risk-review/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/risk-review/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/risk-review/approve-and-continue
+```
+
+The RiskReview draft records the exact source RequirementReview snapshot id and
+canonical hash consumed by the successful adjacent transition. Editing accepts
+only candidate risk items, creates a new immutable RiskReview snapshot, and
+invalidates the prior approval. Submit is an AI/system candidate action;
+complete-review, edit, approve, and reject require a human actor. Continue is a
+deterministic system action that consumes the exact current approval and creates
+a TestPlanReview draft containing the approved RiskReview snapshot id and hash.
+Stage mismatch, stale version, cross-project access, approval replay, or a
+missing exact approval fails closed without advancing the run.
+
+### 11.3 TestPlanReview Controlled Actions
+
+Task 49.5 extends the same authoritative WorkflowRun into the adjacent
+TestPlanReview stage. TestPlanReview is addressed through the owning project and
+RequirementReview; clients cannot supply or replace its source RiskReview
+snapshot.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}/test-plan-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/test-plan-review/submit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/test-plan-review/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/test-plan-review/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/test-plan-review/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/test-plan-review/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/test-plan-review/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/test-plan-review/approve-and-continue
+```
+
+The TestPlanReview draft records the exact source RiskReview snapshot id and
+canonical hash consumed by the successful adjacent transition. Editing accepts
+only candidate test strategy and plan items, creates a new immutable
+TestPlanReview snapshot, and invalidates the prior approval. Submit is an
+AI/system candidate action; complete-review, edit, approve, and reject require a
+human actor. Approval and continue are rejected when any approved risk item has
+`risk_level=high` or `critical` and the current TestPlanReview snapshot lacks an
+explicit non-empty `test_strategy`. Continue is a deterministic system action
+that consumes the exact current approval and creates the adjacent CaseReview
+draft from the approved TestPlanReview snapshot.
+
+### 11.4 CaseReview Controlled Actions
+
+Task 49.6 extends the same authoritative WorkflowRun into the adjacent
+CaseReview stage. CaseReview is addressed through the owning project and
+RequirementReview; clients cannot supply or replace its source TestPlanReview
+snapshot.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}/case-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/case-review/submit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/case-review/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/case-review/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/case-review/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/case-review/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/case-review/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/case-review/approve-and-continue
+```
+
+The CaseReview draft records the exact source TestPlanReview snapshot id and
+canonical hash consumed by the successful adjacent transition. Candidate review
+remains governed by the existing GeneratedCaseCandidate APIs; AI generation
+alone does not approve candidates or create formal TestCase rows. CaseReview
+approval and advancement are rejected unless generated candidates for the same
+RequirementReview have reached final human-reviewed states and at least one
+approved or approved-after-edit candidate has a corresponding TestCase.
+
+Editing the CaseReview gate records a JSON-safe candidate decision snapshot,
+creates a new immutable CaseReview snapshot, re-enters human review, and
+invalidates any prior approval. Continue consumes the exact current approval
+decision and creates the adjacent AutomationPlanReview draft from the approved
+CaseReview snapshot while preserving the source TestPlanReview snapshot id and
+hash, approved candidate ids, approved TestCase ids, and candidate decision
+evidence.
+
+### 11.5 AutomationPlanReview Controlled Actions
+
+Task 49.7 extends the same authoritative WorkflowRun into the adjacent
+AutomationPlanReview stage. AutomationPlanReview is addressed through the
+owning project and RequirementReview; clients cannot supply or replace its
+source CaseReview snapshot.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}/automation-plan-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-plan-review/submit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-plan-review/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-plan-review/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-plan-review/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-plan-review/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-plan-review/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-plan-review/approve-and-continue
+```
+
+The AutomationPlanReview draft records the exact source CaseReview snapshot id
+and canonical hash consumed by the successful adjacent transition. Existing
+AutomationPlan creation and plan approval remain the only path to create and
+human-approve individual automation plans. AI plan output alone does not
+generate AutomationDraft code, approve code, or authorize execution.
+
+AutomationPlanReview approval and advancement are rejected unless at least one
+AutomationPlan for an approved TestCase in the CaseReview snapshot has
+`status=approved`. Editing the AutomationPlanReview gate records a JSON-safe
+plan decision snapshot, creates a new immutable AutomationPlanReview snapshot,
+re-enters human review, and invalidates any prior approval. Continue consumes
+the exact current approval decision and creates the adjacent
+AutomationDraftReview draft from the approved AutomationPlanReview snapshot
+while preserving the source CaseReview snapshot id/hash, source TestPlanReview
+snapshot id/hash, approved candidate ids, approved TestCase ids, approved
+AutomationPlan ids, and plan decision evidence. AutomationDraft generation and
+draft review remain separate domain gates.
+
+### 11.6 AutomationDraftReview Controlled Actions
+
+Task 49.8 extends the same authoritative WorkflowRun into the adjacent
+AutomationDraftReview stage. AutomationDraftReview is addressed through the
+owning project and RequirementReview; clients cannot supply or replace its
+source AutomationPlanReview snapshot.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}/automation-draft-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-draft-review/submit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-draft-review/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-draft-review/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-draft-review/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-draft-review/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-draft-review/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/automation-draft-review/approve-and-continue
+```
+
+The AutomationDraftReview draft records the exact source AutomationPlanReview
+snapshot id and canonical hash consumed by the successful adjacent transition.
+Existing AutomationDraft creation and draft approval remain the only path to
+create and human-approve individual draft code. AI draft output alone does not
+approve code or authorize execution.
+
+AutomationDraftReview approval and advancement are rejected unless at least one
+AutomationDraft for an approved AutomationPlan in the AutomationPlanReview
+snapshot has `status=approved`. Editing the AutomationDraftReview gate records
+a JSON-safe draft decision snapshot, creates a new immutable
+AutomationDraftReview snapshot, re-enters human review, and invalidates any
+prior approval. Continue consumes the exact current approval decision and
+creates the adjacent ExecutionApproval draft from the approved
+AutomationDraftReview snapshot while preserving the source
+AutomationPlanReview snapshot id/hash, source CaseReview snapshot id/hash,
+approved AutomationPlan ids, approved TestCase ids, approved AutomationDraft
+ids, and draft decision evidence. Execution remains a separate later gate.
+
+### 11.7 ExecutionApproval Controlled Actions
+
+Task 49.9 extends the same authoritative WorkflowRun into the adjacent
+ExecutionApproval stage. ExecutionApproval is addressed through the owning
+project and RequirementReview; clients cannot supply or replace its source
+AutomationDraftReview snapshot.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}/execution-approval
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-approval/submit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-approval/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-approval/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-approval/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-approval/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-approval/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-approval/approve-and-continue
+```
+
+The ExecutionApproval draft records the exact source AutomationDraftReview
+snapshot id and canonical hash consumed by the successful adjacent transition.
+AI execution recommendations, approved AutomationDraft code, and browser state
+alone do not create TestRun rows for workflow-backed drafts. For an
+AutomationDraft linked to a RequirementReview workflow, `POST /api/test-runs`
+must include the current ExecutionApproval approval decision id. That approval
+decision must belong to the current ExecutionApproval snapshot, approve the
+same project/workflow, and cover the draft id in the snapshot's approved
+AutomationDraft evidence.
+
+ExecutionApproval approval and advancement are rejected unless at least one
+approved AutomationDraft from the source AutomationDraftReview snapshot remains
+`status=approved`. Editing the ExecutionApproval gate records a JSON-safe
+execution decision snapshot, creates a new immutable ExecutionApproval
+snapshot, re-enters human review, and invalidates any prior approval. Continue
+consumes the exact current approval decision and creates the adjacent
+ExecutionResultReview draft from the approved ExecutionApproval snapshot while
+preserving source AutomationDraftReview, AutomationPlanReview, and CaseReview
+snapshot id/hash values, approved AutomationDraft ids, execution decision
+evidence, and generated TestRun ids.
+
+### 11.8 ExecutionResultReview Controlled Actions
+
+Task 49.10 extends the same authoritative WorkflowRun into the adjacent
+ExecutionResultReview stage. ExecutionResultReview is addressed through the
+owning project and RequirementReview; clients cannot supply or replace its
+source ExecutionApproval snapshot.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}/execution-result-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-result-review/submit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-result-review/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-result-review/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-result-review/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-result-review/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-result-review/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/execution-result-review/approve-and-continue
+```
+
+The ExecutionResultReview draft records the exact source ExecutionApproval
+snapshot id and canonical hash consumed by the successful adjacent transition.
+Execution output, parsed runner result, or artifact presence alone must not
+authorize failure analysis or report generation for a workflow-backed run.
+For a TestRun generated by the RequirementReview-owned workflow, both
+`POST /api/test-runs/{test_run_id}/failure-analysis` and `POST /api/reports`
+must include the current `execution_result_review_decision_id` unless the
+approval has already been consumed by a recorded successful advance into
+ReportReview. The gate input preserves generated TestRun ids, execution
+artifact ids, the approved ExecutionApproval snapshot id/hash, and upstream
+AutomationDraftReview, AutomationPlanReview, and CaseReview snapshot evidence.
+
+ExecutionResultReview approval and advancement are rejected unless the workflow
+has generated TestRun ids and at least one same-project Artifact owned by one
+of those TestRun rows. Editing the ExecutionResultReview gate records a
+JSON-safe result-decision snapshot, creates a new immutable
+ExecutionResultReview snapshot, re-enters human review, and invalidates any
+prior approval. Continue consumes the exact current approval decision and
+creates the adjacent ReportReview draft from the approved
+ExecutionResultReview snapshot while preserving source ExecutionResultReview
+snapshot id/hash, source ExecutionApproval snapshot id/hash, generated TestRun
+ids, execution artifact evidence, and result decision evidence.

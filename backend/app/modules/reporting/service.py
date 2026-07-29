@@ -14,6 +14,19 @@ from backend.app.modules.automation.service import automation_draft_quality_gate
 from backend.app.modules.execution.models import TestResult, TestRun
 from backend.app.modules.reporting.models import FailureAnalysis, Report
 from backend.app.modules.reporting.schemas import FailureAnalysisCreateRequest, ReportCreateRequest
+from backend.app.modules.workflow_control.models import (
+    WorkflowHumanDecision,
+    WorkflowRun,
+    WorkflowStageSnapshot,
+    WorkflowTransitionEvent,
+)
+from backend.app.modules.workflow_control.policy import (
+    ApprovalDecision,
+    ControlledStage,
+    GateState,
+    TransitionAction,
+    WorkflowKind,
+)
 
 
 class TestRunNotFoundError(Exception):
@@ -29,6 +42,10 @@ class ReportNotFoundError(Exception):
 
 
 class ReportInvalidInputError(Exception):
+    pass
+
+
+class ExecutionResultReviewApprovalRequiredError(Exception):
     pass
 
 
@@ -49,6 +66,11 @@ def create_failure_analysis(
     test_run = session.get(TestRun, test_run_id)
     if test_run is None:
         raise TestRunNotFoundError
+    require_execution_result_review_approval(
+        session,
+        test_run,
+        data.execution_result_review_decision_id,
+    )
 
     test_results = list(
         session.scalars(
@@ -217,6 +239,11 @@ def create_report(
     test_run = session.get(TestRun, data.related_entity_id)
     if test_run is None or test_run.project_id != data.project_id:
         raise ReportInvalidInputError
+    require_execution_result_review_approval(
+        session,
+        test_run,
+        data.execution_result_review_decision_id,
+    )
 
     test_results = list(
         session.scalars(
@@ -449,3 +476,79 @@ def report_artifacts_for_report(session: Session, report: Report) -> list[Artifa
             .order_by(Artifact.created_at.asc()),
         ),
     )
+
+
+def require_execution_result_review_approval(
+    session: Session,
+    test_run: TestRun,
+    decision_id: uuid.UUID | None,
+) -> None:
+    requirement_review_id = workflow_requirement_review_id_for_test_run(test_run)
+    if requirement_review_id is None:
+        return
+    if decision_id is None:
+        raise ExecutionResultReviewApprovalRequiredError
+
+    run = session.scalar(
+        select(WorkflowRun).where(
+            WorkflowRun.project_id == test_run.project_id,
+            WorkflowRun.workflow_kind == WorkflowKind.REQUIREMENT_TO_EXECUTION.value,
+            WorkflowRun.subject_ref == str(requirement_review_id),
+            WorkflowRun.status == "active",
+        ),
+    )
+    if run is None:
+        raise ExecutionResultReviewApprovalRequiredError
+
+    decision = session.scalar(
+        select(WorkflowHumanDecision).where(
+            WorkflowHumanDecision.id == decision_id,
+            WorkflowHumanDecision.project_id == test_run.project_id,
+            WorkflowHumanDecision.workflow_run_id == run.id,
+            WorkflowHumanDecision.stage == ControlledStage.EXECUTION_RESULT_REVIEW.value,
+            WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+            WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+            WorkflowHumanDecision.allowed_action == TransitionAction.ADVANCE.value,
+        ),
+    )
+    if decision is None:
+        raise ExecutionResultReviewApprovalRequiredError
+
+    source_snapshot = session.get(WorkflowStageSnapshot, decision.snapshot_id)
+    if source_snapshot is None or not _snapshot_contains_test_run(source_snapshot, test_run.id):
+        raise ExecutionResultReviewApprovalRequiredError
+
+    if run.current_stage == ControlledStage.EXECUTION_RESULT_REVIEW.value:
+        if run.gate_state != GateState.APPROVED.value or run.current_snapshot_id != decision.snapshot_id:
+            raise ExecutionResultReviewApprovalRequiredError
+        return
+
+    if run.current_stage == ControlledStage.REPORT_REVIEW.value:
+        consumed = session.scalar(
+            select(WorkflowTransitionEvent).where(
+                WorkflowTransitionEvent.project_id == test_run.project_id,
+                WorkflowTransitionEvent.workflow_run_id == run.id,
+                WorkflowTransitionEvent.consumed_approval_decision_id == decision.id,
+                WorkflowTransitionEvent.source_snapshot_id == decision.snapshot_id,
+                WorkflowTransitionEvent.to_stage == ControlledStage.REPORT_REVIEW.value,
+            ),
+        )
+        if consumed is not None:
+            return
+
+    raise ExecutionResultReviewApprovalRequiredError
+
+
+def workflow_requirement_review_id_for_test_run(test_run: TestRun) -> uuid.UUID | None:
+    draft = test_run.automation_draft
+    if draft is None:
+        return None
+    plan = draft.automation_plan
+    if plan is None:
+        return None
+    return plan.requirement_review_id
+
+
+def _snapshot_contains_test_run(snapshot: WorkflowStageSnapshot, test_run_id: uuid.UUID) -> bool:
+    test_run_ids = snapshot.input_payload_json.get("generated_test_run_ids") or []
+    return str(test_run_id) in {str(value) for value in test_run_ids}

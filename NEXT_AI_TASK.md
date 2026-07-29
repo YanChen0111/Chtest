@@ -10,22 +10,64 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.2 is complete: workflow positions, stage snapshots, human decisions,
-transition events, and one-time approval consumption now have a project-scoped
-persistence service.
+Task 49.10 is complete. Task 49.11 integrates the persisted gate into
+ReportReview as the next adjacent stage, using the exact approved
+ExecutionResultReview snapshot as input.
 
 Verified behavior:
 
-1. The server loads authoritative position and snapshot state; clients cannot
-   supply trusted completed stages, gate state, or snapshot identity.
-2. Stage-scoped canonical snapshots reject secret-like keys, oversized input,
-   tampering, update, and deletion.
-3. Human decisions and transition events are immutable; run updates use
-   optimistic compare-and-swap in the same transaction.
-4. Advance consumes the exact approval decision instance once using database
-   uniqueness. Fingerprints are integrity metadata, not bearer credentials.
-5. ABA restoration to the same stage and content requires a new approval
-   decision; old decisions remain stale even when hashes match again.
+1. AI output creates only a candidate snapshot and enters `waiting_review`.
+2. Human complete, edit, reject, approve, and continue actions are project
+   scoped and use server-owned state plus optimistic compare-and-swap.
+3. Edit or selected regeneration creates a new snapshot and invalidates old
+   approval; continue consumes one exact approval decision.
+4. Atomic approve-and-continue rolls back decision, events, snapshot, and run
+   changes together on conflict.
+5. The frontend cannot navigate or create a formal document before the
+   authoritative gate permits it.
+6. TestPlanReview backend actions preserve the exact approved RiskReview
+   snapshot, invalidate approval after edits, require explicit strategy for
+   high/critical risks, and consume one exact approval before creating the
+   adjacent CaseReview draft.
+7. The RequirementReview page is stage-aware for RiskReview and TestPlanReview
+   submit, complete, edit, approve, reject, and continue actions.
+8. CaseReview backend actions preserve the exact approved TestPlanReview
+   snapshot, require existing GeneratedCaseCandidate human review before
+   approval/advance, invalidate approval after edits, and consume one exact
+   approval before creating the adjacent AutomationPlanReview draft.
+9. The CaseGenerationReview page loads the authoritative CaseReview gate and
+   drives submit, complete, edit, approve, reject, continue, and
+   approve-and-continue actions with server-owned lock versions.
+10. AutomationPlanReview backend actions preserve the exact approved CaseReview
+    snapshot, require at least one approved AutomationPlan before
+    approval/advance, invalidate approval after edits, and consume one exact
+    approval before creating the adjacent AutomationDraftReview draft.
+11. The AutomationDraftReview page loads the authoritative AutomationPlanReview
+    gate after plan generation and drives submit, complete, edit, approve,
+    reject, continue, and approve-and-continue actions with server-owned lock
+    versions.
+12. AutomationDraftReview backend actions preserve the exact approved
+    AutomationPlanReview snapshot, require at least one approved AutomationDraft
+    before approval/advance, invalidate approval after edits, and consume one
+    exact approval before creating the adjacent ExecutionApproval draft.
+13. The AutomationDraftReview page loads the authoritative AutomationDraftReview
+    gate after draft creation and drives submit, complete, edit, approve,
+    reject, continue, and approve-and-continue actions with server-owned lock
+    versions.
+14. ExecutionApproval backend actions preserve the exact approved
+    AutomationDraftReview snapshot, require a current ExecutionApproval approval
+    decision before workflow-backed AutomationDraft execution, invalidate
+    approval after edits, and consume one exact approval before creating the
+    adjacent ExecutionResultReview draft.
+15. The pytest execution page loads the authoritative ExecutionApproval gate
+    for workflow-backed drafts and sends the server approval decision id when
+    starting an approved run.
+16. ExecutionResultReview backend actions preserve the exact approved
+    ExecutionApproval snapshot, require generated TestRun and Artifact evidence,
+    invalidate approval after edits, consume one exact approval before creating
+    the adjacent ReportReview draft, and require the current
+    ExecutionResultReview approval decision before workflow-backed failure
+    analysis or report generation.
 
 ## Previous Tasks Verified
 
@@ -112,8 +154,10 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers retain explicit control of promoted AI results, and Chtest can
-now persist that control without trusting client state or replaying approvals.
+Test engineers can now edit, reject, approve, explicitly advance,
+execution-approve, and result-review requirement, risk, test-plan, case-review,
+automation-plan, automation-draft, workflow-backed execution, and execution
+result candidates without trusting browser state or AI completion.
 
 ## Must Read
 
@@ -136,7 +180,7 @@ now persist that control without trusting client state or replaying approvals.
 
 ## Expected Files
 
-Default write boundary for Task 49.3:
+Default write boundary for Task 49.11:
 
 ```text
 NEXT_AI_TASK.md
@@ -144,18 +188,15 @@ memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/contracts/02-api-contract.md
 docs/contracts/03-state-machines.md
-backend/app/main.py
-backend/app/modules/workflow_control/router.py
-backend/app/modules/workflow_control/schemas.py
-backend/app/modules/workflow_control/service.py
-backend/app/modules/requirements/router.py
-backend/app/modules/requirements/service.py
-backend/app/tests/api/test_requirement_review.py
-backend/app/tests/api/test_workflow_control.py
-frontend/src/api/requirements.ts
-frontend/src/stores/requirements.ts
-frontend/src/views/requirements/RequirementReviewView.vue
-frontend/src/views/requirements/RequirementReviewView.spec.ts
+backend/app/modules/reporting/router.py
+backend/app/modules/reporting/schemas.py
+backend/app/modules/reporting/service.py
+backend/app/tests/api/test_automation_plan.py
+backend/app/tests/api/test_report_failure_analysis.py
+frontend/src/api/reporting.ts
+frontend/src/stores/reporting.ts
+frontend/src/views/reporting/ReportFailureAnalysisView.vue
+frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts
 ```
 
 Explain any write outside this set before editing it.
@@ -171,26 +212,43 @@ npm --prefix frontend run build
 git diff --check
 ```
 
+Latest Task 49.10 evidence:
+
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_automation_plan.py backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/workflow_control -q` => `63 passed`
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q` => `521 passed`
+- `npm.cmd --prefix frontend test -- --run src/views/reporting/ReportFailureAnalysisView.spec.ts src/views/execution/PytestExecutionView.spec.ts` with temporary Node `v24.18.0` => `2 files / 6 tests passed`
+- `npm.cmd --prefix frontend test -- --run` with temporary Node `v24.18.0` => `25 files / 60 tests passed`
+- `npm.cmd --prefix frontend run build` with temporary Node `v24.18.0` => passed with the existing large-chunk warning
+- `git diff --check` => passed
+- Node/npm was restored only for this shell from a temporary official Node
+  distribution under `%TEMP%\chtest-task49-node`; it was not committed and did
+  not change system PATH.
+
 The source `storage/chtest-dev.db` remains blocked and read-only. Do not run
 upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- AI output alone can never advance a controlled workflow stage.
-- Approval is scoped to the exact input snapshot and becomes invalid after an
-  input hash changes.
-- Skipped stages and transitions without required review/approval fail closed.
+- ReportReview input is the exact ExecutionResultReview snapshot consumed by
+  the successful adjacent-stage transition.
+- Formal report publication cannot advance from generated report content alone
+  without the ReportReview gate.
+- Editing report-review candidates creates a new snapshot and invalidates old
+  approval.
+- ReportReview advancement must preserve approved ExecutionResultReview
+  snapshot id/hash, approved ExecutionApproval snapshot id/hash, generated
+  TestRun ids, execution artifact evidence, and report artifact evidence.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow-control): persist human approval workflow
+feat(workflow-control): gate report review
 ```
 
 ## Next Task
 
-Task 49.3 integrates the persisted gate into RequirementReview as the first
-vertical slice. Add project-scoped read/action APIs and a tester-facing review,
-edit, approve, and continue flow. Do not migrate Case, Automation, execution,
-CI/CD, or knowledge workflows in the same task.
+Task 49.11 integrates the persisted gate into ReportReview as the next adjacent
+stage. Reuse the project-scoped action pattern and preserve the exact approved
+ExecutionResultReview snapshot as ReportReview input. Do not migrate knowledge
+feedback, CI/CD, or repair workflows in the same task.

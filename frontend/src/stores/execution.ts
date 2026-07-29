@@ -1,6 +1,20 @@
 import { defineStore } from 'pinia';
 
-import { createTestRun, getTestRun, type TestRunRead } from '../api/execution';
+import {
+  approveAndContinueExecutionApprovalWorkflow,
+  approveExecutionApprovalWorkflow,
+  completeExecutionApprovalWorkflow,
+  continueExecutionApprovalWorkflow,
+  createTestRun,
+  editExecutionApprovalWorkflow,
+  getExecutionApprovalWorkflow,
+  getTestRun,
+  rejectExecutionApprovalWorkflow,
+  submitExecutionApprovalWorkflow,
+  type ExecutionApprovalWorkflowRead,
+  type TestRunRead,
+} from '../api/execution';
+import { getProjectSettings, type ProjectTestCommand } from '../api/projects';
 import { DEFAULT_PROJECT_ID, getLatestAutomationDraftContext } from './workflowContext';
 
 const RECENT_RUNS_STORAGE_KEY = 'chtest.execution.recent-runs';
@@ -11,10 +25,14 @@ export const useExecutionStore = defineStore('execution', {
     const latestDraft = getLatestAutomationDraftContext();
     return {
       projectId: latestDraft?.projectId ?? DEFAULT_PROJECT_ID,
+      requirementReviewId: latestDraft?.requirementReviewId ?? '',
       automationDraftId: latestDraft?.status === 'approved' ? latestDraft.automationDraftId : '',
       automationDraftFramework: latestDraft?.status === 'approved' ? latestDraft.targetFramework : '',
       testCommandId: '',
+      testCommands: [] as ProjectTestCommand[],
+      loadingCommands: false,
       sourceMode: 'automation_draft' as 'automation_draft' | 'test_command',
+      executionApprovalWorkflow: null as ExecutionApprovalWorkflowRead | null,
       run: null as TestRunRead | null,
       recentRuns: [] as TestRunRead[],
       recentRunsHydrated: false,
@@ -23,6 +41,18 @@ export const useExecutionStore = defineStore('execution', {
     };
   },
   actions: {
+    async loadTestCommands() {
+      if (this.loadingCommands || this.testCommands.length > 0) return;
+      this.loadingCommands = true;
+      try {
+        const settings = await getProjectSettings(this.projectId);
+        this.testCommands = settings.test_commands.filter((item) => item.status === 'active');
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : '加载项目测试命令失败';
+      } finally {
+        this.loadingCommands = false;
+      }
+    },
     hydrateRecentRuns() {
       if (this.recentRunsHydrated || typeof window === 'undefined') return;
       this.recentRunsHydrated = true;
@@ -50,6 +80,15 @@ export const useExecutionStore = defineStore('execution', {
         this.loading = false;
         return;
       }
+      if (
+        this.sourceMode === 'automation_draft'
+        && this.requirementReviewId
+        && !this.executionApprovalWorkflow?.workflow.approval_decision_id
+      ) {
+        this.errorMessage = 'ExecutionApproval gate must be approved before running this AutomationDraft.';
+        this.loading = false;
+        return;
+      }
       if (this.sourceMode === 'test_command' && !this.testCommandId) {
         this.errorMessage = '请先选择已配置的 TestCommand。';
         this.loading = false;
@@ -60,6 +99,10 @@ export const useExecutionStore = defineStore('execution', {
           project_id: this.projectId,
           automation_draft_id: this.sourceMode === 'automation_draft' ? this.automationDraftId : null,
           test_command_id: this.sourceMode === 'test_command' ? this.testCommandId : null,
+          execution_approval_decision_id:
+            this.sourceMode === 'automation_draft'
+              ? this.executionApprovalWorkflow?.workflow.approval_decision_id ?? null
+              : null,
           reason: options.reason ?? 'frontend pytest execution',
           runner_mode: runnerMode,
         });
@@ -95,6 +138,107 @@ export const useExecutionStore = defineStore('execution', {
       }
       this.run = cachedRun;
       await this.refreshRun();
+    },
+    async loadExecutionApprovalWorkflow() {
+      if (!this.projectId || !this.requirementReviewId || !this.automationDraftId) {
+        this.executionApprovalWorkflow = null;
+        return null;
+      }
+      try {
+        this.executionApprovalWorkflow = await getExecutionApprovalWorkflow(this.projectId, this.requirementReviewId);
+        return this.executionApprovalWorkflow;
+      } catch {
+        this.executionApprovalWorkflow = null;
+        return null;
+      }
+    },
+    currentExecutionDecisionSnapshot() {
+      if (!this.automationDraftId) {
+        return [];
+      }
+      return [
+        {
+          automation_draft_id: this.automationDraftId,
+          status: this.executionApprovalWorkflow?.approved_automation_draft_ids.includes(this.automationDraftId)
+            ? 'approved'
+            : 'unknown',
+          runner_mode: this.automationDraftFramework === 'playwright' ? 'playwright_local' : 'local_subprocess',
+          reason: 'Frontend execution scope reviewed.',
+        },
+      ];
+    },
+    async runExecutionApprovalAction(action: () => Promise<ExecutionApprovalWorkflowRead>) {
+      this.loading = true;
+      this.errorMessage = '';
+      try {
+        this.executionApprovalWorkflow = await action();
+        return true;
+      } catch (error) {
+        this.errorMessage = error instanceof Error ? error.message : 'ExecutionApproval workflow action failed';
+        await this.loadExecutionApprovalWorkflow();
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async submitExecutionApprovalGate() {
+      const workflow = this.executionApprovalWorkflow?.workflow;
+      if (!workflow || !this.requirementReviewId) return false;
+      return this.runExecutionApprovalAction(() => submitExecutionApprovalWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+      }));
+    },
+    async completeExecutionApprovalGate() {
+      const workflow = this.executionApprovalWorkflow?.workflow;
+      if (!workflow || !this.requirementReviewId) return false;
+      return this.runExecutionApprovalAction(() => completeExecutionApprovalWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+      }));
+    },
+    async editExecutionApprovalGate() {
+      const workflow = this.executionApprovalWorkflow?.workflow;
+      if (!workflow || !this.requirementReviewId) return false;
+      return this.runExecutionApprovalAction(() => editExecutionApprovalWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+        execution_decisions: this.currentExecutionDecisionSnapshot(),
+      }));
+    },
+    async approveExecutionApprovalGate(comment?: string) {
+      const workflow = this.executionApprovalWorkflow?.workflow;
+      if (!workflow || !this.requirementReviewId) return false;
+      return this.runExecutionApprovalAction(() => approveExecutionApprovalWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async rejectExecutionApprovalGate(comment?: string) {
+      const workflow = this.executionApprovalWorkflow?.workflow;
+      if (!workflow || !this.requirementReviewId) return false;
+      return this.runExecutionApprovalAction(() => rejectExecutionApprovalWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
+    },
+    async continueExecutionApprovalGate() {
+      const workflow = this.executionApprovalWorkflow?.workflow;
+      const approvalDecisionId = workflow?.approval_decision_id;
+      if (!workflow || !this.requirementReviewId || !approvalDecisionId) return false;
+      return this.runExecutionApprovalAction(() => continueExecutionApprovalWorkflow(
+        this.projectId,
+        this.requirementReviewId,
+        {
+          expected_version: workflow.lock_version,
+          approval_decision_id: approvalDecisionId,
+        },
+      ));
+    },
+    async approveAndContinueExecutionApprovalGate(comment?: string) {
+      const workflow = this.executionApprovalWorkflow?.workflow;
+      if (!workflow || !this.requirementReviewId) return false;
+      return this.runExecutionApprovalAction(() => approveAndContinueExecutionApprovalWorkflow(this.projectId, this.requirementReviewId, {
+        expected_version: workflow.lock_version,
+        comment,
+      }));
     },
   },
 });

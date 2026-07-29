@@ -13,6 +13,7 @@ class FailureAnalysisCreateRequest(BaseModel):
     skill_version: str = "failure-analysis-skill:v1"
     model_provider: str | None = None
     model_name: str | None = None
+    execution_result_review_decision_id: uuid.UUID | None = None
 
 
 class FailureAnalysisCreateRead(BaseModel):
@@ -41,6 +42,7 @@ class ReportCreateRequest(BaseModel):
     report_type: str = "automation_execution"
     related_entity_type: str
     related_entity_id: uuid.UUID
+    execution_result_review_decision_id: uuid.UUID | None = None
 
 
 class ReportCreateRead(BaseModel):
