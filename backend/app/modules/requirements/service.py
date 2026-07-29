@@ -15,6 +15,7 @@ from backend.app.modules.ai_runtime.models import AITask, Artifact, LLMCallLog
 from backend.app.modules.ai_runtime.providers.base import ProviderArtifactPayload
 from backend.app.modules.extension import service as extension_service
 from backend.app.modules.knowledge import service as knowledge_service
+from backend.app.modules.knowledge.query_planner import build_retrieval_query_plan, expanded_retrieval_query
 from backend.app.modules.prompt_skill.models import PromptVersion, SkillVersion
 from backend.app.modules.projects.models import Module, Project
 from backend.app.modules.requirements.models import Requirement, RequirementReview, RiskItem
@@ -24,6 +25,27 @@ from backend.app.modules.requirements.schemas import (
     RequirementDocumentRead,
     RequirementReviewDetailRead,
     RequirementReviewStartRequest,
+    RequirementWorkflowActionRequest,
+    RequirementWorkflowContinueRequest,
+    RequirementWorkflowEditRequest,
+    RiskReviewEditRequest,
+    TestPlanReviewEditRequest,
+)
+from backend.app.modules.workflow_control import service as workflow_service
+from backend.app.modules.workflow_control.models import WorkflowHumanDecision, WorkflowTransitionEvent
+from backend.app.modules.workflow_control.policy import (
+    ApprovalDecision,
+    ControlledStage,
+    GateState,
+    TransitionAction,
+    TransitionPolicyError,
+    WorkflowKind,
+)
+from backend.app.modules.workflow_control.schemas import (
+    HumanApprovalCreate,
+    HumanReviewCreate,
+    WorkflowRevisionCreate,
+    WorkflowRunCreate,
 )
 from backend.app.workers.enqueue import FakeAIQueue, enqueue_ai_task
 from backend.app.workers.handlers.ai_task_handler import run_ai_task
@@ -63,6 +85,13 @@ class ContextArtifactNotFoundError(Exception):
 
 class RequirementDocumentNotFoundError(Exception):
     pass
+
+
+class RequirementDocumentApprovalRequiredError(Exception):
+    pass
+
+
+WorkflowPersistenceError = workflow_service.WorkflowPersistenceError
 
 
 def ensure_project_exists(session: Session, project_id: uuid.UUID) -> Project:
@@ -192,6 +221,24 @@ def start_requirement_review(
     if retrieval_payload is not None:
         attach_retrieval_evidence_artifact(session, store, ai_task, retrieval_payload, context_artifact_ids)
     review = persist_requirement_review(session, requirement, ai_task, output)
+    workflow_run = workflow_service.create_workflow_run(
+        session,
+        WorkflowRunCreate(
+            project_id=requirement.project_id,
+            workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+            subject_ref=str(review.id),
+            input_payload=requirement_review_snapshot_payload(session, review),
+            created_by="RequirementReviewAgent",
+            initial_stage=ControlledStage.REQUIREMENT_REVIEW,
+            completed_stages=[ControlledStage.SCOPE],
+        ),
+    )
+    workflow_service.submit_for_review(
+        session,
+        requirement.project_id,
+        workflow_run.id,
+        expected_version=workflow_run.lock_version,
+    )
     return ai_task, review
 
 
@@ -205,11 +252,12 @@ def retrieve_requirement_knowledge(
     if not use_knowledge:
         return None, []
 
+    query_plan = build_retrieval_query_plan(requirement.content)
     adapter_retrieval = extension_service.retrieve_deterministic_knowledge(
         session=session,
         store=store,
         project_id=requirement.project_id,
-        query_text=requirement.content,
+        query_text=expanded_retrieval_query(query_plan),
     )
     retrieval_run, card_evidence = knowledge_service.retrieve_and_persist_test_knowledge_evidence(
         session,
@@ -225,6 +273,9 @@ def retrieve_requirement_knowledge(
         return None, []
 
     adapter_payload = adapter_retrieval.model_dump(mode="json")
+    adapter_payload["query_text"] = requirement.content
+    adapter_payload["query_plan"] = query_plan
+    adapter_payload["retrieval_query"] = expanded_retrieval_query(query_plan)
     adapter_payload["created_knowledge_retrieval_run_id"] = str(retrieval_run.id)
     adapter_payload["knowledge_retrieval_run_id"] = str(retrieval_run.id)
     adapter_payload["knowledge_retrieval_run_ids"] = [str(retrieval_run.id)] if card_evidence else []
@@ -254,6 +305,8 @@ def retrieve_requirement_knowledge(
                 else "test_knowledge_hybrid"
             ),
             "query_text": requirement.content,
+            "query_plan": query_plan,
+            "retrieval_query": expanded_retrieval_query(query_plan),
             "query_terms": knowledge_service.normalize_terms(requirement.content),
             "used_knowledge": True,
             "created_knowledge_retrieval_run_id": str(retrieval_run.id),
@@ -287,6 +340,516 @@ def get_requirement_review_detail(session: Session, requirement_id: uuid.UUID) -
     return requirement_review_detail(session, review)
 
 
+def get_requirement_review_detail_in_project(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    return requirement_review_detail(session, review)
+
+
+def complete_requirement_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, requirement = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.REQUIREMENT_REVIEW)
+    workflow_service.complete_human_review(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+    )
+    return requirement_review_detail(session, review)
+
+
+def edit_requirement_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowEditRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.REQUIREMENT_REVIEW)
+    payload = dict(snapshot.input_payload_json)
+    payload.update(
+        issues=data.issues,
+        clarification_questions=data.clarification_questions,
+        test_design_notes=data.test_design_notes,
+        risk_items=data.risk_items,
+    )
+    revised_run, _, _ = workflow_service.revise_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=WorkflowRevisionCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            input_payload=payload,
+        ),
+    )
+    workflow_service.submit_for_review(
+        session,
+        project_id,
+        revised_run.id,
+        expected_version=revised_run.lock_version,
+    )
+    return requirement_review_detail(session, review)
+
+
+def approve_requirement_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.REQUIREMENT_REVIEW)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            decision=ApprovalDecision.APPROVED,
+        ),
+    )
+    return requirement_review_detail(session, review)
+
+
+def reject_requirement_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.REQUIREMENT_REVIEW)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            decision=ApprovalDecision.REJECTED,
+        ),
+    )
+    return requirement_review_detail(session, review)
+
+
+def regenerate_selected_requirement_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowEditRequest,
+) -> RequirementReviewDetailRead:
+    # The selected regenerated fields are still only a candidate revision. The
+    # request cannot choose trusted workflow state and must re-enter review.
+    return edit_requirement_workflow_review(session, project_id, review_id, data)
+
+
+def continue_requirement_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowContinueRequest,
+) -> RequirementReviewDetailRead:
+    review, requirement = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.REQUIREMENT_REVIEW)
+    workflow_service.advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        approval_decision_id=data.approval_decision_id,
+        target_stage=ControlledStage.RISK_REVIEW,
+        next_input_payload=risk_review_input_payload(requirement, review, snapshot),
+    )
+    return requirement_review_detail(session, review)
+
+
+def approve_and_continue_requirement_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, requirement = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.REQUIREMENT_REVIEW)
+    workflow_service.approve_and_advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+        target_stage=ControlledStage.RISK_REVIEW,
+        next_input_payload=risk_review_input_payload(requirement, review, snapshot),
+    )
+    return requirement_review_detail(session, review)
+
+
+def risk_review_input_payload(requirement: Requirement, review: RequirementReview, source_snapshot) -> dict[str, Any]:
+    return {
+        "requirement_id": str(requirement.id),
+        "requirement_review_id": str(review.id),
+        "source_requirement_review_snapshot_id": str(source_snapshot.id),
+        "source_requirement_review_snapshot_hash": source_snapshot.input_snapshot_hash,
+        "risk_items": source_snapshot.input_payload_json.get("risk_items", []),
+    }
+
+
+def get_risk_review_detail_in_project(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.RISK_REVIEW)
+    return requirement_review_detail(session, review)
+
+
+def submit_risk_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.RISK_REVIEW)
+    workflow_service.submit_for_review(session, project_id, run.id, expected_version=data.expected_version)
+    return requirement_review_detail(session, review)
+
+
+def complete_risk_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.RISK_REVIEW)
+    workflow_service.complete_human_review(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+    )
+    return requirement_review_detail(session, review)
+
+
+def edit_risk_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RiskReviewEditRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.RISK_REVIEW)
+    payload = dict(snapshot.input_payload_json)
+    payload["risk_items"] = data.risk_items
+    revised_run, _, _ = workflow_service.revise_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=WorkflowRevisionCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            input_payload=payload,
+        ),
+    )
+    workflow_service.submit_for_review(
+        session,
+        project_id,
+        revised_run.id,
+        expected_version=revised_run.lock_version,
+    )
+    return requirement_review_detail(session, review)
+
+
+def decide_risk_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+    *,
+    decision: ApprovalDecision,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.RISK_REVIEW)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            decision=decision,
+        ),
+    )
+    return requirement_review_detail(session, review)
+
+
+def continue_risk_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowContinueRequest,
+) -> RequirementReviewDetailRead:
+    review, requirement = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.RISK_REVIEW)
+    workflow_service.advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        approval_decision_id=data.approval_decision_id,
+        target_stage=ControlledStage.TEST_PLAN_REVIEW,
+        next_input_payload=test_plan_input_payload(requirement, review, snapshot),
+    )
+    return requirement_review_detail(session, review)
+
+
+def approve_and_continue_risk_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, requirement = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.RISK_REVIEW)
+    workflow_service.approve_and_advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+        target_stage=ControlledStage.TEST_PLAN_REVIEW,
+        next_input_payload=test_plan_input_payload(requirement, review, snapshot),
+    )
+    return requirement_review_detail(session, review)
+
+
+def test_plan_input_payload(requirement: Requirement, review: RequirementReview, source_snapshot) -> dict[str, Any]:
+    approved_risk_items = source_snapshot.input_payload_json.get("risk_items", [])
+    return {
+        "requirement_id": str(requirement.id),
+        "requirement_review_id": str(review.id),
+        "source_risk_review_snapshot_id": str(source_snapshot.id),
+        "source_risk_review_snapshot_hash": source_snapshot.input_snapshot_hash,
+        "approved_risk_items": approved_risk_items,
+        "test_strategy": "",
+        "plan_items": [
+            {
+                "risk_title": str(item.get("title", "")),
+                "risk_level": str(item.get("risk_level", "medium")),
+                "strategy": str(item.get("suggestion", "")),
+                "included": True,
+            }
+            for item in approved_risk_items
+            if isinstance(item, dict)
+        ],
+    }
+
+
+def get_test_plan_review_detail_in_project(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.TEST_PLAN_REVIEW)
+    return requirement_review_detail(session, review)
+
+
+def submit_test_plan_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.TEST_PLAN_REVIEW)
+    workflow_service.submit_for_review(session, project_id, run.id, expected_version=data.expected_version)
+    return requirement_review_detail(session, review)
+
+
+def complete_test_plan_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, _ = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.TEST_PLAN_REVIEW)
+    workflow_service.complete_human_review(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+    )
+    return requirement_review_detail(session, review)
+
+
+def edit_test_plan_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: TestPlanReviewEditRequest,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.TEST_PLAN_REVIEW)
+    payload = dict(snapshot.input_payload_json)
+    payload["test_strategy"] = data.test_strategy
+    payload["plan_items"] = data.plan_items
+    revised_run, _, _ = workflow_service.revise_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=WorkflowRevisionCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            input_payload=payload,
+        ),
+    )
+    workflow_service.submit_for_review(
+        session,
+        project_id,
+        revised_run.id,
+        expected_version=revised_run.lock_version,
+    )
+    return requirement_review_detail(session, review)
+
+
+def decide_test_plan_workflow_review(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+    *,
+    decision: ApprovalDecision,
+) -> RequirementReviewDetailRead:
+    review, _ = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.TEST_PLAN_REVIEW)
+    if decision is ApprovalDecision.APPROVED:
+        _require_test_plan_strategy(snapshot)
+    workflow_service.record_human_approval(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanApprovalCreate(
+            reviewer=data.reviewer,
+            comment=data.comment,
+            decision=decision,
+        ),
+    )
+    return requirement_review_detail(session, review)
+
+
+def continue_test_plan_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowContinueRequest,
+) -> RequirementReviewDetailRead:
+    review, requirement = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.TEST_PLAN_REVIEW)
+    _require_test_plan_strategy(snapshot)
+    workflow_service.advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        approval_decision_id=data.approval_decision_id,
+        target_stage=ControlledStage.CASE_REVIEW,
+        next_input_payload=case_review_input_payload(requirement, review, snapshot),
+    )
+    return requirement_review_detail(session, review)
+
+
+def approve_and_continue_test_plan_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: RequirementWorkflowActionRequest,
+) -> RequirementReviewDetailRead:
+    review, requirement = requirement_review_in_project(session, project_id, review_id)
+    run, snapshot = requirement_workflow(session, project_id, review.id)
+    require_workflow_stage(run, ControlledStage.TEST_PLAN_REVIEW)
+    _require_test_plan_strategy(snapshot)
+    workflow_service.approve_and_advance_workflow(
+        session,
+        project_id,
+        run.id,
+        expected_version=data.expected_version,
+        data=HumanReviewCreate(reviewer=data.reviewer, comment=data.comment),
+        target_stage=ControlledStage.CASE_REVIEW,
+        next_input_payload=case_review_input_payload(requirement, review, snapshot),
+    )
+    return requirement_review_detail(session, review)
+
+
+def require_workflow_stage(run, expected_stage: ControlledStage) -> None:
+    if run.current_stage != expected_stage.value:
+        raise TransitionPolicyError("WORKFLOW_STAGE_MISMATCH")
+
+
+def case_review_input_payload(requirement: Requirement, review: RequirementReview, source_snapshot) -> dict[str, Any]:
+    return {
+        "requirement_id": str(requirement.id),
+        "requirement_review_id": str(review.id),
+        "source_test_plan_review_snapshot_id": str(source_snapshot.id),
+        "source_test_plan_review_snapshot_hash": source_snapshot.input_snapshot_hash,
+        "approved_risk_items": source_snapshot.input_payload_json.get("approved_risk_items", []),
+        "test_strategy": source_snapshot.input_payload_json.get("test_strategy"),
+        "plan_items": source_snapshot.input_payload_json.get("plan_items", []),
+    }
+
+
+def _require_test_plan_strategy(snapshot) -> None:
+    approved_risks = snapshot.input_payload_json.get("approved_risk_items", [])
+    has_high_risk = any(
+        str(item.get("risk_level", "")).lower() in {"high", "critical"}
+        for item in approved_risks
+        if isinstance(item, dict)
+    )
+    if has_high_risk and not str(snapshot.input_payload_json.get("test_strategy", "")).strip():
+        raise TransitionPolicyError("TEST_PLAN_STRATEGY_REQUIRED")
+
+
 def create_requirement_document(
     session: Session,
     store: LocalArtifactStore,
@@ -302,6 +865,10 @@ def create_requirement_document(
     )
     if review is None:
         raise RequirementReviewNotFoundError
+
+    run, _ = requirement_workflow(session, requirement.project_id, review.id)
+    if not requirement_review_has_approval(session, run):
+        raise RequirementDocumentApprovalRequiredError
 
     risk_items = list(
         session.scalars(
@@ -691,6 +1258,54 @@ def requirement_review_detail(session: Session, review: RequirementReview) -> Re
         ]
         used_knowledge = bool(ai_task.output_json.get("used_knowledge", False))
 
+    workflow = None
+    displayed_issues = review.issues_json
+    displayed_questions = review.clarification_questions_json
+    displayed_notes = review.test_design_notes_json
+    displayed_test_plan_strategy = None
+    displayed_test_plan_items: list[Any] = []
+    displayed_risks: list[Any] = risk_items
+    try:
+        run, snapshot = requirement_workflow(session, review.requirement.project_id, review.id)
+        payload = snapshot.input_payload_json
+        displayed_issues = payload.get("issues", displayed_issues)
+        displayed_questions = payload.get("clarification_questions", displayed_questions)
+        displayed_notes = payload.get("test_design_notes", displayed_notes)
+        displayed_test_plan_strategy = payload.get("test_strategy")
+        displayed_test_plan_items = payload.get("plan_items", displayed_test_plan_items)
+        displayed_risks = payload.get("risk_items", payload.get("approved_risk_items", displayed_risks))
+        latest_approval = session.scalar(
+            select(WorkflowHumanDecision)
+            .where(
+                WorkflowHumanDecision.project_id == run.project_id,
+                WorkflowHumanDecision.workflow_run_id == run.id,
+                WorkflowHumanDecision.snapshot_id == run.current_snapshot_id,
+                WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+                WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+            )
+            .order_by(WorkflowHumanDecision.created_at.desc(), WorkflowHumanDecision.id.desc()),
+        )
+        workflow = {
+            "run_id": str(run.id),
+            "stage": run.current_stage,
+            "state": run.gate_state,
+            "lock_version": run.lock_version,
+            "snapshot_id": str(run.current_snapshot_id),
+            "approval_decision_id": str(latest_approval.id) if latest_approval else None,
+            "can_submit": run.gate_state == GateState.DRAFT.value,
+            "can_complete_review": run.gate_state == GateState.WAITING_REVIEW.value,
+            "can_edit": run.gate_state in {
+                GateState.WAITING_REVIEW.value,
+                GateState.WAITING_APPROVAL.value,
+                GateState.APPROVED.value,
+                GateState.REJECTED.value,
+            },
+            "can_approve": run.gate_state == GateState.WAITING_APPROVAL.value,
+            "can_continue": run.gate_state == GateState.APPROVED.value and latest_approval is not None,
+        }
+    except workflow_service.WorkflowRunNotFoundError:
+        pass
+
     return RequirementReviewDetailRead(
         id=review.id,
         requirement_id=review.requirement_id,
@@ -704,15 +1319,104 @@ def requirement_review_detail(session: Session, review: RequirementReview) -> Re
             "feasibility": review.feasibility_score,
             "logic": review.logic_score,
         },
-        issues=review.issues_json,
-        clarification_questions=review.clarification_questions_json,
-        test_design_notes=review.test_design_notes_json,
-        risk_items=risk_items,
+        issues=displayed_issues,
+        clarification_questions=displayed_questions,
+        test_design_notes=displayed_notes,
+        test_plan_strategy=displayed_test_plan_strategy,
+        test_plan_items=displayed_test_plan_items,
+        risk_items=displayed_risks,
         used_knowledge=used_knowledge,
         used_context_artifact_ids=used_context_ids,
         context_manifest_artifact_id=context_manifest_artifact.id if context_manifest_artifact else None,
         status=review.status,
+        workflow=workflow,
     )
+
+
+def requirement_review_snapshot_payload(session: Session, review: RequirementReview) -> dict[str, Any]:
+    risks = list(
+        session.scalars(
+            select(RiskItem)
+            .where(RiskItem.requirement_review_id == review.id)
+            .order_by(RiskItem.created_at.asc(), RiskItem.id.asc()),
+        ),
+    )
+    return {
+        "requirement_review_id": str(review.id),
+        "requirement_id": str(review.requirement_id),
+        "ai_task_id": str(review.ai_task_id),
+        "overall_score": review.overall_score,
+        "scores": {
+            "completeness": review.completeness_score,
+            "clarity": review.clarity_score,
+            "consistency": review.consistency_score,
+            "testability": review.testability_score,
+            "feasibility": review.feasibility_score,
+            "logic": review.logic_score,
+        },
+        "issues": review.issues_json,
+        "clarification_questions": review.clarification_questions_json,
+        "test_design_notes": review.test_design_notes_json,
+        "risk_items": [
+            {
+                "id": str(item.id),
+                "title": item.title,
+                "risk_level": item.risk_level,
+                "category": item.category,
+                "impact": item.impact,
+                "suggestion": item.suggestion,
+                "status": item.status,
+            }
+            for item in risks
+        ],
+    }
+
+
+def requirement_review_in_project(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+) -> tuple[RequirementReview, Requirement]:
+    row = session.execute(
+        select(RequirementReview, Requirement)
+        .join(Requirement, Requirement.id == RequirementReview.requirement_id)
+        .where(RequirementReview.id == review_id, Requirement.project_id == project_id),
+    ).one_or_none()
+    if row is None:
+        raise RequirementReviewNotFoundError
+    return row[0], row[1]
+
+
+def requirement_workflow(
+    session: Session,
+    project_id: uuid.UUID,
+    review_id: uuid.UUID,
+):
+    return workflow_service.get_workflow_run_for_subject(
+        session,
+        project_id,
+        workflow_kind=WorkflowKind.REQUIREMENT_TO_EXECUTION,
+        subject_ref=str(review_id),
+    )
+
+
+def requirement_review_has_approval(session: Session, run) -> bool:
+    if (
+        run.current_stage == ControlledStage.REQUIREMENT_REVIEW.value
+        and run.gate_state == GateState.APPROVED.value
+    ):
+        return True
+    if ControlledStage.REQUIREMENT_REVIEW.value not in run.completed_stages_json:
+        return False
+    return session.scalar(
+        select(WorkflowTransitionEvent.id).where(
+            WorkflowTransitionEvent.project_id == run.project_id,
+            WorkflowTransitionEvent.workflow_run_id == run.id,
+            WorkflowTransitionEvent.action == TransitionAction.ADVANCE.value,
+            WorkflowTransitionEvent.from_stage == ControlledStage.REQUIREMENT_REVIEW.value,
+            WorkflowTransitionEvent.consumed_approval_decision_id.is_not(None),
+        ),
+    ) is not None
 
 
 def next_requirement_document_number(session: Session, project_id: uuid.UUID) -> str:

@@ -84,11 +84,45 @@ class RequirementReviewDetailRead(BaseModel):
     issues: list[Any]
     clarification_questions: list[Any]
     test_design_notes: list[Any]
+    test_plan_strategy: str | None = None
+    test_plan_items: list[Any] = Field(default_factory=list)
     risk_items: list[RequirementReviewRiskItemRead]
     used_knowledge: bool
     used_context_artifact_ids: list[uuid.UUID]
     context_manifest_artifact_id: uuid.UUID | None
     status: str
+    workflow: dict[str, Any] | None = None
+
+
+class RequirementWorkflowActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    reviewer: str = Field(default="Default User", min_length=1, max_length=120)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class RequirementWorkflowEditRequest(RequirementWorkflowActionRequest):
+    issues: list[dict[str, Any]]
+    clarification_questions: list[str]
+    test_design_notes: list[Any] = Field(default_factory=list)
+    risk_items: list[dict[str, Any]]
+
+
+class RiskReviewEditRequest(RequirementWorkflowActionRequest):
+    risk_items: list[dict[str, Any]]
+
+
+class TestPlanReviewEditRequest(RequirementWorkflowActionRequest):
+    test_strategy: str | None = Field(default=None, max_length=4000)
+    plan_items: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class RequirementWorkflowContinueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    approval_decision_id: uuid.UUID
 
 
 class RequirementReviewRead(BaseModel):
@@ -107,6 +141,8 @@ class RequirementReviewRead(BaseModel):
     issues_json: list[Any]
     clarification_questions_json: list[Any]
     test_design_notes_json: list[Any]
+    test_plan_strategy_json: str | None = None
+    test_plan_items_json: list[Any] = Field(default_factory=list)
     status: str
     created_at: datetime
     updated_at: datetime

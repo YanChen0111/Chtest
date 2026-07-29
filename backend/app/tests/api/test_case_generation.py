@@ -507,6 +507,16 @@ def test_start_case_generation_can_use_requirement_document_artifact(
 ) -> None:
     client, SessionLocal = api_client
     requirement, review = create_reviewed_requirement(client, SessionLocal)
+    completed = client.post(
+        f"/api/projects/{requirement['project_id']}/requirement-reviews/{review['id']}/complete-review",
+        json_body={"expected_version": review["workflow"]["lock_version"]},
+    )
+    assert completed.status_code == 200
+    approved = client.post(
+        f"/api/projects/{requirement['project_id']}/requirement-reviews/{review['id']}/approve",
+        json_body={"expected_version": completed.json()["workflow"]["lock_version"]},
+    )
+    assert approved.status_code == 200
     document_response = client.post(
         f"/api/requirements/{requirement['id']}/documents",
         json_body={

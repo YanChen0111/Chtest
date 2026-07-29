@@ -14,6 +14,16 @@
 
     <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
 
+    <div class="workflow-rail" aria-label="需求到用例流程">
+      <span class="workflow-rail__step workflow-rail__step--active"><strong>1</strong>输入需求</span>
+      <span class="workflow-rail__line"></span>
+      <span class="workflow-rail__step" :class="{ 'workflow-rail__step--active': store.knowledgePreview }"><strong>2</strong>分析并检索知识</span>
+      <span class="workflow-rail__line"></span>
+      <span class="workflow-rail__step"><strong>3</strong>完成评审</span>
+      <span class="workflow-rail__line"></span>
+      <span class="workflow-rail__step"><strong>4</strong>生成用例</span>
+    </div>
+
     <div class="requirement-review-layout">
       <a-card class="requirement-panel" :bordered="false">
         <template #title>需求输入</template>
@@ -23,17 +33,45 @@
             <a-input v-model="form.title" />
           </label>
           <label>
-            <span>来源编号</span>
-            <a-input v-model="form.sourceRef" />
-          </label>
-          <label>
             <span>需求内容</span>
-            <a-textarea v-model="form.content" :auto-size="{ minRows: 8, maxRows: 12 }" />
+            <a-textarea
+              v-model="form.content"
+              placeholder="描述用户动作、系统响应、约束条件和失败处理。可以直接粘贴需求文档。"
+              :auto-size="{ minRows: 8, maxRows: 12 }"
+            />
           </label>
-          <label>
-            <span>ContextArtifact ID 列表</span>
-            <a-input v-model="contextIdsText" placeholder="多个 ID 用逗号分隔" />
-          </label>
+          <div class="auto-knowledge-panel" data-test="auto-knowledge-panel">
+            <span class="auto-knowledge-panel__icon" aria-hidden="true">↗</span>
+            <div>
+              <strong>评审前先检索项目知识</strong>
+              <small>先查看命中的测试知识，再开始需求评审。命中证据会自动带入评审，不需要选择数据源或填写 ID。</small>
+            </div>
+            <a-button
+              data-test="retrieve-before-review"
+              size="small"
+              type="outline"
+              :loading="store.loadingKnowledge"
+              @click="previewKnowledge"
+            >
+              分析并检索知识
+            </a-button>
+          </div>
+          <div v-if="store.knowledgePreview" class="knowledge-preview" data-test="knowledge-preview">
+            <div class="knowledge-preview__header">
+              <strong>{{ store.knowledgePreview.total > 0 ? `已找到 ${store.knowledgePreview.total} 条相关知识` : '暂未找到相关知识' }}</strong>
+              <a-tag :color="store.knowledgePreview.total > 0 ? 'green' : 'gray'">
+                {{ store.knowledgePreview.total > 0 ? '可带入评审' : '继续按需求内容评审' }}
+              </a-tag>
+            </div>
+            <article v-for="item in store.knowledgePreview.items" :key="item.evidence_id" class="knowledge-preview__item">
+              <div>
+                <strong>{{ item.title }}</strong>
+                <span>匹配度 {{ item.score }}</span>
+              </div>
+              <p>{{ item.snippet }}</p>
+            </article>
+            <a-empty v-if="store.knowledgePreview.items.length === 0" description="没有命中已审核知识，仍可继续评审" />
+          </div>
           <a-button html-type="submit" type="primary" :loading="store.loading">开始评审</a-button>
         </form>
       </a-card>
@@ -55,18 +93,75 @@
 
             <a-descriptions :column="2" bordered size="small">
               <a-descriptions-item label="需求标题">{{ store.requirement?.title ?? '未创建' }}</a-descriptions-item>
-              <a-descriptions-item label="需求 ID">{{ store.review.requirement_id }}</a-descriptions-item>
               <a-descriptions-item label="状态">{{ reviewStatusLabel(store.review.status) }}</a-descriptions-item>
-              <a-descriptions-item label="外部知识库">
-                {{ store.review.used_knowledge ? '已使用外部知识库' : '外部知识库未使用' }}
+              <a-descriptions-item label="人工门禁">
+                <a-tag :color="workflowStateColor">{{ workflowStateLabel }}</a-tag>
               </a-descriptions-item>
-              <a-descriptions-item label="上下文清单">
-                {{ store.review.context_manifest_artifact_id ?? '未生成' }}
-              </a-descriptions-item>
-              <a-descriptions-item label="已使用上下文" :span="2">
-                {{ idListText(store.review.used_context_artifact_ids) }}
+              <a-descriptions-item label="知识检索" :span="2">
+                {{ store.review.used_knowledge ? `已自动使用 ${store.review.used_context_artifact_ids.length} 条项目知识证据` : '未命中可用知识，评审仍可继续' }}
               </a-descriptions-item>
             </a-descriptions>
+
+            <div class="review-next-step" data-test="review-next-step">
+              <div>
+                <a-tag :color="unresolvedClarificationCount > 0 ? 'orange' : 'green'">
+                  {{ unresolvedClarificationCount > 0 ? `还有 ${unresolvedClarificationCount} 个问题待澄清` : '评审结果已连接' }}
+                </a-tag>
+                <strong>{{ workflowNextAction }}</strong>
+                <span>只有服务端确认完成评审、批准并消费本次批准后，才能进入下一阶段。</span>
+              </div>
+              <a-space wrap>
+                <a-button v-if="store.review.workflow?.can_submit" data-test="submit-stage-review" type="primary" @click="submitCurrentStage">{{ submitButtonLabel }}</a-button>
+                <a-button v-if="store.review.workflow?.can_complete_review" data-test="complete-review" :disabled="isRequirementReview && (reviewInputChanged || unresolvedClarificationCount > 0)" @click="completeCurrentReview">完成评审</a-button>
+                <a-button v-if="store.review.workflow?.can_approve" data-test="reject-review" status="danger" @click="rejectCurrentReview">拒绝</a-button>
+                <a-button v-if="store.review.workflow?.can_approve" type="primary" data-test="approve-review" :disabled="isRequirementReview && reviewInputChanged" @click="approveCurrentReview">批准</a-button>
+                <a-button v-if="store.review.workflow?.can_continue" type="primary" data-test="continue-workflow" :disabled="isRequirementReview && (reviewInputChanged || unresolvedClarificationCount > 0)" @click="continueCurrentStage">批准并进入下一阶段</a-button>
+              </a-space>
+            </div>
+            <a-alert v-if="reviewInputChanged" type="warning" show-icon content="需求输入已变化，当前候选和批准不可继续使用。请重新评审。" />
+            <a-textarea v-if="store.review.workflow?.can_approve" v-model="reviewComment" data-test="review-comment" placeholder="填写批准或拒绝说明（可选）" :auto-size="{ minRows: 2, maxRows: 4 }" />
+
+            <div v-if="store.review.workflow?.can_edit" class="review-section candidate-editor" data-test="candidate-editor">
+              <a-space>
+                <a-button data-test="toggle-candidate-editor" @click="toggleCandidateEditor">{{ editingCandidate ? '取消编辑' : '编辑候选' }}</a-button>
+                <a-tag v-if="editingCandidate" color="orange">保存后将创建新快照并使旧批准失效</a-tag>
+              </a-space>
+              <div v-if="editingCandidate" class="candidate-editor__body">
+                <label v-for="(issue, index) in (isRiskReview ? [] : editableIssues)" :key="`issue-${index}`">
+                  <span>问题 {{ index + 1 }}</span>
+                  <a-input v-model="issue.text" :data-test="`edit-issue-${index}`" />
+                </label>
+                <label v-for="(_question, index) in (isRiskReview ? [] : editableQuestions)" :key="`question-${index}`">
+                  <span>澄清问题 {{ index + 1 }}</span>
+                  <a-input v-model="editableQuestions[index]" :data-test="`edit-question-${index}`" />
+                </label>
+                <label v-for="(_note, index) in (isRiskReview ? [] : editableNotes)" :key="`note-${index}`">
+                  <span>测试设计建议 {{ index + 1 }}</span>
+                  <a-input v-model="editableNotes[index]" :data-test="`edit-note-${index}`" />
+                </label>
+                <div v-for="(risk, index) in editableRisks" :key="`risk-${index}`" class="candidate-editor__risk">
+                  <a-input v-model="risk.title" :data-test="`edit-risk-title-${index}`" />
+                  <a-textarea v-model="risk.suggestion" :data-test="`edit-risk-suggestion-${index}`" :auto-size="{ minRows: 2, maxRows: 4 }" />
+                </div>
+                <template v-if="isTestPlanReview">
+                  <label>
+                    <span>测试策略</span>
+                    <a-textarea v-model="editableTestPlanStrategy" data-test="edit-test-plan-strategy" :auto-size="{ minRows: 3, maxRows: 6 }" />
+                  </label>
+                  <div v-for="(item, index) in editableTestPlanItems" :key="`plan-${index}`" class="candidate-editor__risk">
+                    <a-input v-model="item.risk_title" :data-test="`edit-plan-risk-${index}`" />
+                    <a-textarea v-model="item.strategy" :data-test="`edit-plan-strategy-${index}`" :auto-size="{ minRows: 2, maxRows: 4 }" />
+                  </div>
+                </template>
+                <a-button type="primary" data-test="save-candidate-edit" :loading="store.loading" @click="saveCandidateEdit">保存人工编辑</a-button>
+              </div>
+            </div>
+            <a-alert
+              v-if="unresolvedClarificationCount > 0"
+              type="warning"
+              show-icon
+              content="请先回答澄清问题并重新评审，再进入用例生成。"
+            />
 
             <div class="review-section">
               <h3>问题</h3>
@@ -116,10 +211,26 @@
               </a-table>
             </div>
 
+            <div v-if="isTestPlanReview" class="review-section" data-test="test-plan-review-panel">
+              <h3>测试计划</h3>
+              <a-alert
+                v-if="testPlanStrategyRequired"
+                type="warning"
+                show-icon
+                content="高风险或严重风险需要明确测试策略，才能批准计划。"
+              />
+              <p>{{ store.review.test_plan_strategy || '待人工确认本轮测试策略。' }}</p>
+              <a-table :columns="testPlanColumns" :data="store.review.test_plan_items ?? []" :pagination="false" size="small">
+                <template #risk_level="{ record }">
+                  <a-tag :color="riskColor(record.risk_level ?? 'medium')">{{ riskLevelLabel(record.risk_level ?? 'medium') }}</a-tag>
+                </template>
+              </a-table>
+            </div>
+
             <div class="review-section document-panel">
               <h3>正式需求文档</h3>
               <a-space wrap>
-                <a-button data-test="generate-document" type="primary" :loading="store.loadingDocument" @click="store.generateRequirementDocument()">
+                <a-button data-test="generate-document" type="primary" :disabled="!canGenerateDocument" :loading="store.loadingDocument" @click="store.generateRequirementDocument()">
                   生成需求文档
                 </a-button>
                 <a-button :loading="store.loadingDocument" @click="store.loadRequirementDocuments()">刷新文档</a-button>
@@ -151,26 +262,40 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 
+import type { RequirementReviewIssue, RequirementRiskItem, TestPlanItem } from '../../api/requirements';
 import { useRequirementsStore } from '../../stores/requirements';
 
 const store = useRequirementsStore();
 
 const form = reactive({
   title: '优惠券结算规则',
-  sourceRef: 'REQ-COUPON-001',
+  sourceRef: 'manual',
   content:
     '用户在提交订单时，可以选择一张可用优惠券。优惠券不可与积分同时使用。过期优惠券不可使用。优惠券金额不能超过订单应付金额。提交订单后，系统需要展示优惠后的最终支付金额。',
 });
-const contextIdsText = ref('');
 const supplementText = ref('');
+const reviewComment = ref('');
+const editingCandidate = ref(false);
+const editableIssues = ref<RequirementReviewIssue[]>([]);
+const editableQuestions = ref<string[]>([]);
+const editableNotes = ref<string[]>([]);
+const editableRisks = ref<RequirementRiskItem[]>([]);
+const editableTestPlanStrategy = ref('');
+const editableTestPlanItems = ref<TestPlanItem[]>([]);
 const clarificationAnswerMap = reactive<Record<string, string>>({});
 
 const riskColumns = [
   { title: '风险', dataIndex: 'title' },
   { title: '等级', slotName: 'risk_level' },
   { title: '建议', dataIndex: 'suggestion' },
+];
+
+const testPlanColumns = [
+  { title: '风险', dataIndex: 'risk_title' },
+  { title: '等级', slotName: 'risk_level' },
+  { title: '测试策略', dataIndex: 'strategy' },
 ];
 
 const scoreItems = computed(() => {
@@ -187,16 +312,66 @@ const scoreItems = computed(() => {
   ];
 });
 
-function contextArtifactIds(): string[] {
-  return contextIdsText.value
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean);
-}
+const unresolvedClarificationCount = computed(() =>
+  (store.review?.clarification_questions ?? []).filter(
+    (question) => !clarificationAnswerMap[question]?.trim() && !supplementText.value.trim(),
+  ).length,
+);
 
-function idListText(ids: string[]): string {
-  return ids.length > 0 ? ids.join(', ') : '无';
-}
+const reviewInputChanged = computed(() => Boolean(
+  store.requirement
+  && (store.requirement.title !== form.title || store.requirement.content !== form.content),
+));
+
+const isRequirementReview = computed(() => store.review?.workflow?.stage === 'requirement_review');
+const isRiskReview = computed(() => store.review?.workflow?.stage === 'risk_review');
+const isTestPlanReview = computed(() => store.review?.workflow?.stage === 'test_plan_review');
+
+const testPlanStrategyRequired = computed(() => Boolean(
+  isTestPlanReview.value
+  && !store.review?.test_plan_strategy?.trim()
+  && store.review?.risk_items.some((risk) => ['high', 'critical'].includes(String(risk.risk_level).toLowerCase())),
+));
+
+const submitButtonLabel = computed(() => {
+  if (isRiskReview.value) return '提交风险候选';
+  if (isTestPlanReview.value) return '提交测试计划候选';
+  return '提交候选';
+});
+
+const canGenerateDocument = computed(() => {
+  const workflow = store.review?.workflow;
+  return Boolean(workflow && (workflow.state === 'approved' || workflow.stage !== 'requirement_review'));
+});
+
+const workflowStateLabel = computed(() => {
+  const labels: Record<string, string> = {
+    waiting_review: '待人工评审',
+    waiting_approval: '待批准',
+    approved: '已批准',
+    rejected: '已拒绝',
+    draft: '草稿',
+  };
+  return labels[store.review?.workflow?.state ?? ''] ?? '未接入门禁';
+});
+
+const workflowStateColor = computed(() => {
+  const colors: Record<string, string> = {
+    approved: 'green',
+    rejected: 'red',
+    waiting_approval: 'orange',
+  };
+  return colors[store.review?.workflow?.state ?? ''] ?? 'blue';
+});
+
+const workflowNextAction = computed(() => {
+  const workflow = store.review?.workflow;
+  if (workflow?.can_submit) return '下一步：提交风险候选供人工评审';
+  if (workflow?.can_complete_review) return '下一步：完成人工评审';
+  if (workflow?.can_approve) return '下一步：批准或拒绝候选';
+  if (workflow?.can_continue) return '下一步：消费批准并继续';
+  return '等待服务端确认可执行操作';
+});
 
 function riskColor(level: string): string {
   const colors: Record<string, string> = {
@@ -241,46 +416,165 @@ function reviewStatusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
-function submitReview() {
+async function previewKnowledge() {
+  await store.retrieveKnowledgePreview(form.content);
+}
+
+async function submitReview() {
+  if (store.knowledgePreviewQuery !== form.content.trim()) {
+    await store.retrieveKnowledgePreview(form.content);
+  }
   void store.reviewRequirement({
     title: form.title,
     content: form.content,
     sourceRef: form.sourceRef,
-    contextArtifactIds: contextArtifactIds(),
+    contextArtifactIds: store.previewContextArtifactIds,
   });
 }
 
-function submitSupplement() {
+async function submitSupplement() {
   const answers = (store.review?.clarification_questions ?? [])
     .map((question) => ({
       question,
       answer: clarificationAnswerMap[question]?.trim() ?? '',
     }))
     .filter((item) => item.answer);
+  if (store.knowledgePreviewQuery !== form.content.trim()) {
+    await store.retrieveKnowledgePreview(form.content);
+  }
   void store.reviewRequirement({
     title: form.title,
     content: form.content,
     sourceRef: form.sourceRef,
-    contextArtifactIds: contextArtifactIds(),
+    contextArtifactIds: store.previewContextArtifactIds,
     supplementText: supplementText.value,
     clarificationAnswers: answers,
   });
 }
 
-onMounted(() => {
+function toggleCandidateEditor() {
+  editingCandidate.value = !editingCandidate.value;
+  if (!editingCandidate.value || !store.review) return;
+  editableIssues.value = store.review.issues.map((item) => ({ ...item }));
+  editableQuestions.value = [...store.review.clarification_questions];
+  editableNotes.value = store.review.test_design_notes.map((item) => String(item));
+  editableRisks.value = store.review.risk_items.map((item) => ({ ...item }));
+  editableTestPlanStrategy.value = store.review.test_plan_strategy ?? '';
+  editableTestPlanItems.value = (store.review.test_plan_items ?? []).map((item) => ({ ...item }));
+}
+
+async function saveCandidateEdit() {
+  const saved = isTestPlanReview.value
+    ? await store.editTestPlanReview(editableTestPlanStrategy.value, editableTestPlanItems.value, reviewComment.value)
+    : isRiskReview.value
+    ? await store.editRiskReview(editableRisks.value, reviewComment.value)
+    : await store.editReview({
+        issues: editableIssues.value,
+        clarification_questions: editableQuestions.value,
+        test_design_notes: editableNotes.value,
+        risk_items: editableRisks.value,
+      });
+  if (saved) editingCandidate.value = false;
+}
+
+function submitCurrentStage() {
+  if (isTestPlanReview.value) return store.submitTestPlanReview();
+  if (isRiskReview.value) return store.submitRiskReview();
+  return false;
+}
+
+function completeCurrentReview() {
+  if (isTestPlanReview.value) return store.completeTestPlanReview();
+  return isRiskReview.value ? store.completeRiskReview() : store.completeReview();
+}
+
+function approveCurrentReview() {
+  if (isTestPlanReview.value) return store.approveTestPlanReview(reviewComment.value);
+  return isRiskReview.value ? store.approveRiskReview(reviewComment.value) : store.approveReview(reviewComment.value);
+}
+
+function rejectCurrentReview() {
+  if (isTestPlanReview.value) return store.rejectTestPlanReview(reviewComment.value);
+  return isRiskReview.value ? store.rejectRiskReview(reviewComment.value) : store.rejectReview(reviewComment.value);
+}
+
+function continueCurrentStage() {
+  if (isTestPlanReview.value) return store.continueTestPlanReview();
+  return isRiskReview.value ? store.continueRiskReview() : store.continueReview();
+}
+
+onMounted(async () => {
   if (store.restoreLatestRequirementReview() && store.requirement) {
     form.title = store.requirement.title;
     form.sourceRef = store.requirement.source_ref ?? '';
     form.content = store.requirement.content;
+    await store.refreshCurrentReview();
   }
   void store.loadRequirementDocuments();
 });
+
+watch(
+  () => form.content,
+  (content) => {
+    if (store.knowledgePreviewQuery && store.knowledgePreviewQuery !== content.trim()) {
+      store.clearKnowledgePreview();
+    }
+  },
+);
 </script>
 
 <style scoped>
 .requirement-review-page {
   display: grid;
   gap: 18px;
+}
+
+.workflow-rail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #98a2b3;
+  font-size: 12px;
+}
+
+.workflow-rail__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.workflow-rail__step strong {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f2f4f7;
+  color: #667085;
+  font-size: 11px;
+}
+
+.workflow-rail__step--active {
+  color: #175cd3;
+  font-weight: 700;
+}
+
+.workflow-rail__step--active strong {
+  color: #ffffff;
+  background: #1664d9;
+}
+
+.workflow-rail__line {
+  height: 1px;
+  min-width: 24px;
+  flex: 1;
+  background: #e5e7eb;
 }
 
 .requirement-review-heading {
@@ -330,6 +624,88 @@ onMounted(() => {
   font-weight: 700;
 }
 
+.auto-knowledge-panel {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #b7ebc6;
+  border-radius: 8px;
+  background: #f3fff6;
+}
+
+.auto-knowledge-panel__icon {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #14804a;
+  background: #dcfce7;
+  font-weight: 800;
+}
+
+.auto-knowledge-panel strong,
+.auto-knowledge-panel small {
+  display: block;
+}
+
+.auto-knowledge-panel strong {
+  color: #166534;
+  font-size: 13px;
+}
+
+.auto-knowledge-panel small {
+  margin-top: 3px;
+  color: #4d7c5b;
+  line-height: 1.5;
+}
+
+.knowledge-preview {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #b7ebc6;
+  border-radius: 8px;
+  background: #f8fff9;
+}
+
+.knowledge-preview__header,
+.knowledge-preview__item > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.knowledge-preview__header strong,
+.knowledge-preview__item strong {
+  color: #166534;
+}
+
+.knowledge-preview__item {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+  border: 1px solid #d7f0dc;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.knowledge-preview__item span {
+  color: #6b8f73;
+  font-size: 11px;
+}
+
+.knowledge-preview__item p {
+  margin: 0;
+  color: #4d7c5b;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .score-strip {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -364,6 +740,56 @@ onMounted(() => {
   margin-top: 18px;
 }
 
+.candidate-editor {
+  padding: 14px;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.candidate-editor__body,
+.candidate-editor__body label,
+.candidate-editor__risk {
+  display: grid;
+  gap: 8px;
+}
+
+.candidate-editor__body {
+  margin-top: 12px;
+}
+
+.candidate-editor__body label span {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.review-next-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #b7ebc6;
+  border-radius: 8px;
+  background: #f3fff6;
+}
+
+.review-next-step > div {
+  display: grid;
+  gap: 5px;
+}
+
+.review-next-step strong {
+  color: #166534;
+}
+
+.review-next-step span {
+  color: #4d7c5b;
+  font-size: 12px;
+}
+
 .review-section h3 {
   margin: 0;
   font-size: 16px;
@@ -396,6 +822,24 @@ onMounted(() => {
   .requirement-review-layout,
   .score-strip {
     grid-template-columns: 1fr;
+  }
+
+  .workflow-rail {
+    overflow-x: auto;
+  }
+
+  .review-next-step {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .auto-knowledge-panel {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .auto-knowledge-panel .arco-btn {
+    grid-column: 2;
+    justify-self: start;
   }
 }
 </style>
