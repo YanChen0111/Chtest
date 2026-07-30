@@ -24,7 +24,7 @@ function failureAnalysisBody() {
   };
 }
 
-function reportBody() {
+function reportBody(status = 'ready') {
   return {
     id: '00000000-0000-0000-0000-000000001401',
     project_id: '00000000-0000-0000-0000-000000000101',
@@ -32,7 +32,7 @@ function reportBody() {
     title: 'Automation execution report',
     related_entity_type: 'TestRun',
     related_entity_id: '00000000-0000-0000-0000-000000001301',
-    status: 'ready',
+    status,
     conclusion: 'failed',
     summary: '1 of 1 tests failed with 1 execution artifact(s).',
     metrics: {
@@ -124,6 +124,42 @@ function executionResultReviewBody(state = 'waiting_approval') {
     execution_artifact_ids: ['00000000-0000-0000-0000-000000001601'],
     execution_decisions: [],
     result_decisions: [],
+  };
+}
+
+function reportReviewBody(state = 'draft', published = false) {
+  return {
+    project_id: '00000000-0000-0000-0000-000000000101',
+    requirement_review_id: '00000000-0000-0000-0000-000000000601',
+    workflow: {
+      run_id: '00000000-0000-0000-0000-000000009101',
+      stage: 'report_review',
+      state,
+      lock_version: state === 'draft' ? 12 : state === 'waiting_review' ? 13 : state === 'waiting_approval' ? 14 : published ? 16 : 15,
+      snapshot_id: '00000000-0000-0000-0000-000000009202',
+      approval_decision_id: state === 'approved' && !published ? '00000000-0000-0000-0000-000000009203' : null,
+      can_submit: state === 'draft',
+      can_complete_review: state === 'waiting_review',
+      can_edit: ['waiting_review', 'waiting_approval', 'approved', 'rejected'].includes(state),
+      can_approve: state === 'waiting_approval',
+      can_continue: state === 'approved' && !published,
+      published,
+    },
+    source_execution_result_review_snapshot_id: '00000000-0000-0000-0000-000000009102',
+    source_execution_result_review_snapshot_hash: 'sha256:execution-result-review',
+    source_execution_approval_snapshot_id: '00000000-0000-0000-0000-000000009002',
+    source_execution_approval_snapshot_hash: 'sha256:execution-approval',
+    generated_test_run_ids: ['00000000-0000-0000-0000-000000001301'],
+    execution_artifact_ids: ['00000000-0000-0000-0000-000000001601'],
+    generated_report_ids: ['00000000-0000-0000-0000-000000001401'],
+    report_artifact_ids: [
+      '00000000-0000-0000-0000-000000001701',
+      '00000000-0000-0000-0000-000000001702',
+      '00000000-0000-0000-0000-000000001703',
+    ],
+    execution_decisions: [],
+    result_decisions: [],
+    report_decisions: [],
   };
 }
 
@@ -249,6 +285,7 @@ describe('ReportFailureAnalysisView', () => {
     const pinia = createPinia();
     const reportingStore = useReportingStore(pinia);
     reportingStore.requirementReviewId = '00000000-0000-0000-0000-000000000601';
+    let reportStatus = 'draft';
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-reviews/00000000-0000-0000-0000-000000000601/execution-result-review')) {
@@ -261,6 +298,47 @@ describe('ReportFailureAnalysisView', () => {
         const payload = JSON.parse(String(init.body));
         expect(payload.expected_version).toBe(10);
         return new Response(JSON.stringify(executionResultReviewBody('approved')), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/requirement-reviews/00000000-0000-0000-0000-000000000601/report-review')) {
+        return new Response(JSON.stringify(reportReviewBody('draft')), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/report-review/submit') && init?.method === 'POST') {
+        return new Response(JSON.stringify(reportReviewBody('waiting_review')), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/report-review/complete-review') && init?.method === 'POST') {
+        return new Response(JSON.stringify(reportReviewBody('waiting_approval')), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/report-review/edit') && init?.method === 'POST') {
+        const payload = JSON.parse(String(init.body));
+        expect(payload.report_decisions[0].report_id).toBe('00000000-0000-0000-0000-000000001401');
+        return new Response(JSON.stringify(reportReviewBody('draft')), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/report-review/approve') && init?.method === 'POST') {
+        return new Response(JSON.stringify(reportReviewBody('approved')), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/report-review/continue') && init?.method === 'POST') {
+        const payload = JSON.parse(String(init.body));
+        expect(payload.approval_decision_id).toBe('00000000-0000-0000-0000-000000009203');
+        reportStatus = 'ready';
+        return new Response(JSON.stringify(reportReviewBody('approved', true)), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -284,13 +362,13 @@ describe('ReportFailureAnalysisView', () => {
         const payload = JSON.parse(String(init.body));
         expect(payload.execution_result_review_decision_id).toBe('00000000-0000-0000-0000-000000009103');
         return new Response(JSON.stringify({
-          report_id: '00000000-0000-0000-0000-000000001701',
-          status: 'ready',
+          report_id: '00000000-0000-0000-0000-000000001401',
+          status: 'draft',
           evidence_manifest_artifact_id: '00000000-0000-0000-0000-000000001703',
         }), { status: 202, headers: { 'Content-Type': 'application/json' } });
       }
       if (url.includes('/reports/')) {
-        return new Response(JSON.stringify(reportBody()), {
+        return new Response(JSON.stringify(reportBody(reportStatus)), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -327,6 +405,27 @@ describe('ReportFailureAnalysisView', () => {
 
     expect(wrapper.text()).toContain('test_script_issue');
     expect(reportingStore.report?.id).toBe('00000000-0000-0000-0000-000000001401');
-    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(reportingStore.report?.status).toBe('draft');
+    expect(wrapper.find('[data-test="report-review-panel"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('ReportReview gate');
+
+    await wrapper.find('[data-test="report-review-submit"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-test="report-review-complete"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-test="report-review-edit"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-test="report-review-submit"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-test="report-review-complete"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-test="report-review-approve"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-test="report-review-continue"]').trigger('click');
+    await flushPromises();
+
+    expect(reportingStore.report?.status).toBe('ready');
+    expect(wrapper.text()).toContain('published');
+    expect(fetchMock).toHaveBeenCalled();
   });
 });

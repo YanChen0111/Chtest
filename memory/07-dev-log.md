@@ -4826,3 +4826,42 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 49.11: integrate ReportReview into persisted workflow control using the
   exact approved ExecutionResultReview snapshot as input.
+
+## 2026-07-30 Slice 49.11 ReportReview Workflow Integration
+
+### Implemented
+
+- Added ReportReview controlled actions on the existing RequirementReview-owned
+  WorkflowRun: read, submit, complete, edit, approve, reject, continue, and
+  approve-and-continue.
+- Bound ReportReview to the exact approved ExecutionResultReview snapshot and
+  preserved source ExecutionApproval snapshot id/hash, generated TestRun ids,
+  execution Artifact evidence, generated Report ids, and Report Artifact ids.
+- Changed workflow-backed automation execution report generation to create
+  editable `draft` report candidates instead of formal `ready` reports.
+- Required ReportReview approval to capture current generated report and report
+  artifact evidence in the immutable ReportReview snapshot; edits invalidate
+  old approval.
+- Implemented terminal ReportReview publish by consuming the exact current
+  approval once, marking generated reports `ready`, returning the authoritative
+  lock version, and rejecting replay.
+- Wired the reporting frontend API/store/view to load ReportReview, save report
+  snapshots, approve/reject, publish, and refresh the report after publish.
+- Updated API, state-machine, and artifact contracts for ReportReview.
+
+### Verification
+
+- Focused backend reporting workflow suite:
+  `backend\\.venv\\Scripts\\python.exe -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/api/test_automation_plan.py::test_execution_approval_workflow_gates_test_run_and_preserves_draft_snapshot -q` => `9 passed`.
+- Full backend: `backend\\.venv\\Scripts\\python.exe -m pytest backend/app/tests -q` => `521 passed`.
+- Full frontend with Node `v24.18.0` from `D:\\Downloads\\Chtest-env\\node-v24.18.0-win-x64`:
+  `npm.cmd --prefix frontend run test -- --run` => `25 files / 60 tests passed`.
+- Production build with the same Node runtime:
+  `npm.cmd --prefix frontend run build` => passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.12: add an AI Workbench workflow queue for pending review, pending
+  approval, and continuable WorkflowRun tasks without adding RBAC, dashboards,
+  or cross-user collaboration.

@@ -993,7 +993,7 @@ def test_execution_approval_workflow_gates_test_run_and_preserves_draft_snapshot
     assert blocked_report.status_code == 400
     assert blocked_report.json()["error_code"] == "EXECUTION_RESULT_REVIEW_APPROVAL_REQUIRED"
 
-    allowed_report = client.post(
+    blocked_report_before_stage = client.post(
         "/api/reports",
         {
             "project_id": context["project_id"],
@@ -1003,7 +1003,8 @@ def test_execution_approval_workflow_gates_test_run_and_preserves_draft_snapshot
             "execution_result_review_decision_id": result_reapproved["workflow"]["approval_decision_id"],
         },
     )
-    assert allowed_report.status_code == 202
+    assert blocked_report_before_stage.status_code == 409
+    assert blocked_report_before_stage.json()["error_code"] == "REPORT_REVIEW_WORKFLOW_STAGE_REQUIRED"
 
     report_stage = client.post(
         f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/execution-result-review/continue",
@@ -1029,6 +1030,107 @@ def test_execution_approval_workflow_gates_test_run_and_preserves_draft_snapshot
     assert report_payload["source_execution_approval_snapshot_hash"] == source_execution_snapshot.input_snapshot_hash
     assert report_payload["generated_test_run_ids"] == [run_body["id"]]
     assert set(report_payload["execution_artifact_ids"]) == set(result_workflow["execution_artifact_ids"])
+
+    allowed_report = client.post(
+        "/api/reports",
+        {
+            "project_id": context["project_id"],
+            "report_type": "automation_execution",
+            "related_entity_type": "TestRun",
+            "related_entity_id": run_body["id"],
+            "execution_result_review_decision_id": result_reapproved["workflow"]["approval_decision_id"],
+        },
+    )
+    assert allowed_report.status_code == 202
+    allowed_report_body = allowed_report.json()
+    assert allowed_report_body["status"] == "draft"
+
+    draft_report = client.get(f"/api/reports/{allowed_report_body['report_id']}").json()
+    assert draft_report["status"] == "draft"
+    assert draft_report["artifact_ids"]
+
+    report_workflow = client.get(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review",
+    ).json()
+    assert report_workflow["workflow"]["state"] == "draft"
+    assert report_workflow["source_execution_result_review_snapshot_id"] == str(source_result_snapshot.id)
+    assert report_workflow["source_execution_result_review_snapshot_hash"] == source_result_snapshot.input_snapshot_hash
+    assert report_workflow["source_execution_approval_snapshot_id"] == str(source_execution_snapshot.id)
+    assert report_workflow["source_execution_approval_snapshot_hash"] == source_execution_snapshot.input_snapshot_hash
+    assert report_workflow["generated_test_run_ids"] == [run_body["id"]]
+    assert set(report_workflow["execution_artifact_ids"]) == set(result_workflow["execution_artifact_ids"])
+    assert report_workflow["generated_report_ids"] == []
+
+    report_submitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/submit",
+        {"expected_version": report_workflow["workflow"]["lock_version"]},
+    ).json()
+    report_completed = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/complete-review",
+        {"expected_version": report_submitted["workflow"]["lock_version"]},
+    ).json()
+    blocked_report_approval = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/approve",
+        {"expected_version": report_completed["workflow"]["lock_version"]},
+    )
+    assert blocked_report_approval.status_code == 409
+    assert blocked_report_approval.json()["error_code"] == "REPORT_REVIEW_ARTIFACT_REQUIRED"
+
+    report_edited = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/edit",
+        {
+            "expected_version": report_completed["workflow"]["lock_version"],
+            "report_decisions": [
+                {
+                    "report_id": allowed_report_body["report_id"],
+                    "status": "reviewed_candidate",
+                    "artifact_ids": draft_report["artifact_ids"],
+                    "conclusion": draft_report["conclusion"],
+                },
+            ],
+        },
+    ).json()
+    assert report_edited["workflow"]["state"] == "draft"
+    assert report_edited["generated_report_ids"] == [allowed_report_body["report_id"]]
+    assert set(report_edited["report_artifact_ids"]) == set(draft_report["artifact_ids"])
+
+    report_resubmitted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/submit",
+        {"expected_version": report_edited["workflow"]["lock_version"]},
+    ).json()
+    report_recompleted = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/complete-review",
+        {"expected_version": report_resubmitted["workflow"]["lock_version"]},
+    ).json()
+    report_approved = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/approve",
+        {"expected_version": report_recompleted["workflow"]["lock_version"]},
+    ).json()
+    assert report_approved["workflow"]["state"] == "approved"
+    assert report_approved["workflow"]["can_continue"] is True
+
+    published = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/continue",
+        {
+            "expected_version": report_approved["workflow"]["lock_version"],
+            "approval_decision_id": report_approved["workflow"]["approval_decision_id"],
+        },
+    ).json()
+    assert published["workflow"]["published"] is True
+    assert published["workflow"]["can_continue"] is False
+
+    ready_report = client.get(f"/api/reports/{allowed_report_body['report_id']}").json()
+    assert ready_report["status"] == "ready"
+
+    replay_publish = client.post(
+        f"/api/projects/{context['project_id']}/requirement-reviews/{context['requirement_review_id']}/report-review/continue",
+        {
+            "expected_version": published["workflow"]["lock_version"],
+            "approval_decision_id": report_approved["workflow"]["approval_decision_id"],
+        },
+    )
+    assert replay_publish.status_code == 409
+    assert replay_publish.json()["error_code"] == "WORKFLOW_APPROVAL_ALREADY_CONSUMED"
 
 
 def test_automation_plan_requires_approval_before_draft_and_execution(

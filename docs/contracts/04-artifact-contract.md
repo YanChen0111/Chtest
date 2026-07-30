@@ -290,6 +290,12 @@ artifacts/projects/{project_id}/reports/{report_id}/
   evidence_manifest.json
 ```
 
+Workflow-backed automation execution reports may write these artifacts while
+the Report row is still a human-review candidate with `status=draft`. Those
+artifacts are evidence for ReportReview; they are not a formal published report
+until the RequirementReview-owned ReportReview approval is consumed and the
+Report row becomes `ready`.
+
 ### 3.8 Context Artifact
 
 ```text
@@ -601,6 +607,10 @@ Evidence manifest artifact rules:
 - Report conclusions must cite evidence before AI explanation. A report cannot
   conclude `passed` when required TestRun/TestResult/artifact evidence is
   missing.
+- For workflow-backed TestRun rows, generated report artifacts must be captured
+  in the current ReportReview snapshot before approval. The snapshot's
+  generated Report ids and Report Artifact ids must match persisted same-project
+  Report/Artifact rows at approval and publish time.
 
 ## 7. 脱敏规则
 

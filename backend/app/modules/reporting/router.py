@@ -17,7 +17,12 @@ from backend.app.modules.reporting.schemas import (
     ReportCreateRead,
     ReportCreateRequest,
     ReportRead,
+    ReportReviewWorkflowActionRequest,
+    ReportReviewWorkflowContinueRequest,
+    ReportReviewWorkflowEditRequest,
+    ReportReviewWorkflowRead,
 )
+from backend.app.modules.workflow_control.policy import ApprovalDecision, TransitionPolicyError
 
 
 router = APIRouter(tags=["reporting"])
@@ -34,6 +39,19 @@ def bad_request(error_code: str, message: str) -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail={"error_code": error_code, "message": message, "details": {}},
+    )
+
+
+def workflow_error(exc: Exception) -> HTTPException:
+    error_code = getattr(exc, "code", exc.__class__.__name__.replace("Error", "").upper())
+    status_code = (
+        status.HTTP_404_NOT_FOUND
+        if error_code in {"WORKFLOW_RUN_NOT_FOUND", "WORKFLOW_PROJECT_NOT_FOUND"}
+        else status.HTTP_409_CONFLICT
+    )
+    return HTTPException(
+        status_code=status_code,
+        detail={"error_code": error_code, "message": "Workflow action was rejected.", "details": {}},
     )
 
 
@@ -92,6 +110,13 @@ def create_report(
             "EXECUTION_RESULT_REVIEW_APPROVAL_REQUIRED",
             "ExecutionResultReview approval is required before report generation.",
         ) from exc
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
     return ReportCreateRead(
         report_id=report.id,
         status=report.status,
@@ -123,6 +148,187 @@ def get_report(
         evidence_manifest=service.report_evidence_manifest(session, report),
         artifacts=service.report_artifacts_for_report(session, report),
     )
+
+
+@router.get(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/report-review",
+    response_model=ReportReviewWorkflowRead,
+)
+def read_report_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    session: Session = Depends(get_session),
+) -> ReportReviewWorkflowRead:
+    try:
+        return service.get_report_review_workflow_detail(session, project_id, requirement_review_id)
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/report-review/submit",
+    response_model=ReportReviewWorkflowRead,
+)
+def submit_report_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ReportReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> ReportReviewWorkflowRead:
+    try:
+        return service.submit_report_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/report-review/complete-review",
+    response_model=ReportReviewWorkflowRead,
+)
+def complete_report_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ReportReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> ReportReviewWorkflowRead:
+    try:
+        return service.complete_report_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/report-review/edit",
+    response_model=ReportReviewWorkflowRead,
+)
+def edit_report_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ReportReviewWorkflowEditRequest,
+    session: Session = Depends(get_session),
+) -> ReportReviewWorkflowRead:
+    try:
+        return service.edit_report_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/report-review/approve",
+    response_model=ReportReviewWorkflowRead,
+)
+def approve_report_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ReportReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> ReportReviewWorkflowRead:
+    try:
+        return service.decide_report_review_workflow(
+            session,
+            project_id,
+            requirement_review_id,
+            data,
+            decision=ApprovalDecision.APPROVED,
+        )
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/report-review/reject",
+    response_model=ReportReviewWorkflowRead,
+)
+def reject_report_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ReportReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> ReportReviewWorkflowRead:
+    try:
+        return service.decide_report_review_workflow(
+            session,
+            project_id,
+            requirement_review_id,
+            data,
+            decision=ApprovalDecision.REJECTED,
+        )
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/report-review/continue",
+    response_model=ReportReviewWorkflowRead,
+)
+def continue_report_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ReportReviewWorkflowContinueRequest,
+    session: Session = Depends(get_session),
+) -> ReportReviewWorkflowRead:
+    try:
+        return service.continue_report_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.ReportReviewApprovalRequiredError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
+
+
+@router.post(
+    "/projects/{project_id}/requirement-reviews/{requirement_review_id}/report-review/approve-and-continue",
+    response_model=ReportReviewWorkflowRead,
+)
+def approve_and_continue_report_review_workflow(
+    project_id: uuid.UUID,
+    requirement_review_id: uuid.UUID,
+    data: ReportReviewWorkflowActionRequest,
+    session: Session = Depends(get_session),
+) -> ReportReviewWorkflowRead:
+    try:
+        return service.approve_and_continue_report_review_workflow(session, project_id, requirement_review_id, data)
+    except (
+        service.ReportReviewWorkflowStageError,
+        service.ReportReviewGateError,
+        service.ReportReviewApprovalRequiredError,
+        service.WorkflowPersistenceError,
+        TransitionPolicyError,
+    ) as exc:
+        raise workflow_error(exc) from exc
 
 
 def failure_analysis_read(analysis: FailureAnalysis) -> FailureAnalysisRead:

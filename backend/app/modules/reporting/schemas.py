@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from backend.app.modules.ai_runtime.schemas import ArtifactRead
 
@@ -49,6 +49,42 @@ class ReportCreateRead(BaseModel):
     report_id: uuid.UUID
     status: str
     evidence_manifest_artifact_id: uuid.UUID | None = None
+
+
+class ReportReviewWorkflowActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    reviewer: str = Field(default="Default User", min_length=1, max_length=120)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class ReportReviewWorkflowEditRequest(ReportReviewWorkflowActionRequest):
+    report_decisions: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ReportReviewWorkflowContinueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=0)
+    approval_decision_id: uuid.UUID
+
+
+class ReportReviewWorkflowRead(BaseModel):
+    project_id: uuid.UUID
+    requirement_review_id: uuid.UUID
+    workflow: dict[str, Any]
+    source_execution_result_review_snapshot_id: str | None = None
+    source_execution_result_review_snapshot_hash: str | None = None
+    source_execution_approval_snapshot_id: str | None = None
+    source_execution_approval_snapshot_hash: str | None = None
+    generated_test_run_ids: list[str] = Field(default_factory=list)
+    execution_artifact_ids: list[str] = Field(default_factory=list)
+    generated_report_ids: list[str] = Field(default_factory=list)
+    report_artifact_ids: list[str] = Field(default_factory=list)
+    execution_decisions: list[dict[str, Any]] = Field(default_factory=list)
+    result_decisions: list[dict[str, Any]] = Field(default_factory=list)
+    report_decisions: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ReportRead(BaseModel):

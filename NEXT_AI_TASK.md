@@ -10,9 +10,8 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.10 is complete. Task 49.11 integrates the persisted gate into
-ReportReview as the next adjacent stage, using the exact approved
-ExecutionResultReview snapshot as input.
+Task 49.11 is complete. Task 49.12 adds an AI Workbench workflow queue for
+pending review, pending approval, and continuable WorkflowRun tasks.
 
 Verified behavior:
 
@@ -68,6 +67,11 @@ Verified behavior:
     the adjacent ReportReview draft, and require the current
     ExecutionResultReview approval decision before workflow-backed failure
     analysis or report generation.
+17. ReportReview backend actions preserve the exact approved
+    ExecutionResultReview snapshot, require generated report and report
+    Artifact evidence in the current snapshot, invalidate approval after edits,
+    consume one exact terminal approval before publishing workflow-backed report
+    candidates, and reject approval replay.
 
 ## Previous Tasks Verified
 
@@ -180,23 +184,21 @@ result candidates without trusting browser state or AI completion.
 
 ## Expected Files
 
-Default write boundary for Task 49.11:
+Default write boundary for Task 49.12:
 
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/contracts/02-api-contract.md
-docs/contracts/03-state-machines.md
-backend/app/modules/reporting/router.py
-backend/app/modules/reporting/schemas.py
-backend/app/modules/reporting/service.py
-backend/app/tests/api/test_automation_plan.py
-backend/app/tests/api/test_report_failure_analysis.py
-frontend/src/api/reporting.ts
-frontend/src/stores/reporting.ts
-frontend/src/views/reporting/ReportFailureAnalysisView.vue
-frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts
+backend/app/modules/workflow_control/router.py
+backend/app/modules/workflow_control/schemas.py
+backend/app/modules/workflow_control/service.py
+backend/app/tests/workflow_control/test_workflow_queue.py
+frontend/src/api/workflowControl.ts
+frontend/src/stores/aiTasks.ts
+frontend/src/views/ai-workbench/AiWorkbenchView.vue
+frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
 Explain any write outside this set before editing it.
@@ -212,43 +214,43 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.10 evidence:
+Latest Task 49.11 evidence:
 
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_automation_plan.py backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/api/test_testrunner_pytest.py backend/app/tests/workflow_control -q` => `63 passed`
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/api/test_automation_plan.py::test_execution_approval_workflow_gates_test_run_and_preserves_draft_snapshot -q` => `9 passed`
 - `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q` => `521 passed`
-- `npm.cmd --prefix frontend test -- --run src/views/reporting/ReportFailureAnalysisView.spec.ts src/views/execution/PytestExecutionView.spec.ts` with temporary Node `v24.18.0` => `2 files / 6 tests passed`
-- `npm.cmd --prefix frontend test -- --run` with temporary Node `v24.18.0` => `25 files / 60 tests passed`
-- `npm.cmd --prefix frontend run build` with temporary Node `v24.18.0` => passed with the existing large-chunk warning
+- `npm.cmd --prefix frontend run test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `25 files / 60 tests passed`
+- `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
 - `git diff --check` => passed
-- Node/npm was restored only for this shell from a temporary official Node
-  distribution under `%TEMP%\chtest-task49-node`; it was not committed and did
-  not change system PATH.
+- `docs/contracts/04-artifact-contract.md` was a necessary Task 49.11 write
+  outside the prior Expected Files because formal ReportReview acceptance
+  depends on report artifact evidence.
 
 The source `storage/chtest-dev.db` remains blocked and read-only. Do not run
 upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- ReportReview input is the exact ExecutionResultReview snapshot consumed by
-  the successful adjacent-stage transition.
-- Formal report publication cannot advance from generated report content alone
-  without the ReportReview gate.
-- Editing report-review candidates creates a new snapshot and invalidates old
-  approval.
-- ReportReview advancement must preserve approved ExecutionResultReview
-  snapshot id/hash, approved ExecutionApproval snapshot id/hash, generated
-  TestRun ids, execution artifact evidence, and report artifact evidence.
+- AI Workbench shows WorkflowRun tasks grouped by `waiting_review`,
+  `waiting_approval`, and `approved/can_continue` without creating new domain
+  records.
+- Each queue item exposes project id, workflow kind, subject ref, current stage,
+  gate state, lock version, snapshot id/hash, and a deterministic route target
+  for the owning review page when such a route exists.
+- The queue is read-only: it must not complete review, approve, reject,
+  continue, mutate snapshots, or publish assets.
+- API list results are project-scoped, deterministic, stable ordered, and
+  exclude completed/inactive workflow runs.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow-control): gate report review
+feat(workflow-control): surface workflow queue
 ```
 
 ## Next Task
 
-Task 49.11 integrates the persisted gate into ReportReview as the next adjacent
-stage. Reuse the project-scoped action pattern and preserve the exact approved
-ExecutionResultReview snapshot as ReportReview input. Do not migrate knowledge
-feedback, CI/CD, or repair workflows in the same task.
+Task 49.12 adds an AI Workbench workflow queue for pending review, pending
+approval, and continuable WorkflowRun tasks. Keep it read-only and local-first:
+do not add RBAC, tenants, dashboards, cross-user collaboration, RAG runtime,
+CI/CD workflow changes, or repair workflows in the same task.

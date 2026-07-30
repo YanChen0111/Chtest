@@ -75,6 +75,48 @@
               </a-button>
             </a-space>
           </section>
+          <section
+            v-if="store.requirementReviewId && store.reportReviewWorkflow"
+            class="execution-result-review-panel"
+            data-test="report-review-panel"
+          >
+            <div class="gate-heading">
+              <strong>ReportReview gate</strong>
+              <a-tag :color="store.reportReviewWorkflow.workflow.published ? 'green' : store.reportReviewWorkflow.workflow.state === 'approved' ? 'blue' : 'orange'">
+                {{ reportReviewStateLabel }}
+              </a-tag>
+            </div>
+            <div class="gate-body">
+              <span>snapshot</span>
+              <strong>{{ store.reportReviewWorkflow.workflow.snapshot_id }}</strong>
+              <span>approval</span>
+              <strong>{{ store.reportReviewWorkflow.workflow.approval_decision_id ?? 'none' }}</strong>
+              <span>reports</span>
+              <strong>{{ store.reportReviewWorkflow.generated_report_ids.length }}</strong>
+              <span>artifacts</span>
+              <strong>{{ store.reportReviewWorkflow.report_artifact_ids.length }}</strong>
+            </div>
+            <a-space wrap>
+              <a-button data-test="report-review-submit" :disabled="!store.reportReviewWorkflow.workflow.can_submit" :loading="store.loadingReport" @click="runReportReviewAction('submit')">
+                Submit
+              </a-button>
+              <a-button data-test="report-review-complete" :disabled="!store.reportReviewWorkflow.workflow.can_complete_review" :loading="store.loadingReport" @click="runReportReviewAction('complete')">
+                Complete review
+              </a-button>
+              <a-button data-test="report-review-edit" :disabled="!store.reportReviewWorkflow.workflow.can_edit || !store.report" :loading="store.loadingReport" @click="runReportReviewAction('edit')">
+                Save report snapshot
+              </a-button>
+              <a-button data-test="report-review-approve" type="primary" :disabled="!store.reportReviewWorkflow.workflow.can_approve" :loading="store.loadingReport" @click="runReportReviewAction('approve')">
+                Approve
+              </a-button>
+              <a-button data-test="report-review-reject" status="danger" :disabled="!store.reportReviewWorkflow.workflow.can_approve" :loading="store.loadingReport" @click="runReportReviewAction('reject')">
+                Reject
+              </a-button>
+              <a-button data-test="report-review-continue" :disabled="!store.reportReviewWorkflow.workflow.can_continue" :loading="store.loadingReport" @click="runReportReviewAction('continue')">
+                Publish
+              </a-button>
+            </a-space>
+          </section>
           <a-space wrap>
             <a-button
               data-test="start-failure-analysis"
@@ -227,6 +269,12 @@ const staleRecentRunCount = computed(() =>
 
 const selectedRun = computed(() => executionStore.recentRuns.find((run) => run.id === store.testRunId) ?? null);
 const executionResultReviewStateLabel = computed(() => store.executionResultReviewWorkflow?.workflow.state ?? 'not_loaded');
+const reportReviewStateLabel = computed(() => {
+  if (store.reportReviewWorkflow?.workflow.published) {
+    return 'published';
+  }
+  return store.reportReviewWorkflow?.workflow.state ?? 'not_loaded';
+});
 
 const evidenceColumns = [
   { title: '证据', dataIndex: 'label' },
@@ -319,9 +367,24 @@ function runExecutionResultReviewAction(
   void operations[action]();
 }
 
+function runReportReviewAction(
+  action: 'submit' | 'complete' | 'edit' | 'approve' | 'reject' | 'continue',
+) {
+  const operations = {
+    submit: () => store.submitReportReviewGate(),
+    complete: () => store.completeReportReviewGate(),
+    edit: () => store.editReportReviewGate(),
+    approve: () => store.approveReportReviewGate('Report evidence reviewed.'),
+    reject: () => store.rejectReportReviewGate('Report review rejected.'),
+    continue: () => store.continueReportReviewGate(),
+  };
+  void operations[action]();
+}
+
 onMounted(() => {
   executionStore.hydrateRecentRuns();
   void store.loadExecutionResultReviewWorkflow();
+  void store.loadReportReviewWorkflow();
 });
 </script>
 

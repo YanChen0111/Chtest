@@ -2959,6 +2959,12 @@ Rules:
 - If required evidence is missing, conclusion must be
   `insufficient_evidence`; reports must not mark execution as passed without
   evidence.
+- For workflow-backed TestRun rows, this endpoint creates a report candidate
+  with `status=draft`. The candidate is not a formal published report until
+  the RequirementReview-owned ReportReview gate records a current approval and
+  consumes that approval through `/report-review/continue`.
+- For non-workflow local TestRun rows, the report may become `ready`
+  immediately after deterministic evidence manifest creation.
 - This endpoint does not create CI/CD quality reports or QualityGateDecision
   records.
 
@@ -2967,7 +2973,7 @@ Response 202:
 ```json
 {
   "report_id": "00000000-0000-0000-0000-000000001401",
-  "status": "generating",
+  "status": "draft",
   "evidence_manifest_artifact_id": "00000000-0000-0000-0000-000000001402"
 }
 ```
@@ -3497,3 +3503,45 @@ creates the adjacent ReportReview draft from the approved
 ExecutionResultReview snapshot while preserving source ExecutionResultReview
 snapshot id/hash, source ExecutionApproval snapshot id/hash, generated TestRun
 ids, execution artifact evidence, and result decision evidence.
+
+### 11.9 ReportReview Controlled Actions
+
+Task 49.11 extends the same authoritative WorkflowRun into the terminal
+ReportReview stage. ReportReview is addressed through the owning project and
+RequirementReview; clients cannot supply or replace its source
+ExecutionResultReview snapshot.
+
+```text
+GET  /api/projects/{project_id}/requirement-reviews/{review_id}/report-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/report-review/submit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/report-review/complete-review
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/report-review/edit
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/report-review/approve
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/report-review/reject
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/report-review/continue
+POST /api/projects/{project_id}/requirement-reviews/{review_id}/report-review/approve-and-continue
+```
+
+The ReportReview draft records the exact source ExecutionResultReview snapshot
+id and canonical hash consumed by the successful adjacent transition. Generated
+report content, Markdown/JSON artifacts, or model conclusions alone must not
+publish a workflow-backed report.
+
+ReportReview approval is rejected unless the current ReportReview snapshot
+contains:
+
+- the source ExecutionResultReview snapshot id/hash;
+- the source ExecutionApproval snapshot id/hash;
+- generated TestRun ids;
+- execution Artifact ids that still match the same-project TestRun rows;
+- generated Report ids;
+- Report Artifact ids that still match the generated Report rows.
+
+Editing ReportReview records a JSON-safe report-decision snapshot, creates a
+new immutable ReportReview snapshot, re-enters human review, and invalidates
+any prior approval. Continue consumes the exact current ReportReview approval
+decision, records a non-replayable system transition event at the terminal
+ReportReview stage, and changes the generated report candidate status from
+`draft` to `ready`. A consumed ReportReview approval cannot be reused after
+the input snapshot, generated report ids, artifact ids, or lock version
+changes.

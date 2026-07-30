@@ -121,6 +121,18 @@ Rules:
   adjacent ReportReview draft binds the exact approved ExecutionResultReview
   snapshot id/hash, the source ExecutionApproval snapshot id/hash, generated
   TestRun ids, execution artifact ids, and upstream snapshot evidence.
+- ReportReview follows `draft -> waiting_review -> waiting_approval ->
+  approved -> published`. It is the terminal gate for workflow-backed
+  automation execution reports. Its input binds the exact consumed
+  ExecutionResultReview snapshot id/hash and preserves the source
+  ExecutionApproval snapshot id/hash, generated TestRun ids, execution
+  artifact ids, generated Report ids, and report artifact ids. Report
+  generation creates editable report candidates only; a workflow-backed report
+  cannot become formal `ready` output until ReportReview approval is consumed.
+  Human ReportReview edits create a JSON-safe report decision snapshot, return
+  to `waiting_review`, and invalidate old approval. Publishing consumes one
+  exact current ReportReview approval at the terminal stage and cannot be
+  replayed.
 
 ## 1. 文档目的
 

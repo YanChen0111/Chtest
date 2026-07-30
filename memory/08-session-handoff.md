@@ -1,5 +1,42 @@
 # Session Handoff
 
+## 2026-07-30 Slice 49.11 ReportReview Workflow Integration
+
+Task 49.11 is complete; next is Task 49.12 AI Workbench workflow queue for
+pending review, pending approval, and continuable tasks.
+
+- Added project-scoped ReportReview read/submit/complete/edit/approve/reject/
+  continue/approve-and-continue actions on the existing RequirementReview-owned
+  WorkflowRun.
+- ReportReview input preserves the exact approved ExecutionResultReview
+  snapshot id/hash, source ExecutionApproval snapshot id/hash, generated
+  TestRun ids, execution Artifact ids, generated Report ids, and Report
+  Artifact ids.
+- Workflow-backed report generation now creates an editable report candidate
+  with `status=draft`; it cannot become formal `ready` output until
+  ReportReview approval is recorded and consumed.
+- ReportReview approval requires current same-project TestRun execution
+  artifacts plus generated Report and Report Artifact evidence captured in the
+  current immutable ReportReview snapshot. Editing the gate creates a JSON-safe
+  report-decision snapshot and invalidates old approval.
+- Publishing consumes one exact current ReportReview approval at the terminal
+  ReportReview stage, marks generated reports `ready`, returns an authoritative
+  lock version, and rejects approval replay.
+- The reporting page now loads the authoritative ReportReview gate after report
+  generation or ExecutionResultReview continuation, exposes fixed submit,
+  complete, edit, approve, reject, and publish actions, and refreshes the
+  report after publish.
+- Contracts were updated for ReportReview API/state-machine/artifact evidence
+  boundaries. `docs/contracts/04-artifact-contract.md` was a necessary write
+  outside the prior Expected Files because Task 49.11 acceptance explicitly
+  depends on report artifact evidence.
+- Verification: focused reporting backend `9 passed`; full backend
+  `521 passed`; full frontend `25 files / 60 tests passed`; production build
+  passed with the existing large-chunk warning; `git diff --check` passed.
+- Node/npm came from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` for this
+  shell; no runtime files were committed. Source `storage/chtest-dev.db` was
+  not used.
+
 ## 2026-07-29 Slice 49.10 ExecutionResultReview Workflow Integration
 
 Task 49.10 is complete; next is Task 49.11 ReportReview workflow integration
