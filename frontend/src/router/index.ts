@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import WorkbenchLayout from '../layouts/WorkbenchLayout.vue';
 import AiWorkbenchView from '../views/ai-workbench/AiWorkbenchView.vue';
 import AutomationDraftReviewView from '../views/automation/AutomationDraftReviewView.vue';
+import TestCampaignScopeView from '../views/campaigns/TestCampaignScopeView.vue';
 import CaseGenerationReviewView from '../views/cases/CaseGenerationReviewView.vue';
 import TestCaseLibraryView from '../views/cases/TestCaseLibraryView.vue';
 import CicdQualityCenterView from '../views/cicd/CicdQualityCenterView.vue';
@@ -29,6 +30,14 @@ export const router = createRouter({
           component: AiWorkbenchView,
           meta: {
             title: 'AI 工作台',
+          },
+        },
+        {
+          path: 'campaigns/scope',
+          name: 'test-campaign-scope',
+          component: TestCampaignScopeView,
+          meta: {
+            title: '测试范围',
           },
         },
         {

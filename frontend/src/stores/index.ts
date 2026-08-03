@@ -10,6 +10,7 @@ export const useWorkbenchStore = defineStore('workbench', {
   state: () => ({
     navigation: [
       { label: 'AI 工作台', routeName: 'ai-workbench', status: '就绪' },
+      { label: '测试范围', routeName: 'test-campaign-scope', status: '就绪' },
       { label: '需求评审', routeName: 'requirement-review', status: '就绪' },
       { label: '用例生成评审', routeName: 'case-generation-review', status: '就绪' },
       { label: '用例库', routeName: 'test-case-library', status: '就绪' },

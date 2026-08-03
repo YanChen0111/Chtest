@@ -105,6 +105,7 @@ import {
   IconBook,
   IconBranch,
   IconBug,
+  IconCalendar,
   IconDashboard,
   IconExperiment,
   IconFile,
@@ -128,7 +129,7 @@ interface NavigationGroup {
 const navigationGroups: readonly NavigationGroup[] = [
   {
     label: '设计与评审',
-    routeNames: ['ai-workbench', 'requirement-review', 'case-generation-review', 'test-case-library'],
+    routeNames: ['ai-workbench', 'test-campaign-scope', 'requirement-review', 'case-generation-review', 'test-case-library'],
   },
   {
     label: '自动化与证据',
@@ -142,6 +143,7 @@ const navigationGroups: readonly NavigationGroup[] = [
 
 const routeIcons: Record<string, Component> = {
   'ai-workbench': IconDashboard,
+  'test-campaign-scope': IconCalendar,
   'requirement-review': IconFile,
   'case-generation-review': IconExperiment,
   'test-case-library': IconBook,

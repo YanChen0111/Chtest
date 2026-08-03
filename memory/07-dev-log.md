@@ -4945,3 +4945,36 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 49.14: add the focused frontend TestCampaign Scope page using only the
   authoritative campaign API and workflow projection.
+
+## 2026-08-03 Slice 49.14 Controlled TestCampaign Scope Frontend
+
+### Implemented
+
+- Added the focused `/campaigns/scope` page with project environment, version,
+  exit-condition, and evidence-id inputs; editable candidate scope; persisted
+  deterministic coverage rows; snapshot and approval audit data; and the
+  fixed human review action bar.
+- Added typed TestCampaign API calls and a Pinia store that always sends the
+  current server lock version and exact approval decision id.
+- Stale `409` responses fail closed, display an explicit refresh requirement,
+  and disable candidate and gate mutations.
+- Continue waits for the authoritative `requirement_review` response before
+  navigating. The page never recomputes coverage from displayed text.
+- Added responsive navigation and mobile action layout without introducing a
+  dashboard or execution/report orchestration.
+
+### Verification
+
+- Focused frontend: `npm.cmd --prefix frontend run test -- TestCampaignScopeView.spec.ts --run` => `1 file / 3 tests passed`.
+- Full backend: `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/campaign-ui-final` => `524 passed`.
+- Full frontend: `npm.cmd --prefix frontend test -- --run` => `26 files / 64 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- Real browser QA verified create, persisted requirement/risk gaps, submit,
+  complete review, approve, and server-backed continue. Desktop and `390x844`
+  views had no horizontal overflow or overlapping controls.
+- `git diff --check` passed. The protected source database was not used.
+
+### Next
+
+- Task 49.15: expose a route only for Scope queue items that can restore the
+  exact same-project TestCampaign, and fail closed on invalid explicit ids.

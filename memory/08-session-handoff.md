@@ -10856,3 +10856,32 @@ temporary official Node distribution under `%TEMP%\chtest-task49-node`.
   requires staging only the intended Task 49.5 files after owner review.
 - Next: Task 49.6 integrates persisted workflow control into CaseReview using
   the exact approved TestPlanReview snapshot as input.
+
+## 2026-08-03 Slice 49.14 Controlled TestCampaign Scope Frontend
+
+Task 49.14 is complete; next is Task 49.15 exact TestCampaign restoration from
+the AI Workbench workflow queue.
+
+- Added the `/campaigns/scope` workbench route, navigation entry, typed
+  TestCampaign API, and a dedicated Pinia store.
+- The page presents immutable input/evidence context, an editable candidate,
+  persisted coverage/gap rows, deterministic validation state, and a fixed set
+  of human review actions.
+- Save, submit, complete review, approve, reject, refresh, and continue use the
+  authoritative campaign projection, exact lock version, and approval decision
+  id. A `409` marks the page stale and locks mutations until refresh.
+- Successful continue navigates only after the backend returns
+  `requirement_review`; the frontend cannot synthesize advancement.
+- Focused frontend: `1 file / 3 tests passed`; full frontend: `26 files / 64
+  tests passed`; full backend: `524 passed`; production build passed with the
+  existing large-chunk warning; `git diff --check` passed.
+- Real browser QA completed create through continue on an isolated database.
+  Desktop and `390x844` layouts had no horizontal overflow or overlapping
+  controls. The protected `storage/chtest-dev.db` was not used.
+- `frontend/src/stores/index.ts` was a necessary write outside the planned list
+  because it owns the existing navigation data; the planned shared
+  `frontend/src/api/types.ts` does not exist, so campaign types remain colocated
+  with their API.
+
+Next: return an exact Scope route from the read-only workflow queue and make the
+page fail closed when an explicit campaign id cannot be restored.

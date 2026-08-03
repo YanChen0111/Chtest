@@ -10,9 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.13 is complete. Task 49.14 adds the focused frontend TestCampaign Scope
-page over the new project-scoped backend API without adding a dashboard or
-expanding the campaign into execution/report orchestration.
+Task 49.14 is complete. Task 49.15 makes AI Workbench TestCampaign queue links
+restore the exact project-scoped campaign named by the server instead of
+falling back to the most recent local campaign.
 
 Verified behavior:
 
@@ -82,6 +82,12 @@ Verified behavior:
     covered/gap rows. Its Scope WorkflowRun requires exact human approval,
     invalidates approval after edits, consumes approval once on continue, and
     creates no execution or report records.
+20. The TestCampaign Scope page exposes the server-owned campaign candidate,
+    coverage rows, immutable snapshot hash, lock version, and exact approval id
+    through one editable three-region review surface.
+21. Scope submit, review, approve, reject, and continue actions stop on stale
+    versions; successful continue navigates only after the backend returns the
+    adjacent `requirement_review` stage.
 
 ## Previous Tasks Verified
 
@@ -168,9 +174,9 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can now define a release/test scope with explicit exit
-conditions and inspect deterministic evidence gaps before any requirement,
-execution, or report stage is allowed to proceed.
+Test engineers can now create, inspect, edit, reject, approve, and advance a
+release scope from one controlled page while preserving server-owned coverage
+and workflow authority.
 
 ## Must Read
 
@@ -193,19 +199,19 @@ execution, or report stage is allowed to proceed.
 
 ## Expected Files
 
-Default write boundary for Task 49.14:
+Default write boundary for Task 49.15:
 
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-frontend/src/api/types.ts
-frontend/src/api/testCampaigns.ts
+docs/contracts/02-api-contract.md
+backend/app/modules/workflow_control/service.py
+backend/app/tests/workflow_control/test_workflow_queue.py
 frontend/src/stores/testCampaigns.ts
-frontend/src/router/index.ts
-frontend/src/layouts/WorkbenchLayout.vue
 frontend/src/views/campaigns/TestCampaignScopeView.vue
 frontend/src/views/campaigns/TestCampaignScopeView.spec.ts
+frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
 Explain any write outside this set before editing it.
@@ -221,41 +227,42 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.13 evidence:
+Latest Task 49.14 evidence:
 
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_campaigns.py backend/app/tests/db/test_alembic_upgrade_head.py -q` => `6 passed`
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/campaign-full` => `524 passed`
-- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `25 files / 61 tests passed`
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/campaign-ui-final` => `524 passed`
+- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 64 tests passed`
 - `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
 - `git diff --check` => passed
+- Real browser QA completed the full Scope gate through approval and confirmed
+  server-backed navigation to `/requirements/review`; desktop and `390x844`
+  layouts had no horizontal overflow or overlapping action controls.
 
 The source `storage/chtest-dev.db` remains blocked and read-only. Do not run
 upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- The page creates and reloads one project-scoped TestCampaign with environment,
-  version, scope, exit-condition, and evidence-id inputs.
-- The center panel edits the candidate scope directly; the evidence panel shows
-  persisted covered/gap rows and never recomputes coverage from display text.
-- Submit, complete review, edit, approve, reject, and continue use the
-  authoritative server lock version and approval decision id. Stale responses
-  block actions and require refresh.
-- Continue navigates only after the backend returns `requirement_review`; no
-  frontend-only state or boolean may bypass the Scope gate.
-- Desktop and 390px mobile layouts show no horizontal overflow or overlapping
-  fixed action controls.
+- A Scope WorkflowRun queue item returns a route only when its `subject_ref` is
+  a valid TestCampaign in the same project and the current stage is `scope`.
+- The route includes the exact campaign id. Opening it loads that campaign by
+  project and id, never the newest campaign or prior browser state.
+- An explicit missing, malformed, or cross-project campaign id fails closed and
+  does not fall back to another campaign.
+- The AI Workbench remains read-only; the route is only a navigation hint and
+  all mutations still require the TestCampaign API's lock version and approval.
+- Existing queue items whose pages cannot restore their exact subject retain a
+  null route.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(frontend): add controlled campaign scope
+feat(workflow): resume exact test campaign scope
 ```
 
 ## Next Task
 
-Task 49.14 exposes the controlled Scope campaign as one focused workbench page.
-Keep all coverage and workflow authority on the backend. Do not add dashboards,
-RBAC, tenants, cross-user collaboration, execution/report orchestration,
-knowledge feedback, or repair workflows in the same task.
+Task 49.15 connects the read-only AI Workbench queue to the exact controlled
+Scope campaign. Keep route creation deterministic and project-scoped. Do not
+add generic route guesses for other workflow stages, dashboards, RBAC, tenants,
+cross-user collaboration, execution/report orchestration, or repair workflows.
