@@ -8,7 +8,7 @@
       </div>
       <a-space>
         <a-tag color="blue">单用户本地项目</a-tag>
-        <a-button type="primary" :loading="store.loadingList" @click="refreshWorkbench">刷新</a-button>
+        <a-button type="primary" :loading="store.loadingList || store.loadingWorkflowQueue" @click="refreshWorkbench">刷新</a-button>
       </a-space>
     </div>
 
@@ -42,6 +42,54 @@
         <strong>{{ metric.value }}</strong>
       </a-card>
     </div>
+
+    <a-card class="task-panel workflow-queue-panel" :bordered="false" data-test="workflow-queue-panel">
+      <template #title>流程待办</template>
+      <div
+        v-if="store.workflowQueueError"
+        class="workflow-queue-error"
+        role="alert"
+        data-test="workflow-queue-error"
+      >
+        {{ store.workflowQueueError }}
+      </div>
+      <div v-if="store.loadingWorkflowQueue" class="muted-text" data-test="workflow-queue-loading">
+        正在加载流程待办...
+      </div>
+      <div v-else class="workflow-queue-groups">
+        <section
+          v-for="group in workflowQueueGroups"
+          :key="group.bucket"
+          class="workflow-queue-group"
+          :data-test="`workflow-queue-${group.bucket}`"
+        >
+          <div class="workflow-queue-heading">
+            <strong>{{ group.title }}</strong>
+            <a-tag color="blue">{{ group.items.length }}</a-tag>
+          </div>
+          <a-table
+            v-if="group.items.length"
+            :columns="workflowQueueColumns"
+            :data="group.items"
+            :pagination="false"
+            row-key="id"
+            size="small"
+          >
+            <template #stage="{ record }">
+              <a-tag :color="workflowStageColor(record.gate_state)">{{ workflowStageLabel(record.current_stage) }}</a-tag>
+            </template>
+            <template #snapshot="{ record }">
+              <span class="workflow-snapshot">{{ record.current_snapshot_id }}</span>
+            </template>
+            <template #open="{ record }">
+              <a v-if="record.route_path" :href="record.route_path" data-test="workflow-queue-open">打开</a>
+              <span v-else class="muted-text">暂无入口</span>
+            </template>
+          </a-table>
+          <a-empty v-else class="detail-empty" description="暂无待办" />
+        </section>
+      </div>
+    </a-card>
 
     <div class="ai-task-layout">
       <a-card class="task-panel" :bordered="false">
@@ -289,11 +337,38 @@ const llmCallColumns = [
   { title: '令牌用量', dataIndex: 'tokenUsageText' },
 ];
 
+const workflowQueueColumns = [
+  { title: '阶段', slotName: 'stage', width: 160 },
+  { title: '对象', dataIndex: 'subject_ref', ellipsis: true, tooltip: true },
+  { title: '版本', dataIndex: 'lock_version', width: 88 },
+  { title: '输入快照', slotName: 'snapshot', width: 220 },
+  { title: '操作', slotName: 'open', width: 90 },
+];
+
 const metrics = computed(() => [
   { label: '最近 AI 任务', value: String(store.totalTasks) },
   { label: '运行中', value: String(store.runningTasks) },
   { label: '失败任务', value: String(store.failedTasks) },
   { label: '上下文工件', value: String(store.contextArtifactCount) },
+  { label: '流程待处理', value: String(store.workflowQueueTotal) },
+]);
+
+const workflowQueueGroups = computed(() => [
+  {
+    bucket: 'waiting_review',
+    title: '待人工评审',
+    items: store.workflowQueueItems('waiting_review'),
+  },
+  {
+    bucket: 'waiting_approval',
+    title: '待批准',
+    items: store.workflowQueueItems('waiting_approval'),
+  },
+  {
+    bucket: 'can_continue',
+    title: '已批准，可继续',
+    items: store.workflowQueueItems('can_continue'),
+  },
 ]);
 
 const modelConnectionLabel = computed(() => {
@@ -451,6 +526,40 @@ function statusColor(status: string): string {
   return colors[status] ?? 'gray';
 }
 
+function workflowStageLabel(stage: string): string {
+  const labels: Record<string, string> = {
+    scope: '测试范围',
+    requirement_review: '需求评审',
+    risk_review: '风险评审',
+    test_plan_review: '测试计划评审',
+    case_review: '用例评审',
+    automation_plan_review: '自动化计划评审',
+    automation_draft_review: '自动化草稿评审',
+    execution_approval: '执行审批',
+    execution_result_review: '执行结果评审',
+    report_review: '报告评审',
+    change_scope: '变更范围',
+    unit_test_patch_review: '单元测试补丁评审',
+    patch_apply_approval: '补丁应用审批',
+    regression_plan_review: '回归计划评审',
+    quality_gate_review: '质量门禁评审',
+  };
+  return labels[stage] ?? stage;
+}
+
+function workflowStageColor(gateState: string): string {
+  if (gateState === 'waiting_review') {
+    return 'orange';
+  }
+  if (gateState === 'waiting_approval') {
+    return 'purple';
+  }
+  if (gateState === 'approved') {
+    return 'green';
+  }
+  return 'gray';
+}
+
 function compactJson(value: Record<string, unknown>): string {
   const entries = Object.entries(value);
   if (entries.length === 0) {
@@ -490,6 +599,7 @@ function refreshWorkbench() {
   void refreshHealth();
   void modelConnectionStore.loadConfig();
   void store.loadRecentTasks();
+  void store.loadWorkflowQueue();
 }
 
 onMounted(() => {
@@ -557,7 +667,7 @@ onMounted(() => {
 
 .ai-metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
 }
 
@@ -579,6 +689,45 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
+}
+
+.workflow-queue-panel {
+  min-width: 0;
+}
+
+.workflow-queue-groups {
+  display: grid;
+  gap: 14px;
+}
+
+.workflow-queue-error {
+  padding: 10px 12px;
+  border: 1px solid #ffccc7;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.workflow-queue-group {
+  display: grid;
+  gap: 10px;
+}
+
+.workflow-queue-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.workflow-snapshot {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
 }
 
 .detail-panel {

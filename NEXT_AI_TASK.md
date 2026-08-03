@@ -10,8 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.11 is complete. Task 49.12 adds an AI Workbench workflow queue for
-pending review, pending approval, and continuable WorkflowRun tasks.
+Task 49.12 is complete. Task 49.13 adds the contract and backend foundation for
+a lightweight TestCampaign with explicit scope, exit conditions, and a
+review-gated Scope workflow step.
 
 Verified behavior:
 
@@ -72,6 +73,10 @@ Verified behavior:
     Artifact evidence in the current snapshot, invalidate approval after edits,
     consume one exact terminal approval before publishing workflow-backed report
     candidates, and reject approval replay.
+18. AI Workbench exposes a project-scoped, read-only WorkflowRun queue grouped
+    by pending review, pending approval, and approved/can-continue state. Queue
+    reads do not mutate workflow, domain, snapshot, approval, report, or
+    artifact records.
 
 ## Previous Tasks Verified
 
@@ -158,10 +163,10 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can now edit, reject, approve, explicitly advance,
-execution-approve, and result-review requirement, risk, test-plan, case-review,
-automation-plan, automation-draft, workflow-backed execution, and execution
-result candidates without trusting browser state or AI completion.
+Test engineers can now edit, reject, approve, explicitly advance, and identify
+the next pending human gate across requirement, risk, test-plan, case-review,
+automation-plan, automation-draft, workflow-backed execution, execution-result,
+and report-review stages without trusting browser state or AI completion.
 
 ## Must Read
 
@@ -184,21 +189,22 @@ result candidates without trusting browser state or AI completion.
 
 ## Expected Files
 
-Default write boundary for Task 49.12:
+Default write boundary for Task 49.13:
 
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
 docs/contracts/02-api-contract.md
-backend/app/modules/workflow_control/router.py
-backend/app/modules/workflow_control/schemas.py
-backend/app/modules/workflow_control/service.py
-backend/app/tests/workflow_control/test_workflow_queue.py
-frontend/src/api/workflowControl.ts
-frontend/src/stores/aiTasks.ts
-frontend/src/views/ai-workbench/AiWorkbenchView.vue
-frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
+docs/contracts/01-data-model-contract.md
+docs/contracts/03-state-machines.md
+backend/alembic/versions/20260803_0020_test_campaign.py
+backend/app/main.py
+backend/app/modules/test_campaigns/models.py
+backend/app/modules/test_campaigns/router.py
+backend/app/modules/test_campaigns/schemas.py
+backend/app/modules/test_campaigns/service.py
+backend/app/tests/api/test_test_campaigns.py
 ```
 
 Explain any write outside this set before editing it.
@@ -214,43 +220,42 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.11 evidence:
+Latest Task 49.12 evidence:
 
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_report_failure_analysis.py backend/app/tests/api/test_automation_plan.py::test_execution_approval_workflow_gates_test_run_and_preserves_draft_snapshot -q` => `9 passed`
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q` => `521 passed`
-- `npm.cmd --prefix frontend run test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `25 files / 60 tests passed`
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/workflow_control/test_workflow_queue.py -q` => `1 passed`
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q -k "not test_rejects_symlink_escape_inside_artifact_root" --basetemp .t49/q` => `521 passed, 1 deselected`; the excluded existing test requires Windows symlink privilege unavailable to the current process (`WinError 1314`).
+- `npm.cmd --prefix frontend run test -- AiWorkbenchView.spec.ts --run` => `1 file / 5 tests passed`
+- `npm.cmd --prefix frontend run test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `25 files / 61 tests passed`
 - `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
 - `git diff --check` => passed
-- `docs/contracts/04-artifact-contract.md` was a necessary Task 49.11 write
-  outside the prior Expected Files because formal ReportReview acceptance
-  depends on report artifact evidence.
 
 The source `storage/chtest-dev.db` remains blocked and read-only. Do not run
 upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- AI Workbench shows WorkflowRun tasks grouped by `waiting_review`,
-  `waiting_approval`, and `approved/can_continue` without creating new domain
-  records.
-- Each queue item exposes project id, workflow kind, subject ref, current stage,
-  gate state, lock version, snapshot id/hash, and a deterministic route target
-  for the owning review page when such a route exists.
-- The queue is read-only: it must not complete review, approve, reject,
-  continue, mutate snapshots, or publish assets.
-- API list results are project-scoped, deterministic, stable ordered, and
-  exclude completed/inactive workflow runs.
+- TestCampaign persists a project-scoped draft scope, target environment/version
+  references, explicit exit conditions, and deterministic coverage rows without
+  creating execution or report records.
+- Creating or revising a campaign creates a new immutable Scope snapshot on an
+  existing WorkflowRun; no boolean field or AI result can bypass the human gate.
+- Scope approval and advancement require one exact current approval grant and
+  invalidate prior approval after edits.
+- Coverage rows reference existing same-project requirement, risk, test-plan,
+  and approved case evidence; missing relationships are reported as gaps rather
+  than inferred as covered.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow-control): surface workflow queue
+feat(test-campaigns): add controlled campaign scope
 ```
 
 ## Next Task
 
-Task 49.12 adds an AI Workbench workflow queue for pending review, pending
-approval, and continuable WorkflowRun tasks. Keep it read-only and local-first:
-do not add RBAC, tenants, dashboards, cross-user collaboration, RAG runtime,
-CI/CD workflow changes, or repair workflows in the same task.
+Task 49.13 adds the contract and backend foundation for a lightweight
+TestCampaign. Keep it local-first and reuse the existing Scope WorkflowRun
+gate. Do not add frontend dashboards, RBAC, tenants, cross-user collaboration,
+CI/CD workflow changes, knowledge feedback, or repair workflows in the same
+task.

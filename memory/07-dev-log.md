@@ -4865,3 +4865,43 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.12: add an AI Workbench workflow queue for pending review, pending
   approval, and continuable WorkflowRun tasks without adding RBAC, dashboards,
   or cross-user collaboration.
+
+## 2026-08-03 Slice 49.12 AI Workbench Workflow Queue
+
+### Implemented
+
+- Added project-scoped read-only workflow queue API:
+  `GET /api/projects/{project_id}/workflow-runs`.
+- Queue returns only active actionable WorkflowRun rows grouped as
+  `waiting_review`, `waiting_approval`, and `can_continue`; it excludes draft,
+  rejected, inactive, cross-project, and consumed terminal approval records.
+- Queue items include workflow kind, subject ref, stage/state, lock version,
+  snapshot id/hash, current unconsumed approval id, and a nullable route hint.
+  Route hints remain null until a destination can restore the exact run instead
+  of falling back to recent browser context.
+- Added the AI Workbench workflow queue panel with grouped read-only lists and
+  explicit unavailable-route state. It intentionally exposes no review,
+  approval, reject, continue, report publish, artifact mutation, or domain
+  creation action.
+- Updated the API contract and added backend/frontend queue coverage.
+
+### Verification
+
+- Focused backend:
+  `backend\\.venv\\Scripts\\python.exe -m pytest backend/app/tests/workflow_control/test_workflow_queue.py -q` => `1 passed`.
+- Backend regression excluding the existing symlink-capability test:
+  `backend\\.venv\\Scripts\\python.exe -m pytest backend/app/tests -q -k "not test_rejects_symlink_escape_inside_artifact_root" --basetemp .t49/q` => `521 passed, 1 deselected`.
+- The excluded test reached its Windows `symlink_to` setup and was blocked by
+  current-process privilege (`WinError 1314`); no product assertion failed.
+- Focused frontend:
+  `npm.cmd --prefix frontend run test -- AiWorkbenchView.spec.ts --run` => `1 file / 5 tests passed`.
+- Full frontend with Node `v24.18.0` from
+  `D:\\Downloads\\Chtest-env\\node-v24.18.0-win-x64`:
+  `npm.cmd --prefix frontend run test -- --run` => `25 files / 61 tests passed`.
+- Production build with the same Node runtime passed with the existing
+  large-chunk warning. `git diff --check` passed.
+
+### Next
+
+- Task 49.13: add a lightweight TestCampaign and coverage matrix entry with
+  explicit scope and exit conditions; keep it local-first and review-gated.

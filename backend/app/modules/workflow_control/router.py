@@ -8,7 +8,13 @@ from sqlalchemy.orm import Session
 from backend.app.modules.projects.router import get_session
 from backend.app.modules.workflow_control import service
 from backend.app.modules.workflow_control.policy import ControlledStage, WorkflowKind
-from backend.app.modules.workflow_control.schemas import WorkflowRunRead, WorkflowStageSnapshotRead
+from backend.app.modules.workflow_control.schemas import (
+    WorkflowQueueGroupsRead,
+    WorkflowQueueItemRead,
+    WorkflowQueueRead,
+    WorkflowRunRead,
+    WorkflowStageSnapshotRead,
+)
 
 router = APIRouter(tags=["workflow-control"])
 
@@ -17,6 +23,13 @@ def workflow_not_found() -> HTTPException:
     return HTTPException(
         status_code=404,
         detail={"error_code": "WORKFLOW_RUN_NOT_FOUND", "message": "Workflow run not found.", "details": {}},
+    )
+
+
+def workflow_project_not_found() -> HTTPException:
+    return HTTPException(
+        status_code=404,
+        detail={"error_code": "WORKFLOW_PROJECT_NOT_FOUND", "message": "Project not found.", "details": {}},
     )
 
 
@@ -48,3 +61,18 @@ def read_workflow_run(project_id: uuid.UUID, run_id: uuid.UUID, session: Session
             created_at=snapshot.created_at.isoformat(),
         ),
     )
+
+
+@router.get("/projects/{project_id}/workflow-runs", response_model=WorkflowQueueRead)
+def list_workflow_runs(project_id: uuid.UUID, session: Session = Depends(get_session)) -> WorkflowQueueRead:
+    try:
+        queue_items = service.list_workflow_queue(session, project_id)
+    except service.ProjectNotFoundError as exc:
+        raise workflow_project_not_found() from exc
+    items = [WorkflowQueueItemRead(**item) for item in queue_items]
+    groups = WorkflowQueueGroupsRead(
+        waiting_review=[item for item in items if item.bucket == "waiting_review"],
+        waiting_approval=[item for item in items if item.bucket == "waiting_approval"],
+        can_continue=[item for item in items if item.bucket == "can_continue"],
+    )
+    return WorkflowQueueRead(project_id=project_id, total=len(items), groups=groups, items=items)

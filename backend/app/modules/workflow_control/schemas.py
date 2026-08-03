@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -58,3 +58,34 @@ class WorkflowRunRead(BaseModel):
     lock_version: int
     status: str
     snapshot: WorkflowStageSnapshotRead
+
+
+class WorkflowQueueItemRead(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    workflow_kind: WorkflowKind
+    subject_ref: str
+    current_stage: ControlledStage
+    gate_state: str
+    bucket: Literal["waiting_review", "waiting_approval", "can_continue"]
+    lock_version: int
+    current_snapshot_id: uuid.UUID
+    input_snapshot_hash: str
+    approval_decision_id: uuid.UUID | None = None
+    can_continue: bool = False
+    route_path: str | None = None
+    created_at: str
+    updated_at: str
+
+
+class WorkflowQueueGroupsRead(BaseModel):
+    waiting_review: list[WorkflowQueueItemRead]
+    waiting_approval: list[WorkflowQueueItemRead]
+    can_continue: list[WorkflowQueueItemRead]
+
+
+class WorkflowQueueRead(BaseModel):
+    project_id: uuid.UUID
+    total: int
+    groups: WorkflowQueueGroupsRead
+    items: list[WorkflowQueueItemRead]

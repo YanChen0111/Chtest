@@ -3545,3 +3545,68 @@ ReportReview stage, and changes the generated report candidate status from
 `draft` to `ready`. A consumed ReportReview approval cannot be reused after
 the input snapshot, generated report ids, artifact ids, or lock version
 changes.
+
+### 11.10 Workflow Queue Read API
+
+Task 49.12 adds a read-only AI Workbench queue over persisted WorkflowRun
+state.
+
+```text
+GET /api/projects/{project_id}/workflow-runs
+```
+
+Response 200:
+
+```json
+{
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "total": 3,
+  "groups": {
+    "waiting_review": [],
+    "waiting_approval": [],
+    "can_continue": []
+  },
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000009001",
+      "project_id": "00000000-0000-0000-0000-000000000101",
+      "workflow_kind": "requirement_to_execution",
+      "subject_ref": "00000000-0000-0000-0000-000000000601",
+      "current_stage": "report_review",
+      "gate_state": "approved",
+      "bucket": "can_continue",
+      "lock_version": 15,
+      "current_snapshot_id": "00000000-0000-0000-0000-000000009101",
+      "input_snapshot_hash": "sha256:...",
+      "approval_decision_id": "00000000-0000-0000-0000-000000009201",
+      "can_continue": true,
+      "route_path": null,
+      "created_at": "2026-07-30T08:00:00+00:00",
+      "updated_at": "2026-07-30T08:05:00+00:00"
+    }
+  ]
+}
+```
+
+Rules:
+
+- The endpoint is project-scoped and returns only active WorkflowRun rows for
+  the requested project. Unknown projects return `404` with
+  `WORKFLOW_PROJECT_NOT_FOUND` instead of a false empty queue.
+- The endpoint is read-only. It must not complete review, approve, reject,
+  continue, revise snapshots, publish reports, create domain records, or write
+  artifacts.
+- Returned buckets are `waiting_review`, `waiting_approval`, and
+  `can_continue`. `can_continue` requires the run to be approved and to have a
+  current approval decision whose source run version and grant fingerprint
+  still match the run and that has not been consumed by any transition event.
+- Draft, rejected, inactive/completed, cross-project, and already-consumed
+  terminal approvals are excluded.
+- Results use stable bucket order (`waiting_review`, `waiting_approval`, then
+  `can_continue`), followed by stage, oldest update time, and WorkflowRun id so
+  repeated reads over unchanged state return the same sequence.
+- `route_path` is nullable and may be returned only when the destination page
+  can restore the exact queue item's project, subject, snapshot, and run. A
+  generic page path that falls back to recent browser context must return
+  `null`. A non-null route remains a navigation hint, not an authorization
+  grant, and cannot replace the owning stage API's server-side checks.

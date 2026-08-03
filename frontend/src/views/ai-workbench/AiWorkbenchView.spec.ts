@@ -5,6 +5,73 @@ import { describe, expect, it, vi } from 'vitest';
 
 import AiWorkbenchView from './AiWorkbenchView.vue';
 
+function workflowQueueBody() {
+  return {
+    project_id: '00000000-0000-0000-0000-000000000101',
+    total: 3,
+    groups: {
+      waiting_review: [
+        {
+          id: '00000000-0000-0000-0000-000000009001',
+          project_id: '00000000-0000-0000-0000-000000000101',
+          workflow_kind: 'requirement_to_execution',
+          subject_ref: '00000000-0000-0000-0000-000000000601',
+          current_stage: 'risk_review',
+          gate_state: 'waiting_review',
+          bucket: 'waiting_review',
+          lock_version: 4,
+          current_snapshot_id: '00000000-0000-0000-0000-000000009101',
+          input_snapshot_hash: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          approval_decision_id: null,
+          can_continue: false,
+          route_path: null,
+          created_at: '2026-07-30T08:00:00Z',
+          updated_at: '2026-07-30T08:01:00Z',
+        },
+      ],
+      waiting_approval: [
+        {
+          id: '00000000-0000-0000-0000-000000009002',
+          project_id: '00000000-0000-0000-0000-000000000101',
+          workflow_kind: 'requirement_to_execution',
+          subject_ref: '00000000-0000-0000-0000-000000000602',
+          current_stage: 'case_review',
+          gate_state: 'waiting_approval',
+          bucket: 'waiting_approval',
+          lock_version: 8,
+          current_snapshot_id: '00000000-0000-0000-0000-000000009102',
+          input_snapshot_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          approval_decision_id: null,
+          can_continue: false,
+          route_path: null,
+          created_at: '2026-07-30T08:02:00Z',
+          updated_at: '2026-07-30T08:03:00Z',
+        },
+      ],
+      can_continue: [
+        {
+          id: '00000000-0000-0000-0000-000000009003',
+          project_id: '00000000-0000-0000-0000-000000000101',
+          workflow_kind: 'requirement_to_execution',
+          subject_ref: '00000000-0000-0000-0000-000000000603',
+          current_stage: 'report_review',
+          gate_state: 'approved',
+          bucket: 'can_continue',
+          lock_version: 15,
+          current_snapshot_id: '00000000-0000-0000-0000-000000009103',
+          input_snapshot_hash: 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+          approval_decision_id: '00000000-0000-0000-0000-000000009203',
+          can_continue: true,
+          route_path: null,
+          created_at: '2026-07-30T08:04:00Z',
+          updated_at: '2026-07-30T08:05:00Z',
+        },
+      ],
+    },
+    items: [],
+  };
+}
+
 describe('AiWorkbenchView', () => {
   it('shows the backend health result', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('ok', { status: 200 })));
@@ -39,6 +106,40 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.text()).toContain('请求失败：502');
   });
 
+  it('keeps workflow queue failures scoped to the queue panel', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/health')) {
+        return new Response('ok', { status: 200 });
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/workflow-runs')) {
+        return new Response('workflow unavailable', { status: 502 });
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/ai-tasks')) {
+        return new Response(JSON.stringify({ total: 0, items: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('not configured', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(AiWorkbenchView, {
+      global: {
+        plugins: [createPinia(), ArcoVue],
+      },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    const queueError = wrapper.find('[data-test="workflow-queue-error"]');
+    expect(queueError.exists()).toBe(true);
+    expect(queueError.text()).toContain('502');
+    expect(wrapper.find('[data-test="workflow-queue-panel"]').exists()).toBe(true);
+  });
+
   it('loads recent AI tasks and shows selected task evidence details', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -58,6 +159,12 @@ describe('AiWorkbenchView', () => {
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         );
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/workflow-runs')) {
+        return new Response(JSON.stringify(workflowQueueBody()), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
       if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/ai-tasks')) {
         return new Response(
@@ -226,6 +333,20 @@ describe('AiWorkbenchView', () => {
 
     expect(wrapper.text()).toContain('最近 AI 任务');
     expect(wrapper.text()).toContain('模型服务');
+    expect(wrapper.text()).toContain('流程待办');
+    expect(wrapper.text()).toContain('待人工评审');
+    expect(wrapper.text()).toContain('待批准');
+    expect(wrapper.text()).toContain('已批准，可继续');
+    expect(wrapper.text()).toContain('风险评审');
+    expect(wrapper.text()).toContain('用例评审');
+    expect(wrapper.text()).toContain('报告评审');
+    expect(wrapper.text()).toContain('15');
+    expect(wrapper.find('[data-test="workflow-queue-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="workflow-queue-can_continue"]').text()).toContain(
+      '00000000-0000-0000-0000-000000009103',
+    );
+    expect(wrapper.find('[data-test="workflow-queue-open"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('暂无入口');
     expect(wrapper.text()).toContain('OpenAI Compatible');
     expect(wrapper.text()).toContain('OpenAI Compatible · gpt-5.5');
     expect(wrapper.text()).toContain('需求评审智能体');
@@ -298,6 +419,17 @@ describe('AiWorkbenchView', () => {
       const url = String(input);
       if (url.endsWith('/health')) {
         return new Response('ok', { status: 200 });
+      }
+      if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/workflow-runs')) {
+        return new Response(
+          JSON.stringify({
+            project_id: '00000000-0000-0000-0000-000000000101',
+            total: 0,
+            groups: { waiting_review: [], waiting_approval: [], can_continue: [] },
+            items: [],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
       }
       if (url.endsWith('/projects/00000000-0000-0000-0000-000000000101/ai-tasks')) {
         return new Response(

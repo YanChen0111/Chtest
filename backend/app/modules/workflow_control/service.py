@@ -190,6 +190,77 @@ def get_workflow_run_for_subject(
     return _authoritative_position(session, project_id, run.id, run.lock_version)
 
 
+WORKFLOW_QUEUE_BUCKETS = ("waiting_review", "waiting_approval", "can_continue")
+
+def list_workflow_queue(session: Session, project_id: uuid.UUID) -> list[dict[str, Any]]:
+    """Return read-only WorkflowRun queue items for the AI Workbench."""
+    if session.get(Project, project_id) is None:
+        raise ProjectNotFoundError
+    runs = list(
+        session.scalars(
+            select(WorkflowRun)
+            .where(
+                WorkflowRun.project_id == project_id,
+                WorkflowRun.status == "active",
+                WorkflowRun.gate_state.in_(
+                    [GateState.WAITING_REVIEW.value, GateState.WAITING_APPROVAL.value, GateState.APPROVED.value],
+                ),
+            )
+            .order_by(
+                WorkflowRun.gate_state.asc(),
+                WorkflowRun.current_stage.asc(),
+                WorkflowRun.updated_at.desc(),
+                WorkflowRun.id.asc(),
+            ),
+        ),
+    )
+    items: list[dict[str, Any]] = []
+    for run in runs:
+        approval = _latest_current_approval(session, run)
+        can_continue = (
+            run.gate_state == GateState.APPROVED.value
+            and approval is not None
+            and approval.source_run_version + 1 == run.lock_version
+            and approval.grant_fingerprint
+            == _grant(run, approval.reviewer, ApprovalDecision.APPROVED).fingerprint
+            and not _approval_consumed(session, approval)
+        )
+        bucket = _queue_bucket(run, can_continue=can_continue)
+        if bucket is None:
+            continue
+        stage = ControlledStage(run.current_stage)
+        items.append(
+            {
+                "id": run.id,
+                "project_id": run.project_id,
+                "workflow_kind": WorkflowKind(run.workflow_kind),
+                "subject_ref": run.subject_ref,
+                "current_stage": stage,
+                "gate_state": run.gate_state,
+                "bucket": bucket,
+                "lock_version": run.lock_version,
+                "current_snapshot_id": run.current_snapshot_id,
+                "input_snapshot_hash": run.input_snapshot_hash,
+                "approval_decision_id": approval.id if can_continue and approval is not None else None,
+                "can_continue": can_continue,
+                # A route is exposed only after its page can restore this exact run.
+                "route_path": None,
+                "created_at": run.created_at.isoformat(),
+                "updated_at": run.updated_at.isoformat(),
+            },
+        )
+    order = {bucket: index for index, bucket in enumerate(WORKFLOW_QUEUE_BUCKETS)}
+    return sorted(
+        items,
+        key=lambda item: (
+            order[item["bucket"]],
+            str(item["current_stage"]),
+            item["updated_at"],
+            str(item["id"]),
+        ),
+    )
+
+
 def submit_for_review(
     session: Session,
     project_id: uuid.UUID,
@@ -675,6 +746,43 @@ def _position(run: WorkflowRun) -> WorkflowPosition:
         input_snapshot_hash=run.input_snapshot_hash,
         completed_stages=tuple(ControlledStage(stage) for stage in run.completed_stages_json),
     )
+
+
+def _latest_current_approval(session: Session, run: WorkflowRun) -> WorkflowHumanDecision | None:
+    return session.scalar(
+        select(WorkflowHumanDecision)
+        .where(
+            WorkflowHumanDecision.project_id == run.project_id,
+            WorkflowHumanDecision.workflow_run_id == run.id,
+            WorkflowHumanDecision.snapshot_id == run.current_snapshot_id,
+            WorkflowHumanDecision.stage == run.current_stage,
+            WorkflowHumanDecision.action == TransitionAction.APPROVE.value,
+            WorkflowHumanDecision.decision == ApprovalDecision.APPROVED.value,
+            WorkflowHumanDecision.allowed_action == TransitionAction.ADVANCE.value,
+        )
+        .order_by(WorkflowHumanDecision.created_at.desc(), WorkflowHumanDecision.id.desc()),
+    )
+
+
+def _approval_consumed(session: Session, decision: WorkflowHumanDecision) -> bool:
+    consumed = session.scalar(
+        select(WorkflowTransitionEvent.id).where(
+            WorkflowTransitionEvent.project_id == decision.project_id,
+            WorkflowTransitionEvent.workflow_run_id == decision.workflow_run_id,
+            WorkflowTransitionEvent.consumed_approval_decision_id == decision.id,
+        ),
+    )
+    return consumed is not None
+
+
+def _queue_bucket(run: WorkflowRun, *, can_continue: bool) -> str | None:
+    if run.gate_state == GateState.WAITING_REVIEW.value:
+        return "waiting_review"
+    if run.gate_state == GateState.WAITING_APPROVAL.value:
+        return "waiting_approval"
+    if can_continue:
+        return "can_continue"
+    return None
 
 
 def _grant(

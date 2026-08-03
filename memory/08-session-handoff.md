@@ -1,5 +1,34 @@
 # Session Handoff
 
+## 2026-08-03 Slice 49.12 AI Workbench Workflow Queue
+
+Task 49.12 is complete; next is Task 49.13 lightweight TestCampaign and
+coverage matrix entry.
+
+- Added read-only `GET /api/projects/{project_id}/workflow-runs` queue over
+  persisted WorkflowRun state.
+- Queue groups active same-project runs into `waiting_review`,
+  `waiting_approval`, and `can_continue`; draft, rejected, inactive,
+  cross-project, and already-consumed terminal approvals are excluded.
+- Queue items expose workflow kind, subject ref, current stage/state, lock
+  version, snapshot id/hash, approval decision id when continuable, and a
+  nullable route hint. Route hints remain null until the destination can
+  restore the exact run; generic recent-context links are not emitted. The
+  endpoint does not mutate workflow, domain records, reports, snapshots, or
+  artifacts.
+- AI Workbench now loads the queue alongside recent AI tasks and renders
+  read-only grouped sections with explicit unavailable-route state; no
+  approval, rejection, or continue actions are exposed from the queue.
+- Verification: focused workflow queue backend `1 passed`; backend regression
+  `521 passed / 1 symlink-capability test deselected`; focused AI Workbench
+  frontend `1 file / 5 tests passed`; full frontend `25 files / 61 tests
+  passed`; production build passed with the existing large-chunk warning;
+  `git diff --check` passed.
+- The deselected existing artifact-store test requires Windows symlink
+  privilege unavailable to the current process (`WinError 1314`); its product
+  assertion was not reached.
+- Source `storage/chtest-dev.db` was not used.
+
 ## 2026-07-30 Slice 49.11 ReportReview Workflow Integration
 
 Task 49.11 is complete; next is Task 49.12 AI Workbench workflow queue for
