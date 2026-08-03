@@ -4905,3 +4905,43 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 49.13: add a lightweight TestCampaign and coverage matrix entry with
   explicit scope and exit conditions; keep it local-first and review-gated.
+
+## 2026-08-03 Slice 49.13 Controlled TestCampaign Scope
+
+### Implemented
+
+- Added Alembic `20260803_0020`, TestCampaign persistence, project-scoped
+  schemas/service/router, and app router registration.
+- Persisted explicit scope statement, same-project target Environment, version
+  reference, normalized exit conditions, selected requirement/risk/test-plan/
+  approved-case ids, and deterministic coverage rows.
+- Reused the existing WorkflowRun Scope gate. Create writes an immutable first
+  snapshot; edit revises to a new immutable snapshot; submit/review/approve/
+  reject/continue retain server-owned compare-and-swap and exact approval
+  consumption.
+- Requirement/risk coverage requires explicit GeneratedCaseCandidate links from
+  selected approved cases. Test-plan coverage requires approval evidence on the
+  exact immutable snapshot. Missing relationships remain visible gaps.
+- Added API tests for evidence-backed coverage, gap reporting, project
+  isolation, stale approval invalidation, one-time approval consumption, and
+  absence of execution/report side effects.
+- Updated data, API, and state-machine contracts plus the Alembic head
+  regression expectation.
+
+### Verification
+
+- Focused API and migration:
+  `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_campaigns.py backend/app/tests/db/test_alembic_upgrade_head.py -q` => `6 passed`.
+- Full backend:
+  `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/campaign-full` => `524 passed`.
+- Full frontend with Node `v24.18.0` from
+  `D:\Downloads\Chtest-env\node-v24.18.0-win-x64`:
+  `npm.cmd --prefix frontend test -- --run` => `25 files / 61 tests passed`.
+- Production build with the same Node runtime passed with the existing
+  large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.14: add the focused frontend TestCampaign Scope page using only the
+  authoritative campaign API and workflow projection.

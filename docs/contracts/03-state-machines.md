@@ -636,6 +636,33 @@ failed -> generating
 
 规则：报告结论必须引用 evidence/artifact。无证据时 conclusion 必须是 `insufficient_evidence` 或 `needs_attention`。
 
+## 10.1 TestCampaign Scope Gate
+
+```text
+draft -> waiting_review -> waiting_approval -> approved
+  ^            |                 |               |
+  |            +---- revise -----+---- revise ---+
+  |                              |
+  +----------- rejected <--------+
+
+approved -- continue(exact current ApprovalGrant) --> requirement_review:draft
+```
+
+Rules:
+
+- TestCampaign domain status does not drive this machine. The associated
+  WorkflowRun is authoritative for stage, gate state, snapshot, lock version,
+  human decision, and approval consumption.
+- Create writes Scope iteration 1. Edit/revise writes the next immutable Scope
+  iteration and invalidates approvals bound to earlier snapshots or versions.
+- Only a human may complete review, approve, reject, or revise. AI may submit a
+  candidate for review but cannot approve or advance it.
+- Continue is a system transition after validation of one exact, unconsumed,
+  current Scope approval decision. Replay, stale version, stale snapshot, wrong
+  project, wrong stage, or altered input fails closed.
+- Scope advancement creates only the adjacent RequirementReview input snapshot.
+  Execution and reporting records remain forbidden at this gate.
+
 ## 11. PromptVersion 和 SkillVersion 状态机
 
 ```text

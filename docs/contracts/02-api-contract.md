@@ -3610,3 +3610,76 @@ Rules:
   generic page path that falls back to recent browser context must return
   `null`. A non-null route remains a navigation hint, not an authorization
   grant, and cannot replace the owning stage API's server-side checks.
+
+### 11.11 Test Campaign Scope API
+
+Task 49.13 adds project-scoped campaign scope endpoints:
+
+```text
+POST /api/projects/{project_id}/test-campaigns
+GET  /api/projects/{project_id}/test-campaigns
+GET  /api/projects/{project_id}/test-campaigns/{campaign_id}
+POST /api/projects/{project_id}/test-campaigns/{campaign_id}/edit
+POST /api/projects/{project_id}/test-campaigns/{campaign_id}/submit
+POST /api/projects/{project_id}/test-campaigns/{campaign_id}/complete-review
+POST /api/projects/{project_id}/test-campaigns/{campaign_id}/approve
+POST /api/projects/{project_id}/test-campaigns/{campaign_id}/reject
+POST /api/projects/{project_id}/test-campaigns/{campaign_id}/continue
+```
+
+Create and edit inputs contain `name`, `scope_statement`, exact
+`target_environment_id`, `target_version_ref`, at least one non-empty exit
+condition, and optional requirement, risk, TestPlanReview snapshot, and
+approved TestCase id lists. Create also records `created_by`; edit requires the
+current `expected_version`, reviewer, and optional comment.
+
+Response 200/201 includes the persisted scope, deterministic coverage rows, and
+the authoritative workflow projection:
+
+```json
+{
+  "id": "00000000-0000-0000-0000-000000000701",
+  "project_id": "00000000-0000-0000-0000-000000000101",
+  "name": "Checkout release 2026.08",
+  "scope_statement": "Validate checkout payment and retry behavior.",
+  "target_environment_id": "00000000-0000-0000-0000-000000000201",
+  "target_version_ref": "release/2026.08",
+  "exit_conditions": ["No open critical defects"],
+  "requirement_ids": [],
+  "risk_ids": [],
+  "test_plan_snapshot_ids": [],
+  "approved_case_ids": [],
+  "coverage_rows": [],
+  "status": "active",
+  "workflow": {
+    "run_id": "00000000-0000-0000-0000-000000009001",
+    "stage": "scope",
+    "state": "draft",
+    "lock_version": 0,
+    "snapshot_id": "00000000-0000-0000-0000-000000009101",
+    "snapshot_hash": "sha256:...",
+    "snapshot_iteration": 1,
+    "approval_decision_id": null,
+    "can_continue": false
+  },
+  "created_at": "2026-08-03T08:00:00+00:00",
+  "updated_at": "2026-08-03T08:00:00+00:00"
+}
+```
+
+Rules:
+
+- Every id is loaded server-side and must belong to `project_id`. A foreign
+  environment or evidence id fails closed; it is never silently omitted.
+- Coverage is derived only from persisted links. Missing approved-case links to
+  selected requirements or risks, and missing approval evidence on a selected
+  TestPlanReview snapshot, return explicit `gap` rows.
+- `submit`, `complete-review`, `approve`, `reject`, and `continue` delegate to
+  the existing workflow-control compare-and-swap service. Clients cannot submit
+  stage, gate state, completed stages, snapshot hash, or grant fingerprint.
+- Edit is allowed only while the run remains at Scope. It creates a new Scope
+  snapshot and returns the gate to draft, invalidating any old approval.
+- Continue requires `expected_version` plus the exact current
+  `approval_decision_id`. It consumes that decision once and advances the same
+  WorkflowRun to a RequirementReview draft whose input cites the approved Scope
+  snapshot id/hash. It does not create a RequirementReview, TestRun, or Report.

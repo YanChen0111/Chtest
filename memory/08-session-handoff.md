@@ -1,5 +1,32 @@
 # Session Handoff
 
+## 2026-08-03 Slice 49.13 Controlled TestCampaign Scope
+
+Task 49.13 is complete. The next scoped task is Task 49.14, a focused frontend
+Scope page over the new campaign API.
+
+- Added migration `20260803_0020` and the project-scoped TestCampaign model for
+  environment/version scope, explicit exit conditions, selected evidence ids,
+  and persisted deterministic coverage rows.
+- Creating a campaign creates Scope iteration 1 on a
+  `requirement_to_execution` WorkflowRun. Editing creates a new immutable Scope
+  snapshot and invalidates earlier approval; no domain boolean controls the
+  gate.
+- Added create/list/read/edit/submit/complete/approve/reject/continue APIs.
+  Continue consumes one exact current approval and advances only to an adjacent
+  RequirementReview input snapshot.
+- Coverage is computed from same-project Requirement, RiskItem,
+  TestPlanReview snapshot approval, and selected active human-approved TestCase
+  evidence. Missing links are explicit gaps.
+- Campaign actions create no TestRun, TestResult, Artifact, FailureAnalysis, or
+  Report records. The source `storage/chtest-dev.db` was not used.
+- Verification: focused API/migration `6 passed`; full backend `524 passed`;
+  frontend `25 files / 61 tests`; production build passed with the existing
+  large-chunk warning; `git diff --check` passed.
+- `backend/app/tests/db/test_alembic_upgrade_head.py` was the only necessary
+  write outside the default Task 49.13 list because the migration regression
+  hard-coded the previous Alembic head.
+
 ## 2026-08-03 Slice 49.12 AI Workbench Workflow Queue
 
 Task 49.12 is complete; next is Task 49.13 lightweight TestCampaign and

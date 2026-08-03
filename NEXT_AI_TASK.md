@@ -10,9 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.12 is complete. Task 49.13 adds the contract and backend foundation for
-a lightweight TestCampaign with explicit scope, exit conditions, and a
-review-gated Scope workflow step.
+Task 49.13 is complete. Task 49.14 adds the focused frontend TestCampaign Scope
+page over the new project-scoped backend API without adding a dashboard or
+expanding the campaign into execution/report orchestration.
 
 Verified behavior:
 
@@ -77,6 +77,11 @@ Verified behavior:
     by pending review, pending approval, and approved/can-continue state. Queue
     reads do not mutate workflow, domain, snapshot, approval, report, or
     artifact records.
+19. TestCampaign persists explicit environment/version scope, exit conditions,
+    selected requirement/risk/test-plan/case evidence, and deterministic
+    covered/gap rows. Its Scope WorkflowRun requires exact human approval,
+    invalidates approval after edits, consumes approval once on continue, and
+    creates no execution or report records.
 
 ## Previous Tasks Verified
 
@@ -163,10 +168,9 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can now edit, reject, approve, explicitly advance, and identify
-the next pending human gate across requirement, risk, test-plan, case-review,
-automation-plan, automation-draft, workflow-backed execution, execution-result,
-and report-review stages without trusting browser state or AI completion.
+Test engineers can now define a release/test scope with explicit exit
+conditions and inspect deterministic evidence gaps before any requirement,
+execution, or report stage is allowed to proceed.
 
 ## Must Read
 
@@ -189,22 +193,19 @@ and report-review stages without trusting browser state or AI completion.
 
 ## Expected Files
 
-Default write boundary for Task 49.13:
+Default write boundary for Task 49.14:
 
 ```text
 NEXT_AI_TASK.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/contracts/02-api-contract.md
-docs/contracts/01-data-model-contract.md
-docs/contracts/03-state-machines.md
-backend/alembic/versions/20260803_0020_test_campaign.py
-backend/app/main.py
-backend/app/modules/test_campaigns/models.py
-backend/app/modules/test_campaigns/router.py
-backend/app/modules/test_campaigns/schemas.py
-backend/app/modules/test_campaigns/service.py
-backend/app/tests/api/test_test_campaigns.py
+frontend/src/api/types.ts
+frontend/src/api/testCampaigns.ts
+frontend/src/stores/testCampaigns.ts
+frontend/src/router/index.ts
+frontend/src/layouts/WorkbenchLayout.vue
+frontend/src/views/campaigns/TestCampaignScopeView.vue
+frontend/src/views/campaigns/TestCampaignScopeView.spec.ts
 ```
 
 Explain any write outside this set before editing it.
@@ -220,12 +221,11 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.12 evidence:
+Latest Task 49.13 evidence:
 
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/workflow_control/test_workflow_queue.py -q` => `1 passed`
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q -k "not test_rejects_symlink_escape_inside_artifact_root" --basetemp .t49/q` => `521 passed, 1 deselected`; the excluded existing test requires Windows symlink privilege unavailable to the current process (`WinError 1314`).
-- `npm.cmd --prefix frontend run test -- AiWorkbenchView.spec.ts --run` => `1 file / 5 tests passed`
-- `npm.cmd --prefix frontend run test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `25 files / 61 tests passed`
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests/api/test_test_campaigns.py backend/app/tests/db/test_alembic_upgrade_head.py -q` => `6 passed`
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/campaign-full` => `524 passed`
+- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `25 files / 61 tests passed`
 - `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
 - `git diff --check` => passed
 
@@ -234,28 +234,28 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- TestCampaign persists a project-scoped draft scope, target environment/version
-  references, explicit exit conditions, and deterministic coverage rows without
-  creating execution or report records.
-- Creating or revising a campaign creates a new immutable Scope snapshot on an
-  existing WorkflowRun; no boolean field or AI result can bypass the human gate.
-- Scope approval and advancement require one exact current approval grant and
-  invalidate prior approval after edits.
-- Coverage rows reference existing same-project requirement, risk, test-plan,
-  and approved case evidence; missing relationships are reported as gaps rather
-  than inferred as covered.
+- The page creates and reloads one project-scoped TestCampaign with environment,
+  version, scope, exit-condition, and evidence-id inputs.
+- The center panel edits the candidate scope directly; the evidence panel shows
+  persisted covered/gap rows and never recomputes coverage from display text.
+- Submit, complete review, edit, approve, reject, and continue use the
+  authoritative server lock version and approval decision id. Stale responses
+  block actions and require refresh.
+- Continue navigates only after the backend returns `requirement_review`; no
+  frontend-only state or boolean may bypass the Scope gate.
+- Desktop and 390px mobile layouts show no horizontal overflow or overlapping
+  fixed action controls.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(test-campaigns): add controlled campaign scope
+feat(frontend): add controlled campaign scope
 ```
 
 ## Next Task
 
-Task 49.13 adds the contract and backend foundation for a lightweight
-TestCampaign. Keep it local-first and reuse the existing Scope WorkflowRun
-gate. Do not add frontend dashboards, RBAC, tenants, cross-user collaboration,
-CI/CD workflow changes, knowledge feedback, or repair workflows in the same
-task.
+Task 49.14 exposes the controlled Scope campaign as one focused workbench page.
+Keep all coverage and workflow authority on the backend. Do not add dashboards,
+RBAC, tenants, cross-user collaboration, execution/report orchestration,
+knowledge feedback, or repair workflows in the same task.

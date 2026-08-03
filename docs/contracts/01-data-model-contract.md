@@ -705,6 +705,49 @@ Task 49.2 does not migrate existing domain services, create API routes, add
 frontend controls, or claim that current Requirement/Case/Automation/CI/CD
 flows use this persistence yet.
 
+## 21.4 TestCampaign
+
+Task 49.13 adds a lightweight project-scoped test campaign. TestCampaign owns
+the editable scope asset; its associated `requirement_to_execution`
+WorkflowRun, identified by `subject_ref=TestCampaign.id`, remains the only
+authority for Scope review, approval, and advancement.
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| project_id | uuid | yes | none | FK Project and project-isolation boundary |
+| name | varchar(160) | yes | none | Human-readable campaign name |
+| scope_statement | text | yes | none | Explicit in-scope objective |
+| target_environment_id | uuid | yes | none | Same-project Environment FK |
+| target_version_ref | varchar(160) | yes | none | Local version/build/commit reference; not execution evidence |
+| exit_conditions_json | jsonb | yes | [] | Non-empty, normalized human-defined exit conditions |
+| requirement_ids_json | jsonb | yes | [] | Selected same-project Requirement ids |
+| risk_ids_json | jsonb | yes | [] | Selected same-project RiskItem ids |
+| test_plan_snapshot_ids_json | jsonb | yes | [] | Selected same-project TestPlanReview WorkflowStageSnapshot ids |
+| approved_case_ids_json | jsonb | yes | [] | Selected same-project active, human-approved TestCase ids |
+| coverage_rows_json | jsonb | yes | [] | Deterministically derived covered/gap rows |
+| status | varchar(40) | yes | active | Domain lifecycle only; never an approval flag |
+
+Rules:
+
+- Creating a campaign creates an immutable Scope WorkflowStageSnapshot in the
+  same transaction. Editing recalculates coverage and creates a new immutable
+  Scope snapshot through `revise_workflow`; it never mutates an old snapshot.
+- TestCampaign has no `approved` boolean. `gate_state`, current snapshot,
+  optimistic version, approval grant, and approval consumption remain owned by
+  WorkflowRun and its append-only evidence tables.
+- Coverage rows are ordered by requirement, risk, test-plan snapshot, then
+  approved case, with ids sorted inside each group. Referenced records must
+  exist in the same project.
+- A requirement or risk row is covered only when one of the campaign's selected
+  approved TestCase rows points to a GeneratedCaseCandidate that explicitly
+  stores that id. Missing links produce `gap` with a reason.
+- A test-plan row is covered only when the exact immutable TestPlanReview
+  snapshot has an approved WorkflowHumanDecision. An unapproved snapshot is a
+  gap. An approved case row is covered only after server validation of active
+  status and `approved` or `approved_after_edit` review status.
+- Campaign creation, editing, approval, and continuation do not create TestRun,
+  TestResult, Artifact, FailureAnalysis, or Report records.
+
 ## 22. TestResult
 
 | Field | Type | Required | Default | Notes |

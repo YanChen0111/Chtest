@@ -18,6 +18,7 @@ from backend.app.modules.prompt_skill.router import router as prompt_skill_route
 from backend.app.modules.reporting.router import router as reporting_router
 from backend.app.modules.requirements.router import router as requirements_router
 from backend.app.modules.review_history.router import router as review_history_router
+from backend.app.modules.test_campaigns.router import router as test_campaigns_router
 from backend.app.modules.workflow_control.router import router as workflow_control_router
 from backend.app.readiness import check_readiness
 
@@ -39,6 +40,7 @@ app.include_router(reporting_router, prefix="/api")
 app.include_router(cicd_router, prefix="/api")
 app.include_router(review_history_router, prefix="/api")
 app.include_router(workflow_control_router, prefix="/api")
+app.include_router(test_campaigns_router, prefix="/api")
 
 
 @app.get("/health", response_class=PlainTextResponse)
