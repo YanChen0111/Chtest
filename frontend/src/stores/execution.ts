@@ -15,6 +15,7 @@ import {
   type TestRunRead,
 } from '../api/execution';
 import { getProjectSettings, type ProjectTestCommand } from '../api/projects';
+import { getRequirement, getRequirementReview } from '../api/requirements';
 import { DEFAULT_PROJECT_ID, getLatestAutomationDraftContext } from './workflowContext';
 
 const RECENT_RUNS_STORAGE_KEY = 'chtest.execution.recent-runs';
@@ -36,11 +37,90 @@ export const useExecutionStore = defineStore('execution', {
       run: null as TestRunRead | null,
       recentRuns: [] as TestRunRead[],
       recentRunsHydrated: false,
+      requestedRequirementId: null as string | null,
+      requestedReviewId: null as string | null,
+      requestedWorkflowRunId: null as string | null,
+      requestedWorkflowStage: null as string | null,
+      exactRestoreFailed: false,
       loading: false,
       errorMessage: '',
     };
   },
   actions: {
+    clearExplicitRestoreRequest() {
+      this.requestedRequirementId = null;
+      this.requestedReviewId = null;
+      this.requestedWorkflowRunId = null;
+      this.requestedWorkflowStage = null;
+      this.exactRestoreFailed = false;
+      this.errorMessage = '';
+    },
+    clearExecutionSelection() {
+      this.requirementReviewId = '';
+      this.automationDraftId = '';
+      this.automationDraftFramework = '';
+      this.testCommandId = '';
+      this.testCommands = [];
+      this.sourceMode = 'automation_draft';
+      this.executionApprovalWorkflow = null;
+      this.run = null;
+      this.recentRuns = [];
+      this.recentRunsHydrated = false;
+    },
+    async loadExactExecutionApproval(
+      projectId: string,
+      requirementId?: string,
+      reviewId?: string,
+      workflowRunId?: string,
+      workflowStage?: string,
+    ) {
+      this.loading = true;
+      this.errorMessage = '';
+      this.projectId = projectId;
+      this.requestedRequirementId = requirementId ?? null;
+      this.requestedReviewId = reviewId ?? null;
+      this.requestedWorkflowRunId = workflowRunId ?? null;
+      this.requestedWorkflowStage = workflowStage ?? 'execution_approval';
+      this.exactRestoreFailed = false;
+      this.clearExecutionSelection();
+      try {
+        if (!requirementId || !reviewId || !workflowRunId) {
+          throw new Error('ExecutionApproval 精确恢复参数不完整。');
+        }
+        const expectedStage = workflowStage ?? 'execution_approval';
+        if (expectedStage !== 'execution_approval') {
+          throw new Error('请求的工作流阶段不是 ExecutionApproval。');
+        }
+        const [requirement, review, executionApproval] = await Promise.all([
+          getRequirement(requirementId),
+          getRequirementReview(requirementId),
+          getExecutionApprovalWorkflow(projectId, reviewId),
+        ]);
+        if (
+          requirement.id !== requirementId
+          || requirement.project_id !== projectId
+          || requirement.status !== 'active'
+          || review.id !== reviewId
+          || review.requirement_id !== requirementId
+          || executionApproval.project_id !== projectId
+          || executionApproval.requirement_review_id !== reviewId
+          || executionApproval.workflow.stage !== expectedStage
+          || executionApproval.workflow.run_id !== workflowRunId
+        ) {
+          throw new Error('请求的 ExecutionApproval 与服务端权威工作流不匹配。');
+        }
+        this.requirementReviewId = reviewId;
+        this.executionApprovalWorkflow = executionApproval;
+        return true;
+      } catch (error) {
+        this.clearExecutionSelection();
+        this.exactRestoreFailed = true;
+        this.errorMessage = error instanceof Error ? error.message : '无法恢复指定的 ExecutionApproval。';
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
     async loadTestCommands() {
       if (this.loadingCommands || this.testCommands.length > 0) return;
       this.loadingCommands = true;
@@ -140,7 +220,7 @@ export const useExecutionStore = defineStore('execution', {
       await this.refreshRun();
     },
     async loadExecutionApprovalWorkflow() {
-      if (!this.projectId || !this.requirementReviewId || !this.automationDraftId) {
+      if (!this.projectId || !this.requirementReviewId) {
         this.executionApprovalWorkflow = null;
         return null;
       }
@@ -197,7 +277,7 @@ export const useExecutionStore = defineStore('execution', {
     },
     async editExecutionApprovalGate() {
       const workflow = this.executionApprovalWorkflow?.workflow;
-      if (!workflow || !this.requirementReviewId) return false;
+      if (!workflow || !this.requirementReviewId || !this.automationDraftId) return false;
       return this.runExecutionApprovalAction(() => editExecutionApprovalWorkflow(this.projectId, this.requirementReviewId, {
         expected_version: workflow.lock_version,
         execution_decisions: this.currentExecutionDecisionSnapshot(),

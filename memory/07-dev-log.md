@@ -5239,3 +5239,34 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.23: expose and restore the exact standard ExecutionApproval queue
   subject through the pytest Execution page. Keep ExecutionResultReview and
   recent draft/run fallback out of scope.
+
+## 2026-08-04 Slice 49.23 Exact ExecutionApproval Resume
+
+### Implemented
+
+- Extended exact queue routing to standard `execution_approval` runs with
+  active same-project RequirementReview ownership.
+- Reused `/execution/pytest` with exact Requirement, RequirementReview,
+  WorkflowRun, and stage values.
+- Added direct ExecutionApproval restoration after clearing stale draft,
+  framework, TestCommand, current run, recent-run, and gate state.
+- Kept controlled gate actions on server lock versions and approval ids while
+  disabling execution and draft-dependent snapshot editing in explicit mode.
+- Preserved the read-only Workbench boundary and normal pytest entry behavior.
+
+### Verification
+
+- Focused backend queue suite: `9 passed`.
+- Focused pytest Execution + AI Workbench frontend suite: `2 files / 14 tests
+  passed`.
+- Frontend typecheck passed.
+- Full backend: `532 passed`.
+- Full frontend: `26 files / 97 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.24: expose and restore the exact standard ExecutionResultReview queue
+  subject through the Report Failure Analysis page. Keep ReportReview and
+  recent/default TestRun fallback out of scope.

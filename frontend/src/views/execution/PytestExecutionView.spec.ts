@@ -3,7 +3,81 @@ import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useExecutionStore } from '../../stores/execution';
 import PytestExecutionView from './PytestExecutionView.vue';
+
+const projectId = '00000000-0000-0000-0000-000000000101';
+const requirementId = '00000000-0000-0000-0000-000000000411';
+const requirementReviewId = '00000000-0000-0000-0000-000000000611';
+const workflowRunId = '00000000-0000-0000-0000-000000000c01';
+const routeQuery: Record<string, string | undefined> = {};
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: routeQuery }),
+}));
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function exactRequirement() {
+  return {
+    id: requirementId,
+    project_id: projectId,
+    module_id: null,
+    title: 'Exact ExecutionApproval requirement',
+    content: 'Restore only the authoritative execution approval gate.',
+    source_type: 'manual',
+    source_ref: 'REQ-EXECUTION-EXACT',
+    status: 'active',
+    created_at: '2026-08-04T00:00:00Z',
+    updated_at: '2026-08-04T00:00:00Z',
+  };
+}
+
+function exactRequirementReview() {
+  return {
+    id: requirementReviewId,
+    requirement_id: requirementId,
+    overall_score: 93,
+    scores: { completeness: 93, clarity: 93, consistency: 93, testability: 93, feasibility: 93, logic: 93 },
+    issues: [],
+    clarification_questions: [],
+    test_design_notes: [],
+    risk_items: [],
+    used_knowledge: false,
+    used_context_artifact_ids: [],
+    context_manifest_artifact_id: null,
+    status: 'reviewed',
+  };
+}
+
+function exactExecutionApproval(overrides: {
+  project_id?: string;
+  requirement_review_id?: string;
+  stage?: string;
+  run_id?: string;
+  state?: string;
+} = {}) {
+  return {
+    ...executionApprovalBody(),
+    project_id: overrides.project_id ?? projectId,
+    requirement_review_id: overrides.requirement_review_id ?? requirementReviewId,
+    workflow: {
+      ...executionApprovalBody().workflow,
+      run_id: overrides.run_id ?? workflowRunId,
+      stage: overrides.stage ?? 'execution_approval',
+      state: overrides.state ?? 'waiting_approval',
+      lock_version: 4,
+      approval_decision_id: null,
+      can_approve: true,
+      can_continue: false,
+    },
+  };
+}
 
 function testRunBody() {
   return {
@@ -136,8 +210,124 @@ function executionApprovalBody() {
 }
 
 describe('PytestExecutionView', () => {
-  beforeEach(() => window.localStorage.clear());
+  beforeEach(() => {
+    window.localStorage.clear();
+    Object.keys(routeQuery).forEach((key) => delete routeQuery[key]);
+  });
   afterEach(() => vi.unstubAllGlobals());
+
+  it('restores the exact ExecutionApproval and uses its server lock for actions', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'execution_approval';
+    window.localStorage.setItem('chtest.latestAutomationDraft', JSON.stringify({
+      projectId,
+      requirementReviewId: '00000000-0000-0000-0000-000000000699',
+      automationDraftId: '00000000-0000-0000-0000-000000001999',
+      status: 'approved',
+      targetFramework: 'pytest',
+    }));
+    window.localStorage.setItem('chtest.execution.recent-runs', JSON.stringify([testRunBody()]));
+    let actionBody: unknown = null;
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/execution-approval`) && !init?.method) {
+        return jsonResponse(exactExecutionApproval());
+      }
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/execution-approval/approve`) && init?.method === 'POST') {
+        actionBody = JSON.parse(String(init.body));
+        return jsonResponse(exactExecutionApproval({ state: 'approved' }));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+
+    const wrapper = mount(PytestExecutionView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    const store = useExecutionStore(pinia);
+    expect(store.requirementReviewId).toBe(requirementReviewId);
+    expect(store.automationDraftId).toBe('');
+    expect(store.testCommandId).toBe('');
+    expect(store.run).toBeNull();
+    expect(store.recentRuns).toEqual([]);
+    expect(store.executionApprovalWorkflow?.workflow.run_id).toBe(workflowRunId);
+    expect(wrapper.find('[data-test="execution-approval-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="execution-approval-edit"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-test="start-run"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-test="execution-recent-runs"]').exists()).toBe(false);
+    expect(requestedUrls.some((url) => url.includes('00000000-0000-0000-0000-000000001999'))).toBe(false);
+
+    await wrapper.find('[data-test="execution-approval-approve"]').trigger('click');
+    await flushPromises();
+    expect(actionBody).toEqual(expect.objectContaining({
+      expected_version: 4,
+      comment: 'Approved for controlled local pytest execution.',
+    }));
+  });
+
+  it.each([
+    ['project identity', { project_id: '00000000-0000-0000-0000-000000000199' }],
+    ['review identity', { requirement_review_id: '00000000-0000-0000-0000-000000000699' }],
+    ['workflow stage', { stage: 'execution_result_review' }],
+    ['workflow run', { run_id: '00000000-0000-0000-0000-000000000c99' }],
+  ])('fails closed when the restored ExecutionApproval has a mismatched %s', async (_label, gateOverrides) => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'execution_approval';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/execution-approval`)) {
+        return jsonResponse(exactExecutionApproval(gateOverrides));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+    const store = useExecutionStore(pinia);
+    store.automationDraftId = '00000000-0000-0000-0000-000000001999';
+    store.run = testRunBody();
+
+    const wrapper = mount(PytestExecutionView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(store.exactRestoreFailed).toBe(true);
+    expect(store.requirementReviewId).toBe('');
+    expect(store.automationDraftId).toBe('');
+    expect(store.testCommandId).toBe('');
+    expect(store.run).toBeNull();
+    expect(store.executionApprovalWorkflow).toBeNull();
+    expect(wrapper.find('[data-test="exact-execution-approval-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="execution-approval-panel"]').exists()).toBe(false);
+  });
+
+  it('fails closed without network or recent context when an ExecutionApproval route parameter is missing', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_stage = 'execution_approval';
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(PytestExecutionView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-test="exact-execution-approval-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="execution-approval-panel"]').exists()).toBe(false);
+  });
 
   it('starts and refreshes a pytest run with evidence details', async () => {
     window.localStorage.setItem(

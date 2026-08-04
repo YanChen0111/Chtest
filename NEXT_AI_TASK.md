@@ -10,10 +10,10 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.22 is complete. Task 49.23 makes an AI Workbench ExecutionApproval queue
-link restore the exact same-project RequirementReview and workflow run named by
-the server instead of falling back to a recent automation draft, execution
-source, or browser context.
+Task 49.23 is complete. Task 49.24 makes an AI Workbench ExecutionResultReview
+queue link restore the exact same-project RequirementReview and workflow run
+named by the server instead of falling back to a recent TestRun, report, or
+browser context.
 
 Verified behavior:
 
@@ -116,6 +116,10 @@ Verified behavior:
     Review page with exact stage and run identity. The authoritative gate is
     restored without loading a recent draft, and draft-dependent snapshot edits
     remain locked when no exact draft payload is available.
+30. Standard ExecutionApproval queue routes open the pytest Execution page with
+    exact Requirement, RequirementReview, WorkflowRun, and stage values. The
+    page verifies the authoritative gate, clears stale draft/command/run state,
+    and keeps execution disabled during explicit queue restoration.
 
 ## Previous Tasks Verified
 
@@ -202,9 +206,9 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can resume the exact actionable ExecutionApproval from the
-read-only queue without authorizing execution for a stale automation draft or
-unrelated browser-selected execution source.
+Test engineers can resume the exact actionable ExecutionResultReview from the
+read-only queue without reviewing evidence or authorizing reports for a stale
+or unrelated browser-selected TestRun.
 
 ## Must Read
 
@@ -215,9 +219,9 @@ unrelated browser-selected execution source.
 5. `docs/contracts/02-api-contract.md`
 6. `docs/contracts/03-state-machines.md`
 7. `memory/08-session-handoff.md`
-8. `frontend/src/stores/execution.ts`
-9. `frontend/src/views/execution/PytestExecutionView.vue`
-10. `frontend/src/views/execution/PytestExecutionView.spec.ts`
+8. `frontend/src/stores/reporting.ts`
+9. `frontend/src/views/reporting/ReportFailureAnalysisView.vue`
+10. `frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts`
 
 ## Do Not Read Unless Needed
 
@@ -227,7 +231,7 @@ unrelated browser-selected execution source.
 
 ## Expected Files
 
-Default write boundary for Task 49.23:
+Default write boundary for Task 49.24:
 
 ```text
 NEXT_AI_TASK.md
@@ -237,9 +241,9 @@ memory/07-dev-log.md
 docs/contracts/02-api-contract.md
 backend/app/modules/workflow_control/service.py
 backend/app/tests/workflow_control/test_workflow_queue.py
-frontend/src/stores/execution.ts
-frontend/src/views/execution/PytestExecutionView.vue
-frontend/src/views/execution/PytestExecutionView.spec.ts
+frontend/src/stores/reporting.ts
+frontend/src/views/reporting/ReportFailureAnalysisView.vue
+frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts
 frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
@@ -256,14 +260,14 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.22 evidence:
+Latest Task 49.23 evidence:
 
-- Focused backend workflow queue verification => `8 passed`.
-- Focused Automation Draft Review + AI Workbench frontend verification => `2
-  files / 24 tests passed`.
+- Focused backend workflow queue verification => `9 passed`.
+- Focused pytest Execution + AI Workbench frontend verification => `2 files /
+  14 tests passed`.
 - Frontend `vue-tsc --noEmit` => passed.
-- Full backend => `531 passed`.
-- Full frontend => `26 files / 91 tests passed`.
+- Full backend => `532 passed`.
+- Full frontend => `26 files / 97 tests passed`.
 - Production build => passed with the existing large-chunk warning.
 - `git diff --check` => passed.
 
@@ -272,30 +276,30 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- An ExecutionApproval queue item returns a route only when its UUID
+- An ExecutionResultReview queue item returns a route only when its UUID
   `subject_ref` resolves to a RequirementReview whose Requirement belongs to
-  the same project and the current stage is `execution_approval`.
+  the same project and the current stage is `execution_result_review`.
 - The route includes the exact RequirementReview and WorkflowRun identifiers
-  needed by the pytest Execution page; the page verifies the returned
-  ExecutionApproval gate before enabling controlled actions or execution.
+  needed by the Report Failure Analysis page; the page verifies the returned
+  ExecutionResultReview gate before enabling controlled actions or generation.
 - Missing, malformed, cross-project, wrong-stage, mismatched-run, and
   non-RequirementReview subjects retain a null route or fail closed in the page.
-- Explicit restore failure clears ExecutionApproval, automation-draft, command,
-  and run selection state and never falls back to local storage, a recent draft
-  or run, or prior browser context.
+- Explicit restore failure clears ExecutionResultReview, ReportReview,
+  TestRun, failure-analysis, and report state and never falls back to local
+  storage, recent runs, the default TestRun, or prior browser context.
 - The AI Workbench remains read-only; all mutations still use the
-  ExecutionApproval API's current server lock version and exact approval id.
+  ExecutionResultReview API's current server lock version and exact approval id.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow): resume exact execution approval
+feat(workflow): resume exact execution result review
 ```
 
 ## Next Task
 
-Task 49.23 connects only standard ExecutionApproval WorkflowRuns to the existing
-pytest Execution page. Do not add ExecutionResultReview, generic route guesses,
-dashboards, RBAC, tenants, cross-user collaboration, report orchestration, or
-repair workflows.
+Task 49.24 connects only standard ExecutionResultReview WorkflowRuns to the
+existing Report Failure Analysis page. Do not add ReportReview, generic route
+guesses, dashboards, RBAC, tenants, cross-user collaboration, or repair
+workflows.

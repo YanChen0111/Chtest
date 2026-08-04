@@ -300,6 +300,7 @@ def _exact_requirement_review_route(
         ControlledStage.CASE_REVIEW,
         ControlledStage.AUTOMATION_PLAN_REVIEW,
         ControlledStage.AUTOMATION_DRAFT_REVIEW,
+        ControlledStage.EXECUTION_APPROVAL,
     }:
         return None
     if run.workflow_kind != WorkflowKind.REQUIREMENT_TO_EXECUTION.value:
@@ -320,6 +321,12 @@ def _exact_requirement_review_route(
     if row is None:
         return None
     review, requirement = row
+    if stage is ControlledStage.EXECUTION_APPROVAL:
+        return (
+            f"/execution/pytest?requirement_id={requirement.id}"
+            f"&requirement_review_id={review.id}&workflow_run_id={run.id}"
+            "&workflow_stage=execution_approval"
+        )
     if stage is ControlledStage.AUTOMATION_DRAFT_REVIEW:
         return (
             f"/automation/drafts?requirement_id={requirement.id}"

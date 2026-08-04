@@ -618,6 +618,57 @@ def test_workflow_queue_routes_only_exact_same_project_automation_draft_review()
     assert by_id[non_requirement_review_id]["route_path"] is None
 
 
+def test_workflow_queue_routes_only_exact_same_project_execution_approval() -> None:
+    with _session() as session:
+        project, other_project = _projects(session)
+        requirement, review = _requirement_review(session, project)
+        _, other_review = _requirement_review(session, other_project)
+        _, inactive_review = _requirement_review(session, project, requirement_status="archived")
+        non_review = _campaign(session, project)
+
+        def queued(
+            subject_ref: str,
+            *,
+            stage: ControlledStage = ControlledStage.EXECUTION_APPROVAL,
+        ):
+            return submit_for_review(
+                session,
+                project.id,
+                _create_run(session, project, subject_ref=subject_ref, stage=stage).id,
+                expected_version=0,
+            )
+
+        valid = queued(str(review.id))
+        cross_project = queued(str(other_review.id))
+        inactive = queued(str(inactive_review.id))
+        missing = queued(str(uuid.uuid4()))
+        malformed = queued("not-a-review-id")
+        wrong_stage = queued(str(review.id), stage=ControlledStage.SCOPE)
+        non_requirement_review = queued(str(non_review.id))
+
+        by_id = {item["id"]: item for item in list_workflow_queue(session, project.id)}
+        expected_route = (
+            f"/execution/pytest?requirement_id={requirement.id}"
+            f"&requirement_review_id={review.id}&workflow_run_id={valid.id}"
+            "&workflow_stage=execution_approval"
+        )
+        valid_id = valid.id
+        cross_project_id = cross_project.id
+        inactive_id = inactive.id
+        missing_id = missing.id
+        malformed_id = malformed.id
+        wrong_stage_id = wrong_stage.id
+        non_requirement_review_id = non_requirement_review.id
+
+    assert by_id[valid_id]["route_path"] == expected_route
+    assert by_id[cross_project_id]["route_path"] is None
+    assert by_id[inactive_id]["route_path"] is None
+    assert by_id[missing_id]["route_path"] is None
+    assert by_id[malformed_id]["route_path"] is None
+    assert by_id[wrong_stage_id]["route_path"] is None
+    assert by_id[non_requirement_review_id]["route_path"] is None
+
+
 def test_workflow_queue_groups_only_actionable_project_runs() -> None:
     with _session() as session:
         project, other_project = _projects(session)

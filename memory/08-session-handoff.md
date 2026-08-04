@@ -11102,3 +11102,29 @@ the AI Workbench workflow queue.
 
 Next: apply the same exact-subject, exact-run, and exact-stage rule only to the
 standard TestPlanReview stage through its existing project-scoped API.
+
+## 2026-08-04 Slice 49.23 Exact ExecutionApproval Resume
+
+Task 49.23 is complete; next is Task 49.24 exact ExecutionResultReview
+restoration from the AI Workbench workflow queue.
+
+- The queue resolves `execution_approval` only for active same-project
+  RequirementReview ownership and emits exact Requirement, RequirementReview,
+  WorkflowRun, and stage values.
+- The pytest page clears stale draft, TestCommand, current run, recent runs,
+  and approval state before directly loading the authoritative gate.
+- Explicit restore never reads recent draft/run state and keeps execution plus
+  draft-dependent snapshot editing disabled without an exact executable source.
+- Project, review, stage, or run mismatch and missing route values fail closed.
+- Focused backend queue verification passed with `9 passed`; full backend passed
+  with `532 passed`.
+- Focused pytest Execution + AI Workbench verification passed with `2 files /
+  14 tests`; full frontend passed with `26 files / 97 tests`.
+- Frontend typecheck and production build passed; the build retains the existing
+  large-chunk warning. `git diff --check` passed.
+- The protected source database and historical scratch directories were not
+  modified.
+
+Next: apply the same exact-subject, exact-run, and exact-stage rule only to the
+standard ExecutionResultReview stage through the existing Report Failure
+Analysis page. Do not add terminal ReportReview behavior in the same task.

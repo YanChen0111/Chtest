@@ -3661,6 +3661,14 @@ Rules:
   non-RequirementReview subjects return `null` or fail closed without
   local-storage, newest-plan, newest-draft, latest-approved-TestCase, or prior
   browser-context fallback.
+- For an `execution_approval` run with the same ownership, the route is
+  `/execution/pytest?requirement_id={requirement_id}&requirement_review_id={subject_ref}&workflow_run_id={run_id}&workflow_stage=execution_approval`.
+  The page must use the project-scoped ExecutionApproval API and verify the
+  exact stage and WorkflowRun id before exposing controlled actions or starting
+  execution. Missing, malformed, inactive, cross-project, wrong-stage,
+  mismatched-run, and non-RequirementReview subjects return `null` or fail
+  closed without local-storage, recent-draft, recent-command, recent-run, or
+  prior browser-context fallback.
 
 ### 11.11 Test Campaign Scope API
 

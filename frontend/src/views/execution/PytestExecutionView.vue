@@ -12,7 +12,14 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" data-test="execution-error-state" type="error" :content="store.errorMessage" show-icon />
+    <a-alert
+      v-if="store.exactRestoreFailed"
+      data-test="exact-execution-approval-restore-failed"
+      type="error"
+      :content="store.errorMessage || '无法恢复指定的 ExecutionApproval，请返回 AI 工作台刷新队列。'"
+      show-icon
+    />
+    <a-alert v-else-if="store.errorMessage" data-test="execution-error-state" type="error" :content="store.errorMessage" show-icon />
 
     <div class="execution-layout">
       <a-card class="execution-panel" :bordered="false">
@@ -24,7 +31,7 @@
           </label>
           <label>
             <span>执行来源</span>
-            <a-radio-group v-model="store.sourceMode" type="button">
+            <a-radio-group v-model="store.sourceMode" type="button" :disabled="explicitRestoreRequested">
               <a-radio value="automation_draft">AutomationDraft</a-radio>
               <a-radio value="test_command">TestCommand</a-radio>
             </a-radio-group>
@@ -63,7 +70,7 @@
               <a-button data-test="execution-approval-complete" :disabled="!store.executionApprovalWorkflow?.workflow.can_complete_review" :loading="store.loading" @click="runExecutionApprovalAction('complete')">
                 Complete review
               </a-button>
-              <a-button data-test="execution-approval-edit" :disabled="!store.executionApprovalWorkflow?.workflow.can_edit" :loading="store.loading" @click="runExecutionApprovalAction('edit')">
+              <a-button data-test="execution-approval-edit" :disabled="!store.executionApprovalWorkflow?.workflow.can_edit || !store.automationDraftId" :loading="store.loading" @click="runExecutionApprovalAction('edit')">
                 Save snapshot
               </a-button>
               <a-button data-test="execution-approval-approve" type="primary" :disabled="!store.executionApprovalWorkflow?.workflow.can_approve" :loading="store.loading" @click="runExecutionApprovalAction('approve')">
@@ -85,6 +92,7 @@
                 v-model="store.testCommandId"
                 allow-clear
                 :loading="store.loadingCommands"
+                :disabled="explicitRestoreRequested"
                 placeholder="选择项目中已配置的 TestCommand"
                 @click="store.loadTestCommands"
               >
@@ -111,7 +119,7 @@
           <p v-if="startHint" class="execution-start-hint" data-test="execution-start-hint">{{ startHint }}</p>
           <p v-else class="execution-start-hint">执行只会使用已批准草稿或项目中已配置的 TestCommand，并自动记录运行证据。</p>
         </form>
-        <ExecutionRecentRuns />
+        <ExecutionRecentRuns v-if="!explicitRestoreRequested" />
       </a-card>
 
       <a-card class="execution-panel execution-result-panel" :bordered="false">
@@ -148,9 +156,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { useExecutionStore } from '../../stores/execution';
+import { DEFAULT_PROJECT_ID } from '../../stores/workflowContext';
 import ExecutionArtifactTable from './ExecutionArtifactTable.vue';
 import ExecutionMetricsPanel from './ExecutionMetricsPanel.vue';
 import ExecutionResultTable from './ExecutionResultTable.vue';
@@ -161,10 +171,23 @@ import { pytestOutputArtifacts } from './executionOutputArtifacts';
 import { buildExecutionRunManifestRows } from './executionRunManifest';
 
 const store = useExecutionStore();
-if (store.automationDraftFramework && store.automationDraftFramework !== 'pytest') {
-  store.automationDraftId = '';
+const route = useRoute();
+
+function queryValue(value: unknown): string | undefined {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return typeof candidate === 'string' && candidate.length ? candidate : undefined;
 }
-void store.loadExecutionApprovalWorkflow();
+
+const requestedRequirementId = computed(() => queryValue(route.query.requirement_id));
+const requestedReviewId = computed(() => queryValue(route.query.requirement_review_id));
+const requestedWorkflowRunId = computed(() => queryValue(route.query.workflow_run_id));
+const requestedWorkflowStage = computed(() => queryValue(route.query.workflow_stage));
+const explicitRestoreRequested = computed(() => (
+  route.query.requirement_id !== undefined
+  || route.query.requirement_review_id !== undefined
+  || route.query.workflow_run_id !== undefined
+  || route.query.workflow_stage !== undefined
+));
 
 const resultColumns = [
   { title: '测试', dataIndex: 'test_name' },
@@ -205,7 +228,7 @@ const startHint = computed(() => {
   }
   return '';
 });
-const canStartRun = computed(() => !startHint.value);
+const canStartRun = computed(() => !explicitRestoreRequested.value && !startHint.value);
 const executionApprovalStateLabel = computed(() => store.executionApprovalWorkflow?.workflow.state ?? 'not_loaded');
 
 function startRun() {
@@ -229,6 +252,24 @@ function runExecutionApprovalAction(
   };
   void operations[action]();
 }
+
+onMounted(async () => {
+  if (explicitRestoreRequested.value) {
+    await store.loadExactExecutionApproval(
+      DEFAULT_PROJECT_ID,
+      requestedRequirementId.value,
+      requestedReviewId.value,
+      requestedWorkflowRunId.value,
+      requestedWorkflowStage.value,
+    );
+    return;
+  }
+  store.clearExplicitRestoreRequest();
+  if (store.automationDraftFramework && store.automationDraftFramework !== 'pytest') {
+    store.automationDraftId = '';
+  }
+  await store.loadExecutionApprovalWorkflow();
+});
 
 </script>
 

@@ -283,12 +283,43 @@ Verification:
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.23
+## Completed Task 49.23
 
 Goal: extend exact queue restoration only to standard ExecutionApproval runs
 through the existing pytest Execution page. Verify the exact RequirementReview
 and WorkflowRun and fail closed without recent draft, command, run, or browser
 fallback.
+
+Implementation:
+
+- The queue emits the pytest Execution page only for exact
+  `execution_approval` runs with active same-project RequirementReview
+  ownership.
+- Explicit restore clears automation draft, framework, TestCommand, current
+  run, recent runs, and approval-gate state before loading Requirement,
+  RequirementReview, and the authoritative ExecutionApproval gate.
+- The page displays the exact gate without loading a recent draft or command;
+  controlled actions use the server lock, while snapshot editing and execution
+  remain disabled without an exact executable source.
+- Missing or mismatched explicit input never reads local-storage draft/run data
+  or prior browser context.
+
+Verification:
+
+- Focused backend queue: `9 passed`.
+- Focused pytest Execution + AI Workbench frontend: `2 files / 14 tests`.
+- Frontend typecheck passed.
+- Full backend: `532 passed`.
+- Full frontend: `26 files / 97 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+## Active Task 49.24
+
+Goal: extend exact queue restoration only to standard ExecutionResultReview
+runs through the existing Report Failure Analysis page. Verify the exact
+RequirementReview and WorkflowRun and fail closed without recent TestRun,
+report, failure-analysis, default-id, or browser fallback.
 
 ## Running Local Services
 
@@ -311,9 +342,9 @@ fallback.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.22 with only its expected implementation and
+1. Commit and push Task 49.23 with only its expected implementation and
    continuity files.
-2. Read the Task 49.23 boundary in `NEXT_AI_TASK.md`.
-3. Implement exact standard ExecutionApproval route resolution and fail-closed
-   page restore without broadening to ExecutionResultReview.
+2. Read the Task 49.24 boundary in `NEXT_AI_TASK.md`.
+3. Implement exact standard ExecutionResultReview route resolution and
+   fail-closed page restore without broadening to ReportReview.
 4. Preserve historical scratch directories and the protected source database.
