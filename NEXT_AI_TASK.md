@@ -10,9 +10,10 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.19 is complete. Task 49.20 makes an AI Workbench CaseReview queue link
-restore the exact same-project RequirementReview and workflow run named by the
-server instead of falling back to recent case-generation context.
+Task 49.20 is complete. Task 49.21 makes an AI Workbench AutomationPlanReview
+queue link restore the exact same-project RequirementReview and workflow run
+named by the server instead of falling back to a recent plan, draft, approved
+test case, or browser context.
 
 Verified behavior:
 
@@ -103,6 +104,10 @@ Verified behavior:
     responsive two-by-two mobile workflow track, stage/state/version summary,
     content-height empty evidence panel, icon-backed commands, and readable
     Alert content without changing route, API, or workflow behavior.
+27. Standard CaseReview queue routes open the Case Generation Review page with
+    exact Requirement, RequirementReview, WorkflowRun, and `case_review` values.
+    The page verifies the authoritative gate and fails closed without stale
+    generation, candidate, or browser-context fallback.
 
 ## Previous Tasks Verified
 
@@ -189,9 +194,9 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can resume the exact actionable CaseReview from the read-only
-queue without acting on a stale generated-case selection or unrelated browser
-context.
+Test engineers can resume the exact actionable AutomationPlanReview from the
+read-only queue without approving or advancing a stale automation plan selected
+by prior browser context.
 
 ## Must Read
 
@@ -202,9 +207,9 @@ context.
 5. `docs/contracts/02-api-contract.md`
 6. `docs/contracts/03-state-machines.md`
 7. `memory/08-session-handoff.md`
-8. `frontend/src/stores/cases.ts`
-9. `frontend/src/views/cases/CaseGenerationReviewView.vue`
-10. `frontend/src/views/cases/CaseGenerationReviewView.spec.ts`
+8. `frontend/src/stores/automation.ts`
+9. `frontend/src/views/automation/AutomationDraftReviewView.vue`
+10. `frontend/src/views/automation/AutomationDraftReviewView.spec.ts`
 
 ## Do Not Read Unless Needed
 
@@ -214,7 +219,7 @@ context.
 
 ## Expected Files
 
-Default write boundary for Task 49.20:
+Default write boundary for Task 49.21:
 
 ```text
 NEXT_AI_TASK.md
@@ -224,9 +229,9 @@ memory/07-dev-log.md
 docs/contracts/02-api-contract.md
 backend/app/modules/workflow_control/service.py
 backend/app/tests/workflow_control/test_workflow_queue.py
-frontend/src/stores/cases.ts
-frontend/src/views/cases/CaseGenerationReviewView.vue
-frontend/src/views/cases/CaseGenerationReviewView.spec.ts
+frontend/src/stores/automation.ts
+frontend/src/views/automation/AutomationDraftReviewView.vue
+frontend/src/views/automation/AutomationDraftReviewView.spec.ts
 frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
@@ -243,46 +248,46 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.19 evidence:
+Latest Task 49.20 evidence:
 
-- Focused RequirementReview frontend verification => `1 file / 9 tests passed`.
-- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 73 tests passed`.
-- `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
-- Browser smoke at `1440x900` and `390x844` => no horizontal overflow;
-  all four mobile workflow steps visible; input and evidence panels do not
-  equal-height stretch; failure Alert text is readable.
-- `git diff --check` => passed
+- Focused backend workflow queue verification => `6 passed`.
+- Focused Case Generation Review + AI Workbench frontend verification => `2
+  files / 19 tests passed`.
+- Frontend `vue-tsc --noEmit` => passed.
+- Full backend => `529 passed`.
+- Full frontend => `26 files / 79 tests passed`.
+- Production build => passed with the existing large-chunk warning.
+- `git diff --check` => passed.
 
 The source `storage/chtest-dev.db` remains blocked and read-only. Do not run
 upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- A CaseReview queue item returns a route only when its UUID `subject_ref`
-  resolves to a RequirementReview whose Requirement belongs to the same project
-  and the current stage is `case_review`.
+- An AutomationPlanReview queue item returns a route only when its UUID
+  `subject_ref` resolves to a RequirementReview whose Requirement belongs to
+  the same project and the current stage is `automation_plan_review`.
 - The route includes the exact RequirementReview and WorkflowRun identifiers
-  needed by the Case Generation Review page; the page verifies the returned
-  CaseReview gate before enabling controlled actions.
+  needed by the Automation Draft Review page; the page verifies the returned
+  AutomationPlanReview gate before enabling controlled actions.
 - Missing, malformed, cross-project, wrong-stage, mismatched-run, and
   non-RequirementReview subjects retain a null route or fail closed in the page.
-- Explicit restore failure clears CaseReview and candidate selection state and
-  never falls back to local storage, the newest generated candidate, or prior
-  browser context.
-- The AI Workbench remains read-only; all mutations still use the CaseReview
-  API's current server lock version and exact approval id.
-- `git diff --check` passes.
+- Explicit restore failure clears AutomationPlanReview, plan, and draft
+  selection state and never falls back to local storage, the newest plan or
+  draft, the latest approved TestCase, or prior browser context.
+- The AI Workbench remains read-only; all mutations still use the
+  AutomationPlanReview API's current server lock version and exact approval id.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow): resume exact case review
+feat(workflow): resume exact automation plan review
 ```
 
 ## Next Task
 
-Task 49.20 connects only standard CaseReview WorkflowRuns to the existing Case
-Generation Review page. Do not add AutomationPlanReview, generic route guesses,
-dashboards, RBAC, tenants, cross-user collaboration, execution/report
-orchestration, or repair workflows.
+Task 49.21 connects only standard AutomationPlanReview WorkflowRuns to the
+existing Automation Draft Review page. Do not add AutomationDraftReview,
+generic route guesses, dashboards, RBAC, tenants, cross-user collaboration,
+execution/report orchestration, or repair workflows.

@@ -9,8 +9,8 @@ require reading `AGENTS.md`, `START_HERE_FOR_AI.md`, and `NEXT_AI_TASK.md` first
 
 ```text
 Read AGENTS.md, START_HERE_FOR_AI.md, NEXT_AI_TASK.md, and
-CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.19 are complete. Continue
-Task 49.20 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
+CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.20 are complete. Continue
+Task 49.21 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
 never use storage/chtest-dev.db for migration or smoke data.
 ```
 
@@ -38,7 +38,9 @@ never use storage/chtest-dev.db for migration or smoke data.
 - Task 49.16 is committed and pushed.
 - Task 49.17 is committed and pushed.
 - Task 49.18 is committed and pushed.
-- Task 49.19 is implemented and fully verified for commit and push.
+- Task 49.19 is committed locally as `01ffd79`; push is pending because GitHub
+  port 443 is unreachable from the current environment.
+- Task 49.20 is complete and fully verified for its handoff commit.
 
 Historical untracked `.pytest-tmp-*` directories and `.t49/` are test scratch
 data. Do not stage, commit, or delete them.
@@ -191,11 +193,42 @@ Verification:
   asked to generate a live review, and the page displayed the full error text.
 - `git diff --check` passed.
 
-## Active Task 49.20
+## Completed Task 49.20
 
 Goal: extend exact queue restoration only to standard CaseReview runs through
 the existing Case Generation Review page. Verify the exact RequirementReview
 and WorkflowRun and fail closed without recent candidate/browser fallback.
+
+Implementation:
+
+- The workflow queue resolves `case_review` only for an active same-project
+  RequirementReview owner and emits exact Requirement, RequirementReview,
+  WorkflowRun, and stage values.
+- The Case Generation Review store clears generation, candidate selection, and
+  gate state before explicit restore, then verifies project ownership, review
+  identity, exact `case_review` stage, and WorkflowRun id.
+- Missing or mismatched explicit input fails closed without local storage,
+  newest requirement/candidate recovery, or prior browser context.
+- The page disables source switching and new candidate generation in explicit
+  mode; controlled actions continue to use server lock versions and approval
+  ids.
+
+Verification:
+
+- Focused backend queue: `6 passed`.
+- Focused Case Generation Review + AI Workbench frontend: `2 files / 19 tests`.
+- Frontend typecheck passed.
+- Full backend: `529 passed`.
+- Full frontend: `26 files / 79 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+## Active Task 49.21
+
+Goal: extend exact queue restoration only to standard AutomationPlanReview runs
+through the existing Automation Draft Review page. Verify the exact
+RequirementReview and WorkflowRun and fail closed without recent plan, draft,
+approved-test-case, or browser fallback.
 
 ## Running Local Services
 
@@ -218,10 +251,9 @@ and WorkflowRun and fail closed without recent candidate/browser fallback.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.19 with only its two frontend files and continuity
-   documents staged.
-2. Read the Task 49.20 boundary in `NEXT_AI_TASK.md`.
-3. Implement exact standard CaseReview route resolution and fail-closed page
-   restore without broadening to AutomationPlanReview.
-4. Run focused verification first, then the required full regressions, build,
-   and diff checks.
+1. Commit Task 49.20 with only its expected implementation and continuity files.
+2. Retry pushing the local Task 49.19 and Task 49.20 commits when GitHub port
+   443 becomes reachable.
+3. Read the Task 49.21 boundary in `NEXT_AI_TASK.md`.
+4. Implement exact standard AutomationPlanReview route resolution and
+   fail-closed page restore without broadening to AutomationDraftReview.

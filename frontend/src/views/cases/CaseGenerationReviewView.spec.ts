@@ -3,7 +3,88 @@ import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { useCasesStore } from '../../stores/cases';
 import CaseGenerationReviewView from './CaseGenerationReviewView.vue';
+
+const projectId = '00000000-0000-0000-0000-000000000101';
+const requirementId = '00000000-0000-0000-0000-000000000411';
+const requirementReviewId = '00000000-0000-0000-0000-000000000611';
+const workflowRunId = '00000000-0000-0000-0000-000000000c01';
+const routeQuery: Record<string, string | undefined> = {};
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: routeQuery }),
+}));
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function exactRequirement() {
+  return {
+    id: requirementId,
+    project_id: projectId,
+    module_id: null,
+    title: 'Exact CaseReview requirement',
+    content: 'Restore this exact case review only.',
+    source_type: 'manual',
+    source_ref: 'REQ-CASE-EXACT',
+    status: 'active',
+    created_at: '2026-08-04T00:00:00Z',
+    updated_at: '2026-08-04T00:00:00Z',
+  };
+}
+
+function exactRequirementReview() {
+  return {
+    id: requirementReviewId,
+    requirement_id: requirementId,
+    overall_score: 90,
+    scores: { completeness: 90, clarity: 90, consistency: 90, testability: 90, feasibility: 90, logic: 90 },
+    issues: [],
+    clarification_questions: [],
+    test_design_notes: [],
+    risk_items: [{ title: 'Exact queue risk', risk_level: 'high', suggestion: 'Review it.' }],
+    used_knowledge: false,
+    used_context_artifact_ids: [],
+    context_manifest_artifact_id: null,
+    status: 'reviewed',
+  };
+}
+
+function exactCaseReview(overrides: {
+  project_id?: string;
+  requirement_review_id?: string;
+  stage?: string;
+  run_id?: string;
+} = {}) {
+  return {
+    project_id: overrides.project_id ?? projectId,
+    requirement_review_id: overrides.requirement_review_id ?? requirementReviewId,
+    workflow: {
+      run_id: overrides.run_id ?? workflowRunId,
+      stage: overrides.stage ?? 'case_review',
+      state: 'waiting_approval',
+      lock_version: 3,
+      snapshot_id: '00000000-0000-0000-0000-000000000c02',
+      approval_decision_id: null,
+      can_submit: false,
+      can_complete_review: false,
+      can_edit: true,
+      can_approve: true,
+      can_continue: false,
+    },
+    source_test_plan_review_snapshot_id: '00000000-0000-0000-0000-000000000b01',
+    source_test_plan_review_snapshot_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    test_strategy: 'Cover the exact queue risk.',
+    plan_items: [{ title: 'Exact coverage', risk_level: 'high' }],
+    generated_candidate_ids: ['00000000-0000-0000-0000-000000000801'],
+    candidate_decisions: [],
+  };
+}
 
 async function confirmDecisionTable(wrapper: VueWrapper): Promise<void> {
   for (const selector of [
@@ -25,7 +106,124 @@ async function confirmDecisionTable(wrapper: VueWrapper): Promise<void> {
 describe('CaseGenerationReviewView', () => {
   afterEach(() => {
     window.localStorage.clear();
+    Object.keys(routeQuery).forEach((key) => delete routeQuery[key]);
     vi.unstubAllGlobals();
+  });
+
+  it('restores the exact CaseReview and WorkflowRun requested by the queue route', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'case_review';
+    window.localStorage.setItem('chtest.latestRequirementReview', JSON.stringify({
+      projectId: '00000000-0000-0000-0000-000000000199',
+      requirementId: '00000000-0000-0000-0000-000000000499',
+      requirementReviewId: '00000000-0000-0000-0000-000000000699',
+    }));
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/case-review`)) {
+        return jsonResponse(exactCaseReview());
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    const store = useCasesStore(pinia);
+    expect(store.projectId).toBe(projectId);
+    expect(store.requirementId).toBe(requirementId);
+    expect(store.requirementReviewId).toBe(requirementReviewId);
+    expect(store.caseReviewWorkflow?.workflow.run_id).toBe(workflowRunId);
+    expect(store.caseReviewWorkflow?.workflow.stage).toBe('case_review');
+    expect(wrapper.find('[data-test="case-review-workflow-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="start-case-generation"]').attributes('disabled')).toBeDefined();
+    expect(requestedUrls.some((url) => url.includes('00000000-0000-0000-0000-000000000499'))).toBe(false);
+    expect(requestedUrls.some((url) => url.endsWith(`/projects/${projectId}/requirements`))).toBe(false);
+  });
+
+  it.each([
+    ['project identity', { project_id: '00000000-0000-0000-0000-000000000199' }],
+    ['review identity', { requirement_review_id: '00000000-0000-0000-0000-000000000699' }],
+    ['workflow stage', { stage: 'automation_plan_review' }],
+    ['workflow run', { run_id: '00000000-0000-0000-0000-000000000c99' }],
+  ])('fails closed when the restored CaseReview has a mismatched %s', async (_label, gateOverrides) => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'case_review';
+    window.localStorage.setItem('chtest.latestRequirementReview', JSON.stringify({
+      projectId,
+      requirementId: '00000000-0000-0000-0000-000000000499',
+      requirementReviewId: '00000000-0000-0000-0000-000000000699',
+    }));
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/case-review`)) {
+        return jsonResponse(exactCaseReview(gateOverrides));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+    const store = useCasesStore(pinia);
+    store.selectedCandidateId = '00000000-0000-0000-0000-000000000899';
+    store.caseReviewWorkflow = exactCaseReview();
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(store.exactRestoreFailed).toBe(true);
+    expect(store.requirementId).toBe('');
+    expect(store.requirementReviewId).toBe('');
+    expect(store.caseReviewWorkflow).toBeNull();
+    expect(store.candidates).toEqual([]);
+    expect(store.selectedCandidateId).toBe('');
+    expect(wrapper.find('[data-test="exact-case-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="case-review-workflow-panel"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="start-case-generation"]').attributes('disabled')).toBeDefined();
+    expect(requestedUrls.some((url) => url.includes('00000000-0000-0000-0000-000000000499'))).toBe(false);
+    expect(requestedUrls.some((url) => url.endsWith(`/projects/${projectId}/requirements`))).toBe(false);
+  });
+
+  it('fails closed without network or browser-context fallback when an exact route parameter is missing', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_stage = 'case_review';
+    window.localStorage.setItem('chtest.latestRequirementReview', JSON.stringify({
+      projectId,
+      requirementId: '00000000-0000-0000-0000-000000000499',
+      requirementReviewId: '00000000-0000-0000-0000-000000000699',
+    }));
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const pinia = createPinia();
+
+    const wrapper = mount(CaseGenerationReviewView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    const store = useCasesStore(pinia);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.exactRestoreFailed).toBe(true);
+    expect(store.requirementId).toBe('');
+    expect(store.requirementReviewId).toBe('');
+    expect(store.caseReviewWorkflow).toBeNull();
+    expect(wrapper.find('[data-test="exact-case-review-restore-failed"]').exists()).toBe(true);
   });
 
   it('starts case generation, lists candidates, and submits a review action', async () => {

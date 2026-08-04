@@ -12,7 +12,14 @@
       </a-space>
     </div>
 
-    <a-alert v-if="store.errorMessage" data-test="case-generation-error" type="error" :content="store.errorMessage" show-icon />
+    <a-alert
+      v-if="store.exactRestoreFailed"
+      data-test="exact-case-review-restore-failed"
+      type="error"
+      :content="store.errorMessage || 'The requested CaseReview could not be restored. Return to the AI Workbench or refresh the queue.'"
+      show-icon
+    />
+    <a-alert v-else-if="store.errorMessage" data-test="case-generation-error" type="error" :content="store.errorMessage" show-icon />
 
     <div class="case-review-layout">
       <div class="workflow-rail workflow-rail--case" aria-label="需求到用例流程">
@@ -31,6 +38,7 @@
               v-model="form.requirementDocumentArtifactId"
               placeholder="可选"
               allow-clear
+              :disabled="explicitRestoreRequested"
               @change="selectRequirementDocument"
             >
               <a-option
@@ -82,7 +90,7 @@
             class="generation-submit"
             html-type="submit"
             type="primary"
-            :disabled="!decisionTableReady"
+            :disabled="explicitRestoreRequested || !decisionTableReady"
             :loading="store.loadingGeneration"
           >
             开始生成候选用例
@@ -362,10 +370,29 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import type { CaseReviewAction, CaseReviewEditedCase, GeneratedCaseCandidateListItem } from '../../api/cases';
 import { useCasesStore } from '../../stores/cases';
+import { DEFAULT_PROJECT_ID } from '../../stores/workflowContext';
 
 const store = useCasesStore();
+const route = useRoute();
+
+function queryValue(value: unknown): string | undefined {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return typeof candidate === 'string' && candidate.length ? candidate : undefined;
+}
+
+const requestedRequirementId = computed(() => queryValue(route.query.requirement_id));
+const requestedReviewId = computed(() => queryValue(route.query.requirement_review_id));
+const requestedWorkflowRunId = computed(() => queryValue(route.query.workflow_run_id));
+const requestedWorkflowStage = computed(() => queryValue(route.query.workflow_stage));
+const explicitRestoreRequested = computed(() => (
+  route.query.requirement_id !== undefined
+  || route.query.requirement_review_id !== undefined
+  || route.query.workflow_run_id !== undefined
+  || route.query.workflow_stage !== undefined
+));
 
 const form = reactive({
   requirementId: store.requirementId,
@@ -695,6 +722,20 @@ function formatDateTime(value: string): string {
 }
 
 onMounted(async () => {
+  if (explicitRestoreRequested.value) {
+    await store.loadExactCaseReview(
+      DEFAULT_PROJECT_ID,
+      requestedRequirementId.value,
+      requestedReviewId.value,
+      requestedWorkflowRunId.value,
+      requestedWorkflowStage.value,
+    );
+    form.requirementId = store.requirementId;
+    form.requirementReviewId = store.requirementReviewId;
+    form.requirementDocumentArtifactId = '';
+    return;
+  }
+  store.clearExplicitRestoreRequest();
   await store.loadGenerationSource();
   await store.loadRequirementDocuments();
   await store.loadCaseReviewWorkflow();

@@ -297,6 +297,7 @@ def _exact_requirement_review_route(
         ControlledStage.REQUIREMENT_REVIEW,
         ControlledStage.RISK_REVIEW,
         ControlledStage.TEST_PLAN_REVIEW,
+        ControlledStage.CASE_REVIEW,
     }:
         return None
     if run.workflow_kind != WorkflowKind.REQUIREMENT_TO_EXECUTION.value:
@@ -317,6 +318,12 @@ def _exact_requirement_review_route(
     if row is None:
         return None
     review, requirement = row
+    if stage is ControlledStage.CASE_REVIEW:
+        return (
+            f"/cases/generation-review?requirement_id={requirement.id}"
+            f"&requirement_review_id={review.id}&workflow_run_id={run.id}"
+            "&workflow_stage=case_review"
+        )
     route = (
         f"/requirements/review?requirement_id={requirement.id}"
         f"&requirement_review_id={review.id}&workflow_run_id={run.id}"

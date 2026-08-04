@@ -3635,6 +3635,14 @@ Rules:
   TestPlanReview API and verify the exact stage and WorkflowRun id before
   exposing any review action. A RiskReview response, CaseReview stage, or run-id
   mismatch fails closed.
+- For a `case_review` run with the same ownership, the route is
+  `/cases/generation-review?requirement_id={requirement_id}&requirement_review_id={subject_ref}&workflow_run_id={run_id}&workflow_stage=case_review`.
+  The page must load the exact RequirementReview, use the project-scoped
+  CaseReview API, and verify the exact `case_review` stage and WorkflowRun id
+  before exposing controlled actions. Missing, malformed, inactive,
+  cross-project, wrong-stage, mismatched-run, and non-RequirementReview subjects
+  return `null` or fail closed without local-storage, newest-candidate, or prior
+  browser-context fallback.
 
 ### 11.11 Test Campaign Scope API
 

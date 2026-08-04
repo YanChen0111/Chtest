@@ -5135,3 +5135,39 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.20: expose and restore the exact standard CaseReview queue subject
   through the existing Case Generation Review page. Keep AutomationPlanReview
   and generic recent-context fallbacks out of scope.
+
+## 2026-08-04 Slice 49.20 Exact CaseReview Resume
+
+### Implemented
+
+- Extended the read-only queue route resolver to standard `case_review` runs
+  with active same-project RequirementReview ownership.
+- Added exact Requirement, RequirementReview, WorkflowRun, and stage values to
+  the Case Generation Review navigation hint.
+- Added an explicit restore path that clears stale generation, candidate,
+  selection, gate, and history state before directly loading the authoritative
+  Requirement, RequirementReview, and CaseReview gate.
+- Rejected missing parameters, inactive/cross-project ownership, review
+  mismatch, stage mismatch, and run mismatch without local-storage or
+  newest-record fallback.
+- Kept the Workbench read-only and preserved server-owned lock versions and
+  approval decision ids for all CaseReview mutations.
+
+### Verification
+
+- Focused backend queue suite: `6 passed`.
+- Focused Case Generation Review + AI Workbench frontend suite: `2 files / 19
+  tests passed`.
+- Frontend typecheck passed.
+- Full backend: `529 passed`.
+- Full frontend: `26 files / 79 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+- Historical scratch directories and the protected source database were not
+  modified.
+
+### Next
+
+- Task 49.21: expose and restore the exact standard AutomationPlanReview queue
+  subject through the existing Automation Draft Review page. Keep
+  AutomationDraftReview and recent plan/draft context fallback out of scope.

@@ -30,6 +30,7 @@ import {
 } from '../api/cases';
 import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
 import {
+  getRequirement,
   getRequirementReview,
   listRequirementDocuments,
   listRequirements,
@@ -72,6 +73,11 @@ export const useCasesStore = defineStore('cases', {
       lastReview: null as CaseReviewRead | null,
       lastReviewCandidateId: '',
       caseReviewWorkflow: null as CaseReviewWorkflowRead | null,
+      requestedRequirementId: null as string | null,
+      requestedReviewId: null as string | null,
+      requestedWorkflowRunId: null as string | null,
+      requestedWorkflowStage: null as string | null,
+      exactRestoreFailed: false,
       reviewHistory: [] as ReviewHistoryItem[],
       loadingGeneration: false,
       loadingReview: false,
@@ -88,6 +94,94 @@ export const useCasesStore = defineStore('cases', {
     },
   },
   actions: {
+    clearExplicitRestoreRequest() {
+      this.requestedRequirementId = null;
+      this.requestedReviewId = null;
+      this.requestedWorkflowRunId = null;
+      this.requestedWorkflowStage = null;
+      this.exactRestoreFailed = false;
+      this.errorMessage = '';
+    },
+    clearCaseReviewSelection() {
+      this.requirementId = '';
+      this.requirementReviewId = '';
+      this.requirementDocumentArtifactId = '';
+      this.selectedRequirementDocumentNumber = '';
+      this.requirementTitle = '';
+      this.requirementReviewConfirmed = false;
+      this.requirementRiskTitles = [];
+      this.requirementClarificationQuestions = [];
+      this.requirementDocuments = [];
+      this.generation = null;
+      this.generationTask = null;
+      this.candidates = [];
+      this.metrics = null;
+      this.totalCandidates = 0;
+      this.selectedCandidateId = '';
+      this.lastReview = null;
+      this.lastReviewCandidateId = '';
+      this.caseReviewWorkflow = null;
+      this.reviewHistory = [];
+    },
+    async loadExactCaseReview(
+      projectId: string,
+      requirementId?: string,
+      reviewId?: string,
+      workflowRunId?: string,
+      workflowStage?: string,
+    ) {
+      this.loadingGeneration = true;
+      this.errorMessage = '';
+      this.projectId = projectId;
+      this.requestedRequirementId = requirementId ?? null;
+      this.requestedReviewId = reviewId ?? null;
+      this.requestedWorkflowRunId = workflowRunId ?? null;
+      this.requestedWorkflowStage = workflowStage ?? 'case_review';
+      this.exactRestoreFailed = false;
+      this.clearCaseReviewSelection();
+      try {
+        if (!requirementId || !reviewId || !workflowRunId) {
+          throw new Error('Exact CaseReview restore parameters are incomplete.');
+        }
+        const expectedStage = workflowStage ?? 'case_review';
+        if (expectedStage !== 'case_review') {
+          throw new Error('The requested workflow stage is not CaseReview.');
+        }
+        const [requirement, review, caseReview] = await Promise.all([
+          getRequirement(requirementId),
+          getRequirementReview(requirementId),
+          getCaseReviewWorkflow(projectId, reviewId),
+        ]);
+        if (
+          requirement.id !== requirementId
+          || requirement.project_id !== projectId
+          || requirement.status !== 'active'
+          || review.id !== reviewId
+          || review.requirement_id !== requirementId
+          || caseReview.project_id !== projectId
+          || caseReview.requirement_review_id !== reviewId
+          || caseReview.workflow.stage !== expectedStage
+          || caseReview.workflow.run_id !== workflowRunId
+        ) {
+          throw new Error('The requested CaseReview does not match the authoritative workflow.');
+        }
+        this.requirementId = requirementId;
+        this.requirementReviewId = reviewId;
+        this.requirementTitle = requirement.title;
+        this.requirementReviewConfirmed = true;
+        this.requirementRiskTitles = review.risk_items.map((item) => item.title);
+        this.requirementClarificationQuestions = review.clarification_questions;
+        this.caseReviewWorkflow = caseReview;
+        return true;
+      } catch (error) {
+        this.clearCaseReviewSelection();
+        this.exactRestoreFailed = true;
+        this.errorMessage = error instanceof Error ? error.message : 'The requested CaseReview could not be restored.';
+        return false;
+      } finally {
+        this.loadingGeneration = false;
+      }
+    },
     loadLatestRequirementReviewContext() {
       const latestDocument = getLatestRequirementDocumentContext();
       const latestContext = getLatestRequirementReviewContext();

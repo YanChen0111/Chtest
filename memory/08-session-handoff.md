@@ -1,5 +1,34 @@
 # Session Handoff
 
+## 2026-08-04 Slice 49.20 Exact CaseReview Resume
+
+Task 49.20 is complete; next is Task 49.21 exact AutomationPlanReview
+restoration from the AI Workbench workflow queue.
+
+- The queue now returns a Case Generation Review route only for a standard
+  `case_review` run whose UUID subject resolves to an active same-project
+  RequirementReview owner.
+- The route carries exact Requirement, RequirementReview, WorkflowRun, and
+  `case_review` values. The page loads the exact Requirement and review plus the
+  project-scoped CaseReview gate, then verifies every identity before exposing
+  controlled actions.
+- Explicit restore clears generation, candidate selection, CaseReview, and
+  review-history state before loading. Missing or mismatched input stays
+  cleared and never reads recent local-storage or newest-record context.
+- The AI Workbench remains read-only; all CaseReview mutations still use the
+  server-owned lock version and approval decision id.
+- Focused backend queue verification passed with `6 passed`; focused Case
+  Generation Review + AI Workbench verification passed with `2 files / 19
+  tests`; frontend typecheck passed.
+- Full backend passed with `529 passed`; full frontend passed with `26 files /
+  79 tests`; production build and `git diff --check` passed.
+- Historical `.pytest-tmp-*` and `.t49/` directories were preserved. The
+  protected `storage/chtest-dev.db` was not used.
+
+Next: apply the exact-subject, exact-run, and exact-stage rule only to standard
+AutomationPlanReview runs through the existing Automation Draft Review page.
+Do not add AutomationDraftReview routing in the same task.
+
 ## 2026-08-04 Slice 49.19 Requirement Review Workbench Polish
 
 Task 49.19 is complete. The next scoped task is Task 49.20, exact CaseReview
