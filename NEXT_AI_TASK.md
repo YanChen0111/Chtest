@@ -10,10 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.23 is complete. Task 49.24 makes an AI Workbench ExecutionResultReview
-queue link restore the exact same-project RequirementReview and workflow run
-named by the server instead of falling back to a recent TestRun, report, or
-browser context.
+Task 49.24 is complete. Task 49.25 makes an AI Workbench ReportReview queue link
+restore the exact same-project RequirementReview and workflow run named by the
+server instead of falling back to a recent TestRun, report, or browser context.
 
 Verified behavior:
 
@@ -120,6 +119,10 @@ Verified behavior:
     exact Requirement, RequirementReview, WorkflowRun, and stage values. The
     page verifies the authoritative gate, clears stale draft/command/run state,
     and keeps execution disabled during explicit queue restoration.
+31. Standard ExecutionResultReview queue routes open the Report Failure
+    Analysis page with exact Requirement, RequirementReview, WorkflowRun, and
+    stage values. The page restores TestRun identity only from the authoritative
+    gate and keeps analysis/report generation locked until approval.
 
 ## Previous Tasks Verified
 
@@ -206,9 +209,9 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can resume the exact actionable ExecutionResultReview from the
-read-only queue without reviewing evidence or authorizing reports for a stale
-or unrelated browser-selected TestRun.
+Test engineers can resume the exact actionable ReportReview from the read-only
+queue without approving or publishing a stale or unrelated browser-selected
+report.
 
 ## Must Read
 
@@ -231,7 +234,7 @@ or unrelated browser-selected TestRun.
 
 ## Expected Files
 
-Default write boundary for Task 49.24:
+Default write boundary for Task 49.25:
 
 ```text
 NEXT_AI_TASK.md
@@ -260,14 +263,14 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.23 evidence:
+Latest Task 49.24 evidence:
 
-- Focused backend workflow queue verification => `9 passed`.
-- Focused pytest Execution + AI Workbench frontend verification => `2 files /
+- Focused backend workflow queue verification => `10 passed`.
+- Focused Report Failure Analysis + AI Workbench frontend verification => `2 files /
   14 tests passed`.
 - Frontend `vue-tsc --noEmit` => passed.
-- Full backend => `532 passed`.
-- Full frontend => `26 files / 97 tests passed`.
+- Full backend => `533 passed`.
+- Full frontend => `26 files / 103 tests passed`.
 - Production build => passed with the existing large-chunk warning.
 - `git diff --check` => passed.
 
@@ -276,30 +279,29 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- An ExecutionResultReview queue item returns a route only when its UUID
+- A ReportReview queue item returns a route only when its UUID
   `subject_ref` resolves to a RequirementReview whose Requirement belongs to
-  the same project and the current stage is `execution_result_review`.
+  the same project and the current stage is `report_review`.
 - The route includes the exact RequirementReview and WorkflowRun identifiers
   needed by the Report Failure Analysis page; the page verifies the returned
-  ExecutionResultReview gate before enabling controlled actions or generation.
+  ReportReview gate before enabling controlled actions or publication.
 - Missing, malformed, cross-project, wrong-stage, mismatched-run, and
   non-RequirementReview subjects retain a null route or fail closed in the page.
 - Explicit restore failure clears ExecutionResultReview, ReportReview,
   TestRun, failure-analysis, and report state and never falls back to local
   storage, recent runs, the default TestRun, or prior browser context.
 - The AI Workbench remains read-only; all mutations still use the
-  ExecutionResultReview API's current server lock version and exact approval id.
+  ReportReview API's current server lock version and exact approval id.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow): resume exact execution result review
+feat(workflow): resume exact report review
 ```
 
 ## Next Task
 
-Task 49.24 connects only standard ExecutionResultReview WorkflowRuns to the
-existing Report Failure Analysis page. Do not add ReportReview, generic route
-guesses, dashboards, RBAC, tenants, cross-user collaboration, or repair
-workflows.
+Task 49.25 connects only standard ReportReview WorkflowRuns to the existing
+Report Failure Analysis page. Do not add generic route guesses, dashboards,
+RBAC, tenants, cross-user collaboration, or repair workflows.

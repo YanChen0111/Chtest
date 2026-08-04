@@ -13,7 +13,14 @@
     </div>
 
     <a-alert
-      v-if="store.errorMessage"
+      v-if="store.exactRestoreFailed"
+      data-test="exact-execution-result-review-restore-failed"
+      type="error"
+      :content="store.errorMessage || '无法恢复指定的 ExecutionResultReview，请返回 AI 工作台刷新队列。'"
+      show-icon
+    />
+    <a-alert
+      v-else-if="store.errorMessage"
       data-test="reporting-error-state"
       type="error"
       :content="store.errorMessage"
@@ -121,6 +128,7 @@
             <a-button
               data-test="start-failure-analysis"
               type="primary"
+              :disabled="explicitRestoreRequested && !exactGenerationReady"
               :loading="store.loadingAnalysis"
               @click="startFailureAnalysis"
             >
@@ -128,6 +136,7 @@
             </a-button>
             <a-button
               data-test="start-report"
+              :disabled="explicitRestoreRequested && !exactGenerationReady"
               :loading="store.loadingReport"
               @click="startReport"
             >
@@ -136,7 +145,7 @@
           </a-space>
         </form>
 
-        <section class="recent-reporting-runs" data-test="reporting-recent-runs" aria-labelledby="reporting-recent-title">
+        <section v-if="!explicitRestoreRequested" class="recent-reporting-runs" data-test="reporting-recent-runs" aria-labelledby="reporting-recent-title">
           <div class="recent-heading">
             <div>
               <p class="eyebrow">会话连续性</p>
@@ -255,13 +264,32 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { artifactDownloadUrl } from '../../api/execution';
 import { useReportingStore } from '../../stores/reporting';
 import { useExecutionStore } from '../../stores/execution';
+import { DEFAULT_PROJECT_ID } from '../../stores/workflowContext';
 
 const store = useReportingStore();
 const executionStore = useExecutionStore();
+const route = useRoute();
+
+function queryValue(value: unknown): string | undefined {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return typeof candidate === 'string' && candidate.length ? candidate : undefined;
+}
+
+const requestedRequirementId = computed(() => queryValue(route.query.requirement_id));
+const requestedReviewId = computed(() => queryValue(route.query.requirement_review_id));
+const requestedWorkflowRunId = computed(() => queryValue(route.query.workflow_run_id));
+const requestedWorkflowStage = computed(() => queryValue(route.query.workflow_stage));
+const explicitRestoreRequested = computed(() => (
+  route.query.requirement_id !== undefined
+  || route.query.requirement_review_id !== undefined
+  || route.query.workflow_run_id !== undefined
+  || route.query.workflow_stage !== undefined
+));
 
 const staleRecentRunCount = computed(() =>
   executionStore.recentRuns.filter((run) => ['pending', 'running', 'execution_pending'].includes(run.status)).length,
@@ -269,6 +297,9 @@ const staleRecentRunCount = computed(() =>
 
 const selectedRun = computed(() => executionStore.recentRuns.find((run) => run.id === store.testRunId) ?? null);
 const executionResultReviewStateLabel = computed(() => store.executionResultReviewWorkflow?.workflow.state ?? 'not_loaded');
+const exactGenerationReady = computed(() => Boolean(
+  store.testRunId && store.executionResultReviewWorkflow?.workflow.approval_decision_id,
+));
 const reportReviewStateLabel = computed(() => {
   if (store.reportReviewWorkflow?.workflow.published) {
     return 'published';
@@ -381,10 +412,23 @@ function runReportReviewAction(
   void operations[action]();
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (explicitRestoreRequested.value) {
+    executionStore.recentRuns = [];
+    executionStore.recentRunsHydrated = false;
+    await store.loadExactExecutionResultReview(
+      DEFAULT_PROJECT_ID,
+      requestedRequirementId.value,
+      requestedReviewId.value,
+      requestedWorkflowRunId.value,
+      requestedWorkflowStage.value,
+    );
+    return;
+  }
+  store.clearExplicitRestoreRequest();
   executionStore.hydrateRecentRuns();
-  void store.loadExecutionResultReviewWorkflow();
-  void store.loadReportReviewWorkflow();
+  await store.loadExecutionResultReviewWorkflow();
+  await store.loadReportReviewWorkflow();
 });
 </script>
 

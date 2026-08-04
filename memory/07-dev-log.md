@@ -5270,3 +5270,34 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.24: expose and restore the exact standard ExecutionResultReview queue
   subject through the Report Failure Analysis page. Keep ReportReview and
   recent/default TestRun fallback out of scope.
+
+## 2026-08-04 Slice 49.24 Exact ExecutionResultReview Resume
+
+### Implemented
+
+- Extended exact queue routing to standard `execution_result_review` runs with
+  active same-project RequirementReview ownership.
+- Reused `/reports/failure-analysis` with exact Requirement,
+  RequirementReview, WorkflowRun, and stage values.
+- Added direct ExecutionResultReview restoration after clearing the default or
+  recent TestRun, both reporting gates, failure analysis, and report state.
+- Used only server-returned generated TestRun ids and kept analysis/report
+  generation disabled until the exact approval decision exists.
+- Preserved the read-only Workbench boundary and normal reporting entry flow.
+
+### Verification
+
+- Focused backend queue suite: `10 passed`.
+- Focused Report Failure Analysis + AI Workbench frontend suite: `2 files / 14
+  tests passed`.
+- Frontend typecheck passed.
+- Full backend: `533 passed`.
+- Full frontend: `26 files / 103 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.25: expose and restore the exact standard ReportReview queue subject
+  through the same reporting page. Keep generic routing and recent/default
+  report fallback out of scope.

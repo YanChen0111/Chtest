@@ -1,11 +1,60 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import ArcoVue from '@arco-design/web-vue';
 import { createPinia } from 'pinia';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ReportFailureAnalysisView from './ReportFailureAnalysisView.vue';
 import { useExecutionStore } from '../../stores/execution';
 import { useReportingStore } from '../../stores/reporting';
+
+const projectId = '00000000-0000-0000-0000-000000000101';
+const requirementId = '00000000-0000-0000-0000-000000000401';
+const requirementReviewId = '00000000-0000-0000-0000-000000000601';
+const workflowRunId = '00000000-0000-0000-0000-000000009101';
+const routeQuery: Record<string, string | undefined> = {};
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: routeQuery }),
+}));
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function exactRequirement() {
+  return {
+    id: requirementId,
+    project_id: projectId,
+    module_id: null,
+    title: 'Exact ExecutionResultReview requirement',
+    content: 'Restore only the authoritative execution result review gate.',
+    source_type: 'manual',
+    source_ref: 'REQ-EXECUTION-RESULT-EXACT',
+    status: 'active',
+    created_at: '2026-08-04T00:00:00Z',
+    updated_at: '2026-08-04T00:00:00Z',
+  };
+}
+
+function exactRequirementReview() {
+  return {
+    id: requirementReviewId,
+    requirement_id: requirementId,
+    overall_score: 94,
+    scores: { completeness: 94, clarity: 94, consistency: 94, testability: 94, feasibility: 94, logic: 94 },
+    issues: [],
+    clarification_questions: [],
+    test_design_notes: [],
+    risk_items: [],
+    used_knowledge: false,
+    used_context_artifact_ids: [],
+    context_manifest_artifact_id: null,
+    status: 'reviewed',
+  };
+}
 
 function failureAnalysisBody() {
   return {
@@ -127,6 +176,27 @@ function executionResultReviewBody(state = 'waiting_approval') {
   };
 }
 
+function exactExecutionResultReview(overrides: {
+  project_id?: string;
+  requirement_review_id?: string;
+  stage?: string;
+  run_id?: string;
+  state?: string;
+} = {}) {
+  const state = overrides.state ?? 'waiting_approval';
+  const body = executionResultReviewBody(state);
+  return {
+    ...body,
+    project_id: overrides.project_id ?? projectId,
+    requirement_review_id: overrides.requirement_review_id ?? requirementReviewId,
+    workflow: {
+      ...body.workflow,
+      run_id: overrides.run_id ?? workflowRunId,
+      stage: overrides.stage ?? 'execution_result_review',
+    },
+  };
+}
+
 function reportReviewBody(state = 'draft', published = false) {
   return {
     project_id: '00000000-0000-0000-0000-000000000101',
@@ -164,6 +234,134 @@ function reportReviewBody(state = 'draft', published = false) {
 }
 
 describe('ReportFailureAnalysisView', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    Object.keys(routeQuery).forEach((key) => delete routeQuery[key]);
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('restores the exact ExecutionResultReview and uses its server lock for actions', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'execution_result_review';
+    window.localStorage.setItem('chtest.execution.recent-runs', JSON.stringify([{
+      id: '00000000-0000-0000-0000-000000001399',
+      project_id: projectId,
+      name: 'stale recent run',
+      command: 'pytest stale',
+      status: 'failed',
+    }]));
+    let actionBody: unknown = null;
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/execution-result-review`) && !init?.method) {
+        return jsonResponse(exactExecutionResultReview());
+      }
+      if (url.endsWith('/execution-result-review/approve') && init?.method === 'POST') {
+        actionBody = JSON.parse(String(init.body));
+        return jsonResponse(exactExecutionResultReview({ state: 'approved' }));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+
+    const wrapper = mount(ReportFailureAnalysisView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    const reportingStore = useReportingStore(pinia);
+    const executionStore = useExecutionStore(pinia);
+    expect(reportingStore.requirementReviewId).toBe(requirementReviewId);
+    expect(reportingStore.testRunId).toBe('00000000-0000-0000-0000-000000001301');
+    expect(reportingStore.reportReviewWorkflow).toBeNull();
+    expect(reportingStore.failureAnalysis).toBeNull();
+    expect(reportingStore.report).toBeNull();
+    expect(executionStore.recentRuns).toEqual([]);
+    expect(wrapper.find('[data-test="reporting-recent-runs"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="start-failure-analysis"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-test="start-report"]').attributes('disabled')).toBeDefined();
+    expect(requestedUrls.some((url) => url.includes('/report-review'))).toBe(false);
+
+    await wrapper.find('[data-test="execution-result-review-approve"]').trigger('click');
+    await flushPromises();
+    expect(actionBody).toEqual(expect.objectContaining({
+      expected_version: 10,
+      comment: 'Execution result evidence reviewed.',
+    }));
+    expect(wrapper.find('[data-test="start-failure-analysis"]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-test="start-report"]').attributes('disabled')).toBeUndefined();
+  });
+
+  it.each([
+    ['project identity', { project_id: '00000000-0000-0000-0000-000000000199' }],
+    ['review identity', { requirement_review_id: '00000000-0000-0000-0000-000000000699' }],
+    ['workflow stage', { stage: 'report_review' }],
+    ['workflow run', { run_id: '00000000-0000-0000-0000-000000009199' }],
+  ])('fails closed when the restored ExecutionResultReview has a mismatched %s', async (_label, overrides) => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'execution_result_review';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/execution-result-review`)) {
+        return jsonResponse(exactExecutionResultReview(overrides));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+    const reportingStore = useReportingStore(pinia);
+    reportingStore.testRunId = '00000000-0000-0000-0000-000000001399';
+    reportingStore.requirementReviewId = requirementReviewId;
+    reportingStore.executionResultReviewWorkflow = executionResultReviewBody();
+    reportingStore.reportReviewWorkflow = reportReviewBody();
+    reportingStore.failureAnalysis = failureAnalysisBody();
+    reportingStore.report = reportBody();
+
+    const wrapper = mount(ReportFailureAnalysisView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(reportingStore.exactRestoreFailed).toBe(true);
+    expect(reportingStore.requirementReviewId).toBe('');
+    expect(reportingStore.testRunId).toBe('');
+    expect(reportingStore.executionResultReviewWorkflow).toBeNull();
+    expect(reportingStore.reportReviewWorkflow).toBeNull();
+    expect(reportingStore.failureAnalysis).toBeNull();
+    expect(reportingStore.report).toBeNull();
+    expect(wrapper.find('[data-test="exact-execution-result-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="execution-result-review-panel"]').exists()).toBe(false);
+  });
+
+  it('fails closed without network or recent context when an ExecutionResultReview route parameter is missing', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_stage = 'execution_result_review';
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(ReportFailureAnalysisView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-test="exact-execution-result-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="reporting-recent-runs"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="start-failure-analysis"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-test="start-report"]').attributes('disabled')).toBeDefined();
+  });
+
   it('offers a named resume action for recent test runs', async () => {
     const pinia = createPinia();
     const executionStore = useExecutionStore(pinia);

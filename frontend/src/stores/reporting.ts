@@ -29,8 +29,9 @@ import {
   type ReportRead,
   type ReportReviewWorkflowRead,
 } from '../api/reporting';
+import { getRequirement, getRequirementReview } from '../api/requirements';
+import { DEFAULT_PROJECT_ID } from './workflowContext';
 
-const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
 const DEFAULT_TEST_RUN_ID = '00000000-0000-0000-0000-000000001301';
 
 export const useReportingStore = defineStore('reporting', {
@@ -42,12 +43,92 @@ export const useReportingStore = defineStore('reporting', {
     reportReviewWorkflow: null as ReportReviewWorkflowRead | null,
     failureAnalysis: null as FailureAnalysisRead | null,
     report: null as ReportRead | null,
+    requestedRequirementId: null as string | null,
+    requestedReviewId: null as string | null,
+    requestedWorkflowRunId: null as string | null,
+    requestedWorkflowStage: null as string | null,
+    exactRestoreFailed: false,
     loadingAnalysis: false,
     loadingReport: false,
     errorMessage: '',
   }),
   actions: {
+    clearExplicitRestoreRequest() {
+      this.requestedRequirementId = null;
+      this.requestedReviewId = null;
+      this.requestedWorkflowRunId = null;
+      this.requestedWorkflowStage = null;
+      this.exactRestoreFailed = false;
+      this.errorMessage = '';
+    },
+    clearReportingSelection() {
+      this.testRunId = '';
+      this.requirementReviewId = '';
+      this.executionResultReviewWorkflow = null;
+      this.reportReviewWorkflow = null;
+      this.failureAnalysis = null;
+      this.report = null;
+    },
+    async loadExactExecutionResultReview(
+      projectId: string,
+      requirementId?: string,
+      reviewId?: string,
+      workflowRunId?: string,
+      workflowStage?: string,
+    ) {
+      this.loadingReport = true;
+      this.errorMessage = '';
+      this.projectId = projectId;
+      this.requestedRequirementId = requirementId ?? null;
+      this.requestedReviewId = reviewId ?? null;
+      this.requestedWorkflowRunId = workflowRunId ?? null;
+      this.requestedWorkflowStage = workflowStage ?? 'execution_result_review';
+      this.exactRestoreFailed = false;
+      this.clearReportingSelection();
+      try {
+        if (!requirementId || !reviewId || !workflowRunId) {
+          throw new Error('ExecutionResultReview 精确恢复参数不完整。');
+        }
+        const expectedStage = workflowStage ?? 'execution_result_review';
+        if (expectedStage !== 'execution_result_review') {
+          throw new Error('请求的工作流阶段不是 ExecutionResultReview。');
+        }
+        const [requirement, review, workflow] = await Promise.all([
+          getRequirement(requirementId),
+          getRequirementReview(requirementId),
+          getExecutionResultReviewWorkflow(projectId, reviewId),
+        ]);
+        if (
+          requirement.id !== requirementId
+          || requirement.project_id !== projectId
+          || requirement.status !== 'active'
+          || review.id !== reviewId
+          || review.requirement_id !== requirementId
+          || workflow.project_id !== projectId
+          || workflow.requirement_review_id !== reviewId
+          || workflow.workflow.stage !== expectedStage
+          || workflow.workflow.run_id !== workflowRunId
+        ) {
+          throw new Error('请求的 ExecutionResultReview 与服务端权威工作流不匹配。');
+        }
+        this.requirementReviewId = reviewId;
+        this.executionResultReviewWorkflow = workflow;
+        this.testRunId = workflow.generated_test_run_ids[0] ?? '';
+        return true;
+      } catch (error) {
+        this.clearReportingSelection();
+        this.exactRestoreFailed = true;
+        this.errorMessage = error instanceof Error ? error.message : '无法恢复指定的 ExecutionResultReview。';
+        return false;
+      } finally {
+        this.loadingReport = false;
+      }
+    },
     async startFailureAnalysis() {
+      if (!this.testRunId) {
+        this.errorMessage = 'Select an exact TestRun before starting failure analysis.';
+        return;
+      }
       if (this.requirementReviewId && !this.executionResultReviewWorkflow?.workflow.approval_decision_id) {
         this.errorMessage = 'ExecutionResultReview gate must be approved before failure analysis.';
         return;
@@ -69,6 +150,10 @@ export const useReportingStore = defineStore('reporting', {
       }
     },
     async startReport() {
+      if (!this.testRunId) {
+        this.errorMessage = 'Select an exact TestRun before generating a report.';
+        return;
+      }
       if (this.requirementReviewId && !this.executionResultReviewWorkflow?.workflow.approval_decision_id) {
         this.errorMessage = 'ExecutionResultReview gate must be approved before report generation.';
         return;
@@ -166,7 +251,7 @@ export const useReportingStore = defineStore('reporting', {
     },
     async editExecutionResultReviewGate() {
       const workflow = this.executionResultReviewWorkflow?.workflow;
-      if (!workflow || !this.requirementReviewId) return false;
+      if (!workflow || !this.requirementReviewId || !this.testRunId) return false;
       return this.runExecutionResultReviewAction(() => editExecutionResultReviewWorkflow(this.projectId, this.requirementReviewId, {
         expected_version: workflow.lock_version,
         result_decisions: this.currentExecutionResultDecisionSnapshot(),

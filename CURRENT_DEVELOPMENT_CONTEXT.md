@@ -314,12 +314,42 @@ Verification:
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.24
+## Completed Task 49.24
 
 Goal: extend exact queue restoration only to standard ExecutionResultReview
 runs through the existing Report Failure Analysis page. Verify the exact
 RequirementReview and WorkflowRun and fail closed without recent TestRun,
 report, failure-analysis, default-id, or browser fallback.
+
+Implementation:
+
+- The queue emits the Report Failure Analysis page only for exact
+  `execution_result_review` runs with active same-project RequirementReview
+  ownership.
+- Explicit restore clears both reporting gates, the default/recent TestRun,
+  failure analysis, and report before loading Requirement, RequirementReview,
+  and the authoritative ExecutionResultReview gate.
+- TestRun identity comes only from the gate's generated evidence; analysis and
+  report generation remain locked until the exact gate is approved.
+- Missing or mismatched explicit input never hydrates recent runs, loads
+  ReportReview, or uses prior browser context.
+
+Verification:
+
+- Focused backend queue: `10 passed`.
+- Focused Report Failure Analysis + AI Workbench frontend: `2 files / 14 tests`.
+- Frontend typecheck passed.
+- Full backend: `533 passed`.
+- Full frontend: `26 files / 103 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+## Active Task 49.25
+
+Goal: extend exact queue restoration only to standard ReportReview runs through
+the existing Report Failure Analysis page. Verify the exact RequirementReview
+and WorkflowRun and fail closed without recent TestRun, report,
+failure-analysis, default-id, or browser fallback.
 
 ## Running Local Services
 
@@ -342,9 +372,9 @@ report, failure-analysis, default-id, or browser fallback.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.23 with only its expected implementation and
+1. Commit and push Task 49.24 with only its expected implementation and
    continuity files.
-2. Read the Task 49.24 boundary in `NEXT_AI_TASK.md`.
-3. Implement exact standard ExecutionResultReview route resolution and
-   fail-closed page restore without broadening to ReportReview.
+2. Read the Task 49.25 boundary in `NEXT_AI_TASK.md`.
+3. Implement exact standard ReportReview route resolution and fail-closed page
+   restore without generic routing or recent report fallback.
 4. Preserve historical scratch directories and the protected source database.

@@ -11128,3 +11128,27 @@ restoration from the AI Workbench workflow queue.
 Next: apply the same exact-subject, exact-run, and exact-stage rule only to the
 standard ExecutionResultReview stage through the existing Report Failure
 Analysis page. Do not add terminal ReportReview behavior in the same task.
+
+## 2026-08-04 Slice 49.24 Exact ExecutionResultReview Resume
+
+Task 49.24 is complete; next is Task 49.25 exact ReportReview restoration from
+the AI Workbench workflow queue.
+
+- The queue resolves `execution_result_review` only for active same-project
+  RequirementReview ownership and emits exact Requirement, RequirementReview,
+  WorkflowRun, and stage values.
+- The reporting page clears default/recent TestRun, both reporting gates,
+  failure analysis, and report before loading the authoritative gate.
+- TestRun identity is taken only from the gate's generated run ids. Explicit
+  mode skips recent-run hydration and ReportReview recovery.
+- Analysis and report generation remain disabled until the exact
+  ExecutionResultReview is approved; mismatches and missing input fail closed.
+- Focused backend queue verification passed with `10 passed`; full backend
+  passed with `533 passed`.
+- Focused reporting + AI Workbench verification passed with `2 files / 14
+  tests`; full frontend passed with `26 files / 103 tests`.
+- Frontend typecheck and production build passed with the existing large-chunk
+  warning. `git diff --check` passed.
+
+Next: apply exact-subject, exact-run, and exact-stage restoration only to the
+terminal ReportReview stage through the same reporting page.
