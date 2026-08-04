@@ -9,8 +9,8 @@ require reading `AGENTS.md`, `START_HERE_FOR_AI.md`, and `NEXT_AI_TASK.md` first
 
 ```text
 Read AGENTS.md, START_HERE_FOR_AI.md, NEXT_AI_TASK.md, and
-CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.21 are complete. Continue
-Task 49.22 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
+CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.22 are complete. Continue
+Task 49.23 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
 never use storage/chtest-dev.db for migration or smoke data.
 ```
 
@@ -31,7 +31,7 @@ never use storage/chtest-dev.db for migration or smoke data.
 - Repository: `D:\Desktop\chenyan\Chtest-docs-preflight-vibecoding-fixes`
 - Branch: `docs/preflight-vibecoding-fixes`
 - Remote tracking: `origin/docs/preflight-vibecoding-fixes`
-- Last pushed commit: `24e74b7 feat(workflow): resume exact case review`
+- Last pushed commit: `42b8383 feat(workflow): resume exact automation plan review`
 - Previous backend campaign commit: `78c0ab3 feat(test-campaigns): add controlled campaign scope`
 - Task 49.14 is committed and pushed.
 - Task 49.15 is committed and pushed.
@@ -39,7 +39,8 @@ never use storage/chtest-dev.db for migration or smoke data.
 - Task 49.17 is committed and pushed.
 - Task 49.18 is committed and pushed.
 - Task 49.19 and Task 49.20 are committed and pushed through `24e74b7`.
-- Task 49.21 is complete and fully verified for its handoff commit.
+- Task 49.21 is committed and pushed as `42b8383`.
+- Task 49.22 is complete and fully verified for its handoff commit.
 
 Historical untracked `.pytest-tmp-*` directories and `.t49/` are test scratch
 data. Do not stage, commit, or delete them.
@@ -252,12 +253,42 @@ Verification:
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.22
+## Completed Task 49.22
 
 Goal: extend exact queue restoration only to standard AutomationDraftReview
 runs through the existing Automation Draft Review page. Verify the exact
 RequirementReview and WorkflowRun and fail closed without recent draft, plan,
 approved-test-case, or browser fallback.
+
+Implementation:
+
+- The queue emits the Automation Draft Review page only for exact
+  `automation_draft_review` runs with active same-project RequirementReview
+  ownership.
+- Explicit restore clears plan, draft, both automation gates, TestCase,
+  commands, and review history before loading the authoritative gate.
+- The page displays AutomationDraftReview without loading a recent draft;
+  submit, complete, approve, reject, and continue use the server lock, while
+  draft-dependent edit remains disabled.
+- Missing or mismatched explicit input never reads local-storage draft or asset
+  context.
+
+Verification:
+
+- Focused backend queue: `8 passed`.
+- Focused Automation Draft Review + AI Workbench frontend: `2 files / 24 tests`.
+- Frontend typecheck passed.
+- Full backend: `531 passed`.
+- Full frontend: `26 files / 91 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+## Active Task 49.23
+
+Goal: extend exact queue restoration only to standard ExecutionApproval runs
+through the existing pytest Execution page. Verify the exact RequirementReview
+and WorkflowRun and fail closed without recent draft, command, run, or browser
+fallback.
 
 ## Running Local Services
 
@@ -280,9 +311,9 @@ approved-test-case, or browser fallback.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.21 with only its expected implementation and
+1. Commit and push Task 49.22 with only its expected implementation and
    continuity files.
-2. Read the Task 49.22 boundary in `NEXT_AI_TASK.md`.
-3. Implement exact standard AutomationDraftReview route resolution and
-   fail-closed page restore without broadening to ExecutionApproval.
+2. Read the Task 49.23 boundary in `NEXT_AI_TASK.md`.
+3. Implement exact standard ExecutionApproval route resolution and fail-closed
+   page restore without broadening to ExecutionResultReview.
 4. Preserve historical scratch directories and the protected source database.

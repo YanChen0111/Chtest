@@ -3652,6 +3652,15 @@ Rules:
   non-RequirementReview subjects return `null` or fail closed without
   local-storage, newest-plan, newest-draft, latest-approved-TestCase, or prior
   browser-context fallback.
+- For an `automation_draft_review` run with the same ownership, the route uses
+  the same `/automation/drafts` page with exact Requirement,
+  RequirementReview, WorkflowRun, and `workflow_stage=automation_draft_review`
+  values. The page must use the project-scoped AutomationDraftReview API and
+  verify the exact stage and WorkflowRun id before exposing controlled actions.
+  Missing, malformed, inactive, cross-project, wrong-stage, mismatched-run, and
+  non-RequirementReview subjects return `null` or fail closed without
+  local-storage, newest-plan, newest-draft, latest-approved-TestCase, or prior
+  browser-context fallback.
 
 ### 11.11 Test Campaign Scope API
 

@@ -152,6 +152,60 @@ export const useAutomationStore = defineStore('automation', {
         this.loading = false;
       }
     },
+    async loadExactAutomationDraftReview(
+      projectId: string,
+      requirementId?: string,
+      reviewId?: string,
+      workflowRunId?: string,
+      workflowStage?: string,
+    ) {
+      this.loading = true;
+      this.errorMessage = '';
+      this.projectId = projectId;
+      this.requestedRequirementId = requirementId ?? null;
+      this.requestedReviewId = reviewId ?? null;
+      this.requestedWorkflowRunId = workflowRunId ?? null;
+      this.requestedWorkflowStage = workflowStage ?? 'automation_draft_review';
+      this.exactRestoreFailed = false;
+      this.clearAutomationReviewSelection();
+      try {
+        if (!requirementId || !reviewId || !workflowRunId) {
+          throw new Error('AutomationDraftReview 精确恢复参数不完整。');
+        }
+        const expectedStage = workflowStage ?? 'automation_draft_review';
+        if (expectedStage !== 'automation_draft_review') {
+          throw new Error('请求的工作流阶段不是 AutomationDraftReview。');
+        }
+        const [requirement, review, draftReview] = await Promise.all([
+          getRequirement(requirementId),
+          getRequirementReview(requirementId),
+          getAutomationDraftReviewWorkflow(projectId, reviewId),
+        ]);
+        if (
+          requirement.id !== requirementId
+          || requirement.project_id !== projectId
+          || requirement.status !== 'active'
+          || review.id !== reviewId
+          || review.requirement_id !== requirementId
+          || draftReview.project_id !== projectId
+          || draftReview.requirement_review_id !== reviewId
+          || draftReview.workflow.stage !== expectedStage
+          || draftReview.workflow.run_id !== workflowRunId
+        ) {
+          throw new Error('请求的 AutomationDraftReview 与服务端权威工作流不匹配。');
+        }
+        this.requirementReviewId = reviewId;
+        this.draftReviewWorkflow = draftReview;
+        return true;
+      } catch (error) {
+        this.clearAutomationReviewSelection();
+        this.exactRestoreFailed = true;
+        this.errorMessage = error instanceof Error ? error.message : '无法恢复指定的 AutomationDraftReview。';
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
     loadLatestApprovedTestCaseContext() {
       const latestCase = getLatestApprovedTestCaseContext();
       if (!latestCase) {
@@ -480,8 +534,8 @@ export const useAutomationStore = defineStore('automation', {
       }));
     },
     async loadAutomationDraftReviewWorkflow() {
-      const requirementReviewId = this.plan?.requirement_review_id;
-      if (!this.projectId || !requirementReviewId || !this.draft) {
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
+      if (!this.projectId || !requirementReviewId) {
         this.draftReviewWorkflow = null;
         return null;
       }
@@ -524,7 +578,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async submitAutomationDraftReviewGate() {
       const workflow = this.draftReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationDraftWorkflowAction(() => submitAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
@@ -532,7 +586,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async completeAutomationDraftReviewGate() {
       const workflow = this.draftReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationDraftWorkflowAction(() => completeAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
@@ -540,8 +594,8 @@ export const useAutomationStore = defineStore('automation', {
     },
     async editAutomationDraftReviewGate() {
       const workflow = this.draftReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
-      if (!workflow || !requirementReviewId) return false;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId || !this.draft) return false;
       return this.runAutomationDraftWorkflowAction(() => editAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
         draft_decisions: this.currentAutomationDraftDecisionSnapshot(),
@@ -549,7 +603,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async approveAutomationDraftReviewGate(comment?: string) {
       const workflow = this.draftReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationDraftWorkflowAction(() => approveAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
@@ -558,7 +612,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async rejectAutomationDraftReviewGate(comment?: string) {
       const workflow = this.draftReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationDraftWorkflowAction(() => rejectAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
@@ -567,7 +621,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async continueAutomationDraftReviewGate() {
       const workflow = this.draftReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       const approvalDecisionId = workflow?.approval_decision_id;
       if (!workflow || !requirementReviewId || !approvalDecisionId) return false;
       return this.runAutomationDraftWorkflowAction(() => continueAutomationDraftReviewWorkflow(
@@ -581,7 +635,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async approveAndContinueAutomationDraftReviewGate(comment?: string) {
       const workflow = this.draftReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationDraftWorkflowAction(() => approveAndContinueAutomationDraftReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,

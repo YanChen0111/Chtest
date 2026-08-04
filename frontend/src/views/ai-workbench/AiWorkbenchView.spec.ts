@@ -8,7 +8,7 @@ import AiWorkbenchView from './AiWorkbenchView.vue';
 function workflowQueueBody() {
   return {
     project_id: '00000000-0000-0000-0000-000000000101',
-    total: 7,
+    total: 8,
     groups: {
       waiting_review: [
         {
@@ -114,6 +114,23 @@ function workflowQueueBody() {
           route_path: '/automation/drafts?requirement_id=00000000-0000-0000-0000-000000000407&requirement_review_id=00000000-0000-0000-0000-000000000607&workflow_run_id=00000000-0000-0000-0000-000000009007&workflow_stage=automation_plan_review',
           created_at: '2026-07-30T08:02:55Z',
           updated_at: '2026-07-30T08:03:55Z',
+        },
+        {
+          id: '00000000-0000-0000-0000-000000009008',
+          project_id: '00000000-0000-0000-0000-000000000101',
+          workflow_kind: 'requirement_to_execution',
+          subject_ref: '00000000-0000-0000-0000-000000000608',
+          current_stage: 'automation_draft_review',
+          gate_state: 'waiting_approval',
+          bucket: 'waiting_approval',
+          lock_version: 11,
+          current_snapshot_id: '00000000-0000-0000-0000-000000009108',
+          input_snapshot_hash: 'sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd',
+          approval_decision_id: null,
+          can_continue: false,
+          route_path: '/automation/drafts?requirement_id=00000000-0000-0000-0000-000000000408&requirement_review_id=00000000-0000-0000-0000-000000000608&workflow_run_id=00000000-0000-0000-0000-000000009008&workflow_stage=automation_draft_review',
+          created_at: '2026-07-30T08:03:00Z',
+          updated_at: '2026-07-30T08:04:00Z',
         },
       ],
       can_continue: [
@@ -411,6 +428,7 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.text()).toContain('测试计划评审');
     expect(wrapper.text()).toContain('用例评审');
     expect(wrapper.text()).toContain('自动化计划评审');
+    expect(wrapper.text()).toContain('自动化草稿评审');
     expect(wrapper.text()).toContain('报告评审');
     expect(wrapper.text()).toContain('15');
     expect(wrapper.find('[data-test="workflow-queue-panel"]').exists()).toBe(true);
@@ -424,6 +442,7 @@ describe('AiWorkbenchView', () => {
       '/requirements/review?requirement_id=00000000-0000-0000-0000-000000000405&requirement_review_id=00000000-0000-0000-0000-000000000605&workflow_run_id=00000000-0000-0000-0000-000000009005&workflow_stage=test_plan_review',
       '/cases/generation-review?requirement_id=00000000-0000-0000-0000-000000000406&requirement_review_id=00000000-0000-0000-0000-000000000606&workflow_run_id=00000000-0000-0000-0000-000000009006&workflow_stage=case_review',
       '/automation/drafts?requirement_id=00000000-0000-0000-0000-000000000407&requirement_review_id=00000000-0000-0000-0000-000000000607&workflow_run_id=00000000-0000-0000-0000-000000009007&workflow_stage=automation_plan_review',
+      '/automation/drafts?requirement_id=00000000-0000-0000-0000-000000000408&requirement_review_id=00000000-0000-0000-0000-000000000608&workflow_run_id=00000000-0000-0000-0000-000000009008&workflow_stage=automation_draft_review',
     ]);
     expect(wrapper.text()).toContain('暂无入口');
     expect(wrapper.text()).toContain('OpenAI Compatible');

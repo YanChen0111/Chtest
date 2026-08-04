@@ -1,5 +1,30 @@
 # Session Handoff
 
+## 2026-08-04 Slice 49.22 Exact AutomationDraftReview Resume
+
+Task 49.22 is complete; next is Task 49.23 exact ExecutionApproval restoration
+from the AI Workbench workflow queue.
+
+- The queue returns the Automation Draft Review page only for a standard
+  `automation_draft_review` run with active same-project RequirementReview
+  ownership and exact Requirement, review, run, and stage values.
+- Explicit page restoration loads the Requirement, RequirementReview, and
+  project-scoped AutomationDraftReview gate directly after clearing TestCase,
+  command, plan, draft, both automation gates, and history state.
+- No recent draft or approved-TestCase context is loaded. The gate remains
+  actionable without reconstructing stale draft code; snapshot editing stays
+  disabled when the exact draft payload is unavailable.
+- Focused backend queue verification passed with `8 passed`; focused Automation
+  Draft Review + AI Workbench verification passed with `2 files / 24 tests`;
+  frontend typecheck passed.
+- Full backend passed with `531 passed`; full frontend passed with `26 files /
+  91 tests`; production build and `git diff --check` passed.
+- Historical scratch directories and `storage/chtest-dev.db` were untouched.
+
+Next: apply exact-subject, exact-run, and exact-stage restoration only to
+ExecutionApproval through the existing pytest Execution page. Do not add
+ExecutionResultReview routing in the same task.
+
 ## 2026-08-04 Slice 49.21 Exact AutomationPlanReview Resume
 
 Task 49.21 is complete; next is Task 49.22 exact AutomationDraftReview

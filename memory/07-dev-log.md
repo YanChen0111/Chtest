@@ -5207,3 +5207,35 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.22: expose and restore the exact standard AutomationDraftReview queue
   subject through the existing Automation Draft Review page. Keep
   ExecutionApproval and recent plan/draft fallback out of scope.
+
+## 2026-08-04 Slice 49.22 Exact AutomationDraftReview Resume
+
+### Implemented
+
+- Extended exact queue routing to standard `automation_draft_review` runs with
+  active same-project RequirementReview ownership.
+- Reused `/automation/drafts` with exact Requirement, RequirementReview,
+  WorkflowRun, and stage values.
+- Added direct AutomationDraftReview restoration after clearing stale plan,
+  draft, TestCase, command, gate, and history state.
+- Kept controlled gate actions on server lock versions and approval ids without
+  loading recent draft code; draft-dependent snapshot edit remains disabled.
+- Preserved the read-only Workbench boundary and all existing normal-entry
+  automation behavior.
+
+### Verification
+
+- Focused backend queue suite: `8 passed`.
+- Focused Automation Draft Review + AI Workbench frontend suite: `2 files / 24
+  tests passed`.
+- Frontend typecheck passed.
+- Full backend: `531 passed`.
+- Full frontend: `26 files / 91 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.23: expose and restore the exact standard ExecutionApproval queue
+  subject through the pytest Execution page. Keep ExecutionResultReview and
+  recent draft/run fallback out of scope.

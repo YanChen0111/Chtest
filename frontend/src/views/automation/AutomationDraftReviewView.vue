@@ -27,7 +27,15 @@
       </li>
     </ol>
 
-    <a-alert v-if="store.exactRestoreFailed" data-test="exact-automation-plan-restore-failed" type="error" show-icon>
+    <a-alert
+      v-if="store.exactRestoreFailed && requestedWorkflowStage === 'automation_draft_review'"
+      data-test="exact-automation-draft-restore-failed"
+      type="error"
+      show-icon
+    >
+      {{ store.errorMessage || '无法恢复指定的 AutomationDraftReview，请返回 AI 工作台刷新队列。' }}
+    </a-alert>
+    <a-alert v-else-if="store.exactRestoreFailed" data-test="exact-automation-plan-restore-failed" type="error" show-icon>
       {{ store.errorMessage || '无法恢复指定的 AutomationPlanReview，请返回 AI 工作台刷新队列。' }}
     </a-alert>
     <a-alert v-else-if="store.errorMessage" data-test="automation-error-state" type="error" show-icon>{{ store.errorMessage }}</a-alert>
@@ -261,7 +269,7 @@
                 <a-button data-test="automation-draft-review-complete" :disabled="!store.draftReviewWorkflow.workflow.can_complete_review" :loading="store.loading" @click="runAutomationDraftReviewAction('complete')">
                   Complete review
                 </a-button>
-                <a-button data-test="automation-draft-review-edit" :disabled="!store.draftReviewWorkflow.workflow.can_edit" :loading="store.loading" @click="runAutomationDraftReviewAction('edit')">
+                <a-button data-test="automation-draft-review-edit" :disabled="!store.draftReviewWorkflow.workflow.can_edit || !store.draft" :loading="store.loading" @click="runAutomationDraftReviewAction('edit')">
                   Save snapshot
                 </a-button>
                 <a-button data-test="automation-draft-review-approve" type="primary" :disabled="!store.draftReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationDraftReviewAction('approve')">
@@ -427,6 +435,51 @@
               </a-spin>
             </section>
           </template>
+
+          <section
+            v-else-if="store.draftReviewWorkflow"
+            class="automation-plan-workflow-panel"
+            data-test="automation-draft-workflow-panel"
+          >
+            <div class="automation-plan-workflow-heading">
+              <strong>AutomationDraftReview gate</strong>
+              <a-tag color="blue">{{ automationDraftReviewStageLabel }}</a-tag>
+              <a-tag :color="store.draftReviewWorkflow.workflow.state === 'approved' ? 'green' : 'orange'">
+                {{ automationDraftReviewStateLabel }}
+              </a-tag>
+            </div>
+            <div class="automation-plan-workflow-body">
+              <span>snapshot</span>
+              <strong>{{ store.draftReviewWorkflow.workflow.snapshot_id }}</strong>
+              <span>drafts</span>
+              <strong>{{ store.draftReviewWorkflow.generated_draft_ids.length }}</strong>
+              <span>approval</span>
+              <strong>{{ store.draftReviewWorkflow.workflow.approval_decision_id ?? 'none' }}</strong>
+            </div>
+            <a-space wrap>
+              <a-button data-test="automation-draft-review-submit" :disabled="!store.draftReviewWorkflow.workflow.can_submit" :loading="store.loading" @click="runAutomationDraftReviewAction('submit')">
+                Submit
+              </a-button>
+              <a-button data-test="automation-draft-review-complete" :disabled="!store.draftReviewWorkflow.workflow.can_complete_review" :loading="store.loading" @click="runAutomationDraftReviewAction('complete')">
+                Complete review
+              </a-button>
+              <a-button data-test="automation-draft-review-edit" disabled :loading="store.loading">
+                Save snapshot
+              </a-button>
+              <a-button data-test="automation-draft-review-approve" type="primary" :disabled="!store.draftReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationDraftReviewAction('approve')">
+                Approve
+              </a-button>
+              <a-button data-test="automation-draft-review-reject" status="danger" :disabled="!store.draftReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationDraftReviewAction('reject')">
+                Reject
+              </a-button>
+              <a-button data-test="automation-draft-review-approve-continue" type="primary" :disabled="!store.draftReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationDraftReviewAction('approve-and-continue')">
+                Approve and continue
+              </a-button>
+              <a-button data-test="automation-draft-review-continue" :disabled="!store.draftReviewWorkflow.workflow.can_continue" :loading="store.loading" @click="runAutomationDraftReviewAction('continue')">
+                Continue
+              </a-button>
+            </a-space>
+          </section>
 
           <a-empty v-else description="生成后展示自动化草稿" />
         </a-spin>
@@ -862,13 +915,23 @@ function shortId(value: string): string {
 
 onMounted(async () => {
   if (explicitRestoreRequested.value) {
-    await store.loadExactAutomationPlanReview(
-      DEFAULT_PROJECT_ID,
-      requestedRequirementId.value,
-      requestedReviewId.value,
-      requestedWorkflowRunId.value,
-      requestedWorkflowStage.value,
-    );
+    if (requestedWorkflowStage.value === 'automation_draft_review') {
+      await store.loadExactAutomationDraftReview(
+        DEFAULT_PROJECT_ID,
+        requestedRequirementId.value,
+        requestedReviewId.value,
+        requestedWorkflowRunId.value,
+        requestedWorkflowStage.value,
+      );
+    } else {
+      await store.loadExactAutomationPlanReview(
+        DEFAULT_PROJECT_ID,
+        requestedRequirementId.value,
+        requestedReviewId.value,
+        requestedWorkflowRunId.value,
+        requestedWorkflowStage.value,
+      );
+    }
     form.testCaseId = '';
     return;
   }
