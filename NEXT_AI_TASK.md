@@ -10,9 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.14 is complete. Task 49.15 makes AI Workbench TestCampaign queue links
-restore the exact project-scoped campaign named by the server instead of
-falling back to the most recent local campaign.
+Task 49.15 is complete. Task 49.16 makes an AI Workbench RequirementReview
+queue link restore the exact same-project Requirement and RequirementReview
+named by the server instead of falling back to recent browser context.
 
 Verified behavior:
 
@@ -88,6 +88,9 @@ Verified behavior:
 21. Scope submit, review, approve, reject, and continue actions stop on stale
     versions; successful continue navigates only after the backend returns the
     adjacent `requirement_review` stage.
+22. AI Workbench Scope queue routes resolve only active same-project
+    TestCampaign subjects. The Scope page restores the exact campaign id and
+    fails closed without listing or selecting a different campaign.
 
 ## Previous Tasks Verified
 
@@ -174,9 +177,9 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can now create, inspect, edit, reject, approve, and advance a
-release scope from one controlled page while preserving server-owned coverage
-and workflow authority.
+Test engineers can resume an actionable RequirementReview directly from the
+read-only workflow queue without acting on a stale or unrelated browser
+selection.
 
 ## Must Read
 
@@ -199,7 +202,7 @@ and workflow authority.
 
 ## Expected Files
 
-Default write boundary for Task 49.15:
+Default write boundary for Task 49.16:
 
 ```text
 NEXT_AI_TASK.md
@@ -208,9 +211,10 @@ memory/07-dev-log.md
 docs/contracts/02-api-contract.md
 backend/app/modules/workflow_control/service.py
 backend/app/tests/workflow_control/test_workflow_queue.py
-frontend/src/stores/testCampaigns.ts
-frontend/src/views/campaigns/TestCampaignScopeView.vue
-frontend/src/views/campaigns/TestCampaignScopeView.spec.ts
+frontend/src/api/requirements.ts
+frontend/src/stores/requirements.ts
+frontend/src/views/requirements/RequirementReviewView.vue
+frontend/src/views/requirements/RequirementReviewView.spec.ts
 frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
@@ -227,42 +231,44 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.14 evidence:
+Latest Task 49.15 evidence:
 
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/campaign-ui-final` => `524 passed`
-- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 64 tests passed`
+- Focused backend queue verification => `2 passed`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q` => `525 passed`.
+- Focused Scope + AI Workbench frontend verification => `2 files / 10 tests passed`.
+- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 66 tests passed`.
 - `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
 - `git diff --check` => passed
-- Real browser QA completed the full Scope gate through approval and confirmed
-  server-backed navigation to `/requirements/review`; desktop and `390x844`
-  layouts had no horizontal overflow or overlapping action controls.
 
 The source `storage/chtest-dev.db` remains blocked and read-only. Do not run
 upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- A Scope WorkflowRun queue item returns a route only when its `subject_ref` is
-  a valid TestCampaign in the same project and the current stage is `scope`.
-- The route includes the exact campaign id. Opening it loads that campaign by
-  project and id, never the newest campaign or prior browser state.
-- An explicit missing, malformed, or cross-project campaign id fails closed and
-  does not fall back to another campaign.
+- A RequirementReview queue item returns a route only when its UUID
+  `subject_ref` resolves to a RequirementReview whose Requirement belongs to
+  the same project and the current stage is `requirement_review`.
+- The route includes the exact Requirement and RequirementReview ids. Opening
+  it loads and verifies both records plus the authoritative workflow run.
+- Missing, malformed, cross-project, mismatched-review, and non-RequirementReview
+  subjects retain a null route or fail closed in the page.
+- An explicit restore failure clears review state, disables controlled actions,
+  and never falls back to local storage, the newest Requirement, or prior
+  browser state.
 - The AI Workbench remains read-only; the route is only a navigation hint and
-  all mutations still require the TestCampaign API's lock version and approval.
-- Existing queue items whose pages cannot restore their exact subject retain a
-  null route.
+  all mutations still require the RequirementReview API's server lock version.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow): resume exact test campaign scope
+feat(workflow): resume exact requirement review
 ```
 
 ## Next Task
 
-Task 49.15 connects the read-only AI Workbench queue to the exact controlled
-Scope campaign. Keep route creation deterministic and project-scoped. Do not
-add generic route guesses for other workflow stages, dashboards, RBAC, tenants,
+Task 49.16 connects only standard RequirementReview WorkflowRuns to the exact
+Requirement review page. Keep TestCampaign-origin RequirementReview runs null
+until their adjacent-stage domain contract is defined. Do not add RiskReview,
+TestPlanReview, CaseReview, generic route guesses, dashboards, RBAC, tenants,
 cross-user collaboration, execution/report orchestration, or repair workflows.

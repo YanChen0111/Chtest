@@ -10,8 +10,9 @@ from sqlalchemy.orm import Session
 
 from backend.app.main import app
 from backend.app.models.base import Base
-from backend.app.modules.projects.models import Project, Workspace
+from backend.app.modules.projects.models import Environment, Project, Workspace
 from backend.app.modules.projects.router import get_session
+from backend.app.modules.test_campaigns.models import TestCampaign
 from backend.app.modules.workflow_control.models import (
     WorkflowHumanDecision,
     WorkflowRun,
@@ -127,6 +128,90 @@ def _create_run(
             created_by="queue-test",
         ),
     )
+
+
+def _campaign(session: Session, project: Project, *, status: str = "active") -> TestCampaign:
+    environment = Environment(project_id=project.id, name=f"env-{uuid.uuid4()}", variables_json={})
+    session.add(environment)
+    session.flush()
+    campaign = TestCampaign(
+        project_id=project.id,
+        name="Queue campaign",
+        scope_statement="Restore this exact campaign.",
+        target_environment_id=environment.id,
+        target_version_ref="release/2026.08",
+        exit_conditions_json=["No open critical defects"],
+        requirement_ids_json=[],
+        risk_ids_json=[],
+        test_plan_snapshot_ids_json=[],
+        approved_case_ids_json=[],
+        coverage_rows_json=[],
+        status=status,
+    )
+    session.add(campaign)
+    session.flush()
+    return campaign
+
+
+def test_workflow_queue_routes_only_exact_same_project_scope_campaign() -> None:
+    with _session() as session:
+        project, other_project = _projects(session)
+        campaign = _campaign(session, project)
+        other_campaign = _campaign(session, other_project)
+        inactive_campaign = _campaign(session, project, status="archived")
+
+        valid = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(campaign.id), stage=ControlledStage.SCOPE).id,
+            expected_version=0,
+        )
+        cross_project = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(other_campaign.id), stage=ControlledStage.SCOPE).id,
+            expected_version=0,
+        )
+        inactive = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(inactive_campaign.id), stage=ControlledStage.SCOPE).id,
+            expected_version=0,
+        )
+        missing = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(uuid.uuid4()), stage=ControlledStage.SCOPE).id,
+            expected_version=0,
+        )
+        malformed = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref="not-a-campaign-id", stage=ControlledStage.SCOPE).id,
+            expected_version=0,
+        )
+        wrong_stage = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(campaign.id)).id,
+            expected_version=0,
+        )
+
+        by_id = {item["id"]: item for item in list_workflow_queue(session, project.id)}
+        campaign_id = campaign.id
+        valid_id = valid.id
+        cross_project_id = cross_project.id
+        inactive_id = inactive.id
+        missing_id = missing.id
+        malformed_id = malformed.id
+        wrong_stage_id = wrong_stage.id
+
+    assert by_id[valid_id]["route_path"] == f"/campaigns/scope?campaign_id={campaign_id}"
+    assert by_id[cross_project_id]["route_path"] is None
+    assert by_id[inactive_id]["route_path"] is None
+    assert by_id[missing_id]["route_path"] is None
+    assert by_id[malformed_id]["route_path"] is None
+    assert by_id[wrong_stage_id]["route_path"] is None
 
 
 def test_workflow_queue_groups_only_actionable_project_runs() -> None:

@@ -3610,6 +3610,12 @@ Rules:
   generic page path that falls back to recent browser context must return
   `null`. A non-null route remains a navigation hint, not an authorization
   grant, and cannot replace the owning stage API's server-side checks.
+- For an active `scope` run whose `subject_ref` resolves to an active
+  same-project TestCampaign, the route is
+  `/campaigns/scope?campaign_id={subject_ref}`. Malformed, missing, inactive,
+  cross-project, or non-Scope subjects return `null`. The Scope page must load
+  that exact id and must not fall back to the newest campaign when an explicit
+  id cannot be restored.
 
 ### 11.11 Test Campaign Scope API
 

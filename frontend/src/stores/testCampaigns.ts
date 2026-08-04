@@ -25,6 +25,7 @@ export const useTestCampaignStore = defineStore('testCampaigns', {
     settings: null as ProjectSettings | null,
     campaigns: [] as TestCampaignRead[],
     campaign: null as TestCampaignRead | null,
+    requestedCampaignId: null as string | null,
     loading: false,
     saving: false,
     stale: false,
@@ -33,7 +34,9 @@ export const useTestCampaignStore = defineStore('testCampaigns', {
   }),
   getters: {
     workflow: (state) => state.campaign?.workflow ?? null,
-    canSave: (state) => !state.stale && (!state.campaign || state.campaign.workflow.stage === 'scope'),
+    canSave: (state) => !state.stale
+      && (!state.requestedCampaignId || Boolean(state.campaign))
+      && (!state.campaign || state.campaign.workflow.stage === 'scope'),
     canSubmit: (state) => !state.stale && state.campaign?.workflow.stage === 'scope'
       && state.campaign.workflow.state === 'draft',
     canCompleteReview: (state) => !state.stale && state.campaign?.workflow.stage === 'scope'
@@ -48,21 +51,26 @@ export const useTestCampaignStore = defineStore('testCampaigns', {
     ),
   },
   actions: {
-    async load(projectId?: string) {
+    async load(projectId?: string, campaignId?: string) {
       this.loading = true;
       this.errorMessage = '';
       this.successMessage = '';
       this.stale = false;
       this.projectId = projectId ?? this.projectId;
+      this.requestedCampaignId = campaignId ?? null;
       try {
         const [settings, campaigns] = await Promise.all([
           getProjectSettings(this.projectId),
-          listTestCampaigns(this.projectId),
+          campaignId
+            ? getTestCampaign(this.projectId, campaignId).then((campaign) => [campaign])
+            : listTestCampaigns(this.projectId),
         ]);
         this.settings = settings;
         this.campaigns = campaigns;
         this.campaign = campaigns[0] ?? null;
       } catch (error) {
+        this.campaigns = [];
+        this.campaign = null;
         this.errorMessage = messageFromError(error, '测试范围加载失败');
       } finally {
         this.loading = false;
@@ -70,7 +78,7 @@ export const useTestCampaignStore = defineStore('testCampaigns', {
     },
     async refresh() {
       if (!this.campaign) {
-        await this.load();
+        await this.load(this.projectId, this.requestedCampaignId ?? undefined);
         return;
       }
       this.loading = true;

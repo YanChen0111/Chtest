@@ -211,7 +211,7 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { IconCheck, IconClose, IconRefresh, IconRight, IconSave } from '@arco-design/web-vue/es/icon';
 
 import type { CampaignCoverageKind, TestCampaignRead, TestCampaignScopeInput } from '../../api/testCampaigns';
@@ -227,6 +227,7 @@ const workflowSteps = [
 ] as const;
 
 const store = useTestCampaignStore();
+const route = useRoute();
 const router = useRouter();
 const reviewComment = ref('');
 const form = reactive({
@@ -268,6 +269,11 @@ const EvidenceIdField = defineComponent({
 const activeEnvironments = computed(() => (
   store.settings?.environments.filter((environment) => environment.status === 'active') ?? []
 ));
+const requestedCampaignId = computed(() => {
+  const value = route.query.campaign_id;
+  const campaignId = Array.isArray(value) ? value[0] : value;
+  return typeof campaignId === 'string' && campaignId.length ? campaignId : undefined;
+});
 const coverageRows = computed(() => store.campaign?.coverage_rows ?? []);
 const coveredCount = computed(() => coverageRows.value.filter((row) => row.coverage_status === 'covered').length);
 const canApprove = computed(() => store.workflow?.state === 'waiting_approval' && !store.stale);
@@ -291,6 +297,7 @@ const stateTone = computed(() => ({
 }[store.workflow?.state ?? 'draft'] ?? 'neutral'));
 const actionHint = computed(() => {
   if (store.stale) return '刷新后才能继续操作';
+  if (!store.campaign && requestedCampaignId.value) return '指定测试活动无法恢复，请返回工作台或刷新';
   if (!store.campaign) return '填写范围并保存第一个草稿';
   if (store.canSubmit) return '草稿需要提交后才能进入人工评审';
   if (store.canCompleteReview) return '人工检查后完成评审';
@@ -383,7 +390,7 @@ function workflowStepClass(step: string) {
   };
 }
 
-onMounted(() => store.load());
+onMounted(() => store.load(undefined, requestedCampaignId.value));
 </script>
 
 <style scoped>

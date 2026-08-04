@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.modules.projects.models import Project
+from backend.app.modules.test_campaigns.models import TestCampaign
 from backend.app.modules.workflow_control.models import (
     WorkflowHumanDecision,
     WorkflowRun,
@@ -229,6 +230,7 @@ def list_workflow_queue(session: Session, project_id: uuid.UUID) -> list[dict[st
         if bucket is None:
             continue
         stage = ControlledStage(run.current_stage)
+        route_path = _exact_scope_route(session, run, stage)
         items.append(
             {
                 "id": run.id,
@@ -243,8 +245,7 @@ def list_workflow_queue(session: Session, project_id: uuid.UUID) -> list[dict[st
                 "input_snapshot_hash": run.input_snapshot_hash,
                 "approval_decision_id": approval.id if can_continue and approval is not None else None,
                 "can_continue": can_continue,
-                # A route is exposed only after its page can restore this exact run.
-                "route_path": None,
+                "route_path": route_path,
                 "created_at": run.created_at.isoformat(),
                 "updated_at": run.updated_at.isoformat(),
             },
@@ -259,6 +260,26 @@ def list_workflow_queue(session: Session, project_id: uuid.UUID) -> list[dict[st
             str(item["id"]),
         ),
     )
+
+
+def _exact_scope_route(session: Session, run: WorkflowRun, stage: ControlledStage) -> str | None:
+    """Return a navigation hint only when Scope can restore this exact subject."""
+    if stage is not ControlledStage.SCOPE or run.workflow_kind != WorkflowKind.REQUIREMENT_TO_EXECUTION.value:
+        return None
+    try:
+        campaign_id = uuid.UUID(run.subject_ref)
+    except (ValueError, AttributeError):
+        return None
+    campaign = session.scalar(
+        select(TestCampaign).where(
+            TestCampaign.id == campaign_id,
+            TestCampaign.project_id == run.project_id,
+            TestCampaign.status == "active",
+        ),
+    )
+    if campaign is None:
+        return None
+    return f"/campaigns/scope?campaign_id={campaign.id}"
 
 
 def submit_for_review(

@@ -6,8 +6,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import TestCampaignScopeView from './TestCampaignScopeView.vue';
 
 const pushMock = vi.fn();
+const routeQuery: { campaign_id?: string } = {};
 
 vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: routeQuery }),
   useRouter: () => ({ push: pushMock }),
 }));
 
@@ -32,6 +34,7 @@ describe('TestCampaignScopeView', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     pushMock.mockReset();
+    delete routeQuery.campaign_id;
   });
 
   it('creates a scope draft with explicit environment, version, and exit conditions', async () => {
@@ -79,6 +82,50 @@ describe('TestCampaignScopeView', () => {
     expect(wrapper.text()).toContain('Snapshot 1');
     expect((wrapper.find('[data-test="campaign-name"] input').element as HTMLInputElement).value)
       .toBe('Checkout release 2026.08');
+  });
+
+  it('loads the exact campaign requested by the workflow queue route', async () => {
+    routeQuery.campaign_id = campaignId;
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/projects/${projectId}/settings`)) return jsonResponse(settingsResponse);
+      if (url.endsWith(`/projects/${projectId}/test-campaigns/${campaignId}`)) {
+        return jsonResponse(campaignResponse('waiting_review', 4));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(requestedUrls.some((url) => url.endsWith(`/test-campaigns/${campaignId}`))).toBe(true);
+    expect(requestedUrls.some((url) => url.endsWith(`/projects/${projectId}/test-campaigns`))).toBe(false);
+    expect((wrapper.find('[data-test="campaign-name"] input').element as HTMLInputElement).value)
+      .toBe('Checkout release 2026.08');
+    expect(wrapper.text()).toContain('待人工评审');
+  });
+
+  it('fails closed when an explicit campaign id cannot be restored', async () => {
+    routeQuery.campaign_id = 'not-a-uuid';
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/projects/${projectId}/settings`)) return jsonResponse(settingsResponse);
+      if (url.endsWith('/test-campaigns/not-a-uuid')) {
+        return jsonResponse({ error_code: 'VALIDATION_ERROR', message: 'Campaign id is invalid.', details: {} }, 422);
+      }
+      return new Response('not found', { status: 404 });
+    }));
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(requestedUrls.some((url) => url.endsWith(`/projects/${projectId}/test-campaigns`))).toBe(false);
+    expect(wrapper.text()).toContain('指定测试活动无法恢复');
+    expect(wrapper.find('[data-test="campaign-save"]').attributes('disabled')).toBeDefined();
   });
 
   it('renders persisted coverage and sends exact workflow versions through continue', async () => {

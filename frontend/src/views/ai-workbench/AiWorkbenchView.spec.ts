@@ -16,7 +16,7 @@ function workflowQueueBody() {
           project_id: '00000000-0000-0000-0000-000000000101',
           workflow_kind: 'requirement_to_execution',
           subject_ref: '00000000-0000-0000-0000-000000000601',
-          current_stage: 'risk_review',
+          current_stage: 'scope',
           gate_state: 'waiting_review',
           bucket: 'waiting_review',
           lock_version: 4,
@@ -24,7 +24,7 @@ function workflowQueueBody() {
           input_snapshot_hash: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
           approval_decision_id: null,
           can_continue: false,
-          route_path: null,
+          route_path: '/campaigns/scope?campaign_id=00000000-0000-0000-0000-000000000601',
           created_at: '2026-07-30T08:00:00Z',
           updated_at: '2026-07-30T08:01:00Z',
         },
@@ -337,7 +337,7 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.text()).toContain('待人工评审');
     expect(wrapper.text()).toContain('待批准');
     expect(wrapper.text()).toContain('已批准，可继续');
-    expect(wrapper.text()).toContain('风险评审');
+    expect(wrapper.text()).toContain('测试范围');
     expect(wrapper.text()).toContain('用例评审');
     expect(wrapper.text()).toContain('报告评审');
     expect(wrapper.text()).toContain('15');
@@ -345,7 +345,9 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.find('[data-test="workflow-queue-can_continue"]').text()).toContain(
       '00000000-0000-0000-0000-000000009103',
     );
-    expect(wrapper.find('[data-test="workflow-queue-open"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="workflow-queue-open"]').attributes('href')).toBe(
+      '/campaigns/scope?campaign_id=00000000-0000-0000-0000-000000000601',
+    );
     expect(wrapper.text()).toContain('暂无入口');
     expect(wrapper.text()).toContain('OpenAI Compatible');
     expect(wrapper.text()).toContain('OpenAI Compatible · gpt-5.5');

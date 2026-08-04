@@ -4978,3 +4978,35 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 49.15: expose a route only for Scope queue items that can restore the
   exact same-project TestCampaign, and fail closed on invalid explicit ids.
+
+## 2026-08-04 Slice 49.15 Exact TestCampaign Scope Resume
+
+### Implemented
+
+- Added deterministic same-project Scope route resolution to the read-only
+  WorkflowRun queue.
+- Required the TestCampaign Scope page to load an explicit campaign id directly
+  and fail closed on malformed, missing, inactive, or otherwise unavailable
+  subjects without falling back to a recent campaign.
+- Preserved server-owned lock versions and approval ids for every mutation; the
+  queue route remains a navigation hint rather than authorization.
+- Added backend and frontend coverage for the exact route and fail-closed
+  branches, and updated the API contract.
+
+### Verification
+
+- Focused backend queue suite: `2 passed`.
+- Full backend: `525 passed`.
+- Focused Scope + AI Workbench frontend suite: `2 files / 10 tests passed`.
+- Full frontend: `26 files / 66 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+- Historical pytest scratch directories and the protected source database were
+  not modified.
+
+### Next
+
+- Task 49.16: expose an exact route only for standard same-project
+  RequirementReview subjects and make the RequirementReview page fail closed
+  on explicit restore failure. Do not route TestCampaign-origin
+  RequirementReview runs until their adjacent-stage domain contract exists.

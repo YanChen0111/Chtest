@@ -10885,3 +10885,32 @@ the AI Workbench workflow queue.
 
 Next: return an exact Scope route from the read-only workflow queue and make the
 page fail closed when an explicit campaign id cannot be restored.
+
+## 2026-08-04 Slice 49.15 Exact TestCampaign Scope Resume
+
+Task 49.15 is complete; next is Task 49.16 exact RequirementReview restoration
+from the AI Workbench workflow queue.
+
+- The read-only workflow queue now returns
+  `/campaigns/scope?campaign_id={id}` only when an active Scope run's UUID
+  subject resolves to an active TestCampaign in the same project.
+- Malformed, missing, inactive, cross-project, non-Scope, and unsupported
+  subjects retain a null route.
+- The Scope store and page load an explicit campaign id directly. Failed
+  explicit restore clears campaign state, disables save and workflow actions,
+  and refresh retries the same id without listing or selecting another
+  campaign.
+- The API contract records the exact route and fail-closed restore semantics.
+- Focused backend queue verification passed with `2 passed`; full backend
+  regression passed with `525 passed`.
+- Focused Scope + AI Workbench frontend verification passed with `2 files / 10
+  tests`; full frontend passed with `26 files / 66 tests`.
+- Production build passed with the existing large-chunk warning, and
+  `git diff --check` passed.
+- Historical `.pytest-tmp-*` and `.t49/` scratch directories were preserved and
+  excluded from the commit. The protected `storage/chtest-dev.db` was not used.
+
+Next: expose an exact route only for standard same-project RequirementReview
+subjects and make explicit page restore fail closed without local-storage or
+recent-record fallback. TestCampaign-origin RequirementReview runs remain null
+until their adjacent-stage domain contract is defined.
