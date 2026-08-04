@@ -233,6 +233,35 @@ function reportReviewBody(state = 'draft', published = false) {
   };
 }
 
+function exactReportReview(overrides: {
+  project_id?: string;
+  requirement_review_id?: string;
+  stage?: string;
+  run_id?: string;
+  state?: string;
+} = {}) {
+  const state = overrides.state ?? 'waiting_approval';
+  const body = reportReviewBody(state);
+  return {
+    ...body,
+    project_id: overrides.project_id ?? projectId,
+    requirement_review_id: overrides.requirement_review_id ?? requirementReviewId,
+    workflow: {
+      ...body.workflow,
+      run_id: overrides.run_id ?? workflowRunId,
+      stage: overrides.stage ?? 'report_review',
+    },
+  };
+}
+
+function exactReport(overrides: { project_id?: string; related_entity_id?: string } = {}) {
+  return {
+    ...reportBody(),
+    project_id: overrides.project_id ?? projectId,
+    related_entity_id: overrides.related_entity_id ?? '00000000-0000-0000-0000-000000001301',
+  };
+}
+
 describe('ReportFailureAnalysisView', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -360,6 +389,145 @@ describe('ReportFailureAnalysisView', () => {
     expect(wrapper.find('[data-test="reporting-recent-runs"]').exists()).toBe(false);
     expect(wrapper.find('[data-test="start-failure-analysis"]').attributes('disabled')).toBeDefined();
     expect(wrapper.find('[data-test="start-report"]').attributes('disabled')).toBeDefined();
+  });
+
+  it('restores the exact ReportReview, report evidence, and server-owned publication lock', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'report_review';
+    let approveBody: unknown = null;
+    let continueBody: unknown = null;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/report-review`) && !init?.method) {
+        return jsonResponse(exactReportReview());
+      }
+      if (url.endsWith('/reports/00000000-0000-0000-0000-000000001401') && !init?.method) {
+        return jsonResponse(exactReport());
+      }
+      if (url.endsWith('/report-review/approve') && init?.method === 'POST') {
+        approveBody = JSON.parse(String(init.body));
+        return jsonResponse(exactReportReview({ state: 'approved' }));
+      }
+      if (url.endsWith('/report-review/continue') && init?.method === 'POST') {
+        continueBody = JSON.parse(String(init.body));
+        return jsonResponse(reportReviewBody('approved', true));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+
+    const wrapper = mount(ReportFailureAnalysisView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    const reportingStore = useReportingStore(pinia);
+    expect(reportingStore.requirementReviewId).toBe(requirementReviewId);
+    expect(reportingStore.executionResultReviewWorkflow).toBeNull();
+    expect(reportingStore.reportReviewWorkflow?.workflow.run_id).toBe(workflowRunId);
+    expect(reportingStore.report?.id).toBe('00000000-0000-0000-0000-000000001401');
+    expect(wrapper.find('[data-test="execution-result-review-panel"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="report-review-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="reporting-recent-runs"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="start-failure-analysis"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-test="start-report"]').attributes('disabled')).toBeDefined();
+
+    await wrapper.find('[data-test="report-review-approve"]').trigger('click');
+    await flushPromises();
+    expect(approveBody).toEqual(expect.objectContaining({
+      expected_version: 14,
+      comment: 'Report evidence reviewed.',
+    }));
+
+    await wrapper.find('[data-test="report-review-continue"]').trigger('click');
+    await flushPromises();
+    expect(continueBody).toEqual({
+      expected_version: 15,
+      approval_decision_id: '00000000-0000-0000-0000-000000009203',
+    });
+    expect(wrapper.text()).toContain('published');
+  });
+
+  it.each([
+    ['project identity', { project_id: '00000000-0000-0000-0000-000000000199' }],
+    ['review identity', { requirement_review_id: '00000000-0000-0000-0000-000000000699' }],
+    ['workflow stage', { stage: 'execution_result_review' }],
+    ['workflow run', { run_id: '00000000-0000-0000-0000-000000009199' }],
+  ])('fails closed when the restored ReportReview has a mismatched %s', async (_label, overrides) => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'report_review';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/report-review`)) {
+        return jsonResponse(exactReportReview(overrides));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+
+    const wrapper = mount(ReportFailureAnalysisView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-test="exact-report-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="report-review-panel"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="start-report"]').attributes('disabled')).toBeDefined();
+  });
+
+  it('fails closed when the exact ReportReview report belongs to another TestRun', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'report_review';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/report-review`)) {
+        return jsonResponse(exactReportReview());
+      }
+      if (url.endsWith('/reports/00000000-0000-0000-0000-000000001401')) {
+        return jsonResponse(exactReport({ related_entity_id: '00000000-0000-0000-0000-000000001399' }));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+    const reportingStore = useReportingStore(pinia);
+
+    const wrapper = mount(ReportFailureAnalysisView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(reportingStore.testRunId).toBe('');
+    expect(reportingStore.reportReviewWorkflow).toBeNull();
+    expect(reportingStore.report).toBeNull();
+    expect(wrapper.find('[data-test="exact-report-review-restore-failed"]').exists()).toBe(true);
+  });
+
+  it('fails closed without network when a ReportReview route parameter is missing', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_stage = 'report_review';
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const wrapper = mount(ReportFailureAnalysisView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-test="exact-report-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="reporting-recent-runs"]').exists()).toBe(false);
   });
 
   it('offers a named resume action for recent test runs', async () => {

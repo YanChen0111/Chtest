@@ -3677,6 +3677,14 @@ Rules:
   wrong-stage, mismatched-run, and non-RequirementReview subjects return `null`
   or fail closed without local-storage, recent-TestRun, recent-analysis,
   recent-report, or prior browser-context fallback.
+- For a `report_review` run with the same ownership, the route is
+  `/reports/failure-analysis?requirement_id={requirement_id}&requirement_review_id={subject_ref}&workflow_run_id={run_id}&workflow_stage=report_review`.
+  The page must use the project-scoped ReportReview API and verify the exact
+  stage and WorkflowRun id before exposing controlled actions or publishing a
+  report. Missing, malformed, inactive, cross-project, wrong-stage,
+  mismatched-run, and non-RequirementReview subjects return `null` or fail
+  closed without local-storage, recent-TestRun, recent-analysis, recent-report,
+  or prior browser-context fallback.
 
 ### 11.11 Test Campaign Scope API
 

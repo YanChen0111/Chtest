@@ -344,12 +344,40 @@ Verification:
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.25
+## Completed Task 49.25
 
 Goal: extend exact queue restoration only to standard ReportReview runs through
 the existing Report Failure Analysis page. Verify the exact RequirementReview
 and WorkflowRun and fail closed without recent TestRun, report,
 failure-analysis, default-id, or browser fallback.
+
+Implementation:
+
+- The queue emits the reporting page only for exact `report_review` runs with
+  active same-project RequirementReview ownership.
+- Explicit restore clears both reporting gates, TestRun, failure analysis, and
+  report before loading Requirement, RequirementReview, ReportReview, and the
+  exact server-listed Report.
+- Report project and TestRun ownership are verified before the gate or report is
+  exposed. Analysis/report generation stays disabled in terminal review mode.
+- Approval and publish actions use the current server lock version and exact
+  approval decision id.
+
+Verification:
+
+- Focused backend queue: `11 passed`.
+- Focused Report Failure Analysis + AI Workbench frontend: `2 files / 21 tests`.
+- Frontend typecheck passed.
+- Full backend: `534 passed`.
+- Full frontend: `26 files / 110 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+## Active Task 49.26
+
+Goal: polish the shared workbench shell, AI queue, pytest execution, and
+reporting layouts for dense desktop work and readable mobile use without
+changing workflow, route, API, approval, or persistence behavior.
 
 ## Running Local Services
 
@@ -372,9 +400,9 @@ failure-analysis, default-id, or browser fallback.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.24 with only its expected implementation and
+1. Commit and push Task 49.25 with only its expected implementation and
    continuity files.
-2. Read the Task 49.25 boundary in `NEXT_AI_TASK.md`.
-3. Implement exact standard ReportReview route resolution and fail-closed page
-   restore without generic routing or recent report fallback.
+2. Read the Task 49.26 boundary in `NEXT_AI_TASK.md`.
+3. Inspect the touched pages in the browser at desktop and mobile sizes, then
+   implement scoped visual and responsive improvements only.
 4. Preserve historical scratch directories and the protected source database.

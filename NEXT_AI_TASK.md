@@ -10,9 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.24 is complete. Task 49.25 makes an AI Workbench ReportReview queue link
-restore the exact same-project RequirementReview and workflow run named by the
-server instead of falling back to a recent TestRun, report, or browser context.
+Task 49.25 is complete. Task 49.26 polishes the shared workbench shell and the
+AI queue, pytest execution, and reporting surfaces without changing workflow,
+route, API, approval, or persistence behavior.
 
 Verified behavior:
 
@@ -123,6 +123,10 @@ Verified behavior:
     Analysis page with exact Requirement, RequirementReview, WorkflowRun, and
     stage values. The page restores TestRun identity only from the authoritative
     gate and keeps analysis/report generation locked until approval.
+32. Standard ReportReview queue routes open the same reporting page with exact
+    Requirement, RequirementReview, WorkflowRun, and stage values. The page
+    restores only server-listed report evidence and publishes with the current
+    lock version and exact approval decision.
 
 ## Previous Tasks Verified
 
@@ -209,20 +213,20 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can resume the exact actionable ReportReview from the read-only
-queue without approving or publishing a stale or unrelated browser-selected
-report.
+Test engineers can scan queue state, review evidence, and operate execution and
+reporting controls in a denser, clearer workbench without losing exact workflow
+context or approval safety.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
-2. `docs/product/01-positioning-and-scope.md`
-3. `docs/implementation/04-ai-vibecoding-governance.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `memory/08-session-handoff.md`
-8. `frontend/src/stores/reporting.ts`
+2. `memory/08-session-handoff.md`
+3. `frontend/src/layouts/WorkbenchLayout.vue`
+4. `frontend/src/layouts/WorkbenchLayout.spec.ts`
+5. `frontend/src/views/ai-workbench/AiWorkbenchView.vue`
+6. `frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts`
+7. `frontend/src/views/execution/PytestExecutionView.vue`
+8. `frontend/src/views/execution/PytestExecutionView.spec.ts`
 9. `frontend/src/views/reporting/ReportFailureAnalysisView.vue`
 10. `frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts`
 
@@ -234,20 +238,21 @@ report.
 
 ## Expected Files
 
-Default write boundary for Task 49.25:
+Default write boundary for Task 49.26:
 
 ```text
 NEXT_AI_TASK.md
 CURRENT_DEVELOPMENT_CONTEXT.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/contracts/02-api-contract.md
-backend/app/modules/workflow_control/service.py
-backend/app/tests/workflow_control/test_workflow_queue.py
-frontend/src/stores/reporting.ts
+frontend/src/layouts/WorkbenchLayout.vue
+frontend/src/layouts/WorkbenchLayout.spec.ts
+frontend/src/views/ai-workbench/AiWorkbenchView.vue
+frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
+frontend/src/views/execution/PytestExecutionView.vue
+frontend/src/views/execution/PytestExecutionView.spec.ts
 frontend/src/views/reporting/ReportFailureAnalysisView.vue
 frontend/src/views/reporting/ReportFailureAnalysisView.spec.ts
-frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
 Explain any write outside this set before editing it.
@@ -263,14 +268,14 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.24 evidence:
+Latest Task 49.25 evidence:
 
-- Focused backend workflow queue verification => `10 passed`.
-- Focused Report Failure Analysis + AI Workbench frontend verification => `2 files /
-  14 tests passed`.
+- Focused backend workflow queue verification => `11 passed`.
+- Focused Report Failure Analysis + AI Workbench frontend verification => `2
+  files / 21 tests passed`.
 - Frontend `vue-tsc --noEmit` => passed.
-- Full backend => `533 passed`.
-- Full frontend => `26 files / 103 tests passed`.
+- Full backend => `534 passed`.
+- Full frontend => `26 files / 110 tests passed`.
 - Production build => passed with the existing large-chunk warning.
 - `git diff --check` => passed.
 
@@ -279,29 +284,27 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- A ReportReview queue item returns a route only when its UUID
-  `subject_ref` resolves to a RequirementReview whose Requirement belongs to
-  the same project and the current stage is `report_review`.
-- The route includes the exact RequirementReview and WorkflowRun identifiers
-  needed by the Report Failure Analysis page; the page verifies the returned
-  ReportReview gate before enabling controlled actions or publication.
-- Missing, malformed, cross-project, wrong-stage, mismatched-run, and
-  non-RequirementReview subjects retain a null route or fail closed in the page.
-- Explicit restore failure clears ExecutionResultReview, ReportReview,
-  TestRun, failure-analysis, and report state and never falls back to local
-  storage, recent runs, the default TestRun, or prior browser context.
-- The AI Workbench remains read-only; all mutations still use the
-  ReportReview API's current server lock version and exact approval id.
+- The workbench shell has a compact, stable desktop layout and a usable mobile
+  navigation/layout without horizontal overflow or overlapping controls.
+- AI queue groups, stage/state/version evidence, and exact resume actions are
+  easier to scan without changing queue ordering, labels, links, or read-only
+  behavior.
+- Pytest execution and reporting preserve every existing control and exact
+  restore state while improving spacing, hierarchy, responsive tracks, and
+  long-identifier wrapping.
+- No route, API request, server-lock, approval-id, persistence, or workflow
+  behavior changes.
+- Browser QA passes at `1440x900` and `390x844` for the touched pages.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow): resume exact report review
+style(frontend): polish workflow workbench
 ```
 
 ## Next Task
 
-Task 49.25 connects only standard ReportReview WorkflowRuns to the existing
-Report Failure Analysis page. Do not add generic route guesses, dashboards,
-RBAC, tenants, cross-user collaboration, or repair workflows.
+Task 49.26 is visual and responsive only. Do not change workflow logic, API
+contracts, route semantics, store state, persistence, dashboards, RBAC, tenants,
+cross-user collaboration, or repair workflows.

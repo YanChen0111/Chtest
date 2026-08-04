@@ -11152,3 +11152,27 @@ the AI Workbench workflow queue.
 
 Next: apply exact-subject, exact-run, and exact-stage restoration only to the
 terminal ReportReview stage through the same reporting page.
+
+## 2026-08-04 Slice 49.25 Exact ReportReview Resume
+
+Task 49.25 is complete; next is Task 49.26 workflow workbench UI polish.
+
+- The queue resolves `report_review` only for active same-project
+  RequirementReview ownership and emits exact Requirement, RequirementReview,
+  WorkflowRun, and stage values.
+- The reporting page clears all prior reporting context before loading the
+  ReportReview gate and its first server-listed report.
+- The report must belong to the same project and a TestRun listed by the gate;
+  otherwise restoration fails closed without recent/default fallback.
+- Terminal review mode hides the unrelated ExecutionResultReview panel and
+  disables new analysis/report generation. Approval and publish use current
+  server lock and approval ids.
+- Focused backend queue verification passed with `11 passed`; full backend
+  passed with `534 passed`.
+- Focused reporting + AI Workbench verification passed with `2 files / 21
+  tests`; full frontend passed with `26 files / 110 tests`.
+- Frontend typecheck and production build passed with the existing large-chunk
+  warning. `git diff --check` passed.
+
+Next: visually inspect and polish the shared workbench shell, AI queue, pytest
+execution, and reporting pages without changing behavior.

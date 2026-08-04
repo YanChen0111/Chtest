@@ -5301,3 +5301,34 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.25: expose and restore the exact standard ReportReview queue subject
   through the same reporting page. Keep generic routing and recent/default
   report fallback out of scope.
+
+## 2026-08-04 Slice 49.25 Exact ReportReview Resume
+
+### Implemented
+
+- Extended exact queue routing to standard `report_review` runs with active
+  same-project RequirementReview ownership.
+- Reused `/reports/failure-analysis` with exact Requirement,
+  RequirementReview, WorkflowRun, and stage values.
+- Loaded only the ReportReview gate and server-listed Report after clearing all
+  prior reporting and TestRun context.
+- Verified report project and TestRun ownership before exposing the terminal
+  gate; kept new generation disabled in terminal review mode.
+- Used current server lock versions for approval and the exact approval decision
+  for publication.
+
+### Verification
+
+- Focused backend queue suite: `11 passed`.
+- Focused Report Failure Analysis + AI Workbench frontend suite: `2 files / 21
+  tests passed`.
+- Frontend typecheck passed.
+- Full backend: `534 passed`.
+- Full frontend: `26 files / 110 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.26: polish the shared workbench shell, AI queue, pytest execution, and
+  reporting layouts without changing workflow behavior.

@@ -181,7 +181,7 @@ function workflowQueueBody() {
           input_snapshot_hash: 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
           approval_decision_id: '00000000-0000-0000-0000-000000009203',
           can_continue: true,
-          route_path: null,
+          route_path: '/reports/failure-analysis?requirement_id=00000000-0000-0000-0000-000000000403&requirement_review_id=00000000-0000-0000-0000-000000000603&workflow_run_id=00000000-0000-0000-0000-000000009003&workflow_stage=report_review',
           created_at: '2026-07-30T08:04:00Z',
           updated_at: '2026-07-30T08:05:00Z',
         },
@@ -481,8 +481,8 @@ describe('AiWorkbenchView', () => {
       '/automation/drafts?requirement_id=00000000-0000-0000-0000-000000000408&requirement_review_id=00000000-0000-0000-0000-000000000608&workflow_run_id=00000000-0000-0000-0000-000000009008&workflow_stage=automation_draft_review',
       '/execution/pytest?requirement_id=00000000-0000-0000-0000-000000000409&requirement_review_id=00000000-0000-0000-0000-000000000609&workflow_run_id=00000000-0000-0000-0000-000000009009&workflow_stage=execution_approval',
       '/reports/failure-analysis?requirement_id=00000000-0000-0000-0000-000000000410&requirement_review_id=00000000-0000-0000-0000-000000000610&workflow_run_id=00000000-0000-0000-0000-000000009010&workflow_stage=execution_result_review',
+      '/reports/failure-analysis?requirement_id=00000000-0000-0000-0000-000000000403&requirement_review_id=00000000-0000-0000-0000-000000000603&workflow_run_id=00000000-0000-0000-0000-000000009003&workflow_stage=report_review',
     ]);
-    expect(wrapper.text()).toContain('暂无入口');
     expect(wrapper.text()).toContain('OpenAI Compatible');
     expect(wrapper.text()).toContain('OpenAI Compatible · gpt-5.5');
     expect(wrapper.text()).toContain('需求评审智能体');

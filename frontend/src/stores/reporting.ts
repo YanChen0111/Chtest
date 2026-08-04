@@ -124,6 +124,77 @@ export const useReportingStore = defineStore('reporting', {
         this.loadingReport = false;
       }
     },
+    async loadExactReportReview(
+      projectId: string,
+      requirementId?: string,
+      reviewId?: string,
+      workflowRunId?: string,
+      workflowStage?: string,
+    ) {
+      this.loadingReport = true;
+      this.errorMessage = '';
+      this.projectId = projectId;
+      this.requestedRequirementId = requirementId ?? null;
+      this.requestedReviewId = reviewId ?? null;
+      this.requestedWorkflowRunId = workflowRunId ?? null;
+      this.requestedWorkflowStage = workflowStage ?? 'report_review';
+      this.exactRestoreFailed = false;
+      this.clearReportingSelection();
+      try {
+        if (!requirementId || !reviewId || !workflowRunId) {
+          throw new Error('ReportReview 精确恢复参数不完整。');
+        }
+        const expectedStage = workflowStage ?? 'report_review';
+        if (expectedStage !== 'report_review') {
+          throw new Error('请求的工作流阶段不是 ReportReview。');
+        }
+        const [requirement, review, workflow] = await Promise.all([
+          getRequirement(requirementId),
+          getRequirementReview(requirementId),
+          getReportReviewWorkflow(projectId, reviewId),
+        ]);
+        if (
+          requirement.id !== requirementId
+          || requirement.project_id !== projectId
+          || requirement.status !== 'active'
+          || review.id !== reviewId
+          || review.requirement_id !== requirementId
+          || workflow.project_id !== projectId
+          || workflow.requirement_review_id !== reviewId
+          || workflow.workflow.stage !== expectedStage
+          || workflow.workflow.run_id !== workflowRunId
+        ) {
+          throw new Error('请求的 ReportReview 与服务端权威工作流不匹配。');
+        }
+        const reportId = workflow.generated_report_ids[0];
+        if (!reportId) {
+          throw new Error('指定的 ReportReview 没有服务端报告证据。');
+        }
+        const report = await getReport(reportId);
+        const relatedTestRunId = report.related_entity_id;
+        if (
+          report.id !== reportId
+          || report.project_id !== projectId
+          || report.related_entity_type !== 'TestRun'
+          || typeof relatedTestRunId !== 'string'
+          || !workflow.generated_test_run_ids.includes(relatedTestRunId)
+        ) {
+          throw new Error('请求的 ReportReview 报告与服务端权威证据不匹配。');
+        }
+        this.requirementReviewId = reviewId;
+        this.reportReviewWorkflow = workflow;
+        this.testRunId = relatedTestRunId;
+        this.report = report;
+        return true;
+      } catch (error) {
+        this.clearReportingSelection();
+        this.exactRestoreFailed = true;
+        this.errorMessage = error instanceof Error ? error.message : '无法恢复指定的 ReportReview。';
+        return false;
+      } finally {
+        this.loadingReport = false;
+      }
+    },
     async startFailureAnalysis() {
       if (!this.testRunId) {
         this.errorMessage = 'Select an exact TestRun before starting failure analysis.';

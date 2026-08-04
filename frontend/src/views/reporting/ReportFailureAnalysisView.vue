@@ -14,7 +14,7 @@
 
     <a-alert
       v-if="store.exactRestoreFailed"
-      data-test="exact-execution-result-review-restore-failed"
+      :data-test="store.requestedWorkflowStage === 'report_review' ? 'exact-report-review-restore-failed' : 'exact-execution-result-review-restore-failed'"
       type="error"
       :content="store.errorMessage || '无法恢复指定的 ExecutionResultReview，请返回 AI 工作台刷新队列。'"
       show-icon
@@ -41,7 +41,7 @@
           </div>
           <p class="reporting-form-helper">先在执行中心完成一次测试，再从“最近运行”选择要分析的运行。</p>
           <section
-            v-if="store.requirementReviewId"
+            v-if="store.requirementReviewId && store.executionResultReviewWorkflow"
             class="execution-result-review-panel"
             data-test="execution-result-review-panel"
           >
@@ -298,7 +298,9 @@ const staleRecentRunCount = computed(() =>
 const selectedRun = computed(() => executionStore.recentRuns.find((run) => run.id === store.testRunId) ?? null);
 const executionResultReviewStateLabel = computed(() => store.executionResultReviewWorkflow?.workflow.state ?? 'not_loaded');
 const exactGenerationReady = computed(() => Boolean(
-  store.testRunId && store.executionResultReviewWorkflow?.workflow.approval_decision_id,
+  requestedWorkflowStage.value === 'execution_result_review'
+  && store.testRunId
+  && store.executionResultReviewWorkflow?.workflow.approval_decision_id,
 ));
 const reportReviewStateLabel = computed(() => {
   if (store.reportReviewWorkflow?.workflow.published) {
@@ -416,13 +418,23 @@ onMounted(async () => {
   if (explicitRestoreRequested.value) {
     executionStore.recentRuns = [];
     executionStore.recentRunsHydrated = false;
-    await store.loadExactExecutionResultReview(
-      DEFAULT_PROJECT_ID,
-      requestedRequirementId.value,
-      requestedReviewId.value,
-      requestedWorkflowRunId.value,
-      requestedWorkflowStage.value,
-    );
+    if (requestedWorkflowStage.value === 'report_review') {
+      await store.loadExactReportReview(
+        DEFAULT_PROJECT_ID,
+        requestedRequirementId.value,
+        requestedReviewId.value,
+        requestedWorkflowRunId.value,
+        requestedWorkflowStage.value,
+      );
+    } else {
+      await store.loadExactExecutionResultReview(
+        DEFAULT_PROJECT_ID,
+        requestedRequirementId.value,
+        requestedReviewId.value,
+        requestedWorkflowRunId.value,
+        requestedWorkflowStage.value,
+      );
+    }
     return;
   }
   store.clearExplicitRestoreRequest();
