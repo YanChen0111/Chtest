@@ -3630,6 +3630,11 @@ Rules:
   project-scoped RiskReview API and verify that the returned workflow stage is
   exactly `risk_review`; a RequirementReview response, later stage, or run-id
   mismatch fails closed.
+- For a `test_plan_review` run with the same ownership, the route adds
+  `workflow_stage=test_plan_review`. The page must use the project-scoped
+  TestPlanReview API and verify the exact stage and WorkflowRun id before
+  exposing any review action. A RiskReview response, CaseReview stage, or run-id
+  mismatch fails closed.
 
 ### 11.11 Test Campaign Scope API
 

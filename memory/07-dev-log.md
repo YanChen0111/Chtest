@@ -5072,3 +5072,33 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.18: expose and restore the exact standard TestPlanReview queue subject
   through the existing project-scoped API. Keep CaseReview and
   TestCampaign-origin RequirementReview runs out of scope.
+
+## 2026-08-04 Slice 49.18 Exact TestPlanReview Resume
+
+### Implemented
+
+- Extended the read-only workflow queue route resolver from RequirementReview
+  and RiskReview to standard TestPlanReview runs.
+- Required an active same-project RequirementReview subject and emitted exact
+  Requirement, RequirementReview, WorkflowRun, and `test_plan_review` values.
+- Routed explicit page restoration through the project-scoped TestPlanReview
+  API and rejected unsupported stages or mismatched authoritative responses.
+- Preserved RequirementReview and RiskReview behavior and kept CaseReview plus
+  TestCampaign-origin RequirementReview runs outside the route resolver.
+- Updated the API contract and added backend/frontend fail-closed coverage.
+
+### Verification
+
+- Focused backend queue suite: `5 passed`.
+- Full backend: `528 passed`.
+- Focused RequirementReview + AI Workbench frontend suite: `2 files / 14 tests
+  passed`.
+- Full frontend: `26 files / 73 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.19: refine only the Requirement Review workbench's desktop/mobile
+  layout and visual hierarchy while preserving every controlled workflow and
+  exact-restore behavior.

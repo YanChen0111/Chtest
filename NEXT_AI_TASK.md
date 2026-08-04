@@ -10,9 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.17 is complete. Task 49.18 makes an AI Workbench TestPlanReview queue
-link restore the exact same-project Requirement, RequirementReview, and
-workflow run named by the server instead of falling back to browser context.
+Task 49.18 is complete. Task 49.19 improves the existing Requirement Review
+workbench layout and visual hierarchy without changing its controlled workflow
+behavior or expanding into a broad application redesign.
 
 Verified behavior:
 
@@ -96,6 +96,9 @@ Verified behavior:
     fails closed without local-storage or recent-record fallback.
 24. Standard RiskReview queue routes add the exact `risk_review` stage and use
     the project-scoped RiskReview API. Stage or run mismatches fail closed.
+25. Standard TestPlanReview queue routes add the exact `test_plan_review` stage
+    and use the project-scoped TestPlanReview API. Unsupported stages and
+    identity mismatches fail closed.
 
 ## Previous Tasks Verified
 
@@ -182,22 +185,19 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can resume an actionable TestPlanReview directly from the
-read-only workflow queue without acting on a stale RiskReview or unrelated
-browser selection.
+Test engineers can scan the requirement, evidence, review state, and controlled
+actions efficiently on desktop and mobile without losing the exact restored
+workflow context.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/04-ai-vibecoding-governance.md`
-4. `docs/contracts/01-data-model-contract.md`
-5. `docs/contracts/02-api-contract.md`
-6. `docs/contracts/03-state-machines.md`
-7. `docs/contracts/04-artifact-contract.md`
-8. `docs/implementation/slices/slice-47-final-test-knowledge-rag-system.md`
-9. `memory/08-session-handoff.md`
-10. `memory/07-dev-log.md`
+4. `docs/contracts/02-api-contract.md`
+5. `memory/08-session-handoff.md`
+6. `frontend/src/views/requirements/RequirementReviewView.vue`
+7. `frontend/src/views/requirements/RequirementReviewView.spec.ts`
 
 ## Do Not Read Unless Needed
 
@@ -207,40 +207,37 @@ browser selection.
 
 ## Expected Files
 
-Default write boundary for Task 49.18:
+Default write boundary for Task 49.19:
 
 ```text
 NEXT_AI_TASK.md
+CURRENT_DEVELOPMENT_CONTEXT.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-docs/contracts/02-api-contract.md
-backend/app/modules/workflow_control/service.py
-backend/app/tests/workflow_control/test_workflow_queue.py
-frontend/src/stores/requirements.ts
 frontend/src/views/requirements/RequirementReviewView.vue
 frontend/src/views/requirements/RequirementReviewView.spec.ts
-frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
 Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run backend and frontend regression plus the production build:
+Run focused and full frontend regression plus the production build and browser
+checks:
 
 ```powershell
-backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q
+npm --prefix frontend test -- RequirementReviewView.spec.ts --run
 npm --prefix frontend test -- --run
 npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.17 evidence:
+Latest Task 49.18 evidence:
 
-- Focused backend queue verification => `4 passed`.
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/task4917-full` => `527 passed`.
-- Focused RequirementReview + AI Workbench frontend verification => `2 files / 12 tests passed`.
-- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 71 tests passed`.
+- Focused backend queue verification => `5 passed`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/task4918-full` => `528 passed`.
+- Focused RequirementReview + AI Workbench frontend verification => `2 files / 14 tests passed`.
+- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 73 tests passed`.
 - `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
 - `git diff --check` => passed
 
@@ -249,31 +246,29 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- A TestPlanReview queue item returns a route only when its UUID
-  `subject_ref` resolves to a RequirementReview whose Requirement belongs to
-  the same project and the current stage is `test_plan_review`.
-- The route includes the exact Requirement, RequirementReview, WorkflowRun, and
-  `test_plan_review` stage. Opening it uses the project-scoped TestPlanReview API
-  and verifies all identifiers against the authoritative response.
-- Missing, malformed, cross-project, mismatched-review, and non-RequirementReview
-  subjects retain a null route or fail closed in the page.
-- An explicit restore failure clears review state, disables controlled actions,
-  and never falls back to local storage, the newest Requirement, or prior
-  browser state.
-- The AI Workbench remains read-only; the route is only a navigation hint and
-  all mutations still require the RequirementReview API's server lock version.
+- The existing RequirementReview, RiskReview, and TestPlanReview restore paths,
+  identifiers, controls, and fail-closed behavior remain unchanged.
+- Desktop layout presents requirement input, evidence, stage status, and human
+  actions with a clear scan order and without decorative page-section cards.
+- At `390x844`, content has no horizontal overflow, controls wrap cleanly, text
+  stays inside its container, and the active review actions remain reachable.
+- Loading, empty, error, restore-failure, waiting-review, waiting-approval,
+  rejected, approved, and continuable states remain visually distinguishable.
+- Existing Arco controls and icons are reused; the task adds no new framework,
+  dashboard, marketing surface, workflow stage, or backend behavior.
+- Focused tests, full frontend regression, build, desktop/mobile browser smoke,
+  and `git diff --check` pass.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow): resume exact test plan review
+feat(frontend): polish requirement review workbench
 ```
 
 ## Next Task
 
-Task 49.18 connects only standard TestPlanReview WorkflowRuns to the existing
-exact Requirement review page. Keep TestCampaign-origin RequirementReview runs
-null until their adjacent-stage domain contract is defined. Do not add
-CaseReview, generic route guesses, dashboards, RBAC, tenants, cross-user
-collaboration, execution/report orchestration, or repair workflows.
+Task 49.19 is a focused visual and responsive refinement of the existing
+Requirement Review page. Preserve all route, store, API, and workflow semantics.
+Do not redesign unrelated pages or add CaseReview, dashboards, RBAC, tenants,
+cross-user collaboration, execution/report orchestration, or repair workflows.

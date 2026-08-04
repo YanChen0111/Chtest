@@ -1,5 +1,28 @@
 # Session Handoff
 
+## 2026-08-04 Slice 49.18 Exact TestPlanReview Resume
+
+Task 49.18 is complete. The next scoped task is Task 49.19, focused responsive
+layout and visual refinement for the existing Requirement Review workbench.
+
+- Extended deterministic queue route resolution to active same-project
+  TestPlanReview subjects without admitting CaseReview or campaign-origin
+  RequirementReview subjects.
+- Added `workflow_stage=test_plan_review` to the exact Requirement,
+  RequirementReview, and WorkflowRun navigation hint.
+- Explicit restoration uses the project-scoped TestPlanReview API and verifies
+  stage, review identity, requirement identity, and workflow run identity before
+  enabling controlled actions.
+- Unsupported stages, malformed ids, cross-project subjects, missing records,
+  and mismatched responses retain a null route or fail closed without using
+  recent browser state.
+- Verification: focused backend queue `5 passed`; full backend `528 passed`;
+  focused RequirementReview + AI Workbench frontend `2 files / 14 tests`;
+  full frontend `26 files / 73 tests`; production build passed with the existing
+  large-chunk warning; `git diff --check` passed.
+- The protected source database and historical pytest scratch directories were
+  not modified.
+
 ## 2026-08-03 Slice 49.13 Controlled TestCampaign Scope
 
 Task 49.13 is complete. The next scoped task is Task 49.14, a focused frontend

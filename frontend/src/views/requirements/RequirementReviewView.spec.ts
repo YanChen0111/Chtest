@@ -169,6 +169,66 @@ describe('RequirementReviewView', () => {
     expect(wrapper.find('[data-test="start-review"]').attributes('disabled')).toBeDefined();
   });
 
+  it('loads an exact test plan review through the project-scoped stage API', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = reviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'test_plan_review';
+    const requestedUrls: string[] = [];
+    const pinia = createPinia();
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${reviewId}/test-plan-review`)) {
+        return jsonResponse(exactReview(reviewId, workflowRunId, 'test_plan_review'));
+      }
+      if (url.endsWith(`/projects/${projectId}/requirement-documents`)) {
+        return jsonResponse({ items: [], total: 0 });
+      }
+      return new Response('not found', { status: 404 });
+    }));
+
+    const wrapper = mount(RequirementReviewView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(requestedUrls.some(
+      (url) => url.endsWith(`/projects/${projectId}/requirement-reviews/${reviewId}/test-plan-review`),
+    )).toBe(true);
+    expect(requestedUrls.some(
+      (url) => url.endsWith(`/projects/${projectId}/requirement-reviews/${reviewId}/risk-review`),
+    )).toBe(false);
+    expect(useRequirementsStore(pinia).review?.workflow?.stage).toBe('test_plan_review');
+    expect(wrapper.find('[data-test="test-plan-review-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="start-review"]').attributes('disabled')).toBeDefined();
+  });
+
+  it('fails closed when a test plan route returns a different workflow stage', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = reviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'test_plan_review';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${reviewId}/test-plan-review`)) {
+        return jsonResponse(exactReview(reviewId, workflowRunId, 'risk_review'));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+
+    const wrapper = mount(RequirementReviewView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-test="exact-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="test-plan-review-panel"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="start-review"]').attributes('disabled')).toBeDefined();
+  });
+
   it('fails closed without restoring stale browser context when explicit ids are invalid', async () => {
     routeQuery.requirement_id = 'not-a-uuid';
     routeQuery.requirement_review_id = reviewId;

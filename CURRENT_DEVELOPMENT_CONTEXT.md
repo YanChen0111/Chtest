@@ -9,8 +9,8 @@ require reading `AGENTS.md`, `START_HERE_FOR_AI.md`, and `NEXT_AI_TASK.md` first
 
 ```text
 Read AGENTS.md, START_HERE_FOR_AI.md, NEXT_AI_TASK.md, and
-CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.17 are complete. Continue
-Task 49.18 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
+CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.18 are complete. Continue
+Task 49.19 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
 never use storage/chtest-dev.db for migration or smoke data.
 ```
 
@@ -31,12 +31,13 @@ never use storage/chtest-dev.db for migration or smoke data.
 - Repository: `D:\Desktop\chenyan\Chtest-docs-preflight-vibecoding-fixes`
 - Branch: `docs/preflight-vibecoding-fixes`
 - Remote tracking: `origin/docs/preflight-vibecoding-fixes`
-- Last pushed commit: `b31d8d4 feat(workflow): resume exact requirement review`
+- Last pushed commit: `f8b6144 feat(workflow): resume exact risk review`
 - Previous backend campaign commit: `78c0ab3 feat(test-campaigns): add controlled campaign scope`
 - Task 49.14 is committed and pushed.
 - Task 49.15 is committed and pushed.
 - Task 49.16 is committed and pushed.
-- Task 49.17 is implemented and fully verified for commit and push.
+- Task 49.17 is committed and pushed.
+- Task 49.18 is implemented and fully verified for commit and push.
 
 Historical untracked `.pytest-tmp-*` directories and `.t49/` are test scratch
 data. Do not stage, commit, or delete them.
@@ -136,12 +137,37 @@ Verification:
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.18
+## Completed Task 49.18
 
 Goal: extend exact queue restoration only to standard TestPlanReview runs using
 the existing project-scoped TestPlanReview API. The route and page must verify
 the Requirement, RequirementReview, WorkflowRun, and `test_plan_review` stage.
 Keep CaseReview and TestCampaign-origin RequirementReview runs null.
+
+Implementation:
+
+- TestPlanReview route resolution requires an active same-project
+  RequirementReview subject and emits exact Requirement, review, run, and stage
+  identifiers.
+- The frontend selects the TestPlanReview API for the explicit stage and fails
+  closed on unsupported stages or any authoritative response mismatch.
+- RequirementReview and RiskReview restore behavior remains backward
+  compatible; CaseReview and campaign-origin subjects remain unrouted.
+
+Verification:
+
+- Focused backend queue: `5 passed`.
+- Focused RequirementReview + AI Workbench frontend: `2 files / 14 tests`.
+- Full backend: `528 passed`.
+- Full frontend: `26 files / 73 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+## Active Task 49.19
+
+Goal: improve the existing Requirement Review workbench's layout, visual
+hierarchy, and responsive behavior without changing workflow, route, store, or
+API semantics. Verify desktop and `390x844` mobile views in a real browser.
 
 ## Running Local Services
 
@@ -164,10 +190,10 @@ Keep CaseReview and TestCampaign-origin RequirementReview runs null.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.17 with only its expected files plus this context
+1. Commit and push Task 49.18 with only its expected files plus this context
    file staged.
-2. Read the Task 49.18 boundary in `NEXT_AI_TASK.md`.
-3. Implement exact standard TestPlanReview route resolution and fail-closed
-   frontend restore without broadening to later workflow stages.
-4. Run focused verification first, then the required full regressions, build,
-   and diff checks.
+2. Inspect the current Requirement Review page at desktop and `390x844` mobile
+   dimensions using the isolated local services.
+3. Implement Task 49.19 only in the Requirement Review view and focused tests.
+4. Run focused/full frontend verification, build, browser smoke, and diff
+   checks; then update handoff context, commit, and push.

@@ -302,7 +302,7 @@ def test_workflow_queue_routes_only_exact_same_project_requirement_review() -> N
                 session,
                 project,
                 subject_ref=str(review.id),
-                stage=ControlledStage.TEST_PLAN_REVIEW,
+                stage=ControlledStage.CASE_REVIEW,
             ).id,
             expected_version=0,
         )
@@ -395,6 +395,51 @@ def test_workflow_queue_routes_only_exact_same_project_risk_review() -> None:
             f"/requirements/review?requirement_id={requirement.id}"
             f"&requirement_review_id={review.id}&workflow_run_id={valid.id}"
             "&workflow_stage=risk_review"
+        )
+        valid_id = valid.id
+        cross_project_id = cross_project.id
+        inactive_id = inactive.id
+        missing_id = missing.id
+        malformed_id = malformed.id
+
+    assert by_id[valid_id]["route_path"] == expected_route
+    assert by_id[cross_project_id]["route_path"] is None
+    assert by_id[inactive_id]["route_path"] is None
+    assert by_id[missing_id]["route_path"] is None
+    assert by_id[malformed_id]["route_path"] is None
+
+
+def test_workflow_queue_routes_only_exact_same_project_test_plan_review() -> None:
+    with _session() as session:
+        project, other_project = _projects(session)
+        requirement, review = _requirement_review(session, project)
+        _, other_review = _requirement_review(session, other_project)
+        _, inactive_review = _requirement_review(session, project, requirement_status="archived")
+
+        def queued(subject_ref: str):
+            return submit_for_review(
+                session,
+                project.id,
+                _create_run(
+                    session,
+                    project,
+                    subject_ref=subject_ref,
+                    stage=ControlledStage.TEST_PLAN_REVIEW,
+                ).id,
+                expected_version=0,
+            )
+
+        valid = queued(str(review.id))
+        cross_project = queued(str(other_review.id))
+        inactive = queued(str(inactive_review.id))
+        missing = queued(str(uuid.uuid4()))
+        malformed = queued("not-a-review-id")
+
+        by_id = {item["id"]: item for item in list_workflow_queue(session, project.id)}
+        expected_route = (
+            f"/requirements/review?requirement_id={requirement.id}"
+            f"&requirement_review_id={review.id}&workflow_run_id={valid.id}"
+            "&workflow_stage=test_plan_review"
         )
         valid_id = valid.id
         cross_project_id = cross_project.id

@@ -108,14 +108,16 @@ export const useRequirementsStore = defineStore('requirements', {
           throw new Error('指定需求评审缺少精确恢复参数');
         }
         const expectedStage = workflowStage ?? 'requirement_review';
-        if (!['requirement_review', 'risk_review'].includes(expectedStage)) {
+        if (!['requirement_review', 'risk_review', 'test_plan_review'].includes(expectedStage)) {
           throw new Error('指定评审阶段不受支持');
         }
         const [requirement, review] = await Promise.all([
           getRequirement(requirementId),
-          expectedStage === 'risk_review'
-            ? getRiskReview(projectId, reviewId)
-            : getRequirementReview(requirementId),
+          expectedStage === 'test_plan_review'
+            ? getTestPlanReview(projectId, reviewId)
+            : expectedStage === 'risk_review'
+              ? getRiskReview(projectId, reviewId)
+              : getRequirementReview(requirementId),
         ]);
         if (
           requirement.id !== requirementId
