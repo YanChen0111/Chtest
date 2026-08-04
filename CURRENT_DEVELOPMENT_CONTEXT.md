@@ -373,11 +373,36 @@ Verification:
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.26
+## Completed Task 49.26
 
 Goal: polish the shared workbench shell, AI queue, pytest execution, and
 reporting layouts for dense desktop work and readable mobile use without
 changing workflow, route, API, approval, or persistence behavior.
+
+Implementation:
+
+- Reduced shared shell/header/content spacing while preserving the existing
+  navigation structure and controls.
+- Converted empty AI workflow queue buckets into compact three-column desktop
+  panels with one-column responsive stacking; populated buckets retain full
+  width for evidence scanning.
+- Rebalanced pytest execution and reporting columns, removed forced equal panel
+  heights, and made reporting evidence span the full detail width above paired
+  analysis/report panels on wide desktops.
+- Added explicit mobile heading/action stacking and kept exact workflow restore
+  context readable without changing any route, store, API, or approval action.
+
+Verification:
+
+- Browser inspection passed at `1440x900` and `390x844` for the shared shell,
+  AI Workbench, pytest execution, reporting, and mobile navigation drawer.
+- No inspected page had horizontal overflow, overlapping controls, or clipped
+  workflow identifiers.
+- Frontend typecheck passed.
+- Full backend: `534 passed`.
+- Full frontend: `26 files / 110 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
 
 ## Running Local Services
 
@@ -400,9 +425,8 @@ changing workflow, route, API, approval, or persistence behavior.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.25 with only its expected implementation and
-   continuity files.
-2. Read the Task 49.26 boundary in `NEXT_AI_TASK.md`.
-3. Inspect the touched pages in the browser at desktop and mobile sizes, then
-   implement scoped visual and responsive improvements only.
-4. Preserve historical scratch directories and the protected source database.
+1. Keep historical scratch directories and the protected source database
+   untouched.
+2. Retry pushing the local Slice 49 commits when GitHub connectivity is
+   available.
+3. Wait for the next product-owner priority; no Task 49.27 is currently queued.

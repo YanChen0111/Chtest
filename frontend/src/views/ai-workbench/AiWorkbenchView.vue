@@ -61,6 +61,7 @@
           v-for="group in workflowQueueGroups"
           :key="group.bucket"
           class="workflow-queue-group"
+          :class="{ 'workflow-queue-group--empty': !group.items.length }"
           :data-test="`workflow-queue-${group.bucket}`"
         >
           <div class="workflow-queue-heading">
@@ -697,6 +698,7 @@ onMounted(() => {
 
 .workflow-queue-groups {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -711,7 +713,17 @@ onMounted(() => {
 
 .workflow-queue-group {
   display: grid;
+  min-width: 0;
   gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5e8ec;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.workflow-queue-group:not(.workflow-queue-group--empty) {
+  grid-column: 1 / -1;
+  background: #ffffff;
 }
 
 .workflow-queue-heading {
@@ -719,6 +731,11 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.workflow-queue-group--empty :deep(.arco-empty) {
+  min-height: 94px;
+  padding: 14px 0 8px;
 }
 
 .workflow-snapshot {
@@ -792,12 +809,25 @@ onMounted(() => {
   .ai-metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .workflow-queue-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-queue-group:not(.workflow-queue-group--empty) {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 640px) {
   .status-grid,
   .ai-metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .workbench-heading :deep(.arco-space) {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 </style>

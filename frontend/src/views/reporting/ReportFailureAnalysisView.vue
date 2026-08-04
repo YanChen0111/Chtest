@@ -6,7 +6,7 @@
         <h2 id="reporting-title">报告与失败分析</h2>
         <p>围绕 TestRun 生成失败分析和自动化执行报告，优先呈现证据，再呈现 AI 结论。</p>
       </div>
-      <a-space>
+      <a-space class="reporting-heading-actions">
         <a-tag color="green">证据优先</a-tag>
         <a-tag color="blue">证据分析</a-tag>
       </a-space>
@@ -33,8 +33,8 @@
         <form class="reporting-form" @submit.prevent>
           <div class="reporting-source-summary" data-test="reporting-source-summary">
             <span>当前分析对象</span>
-            <strong>{{ selectedRun?.name ?? '尚未选择运行' }}</strong>
-            <small>{{ selectedRun ? `${selectedRun.status} · ${selectedRun.command}` : '请从下方最近运行中选择' }}</small>
+            <strong>{{ selectedRun?.name ?? (explicitRestoreRequested && store.testRunId ? `TestRun ${store.testRunId}` : '尚未选择运行') }}</strong>
+            <small>{{ selectedRun ? `${selectedRun.status} · ${selectedRun.command}` : explicitRestoreRequested && store.testRunId ? '由当前工作流证据恢复' : '请从下方最近运行中选择' }}</small>
           </div>
           <div class="reporting-test-run-compatibility" aria-hidden="true">
             <a-input v-model="store.testRunId" data-test="reporting-test-run-id" />
@@ -475,17 +475,30 @@ onMounted(async () => {
 
 .reporting-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.65fr) minmax(0, 1.55fr);
+  grid-template-columns: minmax(380px, 0.82fr) minmax(0, 1.65fr);
+  align-items: start;
   gap: 16px;
 }
 
 .reporting-detail {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 16px;
+}
+
+.reporting-detail > .reporting-panel:first-child {
+  grid-column: 1 / -1;
 }
 
 .reporting-panel {
   border-radius: 8px;
+}
+
+.reporting-heading-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .reporting-form {
@@ -682,6 +695,16 @@ onMounted(async () => {
   }
 }
 
+@media (max-width: 1280px) {
+  .reporting-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .reporting-detail > .reporting-panel:first-child {
+    grid-column: auto;
+  }
+}
+
 @media (max-width: 600px) {
   .reporting-heading,
   .recent-heading {
@@ -690,6 +713,11 @@ onMounted(async () => {
 
   .reporting-heading {
     flex-direction: column;
+  }
+
+  .reporting-heading-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 </style>

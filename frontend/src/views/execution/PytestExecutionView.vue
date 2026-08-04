@@ -6,7 +6,7 @@
         <h2 id="execution-title">执行中心</h2>
         <p>从已批准自动化草稿或已配置 TestCommand 启动本地 pytest，并查看本次运行证据。</p>
       </div>
-      <a-space>
+      <a-space class="execution-heading-actions">
         <a-tag color="green">本地子进程</a-tag>
         <a-tag color="blue">仅 pytest</a-tag>
       </a-space>
@@ -304,12 +304,23 @@ onMounted(async () => {
 
 .execution-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.72fr) minmax(0, 1.5fr);
+  grid-template-columns: minmax(380px, 0.85fr) minmax(0, 1.55fr);
+  align-items: start;
   gap: 16px;
 }
 
 .execution-panel {
   border-radius: 8px;
+}
+
+.execution-heading-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.execution-result-panel {
+  min-height: 420px;
 }
 
 .execution-form {
@@ -360,9 +371,24 @@ onMounted(async () => {
 }
 
 @media (max-width: 980px) {
+  .execution-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .execution-layout {
     grid-template-columns: 1fr;
   }
 
+  .execution-heading-actions {
+    justify-content: flex-start;
+  }
+
+}
+
+@media (max-width: 600px) {
+  .execution-heading-actions {
+    width: 100%;
+  }
 }
 </style>

@@ -11176,3 +11176,29 @@ Task 49.25 is complete; next is Task 49.26 workflow workbench UI polish.
 
 Next: visually inspect and polish the shared workbench shell, AI queue, pytest
 execution, and reporting pages without changing behavior.
+
+## 2026-08-04 Slice 49.26 Workflow Workbench UI Polish
+
+Task 49.26 is complete; the currently queued Slice 49 work is complete and no
+Task 49.27 should be inferred without a new product priority.
+
+- Tightened shared shell/header/content spacing while retaining the established
+  navigation and command model.
+- Made empty AI queue buckets compact and scannable in three desktop columns;
+  populated workflow evidence stays full width and all groups stack on smaller
+  screens.
+- Rebalanced pytest execution and reporting work areas, removed forced equal
+  panel heights, and paired analysis/report panels beneath full-width evidence
+  on wide desktops.
+- Added explicit mobile heading/action tracks. Desktop `1440x900` and mobile
+  `390x844` browser checks covered all touched pages and the navigation drawer
+  with no horizontal overflow, overlap, or clipped workflow context.
+- Full backend passed with `534 passed`; full frontend passed with `26 files /
+  110 tests`; frontend typecheck and production build passed. The build retains
+  the existing large-chunk warning, and `git diff --check` passed.
+- Historical `.pytest-tmp-*` and `.t49/` directories were preserved. The
+  protected `storage/chtest-dev.db` was not used or modified.
+
+Next: wait for a newly assigned product priority and update `NEXT_AI_TASK.md`
+before implementation. Retry pushing local Slice 49 commits when GitHub is
+reachable.

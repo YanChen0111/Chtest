@@ -5332,3 +5332,34 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 
 - Task 49.26: polish the shared workbench shell, AI queue, pytest execution, and
   reporting layouts without changing workflow behavior.
+
+## 2026-08-04 Slice 49.26 Workflow Workbench UI Polish
+
+### Implemented
+
+- Reduced shared shell/header/content spacing for a denser workbench without
+  changing navigation behavior.
+- Changed empty AI workflow queue buckets to compact three-column desktop
+  panels while keeping populated queues full width and responsive.
+- Rebalanced pytest execution and reporting columns, aligned panels to content
+  height, and introduced a wide-screen reporting evidence/analysis/report grid.
+- Added explicit mobile title/action stacking and corrected normal reporting
+  entry text so workflow-restored TestRun context appears only in explicit
+  restore mode.
+
+### Verification
+
+- Browser inspection at `1440x900` and `390x844` covered the shared shell, AI
+  Workbench, pytest execution, reporting, and mobile navigation drawer.
+- No inspected view had horizontal overflow, overlapping controls, or clipped
+  workflow context.
+- Frontend typecheck passed.
+- Full backend: `534 passed`.
+- Full frontend: `26 files / 110 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- The queued Slice 49 work is complete. Wait for the next product-owner
+  priority and do not infer Task 49.27 from roadmap or chat context.
