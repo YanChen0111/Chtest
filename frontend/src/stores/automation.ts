@@ -34,14 +34,14 @@ import {
 } from '../api/automation';
 import { listTestCases, type TestCaseListItem } from '../api/cases';
 import { getProjectSettings, type ProjectTestCommand } from '../api/projects';
+import { getRequirement, getRequirementReview } from '../api/requirements';
 import { listReviewHistory, type ReviewHistoryItem } from '../api/reviewHistory';
 import {
+  DEFAULT_PROJECT_ID,
   getLatestApprovedTestCaseContext,
   getLatestAutomationDraftContext,
   saveLatestAutomationDraftContext,
 } from './workflowContext';
-
-const DEFAULT_PROJECT_ID = '00000000-0000-0000-0000-000000000101';
 
 export const useAutomationStore = defineStore('automation', {
   state: () => {
@@ -49,6 +49,7 @@ export const useAutomationStore = defineStore('automation', {
     return {
       projectId: latestCase?.projectId ?? DEFAULT_PROJECT_ID,
       testCaseId: latestCase?.testCaseId ?? '',
+      requirementReviewId: '',
       testCases: [] as TestCaseListItem[],
       testCommands: [] as ProjectTestCommand[],
       plan: null as AutomationPlanRead | null,
@@ -60,6 +61,11 @@ export const useAutomationStore = defineStore('automation', {
       lastReview: null as AutomationDraftReviewRead | null,
       draftReviewWorkflow: null as AutomationDraftReviewWorkflowRead | null,
       reviewHistory: [] as ReviewHistoryItem[],
+      requestedRequirementId: null as string | null,
+      requestedReviewId: null as string | null,
+      requestedWorkflowRunId: null as string | null,
+      requestedWorkflowStage: null as string | null,
+      exactRestoreFailed: false,
       loading: false,
       loadingAssets: false,
       errorMessage: '',
@@ -67,6 +73,85 @@ export const useAutomationStore = defineStore('automation', {
     };
   },
   actions: {
+    clearExplicitRestoreRequest() {
+      this.requestedRequirementId = null;
+      this.requestedReviewId = null;
+      this.requestedWorkflowRunId = null;
+      this.requestedWorkflowStage = null;
+      this.exactRestoreFailed = false;
+      this.errorMessage = '';
+      this.requirementReviewId = this.plan?.requirement_review_id ?? '';
+    },
+    clearAutomationReviewSelection() {
+      this.testCaseId = '';
+      this.requirementReviewId = '';
+      this.testCases = [];
+      this.testCommands = [];
+      this.plan = null;
+      this.lastPlanReview = null;
+      this.planReviewWorkflow = null;
+      this.planReviewHistory = [];
+      this.createdDraft = null;
+      this.draft = null;
+      this.lastReview = null;
+      this.draftReviewWorkflow = null;
+      this.reviewHistory = [];
+      this.assetErrorMessage = '';
+    },
+    async loadExactAutomationPlanReview(
+      projectId: string,
+      requirementId?: string,
+      reviewId?: string,
+      workflowRunId?: string,
+      workflowStage?: string,
+    ) {
+      this.loading = true;
+      this.errorMessage = '';
+      this.projectId = projectId;
+      this.requestedRequirementId = requirementId ?? null;
+      this.requestedReviewId = reviewId ?? null;
+      this.requestedWorkflowRunId = workflowRunId ?? null;
+      this.requestedWorkflowStage = workflowStage ?? 'automation_plan_review';
+      this.exactRestoreFailed = false;
+      this.clearAutomationReviewSelection();
+      try {
+        if (!requirementId || !reviewId || !workflowRunId) {
+          throw new Error('AutomationPlanReview 精确恢复参数不完整。');
+        }
+        const expectedStage = workflowStage ?? 'automation_plan_review';
+        if (expectedStage !== 'automation_plan_review') {
+          throw new Error('请求的工作流阶段不是 AutomationPlanReview。');
+        }
+        const [requirement, review, planReview] = await Promise.all([
+          getRequirement(requirementId),
+          getRequirementReview(requirementId),
+          getAutomationPlanReviewWorkflow(projectId, reviewId),
+        ]);
+        if (
+          requirement.id !== requirementId
+          || requirement.project_id !== projectId
+          || requirement.status !== 'active'
+          || review.id !== reviewId
+          || review.requirement_id !== requirementId
+          || planReview.project_id !== projectId
+          || planReview.requirement_review_id !== reviewId
+          || planReview.workflow.stage !== expectedStage
+          || planReview.workflow.run_id !== workflowRunId
+        ) {
+          throw new Error('请求的 AutomationPlanReview 与服务端权威工作流不匹配。');
+        }
+        this.requirementReviewId = reviewId;
+        this.planReviewWorkflow = planReview;
+        return true;
+      } catch (error) {
+        this.clearAutomationReviewSelection();
+        this.exactRestoreFailed = true;
+        this.errorMessage = error instanceof Error ? error.message : '无法恢复指定的 AutomationPlanReview。';
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
     loadLatestApprovedTestCaseContext() {
       const latestCase = getLatestApprovedTestCaseContext();
       if (!latestCase) {
@@ -113,6 +198,7 @@ export const useAutomationStore = defineStore('automation', {
           prompt_version: 'automation_plan_generation:v1',
           skill_version: 'automation-plan-skill:v1',
         });
+        this.requirementReviewId = this.plan.requirement_review_id ?? '';
         await this.loadAutomationPlanReviewWorkflow();
         await this.loadCurrentPlanReviewHistory();
       } catch (error) {
@@ -251,7 +337,7 @@ export const useAutomationStore = defineStore('automation', {
       }
       saveLatestAutomationDraftContext({
         projectId: this.projectId,
-        requirementReviewId: this.plan?.requirement_review_id ?? null,
+        requirementReviewId: this.requirementReviewId || this.plan?.requirement_review_id || null,
         testCaseId: this.draft.test_case_id,
         automationDraftId: this.draft.id,
         status: this.draft.status,
@@ -286,7 +372,7 @@ export const useAutomationStore = defineStore('automation', {
       this.planReviewHistory = history.items;
     },
     async loadAutomationPlanReviewWorkflow() {
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!this.projectId || !requirementReviewId) {
         this.planReviewWorkflow = null;
         return null;
@@ -329,7 +415,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async submitAutomationPlanReviewGate() {
       const workflow = this.planReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationPlanWorkflowAction(() => submitAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
@@ -337,7 +423,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async completeAutomationPlanReviewGate() {
       const workflow = this.planReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationPlanWorkflowAction(() => completeAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
@@ -345,8 +431,8 @@ export const useAutomationStore = defineStore('automation', {
     },
     async editAutomationPlanReviewGate() {
       const workflow = this.planReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
-      if (!workflow || !requirementReviewId) return false;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
+      if (!workflow || !requirementReviewId || !this.plan) return false;
       return this.runAutomationPlanWorkflowAction(() => editAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
         plan_decisions: this.currentAutomationPlanDecisionSnapshot(),
@@ -354,7 +440,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async approveAutomationPlanReviewGate(comment?: string) {
       const workflow = this.planReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationPlanWorkflowAction(() => approveAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
@@ -363,7 +449,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async rejectAutomationPlanReviewGate(comment?: string) {
       const workflow = this.planReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationPlanWorkflowAction(() => rejectAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,
@@ -372,7 +458,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async continueAutomationPlanReviewGate() {
       const workflow = this.planReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       const approvalDecisionId = workflow?.approval_decision_id;
       if (!workflow || !requirementReviewId || !approvalDecisionId) return false;
       return this.runAutomationPlanWorkflowAction(() => continueAutomationPlanReviewWorkflow(
@@ -386,7 +472,7 @@ export const useAutomationStore = defineStore('automation', {
     },
     async approveAndContinueAutomationPlanReviewGate(comment?: string) {
       const workflow = this.planReviewWorkflow?.workflow;
-      const requirementReviewId = this.plan?.requirement_review_id;
+      const requirementReviewId = this.requirementReviewId || this.plan?.requirement_review_id;
       if (!workflow || !requirementReviewId) return false;
       return this.runAutomationPlanWorkflowAction(() => approveAndContinueAutomationPlanReviewWorkflow(this.projectId, requirementReviewId, {
         expected_version: workflow.lock_version,

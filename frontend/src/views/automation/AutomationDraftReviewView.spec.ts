@@ -6,10 +6,216 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import AutomationDraftReviewView from './AutomationDraftReviewView.vue';
 import { useAutomationStore } from '../../stores/automation';
 
+const projectId = '00000000-0000-0000-0000-000000000101';
+const requirementId = '00000000-0000-0000-0000-000000000411';
+const requirementReviewId = '00000000-0000-0000-0000-000000000611';
+const workflowRunId = '00000000-0000-0000-0000-000000000c01';
+const routeQuery: Record<string, string | undefined> = {};
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: routeQuery }),
+}));
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function exactRequirement() {
+  return {
+    id: requirementId,
+    project_id: projectId,
+    module_id: null,
+    title: 'Exact AutomationPlanReview requirement',
+    content: 'Restore only the authoritative automation plan gate.',
+    source_type: 'manual',
+    source_ref: 'REQ-AUTOMATION-EXACT',
+    status: 'active',
+    created_at: '2026-08-04T00:00:00Z',
+    updated_at: '2026-08-04T00:00:00Z',
+  };
+}
+
+function exactRequirementReview() {
+  return {
+    id: requirementReviewId,
+    requirement_id: requirementId,
+    overall_score: 92,
+    scores: { completeness: 92, clarity: 92, consistency: 92, testability: 92, feasibility: 92, logic: 92 },
+    issues: [],
+    clarification_questions: [],
+    test_design_notes: [],
+    risk_items: [],
+    used_knowledge: false,
+    used_context_artifact_ids: [],
+    context_manifest_artifact_id: null,
+    status: 'reviewed',
+  };
+}
+
+function exactAutomationPlanReview(overrides: {
+  project_id?: string;
+  requirement_review_id?: string;
+  stage?: string;
+  run_id?: string;
+} = {}) {
+  return {
+    project_id: overrides.project_id ?? projectId,
+    requirement_review_id: overrides.requirement_review_id ?? requirementReviewId,
+    workflow: {
+      run_id: overrides.run_id ?? workflowRunId,
+      stage: overrides.stage ?? 'automation_plan_review',
+      state: 'waiting_approval',
+      lock_version: 3,
+      snapshot_id: '00000000-0000-0000-0000-000000000c02',
+      approval_decision_id: null,
+      can_submit: false,
+      can_complete_review: false,
+      can_edit: true,
+      can_approve: true,
+      can_continue: false,
+    },
+    source_case_review_snapshot_id: '00000000-0000-0000-0000-000000000b01',
+    source_case_review_snapshot_hash: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    source_test_plan_review_snapshot_id: '00000000-0000-0000-0000-000000000a01',
+    source_test_plan_review_snapshot_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    approved_candidate_ids: ['00000000-0000-0000-0000-000000000801'],
+    approved_test_case_ids: ['00000000-0000-0000-0000-000000000901'],
+    generated_plan_ids: ['00000000-0000-0000-0000-000000001001'],
+    plan_decisions: [],
+  };
+}
+
 describe('AutomationDraftReviewView', () => {
   afterEach(() => {
     window.localStorage.clear();
+    Object.keys(routeQuery).forEach((key) => delete routeQuery[key]);
     vi.unstubAllGlobals();
+  });
+
+  it('restores the exact AutomationPlanReview and uses its server lock for actions', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'automation_plan_review';
+    window.localStorage.setItem('chtest.latestApprovedTestCase', JSON.stringify({
+      projectId,
+      testCaseId: '00000000-0000-0000-0000-000000000999',
+    }));
+    window.localStorage.setItem('chtest.latestAutomationDraft', JSON.stringify({
+      projectId,
+      automationDraftId: '00000000-0000-0000-0000-000000001999',
+    }));
+    let actionBody: unknown = null;
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review`) && !init?.method) {
+        return jsonResponse(exactAutomationPlanReview());
+      }
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review/approve-and-continue`) && init?.method === 'POST') {
+        actionBody = JSON.parse(String(init.body));
+        return jsonResponse(exactAutomationPlanReview({ stage: 'automation_draft_review' }));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+
+    const wrapper = mount(AutomationDraftReviewView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    const store = useAutomationStore(pinia);
+    expect(store.projectId).toBe(projectId);
+    expect(store.requirementReviewId).toBe(requirementReviewId);
+    expect(store.plan).toBeNull();
+    expect(store.draft).toBeNull();
+    expect(store.planReviewWorkflow?.workflow.run_id).toBe(workflowRunId);
+    expect(wrapper.find('[data-test="automation-plan-workflow-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="generate-plan"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-test="automation-plan-review-edit"]').attributes('disabled')).toBeDefined();
+    expect(requestedUrls.some((url) => url.includes('00000000-0000-0000-0000-000000001999'))).toBe(false);
+    expect(requestedUrls.some((url) => url.includes('/test-cases?project_id='))).toBe(false);
+
+    await wrapper.find('[data-test="automation-plan-review-approve-continue"]').trigger('click');
+    await flushPromises();
+    expect(actionBody).toEqual(expect.objectContaining({
+      expected_version: 3,
+      comment: 'Automation plan review approved and advanced.',
+    }));
+  });
+
+  it.each([
+    ['project identity', { project_id: '00000000-0000-0000-0000-000000000199' }],
+    ['review identity', { requirement_review_id: '00000000-0000-0000-0000-000000000699' }],
+    ['workflow stage', { stage: 'automation_draft_review' }],
+    ['workflow run', { run_id: '00000000-0000-0000-0000-000000000c99' }],
+  ])('fails closed when the restored AutomationPlanReview has a mismatched %s', async (_label, gateOverrides) => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    routeQuery.workflow_stage = 'automation_plan_review';
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactRequirementReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-reviews/${requirementReviewId}/automation-plan-review`)) {
+        return jsonResponse(exactAutomationPlanReview(gateOverrides));
+      }
+      return new Response('not found', { status: 404 });
+    }));
+    const pinia = createPinia();
+    const store = useAutomationStore(pinia);
+    store.testCaseId = '00000000-0000-0000-0000-000000000999';
+    store.planReviewWorkflow = exactAutomationPlanReview();
+
+    const wrapper = mount(AutomationDraftReviewView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(store.exactRestoreFailed).toBe(true);
+    expect(store.testCaseId).toBe('');
+    expect(store.requirementReviewId).toBe('');
+    expect(store.plan).toBeNull();
+    expect(store.draft).toBeNull();
+    expect(store.planReviewWorkflow).toBeNull();
+    expect(wrapper.find('[data-test="exact-automation-plan-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="automation-plan-workflow-panel"]').exists()).toBe(false);
+    expect(requestedUrls.some((url) => url.includes('/test-cases?project_id='))).toBe(false);
+  });
+
+  it('fails closed without network or recent-context fallback when an exact route parameter is missing', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = requirementReviewId;
+    routeQuery.workflow_stage = 'automation_plan_review';
+    window.localStorage.setItem('chtest.latestApprovedTestCase', JSON.stringify({
+      projectId,
+      testCaseId: '00000000-0000-0000-0000-000000000999',
+    }));
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const pinia = createPinia();
+
+    const wrapper = mount(AutomationDraftReviewView, {
+      global: { plugins: [pinia, ArcoVue] },
+    });
+    await flushPromises();
+
+    const store = useAutomationStore(pinia);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.exactRestoreFailed).toBe(true);
+    expect(store.testCaseId).toBe('');
+    expect(store.planReviewWorkflow).toBeNull();
+    expect(wrapper.find('[data-test="exact-automation-plan-restore-failed"]').exists()).toBe(true);
   });
 
   it('loads reviewer assets and exposes the four-stage workflow', async () => {

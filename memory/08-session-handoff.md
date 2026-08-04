@@ -1,5 +1,35 @@
 # Session Handoff
 
+## 2026-08-04 Slice 49.21 Exact AutomationPlanReview Resume
+
+Task 49.21 is complete; next is Task 49.22 exact AutomationDraftReview
+restoration from the AI Workbench workflow queue.
+
+- The queue now returns `/automation/drafts` only for a standard
+  `automation_plan_review` run whose UUID subject resolves to an active
+  same-project RequirementReview owner.
+- The route carries exact Requirement, RequirementReview, WorkflowRun, and
+  stage values. Explicit page restoration verifies all identities through the
+  Requirement APIs and project-scoped AutomationPlanReview API.
+- Explicit restore clears TestCase, plan, draft, both workflow gates, and
+  review-history state before loading. It never reads the latest approved case,
+  latest automation draft, asset lists, or prior browser context.
+- The authoritative AutomationPlanReview gate is visible without reconstructing
+  a stale AutomationPlan. Submit, complete, approve, reject, and continue use
+  the server lock version and approval id; snapshot editing stays disabled when
+  no exact plan decision payload is available.
+- Focused backend queue verification passed with `7 passed`; focused Automation
+  Draft Review + AI Workbench verification passed with `2 files / 18 tests`;
+  frontend typecheck passed.
+- Full backend passed with `530 passed`; full frontend passed with `26 files /
+  85 tests`; production build and `git diff --check` passed.
+- The protected `storage/chtest-dev.db` and historical scratch directories were
+  not modified.
+
+Next: apply the same exact-subject, exact-run, and exact-stage rule only to
+standard AutomationDraftReview runs. Do not add ExecutionApproval routing in
+the same task.
+
 ## 2026-08-04 Slice 49.20 Exact CaseReview Resume
 
 Task 49.20 is complete; next is Task 49.21 exact AutomationPlanReview

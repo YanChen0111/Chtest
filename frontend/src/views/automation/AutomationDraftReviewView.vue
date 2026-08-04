@@ -27,7 +27,10 @@
       </li>
     </ol>
 
-    <a-alert v-if="store.errorMessage" data-test="automation-error-state" type="error" show-icon>{{ store.errorMessage }}</a-alert>
+    <a-alert v-if="store.exactRestoreFailed" data-test="exact-automation-plan-restore-failed" type="error" show-icon>
+      {{ store.errorMessage || '无法恢复指定的 AutomationPlanReview，请返回 AI 工作台刷新队列。' }}
+    </a-alert>
+    <a-alert v-else-if="store.errorMessage" data-test="automation-error-state" type="error" show-icon>{{ store.errorMessage }}</a-alert>
     <a-alert v-if="store.assetErrorMessage" data-test="automation-stale-assets-state" type="warning" show-icon>
       {{ store.assetErrorMessage }}。已保留当前选择，可重试加载评审资产。
     </a-alert>
@@ -46,6 +49,7 @@
               allow-search
               allow-clear
               :loading="store.loadingAssets"
+              :disabled="explicitRestoreRequested"
               placeholder="按标题或优先级选择用例"
             >
               <a-option v-for="testCase in store.testCases" :key="testCase.id" :value="testCase.id" :label="testCase.title">
@@ -62,7 +66,7 @@
           </div>
           <label>
             <span>目标框架</span>
-            <a-select v-model="form.targetFramework">
+            <a-select v-model="form.targetFramework" :disabled="explicitRestoreRequested">
               <a-option value="pytest">pytest</a-option>
               <a-option value="playwright">Playwright</a-option>
             </a-select>
@@ -75,7 +79,7 @@
             data-test="generate-plan"
             html-type="button"
             type="primary"
-            :disabled="!form.testCaseId"
+            :disabled="explicitRestoreRequested || !form.testCaseId"
             :loading="store.loading"
             @click="submitPlan"
           >
@@ -83,8 +87,9 @@
           </a-button>
         </form>
 
-        <section v-if="store.plan" class="automation-plan-panel">
-          <h3>AutomationPlan</h3>
+        <section v-if="store.plan || store.planReviewWorkflow" class="automation-plan-panel">
+          <template v-if="store.plan">
+            <h3>AutomationPlan</h3>
           <a-descriptions :column="1" bordered size="small">
             <a-descriptions-item label="标题">{{ store.plan.title }}</a-descriptions-item>
             <a-descriptions-item label="状态">{{ store.plan.status }}</a-descriptions-item>
@@ -111,6 +116,7 @@
               生成草稿
             </a-button>
           </a-space>
+          </template>
           <section
             v-if="store.planReviewWorkflow"
             class="automation-plan-workflow-panel"
@@ -138,7 +144,7 @@
               <a-button data-test="automation-plan-review-complete" :disabled="!store.planReviewWorkflow.workflow.can_complete_review" :loading="store.loading" @click="runAutomationPlanReviewAction('complete')">
                 Complete review
               </a-button>
-              <a-button data-test="automation-plan-review-edit" :disabled="!store.planReviewWorkflow.workflow.can_edit" :loading="store.loading" @click="runAutomationPlanReviewAction('edit')">
+              <a-button data-test="automation-plan-review-edit" :disabled="!store.planReviewWorkflow.workflow.can_edit || !store.plan" :loading="store.loading" @click="runAutomationPlanReviewAction('edit')">
                 Save snapshot
               </a-button>
               <a-button data-test="automation-plan-review-approve" type="primary" :disabled="!store.planReviewWorkflow.workflow.can_approve" :loading="store.loading" @click="runAutomationPlanReviewAction('approve')">
@@ -431,9 +437,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { useAutomationStore } from '../../stores/automation';
 import { useExecutionStore } from '../../stores/execution';
+import { DEFAULT_PROJECT_ID } from '../../stores/workflowContext';
 import ExecutionArtifactTable from '../execution/ExecutionArtifactTable.vue';
 import ExecutionMetricsPanel from '../execution/ExecutionMetricsPanel.vue';
 import ExecutionResultTable from '../execution/ExecutionResultTable.vue';
@@ -450,6 +458,23 @@ import { buildExecutionRunManifestRows, type ExecutionRunManifestOutputArtifact 
 
 const store = useAutomationStore();
 const executionStore = useExecutionStore();
+const route = useRoute();
+
+function queryValue(value: unknown): string | undefined {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return typeof candidate === 'string' && candidate.length ? candidate : undefined;
+}
+
+const requestedRequirementId = computed(() => queryValue(route.query.requirement_id));
+const requestedReviewId = computed(() => queryValue(route.query.requirement_review_id));
+const requestedWorkflowRunId = computed(() => queryValue(route.query.workflow_run_id));
+const requestedWorkflowStage = computed(() => queryValue(route.query.workflow_stage));
+const explicitRestoreRequested = computed(() => (
+  route.query.requirement_id !== undefined
+  || route.query.requirement_review_id !== undefined
+  || route.query.workflow_run_id !== undefined
+  || route.query.workflow_stage !== undefined
+));
 
 type AutomationExecutionType = 'pytest' | 'playwright' | 'api' | 'jmeter';
 type ExecutionSourceMode = 'automation_draft' | 'test_command';
@@ -836,6 +861,18 @@ function shortId(value: string): string {
 }
 
 onMounted(async () => {
+  if (explicitRestoreRequested.value) {
+    await store.loadExactAutomationPlanReview(
+      DEFAULT_PROJECT_ID,
+      requestedRequirementId.value,
+      requestedReviewId.value,
+      requestedWorkflowRunId.value,
+      requestedWorkflowStage.value,
+    );
+    form.testCaseId = '';
+    return;
+  }
+  store.clearExplicitRestoreRequest();
   if (store.loadLatestApprovedTestCaseContext()) {
     form.testCaseId = store.testCaseId;
   }

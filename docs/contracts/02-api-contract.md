@@ -3643,6 +3643,15 @@ Rules:
   cross-project, wrong-stage, mismatched-run, and non-RequirementReview subjects
   return `null` or fail closed without local-storage, newest-candidate, or prior
   browser-context fallback.
+- For an `automation_plan_review` run with the same ownership, the route is
+  `/automation/drafts?requirement_id={requirement_id}&requirement_review_id={subject_ref}&workflow_run_id={run_id}&workflow_stage=automation_plan_review`.
+  The page must load the exact RequirementReview, use the project-scoped
+  AutomationPlanReview API, and verify the exact `automation_plan_review` stage
+  and WorkflowRun id before exposing controlled actions. Missing, malformed,
+  inactive, cross-project, wrong-stage, mismatched-run, and
+  non-RequirementReview subjects return `null` or fail closed without
+  local-storage, newest-plan, newest-draft, latest-approved-TestCase, or prior
+  browser-context fallback.
 
 ### 11.11 Test Campaign Scope API
 

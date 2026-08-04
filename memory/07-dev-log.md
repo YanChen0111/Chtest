@@ -5171,3 +5171,39 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.21: expose and restore the exact standard AutomationPlanReview queue
   subject through the existing Automation Draft Review page. Keep
   AutomationDraftReview and recent plan/draft context fallback out of scope.
+
+## 2026-08-04 Slice 49.21 Exact AutomationPlanReview Resume
+
+### Implemented
+
+- Extended the read-only queue resolver to standard `automation_plan_review`
+  runs owned by active same-project RequirementReview rows.
+- Added exact Requirement, RequirementReview, WorkflowRun, and stage values to
+  the `/automation/drafts` navigation hint.
+- Added explicit AutomationPlanReview restoration that clears stale TestCase,
+  plan, draft, workflow-gate, and history state before loading authoritative
+  Requirement and gate data.
+- Skipped latest approved-TestCase, latest-draft, and reviewer-asset recovery in
+  explicit mode.
+- Allowed controlled gate actions to use the exact RequirementReview and server
+  lock without reconstructing a stale AutomationPlan; edit stays unavailable
+  when no exact plan decision payload is loaded.
+
+### Verification
+
+- Focused backend queue suite: `7 passed`.
+- Focused Automation Draft Review + AI Workbench frontend suite: `2 files / 18
+  tests passed`.
+- Frontend typecheck passed.
+- Full backend: `530 passed`.
+- Full frontend: `26 files / 85 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+- Historical scratch directories and the protected source database were not
+  modified.
+
+### Next
+
+- Task 49.22: expose and restore the exact standard AutomationDraftReview queue
+  subject through the existing Automation Draft Review page. Keep
+  ExecutionApproval and recent plan/draft fallback out of scope.

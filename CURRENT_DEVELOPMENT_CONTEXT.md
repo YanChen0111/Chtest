@@ -9,8 +9,8 @@ require reading `AGENTS.md`, `START_HERE_FOR_AI.md`, and `NEXT_AI_TASK.md` first
 
 ```text
 Read AGENTS.md, START_HERE_FOR_AI.md, NEXT_AI_TASK.md, and
-CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.20 are complete. Continue
-Task 49.21 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
+CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.21 are complete. Continue
+Task 49.22 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
 never use storage/chtest-dev.db for migration or smoke data.
 ```
 
@@ -31,16 +31,15 @@ never use storage/chtest-dev.db for migration or smoke data.
 - Repository: `D:\Desktop\chenyan\Chtest-docs-preflight-vibecoding-fixes`
 - Branch: `docs/preflight-vibecoding-fixes`
 - Remote tracking: `origin/docs/preflight-vibecoding-fixes`
-- Last pushed commit: `4dbba4d feat(workflow): resume exact test plan review`
+- Last pushed commit: `24e74b7 feat(workflow): resume exact case review`
 - Previous backend campaign commit: `78c0ab3 feat(test-campaigns): add controlled campaign scope`
 - Task 49.14 is committed and pushed.
 - Task 49.15 is committed and pushed.
 - Task 49.16 is committed and pushed.
 - Task 49.17 is committed and pushed.
 - Task 49.18 is committed and pushed.
-- Task 49.19 is committed locally as `01ffd79`; push is pending because GitHub
-  port 443 is unreachable from the current environment.
-- Task 49.20 is complete and fully verified for its handoff commit.
+- Task 49.19 and Task 49.20 are committed and pushed through `24e74b7`.
+- Task 49.21 is complete and fully verified for its handoff commit.
 
 Historical untracked `.pytest-tmp-*` directories and `.t49/` are test scratch
 data. Do not stage, commit, or delete them.
@@ -223,11 +222,41 @@ Verification:
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.21
+## Completed Task 49.21
 
 Goal: extend exact queue restoration only to standard AutomationPlanReview runs
 through the existing Automation Draft Review page. Verify the exact
 RequirementReview and WorkflowRun and fail closed without recent plan, draft,
+approved-test-case, or browser fallback.
+
+Implementation:
+
+- The queue emits an exact Automation Draft Review route only for active
+  same-project RequirementReview subjects at `automation_plan_review`.
+- Explicit restore clears TestCase, plan, draft, plan/draft gate, and history
+  state before directly loading Requirement, RequirementReview, and the
+  project-scoped AutomationPlanReview gate.
+- The page can display and act on the authoritative gate without restoring a
+  stale AutomationPlan. Actions use the exact lock version; editing remains
+  disabled without the plan decision payload.
+- Explicit mode skips approved-TestCase, latest-draft, asset-list, and browser
+  context recovery.
+
+Verification:
+
+- Focused backend queue: `7 passed`.
+- Focused Automation Draft Review + AI Workbench frontend: `2 files / 18 tests`.
+- Frontend typecheck passed.
+- Full backend: `530 passed`.
+- Full frontend: `26 files / 85 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+## Active Task 49.22
+
+Goal: extend exact queue restoration only to standard AutomationDraftReview
+runs through the existing Automation Draft Review page. Verify the exact
+RequirementReview and WorkflowRun and fail closed without recent draft, plan,
 approved-test-case, or browser fallback.
 
 ## Running Local Services
@@ -251,9 +280,9 @@ approved-test-case, or browser fallback.
 
 ## Immediate Next Steps
 
-1. Commit Task 49.20 with only its expected implementation and continuity files.
-2. Retry pushing the local Task 49.19 and Task 49.20 commits when GitHub port
-   443 becomes reachable.
-3. Read the Task 49.21 boundary in `NEXT_AI_TASK.md`.
-4. Implement exact standard AutomationPlanReview route resolution and
-   fail-closed page restore without broadening to AutomationDraftReview.
+1. Commit and push Task 49.21 with only its expected implementation and
+   continuity files.
+2. Read the Task 49.22 boundary in `NEXT_AI_TASK.md`.
+3. Implement exact standard AutomationDraftReview route resolution and
+   fail-closed page restore without broadening to ExecutionApproval.
+4. Preserve historical scratch directories and the protected source database.

@@ -10,10 +10,10 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.20 is complete. Task 49.21 makes an AI Workbench AutomationPlanReview
+Task 49.21 is complete. Task 49.22 makes an AI Workbench AutomationDraftReview
 queue link restore the exact same-project RequirementReview and workflow run
-named by the server instead of falling back to a recent plan, draft, approved
-test case, or browser context.
+named by the server instead of falling back to a recent draft, automation plan,
+approved test case, or browser context.
 
 Verified behavior:
 
@@ -108,6 +108,10 @@ Verified behavior:
     exact Requirement, RequirementReview, WorkflowRun, and `case_review` values.
     The page verifies the authoritative gate and fails closed without stale
     generation, candidate, or browser-context fallback.
+28. Standard AutomationPlanReview queue routes open the Automation Draft Review
+    page with exact Requirement, RequirementReview, WorkflowRun, and stage
+    values. The page verifies the authoritative gate, keeps stale plan/draft
+    state cleared, and uses server lock versions for controlled actions.
 
 ## Previous Tasks Verified
 
@@ -194,9 +198,9 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can resume the exact actionable AutomationPlanReview from the
-read-only queue without approving or advancing a stale automation plan selected
-by prior browser context.
+Test engineers can resume the exact actionable AutomationDraftReview from the
+read-only queue without approving or advancing a stale automation draft
+selected by prior browser context.
 
 ## Must Read
 
@@ -219,7 +223,7 @@ by prior browser context.
 
 ## Expected Files
 
-Default write boundary for Task 49.21:
+Default write boundary for Task 49.22:
 
 ```text
 NEXT_AI_TASK.md
@@ -248,14 +252,14 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.20 evidence:
+Latest Task 49.21 evidence:
 
-- Focused backend workflow queue verification => `6 passed`.
-- Focused Case Generation Review + AI Workbench frontend verification => `2
-  files / 19 tests passed`.
+- Focused backend workflow queue verification => `7 passed`.
+- Focused Automation Draft Review + AI Workbench frontend verification => `2
+  files / 18 tests passed`.
 - Frontend `vue-tsc --noEmit` => passed.
-- Full backend => `529 passed`.
-- Full frontend => `26 files / 79 tests passed`.
+- Full backend => `530 passed`.
+- Full frontend => `26 files / 85 tests passed`.
 - Production build => passed with the existing large-chunk warning.
 - `git diff --check` => passed.
 
@@ -264,30 +268,30 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- An AutomationPlanReview queue item returns a route only when its UUID
+- An AutomationDraftReview queue item returns a route only when its UUID
   `subject_ref` resolves to a RequirementReview whose Requirement belongs to
-  the same project and the current stage is `automation_plan_review`.
+  the same project and the current stage is `automation_draft_review`.
 - The route includes the exact RequirementReview and WorkflowRun identifiers
   needed by the Automation Draft Review page; the page verifies the returned
-  AutomationPlanReview gate before enabling controlled actions.
+  AutomationDraftReview gate before enabling controlled actions.
 - Missing, malformed, cross-project, wrong-stage, mismatched-run, and
   non-RequirementReview subjects retain a null route or fail closed in the page.
-- Explicit restore failure clears AutomationPlanReview, plan, and draft
+- Explicit restore failure clears AutomationDraftReview, plan, and draft
   selection state and never falls back to local storage, the newest plan or
   draft, the latest approved TestCase, or prior browser context.
 - The AI Workbench remains read-only; all mutations still use the
-  AutomationPlanReview API's current server lock version and exact approval id.
+  AutomationDraftReview API's current server lock version and exact approval id.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(workflow): resume exact automation plan review
+feat(workflow): resume exact automation draft review
 ```
 
 ## Next Task
 
-Task 49.21 connects only standard AutomationPlanReview WorkflowRuns to the
-existing Automation Draft Review page. Do not add AutomationDraftReview,
-generic route guesses, dashboards, RBAC, tenants, cross-user collaboration,
+Task 49.22 connects only standard AutomationDraftReview WorkflowRuns to the
+existing Automation Draft Review page. Do not add ExecutionApproval, generic
+route guesses, dashboards, RBAC, tenants, cross-user collaboration,
 execution/report orchestration, or repair workflows.
