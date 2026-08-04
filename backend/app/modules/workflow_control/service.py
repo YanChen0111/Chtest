@@ -293,10 +293,9 @@ def _exact_requirement_review_route(
     stage: ControlledStage,
 ) -> str | None:
     """Return a route only when this run owns an exact active RequirementReview."""
-    if (
-        stage is not ControlledStage.REQUIREMENT_REVIEW
-        or run.workflow_kind != WorkflowKind.REQUIREMENT_TO_EXECUTION.value
-    ):
+    if stage not in {ControlledStage.REQUIREMENT_REVIEW, ControlledStage.RISK_REVIEW}:
+        return None
+    if run.workflow_kind != WorkflowKind.REQUIREMENT_TO_EXECUTION.value:
         return None
     try:
         review_id = uuid.UUID(run.subject_ref)
@@ -314,10 +313,13 @@ def _exact_requirement_review_route(
     if row is None:
         return None
     review, requirement = row
-    return (
+    route = (
         f"/requirements/review?requirement_id={requirement.id}"
         f"&requirement_review_id={review.id}&workflow_run_id={run.id}"
     )
+    if stage is ControlledStage.RISK_REVIEW:
+        route += "&workflow_stage=risk_review"
+    return route
 
 
 def submit_for_review(

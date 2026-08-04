@@ -3624,6 +3624,12 @@ Rules:
   subjects return `null` or fail closed without local-storage or recent-record
   fallback. A TestCampaign-origin RequirementReview run keeps `route_path=null`
   until it owns a contract-backed RequirementReview domain row.
+- For a `risk_review` run with the same active same-project RequirementReview
+  ownership, the route adds `workflow_stage=risk_review` to the exact
+  Requirement, RequirementReview, and WorkflowRun ids. The page must use the
+  project-scoped RiskReview API and verify that the returned workflow stage is
+  exactly `risk_review`; a RequirementReview response, later stage, or run-id
+  mismatch fails closed.
 
 ### 11.11 Test Campaign Scope API
 

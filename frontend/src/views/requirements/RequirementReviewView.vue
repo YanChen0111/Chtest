@@ -311,10 +311,12 @@ function queryValue(value: unknown): string | undefined {
 const requestedRequirementId = computed(() => queryValue(route.query.requirement_id));
 const requestedReviewId = computed(() => queryValue(route.query.requirement_review_id));
 const requestedWorkflowRunId = computed(() => queryValue(route.query.workflow_run_id));
+const requestedWorkflowStage = computed(() => queryValue(route.query.workflow_stage));
 const explicitRestoreRequested = computed(() => (
   route.query.requirement_id !== undefined
   || route.query.requirement_review_id !== undefined
   || route.query.workflow_run_id !== undefined
+  || route.query.workflow_stage !== undefined
 ));
 
 const riskColumns = [
@@ -549,6 +551,7 @@ onMounted(async () => {
       requestedRequirementId.value,
       requestedReviewId.value,
       requestedWorkflowRunId.value,
+      requestedWorkflowStage.value,
     );
     if (restored) {
       syncRequirementForm();

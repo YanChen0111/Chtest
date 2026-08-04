@@ -302,7 +302,7 @@ def test_workflow_queue_routes_only_exact_same_project_requirement_review() -> N
                 session,
                 project,
                 subject_ref=str(review.id),
-                stage=ControlledStage.RISK_REVIEW,
+                stage=ControlledStage.TEST_PLAN_REVIEW,
             ).id,
             expected_version=0,
         )
@@ -325,6 +325,88 @@ def test_workflow_queue_routes_only_exact_same_project_requirement_review() -> N
     assert by_id[missing_id]["route_path"] is None
     assert by_id[malformed_id]["route_path"] is None
     assert by_id[wrong_stage_id]["route_path"] is None
+
+
+def test_workflow_queue_routes_only_exact_same_project_risk_review() -> None:
+    with _session() as session:
+        project, other_project = _projects(session)
+        requirement, review = _requirement_review(session, project)
+        _, other_review = _requirement_review(session, other_project)
+        _, inactive_review = _requirement_review(session, project, requirement_status="archived")
+
+        valid = submit_for_review(
+            session,
+            project.id,
+            _create_run(
+                session,
+                project,
+                subject_ref=str(review.id),
+                stage=ControlledStage.RISK_REVIEW,
+            ).id,
+            expected_version=0,
+        )
+        cross_project = submit_for_review(
+            session,
+            project.id,
+            _create_run(
+                session,
+                project,
+                subject_ref=str(other_review.id),
+                stage=ControlledStage.RISK_REVIEW,
+            ).id,
+            expected_version=0,
+        )
+        inactive = submit_for_review(
+            session,
+            project.id,
+            _create_run(
+                session,
+                project,
+                subject_ref=str(inactive_review.id),
+                stage=ControlledStage.RISK_REVIEW,
+            ).id,
+            expected_version=0,
+        )
+        missing = submit_for_review(
+            session,
+            project.id,
+            _create_run(
+                session,
+                project,
+                subject_ref=str(uuid.uuid4()),
+                stage=ControlledStage.RISK_REVIEW,
+            ).id,
+            expected_version=0,
+        )
+        malformed = submit_for_review(
+            session,
+            project.id,
+            _create_run(
+                session,
+                project,
+                subject_ref="not-a-review-id",
+                stage=ControlledStage.RISK_REVIEW,
+            ).id,
+            expected_version=0,
+        )
+
+        by_id = {item["id"]: item for item in list_workflow_queue(session, project.id)}
+        expected_route = (
+            f"/requirements/review?requirement_id={requirement.id}"
+            f"&requirement_review_id={review.id}&workflow_run_id={valid.id}"
+            "&workflow_stage=risk_review"
+        )
+        valid_id = valid.id
+        cross_project_id = cross_project.id
+        inactive_id = inactive.id
+        missing_id = missing.id
+        malformed_id = malformed.id
+
+    assert by_id[valid_id]["route_path"] == expected_route
+    assert by_id[cross_project_id]["route_path"] is None
+    assert by_id[inactive_id]["route_path"] is None
+    assert by_id[missing_id]["route_path"] is None
+    assert by_id[malformed_id]["route_path"] is None
 
 
 def test_workflow_queue_groups_only_actionable_project_runs() -> None:

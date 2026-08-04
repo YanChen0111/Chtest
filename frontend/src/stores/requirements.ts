@@ -57,6 +57,7 @@ export const useRequirementsStore = defineStore('requirements', {
     requestedRequirementId: null as string | null,
     requestedReviewId: null as string | null,
     requestedWorkflowRunId: null as string | null,
+    requestedWorkflowStage: null as string | null,
     exactRestoreFailed: false,
     documents: [] as RequirementDocumentRead[],
     createdDocument: null as RequirementDocumentRead | null,
@@ -77,6 +78,7 @@ export const useRequirementsStore = defineStore('requirements', {
       this.requestedRequirementId = null;
       this.requestedReviewId = null;
       this.requestedWorkflowRunId = null;
+      this.requestedWorkflowStage = null;
       this.exactRestoreFailed = false;
       this.errorMessage = '';
     },
@@ -85,6 +87,7 @@ export const useRequirementsStore = defineStore('requirements', {
       requirementId?: string,
       reviewId?: string,
       workflowRunId?: string,
+      workflowStage?: string,
     ) {
       this.loading = true;
       this.errorMessage = '';
@@ -92,6 +95,7 @@ export const useRequirementsStore = defineStore('requirements', {
       this.requestedRequirementId = requirementId ?? null;
       this.requestedReviewId = reviewId ?? null;
       this.requestedWorkflowRunId = workflowRunId ?? null;
+      this.requestedWorkflowStage = workflowStage ?? 'requirement_review';
       this.exactRestoreFailed = false;
       this.requirement = null;
       this.reviewStart = null;
@@ -103,9 +107,15 @@ export const useRequirementsStore = defineStore('requirements', {
         if (!requirementId || !reviewId || !workflowRunId) {
           throw new Error('指定需求评审缺少精确恢复参数');
         }
+        const expectedStage = workflowStage ?? 'requirement_review';
+        if (!['requirement_review', 'risk_review'].includes(expectedStage)) {
+          throw new Error('指定评审阶段不受支持');
+        }
         const [requirement, review] = await Promise.all([
           getRequirement(requirementId),
-          getRequirementReview(requirementId),
+          expectedStage === 'risk_review'
+            ? getRiskReview(projectId, reviewId)
+            : getRequirementReview(requirementId),
         ]);
         if (
           requirement.id !== requirementId
@@ -114,7 +124,7 @@ export const useRequirementsStore = defineStore('requirements', {
           || review.id !== reviewId
           || review.requirement_id !== requirementId
           || review.workflow?.run_id !== workflowRunId
-          || review.workflow.stage !== 'requirement_review'
+          || review.workflow.stage !== expectedStage
         ) {
           throw new Error('指定需求评审与服务端工作流不匹配');
         }
@@ -176,7 +186,12 @@ export const useRequirementsStore = defineStore('requirements', {
       supplementText?: string;
       clarificationAnswers?: ClarificationAnswer[];
     }) {
-      if (this.requestedRequirementId || this.requestedReviewId || this.requestedWorkflowRunId) {
+      if (
+        this.requestedRequirementId
+        || this.requestedReviewId
+        || this.requestedWorkflowRunId
+        || this.requestedWorkflowStage
+      ) {
         this.errorMessage = '显式恢复模式下不能创建新的需求评审';
         return;
       }

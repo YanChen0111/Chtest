@@ -10944,3 +10944,29 @@ the AI Workbench workflow queue.
 Next: apply the same exact-subject and exact-run restoration rule only to the
 standard RiskReview stage through its existing project-scoped API. Do not add
 later stages or invent a TestCampaign RequirementReview domain row.
+
+## 2026-08-04 Slice 49.17 Exact RiskReview Resume
+
+Task 49.17 is complete; next is Task 49.18 exact TestPlanReview restoration from
+the AI Workbench workflow queue.
+
+- The queue now resolves standard `risk_review` runs only when their UUID
+  subject is an active same-project RequirementReview owner.
+- RiskReview routes retain exact Requirement, RequirementReview, and WorkflowRun
+  ids and add `workflow_stage=risk_review`.
+- The page uses the existing project-scoped RiskReview API and verifies project,
+  relationship, run id, and exact returned stage before exposing controls.
+- A RequirementReview response, unsupported stage, invalid id, cross-project
+  subject, inactive Requirement, or run mismatch fails closed without local
+  storage or recent-record fallback.
+- Focused backend queue verification passed with `4 passed`; full backend
+  regression passed with `527 passed`.
+- Focused RequirementReview + AI Workbench frontend verification passed with
+  `2 files / 12 tests`; full frontend passed with `26 files / 71 tests`.
+- Production build passed with the existing large-chunk warning, and
+  `git diff --check` passed.
+- TestCampaign-origin RequirementReview runs, later stages, the protected
+  source database, and historical pytest scratch directories were untouched.
+
+Next: apply the same exact-subject, exact-run, and exact-stage rule only to the
+standard TestPlanReview stage through its existing project-scoped API.

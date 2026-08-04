@@ -10,9 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.16 is complete. Task 49.17 makes an AI Workbench RiskReview queue link
-restore the exact same-project Requirement, RequirementReview, and workflow run
-named by the server instead of falling back to recent browser context.
+Task 49.17 is complete. Task 49.18 makes an AI Workbench TestPlanReview queue
+link restore the exact same-project Requirement, RequirementReview, and
+workflow run named by the server instead of falling back to browser context.
 
 Verified behavior:
 
@@ -94,6 +94,8 @@ Verified behavior:
 23. Standard RequirementReview queue routes include exact Requirement,
     RequirementReview, and WorkflowRun ids. The page verifies all three and
     fails closed without local-storage or recent-record fallback.
+24. Standard RiskReview queue routes add the exact `risk_review` stage and use
+    the project-scoped RiskReview API. Stage or run mismatches fail closed.
 
 ## Previous Tasks Verified
 
@@ -180,8 +182,8 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can resume an actionable RiskReview directly from the read-only
-workflow queue without acting on a stale RequirementReview or unrelated
+Test engineers can resume an actionable TestPlanReview directly from the
+read-only workflow queue without acting on a stale RiskReview or unrelated
 browser selection.
 
 ## Must Read
@@ -205,7 +207,7 @@ browser selection.
 
 ## Expected Files
 
-Default write boundary for Task 49.17:
+Default write boundary for Task 49.18:
 
 ```text
 NEXT_AI_TASK.md
@@ -233,12 +235,12 @@ npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.16 evidence:
+Latest Task 49.17 evidence:
 
-- Focused backend queue verification => `3 passed`.
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/task4916-full` => `526 passed`.
-- Focused RequirementReview + AI Workbench frontend verification => `2 files / 10 tests passed`.
-- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 69 tests passed`.
+- Focused backend queue verification => `4 passed`.
+- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/task4917-full` => `527 passed`.
+- Focused RequirementReview + AI Workbench frontend verification => `2 files / 12 tests passed`.
+- `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 71 tests passed`.
 - `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
 - `git diff --check` => passed
 
@@ -247,12 +249,12 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- A RiskReview queue item returns a route only when its UUID
+- A TestPlanReview queue item returns a route only when its UUID
   `subject_ref` resolves to a RequirementReview whose Requirement belongs to
-  the same project and the current stage is `risk_review`.
+  the same project and the current stage is `test_plan_review`.
 - The route includes the exact Requirement, RequirementReview, WorkflowRun, and
-  `risk_review` stage. Opening it uses the project-scoped RiskReview API and
-  verifies all identifiers against the authoritative response.
+  `test_plan_review` stage. Opening it uses the project-scoped TestPlanReview API
+  and verifies all identifiers against the authoritative response.
 - Missing, malformed, cross-project, mismatched-review, and non-RequirementReview
   subjects retain a null route or fail closed in the page.
 - An explicit restore failure clears review state, disables controlled actions,
@@ -265,13 +267,13 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 ## Commit Message
 
 ```text
-feat(workflow): resume exact risk review
+feat(workflow): resume exact test plan review
 ```
 
 ## Next Task
 
-Task 49.17 connects only standard RiskReview WorkflowRuns to the existing exact
-Requirement review page. Keep TestCampaign-origin RequirementReview runs null
-until their adjacent-stage domain contract is defined. Do not add
-TestPlanReview, CaseReview, generic route guesses, dashboards, RBAC, tenants,
-cross-user collaboration, execution/report orchestration, or repair workflows.
+Task 49.18 connects only standard TestPlanReview WorkflowRuns to the existing
+exact Requirement review page. Keep TestCampaign-origin RequirementReview runs
+null until their adjacent-stage domain contract is defined. Do not add
+CaseReview, generic route guesses, dashboards, RBAC, tenants, cross-user
+collaboration, execution/report orchestration, or repair workflows.

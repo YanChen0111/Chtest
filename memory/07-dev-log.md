@@ -5042,3 +5042,33 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.17: expose and restore the exact standard RiskReview queue subject
   through the existing project-scoped API. Do not add later stages or route
   TestCampaign-origin RequirementReview runs.
+
+## 2026-08-04 Slice 49.17 Exact RiskReview Resume
+
+### Implemented
+
+- Added deterministic RiskReview route resolution for active same-project
+  RequirementReview subjects in the read-only WorkflowRun queue.
+- Added `workflow_stage=risk_review` to the exact Requirement,
+  RequirementReview, and WorkflowRun navigation hint.
+- Routed explicit RiskReview restoration through the existing project-scoped
+  RiskReview API and verified the returned stage and run before exposing the
+  server-owned controls.
+- Preserved the old RequirementReview route and fail-closed behavior for
+  unsupported stages, invalid ids, stale browser context, and mismatched runs.
+
+### Verification
+
+- Focused backend queue suite: `4 passed`.
+- Full backend: `527 passed`.
+- Focused RequirementReview + AI Workbench frontend suite: `2 files / 12 tests
+  passed`.
+- Full frontend: `26 files / 71 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.18: expose and restore the exact standard TestPlanReview queue subject
+  through the existing project-scoped API. Keep CaseReview and
+  TestCampaign-origin RequirementReview runs out of scope.
