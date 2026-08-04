@@ -35,7 +35,7 @@ function workflowQueueBody() {
           project_id: '00000000-0000-0000-0000-000000000101',
           workflow_kind: 'requirement_to_execution',
           subject_ref: '00000000-0000-0000-0000-000000000602',
-          current_stage: 'case_review',
+          current_stage: 'requirement_review',
           gate_state: 'waiting_approval',
           bucket: 'waiting_approval',
           lock_version: 8,
@@ -43,7 +43,7 @@ function workflowQueueBody() {
           input_snapshot_hash: 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
           approval_decision_id: null,
           can_continue: false,
-          route_path: null,
+          route_path: '/requirements/review?requirement_id=00000000-0000-0000-0000-000000000402&requirement_review_id=00000000-0000-0000-0000-000000000602&workflow_run_id=00000000-0000-0000-0000-000000009002',
           created_at: '2026-07-30T08:02:00Z',
           updated_at: '2026-07-30T08:03:00Z',
         },
@@ -338,16 +338,17 @@ describe('AiWorkbenchView', () => {
     expect(wrapper.text()).toContain('待批准');
     expect(wrapper.text()).toContain('已批准，可继续');
     expect(wrapper.text()).toContain('测试范围');
-    expect(wrapper.text()).toContain('用例评审');
+    expect(wrapper.text()).toContain('需求评审');
     expect(wrapper.text()).toContain('报告评审');
     expect(wrapper.text()).toContain('15');
     expect(wrapper.find('[data-test="workflow-queue-panel"]').exists()).toBe(true);
     expect(wrapper.find('[data-test="workflow-queue-can_continue"]').text()).toContain(
       '00000000-0000-0000-0000-000000009103',
     );
-    expect(wrapper.find('[data-test="workflow-queue-open"]').attributes('href')).toBe(
+    expect(wrapper.findAll('[data-test="workflow-queue-open"]').map((link) => link.attributes('href'))).toEqual([
       '/campaigns/scope?campaign_id=00000000-0000-0000-0000-000000000601',
-    );
+      '/requirements/review?requirement_id=00000000-0000-0000-0000-000000000402&requirement_review_id=00000000-0000-0000-0000-000000000602&workflow_run_id=00000000-0000-0000-0000-000000009002',
+    ]);
     expect(wrapper.text()).toContain('暂无入口');
     expect(wrapper.text()).toContain('OpenAI Compatible');
     expect(wrapper.text()).toContain('OpenAI Compatible · gpt-5.5');

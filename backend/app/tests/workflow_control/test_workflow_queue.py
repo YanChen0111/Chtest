@@ -10,8 +10,10 @@ from sqlalchemy.orm import Session
 
 from backend.app.main import app
 from backend.app.models.base import Base
+from backend.app.modules.ai_runtime.models import AITask
 from backend.app.modules.projects.models import Environment, Project, Workspace
 from backend.app.modules.projects.router import get_session
+from backend.app.modules.requirements.models import Requirement, RequirementReview
 from backend.app.modules.test_campaigns.models import TestCampaign
 from backend.app.modules.workflow_control.models import (
     WorkflowHumanDecision,
@@ -153,6 +155,48 @@ def _campaign(session: Session, project: Project, *, status: str = "active") -> 
     return campaign
 
 
+def _requirement_review(
+    session: Session,
+    project: Project,
+    *,
+    requirement_status: str = "active",
+) -> tuple[Requirement, RequirementReview]:
+    task = AITask(
+        project_id=project.id,
+        agent_name="RequirementReviewAgent",
+        task_type="requirement_review",
+        prompt_version_id=uuid.uuid4(),
+        skill_version_id=uuid.uuid4(),
+        model_provider="mock",
+        model_name="mock-requirement-review",
+        status="succeeded",
+        input_json={},
+        output_json={},
+        token_usage_json={},
+        context_artifact_ids=[],
+    )
+    requirement = Requirement(
+        project_id=project.id,
+        title="Queue requirement",
+        content="Restore this exact requirement review.",
+        source_type="manual",
+        source_ref="REQ-QUEUE-1",
+        status=requirement_status,
+    )
+    review = RequirementReview(
+        requirement=requirement,
+        ai_task=task,
+        overall_score=80,
+        issues_json=[],
+        clarification_questions_json=[],
+        test_design_notes_json=[],
+        status="reviewed",
+    )
+    session.add_all([task, requirement, review])
+    session.flush()
+    return requirement, review
+
+
 def test_workflow_queue_routes_only_exact_same_project_scope_campaign() -> None:
     with _session() as session:
         project, other_project = _projects(session)
@@ -207,6 +251,75 @@ def test_workflow_queue_routes_only_exact_same_project_scope_campaign() -> None:
         wrong_stage_id = wrong_stage.id
 
     assert by_id[valid_id]["route_path"] == f"/campaigns/scope?campaign_id={campaign_id}"
+    assert by_id[cross_project_id]["route_path"] is None
+    assert by_id[inactive_id]["route_path"] is None
+    assert by_id[missing_id]["route_path"] is None
+    assert by_id[malformed_id]["route_path"] is None
+    assert by_id[wrong_stage_id]["route_path"] is None
+
+
+def test_workflow_queue_routes_only_exact_same_project_requirement_review() -> None:
+    with _session() as session:
+        project, other_project = _projects(session)
+        requirement, review = _requirement_review(session, project)
+        _, other_review = _requirement_review(session, other_project)
+        _, inactive_review = _requirement_review(session, project, requirement_status="archived")
+
+        valid = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(review.id)).id,
+            expected_version=0,
+        )
+        cross_project = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(other_review.id)).id,
+            expected_version=0,
+        )
+        inactive = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(inactive_review.id)).id,
+            expected_version=0,
+        )
+        missing = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref=str(uuid.uuid4())).id,
+            expected_version=0,
+        )
+        malformed = submit_for_review(
+            session,
+            project.id,
+            _create_run(session, project, subject_ref="not-a-review-id").id,
+            expected_version=0,
+        )
+        wrong_stage = submit_for_review(
+            session,
+            project.id,
+            _create_run(
+                session,
+                project,
+                subject_ref=str(review.id),
+                stage=ControlledStage.RISK_REVIEW,
+            ).id,
+            expected_version=0,
+        )
+
+        by_id = {item["id"]: item for item in list_workflow_queue(session, project.id)}
+        expected_route = (
+            f"/requirements/review?requirement_id={requirement.id}"
+            f"&requirement_review_id={review.id}&workflow_run_id={valid.id}"
+        )
+        valid_id = valid.id
+        cross_project_id = cross_project.id
+        inactive_id = inactive.id
+        missing_id = missing.id
+        malformed_id = malformed.id
+        wrong_stage_id = wrong_stage.id
+
+    assert by_id[valid_id]["route_path"] == expected_route
     assert by_id[cross_project_id]["route_path"] is None
     assert by_id[inactive_id]["route_path"] is None
     assert by_id[missing_id]["route_path"] is None

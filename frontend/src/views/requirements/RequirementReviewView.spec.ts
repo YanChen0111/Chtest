@@ -6,9 +6,162 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRequirementsStore } from '../../stores/requirements';
 import RequirementReviewView from './RequirementReviewView.vue';
 
+const projectId = '00000000-0000-0000-0000-000000000101';
+const requirementId = '00000000-0000-0000-0000-000000000401';
+const reviewId = '00000000-0000-0000-0000-000000000601';
+const workflowRunId = '00000000-0000-0000-0000-000000000701';
+const routeQuery: Record<string, string | undefined> = {};
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: routeQuery }),
+}));
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function exactRequirement(id = requirementId) {
+  return {
+    id,
+    project_id: projectId,
+    module_id: null,
+    title: 'Exact queue requirement',
+    content: 'Restore only this requirement review.',
+    source_type: 'manual',
+    source_ref: 'REQ-EXACT-1',
+    status: 'active',
+    created_at: '2026-08-04T00:00:00Z',
+    updated_at: '2026-08-04T00:00:00Z',
+  };
+}
+
+function exactReview(id = reviewId, runId = workflowRunId) {
+  return {
+    id,
+    requirement_id: requirementId,
+    overall_score: 91,
+    scores: { completeness: 90, clarity: 91, consistency: 92, testability: 93, feasibility: 89, logic: 91 },
+    issues: [],
+    clarification_questions: [],
+    test_design_notes: [],
+    risk_items: [],
+    used_knowledge: false,
+    used_context_artifact_ids: [],
+    context_manifest_artifact_id: null,
+    status: 'reviewed',
+    workflow: {
+      run_id: runId,
+      stage: 'requirement_review',
+      state: 'waiting_review',
+      lock_version: 1,
+      snapshot_id: '00000000-0000-0000-0000-000000000702',
+      approval_decision_id: null,
+      can_submit: false,
+      can_complete_review: true,
+      can_edit: true,
+      can_approve: false,
+      can_continue: false,
+    },
+  };
+}
+
 describe('RequirementReviewView', () => {
-  beforeEach(() => window.localStorage.clear());
+  beforeEach(() => {
+    window.localStorage.clear();
+    Object.keys(routeQuery).forEach((key) => delete routeQuery[key]);
+  });
   afterEach(() => vi.unstubAllGlobals());
+
+  it('loads the exact requirement review and workflow run requested by the queue route', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = reviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactReview());
+      if (url.endsWith(`/projects/${projectId}/requirement-documents`)) {
+        return jsonResponse({ items: [], total: 0 });
+      }
+      return new Response('not found', { status: 404 });
+    }));
+
+    const wrapper = mount(RequirementReviewView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(requestedUrls.some((url) => url.endsWith(`/requirements/${requirementId}`))).toBe(true);
+    expect(requestedUrls.some((url) => url.endsWith(`/requirements/${requirementId}/review`))).toBe(true);
+    expect(requestedUrls.some((url) => url.endsWith(`/projects/${projectId}/requirements`))).toBe(false);
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Exact queue requirement');
+    expect(wrapper.text()).toContain('91');
+    expect(wrapper.find('[data-test="review-next-step"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="start-review"]').attributes('disabled')).toBeDefined();
+    const persisted = JSON.parse(window.localStorage.getItem('chtest.latestRequirementReview') ?? '{}');
+    expect(persisted).toEqual(expect.objectContaining({
+      requirementId,
+      requirementReviewId: reviewId,
+      review: expect.objectContaining({ workflow: expect.objectContaining({ run_id: workflowRunId }) }),
+    }));
+  });
+
+  it('fails closed without restoring stale browser context when explicit ids are invalid', async () => {
+    routeQuery.requirement_id = 'not-a-uuid';
+    routeQuery.requirement_review_id = reviewId;
+    routeQuery.workflow_run_id = workflowRunId;
+    window.localStorage.setItem('chtest.latestRequirementReview', JSON.stringify({
+      projectId,
+      requirementId,
+      requirementReviewId: reviewId,
+      requirement: exactRequirement(),
+      review: exactReview(),
+    }));
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      return jsonResponse({ error_code: 'VALIDATION_ERROR', message: 'Requirement id is invalid.', details: {} }, 422);
+    }));
+
+    const wrapper = mount(RequirementReviewView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(requestedUrls.some((url) => url.endsWith('/requirements/not-a-uuid'))).toBe(true);
+    expect(requestedUrls.some((url) => url.endsWith(`/requirements/${requirementId}`))).toBe(false);
+    expect(wrapper.find('[data-test="exact-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="review-next-step"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="start-review"]').attributes('disabled')).toBeDefined();
+    expect(wrapper.text()).not.toContain('Exact queue requirement');
+  });
+
+  it('fails closed when the restored review belongs to a different workflow run', async () => {
+    routeQuery.requirement_id = requirementId;
+    routeQuery.requirement_review_id = reviewId;
+    routeQuery.workflow_run_id = '00000000-0000-0000-0000-000000000799';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith(`/requirements/${requirementId}`)) return jsonResponse(exactRequirement());
+      if (url.endsWith(`/requirements/${requirementId}/review`)) return jsonResponse(exactReview());
+      return new Response('not found', { status: 404 });
+    }));
+
+    const wrapper = mount(RequirementReviewView, {
+      global: { plugins: [createPinia(), ArcoVue] },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-test="exact-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="review-next-step"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="start-review"]').attributes('disabled')).toBeDefined();
+  });
 
   it('creates a requirement and shows review scores, risks, and context usage', async () => {
     const reviewBodies: unknown[] = [];

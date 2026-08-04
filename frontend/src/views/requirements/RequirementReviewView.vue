@@ -13,6 +13,13 @@
     </div>
 
     <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert
+      v-if="store.exactRestoreFailed"
+      data-test="exact-review-restore-failed"
+      type="warning"
+      content="指定需求评审无法恢复，请返回工作台或刷新"
+      show-icon
+    />
 
     <div class="workflow-rail" aria-label="需求到用例流程">
       <span class="workflow-rail__step workflow-rail__step--active"><strong>1</strong>输入需求</span>
@@ -30,12 +37,13 @@
         <form class="requirement-form" @submit.prevent="submitReview">
           <label>
             <span>需求标题</span>
-            <a-input v-model="form.title" />
+            <a-input v-model="form.title" :disabled="explicitRestoreRequested" />
           </label>
           <label>
             <span>需求内容</span>
             <a-textarea
               v-model="form.content"
+              :disabled="explicitRestoreRequested"
               placeholder="描述用户动作、系统响应、约束条件和失败处理。可以直接粘贴需求文档。"
               :auto-size="{ minRows: 8, maxRows: 12 }"
             />
@@ -50,6 +58,7 @@
               data-test="retrieve-before-review"
               size="small"
               type="outline"
+              :disabled="explicitRestoreRequested"
               :loading="store.loadingKnowledge"
               @click="previewKnowledge"
             >
@@ -72,7 +81,13 @@
             </article>
             <a-empty v-if="store.knowledgePreview.items.length === 0" description="没有命中已审核知识，仍可继续评审" />
           </div>
-          <a-button html-type="submit" type="primary" :loading="store.loading">开始评审</a-button>
+          <a-button
+            data-test="start-review"
+            html-type="submit"
+            type="primary"
+            :disabled="explicitRestoreRequested"
+            :loading="store.loading"
+          >开始评审</a-button>
         </form>
       </a-card>
 
@@ -263,11 +278,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import type { RequirementReviewIssue, RequirementRiskItem, TestPlanItem } from '../../api/requirements';
 import { useRequirementsStore } from '../../stores/requirements';
 
 const store = useRequirementsStore();
+const route = useRoute();
 
 const form = reactive({
   title: '优惠券结算规则',
@@ -285,6 +302,20 @@ const editableRisks = ref<RequirementRiskItem[]>([]);
 const editableTestPlanStrategy = ref('');
 const editableTestPlanItems = ref<TestPlanItem[]>([]);
 const clarificationAnswerMap = reactive<Record<string, string>>({});
+
+function queryValue(value: unknown): string | undefined {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return typeof candidate === 'string' && candidate.length ? candidate : undefined;
+}
+
+const requestedRequirementId = computed(() => queryValue(route.query.requirement_id));
+const requestedReviewId = computed(() => queryValue(route.query.requirement_review_id));
+const requestedWorkflowRunId = computed(() => queryValue(route.query.workflow_run_id));
+const explicitRestoreRequested = computed(() => (
+  route.query.requirement_id !== undefined
+  || route.query.requirement_review_id !== undefined
+  || route.query.workflow_run_id !== undefined
+));
 
 const riskColumns = [
   { title: '风险', dataIndex: 'title' },
@@ -503,11 +534,31 @@ function continueCurrentStage() {
   return isRiskReview.value ? store.continueRiskReview() : store.continueReview();
 }
 
-onMounted(async () => {
-  if (store.restoreLatestRequirementReview() && store.requirement) {
+function syncRequirementForm() {
+  if (store.requirement) {
     form.title = store.requirement.title;
     form.sourceRef = store.requirement.source_ref ?? '';
     form.content = store.requirement.content;
+  }
+}
+
+onMounted(async () => {
+  if (explicitRestoreRequested.value) {
+    const restored = await store.loadExactRequirementReview(
+      store.projectId,
+      requestedRequirementId.value,
+      requestedReviewId.value,
+      requestedWorkflowRunId.value,
+    );
+    if (restored) {
+      syncRequirementForm();
+      void store.loadRequirementDocuments();
+    }
+    return;
+  }
+  store.clearExplicitRestoreRequest();
+  if (store.restoreLatestRequirementReview() && store.requirement) {
+    syncRequirementForm();
     await store.refreshCurrentReview();
   }
   void store.loadRequirementDocuments();

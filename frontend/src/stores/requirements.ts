@@ -17,6 +17,7 @@ import {
   editRequirementReview,
   editRiskReview,
   editTestPlanReview,
+  getRequirement,
   getRequirementReview,
   getRiskReview,
   getTestPlanReview,
@@ -53,6 +54,10 @@ export const useRequirementsStore = defineStore('requirements', {
     requirement: null as RequirementRead | null,
     reviewStart: null as RequirementReviewStartRead | null,
     review: null as RequirementReviewRead | null,
+    requestedRequirementId: null as string | null,
+    requestedReviewId: null as string | null,
+    requestedWorkflowRunId: null as string | null,
+    exactRestoreFailed: false,
     documents: [] as RequirementDocumentRead[],
     createdDocument: null as RequirementDocumentRead | null,
     knowledgePreview: null as TestKnowledgeCardRetrievalRead | null,
@@ -68,6 +73,71 @@ export const useRequirementsStore = defineStore('requirements', {
     },
   },
   actions: {
+    clearExplicitRestoreRequest() {
+      this.requestedRequirementId = null;
+      this.requestedReviewId = null;
+      this.requestedWorkflowRunId = null;
+      this.exactRestoreFailed = false;
+      this.errorMessage = '';
+    },
+    async loadExactRequirementReview(
+      projectId: string,
+      requirementId?: string,
+      reviewId?: string,
+      workflowRunId?: string,
+    ) {
+      this.loading = true;
+      this.errorMessage = '';
+      this.projectId = projectId;
+      this.requestedRequirementId = requirementId ?? null;
+      this.requestedReviewId = reviewId ?? null;
+      this.requestedWorkflowRunId = workflowRunId ?? null;
+      this.exactRestoreFailed = false;
+      this.requirement = null;
+      this.reviewStart = null;
+      this.review = null;
+      this.createdDocument = null;
+      this.documents = [];
+      this.clearKnowledgePreview();
+      try {
+        if (!requirementId || !reviewId || !workflowRunId) {
+          throw new Error('指定需求评审缺少精确恢复参数');
+        }
+        const [requirement, review] = await Promise.all([
+          getRequirement(requirementId),
+          getRequirementReview(requirementId),
+        ]);
+        if (
+          requirement.id !== requirementId
+          || requirement.project_id !== projectId
+          || requirement.status !== 'active'
+          || review.id !== reviewId
+          || review.requirement_id !== requirementId
+          || review.workflow?.run_id !== workflowRunId
+          || review.workflow.stage !== 'requirement_review'
+        ) {
+          throw new Error('指定需求评审与服务端工作流不匹配');
+        }
+        this.requirement = requirement;
+        this.review = review;
+        saveLatestRequirementReviewContext({
+          projectId,
+          requirementId,
+          requirementReviewId: reviewId,
+          requirement,
+          review,
+        });
+        return true;
+      } catch (error) {
+        this.requirement = null;
+        this.review = null;
+        this.exactRestoreFailed = true;
+        this.errorMessage = error instanceof Error ? error.message : '指定需求评审无法恢复';
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
     async retrieveKnowledgePreview(queryText: string) {
       const normalizedQuery = queryText.trim();
       if (!normalizedQuery) {
@@ -106,6 +176,10 @@ export const useRequirementsStore = defineStore('requirements', {
       supplementText?: string;
       clarificationAnswers?: ClarificationAnswer[];
     }) {
+      if (this.requestedRequirementId || this.requestedReviewId || this.requestedWorkflowRunId) {
+        this.errorMessage = '显式恢复模式下不能创建新的需求评审';
+        return;
+      }
       this.loading = true;
       this.errorMessage = '';
       this.reviewStart = null;
@@ -166,11 +240,23 @@ export const useRequirementsStore = defineStore('requirements', {
     async refreshCurrentReview() {
       if (!this.requirement) return false;
       try {
-        this.review = this.review?.workflow?.stage === 'test_plan_review'
+        const review = this.review?.workflow?.stage === 'test_plan_review'
           ? await getTestPlanReview(this.projectId, this.review.id)
           : this.review?.workflow?.stage === 'risk_review'
             ? await getRiskReview(this.projectId, this.review.id)
             : await getRequirementReview(this.requirement.id);
+        if (
+          this.requestedRequirementId
+          && (
+            this.requirement.id !== this.requestedRequirementId
+            || review.id !== this.requestedReviewId
+            || review.requirement_id !== this.requestedRequirementId
+            || review.workflow?.run_id !== this.requestedWorkflowRunId
+          )
+        ) {
+          throw new Error('指定需求评审与服务端工作流不匹配');
+        }
+        this.review = review;
         saveLatestRequirementReviewContext({
           projectId: this.projectId,
           requirementId: this.requirement.id,
@@ -180,6 +266,10 @@ export const useRequirementsStore = defineStore('requirements', {
         });
         return true;
       } catch (error) {
+        if (this.requestedRequirementId) {
+          this.review = null;
+          this.exactRestoreFailed = true;
+        }
         this.errorMessage = error instanceof Error ? error.message : '无法刷新服务端评审状态';
         return false;
       }

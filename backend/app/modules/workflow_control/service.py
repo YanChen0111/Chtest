@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.modules.projects.models import Project
+from backend.app.modules.requirements.models import Requirement, RequirementReview
 from backend.app.modules.test_campaigns.models import TestCampaign
 from backend.app.modules.workflow_control.models import (
     WorkflowHumanDecision,
@@ -230,7 +231,7 @@ def list_workflow_queue(session: Session, project_id: uuid.UUID) -> list[dict[st
         if bucket is None:
             continue
         stage = ControlledStage(run.current_stage)
-        route_path = _exact_scope_route(session, run, stage)
+        route_path = _exact_queue_route(session, run, stage)
         items.append(
             {
                 "id": run.id,
@@ -262,6 +263,10 @@ def list_workflow_queue(session: Session, project_id: uuid.UUID) -> list[dict[st
     )
 
 
+def _exact_queue_route(session: Session, run: WorkflowRun, stage: ControlledStage) -> str | None:
+    return _exact_scope_route(session, run, stage) or _exact_requirement_review_route(session, run, stage)
+
+
 def _exact_scope_route(session: Session, run: WorkflowRun, stage: ControlledStage) -> str | None:
     """Return a navigation hint only when Scope can restore this exact subject."""
     if stage is not ControlledStage.SCOPE or run.workflow_kind != WorkflowKind.REQUIREMENT_TO_EXECUTION.value:
@@ -280,6 +285,39 @@ def _exact_scope_route(session: Session, run: WorkflowRun, stage: ControlledStag
     if campaign is None:
         return None
     return f"/campaigns/scope?campaign_id={campaign.id}"
+
+
+def _exact_requirement_review_route(
+    session: Session,
+    run: WorkflowRun,
+    stage: ControlledStage,
+) -> str | None:
+    """Return a route only when this run owns an exact active RequirementReview."""
+    if (
+        stage is not ControlledStage.REQUIREMENT_REVIEW
+        or run.workflow_kind != WorkflowKind.REQUIREMENT_TO_EXECUTION.value
+    ):
+        return None
+    try:
+        review_id = uuid.UUID(run.subject_ref)
+    except (ValueError, AttributeError):
+        return None
+    row = session.execute(
+        select(RequirementReview, Requirement)
+        .join(Requirement, Requirement.id == RequirementReview.requirement_id)
+        .where(
+            RequirementReview.id == review_id,
+            Requirement.project_id == run.project_id,
+            Requirement.status == "active",
+        ),
+    ).one_or_none()
+    if row is None:
+        return None
+    review, requirement = row
+    return (
+        f"/requirements/review?requirement_id={requirement.id}"
+        f"&requirement_review_id={review.id}&workflow_run_id={run.id}"
+    )
 
 
 def submit_for_review(

@@ -5010,3 +5010,35 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
   RequirementReview subjects and make the RequirementReview page fail closed
   on explicit restore failure. Do not route TestCampaign-origin
   RequirementReview runs until their adjacent-stage domain contract exists.
+
+## 2026-08-04 Slice 49.16 Exact RequirementReview Resume
+
+### Implemented
+
+- Added deterministic RequirementReview route resolution for active
+  same-project Requirement subjects in the read-only WorkflowRun queue.
+- Included exact Requirement, RequirementReview, and WorkflowRun ids in the
+  navigation hint and verified all three in the RequirementReview page.
+- Added direct Requirement loading while preserving project and relationship
+  validation in the store.
+- Locked new review creation and cleared review state whenever explicit restore
+  parameters are incomplete, invalid, cross-project, or mismatched. Explicit
+  mode never falls back to local storage or recent records.
+- Kept TestCampaign-origin RequirementReview runs null until they own a
+  contract-backed RequirementReview row.
+
+### Verification
+
+- Focused backend queue suite: `3 passed`.
+- Full backend: `526 passed`.
+- Focused RequirementReview + AI Workbench frontend suite: `2 files / 10 tests
+  passed`.
+- Full frontend: `26 files / 69 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.17: expose and restore the exact standard RiskReview queue subject
+  through the existing project-scoped API. Do not add later stages or route
+  TestCampaign-origin RequirementReview runs.

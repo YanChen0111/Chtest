@@ -9,9 +9,9 @@ require reading `AGENTS.md`, `START_HERE_FOR_AI.md`, and `NEXT_AI_TASK.md` first
 
 ```text
 Read AGENTS.md, START_HERE_FOR_AI.md, NEXT_AI_TASK.md, and
-CURRENT_DEVELOPMENT_CONTEXT.md. Task 49.15 is complete. Continue Task 49.16
-from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and never use
-storage/chtest-dev.db for migration or smoke data.
+CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 and 49.16 are complete. Continue
+Task 49.17 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
+never use storage/chtest-dev.db for migration or smoke data.
 ```
 
 ## Product Direction
@@ -31,10 +31,11 @@ storage/chtest-dev.db for migration or smoke data.
 - Repository: `D:\Desktop\chenyan\Chtest-docs-preflight-vibecoding-fixes`
 - Branch: `docs/preflight-vibecoding-fixes`
 - Remote tracking: `origin/docs/preflight-vibecoding-fixes`
-- Last pushed commit before this update: `e8ea037 feat(frontend): add controlled campaign scope`
+- Last pushed commit: `5511cdb feat(workflow): resume exact test campaign scope`
 - Previous backend campaign commit: `78c0ab3 feat(test-campaigns): add controlled campaign scope`
 - Task 49.14 is committed and pushed.
-- Task 49.15 is implemented and fully verified for commit and push.
+- Task 49.15 is committed and pushed.
+- Task 49.16 is implemented and fully verified for commit and push.
 
 Historical untracked `.pytest-tmp-*` directories and `.t49/` are test scratch
 data. Do not stage, commit, or delete them.
@@ -79,7 +80,7 @@ The intended commit message is
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.16
+## Completed Task 49.16
 
 Goal: an AI Workbench RequirementReview queue item may open the review page
 only when the run's UUID subject resolves to an exact same-project
@@ -91,6 +92,31 @@ TestCampaign-origin RequirementReview runs currently retain their campaign id
 as `subject_ref` and have no RequirementReview domain row. They must retain a
 null route until that adjacent-stage contract is defined; Task 49.16 must not
 guess or create one.
+
+Implementation:
+
+- The queue resolves only active same-project RequirementReview subjects at
+  the `requirement_review` stage.
+- The route includes exact Requirement, RequirementReview, and WorkflowRun ids.
+- The frontend loads and verifies all three, clears state on any mismatch, and
+  disables new review creation while explicit restore mode is active.
+- Explicit failure never reads stale local-storage context.
+
+Verification:
+
+- Focused backend queue: `3 passed`.
+- Focused RequirementReview + AI Workbench frontend: `2 files / 10 tests`.
+- Full backend: `526 passed`.
+- Full frontend: `26 files / 69 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- `git diff --check` passed.
+
+## Active Task 49.17
+
+Goal: extend exact queue restoration only to standard RiskReview runs using the
+existing project-scoped RiskReview API. The route and page must verify the
+Requirement, RequirementReview, WorkflowRun, and `risk_review` stage. Keep
+TestCampaign-origin RequirementReview runs and later stages null.
 
 ## Running Local Services
 
@@ -113,10 +139,10 @@ guess or create one.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.15 with only the intended files plus this context
+1. Commit and push Task 49.16 with only its expected files plus this context
    file staged.
-2. Read the Task 49.16 boundary in `NEXT_AI_TASK.md`.
-3. Implement exact standard RequirementReview route resolution and fail-closed
+2. Read the Task 49.17 boundary in `NEXT_AI_TASK.md`.
+3. Implement exact standard RiskReview route resolution and fail-closed
    frontend restore without broadening to later workflow stages.
-4. Run the focused backend/frontend verification first, then the required full
-   regressions, build, and diff checks.
+4. Run focused verification first, then the required full regressions, build,
+   and diff checks.

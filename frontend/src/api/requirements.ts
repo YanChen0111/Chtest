@@ -169,6 +169,10 @@ export async function listRequirements(projectId: string): Promise<RequirementLi
   return apiClient.getJson<RequirementListRead>(`/projects/${projectId}/requirements`);
 }
 
+export async function getRequirement(requirementId: string): Promise<RequirementRead> {
+  return apiClient.getJson<RequirementRead>(`/requirements/${requirementId}`);
+}
+
 export async function startRequirementReview(
   requirementId: string,
   data: RequirementReviewStartRequest,

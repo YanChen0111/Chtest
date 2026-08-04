@@ -10914,3 +10914,33 @@ Next: expose an exact route only for standard same-project RequirementReview
 subjects and make explicit page restore fail closed without local-storage or
 recent-record fallback. TestCampaign-origin RequirementReview runs remain null
 until their adjacent-stage domain contract is defined.
+
+## 2026-08-04 Slice 49.16 Exact RequirementReview Resume
+
+Task 49.16 is complete; next is Task 49.17 exact RiskReview restoration from
+the AI Workbench workflow queue.
+
+- The queue returns a RequirementReview route only when the run is at
+  `requirement_review`, its UUID subject resolves to a RequirementReview, and
+  the owning active Requirement belongs to the same project.
+- The route carries exact Requirement, RequirementReview, and WorkflowRun ids.
+  The page loads the Requirement and review directly, then verifies project,
+  relationship, active status, current stage, and run id.
+- Any explicit parameter activates fail-closed mode. Missing, malformed,
+  cross-project, mismatched-review, and mismatched-run input clears review state,
+  disables new review creation, hides workflow actions, and never reads the
+  latest local-storage context.
+- TestCampaign-origin RequirementReview runs retain a null route because their
+  subject remains a campaign id and they do not own a RequirementReview row.
+- Focused backend queue verification passed with `3 passed`; full backend
+  regression passed with `526 passed`.
+- Focused RequirementReview + AI Workbench frontend verification passed with
+  `2 files / 10 tests`; full frontend passed with `26 files / 69 tests`.
+- Production build passed with the existing large-chunk warning, and
+  `git diff --check` passed.
+- The protected `storage/chtest-dev.db` and historical pytest scratch
+  directories were not modified.
+
+Next: apply the same exact-subject and exact-run restoration rule only to the
+standard RiskReview stage through its existing project-scoped API. Do not add
+later stages or invent a TestCampaign RequirementReview domain row.

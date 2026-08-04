@@ -3616,6 +3616,14 @@ Rules:
   cross-project, or non-Scope subjects return `null`. The Scope page must load
   that exact id and must not fall back to the newest campaign when an explicit
   id cannot be restored.
+- For a `requirement_review` run whose UUID `subject_ref` resolves to a
+  RequirementReview attached to an active same-project Requirement, the route
+  is `/requirements/review?requirement_id={requirement_id}&requirement_review_id={subject_ref}&workflow_run_id={run_id}`.
+  The page must load and verify all three ids. Missing, malformed, inactive,
+  cross-project, mismatched-review, mismatched-run, and non-RequirementReview
+  subjects return `null` or fail closed without local-storage or recent-record
+  fallback. A TestCampaign-origin RequirementReview run keeps `route_path=null`
+  until it owns a contract-backed RequirementReview domain row.
 
 ### 11.11 Test Campaign Scope API
 
