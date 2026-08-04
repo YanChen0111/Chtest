@@ -9,8 +9,8 @@ require reading `AGENTS.md`, `START_HERE_FOR_AI.md`, and `NEXT_AI_TASK.md` first
 
 ```text
 Read AGENTS.md, START_HERE_FOR_AI.md, NEXT_AI_TASK.md, and
-CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.18 are complete. Continue
-Task 49.19 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
+CURRENT_DEVELOPMENT_CONTEXT.md. Tasks 49.15 through 49.19 are complete. Continue
+Task 49.20 from NEXT_AI_TASK.md. Preserve unrelated pytest temp directories and
 never use storage/chtest-dev.db for migration or smoke data.
 ```
 
@@ -31,13 +31,14 @@ never use storage/chtest-dev.db for migration or smoke data.
 - Repository: `D:\Desktop\chenyan\Chtest-docs-preflight-vibecoding-fixes`
 - Branch: `docs/preflight-vibecoding-fixes`
 - Remote tracking: `origin/docs/preflight-vibecoding-fixes`
-- Last pushed commit: `f8b6144 feat(workflow): resume exact risk review`
+- Last pushed commit: `4dbba4d feat(workflow): resume exact test plan review`
 - Previous backend campaign commit: `78c0ab3 feat(test-campaigns): add controlled campaign scope`
 - Task 49.14 is committed and pushed.
 - Task 49.15 is committed and pushed.
 - Task 49.16 is committed and pushed.
 - Task 49.17 is committed and pushed.
-- Task 49.18 is implemented and fully verified for commit and push.
+- Task 49.18 is committed and pushed.
+- Task 49.19 is implemented and fully verified for commit and push.
 
 Historical untracked `.pytest-tmp-*` directories and `.t49/` are test scratch
 data. Do not stage, commit, or delete them.
@@ -163,18 +164,45 @@ Verification:
 - Production build passed with the existing large-chunk warning.
 - `git diff --check` passed.
 
-## Active Task 49.19
+## Completed Task 49.19
 
 Goal: improve the existing Requirement Review workbench's layout, visual
 hierarchy, and responsive behavior without changing workflow, route, store, or
 API semantics. Verify desktop and `390x844` mobile views in a real browser.
+
+Implementation:
+
+- Added stage/state/version context, icon-backed commands, responsive score and
+  action layouts, and a complete two-by-two mobile workflow track.
+- Stopped the evidence panel from stretching to the input panel's height and
+  added a compact evidence empty state.
+- Corrected page-local Arco Alert content so errors and blockers are readable.
+- Preserved the existing APIs, store behavior, exact restore paths, workflow
+  actions, and test selectors.
+
+Verification:
+
+- Focused RequirementReview: `1 file / 9 tests passed`.
+- Full frontend: `26 files / 73 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- Desktop `1440x900` and mobile `390x844` browser checks found no horizontal
+  overflow; all four mobile workflow steps are visible.
+- The isolated QA backend returned its existing missing Prompt/Skill 404 when
+  asked to generate a live review, and the page displayed the full error text.
+- `git diff --check` passed.
+
+## Active Task 49.20
+
+Goal: extend exact queue restoration only to standard CaseReview runs through
+the existing Case Generation Review page. Verify the exact RequirementReview
+and WorkflowRun and fail closed without recent candidate/browser fallback.
 
 ## Running Local Services
 
 - Frontend: `http://127.0.0.1:5173` (PID 30088, Vite).
 - Backend: `http://127.0.0.1:8000` (PID 336, Uvicorn).
 - The in-app browser can reach the frontend through
-  `http://192.168.37.84:5173` and is currently on `/requirements/review`.
+  `http://192.168.1.86:5173` and was verified on `/requirements/review`.
 - The QA backend was started with isolated `.t49/campaign-ui.db`; never migrate,
   stamp, bootstrap, or write smoke data to `storage/chtest-dev.db`.
 
@@ -190,10 +218,10 @@ API semantics. Verify desktop and `390x844` mobile views in a real browser.
 
 ## Immediate Next Steps
 
-1. Commit and push Task 49.18 with only its expected files plus this context
-   file staged.
-2. Inspect the current Requirement Review page at desktop and `390x844` mobile
-   dimensions using the isolated local services.
-3. Implement Task 49.19 only in the Requirement Review view and focused tests.
-4. Run focused/full frontend verification, build, browser smoke, and diff
-   checks; then update handoff context, commit, and push.
+1. Commit and push Task 49.19 with only its two frontend files and continuity
+   documents staged.
+2. Read the Task 49.20 boundary in `NEXT_AI_TASK.md`.
+3. Implement exact standard CaseReview route resolution and fail-closed page
+   restore without broadening to AutomationPlanReview.
+4. Run focused verification first, then the required full regressions, build,
+   and diff checks.

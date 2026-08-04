@@ -1,5 +1,30 @@
 # Session Handoff
 
+## 2026-08-04 Slice 49.19 Requirement Review Workbench Polish
+
+Task 49.19 is complete. The next scoped task is Task 49.20, exact CaseReview
+queue restoration through the existing Case Generation Review page.
+
+- Reworked the Requirement Review page into a denser input/evidence workbench
+  with stage, state, and lock-version context at the top.
+- Replaced the clipped mobile workflow rail with a complete two-by-two track;
+  all four steps remain visible at `390x844` without horizontal overflow.
+- Prevented the empty evidence panel from stretching to the input-panel height,
+  added a compact evidence empty state, and made score/action layouts responsive.
+- Added Arco icons to commands, preserved every existing `data-test` workflow
+  action, and kept RequirementReview, RiskReview, and TestPlanReview semantics
+  unchanged.
+- Fixed five page-local Arco Alert usages so API errors, exact-restore failures,
+  stale-input warnings, clarification blockers, and test-plan blockers render
+  their actual text instead of an empty Alert body.
+- Verification: focused RequirementReview `1 file / 9 tests`; full frontend `26
+  files / 73 tests`; production build passed with the existing large-chunk
+  warning; `git diff --check` passed.
+- Browser QA at `1440x900` and `390x844` found no horizontal overflow. The
+  isolated QA environment lacks the configured Prompt/Skill version, so a live
+  review result could not be generated; the resulting 404 was rendered clearly,
+  while populated review behavior remains covered by the focused component test.
+
 ## 2026-08-04 Slice 49.18 Exact TestPlanReview Resume
 
 Task 49.18 is complete. The next scoped task is Task 49.19, focused responsive

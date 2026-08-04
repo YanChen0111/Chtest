@@ -10,9 +10,9 @@ Slice 49: Human-Controlled AI Workflow.
 
 ## Current Task
 
-Task 49.18 is complete. Task 49.19 improves the existing Requirement Review
-workbench layout and visual hierarchy without changing its controlled workflow
-behavior or expanding into a broad application redesign.
+Task 49.19 is complete. Task 49.20 makes an AI Workbench CaseReview queue link
+restore the exact same-project RequirementReview and workflow run named by the
+server instead of falling back to recent case-generation context.
 
 Verified behavior:
 
@@ -99,6 +99,10 @@ Verified behavior:
 25. Standard TestPlanReview queue routes add the exact `test_plan_review` stage
     and use the project-scoped TestPlanReview API. Unsupported stages and
     identity mismatches fail closed.
+26. The Requirement Review workbench now has a denser input/evidence layout,
+    responsive two-by-two mobile workflow track, stage/state/version summary,
+    content-height empty evidence panel, icon-backed commands, and readable
+    Alert content without changing route, API, or workflow behavior.
 
 ## Previous Tasks Verified
 
@@ -185,19 +189,22 @@ Docker Desktop/WSL remains unavailable, but it no longer blocks this task.
 
 ## Product Value Answer
 
-Test engineers can scan the requirement, evidence, review state, and controlled
-actions efficiently on desktop and mobile without losing the exact restored
-workflow context.
+Test engineers can resume the exact actionable CaseReview from the read-only
+queue without acting on a stale generated-case selection or unrelated browser
+context.
 
 ## Must Read
 
 1. `START_HERE_FOR_AI.md`
 2. `docs/product/01-positioning-and-scope.md`
 3. `docs/implementation/04-ai-vibecoding-governance.md`
-4. `docs/contracts/02-api-contract.md`
-5. `memory/08-session-handoff.md`
-6. `frontend/src/views/requirements/RequirementReviewView.vue`
-7. `frontend/src/views/requirements/RequirementReviewView.spec.ts`
+4. `docs/contracts/01-data-model-contract.md`
+5. `docs/contracts/02-api-contract.md`
+6. `docs/contracts/03-state-machines.md`
+7. `memory/08-session-handoff.md`
+8. `frontend/src/stores/cases.ts`
+9. `frontend/src/views/cases/CaseGenerationReviewView.vue`
+10. `frontend/src/views/cases/CaseGenerationReviewView.spec.ts`
 
 ## Do Not Read Unless Needed
 
@@ -207,38 +214,43 @@ workflow context.
 
 ## Expected Files
 
-Default write boundary for Task 49.19:
+Default write boundary for Task 49.20:
 
 ```text
 NEXT_AI_TASK.md
 CURRENT_DEVELOPMENT_CONTEXT.md
 memory/08-session-handoff.md
 memory/07-dev-log.md
-frontend/src/views/requirements/RequirementReviewView.vue
-frontend/src/views/requirements/RequirementReviewView.spec.ts
+docs/contracts/02-api-contract.md
+backend/app/modules/workflow_control/service.py
+backend/app/tests/workflow_control/test_workflow_queue.py
+frontend/src/stores/cases.ts
+frontend/src/views/cases/CaseGenerationReviewView.vue
+frontend/src/views/cases/CaseGenerationReviewView.spec.ts
+frontend/src/views/ai-workbench/AiWorkbenchView.spec.ts
 ```
 
 Explain any write outside this set before editing it.
 
 ## Verification Commands
 
-Run focused and full frontend regression plus the production build and browser
-checks:
+Run backend and frontend regression plus the production build:
 
 ```powershell
-npm --prefix frontend test -- RequirementReviewView.spec.ts --run
+backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q
 npm --prefix frontend test -- --run
 npm --prefix frontend run build
 git diff --check
 ```
 
-Latest Task 49.18 evidence:
+Latest Task 49.19 evidence:
 
-- Focused backend queue verification => `5 passed`.
-- `backend\.venv\Scripts\python.exe -m pytest backend/app/tests -q --basetemp .t49/task4918-full` => `528 passed`.
-- Focused RequirementReview + AI Workbench frontend verification => `2 files / 14 tests passed`.
+- Focused RequirementReview frontend verification => `1 file / 9 tests passed`.
 - `npm.cmd --prefix frontend test -- --run` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => `26 files / 73 tests passed`.
 - `npm.cmd --prefix frontend run build` with Node `v24.18.0` from `D:\Downloads\Chtest-env\node-v24.18.0-win-x64` => passed with the existing large-chunk warning
+- Browser smoke at `1440x900` and `390x844` => no horizontal overflow;
+  all four mobile workflow steps visible; input and evidence panels do not
+  equal-height stretch; failure Alert text is readable.
 - `git diff --check` => passed
 
 The source `storage/chtest-dev.db` remains blocked and read-only. Do not run
@@ -246,29 +258,31 @@ upgrade, stamp, bootstrap, or registry mutation against it.
 
 ## Acceptance
 
-- The existing RequirementReview, RiskReview, and TestPlanReview restore paths,
-  identifiers, controls, and fail-closed behavior remain unchanged.
-- Desktop layout presents requirement input, evidence, stage status, and human
-  actions with a clear scan order and without decorative page-section cards.
-- At `390x844`, content has no horizontal overflow, controls wrap cleanly, text
-  stays inside its container, and the active review actions remain reachable.
-- Loading, empty, error, restore-failure, waiting-review, waiting-approval,
-  rejected, approved, and continuable states remain visually distinguishable.
-- Existing Arco controls and icons are reused; the task adds no new framework,
-  dashboard, marketing surface, workflow stage, or backend behavior.
-- Focused tests, full frontend regression, build, desktop/mobile browser smoke,
-  and `git diff --check` pass.
+- A CaseReview queue item returns a route only when its UUID `subject_ref`
+  resolves to a RequirementReview whose Requirement belongs to the same project
+  and the current stage is `case_review`.
+- The route includes the exact RequirementReview and WorkflowRun identifiers
+  needed by the Case Generation Review page; the page verifies the returned
+  CaseReview gate before enabling controlled actions.
+- Missing, malformed, cross-project, wrong-stage, mismatched-run, and
+  non-RequirementReview subjects retain a null route or fail closed in the page.
+- Explicit restore failure clears CaseReview and candidate selection state and
+  never falls back to local storage, the newest generated candidate, or prior
+  browser context.
+- The AI Workbench remains read-only; all mutations still use the CaseReview
+  API's current server lock version and exact approval id.
+- `git diff --check` passes.
 - `git diff --check` passes.
 
 ## Commit Message
 
 ```text
-feat(frontend): polish requirement review workbench
+feat(workflow): resume exact case review
 ```
 
 ## Next Task
 
-Task 49.19 is a focused visual and responsive refinement of the existing
-Requirement Review page. Preserve all route, store, API, and workflow semantics.
-Do not redesign unrelated pages or add CaseReview, dashboards, RBAC, tenants,
-cross-user collaboration, execution/report orchestration, or repair workflows.
+Task 49.20 connects only standard CaseReview WorkflowRuns to the existing Case
+Generation Review page. Do not add AutomationPlanReview, generic route guesses,
+dashboards, RBAC, tenants, cross-user collaboration, execution/report
+orchestration, or repair workflows.

@@ -165,6 +165,7 @@ describe('RequirementReviewView', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-test="exact-review-restore-failed"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('指定需求评审无法恢复，请返回工作台或刷新');
     expect(wrapper.find('[data-test="review-next-step"]').exists()).toBe(false);
     expect(wrapper.find('[data-test="start-review"]').attributes('disabled')).toBeDefined();
   });
@@ -441,6 +442,12 @@ describe('RequirementReviewView', () => {
     expect(wrapper.text()).toContain('需求评审');
     expect(wrapper.text()).toContain('开始评审');
     expect(wrapper.text()).toContain('评审前先检索项目知识');
+    expect(wrapper.find('.requirement-review-heading__status').exists()).toBe(true);
+    expect(wrapper.findAll('[data-test="workflow-rail"] .workflow-rail__step')).toHaveLength(4);
+    expect(wrapper.find('[data-test="review-input-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="review-evidence-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="review-empty-state"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="review-result"]').exists()).toBe(false);
 
     await wrapper.find('form').trigger('submit');
     await flushPromises();
@@ -458,6 +465,9 @@ describe('RequirementReviewView', () => {
     expect(wrapper.text()).toContain('已自动使用 1 条项目知识证据');
     expect(wrapper.text()).toContain('已找到 1 条相关知识');
     expect(wrapper.find('[data-test="review-next-step"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="review-empty-state"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="review-result"]').exists()).toBe(true);
+    expect(wrapper.findAll('[data-test="workflow-rail"] .workflow-rail__step--active')).toHaveLength(4);
     expect(reviewBodies[0]).toEqual(expect.objectContaining({ use_knowledge: true, context_artifact_ids: ['artifact-coupon-1'] }));
 
     const persistedContext = JSON.parse(window.localStorage.getItem('chtest.latestRequirementReview') ?? '{}');

@@ -1,39 +1,45 @@
 <template>
   <section class="requirement-review-page" aria-labelledby="requirement-review-title">
-    <div class="requirement-review-heading">
-      <div>
-        <p class="eyebrow">需求评审</p>
-        <h2 id="requirement-review-title">需求评审</h2>
+    <header class="requirement-review-heading">
+      <div class="requirement-review-heading__copy">
+        <p class="eyebrow">需求评审 / Evidence Gate</p>
+        <h2 id="requirement-review-title">需求证据工作台</h2>
         <p>把需求先转成可审查证据：评分、问题、澄清问题和风险项都在生成用例前确认。</p>
       </div>
-      <a-space>
+      <div class="requirement-review-heading__status" aria-label="当前评审状态">
         <a-tag color="blue">RequirementReviewAgent</a-tag>
-        <a-tag color="green">人工评审前置</a-tag>
-      </a-space>
-    </div>
+        <a-tag :color="workflowStageColor">{{ workflowStageLabel }}</a-tag>
+        <a-tag :color="workflowStateColor">{{ store.review ? workflowStateLabel : '待创建候选' }}</a-tag>
+        <span v-if="store.review?.workflow" class="version-label">v{{ store.review.workflow.lock_version }}</span>
+      </div>
+    </header>
 
-    <a-alert v-if="store.errorMessage" type="error" :content="store.errorMessage" show-icon />
+    <a-alert v-if="store.errorMessage" type="error" show-icon>{{ store.errorMessage }}</a-alert>
     <a-alert
       v-if="store.exactRestoreFailed"
       data-test="exact-review-restore-failed"
       type="warning"
-      content="指定需求评审无法恢复，请返回工作台或刷新"
       show-icon
-    />
+    >指定需求评审无法恢复，请返回工作台或刷新</a-alert>
 
-    <div class="workflow-rail" aria-label="需求到用例流程">
+    <div class="workflow-rail" data-test="workflow-rail" aria-label="需求到用例流程">
       <span class="workflow-rail__step workflow-rail__step--active"><strong>1</strong>输入需求</span>
       <span class="workflow-rail__line"></span>
-      <span class="workflow-rail__step" :class="{ 'workflow-rail__step--active': store.knowledgePreview }"><strong>2</strong>分析并检索知识</span>
+      <span class="workflow-rail__step" :class="{ 'workflow-rail__step--active': reviewProgress >= 2 }"><strong>2</strong>分析并检索知识</span>
       <span class="workflow-rail__line"></span>
-      <span class="workflow-rail__step"><strong>3</strong>完成评审</span>
+      <span class="workflow-rail__step" :class="{ 'workflow-rail__step--active': reviewProgress >= 3 }"><strong>3</strong>完成评审</span>
       <span class="workflow-rail__line"></span>
-      <span class="workflow-rail__step"><strong>4</strong>生成用例</span>
+      <span class="workflow-rail__step" :class="{ 'workflow-rail__step--active': reviewProgress >= 4 }"><strong>4</strong>生成用例</span>
     </div>
 
     <div class="requirement-review-layout">
-      <a-card class="requirement-panel" :bordered="false">
-        <template #title>需求输入</template>
+      <a-card class="requirement-panel input-panel" data-test="review-input-panel" :bordered="false">
+        <template #title>
+          <div class="panel-heading">
+            <span class="panel-heading__icon" aria-hidden="true"><IconEdit /></span>
+            <div><small>输入与上下文</small><strong>需求输入</strong></div>
+          </div>
+        </template>
         <form class="requirement-form" @submit.prevent="submitReview">
           <label>
             <span>需求标题</span>
@@ -49,7 +55,7 @@
             />
           </label>
           <div class="auto-knowledge-panel" data-test="auto-knowledge-panel">
-            <span class="auto-knowledge-panel__icon" aria-hidden="true">↗</span>
+            <span class="auto-knowledge-panel__icon" aria-hidden="true"><IconSearch /></span>
             <div>
               <strong>评审前先检索项目知识</strong>
               <small>先查看命中的测试知识，再开始需求评审。命中证据会自动带入评审，不需要选择数据源或填写 ID。</small>
@@ -62,6 +68,7 @@
               :loading="store.loadingKnowledge"
               @click="previewKnowledge"
             >
+              <template #icon><IconSearch /></template>
               分析并检索知识
             </a-button>
           </div>
@@ -81,22 +88,32 @@
             </article>
             <a-empty v-if="store.knowledgePreview.items.length === 0" description="没有命中已审核知识，仍可继续评审" />
           </div>
-          <a-button
-            data-test="start-review"
-            html-type="submit"
-            type="primary"
-            :disabled="explicitRestoreRequested"
-            :loading="store.loading"
-          >开始评审</a-button>
+          <div class="input-actions">
+            <a-button
+              data-test="start-review"
+              html-type="submit"
+              type="primary"
+              :disabled="explicitRestoreRequested"
+              :loading="store.loading"
+            >
+              <template #icon><IconPlayArrow /></template>
+              开始评审
+            </a-button>
+          </div>
         </form>
       </a-card>
 
-      <a-card class="requirement-panel evidence-panel" :bordered="false">
-        <template #title>评审证据</template>
-        <a-spin :loading="store.loading">
-          <template v-if="store.review">
+      <a-card class="requirement-panel evidence-panel" data-test="review-evidence-panel" :bordered="false">
+        <template #title>
+          <div class="panel-heading">
+            <span class="panel-heading__icon panel-heading__icon--evidence" aria-hidden="true"><IconFile /></span>
+            <div><small>评分、问题与门禁</small><strong>评审证据</strong></div>
+          </div>
+        </template>
+        <a-spin :loading="store.loading" class="review-spin">
+          <div v-if="store.review" class="review-result" data-test="review-result">
             <div class="score-strip">
-              <div>
+              <div class="score-strip__overall">
                 <span>综合评分</span>
                 <strong>{{ store.review.overall_score }}</strong>
               </div>
@@ -125,20 +142,32 @@
                 <strong>{{ workflowNextAction }}</strong>
                 <span>只有服务端确认完成评审、批准并消费本次批准后，才能进入下一阶段。</span>
               </div>
-              <a-space wrap>
-                <a-button v-if="store.review.workflow?.can_submit" data-test="submit-stage-review" type="primary" @click="submitCurrentStage">{{ submitButtonLabel }}</a-button>
-                <a-button v-if="store.review.workflow?.can_complete_review" data-test="complete-review" :disabled="isRequirementReview && (reviewInputChanged || unresolvedClarificationCount > 0)" @click="completeCurrentReview">完成评审</a-button>
-                <a-button v-if="store.review.workflow?.can_approve" data-test="reject-review" status="danger" @click="rejectCurrentReview">拒绝</a-button>
-                <a-button v-if="store.review.workflow?.can_approve" type="primary" data-test="approve-review" :disabled="isRequirementReview && reviewInputChanged" @click="approveCurrentReview">批准</a-button>
-                <a-button v-if="store.review.workflow?.can_continue" type="primary" data-test="continue-workflow" :disabled="isRequirementReview && (reviewInputChanged || unresolvedClarificationCount > 0)" @click="continueCurrentStage">批准并进入下一阶段</a-button>
-              </a-space>
+              <div class="review-next-step__actions">
+                <a-button v-if="store.review.workflow?.can_submit" data-test="submit-stage-review" type="primary" @click="submitCurrentStage">
+                  <template #icon><IconPlayArrow /></template>{{ submitButtonLabel }}
+                </a-button>
+                <a-button v-if="store.review.workflow?.can_complete_review" data-test="complete-review" :disabled="isRequirementReview && (reviewInputChanged || unresolvedClarificationCount > 0)" @click="completeCurrentReview">
+                  <template #icon><IconCheck /></template>完成评审
+                </a-button>
+                <a-button v-if="store.review.workflow?.can_approve" data-test="reject-review" status="danger" @click="rejectCurrentReview">
+                  <template #icon><IconClose /></template>拒绝
+                </a-button>
+                <a-button v-if="store.review.workflow?.can_approve" type="primary" data-test="approve-review" :disabled="isRequirementReview && reviewInputChanged" @click="approveCurrentReview">
+                  <template #icon><IconCheck /></template>批准
+                </a-button>
+                <a-button v-if="store.review.workflow?.can_continue" type="primary" status="success" data-test="continue-workflow" :disabled="isRequirementReview && (reviewInputChanged || unresolvedClarificationCount > 0)" @click="continueCurrentStage">
+                  批准并进入下一阶段<template #icon><IconRight /></template>
+                </a-button>
+              </div>
             </div>
-            <a-alert v-if="reviewInputChanged" type="warning" show-icon content="需求输入已变化，当前候选和批准不可继续使用。请重新评审。" />
+            <a-alert v-if="reviewInputChanged" type="warning" show-icon>需求输入已变化，当前候选和批准不可继续使用。请重新评审。</a-alert>
             <a-textarea v-if="store.review.workflow?.can_approve" v-model="reviewComment" data-test="review-comment" placeholder="填写批准或拒绝说明（可选）" :auto-size="{ minRows: 2, maxRows: 4 }" />
 
             <div v-if="store.review.workflow?.can_edit" class="review-section candidate-editor" data-test="candidate-editor">
               <a-space>
-                <a-button data-test="toggle-candidate-editor" @click="toggleCandidateEditor">{{ editingCandidate ? '取消编辑' : '编辑候选' }}</a-button>
+                <a-button data-test="toggle-candidate-editor" @click="toggleCandidateEditor">
+                  <template #icon><IconEdit /></template>{{ editingCandidate ? '取消编辑' : '编辑候选' }}
+                </a-button>
                 <a-tag v-if="editingCandidate" color="orange">保存后将创建新快照并使旧批准失效</a-tag>
               </a-space>
               <div v-if="editingCandidate" class="candidate-editor__body">
@@ -168,15 +197,16 @@
                     <a-textarea v-model="item.strategy" :data-test="`edit-plan-strategy-${index}`" :auto-size="{ minRows: 2, maxRows: 4 }" />
                   </div>
                 </template>
-                <a-button type="primary" data-test="save-candidate-edit" :loading="store.loading" @click="saveCandidateEdit">保存人工编辑</a-button>
+                <a-button type="primary" data-test="save-candidate-edit" :loading="store.loading" @click="saveCandidateEdit">
+                  <template #icon><IconSave /></template>保存人工编辑
+                </a-button>
               </div>
             </div>
             <a-alert
               v-if="unresolvedClarificationCount > 0"
               type="warning"
               show-icon
-              content="请先回答澄清问题并重新评审，再进入用例生成。"
-            />
+            >请先回答澄清问题并重新评审，再进入用例生成。</a-alert>
 
             <div class="review-section">
               <h3>问题</h3>
@@ -232,8 +262,7 @@
                 v-if="testPlanStrategyRequired"
                 type="warning"
                 show-icon
-                content="高风险或严重风险需要明确测试策略，才能批准计划。"
-              />
+              >高风险或严重风险需要明确测试策略，才能批准计划。</a-alert>
               <p>{{ store.review.test_plan_strategy || '待人工确认本轮测试策略。' }}</p>
               <a-table :columns="testPlanColumns" :data="store.review.test_plan_items ?? []" :pagination="false" size="small">
                 <template #risk_level="{ record }">
@@ -246,9 +275,11 @@
               <h3>正式需求文档</h3>
               <a-space wrap>
                 <a-button data-test="generate-document" type="primary" :disabled="!canGenerateDocument" :loading="store.loadingDocument" @click="store.generateRequirementDocument()">
-                  生成需求文档
+                  <template #icon><IconFile /></template>生成需求文档
                 </a-button>
-                <a-button :loading="store.loadingDocument" @click="store.loadRequirementDocuments()">刷新文档</a-button>
+                <a-button :loading="store.loadingDocument" @click="store.loadRequirementDocuments()">
+                  <template #icon><IconRefresh /></template>刷新文档
+                </a-button>
               </a-space>
               <div v-if="store.createdDocument" class="document-result">
                 <strong>{{ store.createdDocument.document_number }}</strong>
@@ -267,9 +298,13 @@
                 </template>
               </a-list>
             </div>
-          </template>
+          </div>
 
-          <a-empty v-else-if="!store.loading" description="提交需求后展示评审结果" />
+          <div v-else-if="!store.loading" class="review-empty-state" data-test="review-empty-state">
+            <span aria-hidden="true"><IconFile /></span>
+            <strong>等待评审证据</strong>
+            <p>提交需求后展示评分、问题、澄清项与风险证据。</p>
+          </div>
         </a-spin>
       </a-card>
     </div>
@@ -279,6 +314,17 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import {
+  IconCheck,
+  IconClose,
+  IconEdit,
+  IconFile,
+  IconPlayArrow,
+  IconRefresh,
+  IconRight,
+  IconSave,
+  IconSearch,
+} from '@arco-design/web-vue/es/icon';
 
 import type { RequirementReviewIssue, RequirementRiskItem, TestPlanItem } from '../../api/requirements';
 import { useRequirementsStore } from '../../stores/requirements';
@@ -359,6 +405,33 @@ const reviewInputChanged = computed(() => Boolean(
 const isRequirementReview = computed(() => store.review?.workflow?.stage === 'requirement_review');
 const isRiskReview = computed(() => store.review?.workflow?.stage === 'risk_review');
 const isTestPlanReview = computed(() => store.review?.workflow?.stage === 'test_plan_review');
+
+const reviewProgress = computed(() => {
+  if (
+    store.review?.workflow?.can_continue
+    || (store.review?.workflow?.stage && store.review.workflow.stage !== 'requirement_review')
+  ) return 4;
+  if (store.review) return 3;
+  if (store.knowledgePreview) return 2;
+  return 1;
+});
+
+const workflowStageLabel = computed(() => {
+  const labels: Record<string, string> = {
+    requirement_review: '需求评审',
+    risk_review: '风险评审',
+    test_plan_review: '测试计划评审',
+  };
+  return labels[store.review?.workflow?.stage ?? ''] ?? '需求输入';
+});
+
+const workflowStageColor = computed(() => {
+  const colors: Record<string, string> = {
+    risk_review: 'orange',
+    test_plan_review: 'purple',
+  };
+  return colors[store.review?.workflow?.stage ?? ''] ?? 'blue';
+});
 
 const testPlanStrategyRequired = computed(() => Boolean(
   isTestPlanReview.value
@@ -580,23 +653,81 @@ watch(
 <style scoped>
 .requirement-review-page {
   display: grid;
-  gap: 18px;
+  min-width: 0;
+  gap: 16px;
+  padding-bottom: 12px;
+}
+
+.requirement-review-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.requirement-review-heading__copy {
+  min-width: 0;
+}
+
+.requirement-review-heading h2,
+.requirement-review-heading p {
+  margin: 0;
+}
+
+.requirement-review-heading h2 {
+  margin-top: 2px;
+  color: var(--color-text-1);
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+.requirement-review-heading p:not(.eyebrow) {
+  margin-top: 8px;
+  max-width: 720px;
+  color: var(--color-text-3);
+  line-height: 1.65;
+}
+
+.requirement-review-heading__status {
+  display: flex;
+  max-width: 420px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.version-label {
+  display: inline-flex;
+  min-width: 32px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+  color: var(--color-text-3);
+  background: var(--color-fill-1);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .workflow-rail {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border: 1px solid #dbe6f3;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #98a2b3;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+  background: var(--color-bg-2);
+  color: var(--color-text-4);
   font-size: 12px;
 }
 
 .workflow-rail__step {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 7px;
   white-space: nowrap;
@@ -606,66 +737,102 @@ watch(
   display: inline-flex;
   width: 22px;
   height: 22px;
+  flex: 0 0 22px;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f2f4f7;
-  color: #667085;
+  background: var(--color-fill-2);
+  color: var(--color-text-3);
   font-size: 11px;
 }
 
 .workflow-rail__step--active {
-  color: #175cd3;
+  color: rgb(var(--primary-6));
   font-weight: 700;
 }
 
 .workflow-rail__step--active strong {
   color: #ffffff;
-  background: #1664d9;
+  background: rgb(var(--primary-6));
 }
 
 .workflow-rail__line {
   height: 1px;
-  min-width: 24px;
+  min-width: 22px;
   flex: 1;
-  background: #e5e7eb;
-}
-
-.requirement-review-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.requirement-review-heading h2,
-.requirement-review-heading p {
-  margin: 0;
-}
-
-.requirement-review-heading h2 {
-  font-size: 26px;
-}
-
-.requirement-review-heading p:not(.eyebrow) {
-  margin-top: 10px;
-  max-width: 780px;
-  color: #5b6472;
-  line-height: 1.7;
+  background: var(--color-border-2);
 }
 
 .requirement-review-layout {
   display: grid;
-  grid-template-columns: minmax(360px, 0.85fr) minmax(0, 1.45fr);
+  grid-template-columns: minmax(340px, 0.82fr) minmax(520px, 1.45fr);
+  align-items: start;
   gap: 16px;
 }
 
 .requirement-panel {
-  border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+  background: var(--color-bg-2);
+  box-shadow: 0 4px 14px rgba(29, 41, 57, 0.05);
+}
+
+.requirement-panel :deep(.arco-card-header) {
+  height: auto;
+  min-height: 58px;
+  padding: 12px 16px;
+  border-bottom-color: var(--color-border-2);
+}
+
+.requirement-panel :deep(.arco-card-body) {
+  padding: 16px;
+}
+
+.panel-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-heading__icon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: rgb(var(--primary-6));
+  background: rgb(var(--primary-1));
+  font-size: 17px;
+}
+
+.panel-heading__icon--evidence {
+  color: rgb(var(--success-6));
+  background: rgb(var(--success-1));
+}
+
+.panel-heading div {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.panel-heading small {
+  color: var(--color-text-3);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.panel-heading strong {
+  color: var(--color-text-1);
+  font-size: 15px;
 }
 
 .requirement-form,
-.review-section,
 .clarification-panel label {
   display: grid;
   gap: 14px;
@@ -674,8 +841,12 @@ watch(
 .requirement-form label {
   display: grid;
   gap: 7px;
-  color: #344054;
+  color: var(--color-text-2);
   font-weight: 700;
+}
+
+.requirement-form label > span {
+  font-size: 13px;
 }
 
 .auto-knowledge-panel {
@@ -684,9 +855,9 @@ watch(
   align-items: center;
   gap: 10px;
   padding: 12px;
-  border: 1px solid #b7ebc6;
-  border-radius: 8px;
-  background: #f3fff6;
+  border: 1px solid rgb(var(--success-3));
+  border-radius: 6px;
+  background: rgb(var(--success-1));
 }
 
 .auto-knowledge-panel__icon {
@@ -695,9 +866,9 @@ watch(
   height: 26px;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  color: #14804a;
-  background: #dcfce7;
+  border-radius: 6px;
+  color: rgb(var(--success-7));
+  background: var(--color-bg-2);
   font-weight: 800;
 }
 
@@ -707,13 +878,13 @@ watch(
 }
 
 .auto-knowledge-panel strong {
-  color: #166534;
+  color: rgb(var(--success-7));
   font-size: 13px;
 }
 
 .auto-knowledge-panel small {
   margin-top: 3px;
-  color: #4d7c5b;
+  color: var(--color-text-2);
   line-height: 1.5;
 }
 
@@ -721,9 +892,9 @@ watch(
   display: grid;
   gap: 8px;
   padding: 12px;
-  border: 1px solid #b7ebc6;
-  border-radius: 8px;
-  background: #f8fff9;
+  border: 1px solid rgb(var(--success-3));
+  border-radius: 6px;
+  background: rgb(var(--success-1));
 }
 
 .knowledge-preview__header,
@@ -736,43 +907,102 @@ watch(
 
 .knowledge-preview__header strong,
 .knowledge-preview__item strong {
-  color: #166534;
+  color: rgb(var(--success-7));
 }
 
 .knowledge-preview__item {
   display: grid;
   gap: 4px;
   padding: 9px 10px;
-  border: 1px solid #d7f0dc;
+  border: 1px solid rgb(var(--success-2));
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--color-bg-2);
 }
 
 .knowledge-preview__item span {
-  color: #6b8f73;
+  color: var(--color-text-3);
   font-size: 11px;
 }
 
 .knowledge-preview__item p {
   margin: 0;
-  color: #4d7c5b;
+  color: var(--color-text-2);
   font-size: 12px;
   line-height: 1.55;
 }
 
+.input-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.input-actions :deep(.arco-btn) {
+  width: 100%;
+}
+
+.review-spin,
+.review-spin :deep(.arco-spin) {
+  display: block;
+  width: 100%;
+}
+
+.review-empty-state {
+  display: grid;
+  min-height: 240px;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 28px 20px;
+  color: var(--color-text-3);
+  text-align: center;
+}
+
+.review-empty-state > span {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-2);
+  border-radius: 8px;
+  color: rgb(var(--primary-6));
+  background: var(--color-fill-1);
+  font-size: 24px;
+}
+
+.review-empty-state strong {
+  color: var(--color-text-2);
+  font-size: 15px;
+}
+
+.review-empty-state p {
+  max-width: 320px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.review-result {
+  min-width: 0;
+}
+
 .score-strip {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+  gap: 8px;
   margin-bottom: 16px;
 }
 
 .score-strip div {
-  min-height: 72px;
-  padding: 12px;
-  border: 1px solid #dbe6f3;
-  border-radius: 8px;
-  background: #f8fbff;
+  min-height: 70px;
+  padding: 10px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+  background: var(--color-fill-1);
+}
+
+.score-strip .score-strip__overall {
+  border-color: rgb(var(--primary-3));
+  background: rgb(var(--primary-1));
 }
 
 .score-strip span,
@@ -781,24 +1011,31 @@ watch(
 }
 
 .score-strip span {
-  color: #64748b;
+  color: var(--color-text-3);
+  font-size: 12px;
 }
 
 .score-strip strong {
-  margin-top: 8px;
-  color: #1d4ed8;
-  font-size: 24px;
+  margin-top: 6px;
+  color: rgb(var(--primary-6));
+  font-size: 22px;
+  line-height: 1;
 }
 
 .review-section {
-  margin-top: 18px;
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border-2);
 }
 
 .candidate-editor {
   padding: 14px;
-  border: 1px solid #dbe6f3;
-  border-radius: 8px;
-  background: #f8fbff;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+  background: var(--color-fill-1);
 }
 
 .candidate-editor__body,
@@ -813,21 +1050,26 @@ watch(
 }
 
 .candidate-editor__body label span {
-  color: #344054;
+  color: var(--color-text-2);
   font-size: 12px;
   font-weight: 700;
 }
 
 .review-next-step {
+  position: sticky;
+  z-index: 6;
+  top: 82px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-top: 18px;
   padding: 14px;
-  border: 1px solid #b7ebc6;
-  border-radius: 8px;
-  background: #f3fff6;
+  border: 1px solid rgb(var(--success-3));
+  border-radius: 6px;
+  background: color-mix(in srgb, rgb(var(--success-1)) 94%, transparent);
+  box-shadow: 0 8px 20px rgba(29, 41, 57, 0.09);
+  backdrop-filter: blur(12px);
 }
 
 .review-next-step > div {
@@ -836,29 +1078,39 @@ watch(
 }
 
 .review-next-step strong {
-  color: #166534;
+  color: rgb(var(--success-7));
 }
 
 .review-next-step span {
-  color: #4d7c5b;
+  color: var(--color-text-2);
   font-size: 12px;
+  line-height: 1.5;
+}
+
+.review-next-step__actions {
+  display: flex !important;
+  max-width: 420px;
+  justify-content: flex-end;
+  gap: 8px !important;
+  flex-wrap: wrap;
 }
 
 .review-section h3 {
   margin: 0;
-  font-size: 16px;
+  color: var(--color-text-1);
+  font-size: 15px;
 }
 
 .clarification-panel,
 .document-panel {
   padding: 14px;
-  border: 1px solid #dbe6f3;
-  border-radius: 8px;
-  background: #f8fbff;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+  background: var(--color-fill-1);
 }
 
 .clarification-panel label span {
-  color: #344054;
+  color: var(--color-text-2);
   font-weight: 700;
 }
 
@@ -867,24 +1119,29 @@ watch(
   gap: 4px;
   margin-top: 12px;
   padding: 12px;
-  border: 1px solid #bbf7d0;
-  border-radius: 8px;
-  background: #f0fdf4;
+  border: 1px solid rgb(var(--success-3));
+  border-radius: 6px;
+  background: rgb(var(--success-1));
+}
+
+.review-section :deep(.arco-table-container) {
+  overflow-x: auto;
 }
 
 @media (max-width: 1100px) {
-  .requirement-review-layout,
-  .score-strip {
+  .requirement-review-layout {
     grid-template-columns: 1fr;
   }
 
-  .workflow-rail {
-    overflow-x: auto;
-  }
-
   .review-next-step {
+    position: static;
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .review-next-step__actions {
+    max-width: none;
+    justify-content: flex-start;
   }
 
   .auto-knowledge-panel {
@@ -894,6 +1151,117 @@ watch(
   .auto-knowledge-panel .arco-btn {
     grid-column: 2;
     justify-self: start;
+  }
+}
+
+@media (max-width: 700px) {
+  .requirement-review-page {
+    gap: 14px;
+  }
+
+  .requirement-review-heading {
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .requirement-review-heading h2 {
+    font-size: 22px;
+  }
+
+  .requirement-review-heading p:not(.eyebrow) {
+    margin-top: 6px;
+    line-height: 1.55;
+  }
+
+  .requirement-review-heading__status {
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .workflow-rail {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .workflow-rail__step {
+    min-height: 40px;
+    padding: 7px 8px;
+    border-radius: 5px;
+    background: var(--color-fill-1);
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  .workflow-rail__step--active {
+    background: rgb(var(--primary-1));
+  }
+
+  .workflow-rail__line {
+    display: none;
+  }
+
+  .requirement-panel :deep(.arco-card-header) {
+    min-height: 54px;
+    padding: 10px 14px;
+  }
+
+  .requirement-panel :deep(.arco-card-body) {
+    padding: 14px;
+  }
+
+  .auto-knowledge-panel {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .auto-knowledge-panel .arco-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .knowledge-preview__header,
+  .knowledge-preview__item > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .review-empty-state {
+    min-height: 190px;
+    padding: 22px 12px;
+  }
+
+  .score-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .score-strip .score-strip__overall {
+    grid-column: 1 / -1;
+  }
+
+  .review-next-step__actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .review-next-step__actions :deep(.arco-btn) {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 34px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    white-space: normal;
+  }
+
+  .review-next-step__actions [data-test='continue-workflow'] {
+    grid-column: 1 / -1;
+  }
+
+  .candidate-editor > :deep(.arco-space),
+  .document-panel > :deep(.arco-space) {
+    width: 100%;
   }
 }
 </style>

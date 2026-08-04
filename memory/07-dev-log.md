@@ -5102,3 +5102,36 @@ Start V1 Slice 1 and Slice 2: create platform skeleton, Docker Compose, FastAPI 
 - Task 49.19: refine only the Requirement Review workbench's desktop/mobile
   layout and visual hierarchy while preserving every controlled workflow and
   exact-restore behavior.
+
+## 2026-08-04 Slice 49.19 Requirement Review Workbench Polish
+
+### Implemented
+
+- Added a scan-oriented workbench header with current stage, workflow state,
+  and lock-version context while retaining the existing agent identity.
+- Refined the input/evidence split so the evidence empty state no longer
+  stretches to the full input height on desktop.
+- Added complete responsive workflow steps, compact score tiles, wrapped action
+  controls, table overflow protection, and icon-backed primary commands.
+- Replaced page-local Arco Alert `content` attributes with actual Alert content,
+  making API errors and workflow blockers readable in the rendered page.
+- Preserved existing APIs, stores, route restoration, controlled actions, and
+  test selectors; only the Requirement Review view and its focused test changed.
+
+### Verification
+
+- Focused RequirementReview suite: `1 file / 9 tests passed`.
+- Full frontend: `26 files / 73 tests passed`.
+- Production build passed with the existing large-chunk warning.
+- Browser smoke passed at `1440x900` and `390x844`: no horizontal overflow,
+  four visible mobile workflow steps, compact evidence empty state, and readable
+  request-failure feedback.
+- The isolated QA backend could not create a live review because its configured
+  Prompt/Skill version is absent; no protected source database was used.
+- `git diff --check` passed.
+
+### Next
+
+- Task 49.20: expose and restore the exact standard CaseReview queue subject
+  through the existing Case Generation Review page. Keep AutomationPlanReview
+  and generic recent-context fallbacks out of scope.
